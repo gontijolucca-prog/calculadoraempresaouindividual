@@ -1,6 +1,30 @@
 import React from 'react';
 import { User, Building2, FileText, Download, Ticket, Wallet, MapPin } from 'lucide-react';
 import { jsPDF } from 'jspdf';
+
+// Converte o SVG do logotipo para PNG data URL via canvas
+const svgLogoToPng = (): Promise<string> => {
+  return new Promise((resolve) => {
+    const svgContent = `<svg viewBox="0 0 100 80" width="400" height="320" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="80" fill="white"/><path d="M 45 10 A 30 30 0 0 0 45 70" stroke="#333333" stroke-width="2.5" stroke-linecap="round"/><path d="M 30 45 L 42 58 L 65 25" stroke="#781D1D" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    const canvas = document.createElement('canvas');
+    canvas.width = 400;
+    canvas.height = 320;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) { resolve(''); return; }
+    const img = new Image();
+    const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    img.onload = () => {
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, 400, 320);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(''); };
+    img.src = url;
+  });
+};
 import { cn } from './lib/utils';
 import {
   calculateIRS,
@@ -115,7 +139,8 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
 
   // ─── PDF GENERATION ───────────────────────────────────────────────────────
 
-  const generatePDF = () => {
+  const generatePDF = async () => {
+    const logoDataUrl = await svgLogoToPng();
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const pw = doc.internal.pageSize.getWidth();   // 210
     const ph = doc.internal.pageSize.getHeight();  // 297
@@ -143,20 +168,33 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
 
     const addPageHeader = (title: string) => {
       fill(MAROON);
-      doc.rect(0, 0, pw, 16, 'F');
+      doc.rect(0, 0, pw, 18, 'F');
+
+      // Logotipo pequeno com fundo branco
+      if (logoDataUrl) {
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(ml, 2, 10, 10, 1.5, 1.5, 'F');
+        doc.addImage(logoDataUrl, 'PNG', ml + 0.5, 2.5, 9, 9);
+      }
+
       textC(WHITE);
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
-      doc.text('RECOFATIMA Contabilidade', ml, 10);
+      const textX = logoDataUrl ? ml + 12 : ml;
+      doc.text('RECOFATIMA', textX, 8.5);
       doc.setFont('helvetica', 'normal');
-      doc.text(title, pw / 2, 10, { align: 'center' });
-      doc.text(`Pág. ${page}`, pw - mr, 10, { align: 'right' });
+      doc.setFontSize(6.5);
+      doc.text('Contabilidade', textX, 13);
+
+      doc.setFontSize(8);
+      doc.text(title, pw / 2, 11, { align: 'center' });
+      doc.text(`Pág. ${page}`, pw - mr, 11, { align: 'right' });
     };
 
     const addPageFooter = () => {
-      fill(SLATE_200);
+      fill(MAROON);
       doc.rect(0, ph - 12, pw, 12, 'F');
-      textC(SLATE_600);
+      textC(WHITE);
       doc.setFontSize(7);
       doc.setFont('helvetica', 'normal');
       doc.text(
@@ -201,13 +239,17 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
       doc.text(l1, ml + 2, y + 4);
       doc.setFont('helvetica', 'normal');
       textC(SLATE_900);
-      doc.text(v1, ml + 50, y + 4);
+      // Truncar v1 para não sobrepor a segunda coluna
+      const v1Lines = doc.splitTextToSize(v1, half - 54);
+      doc.text(v1Lines[0] || '', ml + 50, y + 4);
       doc.setFont('helvetica', 'bold');
       textC(SLATE_600);
       doc.text(l2, ml + half + 2, y + 4);
       doc.setFont('helvetica', 'normal');
       textC(SLATE_900);
-      doc.text(v2, ml + half + 50, y + 4);
+      // Truncar v2 para não sair da margem direita
+      const v2Lines = doc.splitTextToSize(v2, half - 52);
+      doc.text(v2Lines[0] || '', ml + half + 50, y + 4);
       return y + 7;
     };
 
@@ -239,25 +281,28 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
 
     // Full-width maroon header
     fill(MAROON);
-    doc.rect(0, 0, pw, 52, 'F');
+    doc.rect(0, 0, pw, 56, 'F');
 
-    // Logo placeholder rectangle
-    doc.setFillColor(255, 255, 255, 0.15);
-    drawC(WHITE);
-    doc.setLineWidth(0.5);
+    // Logotipo na capa com fundo branco arredondado
+    if (logoDataUrl) {
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(ml, 10, 18, 16, 2, 2, 'F');
+      doc.addImage(logoDataUrl, 'PNG', ml + 0.5, 10.5, 17, 15);
+    }
 
-    // RECOFATIMA name
+    // RECOFATIMA name (ao lado do logo)
+    const nameX = logoDataUrl ? ml + 21 : ml;
     textC(WHITE);
-    doc.setFontSize(26);
+    doc.setFontSize(24);
     doc.setFont('helvetica', 'bold');
-    doc.text('RECOFATIMA', ml, 22);
+    doc.text('RECOFATIMA', nameX, 22);
 
-    doc.setFontSize(11);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text('Contabilidade & Consultoria Fiscal', ml, 30);
+    doc.text('Contabilidade & Consultoria Fiscal', nameX, 30);
 
-    doc.setFontSize(9);
-    doc.text('Relatório de Simulação Fiscal • OE 2026', ml, 39);
+    doc.setFontSize(8.5);
+    doc.text('Relatório de Simulação Fiscal • OE 2026', nameX, 38);
 
     // Date top-right
     doc.setFontSize(9);
@@ -269,8 +314,9 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
     doc.setFontSize(8);
     const refNum = `REF: ${profile.nif || 'N/D'}-${today.getFullYear()}`;
     doc.text(refNum, pw - mr, 30, { align: 'right' });
+    doc.setLineWidth(0.2);
 
-    let y = 60;
+    let y = 64;
 
     // ── DADOS DO CLIENTE ──────────────────────────────────────────────────
     y = sectionHeader(y, 'Dados do Cliente');
@@ -410,7 +456,7 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
     // ════════════════════════════════════════════════════════════════════════
     if (taxState) {
       newPage('Enquadramento Fiscal — ENI vs Sociedade');
-      y = 22;
+      y = 24;
 
       // Re-compute (same as above — kept separate for clarity)
       const totalInv = taxState.invEquip + taxState.invLic + taxState.invWorks + taxState.invFundo;
@@ -601,7 +647,7 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
     // ════════════════════════════════════════════════════════════════════════
     if (vehicleState) {
       newPage('Viaturas Ligeiras — IVA e Tributação Autónoma');
-      y = 22;
+      y = 24;
 
       const maintBase = vehicleState.maintenanceCost / 1.23;
       const maintIva = vehicleState.maintenanceCost - maintBase;
@@ -736,12 +782,8 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
     // PÁGINA 4 — BENEFÍCIOS E SS INDEPENDENTE
     // ════════════════════════════════════════════════════════════════════════
     if (ticketState || ssState) {
-      if (vehicleState) {
-        newPage('Benefícios Laborais e Segurança Social');
-      } else {
-        newPage('Benefícios Laborais e Segurança Social');
-      }
-      y = 22;
+      newPage('Benefícios Laborais e Segurança Social');
+      y = 24;
 
       if (ticketState) {
         const limiteSetor = profile.setorTicket === 'hotelaria' || profile.setorTicket === 'construcao' ? 7 : 5;
@@ -814,7 +856,7 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
     // ÚLTIMA PÁGINA — NOTAS LEGAIS E DISCLAIMER
     // ════════════════════════════════════════════════════════════════════════
     newPage('Base Legal e Notas');
-    y = 22;
+    y = 24;
 
     y = sectionHeader(y, 'Legislação de Referência — Simuladores Recofatima 2026');
     fill(SLATE_50);
@@ -875,16 +917,22 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
     doc.text(disclaimerLines, ml + 4, y + 15);
     y += 32;
 
-    // Contact / branding footer
+    // Contact / branding footer com logo
     fill(MAROON);
-    doc.rect(ml, y, cw, 14, 'F');
+    doc.rect(ml, y, cw, 18, 'F');
+    if (logoDataUrl) {
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(ml + 3, y + 2, 11, 10, 1.5, 1.5, 'F');
+      doc.addImage(logoDataUrl, 'PNG', ml + 3.5, y + 2.5, 10, 9);
+    }
     textC(WHITE);
+    const brandX = logoDataUrl ? ml + 17 : ml + 4;
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text('RECOFATIMA Contabilidade', ml + 4, y + 6);
+    doc.text('RECOFATIMA Contabilidade', brandX, y + 7);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text(`Relatório gerado em ${dateStr} • OE 2026`, ml + 4, y + 11);
+    doc.text(`Relatório gerado em ${dateStr} • OE 2026`, brandX, y + 13);
 
     addPageFooter();
 

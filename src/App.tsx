@@ -6,6 +6,7 @@ import TicketSimulator from './TicketSimulator';
 import SelfEmployedSSSimulator from './SelfEmployedSSSimulator';
 import ClientProfile, { defaultProfile } from './ClientProfile';
 import LegalInfo from './LegalInfo';
+import LoginPage from './LoginPage';
 import type { ClientProfile as ClientProfileType } from './ClientProfile';
 import { cn } from './lib/utils';
 
@@ -108,8 +109,13 @@ const getInitialSSState = (profile: ClientProfileType): SSState => ({
 });
 
 export default function App() {
+  const [loggedIn, setLoggedIn] = useState(false);
   const [view, setView] = useState<ViewType>('tax');
   const [prevView, setPrevView] = useState<ViewType>('tax');
+
+  if (!loggedIn) {
+    return <LoginPage onLogin={() => setLoggedIn(true)} />;
+  }
 
   const [clientProfile, setClientProfile] = useState<ClientProfileType>(defaultProfile);
   const [taxState, setTaxState] = useState<TaxSimulatorState>(() => getInitialTaxState(defaultProfile));
