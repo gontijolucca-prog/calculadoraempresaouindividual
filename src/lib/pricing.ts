@@ -109,7 +109,7 @@ export function calcClientEstimate(
   const salarios = profile.nrFuncionarios * p.salarioPorFuncionario;
 
   let iva = 0;
-  if (profile.regimeIva === 'normal_trimestral') {
+  if (profile.regimeIva === 'normal_trimestral' || profile.regimeIva === 'pequenos_retalhistas') {
     iva = p.ivaDeclaracaoTrimestral / 3;
   } else if (profile.regimeIva === 'normal_mensal') {
     iva = p.ivaDeclaracaoMensal;

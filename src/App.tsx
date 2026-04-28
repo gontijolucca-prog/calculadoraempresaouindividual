@@ -29,6 +29,7 @@ interface TaxSimulatorState {
   accMoLda: number;
   accMoEni: number;
   anosAtividade: number;
+  transparenciaFiscal: boolean;
 }
 
 interface VehicleSimulatorState {
@@ -78,7 +79,8 @@ const getInitialTaxState = (profile: ClientProfileType): TaxSimulatorState => ({
   varYr: 5000,
   accMoLda: 200,
   accMoEni: 50,
-  anosAtividade: Math.max(0, new Date().getFullYear() - profile.inicioAtividade)
+  anosAtividade: Math.max(0, new Date().getFullYear() - profile.inicioAtividade),
+  transparenciaFiscal: profile.regimeContabilidade === 'transparencia_fiscal',
 });
 
 const getInitialVehicleState = (): VehicleSimulatorState => ({
@@ -140,7 +142,8 @@ export default function App() {
       isServices: newProfile.atividadePrincipal === 'servicos',
       rev: newProfile.faturaçaoAnualPrevista,
       isSeasonal: newProfile.isSazonal,
-      anosAtividade: Math.max(0, new Date().getFullYear() - newProfile.inicioAtividade)
+      anosAtividade: Math.max(0, new Date().getFullYear() - newProfile.inicioAtividade),
+      transparenciaFiscal: newProfile.regimeContabilidade === 'transparencia_fiscal',
     }));
     setTicketState(prev => ({
       ...prev,
@@ -162,7 +165,8 @@ export default function App() {
       idade: newState.age,
       atividadePrincipal: newState.isServices ? 'servicos' : 'bens',
       faturaçaoAnualPrevista: newState.rev,
-      isSazonal: newState.isSeasonal
+      isSazonal: newState.isSeasonal,
+      regimeContabilidade: newState.transparenciaFiscal ? 'transparencia_fiscal' : prev.regimeContabilidade === 'transparencia_fiscal' ? 'organizada' : prev.regimeContabilidade,
     }));
   };
 
@@ -197,9 +201,9 @@ export default function App() {
     <div className="h-screen w-full flex bg-[#F8FAFC] overflow-hidden text-slate-900 relative">
       {/* Collapsible nav sidebar */}
       <div className="group absolute top-0 left-0 h-full z-50 flex shadow-2xl">
-        <nav className="w-[64px] group-hover:w-[260px] h-full bg-white border-r border-slate-200 flex flex-col transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden">
+        <nav className="w-[64px] group-hover:w-[290px] h-full bg-white border-r border-slate-200 flex flex-col transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden">
           {/* Logo */}
-          <div className="h-20 flex items-center px-4 w-[260px] shrink-0 border-b border-slate-100">
+          <div className="h-20 flex items-center px-4 w-[290px] shrink-0 border-b border-slate-100">
             <div className="w-8 h-8 flex items-center justify-center shrink-0 mr-4">
               <svg viewBox="0 0 100 80" className="w-8 h-8" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M 45 10 A 30 30 0 0 0 45 70" stroke="#333333" strokeWidth="2.5" strokeLinecap="round"/>
@@ -213,7 +217,7 @@ export default function App() {
           </div>
 
           {/* Nav items */}
-          <div className="flex flex-col gap-2 p-3 w-[260px] pt-4">
+          <div className="flex flex-col gap-2 p-3 w-[290px] pt-4">
             {/* Profile button */}
             <button
               onClick={() => setView('profile')}
@@ -248,7 +252,7 @@ export default function App() {
           </div>
 
           {/* Footer note */}
-          <div className="mt-auto p-4 w-[260px] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="mt-auto p-4 w-[290px] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 text-[10px] text-slate-500 font-medium leading-relaxed">
               Dados atualizados conforme <strong>OE 2026</strong> aprovado • Abril 2026
             </div>

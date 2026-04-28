@@ -44,7 +44,8 @@ export interface ClientProfile {
   morada: string;
   codigoPostal: string;
   localidade: string;
-  regimeIva: 'isento' | 'normal_mensal' | 'normal_trimestral';
+  regimeIva: 'isento' | 'normal_mensal' | 'normal_trimestral' | 'pequenos_retalhistas';
+  regimeContabilidade: 'simplificado' | 'organizada' | 'transparencia_fiscal' | 'nao_residente' | 'retgs';
   cae: string;
   inicioAtividade: number;
   atividadePrincipal: 'servicos' | 'bens';
@@ -205,19 +206,29 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
     let y = 20;
     textC(NAVY);
     doc.setFontSize(15); doc.setFont('helvetica', 'bold');
-    doc.text(profile.nomeCliente || 'Cliente', ml, y);
+    // Clip long names to one line (splitTextToSize, take only [0])
+    const nameLines = doc.splitTextToSize(profile.nomeCliente || 'Cliente', cw);
+    doc.text(nameLines[0], ml, y);
 
     const entityLabel = ({ eni: 'ENI', lda: 'Lda.', unipessoal: 'Unipessoal Lda.', sa: 'SA', socio_unico: 'Sócio Único' } as Record<string, string>)[profile.tipoEntidade] ?? '';
+    const regimeLabels: Record<string, string> = {
+      simplificado: 'Reg. Simplificado', organizada: 'Contab. Organizada',
+      transparencia_fiscal: 'Transparência Fiscal', retgs: 'RETGS', nao_residente: 'Não Residente',
+    };
     const metaParts = [
       profile.nif ? `NIF ${profile.nif}` : null,
       entityLabel,
-      profile.atividadePrincipal === 'servicos' ? 'Prestação de Serviços' : 'Venda de Bens',
-      `Faturação ${ptEur(profile.faturaçaoAnualPrevista)}/ano`,
+      regimeLabels[profile.regimeContabilidade] ?? '',
+      profile.atividadePrincipal === 'servicos' ? 'Serviços' : 'Bens',
+      `Fat. ${ptEur(profile.faturaçaoAnualPrevista)}/ano`,
     ].filter(Boolean) as string[];
     textC(SLATE_500);
     doc.setFontSize(8); doc.setFont('helvetica', 'normal');
-    doc.text(metaParts.join('  •  '), ml, y + 6.5);
-    y += 14;
+    // splitTextToSize prevents overflow; show up to 2 lines
+    const metaLines = doc.splitTextToSize(metaParts.join('  •  '), cw);
+    doc.text(metaLines.slice(0, 2), ml, y + 6.5);
+    const metaHeight = metaLines.length > 1 ? 14 : 10;
+    y += metaHeight;
     hRule(y); y += 7;
 
     // ── ENQUADRAMENTO FISCAL ──────────────────────────────────────────────────
@@ -283,7 +294,7 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
 
       const compRows: [string, string, string, boolean][] = [
         ['Segurança Social', ptEur(eniSS), ptEur(ldaSSComp + ldaSSMgr), false],
-        ['Imposto sobre rendimento (IRS / IRC)', ptEur(eniIRS), ptEur(irc), true],
+        ['IRS / IRC sobre rendimento', ptEur(eniIRS), ptEur(irc), true],
         ['Rendimento Líquido Anual', ptEur(eniNet), ptEur(ldaNet), false],
       ];
       compRows.forEach(([label, valEni, valLda, shade], i) => {
@@ -407,7 +418,7 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
 
     const honorLines: [string, number][] = [['Contabilidade mensal base', est.baseMonthly]];
     if (est.salarios > 0) honorLines.push([`Processamento salarial (${profile.nrFuncionarios} func.)`, est.salarios]);
-    if (est.iva > 0) honorLines.push([profile.regimeIva === 'normal_mensal' ? 'IVA mensal' : 'IVA trimestral (÷ 3)', est.iva]);
+    if (est.iva > 0) honorLines.push([profile.regimeIva === 'normal_mensal' ? 'IVA mensal' : profile.regimeIva === 'pequenos_retalhistas' ? 'IVA Peq. Retalhistas (÷ 3)' : 'IVA trimestral (÷ 3)', est.iva]);
     honorLines.push([profile.tipoEntidade === 'eni' ? 'IRS anual (÷ 12)' : 'IRC + IES (÷ 12)', est.anuaisAmortizados]);
     if (est.viaturas > 0) honorLines.push(['Gestão de viaturas', est.viaturas]);
     if (est.tickets > 0) honorLines.push(['Tickets de refeição', est.tickets]);
@@ -537,9 +548,24 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
               <div>
                 <label className={labelClass}>Regime IVA</label>
                 <select value={profile.regimeIva} onChange={e => updateProfile('regimeIva', e.target.value)} className={inputClass}>
-                  <option value="isento">Isento (Art. 53º)</option>
-                  <option value="normal_mensal">Normal Mensal</option>
+                  <option value="isento">Isento (Art. 53.º CIVA)</option>
                   <option value="normal_trimestral">Normal Trimestral</option>
+                  <option value="normal_mensal">Normal Mensal</option>
+                  <option value="pequenos_retalhistas">Pequenos Retalhistas</option>
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Regime de Contabilidade</label>
+                <select
+                  value={profile.regimeContabilidade}
+                  onChange={e => updateProfile('regimeContabilidade', e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="simplificado">Regime Simplificado</option>
+                  <option value="organizada">Contabilidade Organizada</option>
+                  {profile.tipoEntidade !== 'eni' && <option value="transparencia_fiscal">Transparência Fiscal</option>}
+                  {profile.tipoEntidade !== 'eni' && <option value="retgs">RETGS (Grupo de Empresas)</option>}
+                  <option value="nao_residente">Não Residente</option>
                 </select>
               </div>
               <div>
@@ -557,6 +583,37 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
                 <input type="checkbox" checked={profile.isSazonal} onChange={e => updateProfile('isSazonal', e.target.checked)} className="w-4 h-4 accent-[#781D1D]" />
                 <span className="text-[13px] font-[600] text-slate-700">Atividade Sazonal</span>
               </label>
+              {/* Regime warnings */}
+              {profile.tipoEntidade === 'eni' && profile.regimeContabilidade === 'simplificado' && profile.faturaçaoAnualPrevista > 200000 && (
+                <div className="col-span-2 flex gap-2 p-3 bg-amber-50 border border-amber-200 rounded-[8px]">
+                  <span className="text-amber-600 shrink-0 mt-0.5">⚠</span>
+                  <p className="text-[12px] text-amber-900 font-[600]">Faturação prevista excede €200.000 — <strong>Regime Simplificado não é permitido</strong>. Altere para Contabilidade Organizada (obrigatório acima deste limite — Art. 28.º CIRS).</p>
+                </div>
+              )}
+              {profile.tipoEntidade === 'eni' && profile.regimeContabilidade === 'transparencia_fiscal' && (
+                <div className="col-span-2 flex gap-2 p-3 bg-red-50 border border-red-200 rounded-[8px]">
+                  <span className="text-red-600 shrink-0 mt-0.5">✕</span>
+                  <p className="text-[12px] text-red-900 font-[600]">Transparência Fiscal não se aplica a ENI — aplica-se apenas a sociedades de profissionais (Lda./SA). Selecione outro regime.</p>
+                </div>
+              )}
+              {(profile.tipoEntidade === 'lda' || profile.tipoEntidade === 'unipessoal' || profile.tipoEntidade === 'sa' || profile.tipoEntidade === 'socio_unico') && profile.regimeContabilidade === 'simplificado' && profile.faturaçaoAnualPrevista > 200000 && (
+                <div className="col-span-2 flex gap-2 p-3 bg-amber-50 border border-amber-200 rounded-[8px]">
+                  <span className="text-amber-600 shrink-0 mt-0.5">⚠</span>
+                  <p className="text-[12px] text-amber-900 font-[600]">Regime Simplificado IRC apenas disponível até €200.000 de faturação (Art. 86.º-A CIRC). Considere Contabilidade Organizada.</p>
+                </div>
+              )}
+              {profile.regimeContabilidade === 'retgs' && (
+                <div className="col-span-2 flex gap-2 p-3 bg-blue-50 border border-blue-200 rounded-[8px]">
+                  <span className="text-blue-600 shrink-0 mt-0.5">ℹ</span>
+                  <p className="text-[12px] text-blue-900 font-[600]">RETGS aplica-se a grupos de sociedades com participação ≥75%. Os simuladores desta ferramenta não cobrem o regime de tributação consolidada.</p>
+                </div>
+              )}
+              {profile.regimeContabilidade === 'nao_residente' && (
+                <div className="col-span-2 flex gap-2 p-3 bg-blue-50 border border-blue-200 rounded-[8px]">
+                  <span className="text-blue-600 shrink-0 mt-0.5">ℹ</span>
+                  <p className="text-[12px] text-blue-900 font-[600]">Não residentes: tributação depende de convenções de dupla tributação e da natureza dos rendimentos (estabelecimento estável, retenções na fonte, etc.).</p>
+                </div>
+              )}
             </div>
           </section>
 
@@ -612,7 +669,8 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
               Dados Fiscais
             </h4>
             <div className="space-y-3 text-[14px]">
-              <div className="flex justify-between"><span className="text-slate-500">Regime IVA:</span><span className="font-[600] text-slate-800">{profile.regimeIva === 'isento' ? 'Isento' : profile.regimeIva === 'normal_mensal' ? 'Normal Mensal' : 'Normal Trimestral'}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Regime IVA:</span><span className="font-[600] text-slate-800">{{ isento: 'Isento Art. 53.º', normal_mensal: 'Normal Mensal', normal_trimestral: 'Normal Trimestral', pequenos_retalhistas: 'Peq. Retalhistas' }[profile.regimeIva]}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Regime Contab.:</span><span className="font-[600] text-slate-800">{{ simplificado: 'Simplificado', organizada: 'Org. Organizada', transparencia_fiscal: 'Transparência Fiscal', retgs: 'RETGS', nao_residente: 'Não Residente' }[profile.regimeContabilidade]}</span></div>
               <div className="flex justify-between"><span className="text-slate-500">Tipo Entidade:</span><span className="font-[600] text-slate-800 uppercase">{profile.tipoEntidade}</span></div>
               <div className="flex justify-between"><span className="text-slate-500">Atividade:</span><span className="font-[600] text-slate-800">{profile.atividadePrincipal === 'servicos' ? 'Serviços' : 'Bens'}</span></div>
               <div className="flex justify-between"><span className="text-slate-500">Faturação Prevista:</span><span className="font-[600] text-slate-800">{ptEur(profile.faturaçaoAnualPrevista)}</span></div>
@@ -696,6 +754,7 @@ export const defaultProfile: ClientProfile = {
   codigoPostal: '',
   localidade: '',
   regimeIva: 'normal_trimestral',
+  regimeContabilidade: 'simplificado',
   cae: '',
   inicioAtividade: new Date().getFullYear(),
   atividadePrincipal: 'servicos',

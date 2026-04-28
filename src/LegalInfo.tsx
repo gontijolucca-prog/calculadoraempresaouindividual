@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Scale, BookOpen, Car, Ticket, Shield, AlertTriangle, CheckCircle2, Briefcase, Save } from 'lucide-react';
+import { ArrowLeft, Scale, BookOpen, Car, Ticket, Shield, AlertTriangle, CheckCircle2, Briefcase, Save, Layers } from 'lucide-react';
 import { IRS_BRACKETS_2026, IAS_2026 } from './lib/pt2026';
 import {
   loadPricing,
@@ -305,7 +305,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
                           hide: estimate.salarios === 0,
                         },
                         {
-                          label: clientProfile!.regimeIva === 'normal_mensal' ? 'IVA mensal' : 'IVA trimestral (÷3)',
+                          label: clientProfile!.regimeIva === 'normal_mensal' ? 'IVA mensal' : clientProfile!.regimeIva === 'pequenos_retalhistas' ? 'IVA Peq. Retalhistas (÷3)' : 'IVA trimestral (÷3)',
                           value: estimate.iva,
                           hide: estimate.iva === 0,
                         },
@@ -356,6 +356,251 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
                 )}
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════════════════ */}
+        {/* REGIMES DE CONTABILIDADE & IVA                             */}
+        {/* ═══════════════════════════════════════════════════════════ */}
+        <section className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0]">
+          <SectionHeader icon={Layers} title="Regimes de Contabilidade & IVA em Portugal" color="#334155" />
+
+          <p className="text-[13px] text-[#64748B] font-[500] mb-6 leading-relaxed">
+            O enquadramento contabilístico e fiscal de um cliente depende do tipo de entidade, volume de faturação, natureza da atividade e opções exercidas. Abaixo resumem-se todos os regimes em vigor.
+          </p>
+
+          {/* ── Regimes de Apuramento do Rendimento ── */}
+          <h3 className="text-[14px] font-[800] text-[#0F172A] mb-4 mt-2 uppercase tracking-[0.5px]">Regimes de Apuramento do Rendimento</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+
+            {/* 1 - Regime Simplificado */}
+            {(() => {
+              const isActive = clientProfile?.regimeContabilidade === 'simplificado';
+              return (
+                <div className={`rounded-[16px] border-2 p-5 ${isActive ? 'border-[#781D1D] bg-[#FDF2F2]' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}>
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div>
+                      <span className="text-[11px] font-[800] text-[#781D1D] bg-[#FDF2F2] border border-[#F8B4B4] px-2 py-0.5 rounded-full">Art. 28.º CIRS / Art. 86.º-A CIRC</span>
+                      <h4 className="text-[15px] font-[800] text-[#0F172A] mt-2">Regime Simplificado</h4>
+                    </div>
+                    {isActive && <span className="shrink-0 text-[10px] font-[800] bg-[#781D1D] text-white px-2 py-1 rounded-full uppercase">Cliente Atual</span>}
+                  </div>
+                  <div className="space-y-1.5 text-[13px]">
+                    <p className="text-[#475569] font-[500]"><strong className="text-[#0F172A]">Para quem:</strong> ENI (Cat. B) e pequenas sociedades com faturação até <strong>€200.000/ano</strong>.</p>
+                    <p className="text-[#475569] font-[500]"><strong className="text-[#0F172A]">Como funciona:</strong> Não apura lucro real. Usa coeficientes sobre as receitas.</p>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <div className="bg-white rounded-[8px] border border-[#E2E8F0] p-2 text-center">
+                        <div className="text-[11px] text-[#94A3B8] font-[600]">Serviços</div>
+                        <div className="text-[18px] font-[800] text-[#781D1D]">75%</div>
+                        <div className="text-[10px] text-[#94A3B8]">rendimento coletável</div>
+                      </div>
+                      <div className="bg-white rounded-[8px] border border-[#E2E8F0] p-2 text-center">
+                        <div className="text-[11px] text-[#94A3B8] font-[600]">Mercadorias</div>
+                        <div className="text-[18px] font-[800] text-[#781D1D]">15%</div>
+                        <div className="text-[10px] text-[#94A3B8]">rendimento coletável</div>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-[#94A3B8] font-[500] mt-1">Vantagem: menos obrigações contabilísticas. Obriga a Contabilidade Organizada acima de €200k.</p>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 2 - Contabilidade Organizada */}
+            {(() => {
+              const isActive = clientProfile?.regimeContabilidade === 'organizada';
+              return (
+                <div className={`rounded-[16px] border-2 p-5 ${isActive ? 'border-[#0F172A] bg-slate-50' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}>
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div>
+                      <span className="text-[11px] font-[800] text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">SNC + CIRS/CIRC</span>
+                      <h4 className="text-[15px] font-[800] text-[#0F172A] mt-2">Contabilidade Organizada</h4>
+                    </div>
+                    {isActive && <span className="shrink-0 text-[10px] font-[800] bg-[#0F172A] text-white px-2 py-1 rounded-full uppercase">Cliente Atual</span>}
+                  </div>
+                  <div className="space-y-1.5 text-[13px]">
+                    <p className="text-[#475569] font-[500]"><strong className="text-[#0F172A]">Para quem:</strong> Sociedades (obrigatório) e ENI acima de €200k ou por opção.</p>
+                    <p className="text-[#475569] font-[500]"><strong className="text-[#0F172A]">Como funciona:</strong> Apura o lucro real. Imposto = sobre <em>Rendimentos − Gastos</em>.</p>
+                    <p className="text-[#475569] font-[500]">Obriga a Contabilista Certificado (OCC) e demonstrações financeiras (Balanço, DRD).</p>
+                    <p className="text-[11px] text-[#94A3B8] font-[500] mt-1">ENI pode optar voluntariamente mesmo abaixo de €200k para deduzir custos reais superiores aos coeficientes.</p>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 3 - Transparência Fiscal */}
+            {(() => {
+              const isActive = clientProfile?.regimeContabilidade === 'transparencia_fiscal';
+              return (
+                <div className={`rounded-[16px] border-2 p-5 ${isActive ? 'border-purple-500 bg-purple-50' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}>
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div>
+                      <span className="text-[11px] font-[800] text-purple-700 bg-purple-100 border border-purple-200 px-2 py-0.5 rounded-full">Art. 6.º CIRC</span>
+                      <h4 className="text-[15px] font-[800] text-[#0F172A] mt-2">Regime de Transparência Fiscal</h4>
+                    </div>
+                    {isActive && <span className="shrink-0 text-[10px] font-[800] bg-purple-600 text-white px-2 py-1 rounded-full uppercase">Cliente Atual</span>}
+                  </div>
+                  <div className="space-y-1.5 text-[13px]">
+                    <p className="text-[#475569] font-[500]"><strong className="text-[#0F172A]">Para quem:</strong> Sociedades de profissionais (advogados, médicos, arquitetos, etc.).</p>
+                    <p className="text-[#475569] font-[500]"><strong className="text-[#0F172A]">Como funciona:</strong> A empresa <strong>não paga IRC</strong>. O lucro é imputado aos sócios e tributado em IRS na esfera pessoal.</p>
+                    <p className="text-[#475569] font-[500]">Pode ser vantajoso quando a taxa marginal de IRS do sócio é inferior à taxa de IRC.</p>
+                    <p className="text-[11px] text-[#94A3B8] font-[500] mt-1">Muito usado em estruturas profissionais com sócios de rendimentos moderados. Simulável no separador de Enquadramento Fiscal.</p>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 4 - RETGS */}
+            {(() => {
+              const isActive = clientProfile?.regimeContabilidade === 'retgs';
+              return (
+                <div className={`rounded-[16px] border-2 p-5 ${isActive ? 'border-blue-500 bg-blue-50' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}>
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div>
+                      <span className="text-[11px] font-[800] text-blue-700 bg-blue-100 border border-blue-200 px-2 py-0.5 rounded-full">Art. 69.º CIRC</span>
+                      <h4 className="text-[15px] font-[800] text-[#0F172A] mt-2">RETGS — Tributação de Grupos</h4>
+                    </div>
+                    {isActive && <span className="shrink-0 text-[10px] font-[800] bg-blue-600 text-white px-2 py-1 rounded-full uppercase">Cliente Atual</span>}
+                  </div>
+                  <div className="space-y-1.5 text-[13px]">
+                    <p className="text-[#475569] font-[500]"><strong className="text-[#0F172A]">Para quem:</strong> Grupos de sociedades em que a dominante detém ≥75% do capital e direitos de voto.</p>
+                    <p className="text-[#475569] font-[500]"><strong className="text-[#0F172A]">Como funciona:</strong> Resultado fiscal consolidado — lucros e prejuízos compensam-se dentro do grupo.</p>
+                    <p className="text-[11px] text-[#94A3B8] font-[500] mt-1">Requer autorização prévia da AT e contabilidade consolidada. Os simuladores desta ferramenta não cobrem o RETGS.</p>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 5 - Não Residentes */}
+            {(() => {
+              const isActive = clientProfile?.regimeContabilidade === 'nao_residente';
+              return (
+                <div className={`rounded-[16px] border-2 p-5 col-span-full md:col-span-1 ${isActive ? 'border-amber-500 bg-amber-50' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}>
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div>
+                      <span className="text-[11px] font-[800] text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">CIRS/CIRC + CDT</span>
+                      <h4 className="text-[15px] font-[800] text-[#0F172A] mt-2">Regime de Não Residentes</h4>
+                    </div>
+                    {isActive && <span className="shrink-0 text-[10px] font-[800] bg-amber-600 text-white px-2 py-1 rounded-full uppercase">Cliente Atual</span>}
+                  </div>
+                  <div className="space-y-1.5 text-[13px]">
+                    <p className="text-[#475569] font-[500]"><strong className="text-[#0F172A]">Para quem:</strong> Entidades estrangeiras com rendimentos obtidos em Portugal (estabelecimento estável, dividendos, royalties, etc.).</p>
+                    <p className="text-[#475569] font-[500]"><strong className="text-[#0F172A]">Como funciona:</strong> Tributação específica, muitas vezes com retenção na fonte. Depende da Convenção de Dupla Tributação (CDT) aplicável.</p>
+                    <p className="text-[11px] text-[#94A3B8] font-[500] mt-1">Requer análise casuística. A AT disponibiliza orientações no Portal das Finanças.</p>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* ── Regimes de IVA ── */}
+          <h3 className="text-[14px] font-[800] text-[#0F172A] mb-4 mt-6 uppercase tracking-[0.5px]">Regimes de IVA</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+            {/* IVA Art. 53 */}
+            {(() => {
+              const isActive = clientProfile?.regimeIva === 'isento';
+              return (
+                <div className={`rounded-[16px] border-2 p-4 ${isActive ? 'border-emerald-500 bg-emerald-50' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}>
+                  <span className="text-[11px] font-[800] text-emerald-700 bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-full">Art. 53.º CIVA</span>
+                  <h4 className="text-[14px] font-[800] text-[#0F172A] mt-2 mb-2 flex items-center justify-between">
+                    Isenção de IVA
+                    {isActive && <span className="text-[10px] font-[800] bg-emerald-600 text-white px-2 py-0.5 rounded-full">Cliente Atual</span>}
+                  </h4>
+                  <p className="text-[12px] text-[#475569] font-[500] mb-2">Pequenos negócios com faturação até <strong>≈ €15.000/ano</strong>. Não cobra IVA, não deduz IVA.</p>
+                  <p className="text-[11px] text-[#94A3B8] font-[500]">Vantagem em B2C: preço final mais competitivo. Desvantagem: sem recuperação do IVA suportado nas compras.</p>
+                </div>
+              );
+            })()}
+
+            {/* IVA Trimestral */}
+            {(() => {
+              const isActive = clientProfile?.regimeIva === 'normal_trimestral';
+              return (
+                <div className={`rounded-[16px] border-2 p-4 ${isActive ? 'border-[#0F172A] bg-slate-50' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}>
+                  <span className="text-[11px] font-[800] text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">CIVA Normal</span>
+                  <h4 className="text-[14px] font-[800] text-[#0F172A] mt-2 mb-2 flex items-center justify-between">
+                    Regime Normal Trimestral
+                    {isActive && <span className="text-[10px] font-[800] bg-[#0F172A] text-white px-2 py-0.5 rounded-full">Cliente Atual</span>}
+                  </h4>
+                  <p className="text-[12px] text-[#475569] font-[500] mb-2">Declaração periódica de IVA a cada trimestre (4×/ano). Regra geral para faturação &lt; €650.000.</p>
+                  <p className="text-[11px] text-[#94A3B8] font-[500]">Entrega até ao final do 2.º mês seguinte ao trimestre (ex: jan–mar → maio).</p>
+                </div>
+              );
+            })()}
+
+            {/* IVA Mensal */}
+            {(() => {
+              const isActive = clientProfile?.regimeIva === 'normal_mensal';
+              return (
+                <div className={`rounded-[16px] border-2 p-4 ${isActive ? 'border-[#781D1D] bg-[#FDF2F2]' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}>
+                  <span className="text-[11px] font-[800] text-[#781D1D] bg-[#FDF2F2] border border-[#F8B4B4] px-2 py-0.5 rounded-full">CIVA Normal</span>
+                  <h4 className="text-[14px] font-[800] text-[#0F172A] mt-2 mb-2 flex items-center justify-between">
+                    Regime Normal Mensal
+                    {isActive && <span className="text-[10px] font-[800] bg-[#781D1D] text-white px-2 py-0.5 rounded-full">Cliente Atual</span>}
+                  </h4>
+                  <p className="text-[12px] text-[#475569] font-[500] mb-2">Declaração periódica mensal (12×/ano). Obrigatório para faturação ≥ €650.000/ano.</p>
+                  <p className="text-[11px] text-[#94A3B8] font-[500]">Entrega até ao dia 20 do 2.º mês seguinte. Mais obrigações mas cashback de IVA mais rápido.</p>
+                </div>
+              );
+            })()}
+
+            {/* Pequenos Retalhistas */}
+            {(() => {
+              const isActive = clientProfile?.regimeIva === 'pequenos_retalhistas';
+              return (
+                <div className={`rounded-[16px] border-2 p-4 ${isActive ? 'border-amber-500 bg-amber-50' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}>
+                  <span className="text-[11px] font-[800] text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">Art. 60.º-A CIVA</span>
+                  <h4 className="text-[14px] font-[800] text-[#0F172A] mt-2 mb-2 flex items-center justify-between">
+                    Regime dos Pequenos Retalhistas
+                    {isActive && <span className="text-[10px] font-[800] bg-amber-600 text-white px-2 py-0.5 rounded-full">Cliente Atual</span>}
+                  </h4>
+                  <p className="text-[12px] text-[#475569] font-[500] mb-2">Pequenos comerciantes: IVA calculado com base nas <strong>compras</strong>, não nas vendas. Taxa de 25% sobre o IVA suportado.</p>
+                  <p className="text-[11px] text-[#94A3B8] font-[500]">Atualmente pouco utilizado. Simplifica o apuramento mas pode ser desvantajoso em margens elevadas.</p>
+                </div>
+              );
+            })()}
+
+            {/* Isenção específica */}
+            <div className="rounded-[16px] border-2 border-[#E2E8F0] bg-[#F8FAFC] p-4">
+              <span className="text-[11px] font-[800] text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">Art. 9.º CIVA</span>
+              <h4 className="text-[14px] font-[800] text-[#0F172A] mt-2 mb-2">Isenção por Natureza da Atividade</h4>
+              <p className="text-[12px] text-[#475569] font-[500] mb-2">Certas atividades estão isentas por natureza: saúde, educação, seguros, serviços financeiros, etc.</p>
+              <p className="text-[11px] text-[#94A3B8] font-[500]">Diferente da isenção Art. 53.º — sem limite de faturação. Sem direito à dedução do IVA suportado.</p>
+            </div>
+          </div>
+
+          {/* Tabela resumo obrigações */}
+          <div className="mt-8 overflow-x-auto">
+            <h3 className="text-[13px] font-[800] text-[#0F172A] mb-3 uppercase tracking-[0.5px]">Resumo de Obrigações por Regime</h3>
+            <table className="w-full text-[12px]">
+              <thead>
+                <tr className="bg-[#0F172A] text-white">
+                  <th className="text-left px-4 py-2 rounded-tl-[8px]">Regime</th>
+                  <th className="text-center px-3 py-2">Contabilista OCC</th>
+                  <th className="text-center px-3 py-2">Declarações IVA</th>
+                  <th className="text-center px-3 py-2">Modelo 22 / Mod. 3</th>
+                  <th className="text-center px-3 py-2 rounded-tr-[8px]">DAI / IES</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ['Simplificado ENI', 'Recomendado', '0 / trimestral / mensal', 'Mod. 3 Cat. B', 'Não'],
+                  ['Contab. Organizada ENI', 'Obrigatório', '0 / trimestral / mensal', 'Mod. 3 Cat. B', 'Não'],
+                  ['Contab. Organizada Lda/SA', 'Obrigatório', 'Trimestral ou Mensal', 'Modelo 22 IRC', 'Sim (IES)'],
+                  ['Transparência Fiscal', 'Obrigatório', 'Trimestral ou Mensal', 'Mod. 22 + Mod. 3', 'Sim (IES)'],
+                  ['RETGS', 'Obrigatório', 'Trimestral ou Mensal', 'Consolidado', 'Sim (consolidado)'],
+                ].map(([regime, occ, iva, imp, ies], i) => (
+                  <tr key={i} className={i % 2 === 0 ? 'bg-[#F8FAFC]' : 'bg-white'}>
+                    <td className="px-4 py-2 font-[700] text-[#0F172A]">{regime}</td>
+                    <td className="px-3 py-2 text-center">{occ}</td>
+                    <td className="px-3 py-2 text-center">{iva}</td>
+                    <td className="px-3 py-2 text-center">{imp}</td>
+                    <td className="px-3 py-2 text-center">{ies}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
 

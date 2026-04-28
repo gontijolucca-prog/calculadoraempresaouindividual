@@ -23,6 +23,7 @@ interface TaxSimulatorState {
   accMoLda: number;
   accMoEni: number;
   anosAtividade: number;
+  transparenciaFiscal: boolean;
 }
 
 interface Props {
@@ -36,7 +37,8 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
     profSit, currentInc, age, isMainAct, monthlyNeed,
     isServices, b2b, rev, isSeasonal,
     invEquip, invLic, invWorks, invFundo,
-    fixedMo, varYr, accMoLda, accMoEni, anosAtividade
+    fixedMo, varYr, accMoLda, accMoEni, anosAtividade,
+    transparenciaFiscal = false,
   } = initialState;
 
   const setState = (updates: Partial<TaxSimulatorState>) => {
@@ -104,7 +106,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
     const eniNet = rev - costsEniOutPocket - eniSS - eniIRS;
     const eniCashFlow = eniNet - totalInv;
 
-    // LDA
+    // LDA / Sociedade
     const rawGross = monthlyNeed / 0.70;
     const grossSalaryYr = rawGross * 14;
     const ldaSSCompany = grossSalaryYr * 0.2375;
@@ -112,12 +114,22 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
     const ldaIRSManager = calculateIRS(grossSalaryYr);
 
     const profit = rev - costsLdaOutPocket - dpNaoAceite - grossSalaryYr - ldaSSCompany;
+
     let irc = 0;
-    if (profit > 0) {
+    let transparenciaIRSOnProfit = 0;
+    if (transparenciaFiscal) {
+      // Regime de Transparência Fiscal (Art. 6.º CIRC): empresa não paga IRC.
+      // Lucro imputado ao sócio e tributado como IRS (acumulado ao salário já auferido).
+      if (profit > 0) {
+        transparenciaIRSOnProfit = Math.max(0,
+          calculateIRS(grossSalaryYr + profit) - calculateIRS(grossSalaryYr)
+        );
+      }
+    } else if (profit > 0) {
       irc = profit <= 50000 ? profit * 0.15 : (50000 * 0.15) + ((profit - 50000) * 0.19);
     }
 
-    const companyNetEarnings = profit - irc;
+    const companyNetEarnings = profit - irc - transparenciaIRSOnProfit;
     const ldaBusinessNet = companyNetEarnings + (monthlyNeed * 12);
     const ldaCashFlow = (companyNetEarnings + dpNaoAceite) - totalInv;
 
@@ -132,6 +144,8 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
       depsDeduction,
       ppc,
       retencaoFonte,
+      transparenciaFiscal,
+      transparenciaIRSOnProfit,
       eni: { ss: eniSS, irs: eniIRS, net: eniNet, cashFlow: eniCashFlow, costs: costsEniOutPocket, rendColetavel: eniRendColetavel },
       lda: {
         ssComp: ldaSSCompany, ssEmp: ldaSSManager,
@@ -143,7 +157,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
     };
   }, [profSit, currentInc, age, isMainAct, monthlyNeed, isServices, b2b, rev, isSeasonal,
       invEquip, invLic, invWorks, invFundo, fixedMo, varYr, accMoLda, accMoEni,
-      anosAtividade, profile.beneficioJovem, profile.idade, profile.nrDependentes]);
+      anosAtividade, transparenciaFiscal, profile.beneficioJovem, profile.idade, profile.nrDependentes]);
 
   const ptEur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(Math.max(0, v));
 
@@ -169,7 +183,8 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
       varYr: 5000,
       accMoLda: 200,
       accMoEni: 50,
-      anosAtividade: Math.max(0, new Date().getFullYear() - profile.inicioAtividade)
+      anosAtividade: Math.max(0, new Date().getFullYear() - profile.inicioAtividade),
+      transparenciaFiscal: profile.regimeContabilidade === 'transparencia_fiscal',
     });
   };
 
@@ -257,6 +272,13 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
               <label className="col-span-2 flex items-start gap-4 p-4 bg-amber-50 border border-amber-200 rounded-[8px] cursor-pointer hover:bg-amber-100 transition-colors">
                 <input type="checkbox" checked={isSeasonal} onChange={e=>setState({isSeasonal: e.target.checked})} className="mt-1 w-4 h-4 accent-amber-600" />
                 <span className="text-[13px] font-[600] text-amber-900 leading-snug">Negócio Sazonal (Afeta cash-flow drásticamente nos 1ºs trimestres)</span>
+              </label>
+              <label className={cn("col-span-2 flex items-start gap-4 p-4 border rounded-[8px] cursor-pointer transition-colors", transparenciaFiscal ? "bg-purple-50 border-purple-300 hover:bg-purple-100" : "bg-slate-50 border-slate-200 hover:bg-slate-100")}>
+                <input type="checkbox" checked={transparenciaFiscal} onChange={e=>setState({transparenciaFiscal: e.target.checked})} className="mt-1 w-4 h-4 accent-purple-600" />
+                <div>
+                  <span className="text-[13px] font-[700] text-slate-800 leading-snug block">Regime de Transparência Fiscal (Art. 6.º CIRC)</span>
+                  <span className="text-[11px] text-slate-500 font-[500]">Empresa não paga IRC — lucro imputado ao sócio e tributado em IRS. Aplicável a sociedades de profissionais (advogados, médicos, arquitetos…)</span>
+                </div>
               </label>
             </div>
           </section>
@@ -379,14 +401,34 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
 
             {/* LDA CARD */}
             <div className={cn("bg-white border-2 rounded-[20px] p-6 shadow-sm flex flex-col transition-all", winner === 'LDA' ? "border-[#781D1D] ring-4 ring-[#781D1D]/10" : "border-[#E2E8F0]")}>
-              <h4 className="text-[18px] font-[800] text-[#0F172A] mb-6 flex items-center justify-between">Sociedade (Lda / Unipessoal)
+              <h4 className="text-[18px] font-[800] text-[#0F172A] mb-2 flex items-center justify-between">
+                Sociedade {results.transparenciaFiscal ? '(Transp. Fiscal)' : '(Lda / Unipessoal)'}
                 {winner === 'LDA' && <span className="bg-[#781D1D] text-white text-[10px] font-[800] uppercase px-3 py-1 rounded-full tracking-widest">Melhor Opção</span>}
               </h4>
-              <div className="space-y-4 mb-8">
-                <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-                  <span className="text-[13px] font-[600] text-slate-600">IRC a Pagar (Lucro: {ptEur(results.lda.profit)})</span>
-                  <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.lda.irc)}</span>
+              {results.transparenciaFiscal && (
+                <div className="mb-4 flex items-center gap-2 bg-purple-50 border border-purple-200 rounded-[8px] px-3 py-2">
+                  <span className="text-[10px] font-[800] text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">Art. 6.º CIRC</span>
+                  <span className="text-[11px] text-purple-800 font-[600]">Empresa sem IRC — lucro tributado como IRS do sócio</span>
                 </div>
+              )}
+              <div className="space-y-4 mb-8">
+                {results.transparenciaFiscal ? (
+                  <>
+                    <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                      <span className="text-[13px] font-[600] text-purple-700">IRC (isento — Transparência Fiscal)</span>
+                      <span className="text-[15px] font-[700] text-purple-700 font-mono">0 €</span>
+                    </div>
+                    <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                      <span className="text-[13px] font-[600] text-slate-600">IRS sobre lucro imputado ({ptEur(results.lda.profit + results.lda.irc + results.transparenciaIRSOnProfit)})</span>
+                      <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.transparenciaIRSOnProfit)}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                    <span className="text-[13px] font-[600] text-slate-600">IRC a Pagar (Lucro: {ptEur(results.lda.profit + results.lda.irc)})</span>
+                    <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.lda.irc)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                   <span className="text-[13px] font-[600] text-slate-600">TSU (Empresa 23,75% + Gestor 11%)</span>
                   <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.lda.ssComp + results.lda.ssEmp)}</span>
