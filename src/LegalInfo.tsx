@@ -1,9 +1,19 @@
-import React from 'react';
-import { ArrowLeft, Scale, BookOpen, Car, Ticket, Shield, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, Scale, BookOpen, Car, Ticket, Shield, AlertTriangle, CheckCircle2, Briefcase, Save } from 'lucide-react';
 import { IRS_BRACKETS_2026, IAS_2026 } from './lib/pt2026';
+import {
+  loadPricing,
+  savePricing,
+  calcClientEstimate,
+  type PricingConfig,
+} from './lib/pricing';
+import type { ClientProfile } from './ClientProfile';
 
 interface Props {
   onBack: () => void;
+  clientProfile?: ClientProfile;
+  vehicleState?: { price: number };
+  ticketState?: { ticketValue: number };
 }
 
 const ptEur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(v);
@@ -34,7 +44,56 @@ const Article = ({ code, description }: { code: string; description: string }) =
   </div>
 );
 
-export default function LegalInfo({ onBack }: Props) {
+const ptEurShort = (v: number) =>
+  new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(v);
+
+const PriceInput = ({
+  label,
+  description,
+  value,
+  suffix = '€/mês',
+  onChange,
+}: {
+  label: string;
+  description: string;
+  value: number;
+  suffix?: string;
+  onChange: (v: number) => void;
+}) => (
+  <div className="flex flex-col gap-1">
+    <label className="text-[12px] font-[700] text-[#0F172A]">{label}</label>
+    <p className="text-[11px] text-[#94A3B8] font-[500]">{description}</p>
+    <div className="flex items-center gap-2 mt-1">
+      <input
+        type="number"
+        min={0}
+        step={5}
+        value={value}
+        onChange={e => onChange(Math.max(0, parseFloat(e.target.value) || 0))}
+        className="w-28 px-3 py-2 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] font-[700] text-[#0F172A] focus:border-[#781D1D] outline-none"
+      />
+      <span className="text-[12px] text-[#64748B] font-[500]">{suffix}</span>
+    </div>
+  </div>
+);
+
+export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketState }: Props) {
+  const [pricing, setPricing] = useState<PricingConfig>(loadPricing);
+  const [saved, setSaved] = useState(false);
+
+  const update = (field: keyof PricingConfig, value: number) => {
+    const next = { ...pricing, [field]: value };
+    setPricing(next);
+    savePricing(next);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1800);
+  };
+
+  const estimate =
+    clientProfile && clientProfile.nomeCliente
+      ? calcClientEstimate(pricing, clientProfile, vehicleState, ticketState)
+      : null;
+
   return (
     <div className="h-full bg-[#F8FAFC] overflow-y-auto">
       {/* Header */}
@@ -67,6 +126,238 @@ export default function LegalInfo({ onBack }: Props) {
             <strong>Nota:</strong> Esta página apresenta a legislação em que os cálculos dos simuladores se baseiam, com dados válidos para <strong>abril de 2026</strong>. A lei fiscal pode sofrer alterações. Este simulador não substitui o aconselhamento de um <strong>contabilista certificado (OCC)</strong>.
           </p>
         </div>
+
+        {/* ═══════════════════════════════════════════════════════════ */}
+        {/* TABELA DE HONORÁRIOS                                        */}
+        {/* ═══════════════════════════════════════════════════════════ */}
+        <section className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0]">
+          <div className="flex items-center justify-between mb-5 pb-3 border-b-2 border-[#781D1D]">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-[10px] bg-[#781D1D15]">
+                <Briefcase className="w-5 h-5 text-[#781D1D]" />
+              </div>
+              <h2 className="text-[18px] font-[800] text-[#0F172A]">Tabela de Honorários</h2>
+            </div>
+            {saved && (
+              <span className="flex items-center gap-1.5 text-[12px] font-[700] text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full">
+                <Save size={12} /> Guardado
+              </span>
+            )}
+          </div>
+
+          <p className="text-[13px] text-[#64748B] font-[500] mb-6">
+            Configure os valores dos seus serviços. Os preços são guardados automaticamente neste dispositivo e utilizados para calcular a estimativa de honorários para cada cliente.
+          </p>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            {/* ── Coluna de configuração ── */}
+            <div className="lg:col-span-2 space-y-8">
+
+              {/* Contabilidade base */}
+              <div>
+                <h3 className="text-[13px] font-[800] text-[#0F172A] uppercase tracking-[0.5px] mb-4 pb-2 border-b border-[#F1F5F9]">Contabilidade Mensal</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                  <PriceInput
+                    label="ENI / Trab. Independente"
+                    description="Contabilidade de recibos verdes em regime simplificado"
+                    value={pricing.contabilidadeEni}
+                    onChange={v => update('contabilidadeEni', v)}
+                  />
+                  <PriceInput
+                    label="Lda. / Unipessoal"
+                    description="Contabilidade organizada de sociedade por quotas"
+                    value={pricing.contabilidadeLda}
+                    onChange={v => update('contabilidadeLda', v)}
+                  />
+                  <PriceInput
+                    label="Sociedade Anónima (SA)"
+                    description="Contabilidade de SA com maiores obrigações reportivas"
+                    value={pricing.contabilidadeSA}
+                    onChange={v => update('contabilidadeSA', v)}
+                  />
+                </div>
+              </div>
+
+              {/* Salários */}
+              <div>
+                <h3 className="text-[13px] font-[800] text-[#0F172A] uppercase tracking-[0.5px] mb-4 pb-2 border-b border-[#F1F5F9]">Processamento Salarial</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <PriceInput
+                    label="Por funcionário"
+                    description="Processamento de salário, SS e IRS retenção mensal"
+                    suffix="€ / func. / mês"
+                    value={pricing.salarioPorFuncionario}
+                    onChange={v => update('salarioPorFuncionario', v)}
+                  />
+                  <PriceInput
+                    label="Tickets de refeição"
+                    description="Emissão e gestão mensal de vales de refeição"
+                    value={pricing.processamentoTickets}
+                    onChange={v => update('processamentoTickets', v)}
+                  />
+                </div>
+              </div>
+
+              {/* IVA */}
+              <div>
+                <h3 className="text-[13px] font-[800] text-[#0F172A] uppercase tracking-[0.5px] mb-4 pb-2 border-b border-[#F1F5F9]">Declarações de IVA</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <PriceInput
+                    label="Declaração trimestral"
+                    description="IVA periódico — 4 declarações por ano"
+                    suffix="€ / declaração"
+                    value={pricing.ivaDeclaracaoTrimestral}
+                    onChange={v => update('ivaDeclaracaoTrimestral', v)}
+                  />
+                  <PriceInput
+                    label="Declaração mensal"
+                    description="IVA periódico — 12 declarações por ano"
+                    suffix="€ / declaração"
+                    value={pricing.ivaDeclaracaoMensal}
+                    onChange={v => update('ivaDeclaracaoMensal', v)}
+                  />
+                </div>
+              </div>
+
+              {/* Declarações anuais */}
+              <div>
+                <h3 className="text-[13px] font-[800] text-[#0F172A] uppercase tracking-[0.5px] mb-4 pb-2 border-b border-[#F1F5F9]">Declarações Anuais</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                  <PriceInput
+                    label="IRS anual — ENI"
+                    description="Declaração Mod. 3 categoria B"
+                    suffix="€ / ano"
+                    value={pricing.irsAnualEni}
+                    onChange={v => update('irsAnualEni', v)}
+                  />
+                  <PriceInput
+                    label="IRC / Modelo 22"
+                    description="Declaração anual de IRC para sociedades"
+                    suffix="€ / ano"
+                    value={pricing.ircAnualLda}
+                    onChange={v => update('ircAnualLda', v)}
+                  />
+                  <PriceInput
+                    label="DAI / IES"
+                    description="Declaração Anual de Informação Empresarial"
+                    suffix="€ / ano"
+                    value={pricing.daiIES}
+                    onChange={v => update('daiIES', v)}
+                  />
+                </div>
+              </div>
+
+              {/* Outros serviços */}
+              <div>
+                <h3 className="text-[13px] font-[800] text-[#0F172A] uppercase tracking-[0.5px] mb-4 pb-2 border-b border-[#F1F5F9]">Outros Serviços</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <PriceInput
+                    label="Gestão de viaturas"
+                    description="Por viatura: depreciação, TA e custos dedutíveis mensais"
+                    suffix="€ / viatura / mês"
+                    value={pricing.gestaoPorViatura}
+                    onChange={v => update('gestaoPorViatura', v)}
+                  />
+                  <PriceInput
+                    label="Consultoria / hora"
+                    description="Aconselhamento fiscal, reuniões e apoio pontual"
+                    suffix="€ / hora"
+                    value={pricing.consultoriaHora}
+                    onChange={v => update('consultoriaHora', v)}
+                  />
+                  <PriceInput
+                    label="Constituição de empresa"
+                    description="Apoio na constituição de Lda., Unipessoal ou SA"
+                    suffix="€ (valor único)"
+                    value={pricing.constituicaoEmpresa}
+                    onChange={v => update('constituicaoEmpresa', v)}
+                  />
+                  <PriceInput
+                    label="Registo como ENI"
+                    description="Abertura de atividade e primeiras obrigações fiscais"
+                    suffix="€ (valor único)"
+                    value={pricing.registoEni}
+                    onChange={v => update('registoEni', v)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* ── Painel de resumo ── */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-24">
+                {estimate ? (
+                  <div className="bg-[#0F172A] rounded-[20px] p-6 text-white">
+                    <div className="mb-4">
+                      <p className="text-[11px] font-[700] uppercase tracking-[1px] text-[#94A3B8] mb-1">Estimativa para</p>
+                      <p className="text-[16px] font-[800]">{clientProfile!.nomeCliente || 'Cliente'}</p>
+                      <span className="inline-block mt-1 text-[11px] font-[700] bg-[#781D1D] text-white px-2 py-0.5 rounded-full">
+                        {estimate.entityLabel}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 mb-5">
+                      {[
+                        { label: 'Contabilidade base', value: estimate.baseMonthly },
+                        {
+                          label: `Salários (${clientProfile!.nrFuncionarios} func.)`,
+                          value: estimate.salarios,
+                          hide: estimate.salarios === 0,
+                        },
+                        {
+                          label: clientProfile!.regimeIva === 'normal_mensal' ? 'IVA mensal' : 'IVA trimestral (÷3)',
+                          value: estimate.iva,
+                          hide: estimate.iva === 0,
+                        },
+                        {
+                          label: clientProfile!.tipoEntidade === 'eni' ? 'IRS anual (÷12)' : 'IRC + IES (÷12)',
+                          value: estimate.anuaisAmortizados,
+                        },
+                        {
+                          label: 'Gestão de viaturas',
+                          value: estimate.viaturas,
+                          hide: estimate.viaturas === 0,
+                        },
+                        {
+                          label: 'Tickets de refeição',
+                          value: estimate.tickets,
+                          hide: estimate.tickets === 0,
+                        },
+                      ]
+                        .filter(r => !r.hide)
+                        .map(r => (
+                          <div key={r.label} className="flex justify-between items-center text-[13px]">
+                            <span className="text-[#94A3B8] font-[500]">{r.label}</span>
+                            <span className="font-[700]">{ptEurShort(r.value)}</span>
+                          </div>
+                        ))}
+                    </div>
+
+                    <div className="border-t border-[#334155] pt-4 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[13px] text-[#94A3B8] font-[600]">Total / mês</span>
+                        <span className="text-[20px] font-[800] text-white">{ptEurShort(estimate.totalMensal)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[12px] text-[#64748B] font-[500]">Total / ano</span>
+                        <span className="text-[14px] font-[700] text-[#94A3B8]">{ptEurShort(estimate.totalAnual)}</span>
+                      </div>
+                    </div>
+
+                    <p className="text-[10px] text-[#475569] mt-4 leading-relaxed">
+                      Estimativa indicativa. Serviços pontuais (constituição, consultoria) não incluídos.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-[#F8FAFC] border-2 border-dashed border-[#E2E8F0] rounded-[20px] p-6 text-center">
+                    <Briefcase className="w-10 h-10 text-[#CBD5E1] mx-auto mb-3" />
+                    <p className="text-[13px] font-[600] text-[#64748B]">Preencha o nome do cliente no Perfil para ver a estimativa de honorários.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* ═══════════════════════════════════════════════════════════ */}
         {/* 1. IRS — IMPOSTO SOBRE O RENDIMENTO DE PESSOAS SINGULARES  */}

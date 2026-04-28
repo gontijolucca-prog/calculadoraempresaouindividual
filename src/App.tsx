@@ -110,18 +110,17 @@ const getInitialSSState = (profile: ClientProfileType): SSState => ({
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
-  const [view, setView] = useState<ViewType>('tax');
-  const [prevView, setPrevView] = useState<ViewType>('tax');
-
-  if (!loggedIn) {
-    return <LoginPage onLogin={() => setLoggedIn(true)} />;
-  }
-
+  const [view, setView] = useState<ViewType>('profile');
+  const [prevView, setPrevView] = useState<ViewType>('profile');
   const [clientProfile, setClientProfile] = useState<ClientProfileType>(defaultProfile);
   const [taxState, setTaxState] = useState<TaxSimulatorState>(() => getInitialTaxState(defaultProfile));
   const [vehicleState, setVehicleState] = useState<VehicleSimulatorState>(getInitialVehicleState);
   const [ticketState, setTicketState] = useState<TicketSimulatorState>(() => getInitialTicketState(defaultProfile));
   const [ssState, setSSState] = useState<SSState>(() => getInitialSSState(defaultProfile));
+
+  if (!loggedIn) {
+    return <LoginPage onLogin={() => setLoggedIn(true)} />;
+  }
 
   const openLegal = () => {
     setPrevView(view);
@@ -313,7 +312,12 @@ export default function App() {
         )}
 
         {view === 'legal' && (
-          <LegalInfo onBack={closeLegal} />
+          <LegalInfo
+            onBack={closeLegal}
+            clientProfile={clientProfile}
+            vehicleState={vehicleState}
+            ticketState={ticketState}
+          />
         )}
       </main>
     </div>

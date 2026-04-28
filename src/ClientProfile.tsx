@@ -142,802 +142,311 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
   const generatePDF = async () => {
     const logoDataUrl = await svgLogoToPng();
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const pw = doc.internal.pageSize.getWidth();   // 210
-    const ph = doc.internal.pageSize.getHeight();  // 297
-    const ml = 15; // margin left
-    const mr = 15; // margin right
-    const cw = pw - ml - mr; // content width = 180
+    // ─── COMPACT SINGLE-PAGE PDF ──────────────────────────────────────────
+    const pw = doc.internal.pageSize.getWidth();
+    const ph = doc.internal.pageSize.getHeight();
+    const ml = 16;
+    const mr = 16;
+    const cw = pw - ml - mr; // 178 mm
 
     type RGB = [number, number, number];
-    const MAROON: RGB = [120, 29, 29];
+    const NAVY: RGB         = [15, 23, 42];
+    const MAROON: RGB       = [120, 29, 29];
     const MAROON_LIGHT: RGB = [253, 242, 242];
-    const SLATE_50: RGB = [248, 250, 252];
-    const SLATE_200: RGB = [226, 232, 240];
-    const SLATE_600: RGB = [71, 85, 105];
-    const SLATE_900: RGB = [15, 23, 42];
-    const WHITE: RGB = [255, 255, 255];
-    const GREEN: RGB = [16, 185, 129];
-    const RED_LIGHT: RGB = [239, 68, 68];
+    const SLATE_50: RGB     = [248, 250, 252];
+    const SLATE_100: RGB    = [241, 245, 249];
+    const SLATE_200: RGB    = [226, 232, 240];
+    const SLATE_500: RGB    = [100, 116, 139];
+    const SLATE_700: RGB    = [51, 65, 85];
+    const SLATE_900: RGB    = [15, 23, 42];
+    const WHITE: RGB        = [255, 255, 255];
+    const GREEN: RGB        = [5, 150, 105];
+    const GREEN_LIGHT: RGB  = [236, 253, 245];
 
-    const fill = (c: RGB) => doc.setFillColor(c[0], c[1], c[2]);
+    const fill  = (c: RGB) => doc.setFillColor(c[0], c[1], c[2]);
     const textC = (c: RGB) => doc.setTextColor(c[0], c[1], c[2]);
     const drawC = (c: RGB) => doc.setDrawColor(c[0], c[1], c[2]);
-
-    // ─── Helper utilities ────────────────────────────────────────────────────
-    let page = 1;
-
-    const addPageHeader = (title: string) => {
-      fill(MAROON);
-      doc.rect(0, 0, pw, 18, 'F');
-
-      // Logotipo pequeno com fundo branco
-      if (logoDataUrl) {
-        doc.setFillColor(255, 255, 255);
-        doc.roundedRect(ml, 2, 10, 10, 1.5, 1.5, 'F');
-        doc.addImage(logoDataUrl, 'PNG', ml + 0.5, 2.5, 9, 9);
-      }
-
-      textC(WHITE);
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'bold');
-      const textX = logoDataUrl ? ml + 12 : ml;
-      doc.text('RECOFATIMA', textX, 8.5);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.5);
-      doc.text('Contabilidade', textX, 13);
-
-      doc.setFontSize(8);
-      doc.text(title, pw / 2, 11, { align: 'center' });
-      doc.text(`Pág. ${page}`, pw - mr, 11, { align: 'right' });
+    const hRule = (yy: number) => {
+      drawC(SLATE_200); doc.setLineWidth(0.2); doc.line(ml, yy, ml + cw, yy);
     };
 
-    const addPageFooter = () => {
-      fill(MAROON);
-      doc.rect(0, ph - 12, pw, 12, 'F');
-      textC(WHITE);
-      doc.setFontSize(7);
-      doc.setFont('helvetica', 'normal');
-      doc.text(
-        'Dados atualizados conforme OE 2026 • Este relatório é uma estimativa. Consulte o seu contabilista certificado.',
-        pw / 2, ph - 5, { align: 'center' }
-      );
-    };
-
-    const newPage = (title: string) => {
-      addPageFooter();
-      doc.addPage();
-      page++;
-      addPageHeader(title);
-    };
-
-    const sectionHeader = (y: number, label: string, color: RGB = MAROON) => {
-      fill(color);
-      doc.rect(ml, y, cw, 8, 'F');
-      textC(WHITE);
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.text(label.toUpperCase(), ml + 4, y + 5.5);
-      return y + 8;
-    };
-
-    const row = (y: number, label: string, value: string, bold = false) => {
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      textC(SLATE_600);
-      doc.text(label, ml + 2, y + 4);
-      doc.setFont('helvetica', bold ? 'bold' : 'normal');
-      textC(SLATE_900);
-      doc.text(value, ml + 65, y + 4);
-      return y + 7;
-    };
-
-    const twoColRow = (y: number, l1: string, v1: string, l2: string, v2: string) => {
-      doc.setFontSize(9);
-      const half = cw / 2;
-      doc.setFont('helvetica', 'bold');
-      textC(SLATE_600);
-      doc.text(l1, ml + 2, y + 4);
-      doc.setFont('helvetica', 'normal');
-      textC(SLATE_900);
-      // Truncar v1 para não sobrepor a segunda coluna
-      const v1Lines = doc.splitTextToSize(v1, half - 54);
-      doc.text(v1Lines[0] || '', ml + 50, y + 4);
-      doc.setFont('helvetica', 'bold');
-      textC(SLATE_600);
-      doc.text(l2, ml + half + 2, y + 4);
-      doc.setFont('helvetica', 'normal');
-      textC(SLATE_900);
-      // Truncar v2 para não sair da margem direita
-      const v2Lines = doc.splitTextToSize(v2, half - 52);
-      doc.text(v2Lines[0] || '', ml + half + 50, y + 4);
-      return y + 7;
-    };
-
-    const divider = (y: number) => {
-      drawC(SLATE_200);
-      doc.line(ml, y, ml + cw, y);
-      return y + 3;
-    };
-
-    const metricCard = (
-      x: number, y: number, w: number, h: number,
-      label: string, value: string,
-      bgColor: RGB,
-      textColor: RGB
-    ) => {
-      fill(bgColor);
-      doc.roundedRect(x, y, w, h, 3, 3, 'F');
-      textC(textColor);
-      doc.setFontSize(7.5);
-      doc.setFont('helvetica', 'bold');
-      doc.text(label.toUpperCase(), x + 3, y + 5);
-      doc.setFontSize(12);
-      doc.text(value, x + 3, y + 13);
-    };
-
-    // ════════════════════════════════════════════════════════════════════════
-    // PÁGINA 1 — CAPA E FICHA DO CLIENTE
-    // ════════════════════════════════════════════════════════════════════════
-
-    // Full-width maroon header
+    // ── CABEÇALHO ────────────────────────────────────────────────────────────
+    fill(SLATE_50);
+    doc.rect(0, 0, pw, 13, 'F');
     fill(MAROON);
-    doc.rect(0, 0, pw, 56, 'F');
+    doc.rect(0, 0, 3, 13, 'F');
+    drawC(SLATE_200); doc.setLineWidth(0.2); doc.line(0, 13, pw, 13);
 
-    // Logotipo na capa com fundo branco arredondado
-    if (logoDataUrl) {
-      doc.setFillColor(255, 255, 255);
-      doc.roundedRect(ml, 10, 18, 16, 2, 2, 'F');
-      doc.addImage(logoDataUrl, 'PNG', ml + 0.5, 10.5, 17, 15);
-    }
-
-    // RECOFATIMA name (ao lado do logo)
-    const nameX = logoDataUrl ? ml + 21 : ml;
-    textC(WHITE);
-    doc.setFontSize(24);
-    doc.setFont('helvetica', 'bold');
-    doc.text('RECOFATIMA', nameX, 22);
-
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Contabilidade & Consultoria Fiscal', nameX, 30);
-
-    doc.setFontSize(8.5);
-    doc.text('Relatório de Simulação Fiscal • OE 2026', nameX, 38);
-
-    // Date top-right
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
+    if (logoDataUrl) doc.addImage(logoDataUrl, 'PNG', ml, 2.5, 8, 8);
+    textC(NAVY);
+    doc.setFontSize(8.5); doc.setFont('helvetica', 'bold');
+    doc.text('RECOFATIMA', ml + 10, 7.5);
+    textC(SLATE_500);
+    doc.setFontSize(6.5); doc.setFont('helvetica', 'normal');
+    doc.text('Contabilidade', ml + 10, 11);
+    textC(SLATE_500);
+    doc.setFontSize(7);
+    doc.text('Simulação Fiscal • OE 2026', pw / 2, 8.5, { align: 'center' });
     const today = new Date();
-    const dateStr = today.toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' });
-    doc.text(dateStr, pw - mr, 22, { align: 'right' });
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    const refNum = `REF: ${profile.nif || 'N/D'}-${today.getFullYear()}`;
-    doc.text(refNum, pw - mr, 30, { align: 'right' });
-    doc.setLineWidth(0.2);
+    const dateStr = today.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    doc.text(dateStr, pw - mr, 8.5, { align: 'right' });
 
-    let y = 64;
-
-    // ── DADOS DO CLIENTE ──────────────────────────────────────────────────
-    y = sectionHeader(y, 'Dados do Cliente');
-    fill(SLATE_50);
-    doc.rect(ml, y, cw, 50, 'F');
-
-    y += 3;
-    y = twoColRow(y, 'Nome / Empresa:', profile.nomeCliente || '—', 'NIF:', profile.nif || '—');
-    y = twoColRow(y, 'Email:', profile.email || '—', 'Telefone:', profile.telefone || '—');
-    if (profile.morada) {
-      y = row(y, 'Morada:', `${profile.morada}${profile.codigoPostal ? `, ${profile.codigoPostal}` : ''}${profile.localidade ? ` ${profile.localidade}` : ''}`);
-    }
-    y = twoColRow(
-      y,
-      'Tipo de Entidade:',
-      profile.tipoEntidade.toUpperCase(),
-      'CAE:',
-      profile.cae || '—'
+    // ── RODAPÉ ───────────────────────────────────────────────────────────────
+    drawC(SLATE_200); doc.setLineWidth(0.2); doc.line(0, ph - 9, pw, ph - 9);
+    fill(MAROON); doc.rect(0, ph - 9, 3, 9, 'F');
+    textC(SLATE_500);
+    doc.setFontSize(6); doc.setFont('helvetica', 'normal');
+    doc.text(
+      'Este relatório é uma estimativa. Consulte sempre um contabilista certificado (OCC).  RECOFATIMA Contabilidade • OE 2026',
+      pw / 2, ph - 4, { align: 'center' }
     );
-    y = twoColRow(
-      y,
-      'Início de Atividade:',
-      profile.inicioAtividade.toString(),
-      'Regime IVA:',
-      profile.regimeIva === 'isento' ? 'Isento (Art. 53º)' :
-        profile.regimeIva === 'normal_mensal' ? 'Normal Mensal' : 'Normal Trimestral'
-    );
-    y = twoColRow(
-      y,
-      'Tipo de Atividade:',
+
+    // ── IDENTIFICAÇÃO DO CLIENTE ──────────────────────────────────────────────
+    let y = 20;
+    textC(NAVY);
+    doc.setFontSize(15); doc.setFont('helvetica', 'bold');
+    doc.text(profile.nomeCliente || 'Cliente', ml, y);
+
+    const entityLabel = ({ eni: 'ENI', lda: 'Lda.', unipessoal: 'Unipessoal Lda.', sa: 'SA', socio_unico: 'Sócio Único' } as Record<string, string>)[profile.tipoEntidade] ?? '';
+    const metaParts = [
+      profile.nif ? `NIF ${profile.nif}` : null,
+      entityLabel,
       profile.atividadePrincipal === 'servicos' ? 'Prestação de Serviços' : 'Venda de Bens',
-      'Faturação Anual:',
-      ptEur(profile.faturaçaoAnualPrevista)
-    );
-    y += 6;
+      `Faturação ${ptEur(profile.faturaçaoAnualPrevista)}/ano`,
+    ].filter(Boolean) as string[];
+    textC(SLATE_500);
+    doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+    doc.text(metaParts.join('  •  '), ml, y + 6.5);
+    y += 14;
+    hRule(y); y += 7;
 
-    // ── DADOS PESSOAIS ────────────────────────────────────────────────────
-    y = sectionHeader(y, 'Dados Pessoais e Familiares', [51, 65, 85]);
-    fill(SLATE_50);
-    doc.rect(ml, y, cw, 30, 'F');
-    y += 3;
-    y = twoColRow(y, 'Idade:', `${profile.idade} anos`, 'Estado Civil:', profile.estadoCivil.replace('_', ' '));
-    y = twoColRow(
-      y,
-      'Dependentes:',
-      `${profile.nrDependentes}`,
-      'Cônjuge c/ Rendimentos:',
-      profile.cônjugeRendimentos ? 'Sim' : 'Não'
-    );
-    y = twoColRow(
-      y,
-      'Benefício Jovem IRS:',
-      profile.beneficioJovem ? 'Sim (≤35 anos)' : 'Não aplicável',
-      'Atividade Sazonal:',
-      profile.isSazonal ? 'Sim' : 'Não'
-    );
-    y += 6;
-
-    // ── RESUMO EXECUTIVO (se taxState presente) ────────────────────────────
+    // ── ENQUADRAMENTO FISCAL ──────────────────────────────────────────────────
     if (taxState) {
-      // Re-compute ENI vs LDA results
-      const totalInv = taxState.invEquip + taxState.invLic + taxState.invWorks + taxState.invFundo;
+      const fixedYr  = taxState.fixedMo * 12;
       const invCapex = taxState.invEquip + taxState.invLic + taxState.invWorks;
-      const fixedYr = taxState.fixedMo * 12;
-      const accYrLda = taxState.accMoLda * 12;
-      const accYrEni = taxState.accMoEni * 12;
-      const costsEni = fixedYr + taxState.varYr + accYrEni;
-      const costsLda = fixedYr + taxState.varYr + accYrLda;
+      const costsEni = fixedYr + taxState.varYr + taxState.accMoEni * 12;
+      const costsLda = fixedYr + taxState.varYr + taxState.accMoLda * 12;
       const dpNaoAceite = invCapex * 0.25;
 
       let eniSS = 0;
-      if (!(taxState.profSit === 'tco' && !taxState.isMainAct && taxState.rev <= 20000)) {
+      if (!(taxState.profSit === 'tco' && !taxState.isMainAct && taxState.rev <= 20000))
         eniSS = taxState.rev * (taxState.isServices ? 0.70 : 0.20) * 0.214;
-      }
-      let eniRendColetavel = taxState.rev * (taxState.isServices ? 0.75 : 0.15);
+
+      let eniRC = taxState.rev * (taxState.isServices ? 0.75 : 0.15);
       const reqJust = taxState.isServices && taxState.rev > 27360 ? taxState.rev * 0.15 : 0;
       const justDocs = costsEni + 4104;
-      if (reqJust > 0 && justDocs < reqJust) eniRendColetavel += reqJust - justDocs;
+      if (reqJust > 0 && justDocs < reqJust) eniRC += reqJust - justDocs;
+      if (profile.beneficioJovem && profile.idade <= 35)
+        eniRC = Math.max(0, eniRC - calcIRSJovem(taxState.anosAtividade || 0, eniRC, profile.idade));
 
-      // IRS Jovem
-      let irsJovemDeduction = 0;
-      if (profile.beneficioJovem && profile.idade <= 35) {
-        irsJovemDeduction = calcIRSJovem(taxState.anosAtividade || 0, eniRendColetavel, profile.idade);
-        eniRendColetavel = Math.max(0, eniRendColetavel - irsJovemDeduction);
-      }
-
-      const eniIRS_Total = calculateIRS(taxState.currentInc + eniRendColetavel);
-      const eniIRS_Current = calculateIRS(taxState.currentInc);
-      let eniIRS = Math.max(0, eniIRS_Total - eniIRS_Current);
-      const depsDeduction = calcDependentsDeduction(profile.nrDependentes);
-      eniIRS = Math.max(0, eniIRS - depsDeduction);
+      const eniIRS_Base  = calculateIRS(taxState.currentInc);
+      let eniIRS = Math.max(0, calculateIRS(taxState.currentInc + eniRC) - eniIRS_Base - calcDependentsDeduction(profile.nrDependentes));
       const eniNet = taxState.rev - costsEni - eniSS - eniIRS;
 
-      const rawGross = taxState.monthlyNeed / 0.70;
-      const grossSalaryYr = rawGross * 14;
-      const ldaSSComp = grossSalaryYr * 0.2375;
-      const ldaSSMgr = grossSalaryYr * 0.11;
-      const ldaIRS = calculateIRS(grossSalaryYr);
-      const profit = taxState.rev - costsLda - dpNaoAceite - grossSalaryYr - ldaSSComp;
-      const irc = calculateIRC(profit);
-      const companyNet = profit - irc;
-      const ldaNet = companyNet + taxState.monthlyNeed * 12;
+      const rawGross    = taxState.monthlyNeed / 0.70;
+      const grossYr     = rawGross * 14;
+      const ldaSSComp   = grossYr * SS_RATE_EMPLOYER;
+      const ldaSSMgr    = grossYr * 0.11;
+      const profit      = taxState.rev - costsLda - dpNaoAceite - grossYr - ldaSSComp;
+      const irc         = calculateIRC(profit);
+      const ldaNet      = (profit - irc) + taxState.monthlyNeed * 12;
 
-      const winner = ldaNet > eniNet ? 'LDA' : 'ENI';
-      const diff = Math.abs(ldaNet - eniNet);
+      const eniWins = eniNet >= ldaNet;
+      const diff    = Math.abs(eniNet - ldaNet);
 
-      y = sectionHeader(y, 'Resumo Executivo — Recomendação', winner === 'LDA' ? MAROON : [5, 150, 105] as const);
-      fill(winner === 'LDA' ? MAROON_LIGHT : [236, 253, 245] as RGB);
-      doc.rect(ml, y, cw, 20, 'F');
-      y += 4;
-      textC(winner === 'LDA' ? MAROON : [5, 150, 105] as RGB);
-      doc.setFontSize(13);
-      doc.setFont('helvetica', 'bold');
+      // Recomendação
+      fill(eniWins ? GREEN_LIGHT : MAROON_LIGHT);
+      doc.roundedRect(ml, y, cw, 16, 2, 2, 'F');
+      fill(eniWins ? GREEN : MAROON);
+      doc.roundedRect(ml, y, 3, 16, 1, 1, 'F');
+      textC(eniWins ? GREEN : MAROON);
+      doc.setFontSize(10.5); doc.setFont('helvetica', 'bold');
       doc.text(
-        `Regime Ideal: ${winner === 'LDA' ? 'Sociedade (Lda / Unipessoal)' : 'Trabalhador Independente (ENI)'}`,
-        ml + 3, y + 5
+        `✓  Regime Recomendado: ${eniWins ? 'Trabalhador Independente (ENI)' : 'Sociedade (Lda / Unipessoal)'}`,
+        ml + 7, y + 7
       );
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.text(
-        `Vantagem face à alternativa: ${ptEur(diff)}/ano adicional`,
-        ml + 3, y + 12
-      );
-      y += 20;
+      textC(SLATE_700);
+      doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+      doc.text(`Vantagem face à alternativa: ${ptEur(diff)}/ano`, ml + 7, y + 12.5);
+      y += 21;
 
-      // Two metric cards
-      const cardW = (cw - 5) / 2;
-      metricCard(ml, y, cardW, 18, 'Net Income ENI', ptEur(eniNet), [236, 253, 245], [5, 150, 105]);
-      metricCard(ml + cardW + 5, y, cardW, 18, 'Net Income Lda', ptEur(ldaNet), MAROON_LIGHT, MAROON);
-      y += 22;
-    }
+      // Tabela de comparação (apenas resultados chave)
+      const labelCol = cw * 0.52;
+      fill(SLATE_100);
+      doc.roundedRect(ml, y, cw, 7, 1, 1, 'F');
+      textC(SLATE_500);
+      doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+      doc.text('COMPARAÇÃO DE REGIMES', ml + 3, y + 5);
+      doc.text('ENI', ml + labelCol + (cw - labelCol) / 2, y + 5, { align: 'center' });
+      doc.text('SOCIEDADE', ml + cw, y + 5, { align: 'right' });
+      y += 7;
 
-    addPageFooter();
-
-    // ════════════════════════════════════════════════════════════════════════
-    // PÁGINA 2 — ENQUADRAMENTO FISCAL DETALHADO
-    // ════════════════════════════════════════════════════════════════════════
-    if (taxState) {
-      newPage('Enquadramento Fiscal — ENI vs Sociedade');
-      y = 24;
-
-      // Re-compute (same as above — kept separate for clarity)
-      const totalInv = taxState.invEquip + taxState.invLic + taxState.invWorks + taxState.invFundo;
-      const invCapex = taxState.invEquip + taxState.invLic + taxState.invWorks;
-      const fixedYr = taxState.fixedMo * 12;
-      const accYrLda = taxState.accMoLda * 12;
-      const accYrEni = taxState.accMoEni * 12;
-      const costsEni = fixedYr + taxState.varYr + accYrEni;
-      const costsLda = fixedYr + taxState.varYr + accYrLda;
-      const dpNaoAceite = invCapex * 0.25;
-
-      let eniSS = 0;
-      if (!(taxState.profSit === 'tco' && !taxState.isMainAct && taxState.rev <= 20000)) {
-        eniSS = taxState.rev * (taxState.isServices ? 0.70 : 0.20) * 0.214;
-      }
-      let eniRendColetavel = taxState.rev * (taxState.isServices ? 0.75 : 0.15);
-      const reqJust = taxState.isServices && taxState.rev > 27360 ? taxState.rev * 0.15 : 0;
-      const justDocs = costsEni + 4104;
-      if (reqJust > 0 && justDocs < reqJust) eniRendColetavel += reqJust - justDocs;
-
-      let irsJovemDeduction = 0;
-      if (profile.beneficioJovem && profile.idade <= 35) {
-        irsJovemDeduction = calcIRSJovem(taxState.anosAtividade || 0, eniRendColetavel, profile.idade);
-        eniRendColetavel = Math.max(0, eniRendColetavel - irsJovemDeduction);
-      }
-
-      const eniIRS_Total = calculateIRS(taxState.currentInc + eniRendColetavel);
-      const eniIRS_Current = calculateIRS(taxState.currentInc);
-      const depsDeduction = calcDependentsDeduction(profile.nrDependentes);
-      let eniIRS = Math.max(0, eniIRS_Total - eniIRS_Current - depsDeduction);
-      const eniNet = taxState.rev - costsEni - eniSS - eniIRS;
-      const eniCashFlow = eniNet - totalInv;
-      const ppc = eniIRS * 0.25;
-
-      const rawGross = taxState.monthlyNeed / 0.70;
-      const grossSalaryYr = rawGross * 14;
-      const ldaSSComp = grossSalaryYr * 0.2375;
-      const ldaSSMgr = grossSalaryYr * 0.11;
-      const ldaIRS = calculateIRS(grossSalaryYr);
-      const profit = taxState.rev - costsLda - dpNaoAceite - grossSalaryYr - ldaSSComp;
-      const irc = calculateIRC(profit);
-      const companyNet = profit - irc;
-      const ldaNet = companyNet + taxState.monthlyNeed * 12;
-      const ldaCashFlow = (companyNet + dpNaoAceite) - totalInv;
-
-      const winner = ldaNet > eniNet ? 'LDA' : 'ENI';
-
-      // Comparison table header
-      const half = cw / 2;
-      fill(MAROON);
-      doc.rect(ml, y, half - 2, 10, 'F');
-      doc.setFillColor(51, 65, 85);
-      doc.rect(ml + half, y, half, 10, 'F');
-      textC(WHITE);
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.text('ENI (Recibos Verdes)', ml + 4, y + 7);
-      doc.text('Sociedade (Lda / Unipessoal)', ml + half + 4, y + 7);
-      y += 10;
-
-      // ENI vs LDA rows
-      const compRow = (
-        yPos: number,
-        labelEni: string, valEni: string,
-        labelLda: string, valLda: string,
-        shade: boolean
-      ) => {
-        if (shade) {
-          fill(SLATE_50);
-          doc.rect(ml, yPos, cw, 7.5, 'F');
+      const compRows: [string, string, string, boolean][] = [
+        ['Segurança Social', ptEur(eniSS), ptEur(ldaSSComp + ldaSSMgr), false],
+        ['Imposto sobre rendimento (IRS / IRC)', ptEur(eniIRS), ptEur(irc), true],
+        ['Rendimento Líquido Anual', ptEur(eniNet), ptEur(ldaNet), false],
+      ];
+      compRows.forEach(([label, valEni, valLda, shade], i) => {
+        const isLast = i === compRows.length - 1;
+        if (shade) { fill(SLATE_50); doc.rect(ml, y, cw, 8.5, 'F'); }
+        if (isLast) {
+          fill(eniWins ? GREEN_LIGHT : SLATE_50);
+          doc.rect(ml, y, labelCol, 11, 'F');
+          fill(!eniWins ? MAROON_LIGHT : SLATE_50);
+          doc.rect(ml + labelCol, y, cw - labelCol, 11, 'F');
         }
-        doc.setFontSize(8.5);
-        doc.setFont('helvetica', 'bold');
-        textC(SLATE_600);
-        doc.text(labelEni, ml + 2, yPos + 5);
-        doc.setFont('helvetica', 'normal');
-        textC(SLATE_900);
-        doc.text(valEni, ml + half - 4, yPos + 5, { align: 'right' });
-
-        doc.setFont('helvetica', 'bold');
-        textC(SLATE_600);
-        doc.text(labelLda, ml + half + 2, yPos + 5);
-        doc.setFont('helvetica', 'normal');
-        textC(SLATE_900);
-        doc.text(valLda, ml + cw, yPos + 5, { align: 'right' });
-        return yPos + 7.5;
-      };
-
-      y = compRow(y, 'Faturação:', ptEur(taxState.rev), 'Faturação:', ptEur(taxState.rev), false);
-      y = compRow(y, 'Custos & Contabilidade:', ptEur(costsEni), 'Custos & Contabilidade:', ptEur(costsLda), true);
-      y = compRow(y, 'Segurança Social (21,4%):', ptEur(eniSS), 'TSU Empresa (23,75%):', ptEur(ldaSSComp), false);
-      if (irsJovemDeduction > 0) {
-        y = compRow(y, 'Isenção IRS Jovem:', `- ${ptEur(irsJovemDeduction)}`, '—', '—', true);
-      }
-      if (depsDeduction > 0) {
-        y = compRow(y, `Ded. Dependentes (${profile.nrDependentes}):`, `- ${ptEur(depsDeduction)}`, '—', '—', irsJovemDeduction === 0);
-      }
-      y = compRow(y, 'IRS (agravado c/ atividade):', ptEur(eniIRS), 'TSU Gestor (11%):', ptEur(ldaSSMgr), false);
-      y = compRow(y, '—', '—', 'IRC (15%/19%):', ptEur(irc), true);
-
-      // Divider
-      drawC(MAROON);
-      doc.setLineWidth(0.8);
-      doc.line(ml, y, ml + cw, y);
-      y += 2;
-      doc.setLineWidth(0.2);
-
-      // Net totals
-      fill(winner === 'ENI' ? [236, 253, 245] as RGB : SLATE_50);
-      doc.rect(ml, y, half - 2, 14, 'F');
-      fill(winner === 'LDA' ? MAROON_LIGHT : SLATE_50);
-      doc.rect(ml + half, y, half, 14, 'F');
-
-      textC(winner === 'ENI' ? [5, 150, 105] as RGB : SLATE_900);
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'bold');
-      doc.text('RENDIMENTO LÍQUIDO ANUAL', ml + 2, y + 5);
-      doc.setFontSize(13);
-      doc.text(ptEur(eniNet), ml + 4, y + 12);
-
-      textC(winner === 'LDA' ? MAROON : SLATE_900);
-      doc.setFontSize(8);
-      doc.text('RENDIMENTO LÍQUIDO ANUAL', ml + half + 2, y + 5);
-      doc.setFontSize(13);
-      doc.text(ptEur(ldaNet), ml + half + 4, y + 12);
-
-      if (winner === 'ENI') {
-        doc.setFontSize(7);
-        doc.setTextColor(5, 150, 105);
-        doc.text('✓ MELHOR OPÇÃO', ml + cw - 30, y + 12, { align: 'right' });
-      } else {
-        doc.setFontSize(7);
-        textC(MAROON);
-        doc.text('✓ MELHOR OPÇÃO', ml + cw, y + 12, { align: 'right' });
-      }
-      y += 17;
-
-      // Cash flow and break-even
-      const cardW = (cw - 4) / 2;
-      metricCard(ml, y, cardW, 18, 'Cash-Flow Livre ENI (Ano 1)', ptEur(eniCashFlow), [236, 253, 245], [5, 150, 105]);
-      metricCard(ml + cardW + 4, y, cardW, 18, 'Cash-Flow Holding Lda (Ano 1)', ptEur(ldaCashFlow), MAROON_LIGHT, MAROON);
-      y += 22;
-
-      // PPC info
-      if (ppc > 0) {
-        doc.setFillColor(255, 251, 235);
-        doc.rect(ml, y, cw, 12, 'F');
-        doc.setDrawColor(245, 158, 11);
-        doc.setLineWidth(0.3);
-        doc.rect(ml, y, cw, 12);
-        doc.setTextColor(146, 64, 14);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text('⚠ Pagamentos por Conta (PPC) estimados:', ml + 3, y + 5);
-        doc.setFont('helvetica', 'normal');
-        doc.text(
-          `3 prestações de aprox. ${ptEur(ppc / 3)} (julho, setembro, dezembro) — total estimado: ${ptEur(ppc)}`,
-          ml + 3, y + 10
-        );
-        y += 15;
-        doc.setLineWidth(0.2);
-      }
-
-      // IVA advice
-      fill(SLATE_50);
-      doc.rect(ml, y, cw, 20, 'F');
-      drawC(SLATE_200);
-      doc.rect(ml, y, cw, 20);
-      textC(MAROON);
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Parecer Tributário — IVA', ml + 3, y + 6);
-      doc.setFont('helvetica', 'normal');
-      textC(SLATE_900);
-      doc.setFontSize(8);
-      const ivaText = taxState.rev <= 15000 && !taxState.b2b
-        ? `Com faturação ≤15.000€ e mercado B2C, é possível ativar a isenção do Art. 53º do CIVA. Preços sem IVA = mais competitivos.`
-        : `Com este volume e mercado ${taxState.b2b ? 'B2B' : 'B2C'}, o enquadramento no Regime Normal de IVA é obrigatório e vantajoso para dedução de despesas.`;
-      const ivaLines = doc.splitTextToSize(ivaText, cw - 8);
-      doc.text(ivaLines, ml + 3, y + 12);
-      y += 24;
+        const rowH = isLast ? 11 : 8.5;
+        const rowY = y + rowH * 0.62;
+        doc.setFontSize(isLast ? 9.5 : 8.5);
+        doc.setFont('helvetica', isLast ? 'bold' : 'normal');
+        textC(isLast ? NAVY : SLATE_700);
+        doc.text(label, ml + 3, rowY);
+        textC(isLast && eniWins ? GREEN : SLATE_700);
+        doc.text(valEni, ml + labelCol + (cw - labelCol) / 2, rowY, { align: 'center' });
+        textC(isLast && !eniWins ? MAROON : SLATE_700);
+        doc.text(valLda, ml + cw, rowY, { align: 'right' });
+        y += rowH;
+      });
+      y += 6;
     }
 
-    addPageFooter();
+    // ── OUTROS SIMULADORES (resultados resumidos) ────────────────────────────
+    const extras: [string, string][] = [];
 
-    // ════════════════════════════════════════════════════════════════════════
-    // PÁGINA 3 — VIATURAS (se disponível)
-    // ════════════════════════════════════════════════════════════════════════
-    if (vehicleState) {
-      newPage('Viaturas Ligeiras — IVA e Tributação Autónoma');
-      y = 24;
-
-      const maintBase = vehicleState.maintenanceCost / 1.23;
-      const maintIva = vehicleState.maintenanceCost - maintBase;
-      const fuelBase = vehicleState.fuelCost / 1.23;
-      const fuelIva = vehicleState.fuelCost - fuelBase;
-      const isExemptActivity = ['public_transport', 'rent_a_car', 'driving_school'].includes(vehicleState.activity);
-
-      let ivaAqRate = 0;
+    if (vehicleState && vehicleState.price > 0) {
+      const maintIva = (vehicleState.maintenanceCost - vehicleState.maintenanceCost / 1.23);
+      const fuelIva  = (vehicleState.fuelCost - vehicleState.fuelCost / 1.23);
+      const isExempt = ['public_transport', 'rent_a_car', 'driving_school'].includes(vehicleState.activity);
       const totalIvaAq = vehicleState.price * 0.23;
+      let ivaAqRate = 0;
       if (vehicleState.ivaRegime === 'normal') {
-        if (isExemptActivity) ivaAqRate = 1;
+        if (isExempt) ivaAqRate = 1;
         else if (vehicleState.category === 'passageiros') {
           if (vehicleState.engineType === 'electric') ivaAqRate = vehicleState.price <= 62500 ? 1 : 0;
           else if (vehicleState.engineType === 'phev' && vehicleState.phevCompliant) ivaAqRate = vehicleState.price <= 50000 ? 1 : 0;
           else if (['lpg', 'cng'].includes(vehicleState.engineType)) ivaAqRate = vehicleState.price <= 37500 ? 0.5 : 0;
-        } else if (vehicleState.category === 'comercial') {
-          ivaAqRate = ['electric', 'phev', 'lpg', 'cng'].includes(vehicleState.engineType) ? 1 : 0.5;
-        }
+        } else ivaAqRate = 0.5;
       }
-      const ivaAqDed = totalIvaAq * ivaAqRate;
-      const maintIvaDed = (isExemptActivity || vehicleState.category === 'comercial') ? maintIva : 0;
+      const maintIvaDed = (isExempt || vehicleState.category === 'comercial') ? maintIva : 0;
       let fuelIvaRate = 0;
-      if (isExemptActivity) fuelIvaRate = 1;
+      if (isExempt) fuelIvaRate = 1;
       else if (vehicleState.engineType === 'electric') fuelIvaRate = 1;
       else if (['diesel', 'lpg', 'cng'].includes(vehicleState.engineType)) fuelIvaRate = 0.5;
-      const fuelIvaDed = fuelIva * fuelIvaRate;
-      const ivaTotalDed = ivaAqDed + maintIvaDed + fuelIvaDed;
+      const ivaTotalDed = totalIvaAq * ivaAqRate + maintIvaDed + fuelIva * fuelIvaRate;
 
-      const depAnual = vehicleState.price * 0.25;
+      const dep = vehicleState.price * 0.25;
       let limit = 25000;
       if (vehicleState.engineType === 'electric') limit = 62500;
       else if (vehicleState.engineType === 'phev' && vehicleState.phevCompliant) limit = 50000;
       else if (['lpg', 'cng'].includes(vehicleState.engineType)) limit = 37500;
-      if (isExemptActivity) limit = Infinity;
-      const depAceite = limit === Infinity ? depAnual : Math.min(vehicleState.price, limit) * 0.25;
-      const depNaoAceite = Math.max(0, depAnual - depAceite);
-
-      const totalEncsTA = depAnual + (vehicleState.maintenanceCost - maintIvaDed) + vehicleState.insuranceCost + (vehicleState.fuelCost - fuelIvaDed);
+      if (isExempt) limit = Infinity;
+      const totalEncTA = dep + (vehicleState.maintenanceCost - maintIvaDed) + vehicleState.insuranceCost + (vehicleState.fuelCost - fuelIva * fuelIvaRate);
       let taRate = 0;
       if (vehicleState.category === 'passageiros' && !vehicleState.exemptTA) {
         if (vehicleState.engineType === 'electric') taRate = vehicleState.price >= 62500 ? 0.10 : 0;
         else if (vehicleState.engineType === 'phev' && vehicleState.phevCompliant)
           taRate = vehicleState.price < 27500 ? 0.025 : vehicleState.price < 35000 ? 0.075 : 0.15;
-        else
-          taRate = vehicleState.price < 27500 ? 0.085 : vehicleState.price < 35000 ? 0.255 : 0.325;
+        else taRate = vehicleState.price < 27500 ? 0.085 : vehicleState.price < 35000 ? 0.255 : 0.325;
       }
-      const taValue = totalEncsTA * taRate;
-
-      // Vehicle info header
-      y = sectionHeader(y, `${vehicleState.category === 'passageiros' ? 'Ligeiro de Passageiros' : 'Veículo Comercial (2/3 lugares)'} — ${vehicleState.engineType.toUpperCase()}`);
-      fill(SLATE_50);
-      doc.rect(ml, y, cw, 14, 'F');
-      y += 3;
-      y = twoColRow(y, 'Preço Aquisição (s/ IVA):', ptEur(vehicleState.price), 'Regime Aquisição:', vehicleState.ivaRegime === 'normal' ? 'Compra Nova c/ IVA' : vehicleState.ivaRegime === 'second_hand' ? '2ª Mão' : 'Leasing/Renting');
-      y = twoColRow(y, 'IVA Aquisição Total:', ptEur(totalIvaAq), 'Atividade Associada:', vehicleState.activity === 'other' ? 'Geral' : vehicleState.activity);
-      y += 5;
-
-      // Side by side cards
-      const cardW = (cw - 5) / 2;
-
-      // IVA card
-      doc.setFillColor(236, 253, 245);
-      doc.roundedRect(ml, y, cardW, 52, 3, 3, 'F');
-      doc.setTextColor(5, 150, 105);
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.text('IVA RECUPERÁVEL', ml + 3, y + 7);
-      doc.setFontSize(16);
-      doc.text(ptEur(ivaTotalDed), ml + 3, y + 16);
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      textC(SLATE_900);
-      const ivaRows = [
-        ['IVA Aquisição:', ptEur(ivaAqDed), `(${ptPct(ivaAqRate)} de ${ptEur(totalIvaAq)})`],
-        ['IVA Manutenção:', ptEur(maintIvaDed), ''],
-        ['IVA Combustível:', ptEur(fuelIvaDed), ''],
-        ['Seguro (isento IVA):', '€0,00', ''],
-      ];
-      let ry = y + 23;
-      ivaRows.forEach(([l, v, note]) => {
-        textC(SLATE_600);
-        doc.setFont('helvetica', 'bold');
-        doc.text(l, ml + 3, ry);
-        doc.setFont('helvetica', 'normal');
-        textC(SLATE_900);
-        doc.text(v, ml + cardW - 3, ry, { align: 'right' });
-        if (note) {
-          doc.setFontSize(6.5);
-          textC(SLATE_600);
-          doc.text(note, ml + 3, ry + 3.5);
-          doc.setFontSize(8);
-        }
-        ry += 8;
-      });
-
-      // TA card
-      doc.setFillColor(254, 242, 242);
-      doc.roundedRect(ml + cardW + 5, y, cardW, 52, 3, 3, 'F');
-      textC(RED_LIGHT);
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.text('TRIBUTAÇÃO AUTÓNOMA', ml + cardW + 8, y + 7);
-      doc.setFontSize(16);
-      doc.setTextColor(185, 28, 28);
-      doc.text(ptEur(taValue), ml + cardW + 8, y + 16);
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      textC(SLATE_900);
-      const taRows = [
-        ['Taxa aplicada:', `${(taRate * 100).toFixed(1)}%`],
-        ['Encargos sujeitos a TA:', ptEur(totalEncsTA)],
-        ['Depreciação anual (25%):', ptEur(depAnual)],
-        ['Depreciação não aceite:', ptEur(depNaoAceite)],
-        ['Limite fiscal:', limit === Infinity ? 'Ilimitado' : ptEur(limit)],
-      ];
-      ry = y + 23;
-      taRows.forEach(([l, v]) => {
-        textC(SLATE_600);
-        doc.setFont('helvetica', 'bold');
-        doc.text(l, ml + cardW + 8, ry);
-        doc.setFont('helvetica', 'normal');
-        textC(SLATE_900);
-        doc.text(v, ml + cw, ry, { align: 'right' });
-        ry += 8;
-      });
-      y += 56;
+      extras.push([
+        `Viatura ${vehicleState.engineType.toUpperCase()} — ${ptEur(vehicleState.price)}`,
+        `IVA recuperável ${ptEur(ivaTotalDed)}  •  TA ${ptEur(totalEncTA * taRate)}/ano`,
+      ]);
     }
 
-    if (vehicleState) addPageFooter();
-
-    // ════════════════════════════════════════════════════════════════════════
-    // PÁGINA 4 — BENEFÍCIOS E SS INDEPENDENTE
-    // ════════════════════════════════════════════════════════════════════════
-    if (ticketState || ssState) {
-      newPage('Benefícios Laborais e Segurança Social');
-      y = 24;
-
-      if (ticketState) {
-        const limiteSetor = profile.setorTicket === 'hotelaria' || profile.setorTicket === 'construcao' ? 7 : 5;
-        const res = calcTicketSavings(ticketState.employees, ticketState.ticketValue, ticketState.daysPerMonth, ticketState.months);
-
-        y = sectionHeader(y, 'Tickets de Refeição — Benefícios Fiscais');
-        fill(SLATE_50);
-        doc.rect(ml, y, cw, 11, 'F');
-        y += 2;
-        y = twoColRow(y, 'Funcionários:', `${ticketState.employees}`, 'Valor diário:', ptEur(ticketState.ticketValue));
-        y = twoColRow(y, 'Dias por mês:', `${ticketState.daysPerMonth}`, 'Meses:', `${ticketState.months}`);
-        y += 4;
-
-        const cardW = (cw - 4) / 3;
-        metricCard(ml, y, cardW, 22, 'Custo Total Tickets/Ano', ptEur(res.ticketCost), [239, 246, 255], [37, 99, 235]);
-        metricCard(ml + cardW + 2, y, cardW, 22, 'Poupança SS (23,75%)/Ano', ptEur(res.savings), [236, 253, 245], [5, 150, 105]);
-        metricCard(ml + (cardW + 2) * 2, y, cardW, 22, 'Custo Dedutível (60%)/Ano', ptEur(res.custoDedutivelEmpresa), MAROON_LIGHT, MAROON);
-        y += 26;
-
-        if (ticketState.ticketValue > limiteSetor) {
-          doc.setFillColor(254, 242, 242);
-          doc.rect(ml, y, cw, 10, 'F');
-          doc.setTextColor(185, 28, 28);
-          doc.setFontSize(8);
-          doc.setFont('helvetica', 'bold');
-          doc.text(`⚠ Valor diário (${ptEur(ticketState.ticketValue)}) excede o limite legal de ${ptEur(limiteSetor)}/dia para o setor "${profile.setorTicket}". O excedente é tributável.`, ml + 3, y + 6);
-          y += 13;
-        }
-      }
-
-      if (ssState) {
-        y += 4;
-        y = sectionHeader(y, 'Segurança Social — Trabalhador Independente (ENI)', [51, 65, 85] as const);
-        const ssRes = calcSelfSSContribution(ssState.income, ssState.tipoRendimento, ssState.primeiroAno);
-
-        fill(SLATE_50);
-        doc.rect(ml, y, cw, 10, 'F');
-        y += 2;
-        y = twoColRow(y, 'Rendimento mensal:', ptEur(ssState.income), 'Tipo:', ssState.tipoRendimento === 'servicos' ? 'Serviços (base 70%)' : 'Bens (base 20%)');
-        y = twoColRow(y, 'Base de cálculo (€):', ptEur(ssRes.baseCalculo), 'Taxa:', '21,4%');
-        y += 4;
-
-        const cardW = (cw - 4) / 3;
-        if (ssRes.isento) {
-          doc.setFillColor(236, 253, 245);
-          doc.roundedRect(ml, y, cw, 18, 3, 3, 'F');
-          doc.setTextColor(5, 150, 105);
-          doc.setFontSize(10);
-          doc.setFont('helvetica', 'bold');
-          doc.text('✓ ISENTO — 1º Ano de Atividade (Art. 164º CRCSPSS)', ml + 4, y + 11);
-          y += 22;
-        } else {
-          metricCard(ml, y, cardW, 22, 'Contribuição Mensal', ptEur(ssRes.mensal), [239, 246, 255], [37, 99, 235]);
-          metricCard(ml + cardW + 2, y, cardW, 22, 'Contribuição Trimestral', ptEur(ssRes.trimestral), MAROON_LIGHT, MAROON);
-          metricCard(ml + (cardW + 2) * 2, y, cardW, 22, 'Contribuição Anual', ptEur(ssRes.anual), [254, 242, 242], [185, 28, 28]);
-          y += 26;
-          doc.setFillColor(255, 251, 235);
-          doc.rect(ml, y, cw, 10, 'F');
-          doc.setTextColor(146, 64, 14);
-          doc.setFontSize(8);
-          doc.setFont('helvetica', 'normal');
-          doc.text('Pagamento trimestral: janeiro, abril, julho e outubro (até dia 20 do mês seguinte ao trimestre).', ml + 3, y + 6);
-          y += 13;
-        }
-      }
-      addPageFooter();
+    if (ssState) {
+      const ssRes = calcSelfSSContribution(ssState.income, ssState.tipoRendimento, ssState.primeiroAno);
+      extras.push([
+        'Segurança Social Independente',
+        ssRes.isento ? 'Isento — 1.º ano (Art. 164.º CRCSPSS)' : `${ptEur(ssRes.mensal)}/mês  •  ${ptEur(ssRes.anual)}/ano`,
+      ]);
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    // ÚLTIMA PÁGINA — NOTAS LEGAIS E DISCLAIMER
-    // ════════════════════════════════════════════════════════════════════════
-    newPage('Base Legal e Notas');
-    y = 24;
+    if (ticketState && ticketState.employees > 0) {
+      const res = calcTicketSavings(ticketState.employees, ticketState.ticketValue, ticketState.daysPerMonth, ticketState.months);
+      extras.push([
+        `Tickets de Refeição — ${ticketState.employees} func. × ${ptEur(ticketState.ticketValue)}/dia`,
+        `Custo ${ptEur(res.ticketCost)}/ano  •  Poupança SS ${ptEur(res.savings)}/ano`,
+      ]);
+    }
 
-    y = sectionHeader(y, 'Legislação de Referência — Simuladores Recofatima 2026');
-    fill(SLATE_50);
-    doc.rect(ml, y, cw, 120, 'F');
-    y += 4;
+    if (extras.length > 0) {
+      hRule(y); y += 5;
+      fill(MAROON); doc.rect(ml, y, 3, 5, 'F');
+      textC(SLATE_500);
+      doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+      doc.text('OUTROS RESULTADOS', ml + 6, y + 4);
+      y += 9;
+      extras.forEach(([label, value], i) => {
+        if (i % 2 === 0) { fill(SLATE_50); doc.rect(ml, y, cw, 8, 'F'); }
+        doc.setFontSize(8.5); doc.setFont('helvetica', 'normal');
+        textC(SLATE_700);
+        doc.text(label, ml + 3, y + 5.5);
+        doc.setFont('helvetica', 'bold'); textC(NAVY);
+        doc.text(value, ml + cw, y + 5.5, { align: 'right' });
+        y += 8;
+      });
+      y += 4;
+    }
 
-    const legalItems = [
-      ['IRS — Escalões 2026', 'CIRS Art. 68º — Taxas de 13% a 48% (OE 2026, validado abril 2026)'],
-      ['IRS Jovem', 'CIRS Art. 12º-B — Isenção progressiva ≤35 anos nos primeiros 5 anos (OE 2025)'],
-      ['Ded. Dependentes', 'CIRS Art. 78º-A — €600/dependente (€900 a partir do 4.º)'],
-      ['Regime Simplificado ENI', 'CIRS Art. 31º — Coeficientes: 75% serviços, 15% bens'],
-      ['IRC — PME', 'CIRC Art. 87º — Taxa reduzida 15% (primeiros €50k) / 19% restante'],
-      ['TSU Patronal', 'Código Contributivo (Lei 110/2009) — 23,75% (empresa) + 11% (trabalhador)'],
-      ['SS Independente', 'CRCSPSS Art. 162º — Taxa 21,4% sobre 70% (serviços) / 20% (bens)'],
-      ['SS — Isenção 1º ano', 'CRCSPSS Art. 164º — Isenção de 12 meses no início de atividade'],
-      ['IVA Normal', 'CIVA — Taxa standard 23% (Portugal Continental)'],
-      ['IVA Isenção PME', 'CIVA Art. 53º — Isenção p/ faturação <€15.000, exclusivamente B2C'],
-      ['IVA Viaturas', 'CIVA Art. 21º, n.º 1 — Dedução 100%/50%/0% conforme tipo de motor'],
-      ['Tributação Autónoma', 'CIRC Art. 88º, n.º 3 — TA escalonada p/ viaturas passageiros'],
-      ['TA Viaturas Elétricas', 'Lei n.º 82/2023 — TA 10% p/ elétricos com custo >€62.500'],
-      ['Depreciação Viaturas', 'DR 25/2009 + OE 2026 — Limites €25k/€50k/€62,5k conforme motor'],
-      ['Tickets de Refeição', 'DL 133/2024 — Limite €5,00/dia (geral) ou €7,00/dia (hotelaria/construção)'],
-      ['Tickets — Dedutibilidade', 'CIRC Art. 43º — 60% do custo total dedutível para a empresa'],
-      ['Tickets — SS e IRS', 'EBF Art. 18º-A — Isenção SS e IRS para o trabalhador (até ao limite)'],
-    ];
+    // ── HONORÁRIOS ────────────────────────────────────────────────────────────
+    const { loadPricing, calcClientEstimate } = await import('./lib/pricing');
+    const pricing = loadPricing();
+    const est = calcClientEstimate(pricing, profile, vehicleState, ticketState);
 
-    legalItems.forEach(([topic, desc], i) => {
-      if (i % 2 === 0) {
-        doc.setFillColor(241, 245, 249);
-        doc.rect(ml, y - 1, cw, 8, 'F');
-      }
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'bold');
-      textC(MAROON);
-      doc.text(topic, ml + 2, y + 4);
-      doc.setFont('helvetica', 'normal');
-      textC(SLATE_900);
-      doc.text(desc, ml + 52, y + 4);
+    hRule(y); y += 7;
+
+    fill(MAROON); doc.rect(ml, y, 3, 6, 'F');
+    textC(NAVY);
+    doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+    doc.text('ESTIMATIVA DE HONORÁRIOS', ml + 6, y + 4.5);
+    textC(SLATE_500);
+    doc.setFontSize(7.5); doc.setFont('helvetica', 'normal');
+    doc.text(est.entityLabel, ml + cw, y + 4.5, { align: 'right' });
+    y += 10;
+
+    const honorLines: [string, number][] = [['Contabilidade mensal base', est.baseMonthly]];
+    if (est.salarios > 0) honorLines.push([`Processamento salarial (${profile.nrFuncionarios} func.)`, est.salarios]);
+    if (est.iva > 0) honorLines.push([profile.regimeIva === 'normal_mensal' ? 'IVA mensal' : 'IVA trimestral (÷ 3)', est.iva]);
+    honorLines.push([profile.tipoEntidade === 'eni' ? 'IRS anual (÷ 12)' : 'IRC + IES (÷ 12)', est.anuaisAmortizados]);
+    if (est.viaturas > 0) honorLines.push(['Gestão de viaturas', est.viaturas]);
+    if (est.tickets > 0) honorLines.push(['Tickets de refeição', est.tickets]);
+
+    honorLines.forEach(([label, value], i) => {
+      if (i % 2 === 0) { fill(SLATE_50); doc.rect(ml, y, cw, 8, 'F'); }
+      doc.setFontSize(8.5); doc.setFont('helvetica', 'normal'); textC(SLATE_700);
+      doc.text(label, ml + 3, y + 5.5);
+      doc.setFont('helvetica', 'bold'); textC(NAVY);
+      doc.text(`${ptEur(value)}/mês`, ml + cw, y + 5.5, { align: 'right' });
       y += 8;
     });
 
-    y += 6;
-
-    // Disclaimer box
-    doc.setFillColor(255, 251, 235);
-    doc.setDrawColor(245, 158, 11);
-    doc.setLineWidth(0.5);
-    doc.roundedRect(ml, y, cw, 28, 3, 3, 'FD');
-    doc.setLineWidth(0.2);
-    doc.setTextColor(120, 53, 15);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Nota Importante — Limitações desta Simulação', ml + 4, y + 8);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    const disclaimer = 'Este relatório é uma estimativa baseada nos dados fornecidos e na legislação fiscal em vigor em abril de 2026. Os resultados não constituem aconselhamento jurídico ou fiscal vinculativo. Situações específicas (deduções adicionais, benefícios regionais, acordos de dupla tributação, entre outros) podem alterar os valores calculados. Consulte sempre um contabilista certificado (OCC) antes de tomar decisões fiscais.';
-    const disclaimerLines = doc.splitTextToSize(disclaimer, cw - 8);
-    doc.text(disclaimerLines, ml + 4, y + 15);
-    y += 32;
-
-    // Contact / branding footer com logo
-    fill(MAROON);
-    doc.rect(ml, y, cw, 18, 'F');
-    if (logoDataUrl) {
-      doc.setFillColor(255, 255, 255);
-      doc.roundedRect(ml + 3, y + 2, 11, 10, 1.5, 1.5, 'F');
-      doc.addImage(logoDataUrl, 'PNG', ml + 3.5, y + 2.5, 10, 9);
-    }
+    y += 2;
+    fill(NAVY); doc.roundedRect(ml, y, cw, 11, 1.5, 1.5, 'F');
+    fill(MAROON); doc.roundedRect(ml, y, 3, 11, 0.5, 0.5, 'F');
     textC(WHITE);
-    const brandX = logoDataUrl ? ml + 17 : ml + 4;
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('RECOFATIMA Contabilidade', brandX, y + 7);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.text(`Relatório gerado em ${dateStr} • OE 2026`, brandX, y + 13);
+    doc.setFontSize(9.5); doc.setFont('helvetica', 'bold');
+    doc.text('Total mensal estimado', ml + 6, y + 7.5);
+    doc.text(`${ptEur(est.totalMensal)}/mês`, ml + cw, y + 7.5, { align: 'right' });
+    y += 14;
 
-    addPageFooter();
+    fill(SLATE_100); doc.rect(ml, y, cw, 8, 'F');
+    textC(SLATE_500); doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+    doc.text('Total anual estimado', ml + 3, y + 5.5);
+    textC(NAVY); doc.setFont('helvetica', 'bold');
+    doc.text(`${ptEur(est.totalAnual)}/ano`, ml + cw, y + 5.5, { align: 'right' });
+    y += 12;
 
-    // ── SAVE ──────────────────────────────────────────────────────────────
-    doc.save(`Relatorio_Recofatima_${profile.nomeCliente || 'Cliente'}_2026.pdf`);
+    textC(SLATE_500);
+    doc.setFontSize(6.5); doc.setFont('helvetica', 'italic');
+    const noteLines = doc.splitTextToSize(
+      'Proposta indicativa. Serviços pontuais (constituição, consultoria, etc.) não incluídos. Sujeito a confirmação após análise detalhada.',
+      cw
+    );
+    doc.text(noteLines, ml, y);
+
+    // ── GRAVAR ───────────────────────────────────────────────────────────────
+    doc.save(`Recofatima_${profile.nomeCliente || 'Simulacao'}_${today.getFullYear()}.pdf`);
   };
 
   // ─── RENDER ───────────────────────────────────────────────────────────────
