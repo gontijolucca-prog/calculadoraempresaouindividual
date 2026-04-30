@@ -3,6 +3,7 @@ import { calcTicketSavings } from './lib/pt2026';
 import { Ticket, Euro, ShieldCheck, Calculator, AlertTriangle } from 'lucide-react';
 import { cn } from './lib/utils';
 import type { ClientProfile } from './ClientProfile';
+import { useTheme } from './ThemeContext';
 
 interface TicketSimulatorState {
   employees: number;
@@ -19,10 +20,13 @@ interface Props {
 
 export default function TicketSimulator({ initialState, onStateChange, profile }: Props) {
   const { employees, ticketValue, daysPerMonth, months } = initialState;
-
   const setState = (updates: Partial<TicketSimulatorState>) => {
     onStateChange({ ...initialState, ...updates });
   };
+  const { simMode } = useTheme();
+  const outerCls = { split: "h-full flex flex-col md:grid md:grid-cols-[400px_1fr] bg-[#F8FAFC] text-[#1E293B]", stacked: "h-full flex flex-col bg-[#F0F4F8] text-[#1E293B] overflow-y-auto", mosaic: "h-full bg-[#F0FDF4] text-[#1E293B] md:grid md:grid-cols-2 gap-4 p-4", compact: "h-full overflow-y-auto bg-white text-[#1E293B]", hero: "h-full flex md:flex-row-reverse overflow-hidden bg-[#F5F5F4] text-[#1E293B]" }[simMode];
+  const leftCls = { split: "bg-white border-r border-[#E2E8F0] overflow-y-auto p-6 md:p-[40px] flex flex-col gap-[32px] h-full", stacked: "bg-white border-b-2 border-[#E2E8F0] p-6 flex flex-col gap-6", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pb-0 w-full", hero: "md:w-[420px] shrink-0 bg-white border-l border-[#E2E8F0] overflow-y-auto p-6 flex flex-col gap-5 h-full" }[simMode];
+  const rightCls = { split: "p-6 md:p-[40px] overflow-y-auto h-full max-w-7xl mx-auto w-full flex flex-col gap-[32px]", stacked: "p-6 flex flex-col gap-6 max-w-7xl mx-auto w-full", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pt-2 w-full border-t border-slate-100", hero: "flex-1 p-6 md:p-[40px] overflow-y-auto flex flex-col gap-5" }[simMode];
 
   // Limite legal por setor — DL 133/2024
   const limiteSetor = (profile.setorTicket === 'hotelaria' || profile.setorTicket === 'construcao') ? 7 : 5;
@@ -49,9 +53,9 @@ export default function TicketSimulator({ initialState, onStateChange, profile }
   const setorNome = { normal: 'Geral', construcao: 'Construção', hotelaria: 'Hotelaria/Restauração', outros: 'Outros' }[profile.setorTicket] || 'Geral';
 
   return (
-    <div className="h-full flex flex-col md:grid md:grid-cols-[400px_1fr] bg-[#F8FAFC] text-[#1E293B]">
+    <div className={outerCls}>
       {/* Left Pane - Form */}
-      <div className="bg-white border-r border-[#E2E8F0] overflow-y-auto p-6 md:p-[40px] flex flex-col gap-[32px] h-full">
+      <div className={leftCls}>
         <div>
           <h2 className="text-[24px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador Ticket / Vales</h2>
           <p className="text-[14px] text-[#64748B] font-[500] mt-[4px]">Benefícios fiscais com tickets de refeição (DL 133/2024).</p>
@@ -136,7 +140,7 @@ export default function TicketSimulator({ initialState, onStateChange, profile }
       </div>
 
       {/* Right Pane - Results */}
-      <div className="p-6 md:p-[40px] overflow-y-auto h-full max-w-7xl mx-auto w-full flex flex-col gap-[32px]">
+      <div className={rightCls}>
         <div>
           <h1 className="text-[32px] md:text-[40px] font-[800] leading-[1] md:tracking-[-1.5px] mb-[8px] text-[#0F172A]">Resultados Apurados</h1>
           <p className="text-[16px] text-[#64748B] mb-[8px]">Economia fiscal com tickets de refeição — setor: <strong>{setorNome}</strong>.</p>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Scale, BookOpen, Car, Ticket, Shield, AlertTriangle, CheckCircle2, Briefcase, Save, Layers } from 'lucide-react';
+import { ArrowLeft, Scale, BookOpen, Car, Ticket, Shield, AlertTriangle, CheckCircle2, Briefcase, Save, Layers, Building, Banknote, Home } from 'lucide-react';
 import { IRS_BRACKETS_2026, IAS_2026 } from './lib/pt2026';
 import {
   loadPricing,
@@ -901,7 +901,226 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
         </section>
 
         {/* ═══════════════════════════════════════════════════════════ */}
-        {/* 6. REFERÊNCIAS LEGISLATIVAS COMPLETAS                      */}
+        {/* 6. IMT — IMPOSTO MUNICIPAL SOBRE TRANSMISSÕES              */}
+        {/* ═══════════════════════════════════════════════════════════ */}
+        <section className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0]">
+          <SectionHeader icon={Building} title="IMT — Imposto Municipal sobre Transmissões (CIMT)" color="#7C3AED" />
+
+          <div className="space-y-6">
+            <p className="text-[13px] text-[#64748B] font-[500] leading-relaxed">
+              O IMT incide sobre a transmissão onerosa de imóveis situados em Portugal. As taxas e limites abaixo aplicam-se ao Continente (Madeira e Açores têm thresholds 25% superiores).
+            </p>
+
+            {/* Tabela HPP */}
+            <div>
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Habitação Própria e Permanente (HPP) — Continente 2026</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-[13px]">
+                  <thead>
+                    <tr className="bg-[#7C3AED] text-white">
+                      <th className="text-left px-4 py-2 rounded-tl-[8px]">Valor de Aquisição</th>
+                      <th className="text-right px-4 py-2">Taxa Marginal</th>
+                      <th className="text-right px-4 py-2 rounded-tr-[8px]">Parcela a Abater</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { range: 'Até €106.346', taxa: '0%', ded: '—' },
+                      { range: '€106.346 – €145.470', taxa: '2%', ded: '€2.126,92' },
+                      { range: '€145.470 – €198.347', taxa: '5%', ded: '€6.491,02' },
+                      { range: '€198.347 – €330.539', taxa: '7%', ded: '€10.457,96' },
+                      { range: '€330.539 – €660.982', taxa: '8%', ded: '€13.763,35' },
+                      { range: '€660.982 – €1.150.853', taxa: '6% (plana)', ded: '—' },
+                      { range: 'Acima de €1.150.853', taxa: '7,5% (plana)', ded: '—' },
+                    ].map(({ range, taxa, ded }, i) => (
+                      <tr key={i} className={i % 2 === 0 ? 'bg-[#F5F3FF]' : 'bg-white'}>
+                        <td className="px-4 py-2 font-[500]">{range}</td>
+                        <td className="px-4 py-2 text-right font-[700] text-[#7C3AED]">{taxa}</td>
+                        <td className="px-4 py-2 text-right font-mono">{ded}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Outras taxas */}
+            <div>
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Outras Taxas IMT — CIMT Art. 17.º</h3>
+              <div className="space-y-2">
+                <LegalRow label="Habitação secundária / arrendamento" value="Escalões progressivos (1% a 7,5%)" note="Thresholds inferiores aos da HPP. Tabela própria no CIMT." />
+                <LegalRow label="Prédios urbanos — outros fins" value="6,5% (taxa plana)" note="Comércio, serviços, indústria, armazéns" />
+                <LegalRow label="Prédios rústicos" value="5% (taxa plana)" />
+                <LegalRow label="Madeira e Açores" value="Thresholds 25% superiores ao Continente" />
+              </div>
+            </div>
+
+            {/* IMT Jovem */}
+            <div>
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">IMT Jovem — CIMT Art. 11.º-A (OE 2026)</h3>
+              <div className="bg-purple-50 border border-purple-200 rounded-[12px] p-4 mb-4">
+                <p className="text-[13px] text-purple-900 font-[500] leading-relaxed">
+                  <strong>Condições:</strong> Comprador com idade ≤ 35 anos, aquisição de HPP como primeira habitação.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <LegalRow label="Até €330.539 (Continente)" value="IMT = 0 e Imposto de Selo = 0 (isenção total)" note="Medida introduzida pelo OE 2026 para facilitar acesso à habitação" />
+                <LegalRow label="€330.539 – €660.982" value="IMT sobre excedente acima de €330.539" note="Cálculo: IMT_normal(valor) - IMT_normal(330.539); IS também isento" />
+                <LegalRow label="Acima de €660.982" value="IMT e IS normais (sem isenção jovem)" />
+              </div>
+            </div>
+
+            {/* Imposto de Selo */}
+            <div>
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Imposto de Selo — TGIS Verba 1.1</h3>
+              <div className="space-y-2">
+                <LegalRow label="Taxa" value="0,8% sobre o valor de transação" note="Incide sobre aquisições onerosas de imóveis. Pago pelo adquirente." />
+                <LegalRow label="IMT Jovem" value="Isento até ao tecto da isenção total (€330.539)" />
+                <LegalRow label="Hipotecas" value="0,6% sobre o capital mutuado (verba 17.3 TGIS)" />
+              </div>
+            </div>
+
+            {/* Outros custos */}
+            <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[12px] p-4">
+              <h4 className="text-[13px] font-[700] text-[#0F172A] mb-2">Outros Custos de Aquisição (estimativas)</h4>
+              <div className="space-y-1 text-[12px] text-[#64748B]">
+                <div>• Escritura notarial: ~0,5% do valor de transação</div>
+                <div>• Registo predial: ~0,25% do valor de transação</div>
+                <div>• IMI (imposto anual): 0,3%–0,8% do VPT (Valor Patrimonial Tributário)</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════════════════ */}
+        {/* 7. SALÁRIO LÍQUIDO — TCO                                   */}
+        {/* ═══════════════════════════════════════════════════════════ */}
+        <section className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0]">
+          <SectionHeader icon={Banknote} title="Salário Líquido — Trabalhador por Conta de Outrem" color="#0369A1" />
+
+          <div className="space-y-6">
+            <p className="text-[13px] text-[#64748B] font-[500] leading-relaxed">
+              Cálculo do salário líquido para TCO, com descontos de SS, retenção de IRS e subsídio de alimentação. Base legal: CIRS Art. 99.º (retenção) e CRCSPSS Art. 53.º (SS).
+            </p>
+
+            {/* SS TCO */}
+            <div>
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Segurança Social — Taxas TCO (CRCSPSS Art. 53.º)</h3>
+              <div className="space-y-2">
+                <LegalRow label="Taxa do trabalhador" value="11% sobre remuneração ilíquida" />
+                <LegalRow label="Taxa patronal (empresa)" value="23,75% sobre remuneração ilíquida" />
+                <LegalRow label="Custo total" value="34,75% por mês (trabalhador + empresa)" />
+                <LegalRow label="Base de incidência" value="Todas as remunerações, exceto ajudas de custo, despesas de deslocação e subsídio de alimentação isento" />
+              </div>
+            </div>
+
+            {/* Dedução específica */}
+            <div>
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Retenção na Fonte IRS — CIRS Art. 99.º</h3>
+              <div className="bg-blue-50 border border-blue-200 rounded-[12px] p-4 mb-3">
+                <p className="text-[13px] text-blue-900 font-[500] leading-relaxed">
+                  A retenção aproxima-se do IRS anual estimado / nº de pagamentos anuais. Fórmula simplificada utilizada no simulador (via escalões progressivos 2026).
+                </p>
+              </div>
+              <div className="space-y-2">
+                <LegalRow label="Dedução específica Cat. A — CIRS Art. 25.º" value="Maior de: €4.104 ou 72% do rendimento anual bruto" note="Subtrai ao rendimento bruto para determinar o rendimento coletável" />
+                <LegalRow label="Nº de pagamentos (sem duodécimos)" value="14 pagamentos (12 × ordenado + sub. férias + sub. Natal)" />
+                <LegalRow label="Nº de pagamentos (com duodécimos)" value="12 pagamentos (subsídios distribuídos mensalmente)" />
+              </div>
+            </div>
+
+            {/* Subsídio alimentação */}
+            <div>
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Subsídio de Alimentação — DL 133/2024 / Despacho 233-A/2026</h3>
+              <div className="space-y-2">
+                <LegalRow label="Limite isento — dinheiro" value="€6,15/dia" note="Atualizado pelo Despacho 233-A/2026 (vigorou a partir de 1 jan 2026)" />
+                <LegalRow label="Limite isento — cartão/vale refeição" value="€10,46/dia" note="Pagamento em suporte eletrónico (cartão refeição) tem limite superior" />
+                <LegalRow label="Hotelaria / Restauração / Construção" value="€7,00/dia (em dinheiro)" note="DL 133/2024 — setores específicos" />
+                <LegalRow label="Excedente ao limite" value="Tributável em IRS e sujeito a SS (para o trabalhador)" />
+                <LegalRow label="Para a empresa" value="Custo dedutível em IRC (CIRC Art. 23.º)" note="Parte dentro do limite: não sujeita a SS patronal" />
+              </div>
+            </div>
+
+            {/* SMN */}
+            <div>
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Salário Mínimo Nacional 2026</h3>
+              <div className="space-y-2">
+                <LegalRow label="SMN 2026" value="€870/mês" note="DL n.º 94/2025, de 31 dezembro 2025" />
+                <LegalRow label="SMN anual (14 meses)" value="€12.180" />
+                <LegalRow label="Custo empresa SMN" value="~€1.066,63/mês (SMN + 23,75% SS patronal)" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════════════════ */}
+        {/* 8. IMÓVEIS NA EMPRESA                                      */}
+        {/* ═══════════════════════════════════════════════════════════ */}
+        <section className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0]">
+          <SectionHeader icon={Home} title="Imóveis na Empresa — Enquadramento Fiscal" color="#065F46" />
+
+          <div className="space-y-6">
+            <p className="text-[13px] text-[#64748B] font-[500] leading-relaxed">
+              A decisão de colocar um imóvel em nome da empresa (entrada em espécie) ou mantê-lo em nome pessoal e arrendar/ceder à empresa tem implicações fiscais significativas. Resumem-se abaixo os principais pontos legais.
+            </p>
+
+            {/* Arrendamento */}
+            <div>
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Arrendamento / Comodato — Regime Fiscal</h3>
+              <div className="space-y-2">
+                <LegalRow label="IRS — Categoria F (rendas)" value="Taxa de 28% sobre rendas recebidas" note="CIRS Art. 8.º — opção de englobamento pode ser mais favorável em escalões baixos" />
+                <LegalRow label="Isenção de IVA sobre rendas" value="Rendas de imóveis isentas de IVA por natureza (CIVA Art. 9.º, n.º 29)" />
+                <LegalRow label="IMI" value="Continua em nome do titular (não há transmissão)" />
+                <LegalRow label="Comodato" value="Cedência gratuita. Sem IRS na esfera do sócio, mas a empresa não pode deduzir renda" note="Diferente do arrendamento oneroso. A AT pode contestar subavaliações." />
+                <LegalRow label="Gasto dedutível na empresa" value="Sim, se arrendamento oneroso (Art. 23.º CIRC)" note="A renda paga é custo fiscal da empresa" />
+              </div>
+            </div>
+
+            {/* Entrada em Espécie */}
+            <div>
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Entrada em Espécie — Regime Fiscal</h3>
+              <div className="space-y-2">
+                <LegalRow label="IMT" value="Aplicável — taxa depende do tipo de imóvel (ver secção IMT)" note="Base de incidência: maior entre valor de transação e VPT (CIMT Art. 12.º)" />
+                <LegalRow label="Imposto de Selo" value="0,8% sobre o valor de transação (TGIS verba 1.1)" />
+                <LegalRow label="Escritura notarial" value="Obrigatória — honorários ~0,5-1% do valor" />
+                <LegalRow label="IVA na transmissão" value="Geralmente isento — imóveis usados (CIVA Art. 9.º, n.º 30)" note="Exceto imóveis novos ou reabilitados — sujeitos a IVA 23%" />
+                <LegalRow label="Depreciação fiscal" value="2%/ano sobre valor de aquisição (DR 25/2009)" note="CIRC Art. 31.º — imóveis afetos à atividade podem ser depreciados fiscalmente" />
+                <LegalRow label="Mais-valias na venda futura" value="IRC sobre mais-valia (valor venda - valor líquido contabilístico)" note="Reinvestimento pode beneficiar de exclusão tributária — CIRC Art. 48.º" />
+                <LegalRow label="Reavaliação IMI" value="Transmissão implica reavaliação do VPT. Taxa IMI sobre novo VPT." />
+              </div>
+            </div>
+
+            {/* ENI específico */}
+            <div className="bg-amber-50 border border-amber-200 rounded-[12px] p-4">
+              <h4 className="text-[13px] font-[700] text-amber-900 mb-2">ENI — Afetação do Imóvel à Atividade</h4>
+              <p className="text-[13px] text-amber-800 font-[500] leading-relaxed mb-2">
+                Para ENIs (Categoria B), a afetação parcial de um imóvel à atividade (ex: home office) é possível mas mais complexa:
+              </p>
+              <div className="space-y-1 text-[12px] text-amber-700">
+                <div>• Dedução da proporção das despesas (percentagem afeta à atividade)</div>
+                <div>• Não há "transmissão" — apenas afetação contabilística</div>
+                <div>• Desafetação posterior pode implicar tributação de mais-valias latentes</div>
+                <div>• CIRS Art. 3.º, n.º 2, alínea d) — afetação de bens a atividade</div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Artigos de Referência</h3>
+              <div className="space-y-1">
+                <Article code="CIRS Art. 8.º" description="Rendimentos da categoria F — rendas e arrendamento" />
+                <Article code="CIVA Art. 9.º, n.º 29-30" description="Isenção de IVA em operações imobiliárias" />
+                <Article code="CIRC Art. 23.º" description="Gastos dedutíveis — incluindo rendas pagas pela empresa" />
+                <Article code="CIRC Art. 29.º e 31.º" description="Depreciações e amortizações fiscais de imóveis" />
+                <Article code="CIRC Art. 48.º" description="Exclusão de tributação de mais-valias por reinvestimento" />
+                <Article code="CIMT Art. 12.º" description="Base tributável IMT — maior de VPT vs valor de contrato" />
+                <Article code="DR 25/2009" description="Taxas de depreciação — imóveis afetos à atividade: 2%/ano" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════════════════ */}
+        {/* REFERÊNCIAS LEGISLATIVAS COMPLETAS                         */}
         {/* ═══════════════════════════════════════════════════════════ */}
         <section className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0]">
           <SectionHeader icon={BookOpen} title="Índice de Referências Legislativas" color="#475569" />
@@ -926,6 +1145,16 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
             <Article code="DL 133/2024" description="Novos limites diários de vales de refeição: €5,00 (geral) / €7,00 (hotelaria/construção)" />
             <Article code="Lei n.º 82/2023" description="Tributação autónoma de 10% para viaturas elétricas com custo >€62.500" />
             <Article code="OE 2026" description="Orçamento do Estado para 2026 — referência principal para todos os valores desta ferramenta" />
+            <Article code="CIMT Art. 11.º-A" description="IMT Jovem — isenção total de IMT e IS para compradores ≤35 anos na 1.ª habitação até €330.539 (Continente)" />
+            <Article code="CIMT Art. 17.º" description="Tabela de taxas IMT — HPP, habitação secundária, prédios urbanos e rústicos" />
+            <Article code="TGIS Verba 1.1" description="Imposto de Selo sobre transmissões de imóveis — 0,8% sobre o valor de aquisição" />
+            <Article code="CRCSPSS Art. 53.º" description="Taxas de SS TCO: 11% (trabalhador) + 23,75% (patronal)" />
+            <Article code="CIRS Art. 25.º" description="Dedução específica Categoria A — mínimo €4.104 ou 72% do rendimento bruto anual" />
+            <Article code="Despacho 233-A/2026" description="Limites do subsídio de alimentação 2026: €6,15/dia (dinheiro), €10,46/dia (cartão)" />
+            <Article code="DL n.º 94/2025" description="Salário Mínimo Nacional 2026: €870/mês" />
+            <Article code="CIRS Art. 8.º" description="Rendimentos da Categoria F — rendas e arrendamento de imóveis" />
+            <Article code="CIRC Art. 31.º" description="Depreciações de imóveis afetos à atividade empresarial — taxa de 2%/ano" />
+            <Article code="DR 25/2009" description="Tabelas de depreciações — imóveis afetos à atividade" />
           </div>
         </section>
 

@@ -1,116 +1,106 @@
 import React, { useState } from 'react';
-import { Calculator, Car, Ticket, User, UserCircle, Info } from 'lucide-react';
 import TaxSimulator from './TaxSimulator';
 import VehicleSimulator from './VehicleSimulator';
 import TicketSimulator from './TicketSimulator';
 import SelfEmployedSSSimulator from './SelfEmployedSSSimulator';
+import DiagnosticoAutonomia, { type DiagnosticoState } from './DiagnosticoAutonomia';
+import ImoveisEmpresa, { type ImoveisState } from './ImoveisEmpresa';
+import IMTSimulator, { type IMTState } from './IMTSimulator';
+import SalarioLiquidoSimulator, { type SalarioState } from './SalarioLiquidoSimulator';
 import ClientProfile, { defaultProfile } from './ClientProfile';
 import LegalInfo from './LegalInfo';
 import LoginPage from './LoginPage';
 import type { ClientProfile as ClientProfileType } from './ClientProfile';
-import { cn } from './lib/utils';
+import { ThemeProvider, useTheme } from './ThemeContext';
+import { LAYOUTS } from './Layouts';
+
+type ViewType =
+  | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
+  | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'legal';
 
 interface TaxSimulatorState {
-  profSit: string;
-  currentInc: number;
-  age: number;
-  isMainAct: boolean;
-  monthlyNeed: number;
-  isServices: boolean;
-  b2b: boolean;
-  rev: number;
-  isSeasonal: boolean;
-  invEquip: number;
-  invLic: number;
-  invWorks: number;
-  invFundo: number;
-  fixedMo: number;
-  varYr: number;
-  accMoLda: number;
-  accMoEni: number;
-  anosAtividade: number;
-  transparenciaFiscal: boolean;
+  profSit: string; currentInc: number; age: number; isMainAct: boolean;
+  monthlyNeed: number; isServices: boolean; b2b: boolean; rev: number;
+  isSeasonal: boolean; invEquip: number; invLic: number; invWorks: number;
+  invFundo: number; fixedMo: number; varYr: number; accMoLda: number;
+  accMoEni: number; anosAtividade: number; transparenciaFiscal: boolean;
 }
 
 interface VehicleSimulatorState {
-  category: 'comercial' | 'passageiros';
-  engineType: string;
-  price: number;
-  ivaRegime: string;
-  activity: string;
-  maintenanceCost: number;
-  insuranceCost: number;
-  fuelCost: number;
-  exemptTA: boolean;
-  phevCompliant: boolean;
+  category: 'comercial' | 'passageiros'; engineType: string; price: number;
+  ivaRegime: string; activity: string; maintenanceCost: number;
+  insuranceCost: number; fuelCost: number; exemptTA: boolean; phevCompliant: boolean;
 }
 
 interface TicketSimulatorState {
-  employees: number;
-  ticketValue: number;
-  daysPerMonth: number;
-  months: number;
+  employees: number; ticketValue: number; daysPerMonth: number; months: number;
 }
 
 interface SSState {
-  income: number;
-  regime: 'general' | 'simplified';
-  tipoRendimento: 'servicos' | 'bens';
-  primeiroAno: boolean;
+  income: number; regime: 'general' | 'simplified';
+  tipoRendimento: 'servicos' | 'bens'; primeiroAno: boolean;
 }
 
-type ViewType = 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss' | 'legal';
-
-const getInitialTaxState = (profile: ClientProfileType): TaxSimulatorState => ({
-  profSit: profile.tipoEntidade === 'eni' ? 'outro' : 'tco',
-  currentInc: 25000,
-  age: profile.idade,
-  isMainAct: profile.tipoEntidade !== 'eni',
-  monthlyNeed: 1500,
-  isServices: profile.atividadePrincipal === 'servicos',
-  b2b: true,
-  rev: profile.faturaçaoAnualPrevista,
-  isSeasonal: profile.isSazonal,
-  invEquip: 3000,
-  invLic: 500,
-  invWorks: 1000,
-  invFundo: 2000,
-  fixedMo: 400,
-  varYr: 5000,
-  accMoLda: 200,
-  accMoEni: 50,
-  anosAtividade: Math.max(0, new Date().getFullYear() - profile.inicioAtividade),
-  transparenciaFiscal: profile.regimeContabilidade === 'transparencia_fiscal',
+const getInitialTaxState = (p: ClientProfileType): TaxSimulatorState => ({
+  profSit: p.tipoEntidade === 'eni' ? 'outro' : 'tco',
+  currentInc: 25000, age: p.idade, isMainAct: p.tipoEntidade !== 'eni',
+  monthlyNeed: 1500, isServices: p.atividadePrincipal === 'servicos',
+  b2b: true, rev: p.faturaçaoAnualPrevista, isSeasonal: p.isSazonal,
+  invEquip: 3000, invLic: 500, invWorks: 1000, invFundo: 2000,
+  fixedMo: 400, varYr: 5000, accMoLda: 200, accMoEni: 50,
+  anosAtividade: Math.max(0, new Date().getFullYear() - p.inicioAtividade),
+  transparenciaFiscal: p.regimeContabilidade === 'transparencia_fiscal',
 });
 
 const getInitialVehicleState = (): VehicleSimulatorState => ({
-  category: 'passageiros',
-  engineType: 'diesel',
-  price: 35000,
-  ivaRegime: 'normal',
-  activity: 'other',
-  maintenanceCost: 1000,
-  insuranceCost: 800,
-  fuelCost: 2500,
-  exemptTA: false,
-  phevCompliant: true
+  category: 'passageiros', engineType: 'diesel', price: 35000,
+  ivaRegime: 'normal', activity: 'other', maintenanceCost: 1000,
+  insuranceCost: 800, fuelCost: 2500, exemptTA: false, phevCompliant: true,
 });
 
-const getInitialTicketState = (profile: ClientProfileType): TicketSimulatorState => ({
-  employees: profile.nrFuncionarios,
-  ticketValue: profile.valorTicket,
-  daysPerMonth: 22,
-  months: 12
+const getInitialTicketState = (p: ClientProfileType): TicketSimulatorState => ({
+  employees: p.nrFuncionarios, ticketValue: p.valorTicket, daysPerMonth: 22, months: 12,
 });
 
-const getInitialSSState = (profile: ClientProfileType): SSState => ({
-  income: profile.rendimentoMensalEni,
-  regime: profile.regimeSs,
-  tipoRendimento: profile.tipoRendimentoSs,
-  primeiroAno: false
+const getInitialSSState = (p: ClientProfileType): SSState => ({
+  income: p.rendimentoMensalEni, regime: p.regimeSs,
+  tipoRendimento: p.tipoRendimentoSs, primeiroAno: false,
 });
 
-export default function App() {
+const getInitialDiagnosticoState = (p: ClientProfileType, tax: TaxSimulatorState): DiagnosticoState => ({
+  capitaisProprios: 0, ativoTotal: 0, passivoTotal: 0,
+  ativoCorrente: 0, passivoCorrente: 0, disponibilidades: 0,
+  custoFixoMensal: tax.fixedMo, resultadoLiquido: 0,
+  volumeNegocios: p.faturaçaoAnualPrevista, ebitda: 'positivo',
+  faturacaoMaiorCliente: 0, financiamentoExterno: 0, totalFinanciamento: 0,
+  processosDefinidos: false, softwareGestao: false, equipaAutonoma: false,
+  baixaDependenciaGerente: false, controlFinanceiro: false,
+});
+
+const getInitialImoveisState = (p: ClientProfileType): ImoveisState => ({
+  valorImovel: 0, tipoUso: 'comercial', temApoiosPT2030: false,
+  horizonteInvestimento: 'longo', precisaLiquidezMensal: false,
+  precisaReforcoCE: false, tipoAtividade: 'geral',
+});
+
+const getInitialIMTState = (p: ClientProfileType): IMTState => ({
+  valor: 0, tipo: 'hpp', localizacao: 'continente',
+  primeiraHabitacao: true, idadeComprador: p.idade,
+});
+
+const getInitialSalarioState = (p: ClientProfileType): SalarioState => ({
+  salarioBruto: 2000,
+  estadoCivil: p.estadoCivil === 'casado' ? 'casado_1titular' : 'solteiro',
+  nrDependentes: p.nrDependentes, localizacao: 'continente',
+  duodecimos: false, subsidioAlimentacaoDiario: 6.15,
+  tipoSubsidio: 'dinheiro', diasSubsidio: 22,
+  irsJovem: p.beneficioJovem && p.idade <= 35,
+  anosAtividade: Math.max(0, new Date().getFullYear() - p.inicioAtividade),
+  idade: p.idade,
+});
+
+function AppContent() {
+  const { layoutIndex, layoutName, nextLayout, prevLayout } = useTheme();
   const [loggedIn, setLoggedIn] = useState(false);
   const [view, setView] = useState<ViewType>('profile');
   const [prevView, setPrevView] = useState<ViewType>('profile');
@@ -119,19 +109,17 @@ export default function App() {
   const [vehicleState, setVehicleState] = useState<VehicleSimulatorState>(getInitialVehicleState);
   const [ticketState, setTicketState] = useState<TicketSimulatorState>(() => getInitialTicketState(defaultProfile));
   const [ssState, setSSState] = useState<SSState>(() => getInitialSSState(defaultProfile));
+  const [diagnosticoState, setDiagnosticoState] = useState<DiagnosticoState>(() => getInitialDiagnosticoState(defaultProfile, getInitialTaxState(defaultProfile)));
+  const [imoveisState, setImoveisState] = useState<ImoveisState>(() => getInitialImoveisState(defaultProfile));
+  const [imtState, setImtState] = useState<IMTState>(() => getInitialIMTState(defaultProfile));
+  const [salarioState, setSalarioState] = useState<SalarioState>(() => getInitialSalarioState(defaultProfile));
 
   if (!loggedIn) {
     return <LoginPage onLogin={() => setLoggedIn(true)} />;
   }
 
-  const openLegal = () => {
-    setPrevView(view);
-    setView('legal');
-  };
-
-  const closeLegal = () => {
-    setView(prevView);
-  };
+  const openLegal = () => { setPrevView(view); setView('legal'); };
+  const closeLegal = () => setView(prevView);
 
   const updateProfileWithSimulatorSync = (newProfile: ClientProfileType) => {
     setClientProfile(newProfile);
@@ -145,17 +133,18 @@ export default function App() {
       anosAtividade: Math.max(0, new Date().getFullYear() - newProfile.inicioAtividade),
       transparenciaFiscal: newProfile.regimeContabilidade === 'transparencia_fiscal',
     }));
-    setTicketState(prev => ({
+    setTicketState(prev => ({ ...prev, employees: newProfile.nrFuncionarios, ticketValue: newProfile.valorTicket }));
+    setSSState(prev => ({ ...prev, income: newProfile.rendimentoMensalEni, regime: newProfile.regimeSs, tipoRendimento: newProfile.tipoRendimentoSs }));
+    setDiagnosticoState(prev => ({ ...prev, volumeNegocios: newProfile.faturaçaoAnualPrevista }));
+    setSalarioState(prev => ({
       ...prev,
-      employees: newProfile.nrFuncionarios,
-      ticketValue: newProfile.valorTicket
+      estadoCivil: newProfile.estadoCivil === 'casado' ? 'casado_1titular' : 'solteiro',
+      nrDependentes: newProfile.nrDependentes,
+      irsJovem: newProfile.beneficioJovem && newProfile.idade <= 35,
+      idade: newProfile.idade,
+      anosAtividade: Math.max(0, new Date().getFullYear() - newProfile.inicioAtividade),
     }));
-    setSSState(prev => ({
-      ...prev,
-      income: newProfile.rendimentoMensalEni,
-      regime: newProfile.regimeSs,
-      tipoRendimento: newProfile.tipoRendimentoSs
-    }));
+    setImtState(prev => ({ ...prev, idadeComprador: newProfile.idade }));
   };
 
   const handleTaxStateChange = (newState: TaxSimulatorState) => {
@@ -166,164 +155,102 @@ export default function App() {
       atividadePrincipal: newState.isServices ? 'servicos' : 'bens',
       faturaçaoAnualPrevista: newState.rev,
       isSazonal: newState.isSeasonal,
-      regimeContabilidade: newState.transparenciaFiscal ? 'transparencia_fiscal' : prev.regimeContabilidade === 'transparencia_fiscal' ? 'organizada' : prev.regimeContabilidade,
+      regimeContabilidade: newState.transparenciaFiscal
+        ? 'transparencia_fiscal'
+        : prev.regimeContabilidade === 'transparencia_fiscal' ? 'organizada' : prev.regimeContabilidade,
     }));
+    setDiagnosticoState(prev => ({ ...prev, custoFixoMensal: newState.fixedMo, volumeNegocios: newState.rev }));
   };
 
   const handleTicketStateChange = (newState: TicketSimulatorState) => {
     setTicketState(newState);
-    setClientProfile(prev => ({
-      ...prev,
-      nrFuncionarios: newState.employees,
-      valorTicket: newState.ticketValue
-    }));
+    setClientProfile(prev => ({ ...prev, nrFuncionarios: newState.employees, valorTicket: newState.ticketValue }));
   };
 
   const handleSSStateChange = (newState: SSState) => {
     setSSState(newState);
-    setClientProfile(prev => ({
-      ...prev,
-      rendimentoMensalEni: newState.income,
-      regimeSs: newState.regime,
-      tipoRendimentoSs: newState.tipoRendimento
-    }));
+    setClientProfile(prev => ({ ...prev, rendimentoMensalEni: newState.income, regimeSs: newState.regime, tipoRendimentoSs: newState.tipoRendimento }));
   };
 
-  const navItems: Array<{ id: ViewType; icon: React.ElementType; label: string; isSimulator?: boolean }> = [
-    { id: 'profile', icon: UserCircle, label: 'Perfil Cliente' },
-    { id: 'tax', icon: Calculator, label: 'Enquadramento Fiscal', isSimulator: true },
-    { id: 'vehicle', icon: Car, label: 'Viaturas Ligeiras', isSimulator: true },
-    { id: 'ticket', icon: Ticket, label: 'Ticket (Benefícios)', isSimulator: true },
-    { id: 'selfss', icon: User, label: 'Segurança Social Independente', isSimulator: true },
-  ];
+  // Current simulator content
+  const content = (
+    <>
+      {view === 'profile' && (
+        <ClientProfile profile={clientProfile} onChange={updateProfileWithSimulatorSync}
+          taxState={taxState} vehicleState={vehicleState} ticketState={ticketState} ssState={ssState} />
+      )}
+      {view === 'tax' && (
+        <TaxSimulator initialState={taxState} onStateChange={handleTaxStateChange} profile={clientProfile} />
+      )}
+      {view === 'vehicle' && (
+        <VehicleSimulator initialState={vehicleState} onStateChange={setVehicleState} />
+      )}
+      {view === 'ticket' && (
+        <TicketSimulator initialState={ticketState} onStateChange={handleTicketStateChange} profile={clientProfile} />
+      )}
+      {view === 'selfss' && (
+        <SelfEmployedSSSimulator initialState={ssState} onStateChange={handleSSStateChange} />
+      )}
+      {view === 'diagnostico' && (
+        <DiagnosticoAutonomia initialState={diagnosticoState} onStateChange={setDiagnosticoState} />
+      )}
+      {view === 'imoveis' && (
+        <ImoveisEmpresa initialState={imoveisState} onStateChange={setImoveisState} profile={clientProfile} />
+      )}
+      {view === 'imt' && (
+        <IMTSimulator initialState={imtState} onStateChange={setImtState} />
+      )}
+      {view === 'salario' && (
+        <SalarioLiquidoSimulator initialState={salarioState} onStateChange={setSalarioState} />
+      )}
+      {view === 'legal' && (
+        <LegalInfo onBack={closeLegal} clientProfile={clientProfile} vehicleState={vehicleState} ticketState={ticketState} />
+      )}
+    </>
+  );
+
+  const CurrentLayout = LAYOUTS[layoutIndex].component;
 
   return (
-    <div className="h-screen w-full flex bg-[#F8FAFC] overflow-hidden text-slate-900 relative">
-      {/* Collapsible nav sidebar */}
-      <div className="group absolute top-0 left-0 h-full z-50 flex shadow-2xl">
-        <nav className="w-[64px] group-hover:w-[290px] h-full bg-white border-r border-slate-200 flex flex-col transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden">
-          {/* Logo */}
-          <div className="h-20 flex items-center px-4 w-[290px] shrink-0 border-b border-slate-100">
-            <div className="w-8 h-8 flex items-center justify-center shrink-0 mr-4">
-              <svg viewBox="0 0 100 80" className="w-8 h-8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M 45 10 A 30 30 0 0 0 45 70" stroke="#333333" strokeWidth="2.5" strokeLinecap="round"/>
-                <path d="M 30 45 L 42 58 L 65 25" stroke="#781D1D" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <div className="flex-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-              <h1 className="text-[17px] font-[800] tracking-[-0.5px] text-[#333333]">RECOFATIMA</h1>
-              <p className="text-[11px] tracking-[0.5px] text-[#781D1D] mt-[-2px] font-[600] capitalize">Contabilidade</p>
-            </div>
-          </div>
-
-          {/* Nav items */}
-          <div className="flex flex-col gap-2 p-3 w-[290px] pt-4">
-            {/* Profile button */}
-            <button
-              onClick={() => setView('profile')}
-              className={cn("flex items-center gap-3 px-3 py-3 rounded-[12px] transition-colors", view === 'profile' ? "bg-[#0F172A] text-white shadow-md shadow-[#0F172A]/20" : "text-[#475569] hover:text-[#0F172A] hover:bg-[#0F172A]/10")}
-            >
-              <div className="w-4 h-4 flex items-center justify-center shrink-0">
-                <UserCircle className="w-[18px] h-[18px] shrink-0" />
-              </div>
-              <span className="text-sm font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">Perfil Cliente</span>
+    <div className="h-screen flex flex-col overflow-hidden">
+      {/* ── Layout switcher bar — always 3px tall, expands on hover ── */}
+      <div className="group/bar shrink-0 relative z-[200]">
+        <div className="h-[3px] group-hover/bar:h-[44px] transition-all duration-300 overflow-hidden bg-[#1C1917] flex items-center justify-center">
+          <div className="opacity-0 group-hover/bar:opacity-100 transition-opacity duration-200 delay-100 flex items-center gap-5">
+            <button onClick={prevLayout}
+              className="text-stone-400 hover:text-white text-xl px-4 font-[700] select-none transition-colors">
+              ←
             </button>
-
-            <div className="border-t border-slate-200 my-2"></div>
-
-            {/* Simulator buttons */}
-            {([
-              { id: 'tax' as ViewType, icon: Calculator, label: 'Enquadramento Fiscal' },
-              { id: 'vehicle' as ViewType, icon: Car, label: 'Viaturas Ligeiras' },
-              { id: 'ticket' as ViewType, icon: Ticket, label: 'Ticket (Benefícios)' },
-              { id: 'selfss' as ViewType, icon: User, label: 'Segurança Social Independente' },
-            ]).map(({ id, icon: Icon, label }) => (
-              <button
-                key={id}
-                onClick={() => setView(id)}
-                className={cn("flex items-center gap-3 px-3 py-3 rounded-[12px] transition-colors", (view === id || (view === 'legal' && prevView === id)) ? "bg-[#781D1D] text-white shadow-md shadow-[#781D1D]/20" : "text-[#475569] hover:text-[#781D1D] hover:bg-[#781D1D]/10")}
-              >
-                <div className="w-4 h-4 flex items-center justify-center shrink-0">
-                  <Icon className="w-[18px] h-[18px] shrink-0" />
-                </div>
-                <span className="text-sm font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">{label}</span>
-              </button>
-            ))}
+            <span className="text-[11px] font-[800] uppercase tracking-[3px] text-stone-300 whitespace-nowrap">
+              Layout: {layoutName}
+            </span>
+            <button onClick={nextLayout}
+              className="text-stone-400 hover:text-white text-xl px-4 font-[700] select-none transition-colors">
+              →
+            </button>
           </div>
-
-          {/* Footer note */}
-          <div className="mt-auto p-4 w-[290px] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 text-[10px] text-slate-500 font-medium leading-relaxed">
-              Dados atualizados conforme <strong>OE 2026</strong> aprovado • Abril 2026
-            </div>
-          </div>
-        </nav>
+        </div>
       </div>
 
-      {/* Main content */}
-      <main className="flex-1 h-full w-full ml-[64px] bg-[#F8FAFC] flex flex-col overflow-hidden relative">
-
-        {/* ── Botão "i" de informação legal — visível em todas as vistas ── */}
-        {view !== 'legal' && (
-          <button
-            onClick={openLegal}
-            title="Base legal e referências"
-            className="absolute top-4 right-4 z-40 w-9 h-9 rounded-full bg-[#781D1D] text-white flex items-center justify-center shadow-lg hover:bg-[#5A1313] transition-colors"
-          >
-            <Info size={16} />
-          </button>
-        )}
-
-        {view === 'profile' && (
-          <ClientProfile
-            profile={clientProfile}
-            onChange={updateProfileWithSimulatorSync}
-            taxState={taxState}
-            vehicleState={vehicleState}
-            ticketState={ticketState}
-            ssState={ssState}
-          />
-        )}
-
-        {view === 'tax' && (
-          <TaxSimulator
-            initialState={taxState}
-            onStateChange={handleTaxStateChange}
-            profile={clientProfile}
-          />
-        )}
-
-        {view === 'vehicle' && (
-          <VehicleSimulator
-            initialState={vehicleState}
-            onStateChange={setVehicleState}
-          />
-        )}
-
-        {view === 'ticket' && (
-          <TicketSimulator
-            initialState={ticketState}
-            onStateChange={handleTicketStateChange}
-            profile={clientProfile}
-          />
-        )}
-
-        {view === 'selfss' && (
-          <SelfEmployedSSSimulator
-            initialState={ssState}
-            onStateChange={handleSSStateChange}
-          />
-        )}
-
-        {view === 'legal' && (
-          <LegalInfo
-            onBack={closeLegal}
-            clientProfile={clientProfile}
-            vehicleState={vehicleState}
-            ticketState={ticketState}
-          />
-        )}
-      </main>
+      {/* ── Layout fills remaining height ── */}
+      <div className="flex-1 overflow-hidden">
+        <CurrentLayout
+          view={view}
+          setView={setView as (v: ViewType) => void}
+          prevView={prevView}
+          openLegal={openLegal}
+        >
+          {content}
+        </CurrentLayout>
+      </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
