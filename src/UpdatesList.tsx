@@ -20,15 +20,27 @@ interface Props {
 export default function UpdatesList({ onBack }: Props) {
   const [items, setItems] = useState<UpdateItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [newText, setNewText] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => {
     const q = query(collection(db, 'updates'), orderBy('createdAt', 'asc'));
-    const unsub = onSnapshot(q, snap => {
-      setItems(snap.docs.map(d => ({ id: d.id, ...d.data() } as UpdateItem)));
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      q,
+      snap => {
+        setItems(snap.docs.map(d => ({ id: d.id, ...d.data() } as UpdateItem)));
+        setLoading(false);
+        setError(null);
+      },
+      err => {
+        console.error('Firestore error:', err);
+        setLoading(false);
+        setError(err.code === 'permission-denied'
+          ? 'Sem permissão para aceder ao Firestore. Verifique as regras de segurança na consola Firebase.'
+          : `Erro: ${err.message}`);
+      }
+    );
     return unsub;
   }, []);
 
@@ -143,6 +155,17 @@ export default function UpdatesList({ onBack }: Props) {
           <div className="bg-white rounded-[20px] p-12 shadow-sm border border-[#E2E8F0] flex flex-col items-center gap-3">
             <Loader2 className="w-8 h-8 text-[#781D1D] animate-spin" />
             <p className="text-[13px] font-[600] text-[#94A3B8]">A carregar da cloud...</p>
+          </div>
+        )}
+
+        {/* Error */}
+        {error && (
+          <div className="bg-red-50 rounded-[20px] p-8 border border-red-200 flex flex-col items-center gap-3 text-center">
+            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+              <span className="text-red-500 text-xl font-bold">!</span>
+            </div>
+            <p className="text-[14px] font-[700] text-red-700">Erro de ligação ao Firebase</p>
+            <p className="text-[12px] text-red-500 font-[500] max-w-md">{error}</p>
           </div>
         )}
 
