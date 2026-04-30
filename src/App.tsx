@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import TaxSimulator from './TaxSimulator';
 import VehicleSimulator from './VehicleSimulator';
 import TicketSimulator from './TicketSimulator';
@@ -10,10 +10,12 @@ import SalarioLiquidoSimulator, { type SalarioState } from './SalarioLiquidoSimu
 import ClientProfile, { defaultProfile } from './ClientProfile';
 import LegalInfo from './LegalInfo';
 import LoginPage from './LoginPage';
-import UpdatesList, { hasPendingUpdates, loadUpdateItems } from './UpdatesList';
+import UpdatesList from './UpdatesList';
 import type { ClientProfile as ClientProfileType } from './ClientProfile';
 import { ThemeProvider, useTheme } from './ThemeContext';
 import { LAYOUTS } from './Layouts';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { db } from './lib/firebase';
 
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
@@ -105,8 +107,23 @@ function AppContent() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [showUpdateNotification, setShowUpdateNotification] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
-  const refreshPendingCount = () =>
-    setPendingCount(loadUpdateItems().filter(i => i.atualizado && !i.aprovado).length);
+  const notificationShown = useRef(false);
+
+  useEffect(() => {
+    if (!loggedIn) return;
+    const unsub = onSnapshot(collection(db, 'updates'), snap => {
+      const count = snap.docs.filter(d => {
+        const data = d.data();
+        return data.atualizado && !data.aprovado;
+      }).length;
+      setPendingCount(count);
+      if (count > 0 && !notificationShown.current) {
+        setShowUpdateNotification(true);
+        notificationShown.current = true;
+      }
+    });
+    return unsub;
+  }, [loggedIn]);
   const [view, setView] = useState<ViewType>('profile');
   const [prevView, setPrevView] = useState<ViewType>('profile');
   const [clientProfile, setClientProfile] = useState<ClientProfileType>(defaultProfile);
@@ -120,13 +137,7 @@ function AppContent() {
   const [salarioState, setSalarioState] = useState<SalarioState>(() => getInitialSalarioState(defaultProfile));
 
   if (!loggedIn) {
-    return (
-      <LoginPage onLogin={() => {
-        refreshPendingCount();
-        setLoggedIn(true);
-        if (hasPendingUpdates()) setShowUpdateNotification(true);
-      }} />
-    );
+    return <LoginPage onLogin={() => setLoggedIn(true)} />;
   }
 
   const openLegal = () => { setPrevView(view); setView('legal'); };
@@ -219,7 +230,7 @@ function AppContent() {
         <LegalInfo onBack={closeLegal} onOpenUpdates={openUpdates} clientProfile={clientProfile} vehicleState={vehicleState} ticketState={ticketState} />
       )}
       {view === 'updates' && (
-        <UpdatesList onBack={() => setView(prevView)} onItemsChange={refreshPendingCount} />
+        <UpdatesList onBack={() => setView(prevView)} />
       )}
     </>
   );

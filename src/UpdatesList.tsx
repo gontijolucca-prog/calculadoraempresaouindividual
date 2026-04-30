@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Plus, Trash2, ClipboardList, CheckCheck } from 'lucide-react';
-
-const STORAGE_KEY = 'recofatima_updates';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Plus, Trash2, ClipboardList, CheckCheck, Loader2 } from 'lucide-react';
+import {
+  collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy,
+} from 'firebase/firestore';
+import { db } from './lib/firebase';
 
 export interface UpdateItem {
   id: string;
@@ -11,52 +13,40 @@ export interface UpdateItem {
   createdAt: number;
 }
 
-export function loadUpdateItems(): UpdateItem[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveUpdateItems(items: UpdateItem[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-}
-
-export function hasPendingUpdates(): boolean {
-  return loadUpdateItems().some(i => i.atualizado && !i.aprovado);
-}
-
 interface Props {
   onBack: () => void;
-  onItemsChange?: () => void;
 }
 
-export default function UpdatesList({ onBack, onItemsChange }: Props) {
-  const [items, setItems] = useState<UpdateItem[]>(loadUpdateItems);
+export default function UpdatesList({ onBack }: Props) {
+  const [items, setItems] = useState<UpdateItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [newText, setNewText] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  const mutate = (next: UpdateItem[]) => {
-    setItems(next);
-    saveUpdateItems(next);
-    onItemsChange?.();
-  };
+  useEffect(() => {
+    const q = query(collection(db, 'updates'), orderBy('createdAt', 'asc'));
+    const unsub = onSnapshot(q, snap => {
+      setItems(snap.docs.map(d => ({ id: d.id, ...d.data() } as UpdateItem)));
+      setLoading(false);
+    });
+    return unsub;
+  }, []);
 
-  const addItem = () => {
+  const addItem = async () => {
     const text = newText.trim();
     if (!text) return;
-    mutate([...items, { id: Date.now().toString(), text, atualizado: false, aprovado: false, createdAt: Date.now() }]);
     setNewText('');
+    await addDoc(collection(db, 'updates'), {
+      text, atualizado: false, aprovado: false, createdAt: Date.now(),
+    });
   };
 
-  const toggle = (id: string, field: 'atualizado' | 'aprovado') => {
-    mutate(items.map(i => i.id === id ? { ...i, [field]: !i[field] } : i));
+  const toggle = async (item: UpdateItem, field: 'atualizado' | 'aprovado') => {
+    await updateDoc(doc(db, 'updates', item.id), { [field]: !item[field] });
   };
 
-  const confirmDelete = (id: string) => {
-    mutate(items.filter(i => i.id !== id));
+  const confirmDelete = async (id: string) => {
+    await deleteDoc(doc(db, 'updates', id));
     setDeleteConfirm(null);
   };
 
@@ -87,7 +77,7 @@ export default function UpdatesList({ onBack, onItemsChange }: Props) {
           </div>
           <div>
             <h1 className="text-[18px] font-[800] text-[#0F172A]">Checklist de Atualizações</h1>
-            <p className="text-[11px] font-[600] text-[#781D1D] uppercase tracking-[1px]">Registo de atualizações do site</p>
+            <p className="text-[11px] font-[600] text-[#781D1D] uppercase tracking-[1px]">Sincronizado em tempo real</p>
           </div>
         </div>
         <div className="ml-auto flex items-center gap-2">
@@ -148,14 +138,25 @@ export default function UpdatesList({ onBack, onItemsChange }: Props) {
           </div>
         </div>
 
+        {/* Loading */}
+        {loading && (
+          <div className="bg-white rounded-[20px] p-12 shadow-sm border border-[#E2E8F0] flex flex-col items-center gap-3">
+            <Loader2 className="w-8 h-8 text-[#781D1D] animate-spin" />
+            <p className="text-[13px] font-[600] text-[#94A3B8]">A carregar da cloud...</p>
+          </div>
+        )}
+
         {/* Empty state */}
-        {sorted.length === 0 ? (
+        {!loading && sorted.length === 0 && (
           <div className="bg-white rounded-[20px] p-14 shadow-sm border border-[#E2E8F0] text-center">
             <ClipboardList className="w-12 h-12 text-[#CBD5E1] mx-auto mb-4" />
             <p className="text-[15px] font-[700] text-[#94A3B8]">Sem atualizações registadas</p>
             <p className="text-[13px] text-[#CBD5E1] mt-1 font-[500]">Adicione a primeira atualização no campo acima.</p>
           </div>
-        ) : (
+        )}
+
+        {/* Items list */}
+        {!loading && sorted.length > 0 && (
           <div className="space-y-3">
             {sorted.map(item => {
               const done = item.atualizado && item.aprovado;
@@ -164,27 +165,20 @@ export default function UpdatesList({ onBack, onItemsChange }: Props) {
                 <div
                   key={item.id}
                   className={`bg-white rounded-[16px] border shadow-sm transition-all duration-300 ${
-                    done
-                      ? 'opacity-50 border-[#E2E8F0]'
-                      : pending
-                      ? 'border-amber-300 shadow-amber-100/60'
-                      : 'border-[#E2E8F0]'
+                    done ? 'opacity-50 border-[#E2E8F0]' : pending ? 'border-amber-300 shadow-amber-100/60' : 'border-[#E2E8F0]'
                   }`}
                 >
                   <div className="flex items-center gap-4 px-5 py-4">
 
-                    {/* Checkboxes column */}
+                    {/* Checkboxes */}
                     <div className="flex flex-col gap-[10px] shrink-0">
-                      {/* Atualizado */}
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => toggle(item.id, 'atualizado')}
+                          onClick={() => toggle(item, 'atualizado')}
                           className={`w-[22px] h-[22px] rounded-[5px] border-2 flex items-center justify-center transition-all ${
-                            item.atualizado
-                              ? 'bg-emerald-500 border-emerald-500'
-                              : 'border-emerald-300 hover:border-emerald-400 bg-white'
+                            item.atualizado ? 'bg-emerald-500 border-emerald-500' : 'border-emerald-300 hover:border-emerald-400 bg-white'
                           }`}
-                          title="Marcar como atualizado"
+                          title="Atualizado"
                         >
                           {item.atualizado && (
                             <svg width="11" height="9" viewBox="0 0 12 10" fill="none">
@@ -192,18 +186,15 @@ export default function UpdatesList({ onBack, onItemsChange }: Props) {
                             </svg>
                           )}
                         </button>
-                        <span className="text-[10px] font-[700] text-emerald-600 uppercase tracking-[0.5px] whitespace-nowrap">At.</span>
+                        <span className="text-[10px] font-[700] text-emerald-600 uppercase tracking-[0.5px]">At.</span>
                       </div>
-                      {/* Aprovado */}
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => toggle(item.id, 'aprovado')}
+                          onClick={() => toggle(item, 'aprovado')}
                           className={`w-[22px] h-[22px] rounded-[5px] border-2 flex items-center justify-center transition-all ${
-                            item.aprovado
-                              ? 'bg-blue-500 border-blue-500'
-                              : 'border-blue-300 hover:border-blue-400 bg-white'
+                            item.aprovado ? 'bg-blue-500 border-blue-500' : 'border-blue-300 hover:border-blue-400 bg-white'
                           }`}
-                          title="Marcar como aprovado"
+                          title="Aprovado"
                         >
                           {item.aprovado && (
                             <svg width="11" height="9" viewBox="0 0 12 10" fill="none">
@@ -211,11 +202,11 @@ export default function UpdatesList({ onBack, onItemsChange }: Props) {
                             </svg>
                           )}
                         </button>
-                        <span className="text-[10px] font-[700] text-blue-600 uppercase tracking-[0.5px] whitespace-nowrap">Ap.</span>
+                        <span className="text-[10px] font-[700] text-blue-600 uppercase tracking-[0.5px]">Ap.</span>
                       </div>
                     </div>
 
-                    {/* Status indicator */}
+                    {/* Status dot */}
                     <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${
                       done ? 'bg-emerald-400' : pending ? 'bg-amber-400' : 'bg-[#CBD5E1]'
                     }`} />
@@ -227,21 +218,13 @@ export default function UpdatesList({ onBack, onItemsChange }: Props) {
                       {item.text}
                     </p>
 
-                    {/* Status badges */}
+                    {/* Status badge */}
                     <div className="hidden sm:flex flex-col gap-1 shrink-0 items-end">
-                      {pending && (
-                        <span className="text-[10px] font-[700] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full whitespace-nowrap">
-                          Por aprovar
-                        </span>
-                      )}
-                      {done && (
-                        <span className="text-[10px] font-[700] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full whitespace-nowrap">
-                          Concluído
-                        </span>
-                      )}
+                      {pending && <span className="text-[10px] font-[700] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Por aprovar</span>}
+                      {done && <span className="text-[10px] font-[700] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Concluído</span>}
                     </div>
 
-                    {/* Delete button */}
+                    {/* Delete */}
                     <button
                       onClick={() => setDeleteConfirm(item.id)}
                       className="p-2 rounded-[8px] text-[#CBD5E1] hover:text-red-500 hover:bg-red-50 transition-all shrink-0 ml-1"
@@ -256,10 +239,9 @@ export default function UpdatesList({ onBack, onItemsChange }: Props) {
           </div>
         )}
 
-        {/* Footer note */}
         {items.length > 0 && (
           <p className="text-center text-[11px] text-[#CBD5E1] font-[500] pb-4">
-            Todos os itens ficam guardados permanentemente no navegador.
+            ☁ Guardado na cloud — sincronizado em todos os dispositivos.
           </p>
         )}
       </div>
@@ -267,10 +249,7 @@ export default function UpdatesList({ onBack, onItemsChange }: Props) {
       {/* Delete confirmation modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setDeleteConfirm(null)}
-          />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)} />
           <div className="relative bg-white rounded-[24px] p-8 shadow-2xl max-w-sm w-full">
             <div className="flex flex-col items-center text-center gap-4">
               <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">

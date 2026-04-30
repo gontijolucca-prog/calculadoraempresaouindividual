@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Scale, BookOpen, Car, Ticket, Shield, AlertTriangle, CheckCircle2, Briefcase, Save, Layers, Building, Banknote, Home, ClipboardList } from 'lucide-react';
 import { IRS_BRACKETS_2026, IAS_2026 } from './lib/pt2026';
 import {
   loadPricing,
   savePricing,
+  loadPricingFromFirestore,
+  savePricingToFirestore,
   calcClientEstimate,
   type PricingConfig,
 } from './lib/pricing';
@@ -82,10 +84,21 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
   const [pricing, setPricing] = useState<PricingConfig>(loadPricing);
   const [saved, setSaved] = useState(false);
 
+  // On mount: load from Firestore (overrides localStorage if cloud data exists)
+  useEffect(() => {
+    loadPricingFromFirestore().then(cloud => {
+      if (cloud) {
+        setPricing(cloud);
+        savePricing(cloud); // keep localStorage in sync
+      }
+    });
+  }, []);
+
   const update = (field: keyof PricingConfig, value: number) => {
     const next = { ...pricing, [field]: value };
     setPricing(next);
-    savePricing(next);
+    savePricing(next);           // localStorage — instant
+    savePricingToFirestore(next); // Firestore — cloud
     setSaved(true);
     setTimeout(() => setSaved(false), 1800);
   };

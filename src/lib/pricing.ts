@@ -1,4 +1,9 @@
 import type { ClientProfile } from '../ClientProfile';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from './firebase';
+
+const FIRESTORE_DOC = 'pricing';
+const FIRESTORE_COL = 'config';
 
 export interface PricingConfig {
   // Contabilidade mensal base (€/mês)
@@ -77,6 +82,24 @@ export function loadPricing(): PricingConfig {
 
 export function savePricing(p: PricingConfig): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
+}
+
+export async function loadPricingFromFirestore(): Promise<PricingConfig | null> {
+  try {
+    const snap = await getDoc(doc(db, FIRESTORE_COL, FIRESTORE_DOC));
+    if (snap.exists()) return { ...defaultPricing(), ...snap.data() } as PricingConfig;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export async function savePricingToFirestore(p: PricingConfig): Promise<void> {
+  try {
+    await setDoc(doc(db, FIRESTORE_COL, FIRESTORE_DOC), p);
+  } catch {
+    // silently fail — localStorage still has the data
+  }
 }
 
 export function calcClientEstimate(
