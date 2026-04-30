@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Scale, BookOpen, Car, Ticket, Shield, AlertTriangle, CheckCircle2, Briefcase, Save, Layers, Building, Banknote, Home } from 'lucide-react';
+import { ArrowLeft, Scale, BookOpen, Car, Ticket, Shield, AlertTriangle, CheckCircle2, Briefcase, Save, Layers, Building, Banknote, Home, ClipboardList } from 'lucide-react';
 import { IRS_BRACKETS_2026, IAS_2026 } from './lib/pt2026';
 import {
   loadPricing,
@@ -11,6 +11,7 @@ import type { ClientProfile } from './ClientProfile';
 
 interface Props {
   onBack: () => void;
+  onOpenUpdates?: () => void;
   clientProfile?: ClientProfile;
   vehicleState?: { price: number };
   ticketState?: { ticketValue: number };
@@ -77,7 +78,7 @@ const PriceInput = ({
   </div>
 );
 
-export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketState }: Props) {
+export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicleState, ticketState }: Props) {
   const [pricing, setPricing] = useState<PricingConfig>(loadPricing);
   const [saved, setSaved] = useState(false);
 
@@ -110,10 +111,19 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
           <h1 className="text-[18px] font-[800] text-[#0F172A]">Base Legal & Referências</h1>
           <p className="text-[11px] font-[600] text-[#781D1D] uppercase tracking-[1px]">Legislação • Taxas • Limites • OE 2026</p>
         </div>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-3">
           <span className="text-[11px] font-[700] bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full">
             ✓ Atualizado Abril 2026
           </span>
+          {onOpenUpdates && (
+            <button
+              onClick={onOpenUpdates}
+              className="flex items-center gap-2 text-[13px] font-[700] text-white bg-[#781D1D] hover:bg-[#5A1313] px-4 py-2 rounded-[10px] transition-all active:scale-[0.98] shadow-sm shadow-[#781D1D]/20"
+            >
+              <ClipboardList size={15} />
+              Checklist
+            </button>
+          )}
         </div>
       </div>
 

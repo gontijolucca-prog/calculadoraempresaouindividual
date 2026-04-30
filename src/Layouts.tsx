@@ -141,7 +141,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, children }: 
       </div>
 
       <main className="flex-1 h-full ml-[64px] flex flex-col overflow-hidden relative">
-        {view !== 'legal' && (
+        {view !== 'legal' && view !== 'updates' && (
           <button onClick={openLegal} title="Base legal"
             className="absolute top-4 right-4 z-40 w-9 h-9 rounded-full bg-[#781D1D] text-white flex items-center justify-center shadow-lg hover:bg-[#5A1313] transition-colors">
             <Info size={16} />
@@ -206,10 +206,12 @@ export function TopBarLayout({ view, setView, prevView, openLegal, children }: L
           );
         })}
 
-        <button onClick={openLegal} title="Base legal"
-          className="ml-auto shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-[700] text-slate-400 hover:text-white hover:bg-[#1F2937] transition-colors border border-[#374151]">
-          <Info className="w-4 h-4" />Legal
-        </button>
+        {view !== 'legal' && view !== 'updates' && (
+          <button onClick={openLegal} title="Base legal"
+            className="ml-auto shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-[700] text-slate-400 hover:text-white hover:bg-[#1F2937] transition-colors border border-[#374151]">
+            <Info className="w-4 h-4" />Legal
+          </button>
+        )}
       </header>
 
       <main className="flex-1 overflow-hidden">
@@ -282,13 +284,15 @@ export function RailLayout({ view, setView, prevView, openLegal, children }: Lay
           );
         })}
 
-        <button onClick={openLegal}
-          className="mt-auto w-full flex flex-col items-center py-2 text-emerald-400 hover:text-white transition-colors shrink-0">
-          <div className="w-10 h-10 rounded-[12px] flex items-center justify-center hover:bg-[#065F46]/60">
-            <Info className="w-5 h-5" />
-          </div>
-          <span className="text-[9px] font-[700] mt-1">Legal</span>
-        </button>
+        {view !== 'legal' && view !== 'updates' && (
+          <button onClick={openLegal}
+            className="mt-auto w-full flex flex-col items-center py-2 text-emerald-400 hover:text-white transition-colors shrink-0">
+            <div className="w-10 h-10 rounded-[12px] flex items-center justify-center hover:bg-[#065F46]/60">
+              <Info className="w-5 h-5" />
+            </div>
+            <span className="text-[9px] font-[700] mt-1">Legal</span>
+          </button>
+        )}
       </nav>
 
       <main className="flex-1 h-full overflow-hidden">
@@ -317,7 +321,7 @@ export function BottomBarLayout({ view, setView, prevView, openLegal, children }
             <span className="text-[13px] font-[600] text-slate-500">{currentItem.label}</span>
           </>
         )}
-        {view !== 'legal' && (
+        {view !== 'legal' && view !== 'updates' && (
           <button onClick={openLegal}
             className="ml-auto w-7 h-7 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:border-slate-400 hover:text-black transition-colors">
             <Info size={13} />
@@ -371,7 +375,7 @@ export function OverlayLayout({ view, setView, prevView, openLegal, children }: 
         <span className="ml-3 text-[14px] font-[800] text-[#F5F5F4] tracking-[-0.3px]">RECOFATIMA</span>
         <span className="ml-3 text-[11px] font-[500] text-stone-400 uppercase tracking-[1px] hidden sm:block">Contabilidade</span>
 
-        {view !== 'legal' && (
+        {view !== 'legal' && view !== 'updates' && (
           <button onClick={openLegal}
             className="ml-auto mr-3 text-stone-400 hover:text-[#D97706] transition-colors flex items-center gap-1 text-[12px] font-[600]">
             <Info size={15} />

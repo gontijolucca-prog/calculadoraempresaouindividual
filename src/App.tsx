@@ -10,13 +10,14 @@ import SalarioLiquidoSimulator, { type SalarioState } from './SalarioLiquidoSimu
 import ClientProfile, { defaultProfile } from './ClientProfile';
 import LegalInfo from './LegalInfo';
 import LoginPage from './LoginPage';
+import UpdatesList, { hasPendingUpdates, loadUpdateItems } from './UpdatesList';
 import type { ClientProfile as ClientProfileType } from './ClientProfile';
 import { ThemeProvider, useTheme } from './ThemeContext';
 import { LAYOUTS } from './Layouts';
 
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
-  | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'legal';
+  | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'legal' | 'updates';
 
 interface TaxSimulatorState {
   profSit: string; currentInc: number; age: number; isMainAct: boolean;
@@ -102,6 +103,10 @@ const getInitialSalarioState = (p: ClientProfileType): SalarioState => ({
 function AppContent() {
   const { layoutIndex, layoutName, nextLayout, prevLayout } = useTheme();
   const [loggedIn, setLoggedIn] = useState(false);
+  const [showUpdateNotification, setShowUpdateNotification] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+  const refreshPendingCount = () =>
+    setPendingCount(loadUpdateItems().filter(i => i.atualizado && !i.aprovado).length);
   const [view, setView] = useState<ViewType>('profile');
   const [prevView, setPrevView] = useState<ViewType>('profile');
   const [clientProfile, setClientProfile] = useState<ClientProfileType>(defaultProfile);
@@ -115,11 +120,18 @@ function AppContent() {
   const [salarioState, setSalarioState] = useState<SalarioState>(() => getInitialSalarioState(defaultProfile));
 
   if (!loggedIn) {
-    return <LoginPage onLogin={() => setLoggedIn(true)} />;
+    return (
+      <LoginPage onLogin={() => {
+        refreshPendingCount();
+        setLoggedIn(true);
+        if (hasPendingUpdates()) setShowUpdateNotification(true);
+      }} />
+    );
   }
 
   const openLegal = () => { setPrevView(view); setView('legal'); };
   const closeLegal = () => setView(prevView);
+  const openUpdates = () => { setPrevView(view); setView('updates'); };
 
   const updateProfileWithSimulatorSync = (newProfile: ClientProfileType) => {
     setClientProfile(newProfile);
@@ -204,7 +216,10 @@ function AppContent() {
         <SalarioLiquidoSimulator initialState={salarioState} onStateChange={setSalarioState} />
       )}
       {view === 'legal' && (
-        <LegalInfo onBack={closeLegal} clientProfile={clientProfile} vehicleState={vehicleState} ticketState={ticketState} />
+        <LegalInfo onBack={closeLegal} onOpenUpdates={openUpdates} clientProfile={clientProfile} vehicleState={vehicleState} ticketState={ticketState} />
+      )}
+      {view === 'updates' && (
+        <UpdatesList onBack={() => setView(prevView)} onItemsChange={refreshPendingCount} />
       )}
     </>
   );
@@ -213,6 +228,54 @@ function AppContent() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
+
+      {/* ── Pending updates notification modal ── */}
+      {showUpdateNotification && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative bg-white rounded-[28px] shadow-2xl max-w-md w-full overflow-hidden">
+            {/* Accent bar */}
+            <div className="h-1.5 bg-gradient-to-r from-amber-400 to-amber-500 w-full" />
+            <div className="p-10 flex flex-col items-center text-center gap-5">
+              {/* Icon */}
+              <div className="w-20 h-20 rounded-full bg-amber-50 border-4 border-amber-100 flex items-center justify-center">
+                <svg viewBox="0 0 40 40" className="w-10 h-10" fill="none">
+                  <path d="M20 8L20 22" stroke="#D97706" strokeWidth="3" strokeLinecap="round"/>
+                  <circle cx="20" cy="30" r="2" fill="#D97706"/>
+                  <path d="M6 34L20 8L34 34H6Z" stroke="#D97706" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              {/* Text */}
+              <div>
+                <h2 className="text-[22px] font-[800] text-[#0F172A] leading-tight">
+                  Atualização pendente
+                </h2>
+                <p className="text-[14px] text-[#64748B] mt-3 font-[500] leading-relaxed">
+                  Foi efetuada uma atualização no site que aguarda aprovação.
+                  <br />
+                  Aceda à <strong className="text-[#0F172A]">Checklist de Atualizações</strong> para rever e aprovar.
+                </p>
+              </div>
+              {/* Actions */}
+              <div className="flex gap-3 w-full mt-2">
+                <button
+                  onClick={() => setShowUpdateNotification(false)}
+                  className="flex-1 py-3.5 rounded-[12px] text-[14px] font-[700] bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0] transition-all"
+                >
+                  Fechar
+                </button>
+                <button
+                  onClick={() => { setShowUpdateNotification(false); openUpdates(); }}
+                  className="flex-1 py-3.5 rounded-[12px] text-[14px] font-[700] bg-amber-500 text-white hover:bg-amber-600 active:scale-[0.98] transition-all shadow-lg shadow-amber-500/30"
+                >
+                  Ver checklist
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Layout switcher bar — always 3px tall, expands on hover ── */}
       <div className="group/bar shrink-0 relative z-[200]">
         <div className="h-[3px] group-hover/bar:h-[44px] transition-all duration-300 overflow-hidden bg-[#1C1917] flex items-center justify-center">
@@ -231,6 +294,22 @@ function AppContent() {
           </div>
         </div>
       </div>
+
+      {/* ── Persistent pending-updates banner ── */}
+      {pendingCount > 0 && (
+        <button
+          onClick={openUpdates}
+          className="shrink-0 w-full bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-colors flex items-center justify-center gap-2.5 py-[5px] z-[150]"
+        >
+          <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+          <span className="text-[11px] font-[800] text-white uppercase tracking-[1.5px]">
+            {pendingCount} atualização{pendingCount !== 1 ? 'ões' : ''} por aprovar
+          </span>
+          <span className="text-[10px] font-[700] bg-white/25 text-white px-2 py-0.5 rounded-full">
+            Ver →
+          </span>
+        </button>
+      )}
 
       {/* ── Layout fills remaining height ── */}
       <div className="flex-1 overflow-hidden">
