@@ -3,6 +3,7 @@ import { calcSelfSSContribution } from './lib/pt2026';
 import { cn } from './lib/utils';
 import { ShieldCheck, Wallet, AlertTriangle, Calendar } from 'lucide-react';
 import { useTheme } from './ThemeContext';
+import { Tip } from './Tip';
 
 interface SSState {
   income: number;
@@ -50,14 +51,14 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
 
         <div className="space-y-[24px]">
           <div>
-            <label className={labelClass}>Rendimento Mensal (€)</label>
+            <label className={labelClass}>Rendimento Mensal (€) <Tip>O rendimento que serve de base para calcular a contribuição de SS. Para prestadores de serviços, são os honorários mensais. Para comerciantes, é o lucro.</Tip></label>
             <div className="relative">
               <Wallet className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
               <input
                 type="number"
                 min="0"
                 step="0.01"
-                value={income}
+                value={income === 0 ? '' : income}
                 onChange={e => setState({ income: parseFloat(e.target.value) || 0 })}
                 className={cn(inputClass, "pl-[40px]")}
                 required
@@ -66,7 +67,7 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
           </div>
 
           <div>
-            <label className={labelClass}>Tipo de Rendimento</label>
+            <label className={labelClass}>Tipo de Rendimento <Tip>Se vende serviços (consultor, designer, advogado) ou bens/produtos. A taxa de SS pode variar conforme o tipo.</Tip></label>
             <select value={tipoRendimento} onChange={e => setState({ tipoRendimento: e.target.value as 'servicos' | 'bens' })} className={inputClass}>
               <option value="servicos">Prestação de Serviços (base 70%)</option>
               <option value="bens">Venda de Bens (base 20%)</option>
@@ -74,7 +75,7 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
           </div>
 
           <div>
-            <label className={labelClass}>Regime IRS</label>
+            <label className={labelClass}>Regime IRS <Tip>Regime geral: contribuição normal. Regime simplificado: para rendimentos baixos, com regras diferentes de cálculo.</Tip></label>
             <select value={regime} onChange={e => setState({ regime: e.target.value as 'general' | 'simplified' })} className={inputClass}>
               <option value="general">Regime Geral</option>
               <option value="simplified">Regime Simplificado</option>
@@ -93,7 +94,7 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
               className="mt-1 w-5 h-5 accent-emerald-600"
             />
             <div>
-              <span className="text-[14px] font-[700] text-[#0F172A] block">Primeiro Ano de Atividade</span>
+              <span className="text-[14px] font-[700] text-[#0F172A] block">Primeiro Ano de Atividade <Tip>No primeiro ano como independente, pode haver isenção de SS durante alguns meses.</Tip></span>
               <span className="text-[12px] text-[#64748B] font-[500] leading-snug mt-1 block">
                 Isenção total de contribuições no 1.º ano (Art. 164.º CRCSPSS). Aplica-se a novos inscritos na SS como trabalhadores independentes.
               </span>

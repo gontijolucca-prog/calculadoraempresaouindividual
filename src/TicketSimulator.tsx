@@ -4,6 +4,7 @@ import { Ticket, Euro, ShieldCheck, Calculator, AlertTriangle } from 'lucide-rea
 import { cn } from './lib/utils';
 import type { ClientProfile } from './ClientProfile';
 import { useTheme } from './ThemeContext';
+import { Tip } from './Tip';
 
 interface TicketSimulatorState {
   employees: number;
@@ -63,25 +64,25 @@ export default function TicketSimulator({ initialState, onStateChange, profile }
 
         <div className="space-y-[24px]">
           <div>
-            <label className={labelClass}>Número de Empregados</label>
+            <label className={labelClass}>Número de Empregados <Tip>Quantos trabalhadores recebem subsídio de alimentação. Cada um recebe o mesmo valor diário.</Tip></label>
             <input
               type="number"
               min="0"
-              value={employees}
+              value={employees === 0 ? '' : employees}
               onChange={e => setState({ employees: parseInt(e.target.value) || 0 })}
               className={inputClass}
             />
           </div>
 
           <div>
-            <label className={labelClass}>Valor Diário do Ticket (€)</label>
+            <label className={labelClass}>Valor Diário do Ticket (€) <Tip>O valor diário do subsídio de alimentação por funcionário. O valor isento de IRS é €6,15 em dinheiro ou €10,46 em cartão.</Tip></label>
             <div className="relative">
               <Euro className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
               <input
                 type="number"
                 min="0"
                 step="0.01"
-                value={ticketValue}
+                value={ticketValue === 0 ? '' : ticketValue}
                 onChange={e => setState({ ticketValue: parseFloat(e.target.value) || 0 })}
                 className={cn(inputClass, "pl-[40px]", excedeNorma && "border-amber-400 bg-amber-50/30")}
               />
@@ -103,24 +104,24 @@ export default function TicketSimulator({ initialState, onStateChange, profile }
           </div>
 
           <div>
-            <label className={labelClass}>Dias Úteis por Mês</label>
+            <label className={labelClass}>Dias Úteis por Mês <Tip>Número de dias úteis de trabalho por mês em que o subsídio é pago. Normalmente 22 dias (excluindo fins de semana e feriados).</Tip></label>
             <input
               type="number"
               min="0"
               max="31"
-              value={daysPerMonth}
+              value={daysPerMonth === 0 ? '' : daysPerMonth}
               onChange={e => setState({ daysPerMonth: parseInt(e.target.value) || 0 })}
               className={inputClass}
             />
           </div>
 
           <div>
-            <label className={labelClass}>Meses por Ano</label>
+            <label className={labelClass}>Meses por Ano <Tip>Número de meses em que o subsídio é pago. Normalmente 11 (excluindo o mês de férias com subsídio pago à parte).</Tip></label>
             <input
               type="number"
               min="1"
               max="12"
-              value={months}
+              value={months === 0 ? '' : months}
               onChange={e => setState({ months: parseInt(e.target.value) || 12 })}
               className={inputClass}
             />

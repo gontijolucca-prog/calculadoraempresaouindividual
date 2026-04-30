@@ -4,6 +4,7 @@ import { cn } from './lib/utils';
 import type { ClientProfile } from './ClientProfile';
 import { calcIMT } from './lib/imt';
 import { useTheme } from './ThemeContext';
+import { Tip } from './Tip';
 
 export interface ImoveisState {
   valorImovel: number;
@@ -118,12 +119,12 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
 
         <div className="space-y-[18px]">
           <div>
-            <label className={labelCls}>Valor do Imóvel (€)</label>
+            <label className={labelCls}>Valor do Imóvel (€) <Tip>O valor atual do imóvel em euros. Serve para estimar o IMT, Imposto de Selo e o impacto no balanço da empresa.</Tip></label>
             <input
               type="number"
               min="0"
               step="5000"
-              value={s.valorImovel || ''}
+              value={s.valorImovel === 0 ? '' : s.valorImovel}
               onChange={e => setState({ valorImovel: parseFloat(e.target.value) || 0 })}
               className={inputCls}
               placeholder="ex: 250000"
@@ -131,7 +132,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
           </div>
 
           <div>
-            <label className={labelCls}>Tipo de Uso</label>
+            <label className={labelCls}>Tipo de Uso <Tip>Para que vai ser usado o imóvel: habitação (para arrendar como casa), comercial (escritórios, lojas) ou misto (parte habitação, parte comercial).</Tip></label>
             <select value={s.tipoUso} onChange={e => setState({ tipoUso: e.target.value as ImoveisState['tipoUso'] })} className={inputCls}>
               <option value="comercial">Comercial / Escritório</option>
               <option value="habitacao">Habitação</option>
@@ -140,7 +141,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
           </div>
 
           <div>
-            <label className={labelCls}>Horizonte de Investimento</label>
+            <label className={labelCls}>Horizonte de Investimento <Tip>Quanto tempo prevê manter este imóvel: curto prazo (menos de 5 anos) ou longo prazo (mais de 5 anos). Afeta a decisão fiscal.</Tip></label>
             <select value={s.horizonteInvestimento} onChange={e => setState({ horizonteInvestimento: e.target.value as ImoveisState['horizonteInvestimento'] })} className={inputCls}>
               <option value="curto">Curto prazo (&lt;5 anos)</option>
               <option value="longo">Longo prazo (&gt;5 anos)</option>
@@ -148,7 +149,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
           </div>
 
           <div>
-            <label className={labelCls}>Setor de Atividade</label>
+            <label className={labelCls}>Setor de Atividade <Tip>O setor principal da empresa. Afeta o tratamento fiscal do imóvel (ex: turismo tem regras específicas para imóveis).</Tip></label>
             <select value={s.tipoAtividade} onChange={e => setState({ tipoAtividade: e.target.value as ImoveisState['tipoAtividade'] })} className={inputCls}>
               <option value="geral">Geral / Serviços</option>
               <option value="turismo">Turismo</option>
@@ -158,10 +159,10 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
           </div>
 
           {[
-            { key: 'precisaLiquidezMensal', label: 'Precisa de liquidez mensal das rendas' },
-            { key: 'precisaReforcoCE', label: 'Quer reforçar os capitais próprios da empresa' },
-            { key: 'temApoiosPT2030', label: 'A empresa tem ou planeia apoios PT2030 (pode condicionar transmissões)' },
-          ].map(({ key, label }) => (
+            { key: 'precisaLiquidezMensal', label: 'Precisa de liquidez mensal das rendas', tip: 'Se precisa de receber rendas mensalmente para cobrir despesas pessoais ou da empresa. Influencia a opção de arrendamento vs. entrada em espécie.' },
+            { key: 'precisaReforcoCE', label: 'Quer reforçar os capitais próprios da empresa', tip: 'Se o objetivo é melhorar o balanço da empresa (aumentar o capital próprio). A entrada em espécie do imóvel reforça o capital próprio.' },
+            { key: 'temApoiosPT2030', label: 'A empresa tem ou planeia apoios PT2030 (pode condicionar transmissões)', tip: 'Se a empresa beneficia de fundos europeus PT2030. Ter imóvel na empresa pode afetar a elegibilidade a estes apoios.' },
+          ].map(({ key, label, tip }) => (
             <label key={key} className={cn(
               "flex items-center gap-3 p-[14px] rounded-[12px] border-2 cursor-pointer transition-colors",
               s[key as keyof ImoveisState] ? "bg-[#0F172A]/5 border-[#0F172A]" : "bg-[#F8FAFC] border-[#E2E8F0] hover:border-[#94A3B8]"
@@ -171,7 +172,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
                 s[key as keyof ImoveisState] ? "bg-[#0F172A] border-[#0F172A]" : "border-[#E2E8F0]")}>
                 {s[key as keyof ImoveisState] && <span className="text-white text-[10px] font-[900]">✓</span>}
               </div>
-              <span className="text-[13px] font-[500] text-[#475569]">{label}</span>
+              <span className="text-[13px] font-[500] text-[#475569]">{label} <Tip>{tip}</Tip></span>
             </label>
           ))}
 

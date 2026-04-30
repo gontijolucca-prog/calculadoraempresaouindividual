@@ -3,6 +3,7 @@ import { Building, Euro, CheckCircle, AlertTriangle, MapPin } from 'lucide-react
 import { cn } from './lib/utils';
 import { calcIMT, type TipoImovel, type Localizacao } from './lib/imt';
 import { useTheme } from './ThemeContext';
+import { Tip } from './Tip';
 
 export interface IMTState {
   valor: number;
@@ -58,14 +59,14 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
         <div className="space-y-[20px]">
           {/* Valor */}
           <div>
-            <label className={labelCls}>Valor de Aquisição (€)</label>
+            <label className={labelCls}>Valor de Aquisição (€) <Tip>O preço de compra do imóvel em euros. É a base de cálculo do IMT e do Imposto de Selo.</Tip></label>
             <div className="relative">
               <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
               <input
                 type="number"
                 min="0"
                 step="1000"
-                value={s.valor || ''}
+                value={s.valor === 0 ? '' : s.valor}
                 onChange={e => setState({ valor: parseFloat(e.target.value) || 0 })}
                 className={cn(inputCls, "pl-9")}
                 placeholder="ex: 250000"
@@ -75,7 +76,7 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
 
           {/* Tipo */}
           <div>
-            <label className={labelCls}>Tipo de Imóvel</label>
+            <label className={labelCls}>Tipo de Imóvel <Tip>HPP é Habitação Própria Permanente (onde vai viver). Habitação secundária é uma segunda casa. Prédio urbano outros fins é para uso comercial/arrendamento.</Tip></label>
             <select value={s.tipo} onChange={e => setState({ tipo: e.target.value as TipoImovel })} className={inputCls}>
               {(Object.entries(tipoLabels) as [TipoImovel, string][]).map(([v, l]) => (
                 <option key={v} value={v}>{l}</option>
@@ -85,7 +86,7 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
 
           {/* Localização */}
           <div>
-            <label className={labelCls}>Localização</label>
+            <label className={labelCls}>Localização <Tip>O local onde fica o imóvel. Nos Açores e Madeira os escalões do IMT são 25% mais elevados.</Tip></label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
               <select value={s.localizacao} onChange={e => setState({ localizacao: e.target.value as Localizacao })} className={cn(inputCls, "pl-9")}>
@@ -107,18 +108,18 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
                 s.primeiraHabitacao ? "bg-[#0F172A] border-[#0F172A]" : "border-[#E2E8F0]")}>
                 {s.primeiraHabitacao && <CheckCircle className="w-3 h-3 text-white" />}
               </div>
-              <span className="text-[13px] font-[600] text-[#475569]">Primeira habitação (HPP)</span>
+              <span className="text-[13px] font-[600] text-[#475569]">Primeira habitação (HPP) <Tip>Se é a primeira vez que compra uma casa para habitação própria permanente. Condição necessária para beneficiar da isenção de IMT Jovem.</Tip></span>
             </label>
           )}
 
           {/* Idade */}
           <div>
-            <label className={labelCls}>Idade do Comprador</label>
+            <label className={labelCls}>Idade do Comprador <Tip>A idade do comprador no momento da escritura. Até 35 anos (inclusive) pode beneficiar do IMT Jovem se for primeira habitação.</Tip></label>
             <input
               type="number"
               min="18"
               max="100"
-              value={s.idadeComprador || ''}
+              value={s.idadeComprador === 0 ? '' : s.idadeComprador}
               onChange={e => setState({ idadeComprador: parseInt(e.target.value) || 0 })}
               className={inputCls}
               placeholder="ex: 32"

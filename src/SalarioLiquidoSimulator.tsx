@@ -3,6 +3,7 @@ import { Banknote, User, ChevronDown, ShieldCheck, Euro } from 'lucide-react';
 import { cn } from './lib/utils';
 import { calcSalarioLiquido, type EstadoCivil, type SalarioParams } from './lib/salario';
 import { useTheme } from './ThemeContext';
+import { Tip } from './Tip';
 
 export interface SalarioState {
   salarioBruto: number;
@@ -67,14 +68,14 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
         <div className="space-y-[18px]">
           {/* Salário bruto */}
           <div>
-            <label className={labelCls}>Salário Bruto Mensal (€)</label>
+            <label className={labelCls}>Salário Bruto Mensal (€) <Tip>O salário antes de descontos (SS e IRS). É o valor que consta no contrato de trabalho.</Tip></label>
             <div className="relative">
               <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
               <input
                 type="number"
                 min="870"
                 step="50"
-                value={s.salarioBruto || ''}
+                value={s.salarioBruto === 0 ? '' : s.salarioBruto}
                 onChange={e => setState({ salarioBruto: parseFloat(e.target.value) || 0 })}
                 className={cn(inputCls, "pl-9")}
                 placeholder="ex: 2000"
@@ -85,7 +86,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
 
           {/* Estado civil */}
           <div>
-            <label className={labelCls}>Estado Civil (para tabela de retenção)</label>
+            <label className={labelCls}>Estado Civil (para tabela de retenção) <Tip>O estado civil afeta as tabelas de retenção de IRS. Casado com um titular ou dois titulares de rendimento têm taxas diferentes.</Tip></label>
             <select value={s.estadoCivil} onChange={e => setState({ estadoCivil: e.target.value as EstadoCivil })} className={inputCls}>
               <option value="solteiro">Solteiro / Não casado</option>
               <option value="casado_1titular">Casado — 1 titular</option>
@@ -95,12 +96,12 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
 
           {/* Dependentes */}
           <div>
-            <label className={labelCls}>Nº de Dependentes</label>
+            <label className={labelCls}>Nº de Dependentes <Tip>Número de filhos ou pessoas dependentes a cargo. Cada dependente reduz a retenção de IRS.</Tip></label>
             <input
               type="number"
               min="0"
               max="20"
-              value={s.nrDependentes}
+              value={s.nrDependentes === 0 ? '' : s.nrDependentes}
               onChange={e => setState({ nrDependentes: parseInt(e.target.value) || 0 })}
               className={inputCls}
             />
@@ -108,7 +109,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
 
           {/* Localização */}
           <div>
-            <label className={labelCls}>Localização</label>
+            <label className={labelCls}>Localização <Tip>Continente, Açores ou Madeira. Nas regiões autónomas as tabelas de IRS são reduzidas.</Tip></label>
             <select value={s.localizacao} onChange={e => setState({ localizacao: e.target.value as SalarioState['localizacao'] })} className={inputCls}>
               <option value="continente">Continente</option>
               <option value="madeira">Madeira</option>
@@ -127,7 +128,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
               {s.duodecimos && <span className="text-white text-[10px] font-[900]">✓</span>}
             </div>
             <div>
-              <span className="text-[13px] font-[600] text-[#475569]">Duodécimos</span>
+              <span className="text-[13px] font-[600] text-[#475569]">Duodécimos <Tip>Se os subsídios de Natal e Férias são pagos distribuídos pelos 12 meses (duodécimos) ou em 2 pagamentos anuais. Afeta a retenção mensal.</Tip></span>
               <p className="text-[11px] text-[#94A3B8]">Subsídios distribuídos mensalmente (14 pagamentos → 12)</p>
             </div>
           </label>
@@ -137,31 +138,31 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
             <div className="text-[12px] font-[700] uppercase tracking-[1px] text-[#64748B]">Subsídio de Alimentação</div>
             <div className="grid grid-cols-2 gap-[10px]">
               <div>
-                <label className={labelCls}>Valor Diário (€)</label>
+                <label className={labelCls}>Valor Diário (€) <Tip>O valor diário pago por cada dia de trabalho como subsídio de refeição. Até €6,15/dia em dinheiro está isento de IRS e SS.</Tip></label>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
-                  value={s.subsidioAlimentacaoDiario || ''}
+                  value={s.subsidioAlimentacaoDiario === 0 ? '' : s.subsidioAlimentacaoDiario}
                   onChange={e => setState({ subsidioAlimentacaoDiario: parseFloat(e.target.value) || 0 })}
                   className={inputCls}
                   placeholder="ex: 6.15"
                 />
               </div>
               <div>
-                <label className={labelCls}>Dias/mês</label>
+                <label className={labelCls}>Dias/mês <Tip>Número de dias úteis por mês em que o subsídio de alimentação é pago. Normalmente 22 dias.</Tip></label>
                 <input
                   type="number"
                   min="0"
                   max="31"
-                  value={s.diasSubsidio}
+                  value={s.diasSubsidio === 0 ? '' : s.diasSubsidio}
                   onChange={e => setState({ diasSubsidio: parseInt(e.target.value) || 0 })}
                   className={inputCls}
                 />
               </div>
             </div>
             <div>
-              <label className={labelCls}>Tipo de Pagamento</label>
+              <label className={labelCls}>Tipo de Pagamento <Tip>Subsídio em dinheiro: limite isento €6,15/dia. Em cartão de refeição: limite isento €10,46/dia.</Tip></label>
               <select value={s.tipoSubsidio} onChange={e => setState({ tipoSubsidio: e.target.value as 'dinheiro' | 'cartao' })} className={inputCls}>
                 <option value="dinheiro">Dinheiro (limite €6,15/dia)</option>
                 <option value="cartao">Cartão / Vale (limite €10,46/dia)</option>
@@ -179,18 +180,18 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
               s.irsJovem ? "bg-emerald-600 border-emerald-600" : "border-[#E2E8F0]")}>
               {s.irsJovem && <span className="text-white text-[10px] font-[900]">✓</span>}
             </div>
-            <span className="text-[13px] font-[600] text-[#475569]">IRS Jovem (≤35 anos)</span>
+            <span className="text-[13px] font-[600] text-[#475569]">IRS Jovem (≤35 anos) <Tip>Isenção parcial de IRS para jovens até 35 anos nos primeiros anos de trabalho. Reduz significativamente o imposto retido.</Tip></span>
           </label>
 
           {s.irsJovem && (
             <div className="grid grid-cols-2 gap-[10px]">
               <div>
-                <label className={labelCls}>Idade</label>
-                <input type="number" min="18" max="35" value={s.idade || ''} onChange={e => setState({ idade: parseInt(e.target.value) || 0 })} className={inputCls} />
+                <label className={labelCls}>Idade <Tip>A sua idade. Determina a elegibilidade para IRS Jovem (até 35 anos).</Tip></label>
+                <input type="number" min="18" max="35" value={s.idade === 0 ? '' : s.idade} onChange={e => setState({ idade: parseInt(e.target.value) || 0 })} className={inputCls} />
               </div>
               <div>
-                <label className={labelCls}>Anos de atividade</label>
-                <input type="number" min="0" max="5" value={s.anosAtividade} onChange={e => setState({ anosAtividade: parseInt(e.target.value) || 0 })} className={inputCls} />
+                <label className={labelCls}>Anos de atividade <Tip>Há quantos anos está a trabalhar. O benefício de IRS Jovem varia conforme o número de anos de atividade.</Tip></label>
+                <input type="number" min="0" max="5" value={s.anosAtividade === 0 ? '' : s.anosAtividade} onChange={e => setState({ anosAtividade: parseInt(e.target.value) || 0 })} className={inputCls} />
               </div>
             </div>
           )}

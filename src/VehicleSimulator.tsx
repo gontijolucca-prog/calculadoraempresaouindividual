@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Car, Euro, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { cn } from './lib/utils';
 import { useTheme } from './ThemeContext';
+import { Tip } from './Tip';
 
 interface VehicleSimulatorState {
   category: 'comercial' | 'passageiros';
@@ -145,7 +146,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
 
           <div className="space-y-[24px]">
             <div>
-              <label className={labelClass}>Categoria do Veículo</label>
+              <label className={labelClass}>Categoria do Veículo <Tip>Veículos comerciais (carrinhas, camionetas) têm tratamento fiscal mais favorável. Veículos de passageiros têm mais restrições fiscais.</Tip></label>
               <select value={category} onChange={e=>setState({category: e.target.value as any})} className={inputClass}>
                 <option value="passageiros">Ligeiro de Passageiros</option>
                 <option value="comercial">Comercial (2/3 lugares)</option>
@@ -153,7 +154,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
             </div>
 
             <div>
-              <label className={labelClass}>Motor / Combustível</label>
+              <label className={labelClass}>Motor / Combustível <Tip>O tipo de combustível do carro: diesel, gasolina, elétrico ou híbrido. Afeta os limites de dedução de IVA e a isenção de Imposto Automóvel.</Tip></label>
               <select value={engineType} onChange={e=>setState({engineType: e.target.value})} className={inputClass}>
                 <option value="diesel">Gasóleo</option>
                 <option value="gasoline">Gasolina</option>
@@ -166,21 +167,21 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
               {engineType === 'phev' && (
                 <label className="flex items-start gap-2 mt-4 p-3 bg-amber-50/50 border border-amber-200 text-amber-900 rounded-[8px] cursor-pointer">
                   <input type="checkbox" checked={phevCompliant} onChange={e=>setState({phevCompliant: e.target.checked})} className="mt-[2px] accent-amber-600" />
-                  <span className="text-[12px] font-[500] leading-tight">Autonomia elétrica é ≥50 km e emissões são &lt;50 gCO₂/km.</span>
+                  <span className="text-[12px] font-[500] leading-tight">Autonomia elétrica é ≥50 km e emissões são &lt;50 gCO₂/km. <Tip>PHEV é um veículo híbrido plug-in. Se cumpre os requisitos de emissões, pode ter limites de dedução mais favoráveis.</Tip></span>
                 </label>
               )}
             </div>
 
             <div>
-              <label className={labelClass}>Custo Aquisição (Base s/ IVA)</label>
+              <label className={labelClass}>Custo Aquisição (Base s/ IVA) <Tip>O preço de compra da viatura (sem IVA). Determina os limites de dedução e amortização permitidos.</Tip></label>
               <div className="relative">
                 <Euro className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
-                <input type="number" value={price} onChange={e=>setState({price: Number(e.target.value)})} className={cn(inputClass, "pl-[40px]")} />
+                <input type="number" value={price === 0 ? '' : price} onChange={e=>setState({price: Number(e.target.value) || 0})} className={cn(inputClass, "pl-[40px]")} />
               </div>
             </div>
 
             <div>
-              <label className={labelClass}>Regime Fiscal da Aquisição</label>
+              <label className={labelClass}>Regime Fiscal da Aquisição <Tip>Se a empresa está no regime normal de IVA, pode recuperar parte do IVA pago na compra e manutenção do carro.</Tip></label>
               <select value={ivaRegime} onChange={e=>setState({ivaRegime: e.target.value})} className={inputClass}>
                 <option value="normal">Compra Nova (Fatura c/ IVA)</option>
                 <option value="second_hand">Regime Bens em 2ª Mão</option>
@@ -189,7 +190,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
             </div>
 
             <div>
-              <label className={labelClass}>Serviço ou Atividade Associada</label>
+              <label className={labelClass}>Serviço ou Atividade Associada <Tip>A atividade para que serve a viatura: escolas de condução, rent-a-car e transportes públicos têm deduções de IVA a 100%.</Tip></label>
               <select value={activity} onChange={e=>setState({activity: e.target.value as any})} className={inputClass}>
                 <option value="other">Geral / Serviços / Comércio</option>
                 {category === 'comercial' && <option value="goods">Transporte Mercadorias (Alvará)</option>}
@@ -203,16 +204,16 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
               <h3 className="text-[12px] font-[800] text-[#0F172A] mb-4">ENCARGOS ANUAIS (COM IVA)</h3>
               <div className="space-y-[16px]">
                 <div>
-                  <label className="text-[11px] font-[700] text-[#64748B] uppercase">Manutenção & Oficinas</label>
-                  <input type="number" value={maintenanceCost} onChange={e=>setState({maintenanceCost: Number(e.target.value)})} className={cn(inputClass, "py-[8px] px-[12px] mt-1")} />
+                  <label className="text-[11px] font-[700] text-[#64748B] uppercase">Manutenção & Oficinas <Tip>O total gasto por ano em revisões, reparações, pneus e outros serviços de manutenção.</Tip></label>
+                  <input type="number" value={maintenanceCost === 0 ? '' : maintenanceCost} onChange={e=>setState({maintenanceCost: Number(e.target.value) || 0})} className={cn(inputClass, "py-[8px] px-[12px] mt-1")} />
                 </div>
                 <div>
-                  <label className="text-[11px] font-[700] text-[#64748B] uppercase">Seguro & Portagens</label>
-                  <input type="number" value={insuranceCost} onChange={e=>setState({insuranceCost: Number(e.target.value)})} className={cn(inputClass, "py-[8px] px-[12px] mt-1")} />
+                  <label className="text-[11px] font-[700] text-[#64748B] uppercase">Seguro & Portagens <Tip>O prémio anual do seguro automóvel. Geralmente dedutível como gasto da empresa.</Tip></label>
+                  <input type="number" value={insuranceCost === 0 ? '' : insuranceCost} onChange={e=>setState({insuranceCost: Number(e.target.value) || 0})} className={cn(inputClass, "py-[8px] px-[12px] mt-1")} />
                 </div>
                 <div>
-                  <label className="text-[11px] font-[700] text-[#64748B] uppercase">Combustível / Carga</label>
-                  <input type="number" value={fuelCost} onChange={e=>setState({fuelCost: Number(e.target.value)})} className={cn(inputClass, "py-[8px] px-[12px] mt-1")} />
+                  <label className="text-[11px] font-[700] text-[#64748B] uppercase">Combustível / Carga <Tip>O total gasto em combustível por ano. Parcialmente dedutível consoante o tipo de viatura.</Tip></label>
+                  <input type="number" value={fuelCost === 0 ? '' : fuelCost} onChange={e=>setState({fuelCost: Number(e.target.value) || 0})} className={cn(inputClass, "py-[8px] px-[12px] mt-1")} />
                 </div>
               </div>
             </div>
@@ -221,7 +222,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
               <label className="flex items-start gap-4 p-5 border-2 border-[#E2E8F0] rounded-[16px] cursor-pointer transition-colors hover:border-[#CBD5E1]">
                 <input type="checkbox" checked={exemptTA} onChange={e=>setState({exemptTA: e.target.checked})} className="mt-1 w-5 h-5 rounded border-[#E2E8F0] text-[#0F172A] focus:ring-[#0F172A]" />
                 <div>
-                  <span className="text-[14px] font-[700] text-[#0F172A] block">Dispensa de TA?</span>
+                  <span className="text-[14px] font-[700] text-[#0F172A] block">Dispensa de TA? <Tip>ISV é o Imposto sobre Veículos (antigo Imposto Automóvel). Certos veículos elétricos ou híbridos podem estar isentos.</Tip></span>
                   <span className="text-[12px] text-[#64748B] font-[500] leading-snug mt-1 block">Existe acordo escrito p/ imputação dos custos aos rendimentos do colaborador em sede de IRS.</span>
                 </div>
               </label>

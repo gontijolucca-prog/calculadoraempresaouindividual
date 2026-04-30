@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { useTheme } from './ThemeContext';
+import { Tip } from './Tip';
 import type { ClientProfile } from './ClientProfile';
 import { calculateIRS, calcIRSJovem, calcDependentsDeduction } from './lib/pt2026';
 
@@ -177,7 +178,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
       {sectionHeader(<I1 className={hdrIcon}/>, 'Folha 1 — Dados do Promotor')}
       <div className="grid grid-cols-2 gap-x-4 gap-y-4">
         <div className="col-span-2">
-          <label className={lblCls}>Situação Atual</label>
+          <label className={lblCls}>Situação Atual <Tip>A sua situação de trabalho atual: se é trabalhador por conta de outrem (empregado), empresário, reformado, etc.</Tip></label>
           <select value={profSit} onChange={e=>setState({profSit: e.target.value})} className={inputCls}>
             <option value="tco">Trab. Conta de Outrem (TCO)</option>
             <option value="desempregado">Desempregado</option>
@@ -185,25 +186,25 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           </select>
         </div>
         <div>
-          <label className={lblCls}>Idade</label>
-          <input type="number" value={age} onChange={e=>setState({age: Number(e.target.value)})} className={inputCls} />
+          <label className={lblCls}>Idade <Tip>A sua idade em anos. Afeta o benefício de IRS Jovem (para jovens até 35 anos com isenção parcial de IRS).</Tip></label>
+          <input type="number" value={age === 0 ? '' : age} onChange={e=>setState({age: Number(e.target.value) || 0})} className={inputCls} />
         </div>
         <label className="flex flex-col justify-end gap-2 p-3 bg-slate-50 border border-slate-200 rounded-[8px] cursor-pointer hover:bg-slate-100 transition-colors">
-          <span className={lblCls}>Atividade</span>
+          <span className={lblCls}>Atividade <Tip>Indica se a atividade empresarial é a sua principal fonte de rendimento. Afeta a taxa de Segurança Social aplicável.</Tip></span>
           <div className="flex items-center gap-2"><input type="checkbox" checked={isMainAct} onChange={e=>setState({isMainAct: e.target.checked})} className="w-4 h-4 accent-[#781D1D]" /><span className="text-[13px] font-[600] text-slate-700">Principal</span></div>
         </label>
         <div>
-          <label className={lblCls}>Rend. Atual / Ano</label>
-          <input type="number" value={currentInc} onChange={e=>setState({currentInc: Number(e.target.value)})} className={inputCls} />
+          <label className={lblCls}>Rend. Atual / Ano <Tip>O rendimento bruto que recebe atualmente (antes de impostos e descontos). Serve para comparar o que ganha como empregado vs. empresário.</Tip></label>
+          <input type="number" value={currentInc === 0 ? '' : currentInc} onChange={e=>setState({currentInc: Number(e.target.value) || 0})} className={inputCls} />
         </div>
         <div>
-          <label className={lblCls}>Subsistência / Mês</label>
-          <input type="number" value={monthlyNeed} onChange={e=>setState({monthlyNeed: Number(e.target.value)})} className={inputCls} />
+          <label className={lblCls}>Subsistência / Mês <Tip>Quanto precisa de receber por mês depois de impostos para cobrir as suas despesas pessoais.</Tip></label>
+          <input type="number" value={monthlyNeed === 0 ? '' : monthlyNeed} onChange={e=>setState({monthlyNeed: Number(e.target.value) || 0})} className={inputCls} />
         </div>
         {profile.beneficioJovem && profile.idade <= 35 && (
           <div className="col-span-2">
-            <label className={lblCls}>Anos de Atividade (IRS Jovem)</label>
-            <input type="number" min={0} max={5} value={anosAtividade} onChange={e=>setState({anosAtividade: Number(e.target.value)})} className={inputCls} />
+            <label className={lblCls}>Anos de Atividade (IRS Jovem) <Tip>Há quantos anos já exerce esta atividade. Afeta o benefício de IRS Jovem.</Tip></label>
+            <input type="number" min={0} max={5} value={anosAtividade === 0 ? '' : anosAtividade} onChange={e=>setState({anosAtividade: Number(e.target.value) || 0})} className={inputCls} />
             <p className="text-[11px] text-blue-600 mt-1 font-[600]">Art. 12º-B CIRS. 0 = 1º ano.</p>
           </div>
         )}
@@ -216,22 +217,22 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
       {sectionHeader(<I2 className={hdrIcon}/>, 'Folha 2 — O Negócio')}
       <div className="grid grid-cols-2 gap-x-4 gap-y-4">
         <div>
-          <label className={lblCls}>Tipo Venda</label>
+          <label className={lblCls}>Tipo Venda <Tip>Se presta serviços (consultoria, design, etc.) ou vende bens/produtos. Afeta a taxa de IVA e o coeficiente de tributação.</Tip></label>
           <select value={isServices ? 'svc' : 'prod'} onChange={e=>setState({isServices: e.target.value==='svc'})} className={inputCls}>
             <option value="svc">Serviços</option>
             <option value="prod">Bens Físicos</option>
           </select>
         </div>
         <div>
-          <label className={lblCls}>Público</label>
+          <label className={lblCls}>Público <Tip>B2B significa 'Business to Business': se vende principalmente a outras empresas. B2C é venda ao consumidor final. Afeta a importância do IVA.</Tip></label>
           <select value={b2b ? 'b2b' : 'b2c'} onChange={e=>setState({b2b: e.target.value==='b2b'})} className={inputCls}>
             <option value="b2b">Empresas (B2B)</option>
             <option value="b2c">Particulares (B2C)</option>
           </select>
         </div>
         <div className="col-span-2">
-          <label className={lblCls}>Previsão Faturação (Ano 1)</label>
-          <input type="number" value={rev} onChange={e=>setState({rev: Number(e.target.value)})} className={inputCls} />
+          <label className={lblCls}>Previsão Faturação (Ano 1) <Tip>O total de faturação anual que espera ter (todas as vendas/serviços). É a base para calcular impostos e regime de IVA.</Tip></label>
+          <input type="number" value={rev === 0 ? '' : rev} onChange={e=>setState({rev: Number(e.target.value) || 0})} className={inputCls} />
         </div>
         <label className="col-span-2 flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-[8px] cursor-pointer hover:bg-amber-100 transition-colors">
           <input type="checkbox" checked={isSeasonal} onChange={e=>setState({isSeasonal: e.target.checked})} className="mt-1 w-4 h-4 accent-amber-600" />
@@ -252,10 +253,10 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
     <div>
       {sectionHeader(<I3 className={hdrIcon}/>, 'Folha 3 — Investimento Inicial')}
       <div className="grid grid-cols-2 gap-x-4 gap-y-4">
-        <div><label className={lblCls}>Equipamento/Tech</label><input type="number" value={invEquip} onChange={e=>setState({invEquip: Number(e.target.value)})} className={inputCls} /></div>
-        <div><label className={lblCls}>Licenças / Registo</label><input type="number" value={invLic} onChange={e=>setState({invLic: Number(e.target.value)})} className={inputCls} /></div>
-        <div><label className={lblCls}>Obras / Espaço</label><input type="number" value={invWorks} onChange={e=>setState({invWorks: Number(e.target.value)})} className={inputCls} /></div>
-        <div><label className={lblCls}>Fundo de Maneio</label><input type="number" value={invFundo} onChange={e=>setState({invFundo: Number(e.target.value)})} className={inputCls} /></div>
+        <div><label className={lblCls}>Equipamento/Tech <Tip>Valor dos equipamentos que vai comprar para o negócio (computadores, máquinas, ferramentas). São considerados investimentos dedutíveis.</Tip></label><input type="number" value={invEquip === 0 ? '' : invEquip} onChange={e=>setState({invEquip: Number(e.target.value) || 0})} className={inputCls} /></div>
+        <div><label className={lblCls}>Licenças / Registo <Tip>Valor de licenças de software, patentes ou direitos que vai adquirir para o negócio.</Tip></label><input type="number" value={invLic === 0 ? '' : invLic} onChange={e=>setState({invLic: Number(e.target.value) || 0})} className={inputCls} /></div>
+        <div><label className={lblCls}>Obras / Espaço <Tip>Valor de obras de remodelação ou instalação do espaço de trabalho. São investimentos amortizáveis.</Tip></label><input type="number" value={invWorks === 0 ? '' : invWorks} onChange={e=>setState({invWorks: Number(e.target.value) || 0})} className={inputCls} /></div>
+        <div><label className={lblCls}>Fundo de Maneio <Tip>Dinheiro de reserva para pagar despesas correntes antes de receber dos clientes. Garante liquidez inicial.</Tip></label><input type="number" value={invFundo === 0 ? '' : invFundo} onChange={e=>setState({invFundo: Number(e.target.value) || 0})} className={inputCls} /></div>
         <div className="col-span-2 flex justify-between items-center bg-slate-50 p-3 rounded-[8px] border border-slate-100">
           <span className="text-[12px] font-[700] text-slate-500 uppercase">Total CapEx</span>
           <span className="text-[16px] font-[800] text-slate-800">{ptEur(results.totalInv)}</span>
@@ -268,10 +269,10 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
     <div>
       {sectionHeader(<I4 className={hdrIcon}/>, 'Folha 4 — Controlo de Custos')}
       <div className="grid grid-cols-2 gap-x-4 gap-y-4">
-        <div><label className={lblCls}>Custos Fixos / Mês</label><input type="number" value={fixedMo} onChange={e=>setState({fixedMo: Number(e.target.value)})} className={inputCls} /></div>
-        <div><label className={lblCls}>Custos Prod. / Ano</label><input type="number" value={varYr} onChange={e=>setState({varYr: Number(e.target.value)})} className={inputCls} /></div>
-        <div><label className={lblCls}>Contabilidade Lda/Mês</label><input type="number" value={accMoLda} onChange={e=>setState({accMoLda: Number(e.target.value)})} className={inputCls} /></div>
-        <div><label className={lblCls}>Contabilidade ENI/Mês</label><input type="number" value={accMoEni} onChange={e=>setState({accMoEni: Number(e.target.value)})} className={inputCls} /></div>
+        <div><label className={lblCls}>Custos Fixos / Mês <Tip>Despesas que paga todos os meses independentemente de faturar (renda, internet, seguro). São sempre dedutíveis.</Tip></label><input type="number" value={fixedMo === 0 ? '' : fixedMo} onChange={e=>setState({fixedMo: Number(e.target.value) || 0})} className={inputCls} /></div>
+        <div><label className={lblCls}>Custos Prod. / Ano <Tip>Despesas que variam com o volume de negócio (fornecedores, matérias-primas, publicidade).</Tip></label><input type="number" value={varYr === 0 ? '' : varYr} onChange={e=>setState({varYr: Number(e.target.value) || 0})} className={inputCls} /></div>
+        <div><label className={lblCls}>Contabilidade Lda/Mês <Tip>Custo mensal de contratar um contabilista para uma Lda. A contabilidade organizada é obrigatória para empresas.</Tip></label><input type="number" value={accMoLda === 0 ? '' : accMoLda} onChange={e=>setState({accMoLda: Number(e.target.value) || 0})} className={inputCls} /></div>
+        <div><label className={lblCls}>Contabilidade ENI/Mês <Tip>Custo mensal de contratar um contabilista para um ENI (Empresário em Nome Individual).</Tip></label><input type="number" value={accMoEni === 0 ? '' : accMoEni} onChange={e=>setState({accMoEni: Number(e.target.value) || 0})} className={inputCls} /></div>
       </div>
     </div>
   );
@@ -649,36 +650,36 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           {[
             { title: 'Promotor', icon: <I1 size={14} className="inline mr-1"/>, content: (
               <div className="grid grid-cols-2 gap-2">
-                <div className="col-span-2"><label className={compactLbl}>Situação</label>
+                <div className="col-span-2"><label className={compactLbl}>Situação <Tip>A sua situação de trabalho atual: se é trabalhador por conta de outrem (empregado), empresário, reformado, etc.</Tip></label>
                   <select value={profSit} onChange={e=>setState({profSit: e.target.value})} className={compactInput}>
                     <option value="tco">TCO</option><option value="desempregado">Desempregado</option><option value="outro">ENI</option>
                   </select></div>
-                <div><label className={compactLbl}>Idade</label><input type="number" value={age} onChange={e=>setState({age: Number(e.target.value)})} className={compactInput} /></div>
-                <div><label className={compactLbl}>Rend. Atual/Ano</label><input type="number" value={currentInc} onChange={e=>setState({currentInc: Number(e.target.value)})} className={compactInput} /></div>
-                <div><label className={compactLbl}>Subsist./Mês</label><input type="number" value={monthlyNeed} onChange={e=>setState({monthlyNeed: Number(e.target.value)})} className={compactInput} /></div>
+                <div><label className={compactLbl}>Idade <Tip>A sua idade em anos. Afeta o benefício de IRS Jovem (para jovens até 35 anos com isenção parcial de IRS).</Tip></label><input type="number" value={age === 0 ? '' : age} onChange={e=>setState({age: Number(e.target.value) || 0})} className={compactInput} /></div>
+                <div><label className={compactLbl}>Rend. Atual/Ano <Tip>O rendimento bruto que recebe atualmente (antes de impostos e descontos). Serve para comparar o que ganha como empregado vs. empresário.</Tip></label><input type="number" value={currentInc === 0 ? '' : currentInc} onChange={e=>setState({currentInc: Number(e.target.value) || 0})} className={compactInput} /></div>
+                <div><label className={compactLbl}>Subsist./Mês <Tip>Quanto precisa de receber por mês depois de impostos para cobrir as suas despesas pessoais.</Tip></label><input type="number" value={monthlyNeed === 0 ? '' : monthlyNeed} onChange={e=>setState({monthlyNeed: Number(e.target.value) || 0})} className={compactInput} /></div>
               </div>
             )},
             { title: 'Negócio', icon: <I2 size={14} className="inline mr-1"/>, content: (
               <div className="grid grid-cols-2 gap-2">
-                <div><label className={compactLbl}>Tipo</label><select value={isServices ? 'svc' : 'prod'} onChange={e=>setState({isServices: e.target.value==='svc'})} className={compactInput}><option value="svc">Serviços</option><option value="prod">Bens</option></select></div>
-                <div><label className={compactLbl}>Público</label><select value={b2b ? 'b2b' : 'b2c'} onChange={e=>setState({b2b: e.target.value==='b2b'})} className={compactInput}><option value="b2b">B2B</option><option value="b2c">B2C</option></select></div>
-                <div className="col-span-2"><label className={compactLbl}>Faturação Ano 1</label><input type="number" value={rev} onChange={e=>setState({rev: Number(e.target.value)})} className={compactInput} /></div>
+                <div><label className={compactLbl}>Tipo <Tip>Se presta serviços (consultoria, design, etc.) ou vende bens/produtos. Afeta a taxa de IVA e o coeficiente de tributação.</Tip></label><select value={isServices ? 'svc' : 'prod'} onChange={e=>setState({isServices: e.target.value==='svc'})} className={compactInput}><option value="svc">Serviços</option><option value="prod">Bens</option></select></div>
+                <div><label className={compactLbl}>Público <Tip>B2B significa 'Business to Business': se vende principalmente a outras empresas. B2C é venda ao consumidor final. Afeta a importância do IVA.</Tip></label><select value={b2b ? 'b2b' : 'b2c'} onChange={e=>setState({b2b: e.target.value==='b2b'})} className={compactInput}><option value="b2b">B2B</option><option value="b2c">B2C</option></select></div>
+                <div className="col-span-2"><label className={compactLbl}>Faturação Ano 1 <Tip>O total de faturação anual que espera ter (todas as vendas/serviços). É a base para calcular impostos e regime de IVA.</Tip></label><input type="number" value={rev === 0 ? '' : rev} onChange={e=>setState({rev: Number(e.target.value) || 0})} className={compactInput} /></div>
               </div>
             )},
             { title: 'Investimento', icon: <I3 size={14} className="inline mr-1"/>, content: (
               <div className="grid grid-cols-2 gap-2">
-                <div><label className={compactLbl}>Equipamento</label><input type="number" value={invEquip} onChange={e=>setState({invEquip: Number(e.target.value)})} className={compactInput} /></div>
-                <div><label className={compactLbl}>Licenças</label><input type="number" value={invLic} onChange={e=>setState({invLic: Number(e.target.value)})} className={compactInput} /></div>
-                <div><label className={compactLbl}>Obras</label><input type="number" value={invWorks} onChange={e=>setState({invWorks: Number(e.target.value)})} className={compactInput} /></div>
-                <div><label className={compactLbl}>Fundo Maneio</label><input type="number" value={invFundo} onChange={e=>setState({invFundo: Number(e.target.value)})} className={compactInput} /></div>
+                <div><label className={compactLbl}>Equipamento <Tip>Valor dos equipamentos que vai comprar para o negócio (computadores, máquinas, ferramentas). São considerados investimentos dedutíveis.</Tip></label><input type="number" value={invEquip === 0 ? '' : invEquip} onChange={e=>setState({invEquip: Number(e.target.value) || 0})} className={compactInput} /></div>
+                <div><label className={compactLbl}>Licenças <Tip>Valor de licenças de software, patentes ou direitos que vai adquirir para o negócio.</Tip></label><input type="number" value={invLic === 0 ? '' : invLic} onChange={e=>setState({invLic: Number(e.target.value) || 0})} className={compactInput} /></div>
+                <div><label className={compactLbl}>Obras <Tip>Valor de obras de remodelação ou instalação do espaço de trabalho. São investimentos amortizáveis.</Tip></label><input type="number" value={invWorks === 0 ? '' : invWorks} onChange={e=>setState({invWorks: Number(e.target.value) || 0})} className={compactInput} /></div>
+                <div><label className={compactLbl}>Fundo Maneio <Tip>Dinheiro de reserva para pagar despesas correntes antes de receber dos clientes. Garante liquidez inicial.</Tip></label><input type="number" value={invFundo === 0 ? '' : invFundo} onChange={e=>setState({invFundo: Number(e.target.value) || 0})} className={compactInput} /></div>
               </div>
             )},
             { title: 'Custos', icon: <I4 size={14} className="inline mr-1"/>, content: (
               <div className="grid grid-cols-2 gap-2">
-                <div><label className={compactLbl}>Fixos/Mês</label><input type="number" value={fixedMo} onChange={e=>setState({fixedMo: Number(e.target.value)})} className={compactInput} /></div>
-                <div><label className={compactLbl}>Prod./Ano</label><input type="number" value={varYr} onChange={e=>setState({varYr: Number(e.target.value)})} className={compactInput} /></div>
-                <div><label className={compactLbl}>Cont. Lda/Mês</label><input type="number" value={accMoLda} onChange={e=>setState({accMoLda: Number(e.target.value)})} className={compactInput} /></div>
-                <div><label className={compactLbl}>Cont. ENI/Mês</label><input type="number" value={accMoEni} onChange={e=>setState({accMoEni: Number(e.target.value)})} className={compactInput} /></div>
+                <div><label className={compactLbl}>Fixos/Mês <Tip>Despesas que paga todos os meses independentemente de faturar (renda, internet, seguro). São sempre dedutíveis.</Tip></label><input type="number" value={fixedMo === 0 ? '' : fixedMo} onChange={e=>setState({fixedMo: Number(e.target.value) || 0})} className={compactInput} /></div>
+                <div><label className={compactLbl}>Prod./Ano <Tip>Despesas que variam com o volume de negócio (fornecedores, matérias-primas, publicidade).</Tip></label><input type="number" value={varYr === 0 ? '' : varYr} onChange={e=>setState({varYr: Number(e.target.value) || 0})} className={compactInput} /></div>
+                <div><label className={compactLbl}>Cont. Lda/Mês <Tip>Custo mensal de contratar um contabilista para uma Lda. A contabilidade organizada é obrigatória para empresas.</Tip></label><input type="number" value={accMoLda === 0 ? '' : accMoLda} onChange={e=>setState({accMoLda: Number(e.target.value) || 0})} className={compactInput} /></div>
+                <div><label className={compactLbl}>Cont. ENI/Mês <Tip>Custo mensal de contratar um contabilista para um ENI (Empresário em Nome Individual).</Tip></label><input type="number" value={accMoEni === 0 ? '' : accMoEni} onChange={e=>setState({accMoEni: Number(e.target.value) || 0})} className={compactInput} /></div>
               </div>
             )},
           ].map(({ title, icon, content }, i) => (

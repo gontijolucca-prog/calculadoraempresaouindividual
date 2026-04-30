@@ -103,7 +103,6 @@ const getInitialSalarioState = (p: ClientProfileType): SalarioState => ({
 });
 
 function AppContent() {
-  const { layoutIndex, layoutName, nextLayout, prevLayout } = useTheme();
   const [loggedIn, setLoggedIn] = useState(false);
   const [showUpdateNotification, setShowUpdateNotification] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
@@ -235,7 +234,7 @@ function AppContent() {
     </>
   );
 
-  const CurrentLayout = LAYOUTS[layoutIndex].component;
+  const CurrentLayout = LAYOUTS[0].component;
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -286,25 +285,6 @@ function AppContent() {
           </div>
         </div>
       )}
-
-      {/* ── Layout switcher bar — always 3px tall, expands on hover ── */}
-      <div className="group/bar shrink-0 relative z-[200]">
-        <div className="h-[3px] group-hover/bar:h-[44px] transition-all duration-300 overflow-hidden bg-[#1C1917] flex items-center justify-center">
-          <div className="opacity-0 group-hover/bar:opacity-100 transition-opacity duration-200 delay-100 flex items-center gap-5">
-            <button onClick={prevLayout}
-              className="text-stone-400 hover:text-white text-xl px-4 font-[700] select-none transition-colors">
-              ←
-            </button>
-            <span className="text-[11px] font-[800] uppercase tracking-[3px] text-stone-300 whitespace-nowrap">
-              Layout: {layoutName}
-            </span>
-            <button onClick={nextLayout}
-              className="text-stone-400 hover:text-white text-xl px-4 font-[700] select-none transition-colors">
-              →
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* ── Persistent pending-updates banner ── */}
       {pendingCount > 0 && (

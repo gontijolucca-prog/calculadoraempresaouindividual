@@ -1,11 +1,9 @@
-import React, { createContext, useContext, useState } from 'react';
-import { LAYOUTS } from './Layouts';
+import React, { createContext, useContext } from 'react';
 
-export type SimMode = 'split' | 'stacked' | 'mosaic' | 'compact' | 'hero';
-const SIM_MODES: SimMode[] = ['split', 'stacked', 'mosaic', 'compact', 'hero'];
+export type SimMode = 'split';
 
 interface LayoutContextValue {
-  layoutIndex: number;
+  layoutIndex: 0;
   layoutName: string;
   simMode: SimMode;
   nextLayout: () => void;
@@ -14,25 +12,20 @@ interface LayoutContextValue {
 
 const LayoutContext = createContext<LayoutContextValue>({
   layoutIndex: 0,
-  layoutName: LAYOUTS[0].name,
+  layoutName: 'Top Bar Maroon',
   simMode: 'split',
   nextLayout: () => {},
   prevLayout: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [layoutIndex, setLayoutIndex] = useState(0);
-
-  const nextLayout = () => setLayoutIndex(i => (i + 1) % LAYOUTS.length);
-  const prevLayout = () => setLayoutIndex(i => (i - 1 + LAYOUTS.length) % LAYOUTS.length);
-
   return (
     <LayoutContext.Provider value={{
-      layoutIndex,
-      layoutName: LAYOUTS[layoutIndex].name,
-      simMode: SIM_MODES[layoutIndex],
-      nextLayout,
-      prevLayout,
+      layoutIndex: 0,
+      layoutName: 'Top Bar Maroon',
+      simMode: 'split',
+      nextLayout: () => {},
+      prevLayout: () => {},
     }}>
       {children}
     </LayoutContext.Provider>

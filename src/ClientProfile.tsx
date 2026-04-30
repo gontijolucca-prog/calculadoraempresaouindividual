@@ -1,5 +1,6 @@
 import React from 'react';
 import { User, Building2, FileText, Download, Ticket, Wallet, MapPin } from 'lucide-react';
+import { Tip } from './Tip';
 import { jsPDF } from 'jspdf';
 
 // Converte o SVG do logotipo para PNG data URL via canvas
@@ -524,7 +525,7 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
             </h3>
             <div className="grid grid-cols-2 gap-x-4 gap-y-4">
               <div>
-                <label className={labelClass}>Tipo de Entidade</label>
+                <label className={labelClass}>Tipo de Entidade <Tip>A forma jurídica do negócio: ENI é Empresário em Nome Individual (sem empresa criada), Lda. é uma sociedade de responsabilidade limitada, SA é uma sociedade anónima.</Tip></label>
                 <select value={profile.tipoEntidade} onChange={e => updateProfile('tipoEntidade', e.target.value)} className={inputClass}>
                   <option value="eni">ENI (Recibos Verdes)</option>
                   <option value="lda">Lda (Sociedade)</option>
@@ -538,15 +539,15 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
                 <input type="text" value={profile.cae} onChange={e => updateProfile('cae', e.target.value)} className={inputClass} placeholder="62020" />
               </div>
               <div>
-                <label className={labelClass}>Faturação Anual Prevista</label>
-                <input type="number" value={profile.faturaçaoAnualPrevista} onChange={e => updateProfile('faturaçaoAnualPrevista', Number(e.target.value))} className={inputClass} placeholder="60000" />
+                <label className={labelClass}>Faturação Anual Prevista <Tip>O total de vendas/serviços que espera faturar num ano. Base para escolher o regime de IVA e calcular impostos.</Tip></label>
+                <input type="number" value={profile.faturaçaoAnualPrevista === 0 ? '' : profile.faturaçaoAnualPrevista} onChange={e => updateProfile('faturaçaoAnualPrevista', Number(e.target.value) || 0)} className={inputClass} placeholder="60000" />
               </div>
               <div>
-                <label className={labelClass}>Nr. Funcionários</label>
-                <input type="number" value={profile.nrFuncionarios} onChange={e => updateProfile('nrFuncionarios', Number(e.target.value))} className={inputClass} placeholder="5" />
+                <label className={labelClass}>Nr. Funcionários <Tip>Quantas pessoas trabalham na empresa com contrato de trabalho. Afeta os custos de Segurança Social patronal.</Tip></label>
+                <input type="number" value={profile.nrFuncionarios === 0 ? '' : profile.nrFuncionarios} onChange={e => updateProfile('nrFuncionarios', Number(e.target.value) || 0)} className={inputClass} placeholder="5" />
               </div>
               <div>
-                <label className={labelClass}>Regime IVA</label>
+                <label className={labelClass}>Regime IVA <Tip>IVA é o Imposto sobre o Valor Acrescentado. O regime trimestral entrega declarações de 3 em 3 meses; o mensal, todos os meses. Isentos não cobram IVA.</Tip></label>
                 <select value={profile.regimeIva} onChange={e => updateProfile('regimeIva', e.target.value)} className={inputClass}>
                   <option value="isento">Isento (Art. 53.º CIVA)</option>
                   <option value="normal_trimestral">Normal Trimestral</option>
@@ -555,7 +556,7 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
                 </select>
               </div>
               <div>
-                <label className={labelClass}>Regime de Contabilidade</label>
+                <label className={labelClass}>Regime de Contabilidade <Tip>Contabilidade Organizada exige contabilista e permite deduzir mais custos. Regime Simplificado é mais fácil mas com menos deduções.</Tip></label>
                 <select
                   value={profile.regimeContabilidade}
                   onChange={e => updateProfile('regimeContabilidade', e.target.value)}
@@ -569,11 +570,11 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
                 </select>
               </div>
               <div>
-                <label className={labelClass}>Ano Início Atividade</label>
-                <input type="number" value={profile.inicioAtividade} onChange={e => updateProfile('inicioAtividade', Number(e.target.value))} className={inputClass} min={2000} max={currentYear} />
+                <label className={labelClass}>Ano Início Atividade <Tip>O ano em que iniciou a atividade. Determina há quantos anos está ativo para efeitos de IRS Jovem.</Tip></label>
+                <input type="number" value={profile.inicioAtividade === 0 ? '' : profile.inicioAtividade} onChange={e => updateProfile('inicioAtividade', Number(e.target.value) || 0)} className={inputClass} min={2000} max={currentYear} />
               </div>
               <div>
-                <label className={labelClass}>Atividade Principal</label>
+                <label className={labelClass}>Atividade Principal <Tip>O setor de negócio principal: se presta serviços (consultoria, design, etc.) ou vende bens/produtos físicos.</Tip></label>
                 <select value={profile.atividadePrincipal} onChange={e => updateProfile('atividadePrincipal', e.target.value)} className={inputClass}>
                   <option value="servicos">Prestação de Serviços</option>
                   <option value="bens">Venda de Bens</option>
@@ -581,7 +582,7 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
               </div>
               <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-[8px] cursor-pointer">
                 <input type="checkbox" checked={profile.isSazonal} onChange={e => updateProfile('isSazonal', e.target.checked)} className="w-4 h-4 accent-[#781D1D]" />
-                <span className="text-[13px] font-[600] text-slate-700">Atividade Sazonal</span>
+                <span className="text-[13px] font-[600] text-slate-700">Atividade Sazonal <Tip>Se o negócio só funciona em certas épocas (ex: turismo de praia, agricultura). Afeta os cálculos de SS.</Tip></span>
               </label>
               {/* Regime warnings */}
               {profile.tipoEntidade === 'eni' && profile.regimeContabilidade === 'simplificado' && profile.faturaçaoAnualPrevista > 200000 && (
@@ -625,11 +626,11 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
             </h3>
             <div className="grid grid-cols-2 gap-x-4 gap-y-4">
               <div>
-                <label className={labelClass}>Idade</label>
-                <input type="number" value={profile.idade} onChange={e => updateProfile('idade', Number(e.target.value))} className={inputClass} min={18} max={100} />
+                <label className={labelClass}>Idade <Tip>A sua idade. Determina se tem direito ao benefício de IRS Jovem (até 35 anos).</Tip></label>
+                <input type="number" value={profile.idade === 0 ? '' : profile.idade} onChange={e => updateProfile('idade', Number(e.target.value) || 0)} className={inputClass} min={18} max={100} />
               </div>
               <div>
-                <label className={labelClass}>Estado Civil</label>
+                <label className={labelClass}>Estado Civil <Tip>O estado civil afeta as tabelas de retenção de IRS (quanto desconta por mês). Casado com dois titulares tem tabelas diferentes.</Tip></label>
                 <select value={profile.estadoCivil} onChange={e => updateProfile('estadoCivil', e.target.value)} className={inputClass}>
                   <option value="solteiro">Solteiro</option>
                   <option value="casado">Casado</option>
@@ -639,8 +640,8 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
                 </select>
               </div>
               <div>
-                <label className={labelClass}>Nr. Dependentes</label>
-                <input type="number" value={profile.nrDependentes} onChange={e => updateProfile('nrDependentes', Number(e.target.value))} className={inputClass} min={0} max={10} />
+                <label className={labelClass}>Nr. Dependentes <Tip>Número de filhos ou dependentes a cargo. Cada dependente dá direito a deduções no IRS.</Tip></label>
+                <input type="number" value={profile.nrDependentes === 0 ? '' : profile.nrDependentes} onChange={e => updateProfile('nrDependentes', Number(e.target.value) || 0)} className={inputClass} min={0} max={10} />
               </div>
               <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-[8px] cursor-pointer">
                 <input type="checkbox" checked={profile.cônjugeRendimentos} onChange={e => updateProfile('cônjugeRendimentos', e.target.checked)} className="w-4 h-4 accent-[#781D1D]" />
@@ -648,7 +649,7 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
               </label>
               <label className="col-span-2 flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-[8px] cursor-pointer">
                 <input type="checkbox" checked={profile.beneficioJovem} onChange={e => updateProfile('beneficioJovem', e.target.checked)} className="w-4 h-4 accent-blue-600" />
-                <span className="text-[13px] font-[600] text-blue-900">Benefício Jovem IRS (≤35 anos — CIRS Art. 12º-B)</span>
+                <span className="text-[13px] font-[600] text-blue-900">Benefício Jovem IRS (≤35 anos — CIRS Art. 12º-B) <Tip>Isenção parcial de IRS para jovens até 35 anos nos primeiros anos de trabalho. Reduz significativamente o imposto a pagar.</Tip></span>
               </label>
             </div>
           </section>
