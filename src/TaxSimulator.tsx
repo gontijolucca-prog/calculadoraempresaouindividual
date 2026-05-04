@@ -322,7 +322,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
       </h4>
       <div className="space-y-3 mb-6 flex-1">
         <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-          <span className="text-[13px] font-[600] text-slate-600">IRS Agravado {results.irsJovemDeduction > 0 ? '(c/ IRS Jovem)' : ''}</span>
+          <span className="text-[13px] font-[600] text-slate-600">IRS Agravado <Tip>O IRS para recibos verdes tem taxas progressivas mais elevadas. Calcula-se aplicando as tabelas de retenção aos rendimento(Category B).</Tip> {results.irsJovemDeduction > 0 ? '(c/ IRS Jovem)' : ''}</span>
           <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.eni.irs)}</span>
         </div>
         {results.depsDeduction > 0 && (
@@ -332,21 +332,21 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           </div>
         )}
         <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-          <span className="text-[13px] font-[600] text-slate-600">Seg. Social (21,4%)</span>
+          <span className="text-[13px] font-[600] text-slate-600">Seg. Social (21,4%) <Tip>A contribuição para a Segurança Social de trabalhador independente (ENI). Taxa de 21,4% sobre a base de cálculo.</Tip></span>
           <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.eni.ss)}</span>
         </div>
         <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-          <span className="text-[13px] font-[600] text-slate-600">Custos & Contabilidade</span>
+          <span className="text-[13px] font-[600] text-slate-600">Custos & Contabilidade <Tip>Custos fixos anuais + custos variáveis + custo do contabilista. Soma das despesas do negócio.</Tip></span>
           <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.eni.costs)}</span>
         </div>
       </div>
       <div className="bg-slate-50 p-4 rounded-[12px] space-y-2">
         <div className="flex justify-between items-center">
-          <span className="text-[11px] font-[700] text-slate-500 uppercase tracking-widest">Net Income Ano 1</span>
+          <span className="text-[11px] font-[700] text-slate-500 uppercase tracking-widest">Net Income Ano 1 <Tip>Rendimento líquido: quanto sobra depois de pagar impostos, contribuições de SS e todas as despesas do negócio.</Tip></span>
           <span className="text-[20px] font-[800] text-[#0F172A]">{ptEur(results.eni.net)}</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-[11px] font-[700] text-slate-500 uppercase tracking-widest">Cash-Flow Livre Y1</span>
+          <span className="text-[11px] font-[700] text-slate-500 uppercase tracking-widest">Cash-Flow Livre Y1 <Tip>Dinheiro disponível após pagar tudo (impostos, contribuições, custos) e ainda descontar o investimento inicial. Valor positivo significa que gerou riqueza.</Tip></span>
           <span className="text-[18px] font-[800] text-emerald-600">{ptEur(results.eni.cashFlow)}</span>
         </div>
       </div>
@@ -384,21 +384,21 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           </div>
         )}
         <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-          <span className="text-[13px] font-[600] text-slate-600">TSU (23,75% + 11%)</span>
+          <span className="text-[13px] font-[600] text-slate-600">TSU (23,75% + 11%) <Tip>TSU = Taxa Social Única. 23,75% é a contribuição da empresa para SS, 11% é a retenção do funcionário.</Tip></span>
           <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.lda.ssComp + results.lda.ssEmp)}</span>
         </div>
         <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-          <span className="text-[13px] font-[600] text-slate-600">Custos & Contabilidade</span>
+          <span className="text-[13px] font-[600] text-slate-600">Custos & Contabilidade <Tip>Custos fixos anuais + custos variáveis + custo do contabilista. Soma das despesas do negócio.</Tip></span>
           <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.lda.costs)}</span>
         </div>
       </div>
       <div className="bg-slate-50 p-4 rounded-[12px] space-y-2">
         <div className="flex justify-between items-center">
-          <span className="text-[11px] font-[700] text-slate-500 uppercase tracking-widest">Lucro + Remuneração</span>
+          <span className="text-[11px] font-[700] text-slate-500 uppercase tracking-widest">Lucro + Remuneração <Tip>Lucro da empresa após IRC mais o salário que recebe como gestor. É o rendimento total anual.</Tip></span>
           <span className="text-[20px] font-[800] text-[#0F172A]">{ptEur(results.lda.net)}</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-[11px] font-[700] text-slate-500 uppercase tracking-widest">Cash-Flow Holding Y1</span>
+          <span className="text-[11px] font-[700] text-slate-500 uppercase tracking-widest">Cash-Flow Holding Y1 <Tip>Dinheiro disponível na sociedade depois de pagar IRC, salários e descontar investimentos. Indicador de saúde financeira da empresa.</Tip></span>
           <span className="text-[18px] font-[800] text-[#781D1D]">{ptEur(results.lda.cashFlow)}</span>
         </div>
       </div>
@@ -410,9 +410,9 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
       {(results.ppc > 0 || results.retencaoFonte > 0) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {results.ppc > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-[16px] p-5">
-              <div className="text-amber-800 font-[800] flex items-center gap-2 mb-2 text-[13px]"><Calculator size={15}/> Pagamentos por Conta (PPC)</div>
-              <p className="text-[12px] text-amber-900 font-[500] mb-3">Pagamentos antecipados em julho, setembro e dezembro.</p>
+        <div className="bg-amber-50 border border-amber-200 rounded-[16px] p-5">
+          <div className="text-amber-800 font-[800] flex items-center gap-2 mb-2 text-[13px]"><Calculator size={15}/> Pagamentos por Conta (PPC) <Tip>PPC são pagamentos antecipados de IRC que as empresas fazem em julho, setembro e dezembro. São antecipados com base no lucro do ano anterior.</Tip></div>
+          <p className="text-[12px] text-amber-900 font-[500] mb-3">Pagamentos antecipados em julho, setembro e dezembro.</p>
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-white p-2 rounded-[8px] border border-amber-100 text-center">
                   <div className="text-[10px] text-slate-500 font-[600] uppercase">Por Prestação</div>
@@ -444,14 +444,14 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-amber-50 border border-amber-200 rounded-[20px] p-6 shadow-sm">
-          <div className="text-amber-800 font-[800] flex items-center gap-2 mb-3"><PieChart size={18}/> Break-Even</div>
+          <div className="text-amber-800 font-[800] flex items-center gap-2 mb-3"><PieChart size={18}/> Break-Even <Tip>Break-Even ou Ponto de Equilíbrio é o valor de faturação necessário para cobrir todos os custos. Abaixo deste valor, há prejuízo; acima, há lucro.</Tip></div>
           <div className="space-y-2">
             <div className="bg-white p-3 rounded-[8px] flex justify-between items-center border border-amber-100">
-              <span className="text-[12px] font-[600] text-slate-500 uppercase">Empresa</span>
+              <span className="text-[12px] font-[600] text-slate-500 uppercase">Empresa <Tip>Quanto precisa de faturar por ano para cobrir custos fixos + salários + contribuições de SS.</Tip></span>
               <strong className="font-mono text-[14px]">{ptEur(results.beLda)}<span className="text-[11px] text-slate-400 font-sans">/ano</span></strong>
             </div>
             <div className="bg-white p-3 rounded-[8px] flex justify-between items-center border border-amber-100">
-              <span className="text-[12px] font-[600] text-slate-500 uppercase">Recibos Verdes</span>
+              <span className="text-[12px] font-[600] text-slate-500 uppercase">Recibos Verdes <Tip>Quanto precisa de faturar por ano para cobrir custos fixos + impostos + contribuições de SS.</Tip></span>
               <strong className="font-mono text-[14px]">{ptEur(results.beEni)}<span className="text-[11px] text-slate-400 font-sans">/ano</span></strong>
             </div>
           </div>
@@ -474,8 +474,8 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
   ════════════════════════════════════════════════ */
   if (simMode === 'split') {
     return (
-      <div className="h-full flex flex-col xl:flex-row bg-[#F8FAFC]">
-        <div className="xl:w-[480px] shrink-0 bg-white border-r border-[#E2E8F0] overflow-y-auto h-full flex flex-col">
+      <div className="overflow-y-auto lg:overflow-hidden lg:h-full lg:flex lg:flex-row bg-[#F8FAFC]">
+        <div className="lg:w-[460px] shrink-0 bg-white border-b border-[#E2E8F0] lg:border-b-0 lg:border-r lg:overflow-y-auto lg:h-full flex flex-col">
           <div className="p-6 md:p-8 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md z-20 border-b border-[#F1F5F9]">
             <div>
               <h2 className="text-[20px] font-[800] tracking-[-0.5px] text-[#0F172A]">Recofatima Simuladores</h2>
@@ -488,7 +488,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           </div>
         </div>
 
-        <div className="flex-1 p-6 md:p-10 overflow-y-auto w-full flex flex-col gap-8 max-w-7xl mx-auto">
+        <div className="flex-1 p-4 sm:p-6 lg:p-10 lg:overflow-y-auto lg:h-full w-full flex flex-col gap-6 lg:gap-8 max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-[32px] md:text-[40px] font-[800] tracking-[-1.5px] text-[#0F172A] leading-[1.1]">Dashboard Decision Financeiro</h1>

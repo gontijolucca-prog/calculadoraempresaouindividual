@@ -36,7 +36,7 @@ interface VehicleSimulatorState {
 }
 
 interface TicketSimulatorState {
-  employees: number; ticketValue: number; daysPerMonth: number; months: number;
+  employees: number; ticketValue: number; daysPerMonth: number; months: number; ticketType: string;
 }
 
 interface SSState {
@@ -62,7 +62,7 @@ const getInitialVehicleState = (): VehicleSimulatorState => ({
 });
 
 const getInitialTicketState = (p: ClientProfileType): TicketSimulatorState => ({
-  employees: p.nrFuncionarios, ticketValue: p.valorTicket, daysPerMonth: 22, months: 12,
+  employees: p.nrFuncionarios, ticketValue: p.valorTicket, daysPerMonth: 22, months: 12, ticketType: 'alimentacao',
 });
 
 const getInitialSSState = (p: ClientProfileType): SSState => ({
@@ -97,6 +97,7 @@ const getInitialSalarioState = (p: ClientProfileType): SalarioState => ({
   nrDependentes: p.nrDependentes, localizacao: 'continente',
   duodecimos: false, subsidioAlimentacaoDiario: 6.15,
   tipoSubsidio: 'dinheiro', diasSubsidio: 22,
+  ticketRefeicaoDiario: 0, ticketRefeicaoDias: 0,
   irsJovem: p.beneficioJovem && p.idade <= 35,
   anosAtividade: Math.max(0, new Date().getFullYear() - p.inicioAtividade),
   idade: p.idade,
@@ -309,6 +310,7 @@ function AppContent() {
           setView={setView as (v: ViewType) => void}
           prevView={prevView}
           openLegal={openLegal}
+          openUpdates={openUpdates}
         >
           {content}
         </CurrentLayout>

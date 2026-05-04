@@ -10,3 +10,17 @@ body {
   background-color: #F8FAFC;
   color: #1E293B;
 }
+
+/* Hide scrollbar but keep scrollability (used on nav) */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Clamp text to avoid overflow in small containers */
+@media (max-width: 640px) {
+  h1 { font-size: clamp(1.4rem, 5vw, 2.5rem) !important; }
+}

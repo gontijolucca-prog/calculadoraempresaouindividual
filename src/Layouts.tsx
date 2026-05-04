@@ -1,8 +1,9 @@
 import React from 'react';
 import {
-  UserCircle, Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote, Info,
+  UserCircle, Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote, Info, ClipboardList,
 } from 'lucide-react';
 import { cn } from './lib/utils';
+import { Tip } from './Tip';
 
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
@@ -13,6 +14,7 @@ export interface LayoutProps {
   setView: (v: ViewType) => void;
   prevView: ViewType;
   openLegal: () => void;
+  openUpdates: () => void;
   children: React.ReactNode;
 }
 
@@ -28,6 +30,18 @@ const NAV_ITEMS = [
   { id: 'salario'    as ViewType, label: 'Salário',      Icon: Banknote,   group: 'tool'    },
 ] as const;
 
+const NAV_TIPS: Record<string, string> = {
+  profile: 'Dados do cliente: situação fiscal, idade, faturação. Alimenta automaticamente todos os simuladores.',
+  tax: 'Simulador fiscal: compara a carga de IRS/IRC entre ENI (recibos verdes) e Lda para a sua situação.',
+  vehicle: 'Calcula o IVA recuperável na compra/manutenção de viaturas e a Tributação Autónoma sobre encargos.',
+  ticket: 'Subsídio de alimentação em vales: isento de IRS e SS até ao limite legal. Calcula a poupança anual.',
+  selfss: 'Segurança Social de Independente — contribuições à SS para trabalhadores a recibos verdes ou ENI.',
+  diagnostico: 'Avalia a solidez da empresa em 5 pilares: autonomia financeira, tesouraria, rentabilidade, dependência e maturidade operacional.',
+  imoveis: 'Guia de decisão: arrendar o imóvel à empresa vs. transferi-lo como entrada em espécie.',
+  imt: 'Imposto Municipal sobre Transmissões: calcula o IMT e o Imposto de Selo na compra de imóveis.',
+  salario: 'Calcula o salário líquido mensal de um trabalhador e o custo total para a empresa.',
+};
+
 function Logo({ className = 'w-7 h-7' }: { className?: string }) {
   return (
     <svg viewBox="0 0 100 80" className={className} fill="none">
@@ -37,22 +51,25 @@ function Logo({ className = 'w-7 h-7' }: { className?: string }) {
   );
 }
 
-export function SidebarLayout({ view, setView, prevView, openLegal, children }: LayoutProps) {
+export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates, children }: LayoutProps) {
   const active = view === 'legal' || view === 'updates' ? prevView : view;
 
   return (
     <div className="h-full w-full flex flex-col bg-[#F8FAFC] overflow-hidden">
       {/* Top Navigation Bar */}
-      <header className="bg-white border-b border-slate-200 shrink-0 flex items-center h-[52px] px-4 gap-0 overflow-x-auto shadow-sm">
+      <header className="bg-white border-b border-slate-200 shrink-0 flex items-center min-h-[52px] px-3 gap-0 overflow-x-auto shadow-sm scrollbar-none">
 
-        {/* Brand */}
-        <div className="flex items-center gap-2.5 mr-3 shrink-0">
+        {/* Brand / Home button */}
+        <button
+          onClick={() => setView('profile')}
+          className="flex items-center gap-2 mr-2 shrink-0 bg-transparent border-none p-0 cursor-pointer"
+        >
           <Logo />
           <div className="hidden sm:block">
-            <div className="text-[14px] font-[800] text-[#1E293B] tracking-[-0.3px] leading-none">RECOFATIMA</div>
+            <div className="text-[13px] font-[800] text-[#1E293B] tracking-[-0.3px] leading-none">RECOFATIMA</div>
             <div className="text-[9px] font-[600] text-[#781D1D] uppercase tracking-[0.5px] leading-none mt-[2px]">Contabilidade</div>
           </div>
-        </div>
+        </button>
 
         <div className="h-5 w-px bg-slate-200 mx-2 shrink-0" />
 
@@ -62,19 +79,19 @@ export function SidebarLayout({ view, setView, prevView, openLegal, children }: 
             key={id}
             onClick={() => setView(id)}
             className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[12px] font-[600] transition-colors shrink-0",
+              "flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] transition-colors shrink-0",
               active === id
                 ? "bg-[#0F172A] text-white shadow-sm"
                 : "text-slate-500 hover:text-[#0F172A] hover:bg-slate-100"
             )}
           >
-            <Icon className="w-3.5 h-3.5" />
-            {label}
+            <Icon className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+            <span className="hidden sm:inline">{label}</span>
           </button>
         ))}
 
-        <div className="h-5 w-px bg-slate-200 mx-2.5 shrink-0" />
-        <span className="text-[9px] font-[800] uppercase tracking-[2px] text-slate-400 mr-2 shrink-0 hidden md:block">Simuladores</span>
+        <div className="h-5 w-px bg-slate-200 mx-2 shrink-0" />
+        <span className="text-[9px] font-[800] uppercase tracking-[2px] text-slate-400 mr-1.5 shrink-0 hidden md:block">Simuladores</span>
 
         {/* Sim buttons */}
         {NAV_ITEMS.filter(n => n.group === 'sim').map(({ id, label, Icon }) => (
@@ -82,19 +99,19 @@ export function SidebarLayout({ view, setView, prevView, openLegal, children }: 
             key={id}
             onClick={() => setView(id)}
             className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[12px] font-[600] transition-colors mr-1 shrink-0",
+              "flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] transition-colors mr-0.5 shrink-0",
               active === id
                 ? "bg-[#781D1D] text-white shadow-sm shadow-[#781D1D]/20"
                 : "text-slate-500 hover:text-[#781D1D] hover:bg-[#781D1D]/8"
             )}
           >
-            <Icon className="w-3.5 h-3.5" />
-            <span className="hidden lg:inline">{label}</span>
+            <Icon className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+            <span className="hidden lg:inline ml-0.5">{label}</span>
           </button>
         ))}
 
-        <div className="h-5 w-px bg-slate-200 mx-2.5 shrink-0" />
-        <span className="text-[9px] font-[800] uppercase tracking-[2px] text-slate-400 mr-2 shrink-0 hidden md:block">Análise</span>
+        <div className="h-5 w-px bg-slate-200 mx-2 shrink-0" />
+        <span className="text-[9px] font-[800] uppercase tracking-[2px] text-slate-400 mr-1.5 shrink-0 hidden md:block">Análise</span>
 
         {/* Tool buttons */}
         {NAV_ITEMS.filter(n => n.group === 'tool').map(({ id, label, Icon }) => (
@@ -102,26 +119,35 @@ export function SidebarLayout({ view, setView, prevView, openLegal, children }: 
             key={id}
             onClick={() => setView(id)}
             className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[12px] font-[600] transition-colors mr-1 shrink-0",
+              "flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] transition-colors mr-0.5 shrink-0",
               active === id
                 ? "bg-[#781D1D] text-white shadow-sm shadow-[#781D1D]/20"
                 : "text-slate-500 hover:text-[#781D1D] hover:bg-[#781D1D]/8"
             )}
           >
-            <Icon className="w-3.5 h-3.5" />
-            <span className="hidden lg:inline">{label}</span>
+            <Icon className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+            <span className="hidden lg:inline ml-0.5">{label}</span>
           </button>
         ))}
 
-        {/* Info / Legal button */}
+        {/* Side buttons group (Checklist + Legal) */}
         {view !== 'legal' && view !== 'updates' && (
-          <button
-            onClick={openLegal}
-            className="ml-auto shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[12px] font-[600] text-slate-500 hover:text-[#781D1D] hover:bg-[#781D1D]/8 transition-colors border border-slate-200"
-          >
-            <Info className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Legal</span>
-          </button>
+          <div className="ml-auto flex items-center gap-1 shrink-0">
+            <button
+              onClick={openUpdates}
+              className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] text-white bg-[#781D1D] hover:bg-[#5A1313] transition-colors shadow-sm shadow-[#781D1D]/20"
+            >
+              <ClipboardList className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+              <span className="hidden sm:inline">Checklist</span>
+            </button>
+            <button
+              onClick={openLegal}
+              className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] text-slate-500 hover:text-[#781D1D] hover:bg-[#781D1D]/8 transition-colors border border-slate-200"
+            >
+              <Info className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+              <span className="hidden sm:inline">Legal</span>
+            </button>
+          </div>
         )}
       </header>
 

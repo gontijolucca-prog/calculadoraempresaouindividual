@@ -30,9 +30,9 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
   const s = initialState;
   const setState = (u: Partial<IMTState>) => onStateChange({ ...s, ...u });
   const { simMode } = useTheme();
-  const outerCls = { split: "h-full flex flex-col md:grid md:grid-cols-[380px_1fr] bg-[#F8FAFC] text-[#1E293B]", stacked: "h-full flex flex-col bg-[#F0F4F8] text-[#1E293B] overflow-y-auto", mosaic: "h-full bg-[#F0FDF4] text-[#1E293B] md:grid md:grid-cols-2 gap-4 p-4", compact: "h-full overflow-y-auto bg-white text-[#1E293B]", hero: "h-full flex md:flex-row-reverse overflow-hidden bg-[#F5F5F4] text-[#1E293B]" }[simMode];
-  const leftCls = { split: "bg-white border-r border-[#E2E8F0] overflow-y-auto p-[28px] flex flex-col gap-[24px] h-full", stacked: "bg-white border-b-2 border-[#E2E8F0] p-6 flex flex-col gap-5", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pb-0 w-full", hero: "md:w-[400px] shrink-0 bg-white border-l border-[#E2E8F0] overflow-y-auto p-6 flex flex-col gap-5 h-full" }[simMode];
-  const rightCls = { split: "overflow-y-auto p-[28px] flex flex-col gap-[16px]", stacked: "p-6 flex flex-col gap-4 max-w-7xl mx-auto w-full", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-4 h-full", compact: "max-w-xl mx-auto p-4 pt-2 w-full border-t border-slate-100", hero: "flex-1 overflow-y-auto p-6 flex flex-col gap-4" }[simMode];
+  const outerCls = { split: "overflow-y-auto lg:overflow-hidden lg:h-full lg:grid lg:grid-cols-[380px_1fr] bg-[#F8FAFC] text-[#1E293B]", stacked: "h-full flex flex-col bg-[#F0F4F8] text-[#1E293B] overflow-y-auto", mosaic: "h-full bg-[#F0FDF4] text-[#1E293B] md:grid md:grid-cols-2 gap-4 p-4", compact: "h-full overflow-y-auto bg-white text-[#1E293B]", hero: "h-full flex md:flex-row-reverse overflow-hidden bg-[#F5F5F4] text-[#1E293B]" }[simMode];
+  const leftCls = { split: "bg-white border-b border-[#E2E8F0] lg:border-b-0 lg:border-r lg:overflow-y-auto p-4 sm:p-5 lg:p-[28px] flex flex-col gap-4 lg:gap-[24px] lg:h-full", stacked: "bg-white border-b-2 border-[#E2E8F0] p-6 flex flex-col gap-5", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pb-0 w-full", hero: "md:w-[400px] shrink-0 bg-white border-l border-[#E2E8F0] overflow-y-auto p-6 flex flex-col gap-5 h-full" }[simMode];
+  const rightCls = { split: "p-4 sm:p-5 lg:p-[28px] lg:overflow-y-auto lg:h-full flex flex-col gap-4 lg:gap-[16px]", stacked: "p-6 flex flex-col gap-4 max-w-7xl mx-auto w-full", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-4 h-full", compact: "max-w-xl mx-auto p-4 pt-2 w-full border-t border-slate-100", hero: "flex-1 overflow-y-auto p-6 flex flex-col gap-4" }[simMode];
 
   const result = useMemo(() => {
     if (s.valor <= 0) return null;
@@ -52,8 +52,8 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
       {/* Left Pane */}
       <div className={leftCls}>
         <div>
-          <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador IMT</h2>
-          <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Imposto Municipal sobre Transmissões + Imposto de Selo (2026).</p>
+          <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador IMT <Tip>IMT = Imposto Municipal sobre Transmissões Onerosas de Imóveis. É pago pelo comprador no momento da escritura de compra e venda. Em 2026, jovens até 35 anos na 1ª habitação têm isenção total até €330.539.</Tip></h2>
+          <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Imposto Municipal sobre Transmissões + Imposto de Selo (2026). <Tip>Para além do IMT, a compra de imóveis tem sempre Imposto de Selo de 0,8% sobre o valor de transação. Juntos, são o principal custo fiscal da compra.</Tip></p>
         </div>
 
         <div className="space-y-[20px]">
@@ -174,15 +174,15 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
             {/* Cards de impostos */}
             <div className="grid grid-cols-3 gap-[12px]">
               {[
-                { label: 'IMT', value: result.imt, color: result.imt === 0 ? 'emerald' : 'red' },
-                { label: 'Imposto de Selo', value: result.impostoSelo, color: result.impostoSelo === 0 ? 'emerald' : 'orange' },
-                { label: 'Total Impostos', value: result.total, color: result.total === 0 ? 'emerald' : 'red' },
-              ].map(({ label, value, color }) => (
+                { label: 'IMT', value: result.imt, color: result.imt === 0 ? 'emerald' : 'red', tip: 'Imposto Municipal sobre Transmissões: calculado em escalões progressivos sobre o preço de compra. Quanto mais caro o imóvel, maior a taxa.' },
+                { label: 'Imposto de Selo', value: result.impostoSelo, color: result.impostoSelo === 0 ? 'emerald' : 'orange', tip: 'Imposto de Selo de 0,8% sobre o valor de transação (TGIS verba 1.1). Pago pelo comprador, separado do IMT.' },
+                { label: 'Total Impostos', value: result.total, color: result.total === 0 ? 'emerald' : 'red', tip: 'Soma do IMT + Imposto de Selo. É o custo fiscal total da compra — a este valor acrescem ainda escritura, registos e comissão imobiliária.' },
+              ].map(({ label, value, color, tip }) => (
                 <div key={label} className={cn(
                   "rounded-[16px] p-[16px] border text-center",
                   color === 'emerald' ? 'bg-emerald-50 border-emerald-100' : color === 'orange' ? 'bg-orange-50 border-orange-100' : 'bg-red-50 border-red-100'
                 )}>
-                  <div className="text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B]">{label}</div>
+                  <div className="text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B]">{label} <Tip>{tip}</Tip></div>
                   <div className={cn(
                     "text-[22px] font-[900] mt-[4px]",
                     color === 'emerald' ? 'text-emerald-700' : color === 'orange' ? 'text-orange-700' : 'text-red-700'

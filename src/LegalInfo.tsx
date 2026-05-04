@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Scale, BookOpen, Car, Ticket, Shield, AlertTriangle, CheckCircle2, Briefcase, Save, Layers, Building, Banknote, Home, ClipboardList } from 'lucide-react';
+import { ArrowLeft, Scale, BookOpen, Car, Ticket, Shield, AlertTriangle, CheckCircle2, Briefcase, Save, Layers, Building, Banknote, Home, ClipboardList, Utensils, Baby, Heart, Gift } from 'lucide-react';
 import { IRS_BRACKETS_2026, IAS_2026 } from './lib/pt2026';
 import {
   loadPricing,
@@ -890,34 +890,127 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
         </section>
 
         {/* ═══════════════════════════════════════════════════════════ */}
-        {/* 5. TICKETS DE REFEIÇÃO                                     */}
+        {/* 5. TICKETS / VALES — TODOS OS TIPOS                        */}
         {/* ═══════════════════════════════════════════════════════════ */}
         <section className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0]">
-          <SectionHeader icon={Ticket} title="Tickets / Vales de Refeição" color="#7C3AED" />
+          <SectionHeader icon={Ticket} title="Tickets / Vales — Benefícios Sociais" color="#7C3AED" />
 
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Limites e Isenções — DL 133/2024 + EBF Art. 18.º-A</h3>
-              <div className="space-y-2">
-                <LegalRow label="Limite diário — setor geral" value="€5,00/dia útil" note="Acima deste valor, o excedente é tributável em IRS e sujeito a SS para o trabalhador" />
-                <LegalRow label="Limite diário — hotelaria/restauração/construção" value="€7,00/dia útil" note="DL 133/2024, com efeitos a partir de 1 janeiro 2024" />
-                <LegalRow label="Isenção SS para o trabalhador" value="Total — até ao limite legal diário" />
-                <LegalRow label="Isenção IRS para o trabalhador" value="Total — até ao limite legal diário" />
+          <div className="space-y-8">
+            <p className="text-[13px] text-[#64748B] font-[500] leading-relaxed">
+              Os tickets e vales são instrumentos de compensação extra-salarial que oferecem vantagens fiscais tanto para a empresa (dedutibilidade em IRC) como para o colaborador (isenção de IRS e/ou SS dentro de limites). Existem vários tipos disponíveis no mercado português, cada um com regras específicas.
+            </p>
+
+            {/* ── Ticket Alimentação ── */}
+            <div className="border border-[#E2E8F0] rounded-[16px] p-5 bg-[#FAFAFF]">
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3 flex items-center gap-2">
+                <Utensils className="w-4 h-4 text-[#7C3AED]" /> Ticket Restauração / Alimentação
+              </h3>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h4 className="text-[13px] font-[700] text-[#334155]">Limites e Isenções — DL 133/2024 + EBF Art. 18.º-A</h4>
+                  <LegalRow label="Limite diário — setor geral" value="€5,00/dia útil" note="Acima deste valor, o excedente é tributável em IRS e sujeito a SS para o trabalhador" />
+                  <LegalRow label="Limite diário — hotelaria/restauração/construção" value="€7,00/dia útil" note="DL 133/2024, com efeitos a partir de 1 janeiro 2024" />
+                  <LegalRow label="Isenção SS para o trabalhador" value="Total — até ao limite legal diário" />
+                  <LegalRow label="Isenção IRS para o trabalhador" value="Total — até ao limite legal diário" />
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-[13px] font-[700] text-[#334155]">Dedutibilidade — CIRC Art. 43.º</h4>
+                  <LegalRow label="Percentagem dedutível" value="60% do custo total dos tickets" note="Apenas o custo dentro do limite legal. Excedente: 0% dedutível." />
+                  <LegalRow label="SS patronal sobre tickets" value="Não aplicável — até ao limite legal (poupança de 23,75%)" />
+                </div>
               </div>
             </div>
 
-            <div>
-              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Dedutibilidade para a Empresa — CIRC Art. 43.º</h3>
+            {/* ── Ticket Infância ── */}
+            <div className="border border-[#E2E8F0] rounded-[16px] p-5 bg-[#FFFBEB]">
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3 flex items-center gap-2">
+                <Baby className="w-4 h-4 text-[#D97706]" /> Ticket Infância®
+              </h3>
               <div className="space-y-2">
-                <LegalRow label="Percentagem dedutível" value="60% do custo total dos tickets" note="Apenas o custo dentro do limite legal. Excedente: 0% dedutível." />
-                <LegalRow label="SS patronal sobre tickets" value="Não aplicável — até ao limite legal (poupança de 23,75%)" />
+                <p className="text-[13px] text-[#64748B] font-[500] leading-relaxed">
+                  Vale infância atribuído pelas empresas para subsidiar as despesas de educação dos filhos e equiparados no <strong>Pré-Escolar (até aos 7 anos)</strong>. Aplicável a creches e estabelecimentos de educação pré-escolar (ensino privado, ensino privado solidário e ensino público).
+                </p>
+                <LegalRow label="Limite de referência" value="€50/mês por colaborador" note="Valor de referência indicativo para efeitos de isenção" />
+                <LegalRow label="Isenção IRS" value="Sim — até ao limite de referência" note="O valor dentro do limite não é considerado rendimento para efeitos de IRS" />
+                <LegalRow label="SS patronal" value="Aplicável (23,75% sobre o valor)" note="Diferente dos vales de alimentação, a SS patronal é devida" />
+                <LegalRow label="Dedutibilidade empresa" value="60% do custo (benefício social)" note="Aplicável como gasto de natureza social — CIRC Art. 43.º" />
               </div>
             </div>
 
+            {/* ── Ticket Ensino ── */}
+            <div className="border border-[#E2E8F0] rounded-[16px] p-5 bg-[#F0FDF4]">
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3 flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-[#16A34A]" /> Ticket Ensino® / Educação
+              </h3>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-[13px] text-[#64748B] font-[500] leading-relaxed">
+                    O <strong>Ticket Ensino® (Cheque Educação)</strong> é um título em vale, cartão eletrónico e formato digital, totalmente desmaterializado, atribuído pelas empresas e instituições aos seus colaboradores para compensação de encargos familiares com a educação.
+                  </p>
+                  <p className="text-[13px] text-[#64748B] font-[500] leading-relaxed">
+                    Já o <strong>Cheque Ensino/Formação</strong> permite às empresas e instituições subsidiar as despesas de educação e formação dos colaboradores e seus dependentes em áreas diversas, <strong>sem limite de idade ou valor anual</strong>.
+                  </p>
+                </div>
+                <LegalRow label="Limite de referência" value="€50/mês por colaborador" note="Valor de referência indicativo para efeitos de isenção" />
+                <LegalRow label="Isenção IRS" value="Sim — até ao limite de referência" note="O valor dentro do limite não é considerado rendimento para IRS" />
+                <LegalRow label="SS patronal" value="Aplicável (23,75% sobre o valor)" />
+                <LegalRow label="Dedutibilidade empresa" value="60% do custo (benefício social)" note="CIRC Art. 43.º — gastos com benefícios sociais" />
+              </div>
+            </div>
+
+            {/* ── Ticket Saúde ── */}
+            <div className="border border-[#E2E8F0] rounded-[16px] p-5 bg-[#FEF2F2]">
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3 flex items-center gap-2">
+                <Heart className="w-4 h-4 text-[#DC2626]" /> Ticket Saúde®
+              </h3>
+              <div className="space-y-2">
+                <p className="text-[13px] text-[#64748B] font-[500] leading-relaxed">
+                  Vale de saúde e bem-estar que permite às empresas subsidiar os encargos com as despesas de saúde e apoio social dos colaboradores e seus familiares, podendo complementar o seguro de saúde.
+                </p>
+                <LegalRow label="Limite de referência" value="€100/mês por colaborador" note="Valor de referência indicativo para efeitos de isenção" />
+                <LegalRow label="Isenção IRS" value="Sim — até ao limite de referência" note="O valor dentro do limite não é considerado rendimento para IRS" />
+                <LegalRow label="SS patronal" value="Aplicável (23,75% sobre o valor)" />
+                <LegalRow label="Dedutibilidade empresa" value="60% do custo" note="Gasto dedutível como benefício social — CIRC Art. 43.º" />
+              </div>
+            </div>
+
+            {/* ── Ticket Oferta ── */}
+            <div className="border border-[#E2E8F0] rounded-[16px] p-5 bg-[#F5F3FF]">
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3 flex items-center gap-2">
+                <Gift className="w-4 h-4 text-[#7C3AED]" /> Ticket Oferta®
+              </h3>
+              <div className="space-y-2">
+                <p className="text-[13px] text-[#64748B] font-[500] leading-relaxed">
+                  Cheque prenda destinado ao pagamento de bens e serviços numa vasta rede nacional de lojas e marcas selecionadas. Utilizado para ofertas de Natal, aniversário ou outras ocasiões especiais.
+                </p>
+                <LegalRow label="Limite de isenção IRS" value="Sem limite específico" note="Tratado como rendimento em espécie — sujeito a IRS na esfera do colaborador" />
+                <LegalRow label="Isenção IRS" value="Não" note="Considerado rendimento do trabalho dependente (Categoria A)" />
+                <LegalRow label="SS patronal" value="Aplicável (23,75% sobre o valor)" />
+                <LegalRow label="Dedutibilidade empresa" value="40% do custo" note="Gastos com realizações sociais — dedutibilidade limitada a 40% (CIRC Art. 43.º, n.º 2)" />
+              </div>
+            </div>
+
+            {/* ── Ticket Car ── */}
+            <div className="border border-[#E2E8F0] rounded-[16px] p-5 bg-[#EFF6FF]">
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3 flex items-center gap-2">
+                <Car className="w-4 h-4 text-[#2563EB]" /> Ticket Car®
+              </h3>
+              <div className="space-y-2">
+                <p className="text-[13px] text-[#64748B] font-[500] leading-relaxed">
+                  Cartão combustível / mobilidade para despesas com viaturas. Benefício com regras específicas de tributação em IRS e dedutibilidade de IVA pela empresa.
+                </p>
+                <LegalRow label="Limite de isenção IRS" value="Sem limite específico (rendimento em espécie)" note="Sujeito a IRS se utilizado para fins pessoais" />
+                <LegalRow label="Isenção IRS" value="Não (se uso pessoal)" note="Considerado rendimento em espécie — Art. 24.º CIRS" />
+                <LegalRow label="SS patronal" value="Aplicável (23,75% sobre o valor)" />
+                <LegalRow label="Dedutibilidade empresa" value="50% do custo" note="IVA parcialmente dedutível (50%) — CIVA Art. 21.º. Gastos dedutíveis em IRC até 50%." />
+              </div>
+            </div>
+
+            {/* Resumo geral */}
             <div className="bg-purple-50 border border-purple-200 rounded-[12px] p-4">
               <h4 className="text-[13px] font-[700] text-purple-900 mb-2">Comparação: Ticket vs Aumento Salarial Equivalente</h4>
               <p className="text-[13px] text-purple-800 font-[500] leading-relaxed">
-                Se a empresa paga €5/dia × 22 dias × 12 meses = €1.320/ano por trabalhador em tickets, pouparia €1.320 × 23,75% = €313,50/trabalhador em SS patronal face a um aumento salarial equivalente. O trabalhador recebe o mesmo valor líquido (sem descontos).
+                Se a empresa paga €5/dia × 22 dias × 12 meses = €1.320/ano por trabalhador em tickets de alimentação, pouparia €1.320 × 23,75% = €313,50/trabalhador em SS patronal face a um aumento salarial equivalente. O trabalhador recebe o mesmo valor líquido (sem descontos). Para os restantes tipos de ticket, as vantagens fiscais variam consoante o tipo de benefício.
               </p>
             </div>
           </div>

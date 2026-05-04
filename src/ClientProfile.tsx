@@ -108,6 +108,7 @@ interface TicketSimulatorState {
   ticketValue: number;
   daysPerMonth: number;
   months: number;
+  ticketType: string;
 }
 
 interface SSState {
@@ -464,13 +465,12 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
   // ─── RENDER ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="h-full flex flex-col xl:flex-row bg-[#F8FAFC]">
+    <div className="overflow-y-auto lg:overflow-hidden lg:h-full lg:flex lg:flex-row bg-[#F8FAFC]">
       {/* LEFT PANEL */}
-      <div className="xl:w-[480px] shrink-0 bg-white border-r border-[#E2E8F0] overflow-y-auto h-full flex flex-col">
+      <div className="lg:w-[460px] shrink-0 bg-white border-b border-[#E2E8F0] lg:border-b-0 lg:border-r lg:overflow-y-auto lg:h-full flex flex-col">
         <div className="p-6 md:p-8 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md z-20 border-b border-[#F1F5F9]">
           <div>
             <h2 className="text-[20px] font-[800] tracking-[-0.5px] text-[#0F172A]">Perfil do Cliente</h2>
-            <div className="text-[11px] font-[700] uppercase tracking-[1px] text-[#4F46E5] mt-1">Parâmetros Master</div>
           </div>
           <button onClick={generatePDF} className="flex shrink-0 items-center gap-2 bg-[#0F172A] text-white px-4 py-2 rounded-[10px] text-[13px] font-[700] hover:bg-[#781D1D] transition-colors shadow-lg">
             <Download size={16} />
@@ -657,7 +657,7 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
       </div>
 
       {/* RIGHT PANEL */}
-      <div className="flex-1 p-6 md:p-10 overflow-y-auto w-full flex flex-col gap-8 relative max-w-7xl mx-auto">
+      <div className="flex-1 p-4 sm:p-6 lg:p-10 lg:overflow-y-auto lg:h-full w-full flex flex-col gap-6 lg:gap-8 relative max-w-7xl mx-auto">
         <div>
           <h1 className="text-[32px] md:text-[40px] font-[800] tracking-[-1.5px] text-[#0F172A] leading-[1.1]">Resumo de Parâmetros</h1>
           <p className="text-[15px] font-[500] text-[#64748B] mt-1">Estes valores são aplicados automaticamente nos simuladores.</p>

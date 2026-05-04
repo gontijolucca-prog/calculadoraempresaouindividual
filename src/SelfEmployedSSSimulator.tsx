@@ -36,17 +36,17 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
 
   const ptEur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(v || 0);
   const { simMode } = useTheme();
-  const outerCls = { split: "h-full flex flex-col md:grid md:grid-cols-[400px_1fr] bg-[#F8FAFC] text-[#1E293B]", stacked: "h-full flex flex-col bg-[#F0F4F8] text-[#1E293B] overflow-y-auto", mosaic: "h-full bg-[#F0FDF4] text-[#1E293B] md:grid md:grid-cols-2 gap-4 p-4", compact: "h-full overflow-y-auto bg-white text-[#1E293B]", hero: "h-full flex md:flex-row-reverse overflow-hidden bg-[#F5F5F4] text-[#1E293B]" }[simMode];
-  const leftCls = { split: "bg-white border-r border-[#E2E8F0] overflow-y-auto p-6 md:p-[40px] flex flex-col gap-[32px] h-full", stacked: "bg-white border-b-2 border-[#E2E8F0] p-6 flex flex-col gap-6", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pb-0 w-full", hero: "md:w-[420px] shrink-0 bg-white border-l border-[#E2E8F0] overflow-y-auto p-6 flex flex-col gap-5 h-full" }[simMode];
-  const rightCls = { split: "p-6 md:p-[40px] overflow-y-auto h-full max-w-7xl mx-auto w-full flex flex-col gap-[32px]", stacked: "p-6 flex flex-col gap-6 max-w-7xl mx-auto w-full", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pt-2 w-full border-t border-slate-100", hero: "flex-1 p-6 md:p-[40px] overflow-y-auto flex flex-col gap-5" }[simMode];
+  const outerCls = { split: "overflow-y-auto lg:overflow-hidden lg:h-full lg:grid lg:grid-cols-[400px_1fr] bg-[#F8FAFC] text-[#1E293B]", stacked: "h-full flex flex-col bg-[#F0F4F8] text-[#1E293B] overflow-y-auto", mosaic: "h-full bg-[#F0FDF4] text-[#1E293B] md:grid md:grid-cols-2 gap-4 p-4", compact: "h-full overflow-y-auto bg-white text-[#1E293B]", hero: "h-full flex md:flex-row-reverse overflow-hidden bg-[#F5F5F4] text-[#1E293B]" }[simMode];
+  const leftCls = { split: "bg-white border-b border-[#E2E8F0] lg:border-b-0 lg:border-r lg:overflow-y-auto p-4 sm:p-6 lg:p-[40px] flex flex-col gap-5 lg:gap-[32px] lg:h-full", stacked: "bg-white border-b-2 border-[#E2E8F0] p-6 flex flex-col gap-6", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pb-0 w-full", hero: "md:w-[420px] shrink-0 bg-white border-l border-[#E2E8F0] overflow-y-auto p-6 flex flex-col gap-5 h-full" }[simMode];
+  const rightCls = { split: "p-4 sm:p-6 lg:p-[40px] lg:overflow-y-auto lg:h-full max-w-7xl mx-auto w-full flex flex-col gap-5 lg:gap-[32px]", stacked: "p-6 flex flex-col gap-6 max-w-7xl mx-auto w-full", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pt-2 w-full border-t border-slate-100", hero: "flex-1 p-6 md:p-[40px] overflow-y-auto flex flex-col gap-5" }[simMode];
 
   return (
     <div className={outerCls}>
       {/* Left Pane - Form */}
       <div className={leftCls}>
         <div>
-          <h2 className="text-[24px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador SS Independente</h2>
-          <p className="text-[14px] text-[#64748B] font-[500] mt-[4px]">Contribuições de trabalhador independente (ENI).</p>
+          <h2 className="text-[24px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador SS Independente <Tip>SS Independente = Segurança Social para trabalhadores a recibos verdes ou ENI. Diferente dos trabalhadores por conta de outrem: o próprio paga a sua contribuição trimestralmente.</Tip></h2>
+          <p className="text-[14px] text-[#64748B] font-[500] mt-[4px]">Contribuições de trabalhador independente (ENI). <Tip>ENI = Empresário em Nome Individual. É uma forma de trabalhar por conta própria sem criar uma empresa. Paga IRS em Categoria B e SS como independente.</Tip></p>
         </div>
 
         <div className="space-y-[24px]">
@@ -160,7 +160,7 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
                   <div className="bg-[#EFF6FF] text-[#3B82F6] p-[10px] rounded-[14px]">
                     <Wallet className="w-[20px] h-[20px]" />
                   </div>
-                  <h3 className="text-[15px] font-[700] text-[#0F172A]">Mensal</h3>
+                  <h3 className="text-[15px] font-[700] text-[#0F172A]">Mensal <Tip>Estimativa mensal de SS. Na prática a SS é paga trimestralmente, mas este valor dá a ideia do encargo por mês.</Tip></h3>
                 </div>
                 <div className="text-[36px] font-[800] text-[#3B82F6] tracking-[-1px] mb-[8px]">
                   {ptEur(result.mensal)}
@@ -173,7 +173,7 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
                   <div className="bg-[#FDF2F2] text-[#781D1D] p-[10px] rounded-[14px]">
                     <Calendar className="w-[20px] h-[20px]" />
                   </div>
-                  <h3 className="text-[15px] font-[700] text-[#0F172A]">Trimestral</h3>
+                  <h3 className="text-[15px] font-[700] text-[#0F172A]">Trimestral <Tip>O valor a pagar à Segurança Social de 3 em 3 meses. Pagamentos em janeiro, abril, julho e outubro, até ao dia 20.</Tip></h3>
                 </div>
                 <div className="text-[36px] font-[800] text-[#781D1D] tracking-[-1px] mb-[8px]">
                   {ptEur(result.trimestral)}
@@ -189,7 +189,7 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
                   <div className="bg-[#ECFDF5] text-[#10B981] p-[10px] rounded-[14px]">
                     <ShieldCheck className="w-[20px] h-[20px]" />
                   </div>
-                  <h3 className="text-[15px] font-[700] text-[#0F172A]">Anual</h3>
+                  <h3 className="text-[15px] font-[700] text-[#0F172A]">Anual <Tip>O total de contribuições para a Segurança Social durante todo o ano. Útil para planear o orçamento anual.</Tip></h3>
                 </div>
                 <div className="text-[36px] font-[800] text-[#10B981] tracking-[-1px] mb-[8px]">
                   {ptEur(result.anual)}
@@ -208,27 +208,27 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
               </div>
               <div className="flex-1 space-y-0">
                 <div className="flex justify-between py-[14px] border-b border-[#F1F5F9] text-[14px] items-center">
-                  <span className="text-[#64748B] font-[600]">Rendimento Mensal</span>
+                  <span className="text-[#64748B] font-[600]">Rendimento Mensal <Tip>O rendimento base que declarou, antes de qualquer desconto ou cálculo.</Tip></span>
                   <span className="font-[700] font-mono text-[#0F172A]">{ptEur(income)}</span>
                 </div>
                 <div className="flex justify-between py-[14px] border-b border-[#F1F5F9] text-[14px] items-center">
-                  <span className="text-[#64748B] font-[600]">Tipo de Rendimento</span>
+                  <span className="text-[#64748B] font-[600]">Tipo de Rendimento <Tip>Serviços (base 70%) ou bens (base 20%). A diferença está na percentagem do rendimento que serve de base para calcular a SS.</Tip></span>
                   <span className="font-[700] font-mono text-[#0F172A]">{tipoRendimento === 'servicos' ? 'Serviços (70%)' : 'Bens (20%)'}</span>
                 </div>
                 <div className="flex justify-between py-[14px] border-b border-[#F1F5F9] text-[14px] items-center">
-                  <span className="text-[#64748B] font-[600]">Base de Cálculo (€)</span>
+                  <span className="text-[#64748B] font-[600]">Base de Cálculo (€) <Tip>O valor sobre o qual é aplicada a taxa de SS. Para prestação de serviços é 70% do rendimento; para venda de bens é 20%.</Tip></span>
                   <span className="font-[700] font-mono text-[#0F172A]">{ptEur(result.baseCalculo)}</span>
                 </div>
                 <div className="flex justify-between py-[14px] border-b border-[#F1F5F9] text-[14px] items-center">
-                  <span className="text-[#64748B] font-[600]">Taxa SS 2026</span>
+                  <span className="text-[#64748B] font-[600]">Taxa SS 2026 <Tip>A taxa que os trabalhadores independentes pagam à Segurança Social em 2026 é 21,4% da base de cálculo.</Tip></span>
                   <span className="font-[700] font-mono text-[#0F172A]">21,4%</span>
                 </div>
                 <div className="flex justify-between py-[14px] border-b border-[#F1F5F9] text-[14px] items-center">
-                  <span className="text-[#64748B] font-[600]">Mínimo de Contribuição</span>
+                  <span className="text-[#64748B] font-[600]">Mínimo de Contribuição <Tip>Mesmo com rendimentos muito baixos, a SS cobra um mínimo de €20/mês se o rendimento superar o IAS (Indexante dos Apoios Sociais).</Tip></span>
                   <span className="font-[700] font-mono text-[#0F172A]">€20,00</span>
                 </div>
                 <div className="flex justify-between py-[14px] text-[14px] items-center">
-                  <span className="text-[#64748B] font-[600]">Contribuição Dedutível em IRS</span>
+                  <span className="text-[#64748B] font-[600]">Contribuição Dedutível em IRS <Tip>As contribuições pagas à SS são 100% dedutíveis no IRS Categoria B — reduzem o rendimento sobre o qual paga IRS.</Tip></span>
                   <span className="font-[700] font-mono text-emerald-600">Sim (100%)</span>
                 </div>
               </div>

@@ -30,9 +30,9 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
   };
 
   const { simMode } = useTheme();
-  const outerCls = { split: "h-full flex flex-col md:grid md:grid-cols-[400px_1fr] bg-[#F8FAFC] text-[#1E293B]", stacked: "h-full flex flex-col bg-[#F0F4F8] text-[#1E293B] overflow-y-auto", mosaic: "h-full bg-[#F0FDF4] text-[#1E293B] md:grid md:grid-cols-2 gap-4 p-4", compact: "h-full overflow-y-auto bg-white text-[#1E293B]", hero: "h-full flex md:flex-row-reverse overflow-hidden bg-[#F5F5F4] text-[#1E293B]" }[simMode];
-  const leftCls = { split: "bg-white border-r border-[#E2E8F0] overflow-y-auto p-6 md:p-[40px] flex flex-col gap-[32px] h-full", stacked: "bg-white border-b-2 border-[#E2E8F0] p-6 flex flex-col gap-6", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pb-0 w-full", hero: "md:w-[420px] shrink-0 bg-white border-l border-[#E2E8F0] overflow-y-auto p-6 flex flex-col gap-5 h-full" }[simMode];
-  const rightCls = { split: "p-6 md:p-[40px] overflow-y-auto h-full max-w-7xl mx-auto w-full flex flex-col gap-[32px]", stacked: "p-6 flex flex-col gap-6 max-w-7xl mx-auto w-full", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pt-2 w-full border-t border-slate-100", hero: "flex-1 p-6 md:p-[40px] overflow-y-auto flex flex-col gap-5" }[simMode];
+  const outerCls = { split: "overflow-y-auto lg:overflow-hidden lg:h-full lg:grid lg:grid-cols-[400px_1fr] bg-[#F8FAFC] text-[#1E293B]", stacked: "h-full flex flex-col bg-[#F0F4F8] text-[#1E293B] overflow-y-auto", mosaic: "h-full bg-[#F0FDF4] text-[#1E293B] md:grid md:grid-cols-2 gap-4 p-4", compact: "h-full overflow-y-auto bg-white text-[#1E293B]", hero: "h-full flex md:flex-row-reverse overflow-hidden bg-[#F5F5F4] text-[#1E293B]" }[simMode];
+  const leftCls = { split: "bg-white border-b border-[#E2E8F0] lg:border-b-0 lg:border-r lg:overflow-y-auto p-4 sm:p-6 lg:p-[40px] flex flex-col gap-5 lg:gap-[32px] lg:h-full", stacked: "bg-white border-b-2 border-[#E2E8F0] p-6 flex flex-col gap-6", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pb-0 w-full", hero: "md:w-[420px] shrink-0 bg-white border-l border-[#E2E8F0] overflow-y-auto p-6 flex flex-col gap-5 h-full" }[simMode];
+  const rightCls = { split: "p-4 sm:p-6 lg:p-[40px] lg:overflow-y-auto lg:h-full max-w-7xl mx-auto w-full flex flex-col gap-5 lg:gap-[32px]", stacked: "p-6 flex flex-col gap-6 max-w-7xl mx-auto w-full", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pt-2 w-full border-t border-slate-100", hero: "flex-1 p-6 md:p-[40px] overflow-y-auto flex flex-col gap-5" }[simMode];
 
   const results = useMemo(() => {
     const maintBase = maintenanceCost / 1.23;
@@ -140,8 +140,8 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
        {/* Left Pane - Form */}
        <div className={leftCls}>
           <div>
-            <h2 className="text-[24px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador Viaturas</h2>
-            <p className="text-[14px] text-[#64748B] font-[500] mt-[4px]">Cálculo IVA e Tributação Autónoma.</p>
+            <h2 className="text-[24px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador Viaturas <Tip>Calcula o IVA que a empresa pode recuperar na compra e manutenção do carro, e a Tributação Autónoma sobre encargos com viaturas de passageiros.</Tip></h2>
+            <p className="text-[14px] text-[#64748B] font-[500] mt-[4px]">Cálculo IVA e Tributação Autónoma. <Tip>IVA é o Imposto sobre o Valor Acrescentado — as empresas podem recuperar parte do IVA pago se usarem o carro para atividade tributável. Tributação Autónoma é um imposto extra sobre encargos com carros da empresa.</Tip></p>
           </div>
 
           <div className="space-y-[24px]">
@@ -201,7 +201,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
             </div>
 
             <div className="p-5 border-2 border-[#E2E8F0] rounded-[16px] bg-[#F8FAFC]">
-              <h3 className="text-[12px] font-[800] text-[#0F172A] mb-4">ENCARGOS ANUAIS (COM IVA)</h3>
+              <h3 className="text-[12px] font-[800] text-[#0F172A] mb-4">ENCARGOS ANUAIS (COM IVA) <Tip>Os custos anuais de operação da viatura (manutenção, seguro e combustível) com IVA incluído. São usados para calcular a base da Tributação Autónoma.</Tip></h3>
               <div className="space-y-[16px]">
                 <div>
                   <label className="text-[11px] font-[700] text-[#64748B] uppercase">Manutenção & Oficinas <Tip>O total gasto por ano em revisões, reparações, pneus e outros serviços de manutenção.</Tip></label>
@@ -244,7 +244,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
                   <div className="bg-[#ECFDF5] text-[#10B981] p-[12px] rounded-[16px]">
                     <ShieldCheck className="w-[24px] h-[24px]" />
                   </div>
-                  <h3 className="text-[18px] font-[700] text-[#0F172A]">IVA Recupérável Anual</h3>
+                  <h3 className="text-[18px] font-[700] text-[#0F172A]">IVA Recupérável Anual <Tip>O total de IVA que a empresa pode deduzir (recuperar) na aquisição e encargos com a viatura durante o ano. Depende do tipo de motor, atividade e preço do carro.</Tip></h3>
                </div>
 
                <div className="text-[48px] md:text-[56px] font-[800] text-[#10B981] tracking-[-2px] mb-[32px]">
@@ -253,15 +253,15 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
 
                <div className="flex-1 space-y-0">
                  <div className="flex justify-between py-[16px] border-b border-[#F1F5F9] text-[14px] items-center">
-                   <span className="text-[#64748B] font-[600]">IVA Aquisição (Dedutível)</span>
+                   <span className="text-[#64748B] font-[600]">IVA Aquisição (Dedutível) <Tip>O IVA pago na compra da viatura que a empresa pode recuperar. Para carros de passageiros normais, geralmente é 0%; para elétricos, híbridos plug-in e comerciais há regras específicas.</Tip></span>
                    <span className="font-[700] font-mono text-[#0F172A]">{ptEur(results.ivaAquisicaoDedutivel)}</span>
                  </div>
                  <div className="flex justify-between py-[16px] border-b border-[#F1F5F9] text-[14px] items-center">
-                   <span className="text-[#64748B] font-[600]">IVA Operação (Manutenção)</span>
+                   <span className="text-[#64748B] font-[600]">IVA Operação (Manutenção) <Tip>O IVA das faturas de oficina, revisões e manutenção que a empresa pode deduzir. Para viaturas comerciais é 100%; para passageiros, depende do tipo de atividade.</Tip></span>
                    <span className="font-[700] font-mono text-[#0F172A]">{ptEur(results.ivaRecupManutencao)}</span>
                  </div>
                  <div className="flex justify-between py-[16px] border-b border-[#F1F5F9] text-[14px] items-center">
-                   <span className="text-[#64748B] font-[600]">IVA Op. (Combustível/Energia)</span>
+                   <span className="text-[#64748B] font-[600]">IVA Op. (Combustível/Energia) <Tip>O IVA do combustível ou carga elétrica que a empresa pode recuperar. Para gasóleo e GPL é 50% (veículos de passageiros); para elétricos é 100%; para gasolina é 0%.</Tip></span>
                    <span className="font-[700] font-mono text-[#0F172A]">{ptEur(results.ivaRecupCombustivel)}</span>
                  </div>
                </div>
@@ -276,7 +276,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
                   <div className="bg-[#FEF2F2] text-[#EF4444] p-[12px] rounded-[16px]">
                     <AlertTriangle className="w-[24px] h-[24px]" />
                   </div>
-                  <h3 className="text-[18px] font-[700] text-[#0F172A]">Tributação Autónoma a Pagar</h3>
+                  <h3 className="text-[18px] font-[700] text-[#0F172A]">Tributação Autónoma a Pagar <Tip>A Tributação Autónoma (TA) é um imposto sobre os encargos com viaturas de passageiros. Incide sobre depreciação + manutenção + seguro + combustível, a uma taxa que aumenta com o preço do carro.</Tip></h3>
                </div>
 
                <div className="text-[48px] md:text-[56px] font-[800] text-[#EF4444] tracking-[-2px] mb-[12px]">
@@ -284,7 +284,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
                </div>
                <div className="mb-[24px]">
                  <span className="inline-flex items-center px-[12px] py-[6px] bg-[#FEF2F2] text-[#B91C1C] text-[12px] font-[800] uppercase tracking-[1px] rounded-full">
-                    Taxa Aplicada: {(results.taRate * 100).toFixed(1)}% IRC
+                    Taxa Aplicada: {(results.taRate * 100).toFixed(1)}% IRC <Tip>A percentagem de Tributação Autónoma que se aplica ao total de encargos com esta viatura. Carros mais caros têm taxas mais elevadas.</Tip>
                  </span>
                </div>
 
@@ -297,15 +297,15 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
                {category === 'passageiros' ? (
                  <div className="flex-1 space-y-0">
                    <div className="flex justify-between py-[14px] border-b border-[#F1F5F9] text-[14px] items-center">
-                     <span className="text-[#64748B] font-[600]">Lmt. Depreciação (Fiscal)</span>
+                     <span className="text-[#64748B] font-[600]">Lmt. Depreciação (Fiscal) <Tip>O limite máximo sobre o qual a empresa calcula depreciações aceites fiscalmente. Gasolina/Diesel: €25.000; GPL/GNV: €37.500; PHEV: €50.000; Elétrico: €62.500.</Tip></span>
                      <span className="font-[700] font-mono text-[#0F172A]">{results.limit === Infinity ? 'Ilimitado' : ptEur(results.limit)}</span>
                    </div>
                    <div className="flex justify-between py-[14px] border-b border-[#F1F5F9] text-[14px] items-center">
-                     <span className="text-[#64748B] font-[600]">Depreciação Não Aceite</span>
+                     <span className="text-[#64748B] font-[600]">Depreciação Não Aceite <Tip>A parte da depreciação anual que o fisco não aceita como gasto, por o preço do carro exceder o limite legal. Aumenta o lucro tributável da empresa.</Tip></span>
                      <span className="font-[700] font-mono text-[#0F172A]">{ptEur(results.depNaoAceite)}</span>
                    </div>
                    <div className="flex justify-between py-[14px] border-b border-[#F1F5F9] text-[14px] items-center">
-                     <span className="text-[#64748B] font-[600]">Encargos Sujeitos a TA</span>
+                     <span className="text-[#64748B] font-[600]">Encargos Sujeitos a TA <Tip>O total de encargos (depreciação + manutenção + seguro + combustível) que serve de base para calcular a Tributação Autónoma. Quanto maior este valor, maior o imposto.</Tip></span>
                      <span className="font-[700] font-mono text-[#0F172A]">{ptEur(results.totalEncsTA)}</span>
                    </div>
                  </div>

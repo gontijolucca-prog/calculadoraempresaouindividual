@@ -18,6 +18,8 @@ export interface SalarioParams {
   subsidioAlimentacaoDiario: number;
   tipoSubsidio: 'dinheiro' | 'cartao';
   diasSubsidio: number;         // dias/mês com direito a subsídio
+  ticketRefeicaoDiario: number; // valor diário do ticket refeição (cartão/vale)
+  ticketRefeicaoDias: number;   // dias/mês com ticket refeição
   irsJovem: boolean;
   anosAtividade: number;
   idade: number;
@@ -30,6 +32,9 @@ export interface SalarioResult {
   subsidioAlimentacao: number;
   subsidioAlimentacaoIsento: number;
   subsidioAlimentacaoTributavel: number;
+  ticketRefeicao: number;
+  ticketRefeicaoIsento: number;
+  ticketRefeicaoTributavel: number;
   salarioLiquido: number;
   custoPrevio: number;         // custo mensal antes de qualquer desconto
   custoEmpregador: number;
@@ -43,6 +48,8 @@ export interface SalarioResult {
 // Limite legal diário do subsídio de alimentação 2026 — DL 133/2024 / Despacho 233-A/2026
 const LIMITE_SUBSIDIO_DINHEIRO = 6.15;
 const LIMITE_SUBSIDIO_CARTAO = 10.46;
+// Limite do ticket refeição (vale/cartão refeição) — DL 133/2024
+const LIMITE_TICKET_REFEICAO = 5.00;
 
 // Taxa SS trabalhador TCO — CRCSPSS Art. 53º
 const SS_TRABALHADOR = 0.11;
@@ -91,8 +98,13 @@ export function calcSalarioLiquido(p: SalarioParams): SalarioResult {
   const subsidioTotal = valorDiario * p.diasSubsidio;
   const subsidioTributavel = Math.max(0, subsidioTotal - subsidioIsento);
 
+  // 8b. Ticket refeição (vale/cartão refeição) — DL 133/2024
+  const ticketRefeicaoTotal = p.ticketRefeicaoDiario * p.ticketRefeicaoDias;
+  const ticketRefeicaoIsento = Math.min(p.ticketRefeicaoDiario, LIMITE_TICKET_REFEICAO) * p.ticketRefeicaoDias;
+  const ticketRefeicaoTributavel = Math.max(0, ticketRefeicaoTotal - ticketRefeicaoIsento);
+
   // 9. Salário líquido mensal
-  const salarioLiquido = p.salarioBruto - ssTrabalhador - retencaoIRS + subsidioIsento;
+  const salarioLiquido = p.salarioBruto - ssTrabalhador - retencaoIRS + subsidioIsento + ticketRefeicaoIsento;
 
   // 10. Custo empregador
   const ssPatronal = p.salarioBruto * SS_PATRONAL;
@@ -109,6 +121,9 @@ export function calcSalarioLiquido(p: SalarioParams): SalarioResult {
     subsidioAlimentacao: subsidioTotal,
     subsidioAlimentacaoIsento: subsidioIsento,
     subsidioAlimentacaoTributavel: subsidioTributavel,
+    ticketRefeicao: ticketRefeicaoTotal,
+    ticketRefeicaoIsento,
+    ticketRefeicaoTributavel,
     salarioLiquido,
     custoPrevio: p.salarioBruto,
     custoEmpregador,
