@@ -27,8 +27,6 @@
     "active": true,
     "targets": ["nsis", "msi"],
     "identifier": "com.recofatima.simuladores",
-    "icon": [
-      "icons/icon.png"
-    ]
+    "icon": []
   }
 }

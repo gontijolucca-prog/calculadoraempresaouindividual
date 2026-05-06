@@ -30,10 +30,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Generate Icons
-        run: npx tauri icon src-tauri/icons/icon.png
-        continue-on-error: true
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
