@@ -5,7 +5,7 @@
  * CRCSPSS Art. 53º (SS trabalhador), Decreto n.º 233-A/2026
  */
 
-import { calculateIRS, calcIRSJovem, calcDependentsDeduction } from './pt2026';
+import { calculateIRS, calcIRSJovem, calcDependentsDeduction, TICKET_LIMITS_2026, type TipoSubsidioRefeicao } from './pt2026';
 
 export type EstadoCivil = 'solteiro' | 'casado_1titular' | 'casado_2titulares';
 
@@ -14,12 +14,10 @@ export interface SalarioParams {
   estadoCivil: EstadoCivil;
   nrDependentes: number;
   localizacao: 'continente' | 'madeira' | 'acores';
-  duodecimos: boolean;          // distribui subsídios mensalmente (12 pagamentos/ano)
+  duodecimos: boolean;
   subsidioAlimentacaoDiario: number;
-  tipoSubsidio: 'dinheiro' | 'cartao';
-  diasSubsidio: number;         // dias/mês com direito a subsídio
-  ticketRefeicaoDiario: number; // valor diário do ticket refeição (cartão/vale)
-  ticketRefeicaoDias: number;   // dias/mês com ticket refeição
+  tipoSubsidio: TipoSubsidioRefeicao;
+  diasSubsidio: number;
   irsJovem: boolean;
   anosAtividade: number;
   idade: number;
@@ -32,9 +30,6 @@ export interface SalarioResult {
   subsidioAlimentacao: number;
   subsidioAlimentacaoIsento: number;
   subsidioAlimentacaoTributavel: number;
-  ticketRefeicao: number;
-  ticketRefeicaoIsento: number;
-  ticketRefeicaoTributavel: number;
   salarioLiquido: number;
   custoPrevio: number;         // custo mensal antes de qualquer desconto
   custoEmpregador: number;
@@ -45,11 +40,7 @@ export interface SalarioResult {
   irsJovemIsencao: number;
 }
 
-// Limite legal diário do subsídio de alimentação 2026 — DL 133/2024 / Despacho 233-A/2026
-const LIMITE_SUBSIDIO_DINHEIRO = 6.15;
-const LIMITE_SUBSIDIO_CARTAO = 10.46;
-// Limite do ticket refeição (vale/cartão refeição) — DL 133/2024
-const LIMITE_TICKET_REFEICAO = 5.00;
+// Limites via constante centralizada em pt2026.ts
 
 // Taxa SS trabalhador TCO — CRCSPSS Art. 53º
 const SS_TRABALHADOR = 0.11;
@@ -92,19 +83,14 @@ export function calcSalarioLiquido(p: SalarioParams): SalarioResult {
   const retencaoIRS = coletaIRS / nrPagamentos;
 
   // 8. Subsídio de alimentação
-  const limiteIsento = p.tipoSubsidio === 'cartao' ? LIMITE_SUBSIDIO_CARTAO : LIMITE_SUBSIDIO_DINHEIRO;
+  const limiteIsento = TICKET_LIMITS_2026[p.tipoSubsidio];
   const valorDiario = p.subsidioAlimentacaoDiario;
   const subsidioIsento = Math.min(valorDiario, limiteIsento) * p.diasSubsidio;
   const subsidioTotal = valorDiario * p.diasSubsidio;
   const subsidioTributavel = Math.max(0, subsidioTotal - subsidioIsento);
 
-  // 8b. Ticket refeição (vale/cartão refeição) — DL 133/2024
-  const ticketRefeicaoTotal = p.ticketRefeicaoDiario * p.ticketRefeicaoDias;
-  const ticketRefeicaoIsento = Math.min(p.ticketRefeicaoDiario, LIMITE_TICKET_REFEICAO) * p.ticketRefeicaoDias;
-  const ticketRefeicaoTributavel = Math.max(0, ticketRefeicaoTotal - ticketRefeicaoIsento);
-
   // 9. Salário líquido mensal
-  const salarioLiquido = p.salarioBruto - ssTrabalhador - retencaoIRS + subsidioIsento + ticketRefeicaoIsento;
+  const salarioLiquido = p.salarioBruto - ssTrabalhador - retencaoIRS + subsidioIsento;
 
   // 10. Custo empregador
   const ssPatronal = p.salarioBruto * SS_PATRONAL;
@@ -121,9 +107,6 @@ export function calcSalarioLiquido(p: SalarioParams): SalarioResult {
     subsidioAlimentacao: subsidioTotal,
     subsidioAlimentacaoIsento: subsidioIsento,
     subsidioAlimentacaoTributavel: subsidioTributavel,
-    ticketRefeicao: ticketRefeicaoTotal,
-    ticketRefeicaoIsento,
-    ticketRefeicaoTributavel,
     salarioLiquido,
     custoPrevio: p.salarioBruto,
     custoEmpregador,

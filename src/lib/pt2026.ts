@@ -89,18 +89,7 @@ export function calcDependentsDeduction(nrDependentes: number): number {
 
 /**
  * Calcula o custo total para a empresa ao pagar tickets em vez de salário.
- *
- * Regras 2026:
- * - Tickets de refeição: limite máximo dedutível de 60% para a empresa (CIRC Art. 43º)
- * - Valor máximo diário: 5€ (setor geral) ou 7€ (hotelaria/construção) — DL 133/2024
- * - SS sobre benefícios em espécie: NÃO aplicável até ao limite legal
- * - A empresa poupa a diferença da SS Patronal ao dar tickets em vez de salário
- *
- * @param employees número de trabalhadores
- * @param ticketValue valor diário do ticket (€)
- * @param daysPerMonth dias úteis por mês
- * @param months número de meses por ano
- * @returns object com ticketCost, salaryCost, savings, custoDedutivelEmpresa
+ * Mantido por compatibilidade — usar calcTicketBenefit para novos tipos.
  */
 export function calcTicketSavings(
   employees: number,
@@ -115,6 +104,48 @@ export function calcTicketSavings(
 
   return { ticketCost, salaryCost, savings, custoDedutivelEmpresa };
 }
+
+// ── Tickets e Benefícios Laborais — 2026 ─────────────────────────────────────
+
+/**
+ * Limites diários de isenção IRS/SS — subsídio de alimentação e vales 2026
+ * Despacho 233-A/2026 (cartão, dinheiro) · DL 133/2024 (vale papel)
+ */
+export const TICKET_LIMITS_2026 = {
+  cartao:          10.46,  // Cartão eletrónico (ex: Ticket Restaurant® card) — Despacho 233-A/2026
+  dinheiro:         6.15,  // Dinheiro / transferência / cheque — Despacho 233-A/2026
+  vale_geral:       5.00,  // Vale em papel — setor geral — DL 133/2024
+  vale_hotelaria:   7.00,  // Vale em papel — hotelaria, restauração, construção — DL 133/2024
+} as const;
+
+export type TipoSubsidioRefeicao = keyof typeof TICKET_LIMITS_2026;
+
+export type TipoTicket = 'restaurante' | 'infancia' | 'educacao' | 'saude' | 'oferta' | 'car';
+
+/**
+ * Fator de dedutibilidade IRC por tipo de ticket — CIRC Art. 43.º / Art. 23.º-A
+ * restaurante : 60%   — limitação para subsídio de refeição (Art. 43.º n.º 2)
+ * infancia    : 140%  — majoração 40% para creches/pré-escolar (Art. 43.º n.º 9)
+ * educacao    : 100%  — gasto dedutível normal (Art. 43.º n.º 1)
+ * saude       : 100%  — realização de utilidade social (Art. 43.º n.º 1)
+ * oferta      :  50%  — gasto de representação (Art. 23.º-A n.º 1 h))
+ * car         : 100%  — gasto com viaturas dedutível (Art. 23.º n.º 1 h)); Trib. Autónoma pode aplicar-se
+ */
+export const TICKET_IRC_FACTOR: Record<TipoTicket, number> = {
+  restaurante: 0.60,
+  infancia:    1.40,
+  educacao:    1.00,
+  saude:       1.00,
+  oferta:      0.50,
+  car:         1.00,
+};
+
+/** IVA dedutível em combustível/manutenção por tipo de viatura — CIVA Art. 21.º */
+export const TICKET_CAR_IVA_RATE: Record<'passageiros' | 'misto' | 'comercial', number> = {
+  passageiros: 0.00,  // Excluído — CIVA Art. 21.º n.º 1 a)
+  misto:       0.50,  // 50% — CIVA Art. 21.º n.º 2
+  comercial:   1.00,  // 100% — viaturas de mercadorias/comerciais
+};
 
 /**
  * Calcula a contribuição mensal da Segurança Social para trabalhadores independentes.

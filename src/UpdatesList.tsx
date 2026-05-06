@@ -22,6 +22,9 @@ export default function UpdatesList({ onBack }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newText, setNewText] = useState('');
+  const [adding, setAdding] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => {
@@ -44,22 +47,52 @@ export default function UpdatesList({ onBack }: Props) {
     return unsub;
   }, []);
 
+  // Close the delete-confirmation modal with Escape
+  useEffect(() => {
+    if (!deleteConfirm) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setDeleteConfirm(null);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [deleteConfirm]);
+
   const addItem = async () => {
+    if (adding) return;
     const text = newText.trim();
     if (!text) return;
-    setNewText('');
-    await addDoc(collection(db, 'updates'), {
-      text, atualizado: false, aprovado: false, createdAt: Date.now(),
-    });
+    setAdding(true);
+    try {
+      await addDoc(collection(db, 'updates'), {
+        text, atualizado: false, aprovado: false, createdAt: Date.now(),
+      });
+      setNewText('');
+    } catch (err) {
+      console.error('Failed to add item:', err);
+    } finally {
+      setAdding(false);
+    }
   };
 
   const toggle = async (item: UpdateItem, field: 'atualizado' | 'aprovado') => {
-    await updateDoc(doc(db, 'updates', item.id), { [field]: !item[field] });
+    if (togglingId === item.id) return;
+    setTogglingId(item.id);
+    try {
+      await updateDoc(doc(db, 'updates', item.id), { [field]: !item[field] });
+    } finally {
+      setTogglingId(null);
+    }
   };
 
   const confirmDelete = async (id: string) => {
-    await deleteDoc(doc(db, 'updates', id));
-    setDeleteConfirm(null);
+    if (deleting) return;
+    setDeleting(true);
+    try {
+      await deleteDoc(doc(db, 'updates', id));
+      setDeleteConfirm(null);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const sorted = [
@@ -76,10 +109,12 @@ export default function UpdatesList({ onBack }: Props) {
       {/* Header */}
       <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-[#E2E8F0] px-6 md:px-10 py-4 flex items-center gap-4">
         <button
+          type="button"
           onClick={onBack}
+          aria-label="Voltar à página anterior"
           className="flex items-center gap-2 text-[13px] font-[700] text-[#475569] hover:text-[#781D1D] transition-colors px-3 py-2 rounded-[8px] hover:bg-[#FDF2F2]"
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={16} aria-hidden="true" />
           Voltar
         </button>
         <div className="h-6 w-px bg-[#E2E8F0]" />
@@ -111,23 +146,27 @@ export default function UpdatesList({ onBack }: Props) {
 
         {/* Add new item */}
         <div className="bg-white rounded-[20px] p-6 shadow-sm border border-[#E2E8F0]">
-          <p className="text-[12px] font-[700] uppercase tracking-[1px] text-[#64748B] mb-3">Adicionar nova atualização</p>
+          <label htmlFor="update-input" className="block text-[12px] font-[700] uppercase tracking-[1px] text-[#64748B] mb-3">Adicionar nova atualização</label>
           <div className="flex gap-3">
             <input
+              id="update-input"
               type="text"
               value={newText}
               onChange={e => setNewText(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addItem()}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } }}
               placeholder="Descreva a atualização efetuada..."
-              className="flex-1 px-4 py-3 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-[10px] text-[14px] font-[600] text-[#0F172A] focus:border-[#781D1D] outline-none transition-all placeholder:text-[#CBD5E1]"
+              disabled={adding}
+              className="flex-1 px-4 py-3 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-[10px] text-[14px] font-[600] text-[#0F172A] focus:border-[#781D1D] outline-none transition-all placeholder:text-[#94A3B8] disabled:opacity-60"
             />
             <button
+              type="button"
               onClick={addItem}
-              disabled={!newText.trim()}
+              disabled={!newText.trim() || adding}
+              aria-busy={adding}
               className="flex items-center gap-2 bg-[#781D1D] text-white px-5 py-3 rounded-[10px] text-[14px] font-[700] hover:bg-[#5A1313] active:scale-[0.98] transition-all shadow-md shadow-[#781D1D]/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
             >
-              <Plus size={16} />
-              Adicionar
+              {adding ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Plus size={16} aria-hidden="true" />}
+              {adding ? 'A guardar…' : 'Adicionar'}
             </button>
           </div>
         </div>
@@ -197,35 +236,41 @@ export default function UpdatesList({ onBack }: Props) {
                     <div className="flex flex-col gap-[10px] shrink-0">
                       <div className="flex items-center gap-2">
                         <button
+                          type="button"
                           onClick={() => toggle(item, 'atualizado')}
-                          className={`w-[22px] h-[22px] rounded-[5px] border-2 flex items-center justify-center transition-all ${
+                          disabled={togglingId === item.id}
+                          aria-pressed={item.atualizado}
+                          aria-label={item.atualizado ? 'Marcar como não atualizado' : 'Marcar como atualizado'}
+                          className={`w-[22px] h-[22px] rounded-[5px] border-2 flex items-center justify-center transition-all disabled:opacity-50 ${
                             item.atualizado ? 'bg-emerald-500 border-emerald-500' : 'border-emerald-300 hover:border-emerald-400 bg-white'
                           }`}
-                          title="Atualizado"
                         >
                           {item.atualizado && (
-                            <svg width="11" height="9" viewBox="0 0 12 10" fill="none">
+                            <svg width="11" height="9" viewBox="0 0 12 10" fill="none" aria-hidden="true">
                               <path d="M1 5L4.5 8.5L11 1.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
                           )}
                         </button>
-                        <span className="text-[10px] font-[700] text-emerald-600 uppercase tracking-[0.5px]">At.</span>
+                        <span className="text-[10px] font-[700] text-emerald-600 uppercase tracking-[0.5px]" aria-hidden="true">At.</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
+                          type="button"
                           onClick={() => toggle(item, 'aprovado')}
-                          className={`w-[22px] h-[22px] rounded-[5px] border-2 flex items-center justify-center transition-all ${
+                          disabled={togglingId === item.id}
+                          aria-pressed={item.aprovado}
+                          aria-label={item.aprovado ? 'Remover aprovação' : 'Aprovar item'}
+                          className={`w-[22px] h-[22px] rounded-[5px] border-2 flex items-center justify-center transition-all disabled:opacity-50 ${
                             item.aprovado ? 'bg-blue-500 border-blue-500' : 'border-blue-300 hover:border-blue-400 bg-white'
                           }`}
-                          title="Aprovado"
                         >
                           {item.aprovado && (
-                            <svg width="11" height="9" viewBox="0 0 12 10" fill="none">
+                            <svg width="11" height="9" viewBox="0 0 12 10" fill="none" aria-hidden="true">
                               <path d="M1 5L4.5 8.5L11 1.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
                           )}
                         </button>
-                        <span className="text-[10px] font-[700] text-blue-600 uppercase tracking-[0.5px]">Ap.</span>
+                        <span className="text-[10px] font-[700] text-blue-600 uppercase tracking-[0.5px]" aria-hidden="true">Ap.</span>
                       </div>
                     </div>
 
@@ -249,11 +294,13 @@ export default function UpdatesList({ onBack }: Props) {
 
                     {/* Delete */}
                     <button
+                      type="button"
                       onClick={() => setDeleteConfirm(item.id)}
-                      className="p-2 rounded-[8px] text-[#CBD5E1] hover:text-red-500 hover:bg-red-50 transition-all shrink-0 ml-1"
+                      aria-label={`Apagar item: ${item.text.slice(0, 60)}`}
                       title="Apagar item"
+                      className="p-2 rounded-[8px] text-[#CBD5E1] hover:text-red-500 hover:bg-red-50 transition-all shrink-0 ml-1"
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={16} aria-hidden="true" />
                     </button>
                   </div>
                 </div>
@@ -271,31 +318,47 @@ export default function UpdatesList({ onBack }: Props) {
 
       {/* Delete confirmation modal */}
       {deleteConfirm && (
-        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)} />
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-modal-title"
+          className="fixed inset-0 z-[500] flex items-center justify-center p-4"
+        >
+          <button
+            type="button"
+            aria-label="Fechar diálogo"
+            onClick={() => setDeleteConfirm(null)}
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
+          />
           <div className="relative bg-white rounded-[24px] p-8 shadow-2xl max-w-sm w-full">
             <div className="flex flex-col items-center text-center gap-4">
               <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
-                <Trash2 className="w-8 h-8 text-red-500" />
+                <Trash2 className="w-8 h-8 text-red-500" aria-hidden="true" />
               </div>
               <div>
-                <h3 className="text-[20px] font-[800] text-[#0F172A]">Apagar item?</h3>
+                <h3 id="delete-modal-title" className="text-[20px] font-[800] text-[#0F172A]">Apagar item?</h3>
                 <p className="text-[13px] text-[#64748B] mt-2 font-[500] leading-relaxed">
                   Tem a certeza que deseja apagar este item?<br/>Esta ação não pode ser desfeita.
                 </p>
               </div>
               <div className="flex gap-3 w-full mt-1">
                 <button
+                  type="button"
                   onClick={() => setDeleteConfirm(null)}
-                  className="flex-1 py-3 rounded-[10px] text-[14px] font-[700] bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0] transition-all"
+                  disabled={deleting}
+                  className="flex-1 py-3 rounded-[10px] text-[14px] font-[700] bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0] transition-all disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <button
+                  type="button"
                   onClick={() => confirmDelete(deleteConfirm)}
-                  className="flex-1 py-3 rounded-[10px] text-[14px] font-[700] bg-red-500 text-white hover:bg-red-600 active:scale-[0.98] transition-all shadow-md shadow-red-500/25"
+                  disabled={deleting}
+                  aria-busy={deleting}
+                  className="flex-1 py-3 rounded-[10px] text-[14px] font-[700] bg-red-500 text-white hover:bg-red-600 active:scale-[0.98] transition-all shadow-md shadow-red-500/25 disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100 inline-flex items-center justify-center gap-2"
                 >
-                  Apagar
+                  {deleting && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
+                  {deleting ? 'A apagar…' : 'Apagar'}
                 </button>
               </div>
             </div>

@@ -12,10 +12,8 @@ export interface SalarioState {
   localizacao: 'continente' | 'madeira' | 'acores';
   duodecimos: boolean;
   subsidioAlimentacaoDiario: number;
-  tipoSubsidio: 'dinheiro' | 'cartao';
+  tipoSubsidio: 'dinheiro' | 'cartao' | 'vale_geral' | 'vale_hotelaria';
   diasSubsidio: number;
-  ticketRefeicaoDiario: number;
-  ticketRefeicaoDias: number;
   irsJovem: boolean;
   anosAtividade: number;
   idade: number;
@@ -45,8 +43,6 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
       subsidioAlimentacaoDiario: s.subsidioAlimentacaoDiario,
       tipoSubsidio: s.tipoSubsidio,
       diasSubsidio: s.diasSubsidio,
-      ticketRefeicaoDiario: s.ticketRefeicaoDiario,
-      ticketRefeicaoDias: s.ticketRefeicaoDias,
       irsJovem: s.irsJovem,
       anosAtividade: s.anosAtividade,
       idade: s.idade,
@@ -167,42 +163,13 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
             </div>
             <div>
               <label className={labelCls}>Tipo de Pagamento <Tip>Subsídio em dinheiro: limite isento €6,15/dia. Em cartão de refeição: limite isento €10,46/dia.</Tip></label>
-              <select value={s.tipoSubsidio} onChange={e => setState({ tipoSubsidio: e.target.value as 'dinheiro' | 'cartao' })} className={inputCls}>
-                <option value="dinheiro">Dinheiro (limite €6,15/dia)</option>
-                <option value="cartao">Cartão / Vale (limite €10,46/dia)</option>
+              <select value={s.tipoSubsidio} onChange={e => setState({ tipoSubsidio: e.target.value as SalarioState['tipoSubsidio'] })} className={inputCls}>
+                <option value="cartao">Cartão eletrónico — limite €10,46/dia</option>
+                <option value="dinheiro">Dinheiro / transferência — limite €6,15/dia</option>
+                <option value="vale_geral">Vale em papel, setor geral — limite €5,00/dia</option>
+                <option value="vale_hotelaria">Vale em papel, hotelaria/construção — limite €7,00/dia</option>
               </select>
             </div>
-          </div>
-
-          {/* Ticket Refeição */}
-          <div className="space-y-[10px]">
-            <div className="text-[12px] font-[700] uppercase tracking-[1px] text-[#64748B]">Ticket Refeição (Vale/Cartão)</div>
-            <div className="grid grid-cols-2 gap-[10px]">
-              <div>
-                <label className={labelCls}>Valor Diário (€) <Tip>Valor diário do ticket refeição em vale/cartão. Limite isento: €5/dia (setor geral) ou €7/dia (hotelaria/construção).</Tip></label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={s.ticketRefeicaoDiario === 0 ? '' : s.ticketRefeicaoDiario}
-                  onChange={e => setState({ ticketRefeicaoDiario: parseFloat(e.target.value) || 0 })}
-                  className={inputCls}
-                  placeholder="ex: 5.00"
-                />
-              </div>
-              <div>
-                <label className={labelCls}>Dias/mês <Tip>Número de dias úteis por mês em que o ticket refeição é atribuído.</Tip></label>
-                <input
-                  type="number"
-                  min="0"
-                  max="31"
-                  value={s.ticketRefeicaoDias === 0 ? '' : s.ticketRefeicaoDias}
-                  onChange={e => setState({ ticketRefeicaoDias: parseInt(e.target.value) || 0 })}
-                  className={inputCls}
-                />
-              </div>
-            </div>
-            <p className="text-[11px] text-[#94A3B8]">Limite isento: €5/dia (geral) · €7/dia (hotelaria/construção) — DL 133/2024</p>
           </div>
 
           {/* IRS Jovem */}
@@ -288,12 +255,6 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
                     <span className="font-[700] text-emerald-700">+ {ptEur(result.subsidioAlimentacaoIsento)}</span>
                   </div>
                 )}
-                {result.ticketRefeicaoIsento > 0 && (
-                  <div className="flex justify-between text-[13px]">
-                    <span className="text-emerald-700 font-[500]">Ticket refeição (isento)</span>
-                    <span className="font-[700] text-emerald-700">+ {ptEur(result.ticketRefeicaoIsento)}</span>
-                  </div>
-                )}
                 <div className="h-px bg-[#E2E8F0] my-1" />
                 <div className="flex justify-between text-[15px]">
                   <span className="font-[800] text-[#0F172A]">Salário Líquido</span>
@@ -349,33 +310,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
                     </div>
                   )}
                   <div className="text-[11px] text-[#94A3B8] mt-2">
-                    Limite legal 2026: €6,15/dia (dinheiro) · €10,46/dia (cartão refeição) — DL 133/2024
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Quadro ticket refeição */}
-            {result.ticketRefeicao > 0 && (
-              <div className="bg-white border border-[#E2E8F0] rounded-[20px] p-[20px]">
-                <h3 className="text-[13px] font-[700] uppercase tracking-[1px] text-[#64748B] mb-[14px]">Ticket Refeição (Vale/Cartão)</h3>
-                <div className="space-y-[8px] text-[14px]">
-                  <div className="flex justify-between">
-                    <span className="text-[#64748B]">Total pago</span>
-                    <span className="font-[700]">{ptEur(result.ticketRefeicao)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-emerald-700">Parte isenta</span>
-                    <span className="font-[700] text-emerald-700">{ptEur(result.ticketRefeicaoIsento)}</span>
-                  </div>
-                  {result.ticketRefeicaoTributavel > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-orange-700">Parte tributável (excede limite)</span>
-                      <span className="font-[700] text-orange-700">{ptEur(result.ticketRefeicaoTributavel)}</span>
-                    </div>
-                  )}
-                  <div className="text-[11px] text-[#94A3B8] mt-2">
-                    Limite legal 2026: €5/dia (geral) · €7/dia (hotelaria/construção) — DL 133/2024
+                    Limites isentos 2026: €10,46/dia (cartão eletrónico) · €6,15/dia (dinheiro) · €5,00/dia (vale papel, geral) · €7,00/dia (vale papel, hotelaria) — Despacho 233-A/2026 · DL 133/2024
                   </div>
                 </div>
               </div>

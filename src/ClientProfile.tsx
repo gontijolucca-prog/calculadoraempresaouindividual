@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { User, Building2, FileText, Download, Ticket, Wallet, MapPin } from 'lucide-react';
 import { Tip } from './Tip';
 import { jsPDF } from 'jspdf';
+import PDFPreviewEditor from './PDFPreviewEditor';
 
 // Converte o SVG do logotipo para PNG data URL via canvas
 const svgLogoToPng = (): Promise<string> => {
@@ -36,6 +37,21 @@ import {
   calculateIRC,
   SS_RATE_EMPLOYER,
 } from './lib/pt2026';
+
+/**
+ * NIF (Número de Identificação Fiscal) PT validation:
+ * 9 digits, first digit denotes entity type, last digit is a mod-11 checksum.
+ */
+function isValidNIFPT(nif: string): boolean {
+  if (!/^\d{9}$/.test(nif)) return false;
+  const validFirst = ['1', '2', '3', '5', '6', '8', '9'];
+  if (!validFirst.includes(nif[0]) && nif[0] !== '4' && nif[0] !== '7') return false;
+  let total = 0;
+  for (let i = 0; i < 8; i++) total += parseInt(nif[i], 10) * (9 - i);
+  const mod = total % 11;
+  const check = mod < 2 ? 0 : 11 - mod;
+  return check === parseInt(nif[8], 10);
+}
 
 export interface ClientProfile {
   nomeCliente: string;
@@ -108,7 +124,6 @@ interface TicketSimulatorState {
   ticketValue: number;
   daysPerMonth: number;
   months: number;
-  ticketType: string;
 }
 
 interface SSState {
@@ -134,6 +149,8 @@ const ptEur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency',
 const ptPct = (v: number) => `${(v * 100).toFixed(1)}%`;
 
 export default function ClientProfile({ profile, onChange, taxState, vehicleState, ticketState, ssState }: Props) {
+  const [showEditor, setShowEditor] = useState(false);
+
   const updateProfile = (field: keyof ClientProfile, value: any) => {
     onChange({ ...profile, [field]: value });
   };
@@ -465,6 +482,7 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
   // ─── RENDER ───────────────────────────────────────────────────────────────
 
   return (
+    <>
     <div className="overflow-y-auto lg:overflow-hidden lg:h-full lg:flex lg:flex-row bg-[#F8FAFC]">
       {/* LEFT PANEL */}
       <div className="lg:w-[460px] shrink-0 bg-white border-b border-[#E2E8F0] lg:border-b-0 lg:border-r lg:overflow-y-auto lg:h-full flex flex-col">
@@ -472,7 +490,7 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
           <div>
             <h2 className="text-[20px] font-[800] tracking-[-0.5px] text-[#0F172A]">Perfil do Cliente</h2>
           </div>
-          <button onClick={generatePDF} className="flex shrink-0 items-center gap-2 bg-[#0F172A] text-white px-4 py-2 rounded-[10px] text-[13px] font-[700] hover:bg-[#781D1D] transition-colors shadow-lg">
+          <button onClick={() => setShowEditor(true)} className="flex shrink-0 items-center gap-2 bg-[#781D1D] text-white px-4 py-2 rounded-[10px] text-[13px] font-[700] hover:bg-[#5A1313] transition-colors shadow-lg">
             <Download size={16} />
             Exportar PDF
           </button>
@@ -488,31 +506,47 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
             <div className="grid grid-cols-2 gap-x-4 gap-y-4">
               <div className="col-span-2">
                 <label className={labelClass}>Nome do Cliente / Empresa</label>
-                <input type="text" value={profile.nomeCliente} onChange={e => updateProfile('nomeCliente', e.target.value)} className={inputClass} placeholder="Nome completo ou denominação social" />
+                <input type="text" autoComplete="name" value={profile.nomeCliente} onChange={e => updateProfile('nomeCliente', e.target.value)} className={inputClass} placeholder="Nome completo ou denominação social" />
               </div>
               <div>
                 <label className={labelClass}>NIF</label>
-                <input type="text" value={profile.nif} onChange={e => updateProfile('nif', e.target.value)} className={inputClass} placeholder="123456789" maxLength={9} />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="\d{9}"
+                  maxLength={9}
+                  value={profile.nif}
+                  onChange={e => updateProfile('nif', e.target.value.replace(/\D/g, '').slice(0, 9))}
+                  className={inputClass}
+                  placeholder="123456789"
+                  aria-invalid={profile.nif.length > 0 && !isValidNIFPT(profile.nif)}
+                  aria-describedby="nif-help"
+                />
+                {profile.nif.length > 0 && !isValidNIFPT(profile.nif) && (
+                  <p id="nif-help" className="text-[11px] text-amber-700 font-[600] mt-1">
+                    NIF deve ter 9 dígitos e checksum válido.
+                  </p>
+                )}
               </div>
               <div>
                 <label className={labelClass}>Telefone</label>
-                <input type="tel" value={profile.telefone} onChange={e => updateProfile('telefone', e.target.value)} className={inputClass} placeholder="912345678" />
+                <input type="tel" autoComplete="tel" inputMode="tel" value={profile.telefone} onChange={e => updateProfile('telefone', e.target.value)} className={inputClass} placeholder="912345678" />
               </div>
               <div className="col-span-2">
                 <label className={labelClass}>Email</label>
-                <input type="email" value={profile.email} onChange={e => updateProfile('email', e.target.value)} className={inputClass} placeholder="email@empresa.pt" />
+                <input type="email" autoComplete="email" inputMode="email" value={profile.email} onChange={e => updateProfile('email', e.target.value)} className={inputClass} placeholder="email@empresa.pt" />
               </div>
               <div className="col-span-2">
                 <label className={labelClass}>Morada</label>
-                <input type="text" value={profile.morada} onChange={e => updateProfile('morada', e.target.value)} className={inputClass} placeholder="Rua, Avenida..." />
+                <input type="text" autoComplete="street-address" value={profile.morada} onChange={e => updateProfile('morada', e.target.value)} className={inputClass} placeholder="Rua, Avenida..." />
               </div>
               <div>
                 <label className={labelClass}>Código Postal</label>
-                <input type="text" value={profile.codigoPostal} onChange={e => updateProfile('codigoPostal', e.target.value)} className={inputClass} placeholder="1000-001" maxLength={8} />
+                <input type="text" autoComplete="postal-code" inputMode="numeric" value={profile.codigoPostal} onChange={e => updateProfile('codigoPostal', e.target.value)} className={inputClass} placeholder="1000-001" maxLength={8} />
               </div>
               <div>
                 <label className={labelClass}>Localidade</label>
-                <input type="text" value={profile.localidade} onChange={e => updateProfile('localidade', e.target.value)} className={inputClass} placeholder="Lisboa" />
+                <input type="text" autoComplete="address-level2" value={profile.localidade} onChange={e => updateProfile('localidade', e.target.value)} className={inputClass} placeholder="Lisboa" />
               </div>
             </div>
           </section>
@@ -743,6 +777,18 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
         </section>
       </div>
     </div>
+
+    {showEditor && (
+      <PDFPreviewEditor
+        profile={profile}
+        taxState={taxState}
+        vehicleState={vehicleState}
+        ticketState={ticketState}
+        ssState={ssState}
+        onClose={() => setShowEditor(false)}
+      />
+    )}
+    </>
   );
 }
 

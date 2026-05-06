@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Scale, BookOpen, Car, Ticket, Shield, AlertTriangle, CheckCircle2, Briefcase, Save, Layers, Building, Banknote, Home, ClipboardList, Utensils, Baby, Heart, Gift } from 'lucide-react';
+import { ArrowLeft, Scale, BookOpen, Car, Ticket, Shield, AlertTriangle, CheckCircle2, Briefcase, Save, Layers, Building, Banknote, Home, ClipboardList } from 'lucide-react';
 import { IRS_BRACKETS_2026, IAS_2026 } from './lib/pt2026';
 import {
   loadPricing,
@@ -17,6 +17,7 @@ interface Props {
   clientProfile?: ClientProfile;
   vehicleState?: { price: number };
   ticketState?: { ticketValue: number };
+  initialAnchor?: string | null;
 }
 
 const ptEur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(v);
@@ -80,7 +81,102 @@ const PriceInput = ({
   </div>
 );
 
-export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicleState, ticketState }: Props) {
+type LegalSectionEntry = {
+  id: string;
+  label: string;
+  Icon: React.ElementType;
+  color: string;
+  parentId?: string;
+};
+
+const LEGAL_SECTIONS: LegalSectionEntry[] = [
+  { id: 'legal-honorarios', label: 'Honorários',           Icon: Briefcase, color: '#781D1D' },
+  { id: 'legal-regimes',    label: 'Regimes Contab. & IVA', Icon: Layers,    color: '#334155' },
+  { id: 'legal-cae',        label: 'CAE & Art.9 CIVA',     Icon: ClipboardList, color: '#334155', parentId: 'legal-regimes' },
+  { id: 'legal-docs',       label: 'Documentos obrig.',    Icon: ClipboardList, color: '#334155', parentId: 'legal-regimes' },
+  { id: 'legal-irs',        label: 'IRS',                  Icon: BookOpen,  color: '#781D1D' },
+  { id: 'legal-distribuicao', label: 'Salário vs Dividendos', Icon: Banknote, color: '#781D1D', parentId: 'legal-irs' },
+  { id: 'legal-irc',        label: 'IRC',                  Icon: Scale,     color: '#334155' },
+  { id: 'legal-csc',        label: 'Estrutura Societária', Icon: Building,  color: '#334155', parentId: 'legal-irc' },
+  { id: 'legal-iva',        label: 'IVA',                  Icon: Scale,     color: '#1D4ED8' },
+  { id: 'legal-ss',         label: 'Segurança Social',     Icon: Shield,    color: '#059669' },
+  { id: 'legal-dividas',    label: 'Dívidas Fiscais & SS', Icon: AlertTriangle, color: '#059669', parentId: 'legal-ss' },
+  { id: 'legal-tickets',    label: 'Tickets / Benefícios', Icon: Ticket,    color: '#7C3AED' },
+  { id: 'legal-imt',        label: 'IMT & Imposto Selo',   Icon: Building,  color: '#7C3AED' },
+  { id: 'legal-salario',    label: 'Salário Líquido TCO',  Icon: Banknote,  color: '#0369A1' },
+  { id: 'legal-imoveis',    label: 'Imóveis na Empresa',   Icon: Home,      color: '#065F46' },
+  { id: 'legal-indice',     label: 'Índice Legislativo',   Icon: BookOpen,  color: '#475569' },
+];
+
+// Honour user motion preferences for in-page anchor scrolling.
+function prefersReducedMotion(): boolean {
+  return typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+}
+
+function LegalSidebar() {
+  const [activeId, setActiveId] = useState<string>(LEGAL_SECTIONS[0].id);
+
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(
+      entries => {
+        const visible = entries
+          .filter(e => e.isIntersecting)
+          .map(e => e.target.id)
+          .filter(id => LEGAL_SECTIONS.some(s => s.id === id));
+        if (visible.length === 0) return;
+        const first = LEGAL_SECTIONS
+          .map(s => s.id)
+          .find(id => visible.includes(id));
+        if (first) setActiveId(first);
+      },
+      { rootMargin: '-15% 0px -70% 0px', threshold: 0 }
+    );
+    LEGAL_SECTIONS.forEach(s => {
+      const el = document.getElementById(s.id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  const handleClick = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+      block: 'start',
+    });
+    setActiveId(id);
+  };
+
+  return (
+    <nav className="space-y-0.5" aria-label="Índice da página legal">
+      <p className="text-[10px] font-[800] uppercase tracking-[1.5px] text-[#94A3B8] mb-3 px-3">Índice Legal</p>
+      {LEGAL_SECTIONS.map(({ id, label, Icon, color, parentId }) => {
+        const isActive = activeId === id;
+        const indent = parentId ? 'pl-7' : 'pl-3';
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => handleClick(id)}
+            aria-current={isActive ? 'true' : undefined}
+            className={
+              `w-full flex items-center gap-2 ${indent} pr-3 py-1.5 rounded-[8px] text-[12px] font-[600] transition-all text-left border-l-2 ` +
+              (isActive
+                ? 'bg-[#FDF2F2] text-[#781D1D] border-[#781D1D] font-[700]'
+                : 'border-transparent text-slate-600 hover:text-[#0F172A] hover:bg-slate-50')
+            }
+          >
+            <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: isActive ? '#781D1D' : color }} aria-hidden="true" />
+            <span className="truncate">{label}</span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
+export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicleState, ticketState, initialAnchor }: Props) {
   const [pricing, setPricing] = useState<PricingConfig>(loadPricing);
   const [saved, setSaved] = useState(false);
 
@@ -93,6 +189,25 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
       }
     });
   }, []);
+
+  // If a deep-link anchor was supplied (from Ficha → "Base Legal →"),
+  // scroll to it after the section DOM mounts. Two rAFs to ensure layout settled.
+  useEffect(() => {
+    if (!initialAnchor) return;
+    let cancelled = false;
+    const tryScroll = () => {
+      if (cancelled) return;
+      const el = document.getElementById(initialAnchor);
+      if (el) {
+        el.scrollIntoView({
+          behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+          block: 'start',
+        });
+      }
+    };
+    requestAnimationFrame(() => requestAnimationFrame(tryScroll));
+    return () => { cancelled = true; };
+  }, [initialAnchor]);
 
   const update = (field: keyof PricingConfig, value: number) => {
     const next = { ...pricing, [field]: value };
@@ -140,7 +255,12 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 md:px-10 py-10 space-y-12">
+      <div className="max-w-7xl mx-auto px-6 md:px-10 py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-10">
+          <aside className="hidden lg:block sticky top-[80px] self-start max-h-[calc(100vh-100px)] overflow-y-auto pr-2">
+            <LegalSidebar />
+          </aside>
+          <div className="min-w-0 max-w-4xl space-y-12">
 
         {/* Aviso */}
         <div className="bg-amber-50 border border-amber-200 rounded-[16px] p-5 flex gap-4">
@@ -153,7 +273,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
         {/* ═══════════════════════════════════════════════════════════ */}
         {/* TABELA DE HONORÁRIOS                                        */}
         {/* ═══════════════════════════════════════════════════════════ */}
-        <section className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0]">
+        <section id="legal-honorarios" className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0] scroll-mt-24">
           <div className="flex items-center justify-between mb-5 pb-3 border-b-2 border-[#781D1D]">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-[10px] bg-[#781D1D15]">
@@ -385,7 +505,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
         {/* ═══════════════════════════════════════════════════════════ */}
         {/* REGIMES DE CONTABILIDADE & IVA                             */}
         {/* ═══════════════════════════════════════════════════════════ */}
-        <section className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0]">
+        <section id="legal-regimes" className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0] scroll-mt-24">
           <SectionHeader icon={Layers} title="Regimes de Contabilidade & IVA em Portugal" color="#334155" />
 
           <p className="text-[13px] text-[#64748B] font-[500] mb-6 leading-relaxed">
@@ -625,12 +745,58 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
               </tbody>
             </table>
           </div>
+
+          {/* ── CAE & atividades isentas (Art.9 CIVA) ── */}
+          <div id="legal-cae" className="mt-10 pt-8 border-t border-[#E2E8F0] scroll-mt-24">
+            <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3 uppercase tracking-[0.5px]">CAE & Atividades Isentas de IVA (Art. 9.º CIVA)</h3>
+            <p className="text-[13px] text-[#64748B] font-[500] mb-4 leading-relaxed">
+              A Classificação Portuguesa das Atividades Económicas (CAE-Rev.3, NACE) identifica a atividade junto da AT, SS e bancos. Algumas atividades estão isentas de IVA por natureza (sem registo no Art. 53.º), o que tem implicações na (não) dedução do IVA suportado.
+            </p>
+            <div className="space-y-2 mb-4">
+              <LegalRow label="Saúde — médicos, enfermagem, MTC" value="Isenta de IVA — CIVA Art. 9.º, n.º 1" note="Não permite deduzir IVA suportado em compras" />
+              <LegalRow label="Educação e formação certificada" value="Isenta de IVA — CIVA Art. 9.º, n.º 9" note="Inclui DGERT, CITE-2, ensino reconhecido" />
+              <LegalRow label="Serviços sociais" value="Isenta de IVA — CIVA Art. 9.º, n.º 7-8" />
+              <LegalRow label="Cultura, museus, espetáculos sem fim lucrativo" value="Isenta de IVA — CIVA Art. 9.º, n.º 13-14" />
+              <LegalRow label="Operações imobiliárias (rendas, transmissão usado)" value="Isenta de IVA — CIVA Art. 9.º, n.º 29-30" note="Possível renúncia à isenção em arrendamento empresarial (CIVA Art. 12.º)" />
+              <LegalRow label="Atividade não isenta + < €15.000/ano" value="Pode optar pelo Art. 53.º (isenção PME)" note="Limite OE 2025 — passou de €14.500 para €15.000" />
+              <LegalRow label="CAE principal vs secundário" value="Atividade principal define enquadramento; secundárias podem somar à mesma faturação" note="Comunicação obrigatória à AT (declaração de início/alterações)" />
+            </div>
+            <div className="space-y-1">
+              <Article code="CIVA Art. 9.º" description="Operações isentas de IVA — saúde, educação, serviços sociais, cultura, imobiliário usado" />
+              <Article code="CIVA Art. 53.º" description="Regime especial de isenção PME — volume de negócios ≤ €15.000/ano" />
+              <Article code="DR n.º 381/2007" description="Classificação Portuguesa das Atividades Económicas — CAE-Rev.3" />
+            </div>
+          </div>
+
+          {/* ── Documentos contabilísticos obrigatórios ── */}
+          <div id="legal-docs" className="mt-10 pt-8 border-t border-[#E2E8F0] scroll-mt-24">
+            <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3 uppercase tracking-[0.5px]">Documentos Contabilísticos & Prazos de Arquivo</h3>
+            <p className="text-[13px] text-[#64748B] font-[500] mb-4 leading-relaxed">
+              O DL 158/2009 (SNC) e o RGIT estabelecem os documentos obrigatórios e os prazos legais de conservação. A AT pode exigir o acesso a estes documentos durante o período de arquivo.
+            </p>
+            <div className="space-y-2 mb-4">
+              <LegalRow label="Faturas, recibos, notas de crédito/débito" value="Arquivo obrigatório 10 anos" note="RGIT Art. 123.º — emissão por sistema certificado (Portaria 363/2010)" />
+              <LegalRow label="Livros contabilísticos (diário, razão, inventário)" value="Arquivo obrigatório 10 anos" note="DL 158/2009 — SNC; obrigatórios em contabilidade organizada" />
+              <LegalRow label="Mapas de pessoal, recibos de salário, contratos" value="Arquivo 5 anos (laboral) / 10 anos (contributivo)" note="Código do Trabalho + CRCSPSS" />
+              <LegalRow label="Declarações fiscais (Mod. 22, IES, IVA, Mod. 3)" value="Arquivo 10 anos a partir do final do exercício" />
+              <LegalRow label="Extratos bancários, comprovantes de pagamento" value="10 anos — comprovam fluxos contabilísticos" />
+              <LegalRow label="Inventários físicos (stocks)" value="Obrigatório a 31 dez de cada exercício" note="DL 158/2009 — anexo ao Modelo 22 e IES" />
+              <LegalRow label="SAF-T (PT) — ficheiro normalizado" value="Geração e envio à AT obrigatórios para empresas" note="Portaria 321-A/2007 — formato XML uniforme" />
+              <LegalRow label="ENI em regime simplificado" value="Documentos justificativos das despesas isentas (mas relevantes)" note="Recomenda-se manter mesmo se não declarar custos reais" />
+            </div>
+            <div className="space-y-1">
+              <Article code="DL 158/2009" description="Sistema de Normalização Contabilística (SNC) — obrigações de registo e arquivo" />
+              <Article code="RGIT Art. 123.º" description="Conservação de livros e documentos — 10 anos" />
+              <Article code="Portaria 363/2010" description="Sistemas de faturação certificados pela AT" />
+              <Article code="Portaria 321-A/2007" description="SAF-T (PT) — ficheiro normalizado de auditoria fiscal" />
+            </div>
+          </div>
         </section>
 
         {/* ═══════════════════════════════════════════════════════════ */}
         {/* 1. IRS — IMPOSTO SOBRE O RENDIMENTO DE PESSOAS SINGULARES  */}
         {/* ═══════════════════════════════════════════════════════════ */}
-        <section className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0]">
+        <section id="legal-irs" className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0] scroll-mt-24">
           <SectionHeader icon={BookOpen} title="IRS — Imposto sobre o Rendimento (CIRS)" />
 
           <div className="space-y-6">
@@ -718,12 +884,35 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
               </div>
             </div>
           </div>
+
+          {/* ── Distribuição de Resultados — Salário vs Dividendos ── */}
+          <div id="legal-distribuicao" className="mt-10 pt-8 border-t border-[#E2E8F0] scroll-mt-24">
+            <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3 uppercase tracking-[0.5px]">Distribuição de Resultados — Salário vs Dividendos</h3>
+            <p className="text-[13px] text-[#64748B] font-[500] mb-4 leading-relaxed">
+              Numa Lda./Unipessoal, o sócio-gerente pode receber rendimento como salário (Categoria A), distribuição de dividendos (Categoria E) ou misto. A escolha tem impacto significativo em IRS, IRC e SS.
+            </p>
+            <div className="space-y-2 mb-4">
+              <LegalRow label="Salário do sócio-gerente — Cat. A" value="Tributado a escalões IRS (13–48%) + SS 11% trabalhador + 23,75% empresa" note="Custo dedutível em IRC para a empresa (Art. 23.º CIRC)" />
+              <LegalRow label="Dividendos — Cat. E" value="Retenção liberatória 28% (Art. 71.º CIRS)" note="Pode optar por englobamento se mais favorável (escalões IRS) — declara-se na Mod. 3" />
+              <LegalRow label="Distribuição não dedutível em IRC" value="Os lucros saem após pagamento de IRC (15%/19%) — dupla tributação económica" />
+              <LegalRow label="Reinvestimento de lucros" value="Sem tributação adicional até serem distribuídos — favorece capitalização" />
+              <LegalRow label="Salário mínimo de gerência (SS)" value="Base de incidência mínima ≥ 1 IAS (€542,16/mês em 2026)" note="Mesmo gerentes não remunerados pagam contribuição mínima sobre 1 IAS" />
+              <LegalRow label="Rule of thumb" value="Salário até cobrir necessidades pessoais; restante reinvestir ou distribuir como dividendos" note="Comparação caso a caso depende de IRS marginal, escalão IRC e SS já paga noutros vínculos" />
+            </div>
+            <div className="space-y-1">
+              <Article code="CIRS Art. 71.º, n.º 1" description="Retenção liberatória de 28% sobre dividendos (Cat. E)" />
+              <Article code="CIRS Art. 22.º" description="Englobamento opcional de Cat. E — escolha do contribuinte" />
+              <Article code="CIRC Art. 23.º" description="Salários como gasto dedutível; dividendos não" />
+              <Article code="CSC Art. 217.º e 294.º" description="Distribuição de lucros — Sociedade por Quotas e SA" />
+              <Article code="CRCSPSS Art. 56.º" description="Base de incidência mínima dos gerentes — 1 IAS" />
+            </div>
+          </div>
         </section>
 
         {/* ═══════════════════════════════════════════════════════════ */}
         {/* 2. IRC — IMPOSTO SOBRE O RENDIMENTO DE PESSOAS COLETIVAS   */}
         {/* ═══════════════════════════════════════════════════════════ */}
-        <section className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0]">
+        <section id="legal-irc" className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0] scroll-mt-24">
           <SectionHeader icon={Scale} title="IRC — Imposto sobre o Rendimento das Empresas (CIRC)" color="#334155" />
 
           <div className="space-y-6">
@@ -785,12 +974,38 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
               </div>
             </div>
           </div>
+
+          {/* ── Estrutura Societária — CSC ── */}
+          <div id="legal-csc" className="mt-10 pt-8 border-t border-[#E2E8F0] scroll-mt-24">
+            <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3 uppercase tracking-[0.5px]">Estrutura Societária — Código das Sociedades Comerciais</h3>
+            <p className="text-[13px] text-[#64748B] font-[500] mb-4 leading-relaxed">
+              A escolha da forma jurídica condiciona o capital mínimo, a responsabilidade dos sócios, a estrutura de gerência e os requisitos de constituição. Resumo das formas mais comuns para PME em Portugal.
+            </p>
+            <div className="space-y-2 mb-4">
+              <LegalRow label="Sociedade Unipessoal por Quotas (Lda.)" value="1 sócio único, capital livre (mín. €1)" note="CSC Art. 270.º-A. Responsabilidade limitada à quota" />
+              <LegalRow label="Sociedade por Quotas (Lda.)" value="2+ sócios, capital livre (mín. €2)" note="CSC Art. 197.º-264.º. Cada sócio responde pela sua quota" />
+              <LegalRow label="Sociedade Anónima (SA)" value="5+ acionistas, capital mínimo €50.000" note="CSC Art. 271.º. 30% capital realizado na constituição" />
+              <LegalRow label="Empresário em Nome Individual (ENI)" value="Sem capital social — pessoa singular" note="Responsabilidade ilimitada com património pessoal" />
+              <LegalRow label="Estabelecimento Individual de Resp. Limitada (EIRL)" value="Capital mínimo €5.000" note="DL 248/86. Património afeto isolado, mas figura em desuso" />
+              <LegalRow label="Gerência" value="Lda.: 1+ gerente. SA: Conselho de Administração" note="CSC Art. 252.º (Lda.) e 405.º (SA)" />
+              <LegalRow label="Responsabilidade do gerente" value="Subsidiária por dívidas fiscais e SS" note="LGT Art. 24.º — gerente responde se houver culpa funcional na falta de pagamento" />
+              <LegalRow label="Pacto social — alterações" value="Escritura/registo comercial obrigatórios" note="Aumento capital, mudança gerência, dissolução: registo predial-comercial" />
+              <LegalRow label="Empresa na Hora" value="Constituição em 1 dia (€360 + IRN)" note="DL 111/2005. Estatutos pré-aprovados; pacto social personalizável depois" />
+            </div>
+            <div className="space-y-1">
+              <Article code="CSC (DL 262/86)" description="Código das Sociedades Comerciais — formas jurídicas, capital, gerência, dissolução" />
+              <Article code="CSC Art. 197.º a 270.º-G" description="Sociedades por Quotas e Unipessoais" />
+              <Article code="CSC Art. 271.º a 464.º" description="Sociedades Anónimas — capital, ações, conselho de administração" />
+              <Article code="LGT Art. 24.º" description="Responsabilidade subsidiária dos gerentes por dívidas fiscais" />
+              <Article code="DL 111/2005 (Empresa na Hora)" description="Constituição imediata de sociedade com estatutos pré-aprovados" />
+            </div>
+          </div>
         </section>
 
         {/* ═══════════════════════════════════════════════════════════ */}
         {/* 3. IVA — IMPOSTO SOBRE O VALOR ACRESCENTADO               */}
         {/* ═══════════════════════════════════════════════════════════ */}
-        <section className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0]">
+        <section id="legal-iva" className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0] scroll-mt-24">
           <SectionHeader icon={Scale} title="IVA — Imposto sobre o Valor Acrescentado (CIVA)" color="#1D4ED8" />
 
           <div className="space-y-6">
@@ -852,7 +1067,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
         {/* ═══════════════════════════════════════════════════════════ */}
         {/* 4. SEGURANÇA SOCIAL                                        */}
         {/* ═══════════════════════════════════════════════════════════ */}
-        <section className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0]">
+        <section id="legal-ss" className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0] scroll-mt-24">
           <SectionHeader icon={Shield} title="Segurança Social (SS)" color="#059669" />
 
           <div className="space-y-6">
@@ -887,130 +1102,145 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
               </div>
             </div>
           </div>
+
+          {/* ── Dívidas Fiscais & SS — planos prestacionais ── */}
+          <div id="legal-dividas" className="mt-10 pt-8 border-t border-[#E2E8F0] scroll-mt-24">
+            <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3 uppercase tracking-[0.5px]">Dívidas Fiscais & SS — Planos Prestacionais e Execuções</h3>
+            <p className="text-[13px] text-[#64748B] font-[500] mb-4 leading-relaxed">
+              Existindo dívidas à AT ou à SS, é possível requerer planos prestacionais que evitam ou suspendem execuções fiscais. Conhecer os limites legais é essencial para o diagnóstico de viabilidade do cliente.
+            </p>
+            <div className="space-y-2 mb-4">
+              <LegalRow label="Plano prestacional AT — até €5.000 (s/garantia)" value="Até 12 prestações mensais" note="LGT Art. 196.º + DL 492/88. Pedido online via Portal Finanças" />
+              <LegalRow label="Plano prestacional AT — €5.000 a €50.000" value="Até 36 prestações com garantia" note="Garantia bancária, hipoteca ou penhor" />
+              <LegalRow label="Plano prestacional AT — > €50.000" value="Até 60 prestações + garantia + dispensa pode exigir comprovativo de dificuldade" />
+              <LegalRow label="Plano prestacional SS" value="Até 150 prestações para valores elevados" note="DL 42/2001 + Portaria 200/2018. Pedido na Segurança Social Direta" />
+              <LegalRow label="Juros de mora" value="Taxa legal definida anualmente (4,705% em 2026)" note="Aviso BdP — Aviso 2/2025 sobre taxas legais" />
+              <LegalRow label="Suspensão da execução" value="Plano deferido suspende processo executivo" note="Cumprimento estrito é obrigatório — falta = caducidade do plano" />
+              <LegalRow label="Certidão de dívida vs não dívida" value="Dívida em plano cumprido = situação regularizada" note="Permite candidaturas a apoios PT2030, contratação pública, etc." />
+              <LegalRow label="Dívidas à SS bloqueiam apoios" value="Sem regularização: sem subsídios, sem apoios PT2030, sem contratos públicos" />
+              <LegalRow label="Insolvência / PER / RERE" value="Mecanismos quando não é viável plano com a AT/SS" note="CIRE — Código da Insolvência e Recuperação de Empresas" />
+            </div>
+            <div className="space-y-1">
+              <Article code="LGT Art. 196.º" description="Pagamento em prestações de dívidas tributárias — competência e limites" />
+              <Article code="DL 492/88" description="Regime do pagamento em prestações de dívidas à AT" />
+              <Article code="DL 42/2001" description="Regime executivo da Segurança Social — planos prestacionais" />
+              <Article code="Portaria 200/2018" description="Atualização do regime de prestações da SS — até 150 prestações" />
+              <Article code="CIRE (DL 53/2004)" description="Código da Insolvência e Recuperação de Empresas — PER, RERE, insolvência" />
+            </div>
+          </div>
         </section>
 
         {/* ═══════════════════════════════════════════════════════════ */}
-        {/* 5. TICKETS / VALES — TODOS OS TIPOS                        */}
+        {/* 5. TICKETS DE REFEIÇÃO                                     */}
         {/* ═══════════════════════════════════════════════════════════ */}
-        <section className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0]">
-          <SectionHeader icon={Ticket} title="Tickets / Vales — Benefícios Sociais" color="#7C3AED" />
+        <section id="legal-tickets" className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0] scroll-mt-24">
+          <SectionHeader icon={Ticket} title="Tickets / Benefícios Laborais" color="#7C3AED" />
 
           <div className="space-y-8">
             <p className="text-[13px] text-[#64748B] font-[500] leading-relaxed">
-              Os tickets e vales são instrumentos de compensação extra-salarial que oferecem vantagens fiscais tanto para a empresa (dedutibilidade em IRC) como para o colaborador (isenção de IRS e/ou SS dentro de limites). Existem vários tipos disponíveis no mercado português, cada um com regras específicas.
+              Os tickets da Ticket.pt são instrumentos de política remuneratória com tratamento fiscal privilegiado — isentos de IRS e SS para o trabalhador e dedutíveis (ou majorados) em IRC para a empresa. Base legal: DL n.º 162/2014 · Código Contributivo Art. 46.º · CIRC Art. 43.º
             </p>
 
-            {/* ── Ticket Alimentação ── */}
-            <div className="border border-[#E2E8F0] rounded-[16px] p-5 bg-[#FAFAFF]">
-              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3 flex items-center gap-2">
-                <Utensils className="w-4 h-4 text-[#7C3AED]" /> Ticket Restauração / Alimentação
-              </h3>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <h4 className="text-[13px] font-[700] text-[#334155]">Limites e Isenções — DL 133/2024 + EBF Art. 18.º-A</h4>
-                  <LegalRow label="Limite diário — setor geral" value="€5,00/dia útil" note="Acima deste valor, o excedente é tributável em IRS e sujeito a SS para o trabalhador" />
-                  <LegalRow label="Limite diário — hotelaria/restauração/construção" value="€7,00/dia útil" note="DL 133/2024, com efeitos a partir de 1 janeiro 2024" />
-                  <LegalRow label="Isenção SS para o trabalhador" value="Total — até ao limite legal diário" />
-                  <LegalRow label="Isenção IRS para o trabalhador" value="Total — até ao limite legal diário" />
-                </div>
-                <div className="space-y-2">
-                  <h4 className="text-[13px] font-[700] text-[#334155]">Dedutibilidade — CIRC Art. 43.º</h4>
-                  <LegalRow label="Percentagem dedutível" value="60% do custo total dos tickets" note="Apenas o custo dentro do limite legal. Excedente: 0% dedutível." />
-                  <LegalRow label="SS patronal sobre tickets" value="Não aplicável — até ao limite legal (poupança de 23,75%)" />
-                </div>
+            {/* Resumo comparativo */}
+            <div>
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Resumo Comparativo — Todos os Tipos</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-[12px]">
+                  <thead>
+                    <tr className="bg-[#7C3AED] text-white">
+                      <th className="text-left px-3 py-2 rounded-tl-[8px]">Produto</th>
+                      <th className="text-center px-3 py-2">Isento IRS</th>
+                      <th className="text-center px-3 py-2">Isento SS</th>
+                      <th className="text-right px-3 py-2 rounded-tr-[8px]">IRC Dedutível</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { nome: 'Ticket Restaurant® — cartão eletrónico', irs: '✓ até €10,46/dia', ss: '✓ até €10,46/dia', irc: '60%', ok: true },
+                      { nome: 'Ticket Restaurant® — vale papel (geral)', irs: '✓ até €5,00/dia', ss: '✓ até €5,00/dia', irc: '60%', ok: true },
+                      { nome: 'Ticket Restaurant® — vale papel (hotelaria)', irs: '✓ até €7,00/dia', ss: '✓ até €7,00/dia', irc: '60%', ok: true },
+                      { nome: 'Ticket Infância®', irs: '✓ Isento total', ss: '✓ Isento total', irc: '140% (majoração 40%)', ok: true },
+                      { nome: 'Ticket Educação®', irs: '✓ Isento total', ss: '✓ Isento total', irc: '100%', ok: true },
+                      { nome: 'Ticket Saúde®', irs: '✓ Isento total', ss: '✓ Isento total', irc: '100%', ok: true },
+                      { nome: 'Ticket Oferta®', irs: '✗ Não isento', ss: '✗ Não isento', irc: '0,5% VN (clientes)', ok: false },
+                    ].map(({ nome, irs, ss, irc, ok }, i) => (
+                      <tr key={i} className={i % 2 === 0 ? 'bg-[#F5F3FF]' : 'bg-white'}>
+                        <td className="px-3 py-2 font-[500]">{nome}</td>
+                        <td className={`px-3 py-2 text-center font-[600] ${ok ? 'text-emerald-700' : 'text-red-600'}`}>{irs}</td>
+                        <td className={`px-3 py-2 text-center font-[600] ${ok ? 'text-emerald-700' : 'text-red-600'}`}>{ss}</td>
+                        <td className="px-3 py-2 text-right font-[700]">{irc}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            {/* ── Ticket Infância ── */}
-            <div className="border border-[#E2E8F0] rounded-[16px] p-5 bg-[#FFFBEB]">
-              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3 flex items-center gap-2">
-                <Baby className="w-4 h-4 text-[#D97706]" /> Ticket Infância®
-              </h3>
+            {/* Ticket Restaurant */}
+            <div>
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Ticket Restaurant® — Subsídio de Refeição</h3>
               <div className="space-y-2">
-                <p className="text-[13px] text-[#64748B] font-[500] leading-relaxed">
-                  Vale infância atribuído pelas empresas para subsidiar as despesas de educação dos filhos e equiparados no <strong>Pré-Escolar (até aos 7 anos)</strong>. Aplicável a creches e estabelecimentos de educação pré-escolar (ensino privado, ensino privado solidário e ensino público).
-                </p>
-                <LegalRow label="Limite de referência" value="€50/mês por colaborador" note="Valor de referência indicativo para efeitos de isenção" />
-                <LegalRow label="Isenção IRS" value="Sim — até ao limite de referência" note="O valor dentro do limite não é considerado rendimento para efeitos de IRS" />
-                <LegalRow label="SS patronal" value="Aplicável (23,75% sobre o valor)" note="Diferente dos vales de alimentação, a SS patronal é devida" />
-                <LegalRow label="Dedutibilidade empresa" value="60% do custo (benefício social)" note="Aplicável como gasto de natureza social — CIRC Art. 43.º" />
+                <LegalRow label="Cartão eletrónico — limite isento" value="€10,46/dia útil" note="Despacho 233-A/2026 — suporte eletrónico (cartão refeição)" />
+                <LegalRow label="Dinheiro / transferência — limite isento" value="€6,15/dia útil" note="Despacho 233-A/2026" />
+                <LegalRow label="Vale em papel, setor geral — limite isento" value="€5,00/dia útil" note="DL 133/2024, com efeitos a partir de 1 janeiro 2024" />
+                <LegalRow label="Vale em papel, hotelaria/restauração/construção" value="€7,00/dia útil" note="DL 133/2024 — setores específicos" />
+                <LegalRow label="Isenção IRS e SS (trabalhador)" value="Total — até ao limite legal da modalidade" note="Excedente: sujeito a IRS e SS como remuneração normal" />
+                <LegalRow label="Isenção SS patronal (empresa)" value="Não há SS sobre o valor dentro do limite — poupança de 23,75%" note="Código Contributivo Art. 46.º n.º 1 e)" />
+                <LegalRow label="Dedutibilidade IRC" value="60% do custo total dos tickets" note="CIRC Art. 43.º n.º 2 — limitação específica (vs. 100% para salário)" />
               </div>
             </div>
 
-            {/* ── Ticket Ensino ── */}
-            <div className="border border-[#E2E8F0] rounded-[16px] p-5 bg-[#F0FDF4]">
-              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3 flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-[#16A34A]" /> Ticket Ensino® / Educação
-              </h3>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <p className="text-[13px] text-[#64748B] font-[500] leading-relaxed">
-                    O <strong>Ticket Ensino® (Cheque Educação)</strong> é um título em vale, cartão eletrónico e formato digital, totalmente desmaterializado, atribuído pelas empresas e instituições aos seus colaboradores para compensação de encargos familiares com a educação.
-                  </p>
-                  <p className="text-[13px] text-[#64748B] font-[500] leading-relaxed">
-                    Já o <strong>Cheque Ensino/Formação</strong> permite às empresas e instituições subsidiar as despesas de educação e formação dos colaboradores e seus dependentes em áreas diversas, <strong>sem limite de idade ou valor anual</strong>.
-                  </p>
-                </div>
-                <LegalRow label="Limite de referência" value="€50/mês por colaborador" note="Valor de referência indicativo para efeitos de isenção" />
-                <LegalRow label="Isenção IRS" value="Sim — até ao limite de referência" note="O valor dentro do limite não é considerado rendimento para IRS" />
-                <LegalRow label="SS patronal" value="Aplicável (23,75% sobre o valor)" />
-                <LegalRow label="Dedutibilidade empresa" value="60% do custo (benefício social)" note="CIRC Art. 43.º — gastos com benefícios sociais" />
-              </div>
-            </div>
-
-            {/* ── Ticket Saúde ── */}
-            <div className="border border-[#E2E8F0] rounded-[16px] p-5 bg-[#FEF2F2]">
-              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3 flex items-center gap-2">
-                <Heart className="w-4 h-4 text-[#DC2626]" /> Ticket Saúde®
-              </h3>
+            {/* Ticket Infância */}
+            <div>
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Ticket Infância® — Educação Pré-Escolar</h3>
               <div className="space-y-2">
-                <p className="text-[13px] text-[#64748B] font-[500] leading-relaxed">
-                  Vale de saúde e bem-estar que permite às empresas subsidiar os encargos com as despesas de saúde e apoio social dos colaboradores e seus familiares, podendo complementar o seguro de saúde.
-                </p>
-                <LegalRow label="Limite de referência" value="€100/mês por colaborador" note="Valor de referência indicativo para efeitos de isenção" />
-                <LegalRow label="Isenção IRS" value="Sim — até ao limite de referência" note="O valor dentro do limite não é considerado rendimento para IRS" />
-                <LegalRow label="SS patronal" value="Aplicável (23,75% sobre o valor)" />
-                <LegalRow label="Dedutibilidade empresa" value="60% do custo" note="Gasto dedutível como benefício social — CIRC Art. 43.º" />
+                <LegalRow label="Âmbito" value="Encargos com creche e jardim de infância — crianças até 7 anos de idade" />
+                <LegalRow label="Isenção IRS" value="Total — sem limite de valor" note="CIRS Art. 24.º — encargos suportados pela entidade patronal com educação pré-escolar" />
+                <LegalRow label="Isenção SS (patronal + trabalhador)" value="Total — sem limite de valor" note="Código Contributivo Art. 46.º n.º 1" />
+                <LegalRow label="Dedutibilidade IRC" value="140% do custo — majoração de 40% sobre o custo real" note="CIRC Art. 43.º n.º 9 — creches, lactários e jardins de infância" />
+                <LegalRow label="Limite de valor" value="Sem limite específico definido na lei" note="O montante deve ser razoável, documentado e acessível a todos os trabalhadores" />
               </div>
             </div>
 
-            {/* ── Ticket Oferta ── */}
-            <div className="border border-[#E2E8F0] rounded-[16px] p-5 bg-[#F5F3FF]">
-              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3 flex items-center gap-2">
-                <Gift className="w-4 h-4 text-[#7C3AED]" /> Ticket Oferta®
-              </h3>
+            {/* Ticket Educação */}
+            <div>
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Ticket Educação® — Ensino e Formação</h3>
               <div className="space-y-2">
-                <p className="text-[13px] text-[#64748B] font-[500] leading-relaxed">
-                  Cheque prenda destinado ao pagamento de bens e serviços numa vasta rede nacional de lojas e marcas selecionadas. Utilizado para ofertas de Natal, aniversário ou outras ocasiões especiais.
-                </p>
-                <LegalRow label="Limite de isenção IRS" value="Sem limite específico" note="Tratado como rendimento em espécie — sujeito a IRS na esfera do colaborador" />
-                <LegalRow label="Isenção IRS" value="Não" note="Considerado rendimento do trabalho dependente (Categoria A)" />
-                <LegalRow label="SS patronal" value="Aplicável (23,75% sobre o valor)" />
-                <LegalRow label="Dedutibilidade empresa" value="40% do custo" note="Gastos com realizações sociais — dedutibilidade limitada a 40% (CIRC Art. 43.º, n.º 2)" />
+                <LegalRow label="Âmbito" value="Ensino privado e público, livros, manuais, material escolar e centros de explicações — todos os graus de ensino" />
+                <LegalRow label="Isenção IRS" value="Total — sem limite de valor ou de idade" note="CIRS Art. 24.º" />
+                <LegalRow label="Isenção SS (patronal + trabalhador)" value="Total" note="Código Contributivo Art. 46.º" />
+                <LegalRow label="Dedutibilidade IRC" value="100% — gasto dedutível normal" note="CIRC Art. 43.º n.º 1" />
               </div>
             </div>
 
-            {/* ── Ticket Car ── */}
-            <div className="border border-[#E2E8F0] rounded-[16px] p-5 bg-[#EFF6FF]">
-              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3 flex items-center gap-2">
-                <Car className="w-4 h-4 text-[#2563EB]" /> Ticket Car®
-              </h3>
+            {/* Ticket Saúde */}
+            <div>
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Ticket Saúde® — Saúde e Bem-estar</h3>
               <div className="space-y-2">
-                <p className="text-[13px] text-[#64748B] font-[500] leading-relaxed">
-                  Cartão combustível / mobilidade para despesas com viaturas. Benefício com regras específicas de tributação em IRS e dedutibilidade de IVA pela empresa.
-                </p>
-                <LegalRow label="Limite de isenção IRS" value="Sem limite específico (rendimento em espécie)" note="Sujeito a IRS se utilizado para fins pessoais" />
-                <LegalRow label="Isenção IRS" value="Não (se uso pessoal)" note="Considerado rendimento em espécie — Art. 24.º CIRS" />
-                <LegalRow label="SS patronal" value="Aplicável (23,75% sobre o valor)" />
-                <LegalRow label="Dedutibilidade empresa" value="50% do custo" note="IVA parcialmente dedutível (50%) — CIVA Art. 21.º. Gastos dedutíveis em IRC até 50%." />
+                <LegalRow label="Âmbito" value="Consultas, medicamentos, fisioterapia, internamento em lares, centros de dia e apoio domiciliário — trabalhadores e familiares" />
+                <LegalRow label="Isenção IRS" value="Total — sem limite de valor" note="CIRS Art. 24.º n.º 1 b) — encargos de assistência médica e medicamentosa" />
+                <LegalRow label="Isenção SS (patronal + trabalhador)" value="Total" note="Código Contributivo Art. 46.º" />
+                <LegalRow label="Dedutibilidade IRC" value="100% — realização de utilidade social" note="CIRC Art. 43.º n.º 1" />
+                <LegalRow label="Requisito" value="Deve ser extensível a todos os trabalhadores ou a categorias homogéneas" />
               </div>
             </div>
 
-            {/* Resumo geral */}
-            <div className="bg-purple-50 border border-purple-200 rounded-[12px] p-4">
-              <h4 className="text-[13px] font-[700] text-purple-900 mb-2">Comparação: Ticket vs Aumento Salarial Equivalente</h4>
+            {/* Ticket Oferta */}
+            <div>
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Ticket Oferta® — Vale Prenda</h3>
+              <div className="space-y-2">
+                <LegalRow label="IRS (trabalhadores)" value="Sujeito — tratado como remuneração em espécie" note="CIRS Art. 2.º n.º 3 b) — não existe isenção específica para vales prenda a trabalhadores" />
+                <LegalRow label="SS (trabalhadores)" value="Sujeito — base de incidência normal" />
+                <LegalRow label="IRC (para clientes / parceiros de negócio)" value="Gasto de representação — dedutível até 0,5% do volume de negócios" note="CIRC Art. 23.º-A n.º 1 h)" />
+                <LegalRow label="Uso recomendado" value="Prémios de Natal, campanhas de fidelização, reconhecimento pontual" note="Ferramenta de gestão de ofertas — sem benefício fiscal próprio" />
+              </div>
+            </div>
+
+            {/* Poupança estimada */}
+            <div className="bg-purple-50 border border-purple-200 rounded-[12px] p-5">
+              <h4 className="text-[13px] font-[700] text-purple-900 mb-2">Poupança estimada: Ticket isento vs. Equivalente Salarial</h4>
               <p className="text-[13px] text-purple-800 font-[500] leading-relaxed">
-                Se a empresa paga €5/dia × 22 dias × 12 meses = €1.320/ano por trabalhador em tickets de alimentação, pouparia €1.320 × 23,75% = €313,50/trabalhador em SS patronal face a um aumento salarial equivalente. O trabalhador recebe o mesmo valor líquido (sem descontos). Para os restantes tipos de ticket, as vantagens fiscais variam consoante o tipo de benefício.
+                Ao atribuir um ticket isento (Infância, Educação ou Saúde) em vez de aumentar o salário, a empresa poupa 23,75% em SS patronal e o trabalhador retém 11% adicional (sem desconto de SS). Para um ticket de €3.600/ano/trabalhador, a poupança conjunta em SS é ≈ €1.250/trabalhador/ano — sem contar com o benefício adicional em IRC para o Ticket Infância (majoração de 40%).
               </p>
             </div>
           </div>
@@ -1019,7 +1249,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
         {/* ═══════════════════════════════════════════════════════════ */}
         {/* 6. IMT — IMPOSTO MUNICIPAL SOBRE TRANSMISSÕES              */}
         {/* ═══════════════════════════════════════════════════════════ */}
-        <section className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0]">
+        <section id="legal-imt" className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0] scroll-mt-24">
           <SectionHeader icon={Building} title="IMT — Imposto Municipal sobre Transmissões (CIMT)" color="#7C3AED" />
 
           <div className="space-y-6">
@@ -1111,7 +1341,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
         {/* ═══════════════════════════════════════════════════════════ */}
         {/* 7. SALÁRIO LÍQUIDO — TCO                                   */}
         {/* ═══════════════════════════════════════════════════════════ */}
-        <section className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0]">
+        <section id="legal-salario" className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0] scroll-mt-24">
           <SectionHeader icon={Banknote} title="Salário Líquido — Trabalhador por Conta de Outrem" color="#0369A1" />
 
           <div className="space-y-6">
@@ -1172,7 +1402,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
         {/* ═══════════════════════════════════════════════════════════ */}
         {/* 8. IMÓVEIS NA EMPRESA                                      */}
         {/* ═══════════════════════════════════════════════════════════ */}
-        <section className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0]">
+        <section id="legal-imoveis" className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0] scroll-mt-24">
           <SectionHeader icon={Home} title="Imóveis na Empresa — Enquadramento Fiscal" color="#065F46" />
 
           <div className="space-y-6">
@@ -1238,7 +1468,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
         {/* ═══════════════════════════════════════════════════════════ */}
         {/* REFERÊNCIAS LEGISLATIVAS COMPLETAS                         */}
         {/* ═══════════════════════════════════════════════════════════ */}
-        <section className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0]">
+        <section id="legal-indice" className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0] scroll-mt-24">
           <SectionHeader icon={BookOpen} title="Índice de Referências Legislativas" color="#475569" />
 
           <div className="space-y-1">
@@ -1286,7 +1516,9 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
             Esta ferramenta é desenvolvida e mantida pela equipa RECOFATIMA. Para questões específicas sobre a sua situação fiscal, consulte sempre um contabilista certificado (OCC).
           </p>
         </div>
-      </div>
+          </div>{/* /min-w-0 right column */}
+        </div>{/* /grid */}
+      </div>{/* /max-w-7xl */}
     </div>
   );
 }
