@@ -32,14 +32,10 @@ jobs:
 
       - name: Generate Icons
         run: npx tauri icon src-tauri/icons/icon.png
+        continue-on-error: true
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: './src-tauri -> target'
 
       - name: Build the app
         uses: tauri-apps/tauri-action@v0
@@ -48,7 +44,8 @@ jobs:
         with:
           tagName: app-v__VERSION__
           releaseName: "Recofátima Simuladores v__VERSION__"
-          releaseBody: "Versão portátil para Windows e Mac da aplicação Recofátima Simuladores."
+          releaseBody: "Versão portátil para Windows e Mac."
           releaseDraft: true
           prerelease: false
+          # Não tentar compilar o frontend no GitHub, usar apenas o wrapper
           args: ${{ matrix.platform == 'windows-latest' && '--target x86_64-pc-windows-msvc' || '' }}

@@ -5,7 +5,7 @@
   "build": {
     "beforeDevCommand": "",
     "beforeBuildCommand": "",
-    "devPath": "https://recofatima.github.io/recofatima-simuladores-v1/",
+    "devPath": "https://gontijolucca-prog.github.io/calculadoraempresaouindividual/",
     "distDir": "../dist"
   },
   "app": {
@@ -16,7 +16,7 @@
         "height": 800,
         "resizable": true,
         "fullscreen": false,
-        "url": "https://recofatima.github.io/recofatima-simuladores-v1/"
+        "url": "https://gontijolucca-prog.github.io/calculadoraempresaouindividual/"
       }
     ],
     "security": {
