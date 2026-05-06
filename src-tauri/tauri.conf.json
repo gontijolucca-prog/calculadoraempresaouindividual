@@ -1,0 +1,38 @@
+{
+  "productName": "Recofatima Simuladores",
+  "version": "1.0.0",
+  "identifier": "com.recofatima.simuladores",
+  "build": {
+    "beforeDevCommand": "",
+    "beforeBuildCommand": "",
+    "devPath": "https://recofatima.github.io/recofatima-simuladores-v1/",
+    "distDir": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Recofátima Simuladores",
+        "width": 1280,
+        "height": 800,
+        "resizable": true,
+        "fullscreen": false,
+        "url": "https://recofatima.github.io/recofatima-simuladores-v1/"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "msi"],
+    "identifier": "com.recofatima.simuladores",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}
