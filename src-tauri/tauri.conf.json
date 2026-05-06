@@ -4,9 +4,7 @@
   "identifier": "com.recofatima.simuladores",
   "build": {
     "beforeDevCommand": "",
-    "beforeBuildCommand": "",
-    "devPath": "https://gontijolucca-prog.github.io/calculadoraempresaouindividual/",
-    "distDir": "../dist"
+    "beforeBuildCommand": ""
   },
   "app": {
     "windows": [
@@ -15,8 +13,7 @@
         "width": 1280,
         "height": 800,
         "resizable": true,
-        "fullscreen": false,
-        "url": "https://gontijolucca-prog.github.io/calculadoraempresaouindividual/"
+        "fullscreen": false
       }
     ],
     "security": {
@@ -26,7 +23,6 @@
   "bundle": {
     "active": true,
     "targets": ["nsis", "msi"],
-    "identifier": "com.recofatima.simuladores",
     "icon": []
   }
 }
