@@ -96,7 +96,8 @@ export default function UpdatesList({ onBack }: Props) {
   };
 
   const sorted = [
-    ...items.filter(i => !(i.atualizado && i.aprovado)),
+    ...items.filter(i => i.atualizado && !i.aprovado),
+    ...items.filter(i => !i.atualizado && !i.aprovado),
     ...items.filter(i => i.atualizado && i.aprovado),
   ];
 
