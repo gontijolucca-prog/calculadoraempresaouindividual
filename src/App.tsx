@@ -219,6 +219,14 @@ function AppContent() {
     return () => document.removeEventListener('keydown', onKey);
   }, [showUpdateNotification, pendingCount]);
 
+  // Close the SAFT modal with Escape
+  useEffect(() => {
+    if (!saftModal?.open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSaftModal(null); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [saftModal?.open]);
+
   if (!loggedIn) {
     return <LoginPage onLogin={() => setLoggedIn(true)} />;
   }
@@ -557,17 +565,6 @@ function AppContent() {
           </div>
         </div>
       )}
-
-      {/* Close SAFT modal with Escape */}
-      {(() => {
-        useEffect(() => {
-          if (!saftModal?.open) return;
-          const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSaftModal(null); };
-          document.addEventListener('keydown', onKey);
-          return () => document.removeEventListener('keydown', onKey);
-        }, [saftModal?.open]);
-        return null;
-      })()}
 
       {/* ── Layout fills remaining height (skip link target lives on <main> inside) ── */}
       <div className="flex-1 overflow-hidden">
