@@ -1,0 +1,55 @@
+rules_version = '2';
+
+// Regras conservadoras para a coleção `updates` (lista de updates dev↔cliente).
+//
+// Estado actual: a app não tem autenticação real (LoginPage é mock). Por isso,
+// as regras abaixo aplicam restrições estruturais em vez de identidade:
+//
+//  - read: qualquer pessoa pode ler (a lista é mostrada na UI).
+//  - create: qualquer pessoa pode criar, MAS só com a forma esperada e tamanho razoável.
+//  - update: só permitido alternar os flags `atualizado` e `aprovado` (toggle workflow);
+//    o `text` e `createdAt` ficam imutáveis para evitar reescritas oportunistas.
+//  - delete: só permitido em items já marcados como `aprovado:true` (housekeeping
+//    seguro). Items pendentes ou só atualizados não podem ser apagados — protege
+//    contra "cliente apaga update do dev por engano".
+//
+// Quando integrares Firebase Auth, restringir create/update/delete a:
+//   request.auth != null && request.auth.token.admin == true
+// E adicionar regras específicas para outros caminhos (clientProfile, fichaState, etc.).
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /updates/{docId} {
+      allow read: if true;
+
+      allow create: if isValidUpdateCreate(request.resource.data);
+
+      allow update: if isToggleOnly(resource.data, request.resource.data);
+
+      allow delete: if resource.data.aprovado == true;
+    }
+
+    // Bloquear tudo o resto explicitamente até existir auth real.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+function isValidUpdateCreate(data) {
+  return data.keys().hasOnly(['text', 'atualizado', 'aprovado', 'createdAt'])
+      && data.text is string
+      && data.text.size() > 0
+      && data.text.size() < 1000
+      && data.atualizado is bool
+      && data.aprovado is bool;
+}
+
+function isToggleOnly(before, after) {
+  // Permite alterar só `atualizado` e `aprovado`. Texto e createdAt imutáveis.
+  return after.text == before.text
+      && after.createdAt == before.createdAt
+      && after.atualizado is bool
+      && after.aprovado is bool;
+}
