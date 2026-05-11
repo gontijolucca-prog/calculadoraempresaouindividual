@@ -29,10 +29,12 @@ const IMTSimulator = lazy(() => import('./IMTSimulator'));
 const SalarioLiquidoSimulator = lazy(() => import('./SalarioLiquidoSimulator'));
 const FichaDiagnostico = lazy(() => import('./FichaDiagnostico'));
 const UpdatesList = lazy(() => import('./UpdatesList'));
+const PreviSaSimulator = lazy(() => import('./PreviSaSimulator'));
 
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
-  | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'ficha' | 'legal' | 'updates';
+  | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'ficha' | 'legal' | 'updates'
+  | 'previsa';
 
 const VIEW_TITLES: Record<ViewType, string> = {
   profile: 'Perfil do Cliente',
@@ -47,6 +49,7 @@ const VIEW_TITLES: Record<ViewType, string> = {
   ficha: 'Ficha de Diagnóstico',
   legal: 'Base Legal & Referências',
   updates: 'Checklist de Atualizações',
+  previsa: 'Simulador PreviSa',
 };
 
 interface TaxSimulatorState {
@@ -387,6 +390,9 @@ function AppContent() {
         )}
         {view === 'updates' && (
           <UpdatesList onBack={() => setView(prevView)} />
+        )}
+        {view === 'previsa' && (
+          <PreviSaSimulator />
         )}
       </PageTransition>
     </Suspense>

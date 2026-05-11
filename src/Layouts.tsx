@@ -3,14 +3,15 @@ import { motion } from 'motion/react';
 import {
   UserCircle, Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote, Info,
   ClipboardCheck, ClipboardList, Upload, LogOut,
-  ChevronDown,
+  ChevronDown, TrendingUp,
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Tip } from './Tip';
 
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
-  | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'ficha' | 'legal' | 'updates';
+  | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'ficha' | 'legal' | 'updates'
+  | 'previsa';
 
 export interface LayoutProps {
   view: ViewType;
@@ -36,6 +37,7 @@ const NAV_ITEMS = [
   { id: 'imt'        as ViewType, label: 'IMT',          Icon: Building,   group: 'sim'     },
   { id: 'salario'    as ViewType, label: 'Salário',      Icon: Banknote,   group: 'sim'     },
   { id: 'ficha'      as ViewType, label: 'Ficha',        Icon: ClipboardCheck, group: 'sim' },
+  { id: 'previsa'    as ViewType, label: 'PreviSa',      Icon: TrendingUp,     group: 'sim' },
 ] as const;
 
 const NAV_TIPS: Record<string, string> = {
@@ -49,6 +51,7 @@ const NAV_TIPS: Record<string, string> = {
   imt: 'Imposto Municipal sobre Transmissões: calcula o IMT e o Imposto de Selo na compra de imóveis.',
   salario: 'Calcula o salário líquido mensal de um trabalhador e o custo total para a empresa.',
   ficha: 'Ficha de Diagnóstico Fiscal e Empresarial: levantamento estruturado de 16 secções (identificação, atividade, IVA, custos, RH, SS, viaturas, sociedade, dívidas, objetivos) com referências cruzadas à Base Legal.',
+  previsa: 'Simulador PreviSa — previsão de IRC (Modelo 22): apuramento Q07, matéria coletável Q09, tributações autónomas, PEC/PC e liquidação.',
 };
 
 function Logo({ className = 'w-7 h-7' }: { className?: string }) {
