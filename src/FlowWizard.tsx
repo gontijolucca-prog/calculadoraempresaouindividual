@@ -67,7 +67,7 @@ export function FlowWizard<T>({
   const Icon = IconComponent || ListOrdered;
 
   return (
-    <div className="fixed inset-0 z-[999] bg-white flex flex-col overflow-hidden">
+    <div className="h-full w-full bg-white flex flex-col overflow-hidden">
       {/* Top progress bar */}
       <div className="shrink-0 w-full h-1.5 bg-[#F1F5F9]">
         <motion.div
@@ -91,7 +91,7 @@ export function FlowWizard<T>({
           className="flex items-center gap-2 px-4 py-2.5 text-[14px] font-[700] text-[#64748B] hover:text-[#0F172A] hover:bg-[#F8FAFC] rounded-[10px] transition-colors"
         >
           <X className="w-4 h-4" />
-          Sair
+          Vista detalhada
         </button>
       </div>
 
@@ -186,16 +186,16 @@ export function FlowWizard<T>({
                     transition={{ delay: 0.1, duration: 0.4, type: 'spring', stiffness: 200 }}
                     className="flex items-center justify-center mb-2"
                   >
-                    <div className="bg-[#ECFDF5] text-[#10B981] p-4 rounded-[20px]">
-                      <ShieldCheck className="w-8 h-8" />
+                    <div className="bg-[#ECFDF5] text-[#10B981] p-2 rounded-[12px]">
+                      <ShieldCheck className="w-5 h-5" />
                     </div>
                   </motion.div>
 
                   <div className="text-center">
-                    <h2 className="text-[36px] sm:text-[48px] lg:text-[56px] font-[800] text-[#0F172A] tracking-[-1.5px] leading-[1.05]">
+                    <h2 className="text-[20px] sm:text-[24px] font-[800] text-[#0F172A] tracking-[-0.5px] leading-tight">
                       {resultsStep.label}
                     </h2>
-                    <p className="text-[18px] lg:text-[20px] text-[#64748B] font-[500] mt-4 leading-relaxed max-w-3xl mx-auto">
+                    <p className="text-[14px] text-[#64748B] font-[500] mt-1 leading-snug max-w-xl mx-auto">
                       {resultsStep.description}
                     </p>
                   </div>

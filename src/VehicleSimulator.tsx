@@ -493,21 +493,22 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
   const flowSteps = steps.filter(s => s.id !== 'results');
   const resultsStepDef = steps.find(s => s.id === 'results')!;
 
-  return (
-    <>
-      {flowMode && (
-        <FlowWizard
-          open={flowMode}
-          onClose={exitFlow}
-          title="Simulador Viaturas"
-          icon={Car}
-          steps={flowSteps}
-          resultsStep={{ label: resultsStepDef.label, description: resultsStepDef.description, render: resultsStepDef.render(initialState, setState) }}
-          state={initialState}
-          setState={setState}
-        />
-      )}
+  if (flowMode) {
+    return (
+      <FlowWizard
+        open={flowMode}
+        onClose={exitFlow}
+        title="Simulador Viaturas"
+        icon={Car}
+        steps={flowSteps}
+        resultsStep={{ label: resultsStepDef.label, description: resultsStepDef.description, render: resultsStepDef.render(initialState, setState) }}
+        state={initialState}
+        setState={setState}
+      />
+    );
+  }
 
+  return (
     <motion.div
       className={outerCls}
       initial={{ opacity: 0 }}

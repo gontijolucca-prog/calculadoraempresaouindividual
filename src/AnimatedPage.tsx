@@ -243,7 +243,7 @@ export function AnimatedCard({
 
 // Hook reutilizável para gerir estado do flow mode
 export function useFlowMode() {
-  const [flowMode, setFlowMode] = React.useState(false);
+  const [flowMode, setFlowMode] = React.useState(true);
   const [currentStep, setCurrentStep] = React.useState(0);
 
   const enterFlow = React.useCallback(() => {
