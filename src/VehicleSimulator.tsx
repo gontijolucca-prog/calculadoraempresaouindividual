@@ -640,6 +640,5 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
         <VehicleResults state={initialState} results={results} />
       </motion.div>
     </motion.div>
-  </>
-)
+  )
 }
