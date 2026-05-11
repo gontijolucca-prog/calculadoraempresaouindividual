@@ -12,26 +12,27 @@ export { defaultPreviSaState } from './previSaState';
 const PME_BRACKET = 50_000;
 
 const RATES: Record<Regime, { main: number; pme: number }> = {
-  geral:         { main: 0.20, pme: 0.16 },
-  madeira:       { main: 0.14, pme: 0.0875 },
-  acores:        { main: 0.14, pme: 0.0875 },
-  interioridade: { main: 0.20, pme: 0.125 },
-  startup:       { main: 0.125, pme: 0.125 },
+  geral:         { main: 0.20,   pme: 0.16 },
+  madeira:       { main: 0.14,   pme: 0.0875 },
+  acores:        { main: 0.14,   pme: 0.0875 },
+  interioridade: { main: 0.20,   pme: 0.125 },
+  startup:       { main: 0.125,  pme: 0.125 },
 };
 
-const DERRAMA_CONTINENTAL = [
-  { limit: 1_500_000,  rate: 0.03 },
-  { limit: 7_500_000,  rate: 0.05 },
-  { limit: 35_000_000, rate: 0.09 },
-  { limit: Infinity,   rate: 0.09 },
-];
-
-const DERRAMA_ACORES = [
-  { limit: 1_500_000,  rate: 0.021 },
-  { limit: 7_500_000,  rate: 0.035 },
-  { limit: 35_000_000, rate: 0.063 },
-  { limit: Infinity,   rate: 0.063 },
-];
+const DERRAMA_TIERS: Record<'continental' | 'acores', { limit: number; rate: number }[]> = {
+  continental: [
+    { limit: 1_500_000,  rate: 0.03 },
+    { limit: 7_500_000,  rate: 0.05 },
+    { limit: 35_000_000, rate: 0.09 },
+    { limit: Infinity,   rate: 0.09 },
+  ],
+  acores: [
+    { limit: 1_500_000,  rate: 0.021 },
+    { limit: 7_500_000,  rate: 0.035 },
+    { limit: 35_000_000, rate: 0.063 },
+    { limit: Infinity,   rate: 0.063 },
+  ],
+};
 
 const PC_RATES: Record<Territorio, number[]> = {
   continental: [0.025, 0.045, 0.085],
@@ -39,176 +40,260 @@ const PC_RATES: Record<Territorio, number[]> = {
   acores:      [0.0175, 0.0315, 0.0595],
 };
 
-const TA_VEICULO_RATES: { max: number; conv: number; plug5050: number; gnv: number; eletrico: number }[] = [
-  { max: 37_500,  conv: 0.08,  plug5050: 0.025, gnv: 0.025, eletrico: 0 },
-  { max: 45_000,  conv: 0.25,  plug5050: 0.075, gnv: 0.075, eletrico: 0 },
-  { max: 62_500,  conv: 0.32,  plug5050: 0.15,  gnv: 0.15,  eletrico: 0 },
-  { max: Infinity,conv: 0.32,  plug5050: 0.15,  gnv: 0.15,  eletrico: 0.10 },
+const PEC_LIMITS: Record<Territorio, [number, number]> = {
+  continental: [850, 70_000],
+  madeira:     [680, 56_000],
+  acores:      [680, 56_000],
+};
+
+const TA_BRACKETS: { max: number; conv: number; plug5050: number; gnv: number; eletrico: number }[] = [
+  { max: 37_500,   conv: 0.08,  plug5050: 0.025, gnv: 0.025, eletrico: 0 },
+  { max: 45_000,   conv: 0.25,  plug5050: 0.075, gnv: 0.075, eletrico: 0 },
+  { max: 62_500,   conv: 0.32,  plug5050: 0.15,  gnv: 0.15,  eletrico: 0 },
+  { max: Infinity, conv: 0.32,  plug5050: 0.15,  gnv: 0.15,  eletrico: 0.10 },
 ];
 
-// ─── Calculation engine ───────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function sumFields(s: PreviSaState, keys: (keyof PreviSaState)[]): number {
+  return keys.reduce((acc, k) => acc + ((s[k] as number) || 0), 0);
+}
 
 function calcTAVeiculo(v: ViaturaRow, agravamento: boolean): number {
-  const bracket = TA_VEICULO_RATES.find(b => v.custoHistorico <= b.max) ?? TA_VEICULO_RATES.at(-1)!;
-  let rate: number;
-  if (v.combustivel === 'eletrico') rate = bracket.eletrico;
-  else if (v.combustivel === 'plug_in') rate = bracket.conv;
-  else if (v.combustivel === 'plug_in_5050') rate = bracket.plug5050;
-  else if (v.combustivel === 'gnv') rate = bracket.gnv;
-  else rate = bracket.conv;
+  const b = TA_BRACKETS.find(x => v.custoHistorico <= x.max) ?? TA_BRACKETS.at(-1)!;
+  let rate = 0;
+  if      (v.combustivel === 'eletrico')    rate = b.eletrico;
+  else if (v.combustivel === 'plug_in_5050') rate = b.plug5050;
+  else if (v.combustivel === 'gnv')          rate = b.gnv;
+  else                                       rate = b.conv; // convencional or plug_in
   return v.encargos * rate * (agravamento ? 1.1 : 1);
 }
 
-function calcDerramaEstadual(materia: number, territorio: Territorio): number {
-  const tiers = territorio === 'acores' ? DERRAMA_ACORES : DERRAMA_CONTINENTAL;
-  if (materia <= 0) return 0;
-  let tax = 0;
-  let prev = 0;
-  for (const tier of tiers) {
-    if (materia <= prev) break;
-    const slice = Math.min(materia, tier.limit) - prev;
-    if (slice <= 0) continue;
-    tax += slice * tier.rate;
-    prev = tier.limit;
-    if (materia <= tier.limit) break;
+function calcDerramaEstadual(mc: number, territorio: Territorio): number {
+  if (mc <= 0 || territorio === 'madeira') return 0;
+  const tiers = DERRAMA_TIERS[territorio === 'acores' ? 'acores' : 'continental'];
+  let tax = 0, prev = 0;
+  for (const t of tiers) {
+    if (mc <= prev) break;
+    tax += (Math.min(mc, t.limit) - prev) * t.rate;
+    prev = t.limit;
+    if (mc <= t.limit) break;
   }
   return tax;
 }
 
+// ─── Calculation engine ───────────────────────────────────────────────────────
+
 interface CalcResult {
-  c708: number; c753: number; c776: number;
-  lucroTributavel: number; prejuizoFiscal: number;
+  raiCalc: number;
+  effectiveRai: number;
+  c708: number;
+  acrescer: number;
+  c753: number;
+  c776: number;
+  lucroTributavel: number;
+  prejuizoFiscal: number;
+  totalPrejuziosDisp: number;
+  prejuziosEfetivos: number;
   materiaColetavel: number;
-  ircBase: number; derramaEstadual: number;
-  taTotal: number; ircLiquidacao: number;
-  pecCalculado: number; pcCalculado: number;
-  totalDeducoesColeta: number; ircApagar: number;
+  ircColeta: number;        // c347 + c349
+  derramaEstadual: number;
+  derrMunicipal: number;
+  c378: number;             // total antes deduções
+  deducoesColeta: number;   // c357
+  c358: number;             // IRC liquidado
+  taViaturas: number;
+  taOutras: number;
+  taBruta: number;
+  taTotal: number;          // c365 (líq. art.88n12)
+  totalPagamentos: number;  // retFonte + PC + PAC
+  c367: number;             // total a pagar (positivo = pagar, negativo = receber)
+  pecCalculado: number;
+  pcCalculado: number;
 }
 
+const ACRESCER_KEYS: (keyof PreviSaState)[] = [
+  'c709','c710','c711','c782','c712','c713','c714','c715','c717','c721',
+  'c724','c725','c716','c731','c726','c783','c728','c727','c729','c730',
+  'c732','c733','c784','c734','c735','c780','c785','c802','c746','c737',
+  'c786','c718','c719','c720','c722','c723','c736','c738','c739','c740',
+  'c741','c742','c743','c787','c744','c745','c747','c748','c749','c788',
+  'c750','c789','c790','c751','c803','c779','c797','c799','c804','c752',
+];
+
+const DEDUZIR_KEYS: (keyof PreviSaState)[] = [
+  'c754','c755','c756','c757','c791','c758','c759','c760','c761','c762',
+  'c763','c781','c764','c765','c766','c792','c767','c768','c769','c770',
+  'c793','c771','c794','c772','c795','c773','c796','c774','c800','c801',
+  'c798','c775',
+];
+
+const PREJ_KEYS: (keyof PreviSaState)[] = [
+  'prej_ate2017','prej_2018','prej_2019','prej_2020',
+  'prej_2021','prej_2022','prej_2023','prej_2024','c397',
+];
+
 function calculate(s: PreviSaState): CalcResult {
-  // Q07
-  const c708 = s.c701_rai + s.c702 + s.c703 - s.c704 - s.c705 + s.c706 - s.c707;
+  // RAI
+  const raiCalc =
+    (s.rai_711 + s.rai_712 + s.rai_72 + s.rai_74 + s.rai_75 +
+     s.rai_76 + s.rai_77 + s.rai_78 + s.rai_79)
+    - (s.rai_cmv + s.rai_cmc + s.rai_62 + s.rai_63 + s.rai_64 +
+       s.rai_65 + s.rai_66 + s.rai_67 + s.rai_68 + s.rai_69)
+    + s.rai_8122_db - s.rai_8122_cr;
 
-  const acrescer = [
-    s.c709, s.c710, s.c711, s.c712, s.c713, s.c714, s.c715, s.c716,
-    s.c717, s.c718, s.c719, s.c720, s.c721, s.c722, s.c723, s.c724,
-    s.c725, s.c726, s.c727, s.c728, s.c729, s.c730, s.c731, s.c732,
-    s.c733, s.c734, s.c735, s.c736, s.c737, s.c738, s.c739, s.c740,
-    s.c741, s.c742, s.c743, s.c744, s.c745, s.c746, s.c747, s.c748,
-    s.c749, s.c750, s.c751, s.c752,
-  ].reduce((a, b) => a + (b || 0), 0);
+  const effectiveRai = s.useRaiCalc ? raiCalc : s.c701_rai;
 
+  // Q07 c708
+  const c708 = s.c708_override
+    ? effectiveRai
+    : effectiveRai + s.c702 + s.c703 + s.c805 - s.c704 - s.c705 - s.c806 + s.c706 - s.c707;
+
+  // Q07 acrescer / deduzir
+  const acrescer = sumFields(s, ACRESCER_KEYS);
   const c753 = c708 + acrescer;
-
-  const deducoesQ07 = [
-    s.c754, s.c755, s.c756, s.c757, s.c758, s.c759, s.c760, s.c761,
-    s.c762, s.c763, s.c764, s.c765, s.c766, s.c767, s.c768, s.c769,
-    s.c770, s.c771, s.c772, s.c773, s.c774, s.c775,
-  ].reduce((a, b) => a + (b || 0), 0);
-
-  const c776 = deducoesQ07;
+  const c776 = sumFields(s, DEDUZIR_KEYS);
   const rawLT = c753 - c776;
   const lucroTributavel = Math.max(0, rawLT);
-  const prejuizoFiscal = Math.abs(Math.min(0, rawLT));
+  const prejuizoFiscal  = Math.abs(Math.min(0, rawLT));
 
-  // Q09 — Matéria coletável
-  const limiteDeducao = s.limiteMaisPP ? 0.75 : 0.65;
-  const maxDeducaoPrej = lucroTributavel * limiteDeducao;
-  const prejuziosEfetivos = Math.min(s.prejuizosDeduzir, maxDeducaoPrej);
-  const materiaColetavel = Math.max(0, lucroTributavel - prejuziosEfetivos - s.beneficiosFiscais);
+  // Q09 prejuízos
+  const totalPrejuziosDisp = sumFields(s, PREJ_KEYS);
+  const limite = s.limiteMaisPP ? 0.75 : 0.65;
+  const prejuziosEfetivos = Math.min(totalPrejuziosDisp, lucroTributavel * limite);
+  const materiaColetavel  = Math.max(0, lucroTributavel - prejuziosEfetivos - s.beneficiosFiscais);
 
-  // IRC taxa
+  // IRC coleta (c347)
   const r = RATES[s.isStartup ? 'startup' : s.regime];
   let ircBase = 0;
   if (s.isPME && !s.isStartup) {
-    const bracket1 = Math.min(materiaColetavel, PME_BRACKET);
-    const bracket2 = Math.max(0, materiaColetavel - PME_BRACKET);
-    ircBase = bracket1 * r.pme + bracket2 * r.main;
+    ircBase = Math.min(materiaColetavel, PME_BRACKET) * r.pme
+            + Math.max(0, materiaColetavel - PME_BRACKET) * r.main;
   } else {
     ircBase = materiaColetavel * r.main;
   }
+  const ircColeta = ircBase + s.c349 * s.c349_taxa;
 
-  // Derrama Estadual (apenas continental ou açores)
-  const derramaEstadual = s.territorio === 'madeira' ? 0 : calcDerramaEstadual(materiaColetavel, s.territorio);
+  // Derramas
+  const derramaEstadual = calcDerramaEstadual(materiaColetavel, s.territorio);
+  const derrMunicipal   = lucroTributavel * s.taxaDerramaMunicipal;
 
-  // TA
+  // c378
+  const c378 = ircColeta + derramaEstadual + derrMunicipal;
+
+  // Deduções à coleta (c357)
+  const deducoesColeta = s.c353 + s.c375 + s.c355_bf + s.c355_cfei + s.c355_ifr + s.c470;
+
+  // c358 — IRC liquidado
+  const c358 = Math.max(0, c378 - deducoesColeta);
+
+  // Tributações Autónomas
   const taViaturas = s.viaturas.reduce((sum, v) => sum + calcTAVeiculo(v, s.agravamentoTA), 0);
   const agr = s.agravamentoTA ? 1.1 : 1;
   const taOutras =
-    s.ta_despNaoDocPrincipal   * 0.50 * agr +
-    s.ta_despNaoDocNaoPrincipal* 0.70 * agr +
+    s.ta_despNaoDocPrincipal    * 0.50 * agr +
+    s.ta_despNaoDocNaoPrincipal * 0.70 * agr +
     s.ta_representacao          * 0.10 * agr +
     s.ta_ajadasCusto            * 0.05 * agr +
     s.ta_lucrosDistribuidos     * 0.23 * agr +
     s.ta_offshores              * 0.35 * agr +
     s.ta_indemCessacao          * 0.35 * agr +
     s.ta_bonus                  * 0.35 * agr;
+  const taBruta = taViaturas + taOutras;
+  const taTotal = Math.max(0, taBruta - s.ta_retFonteArt88n12);
 
-  const taTotal = taViaturas + taOutras;
-  const ircLiquidacao = ircBase + derramaEstadual + taTotal;
+  // Pagamentos
+  const totalPagamentos = s.retencoesFonte + s.pcPagamentos + s.pacPagamentos;
 
-  // PEC
+  // c367 = IRC a pagar / recuperar
+  // pagar = c358 + c365(TA) + c366 + c369 - pecPagamentos - totalPagamentos - c379 + c363 + c372
+  const c367 =
+    c358 + taTotal + s.c366 + s.c369
+    - s.pecPagamentos - totalPagamentos - s.c379
+    + s.c363 + s.c372;
+
+  // PEC estimado
+  const [pecMin, pecMax] = PEC_LIMITS[s.territorio];
   const pecBruto = s.volumeNegocios * 0.01 - s.retencoesFonte;
-  const pecCalculado = Math.max(850, Math.min(70_000, pecBruto));
+  const pecCalculado = pecBruto <= 0 ? 0 : Math.max(pecMin, Math.min(pecMax, pecBruto));
 
-  // PC
+  // PC estimado
   const pcRates = PC_RATES[s.territorio];
   const vn = s.volumeNegocios;
   let pcCalculado = 0;
-  if (vn <= 500_000) {
-    pcCalculado = vn * pcRates[0];
-  } else if (vn <= 5_000_000) {
-    pcCalculado = 500_000 * pcRates[0] + (vn - 500_000) * pcRates[1];
-  } else {
-    pcCalculado = 500_000 * pcRates[0] + 4_500_000 * pcRates[1] + (vn - 5_000_000) * pcRates[2];
-  }
-
-  const totalDeducoesColeta = s.retencoesFonte + s.pecPagamentos + s.pcPagamentos + s.pagamentosAdicionais;
-  const ircApagar = Math.max(0, ircLiquidacao - totalDeducoesColeta);
+  if (vn <= 500_000)       pcCalculado = vn * pcRates[0];
+  else if (vn <= 5_000_000) pcCalculado = 500_000 * pcRates[0] + (vn - 500_000) * pcRates[1];
+  else                      pcCalculado = 500_000 * pcRates[0] + 4_500_000 * pcRates[1] + (vn - 5_000_000) * pcRates[2];
 
   return {
-    c708, c753, c776, lucroTributavel, prejuizoFiscal,
-    materiaColetavel, ircBase, derramaEstadual, taTotal,
-    ircLiquidacao, pecCalculado, pcCalculado,
-    totalDeducoesColeta, ircApagar,
+    raiCalc, effectiveRai, c708, acrescer, c753, c776,
+    lucroTributavel, prejuizoFiscal, totalPrejuziosDisp, prejuziosEfetivos, materiaColetavel,
+    ircColeta, derramaEstadual, derrMunicipal, c378, deducoesColeta, c358,
+    taViaturas, taOutras, taBruta, taTotal,
+    totalPagamentos, c367, pecCalculado, pcCalculado,
   };
 }
 
-// ─── UI helpers ───────────────────────────────────────────────────────────────
+// ─── UI primitives ────────────────────────────────────────────────────────────
 
 const fmt = (n: number) => n.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const pct = (n: number) => (n * 100).toFixed(2) + '%';
 
-function NumInput({ label, value, onChange, help, indent = false }: {
-  label: string; value: number; onChange: (v: number) => void;
-  help?: string; indent?: boolean;
+function NumInput({ label, value, onChange, help, indent = false, readOnly = false }: {
+  label: string; value: number; onChange?: (v: number) => void;
+  help?: string; indent?: boolean; readOnly?: boolean;
 }) {
   return (
     <div className={cn('flex items-center gap-3 py-1.5', indent && 'pl-4')}>
       <label className="flex-1 text-[12px] font-[500] text-slate-600 leading-snug">{label}</label>
-      {help && <span className="text-[10px] text-slate-400 hidden sm:block">{help}</span>}
+      {help && <span className="text-[10px] text-slate-400 hidden sm:block shrink-0">{help}</span>}
       <input
-        type="number"
-        step="0.01"
+        type="number" step="0.01"
         value={value || ''}
-        onChange={e => onChange(parseFloat(e.target.value) || 0)}
-        className="w-36 text-right text-[13px] font-[600] text-[#0F172A] border border-slate-200 rounded-[8px] px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30 focus:border-[#781D1D]"
+        readOnly={readOnly}
+        onChange={e => onChange?.(parseFloat(e.target.value) || 0)}
+        className={cn(
+          'w-36 text-right text-[13px] font-[600] text-[#0F172A] border border-slate-200 rounded-[8px] px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30 focus:border-[#781D1D]',
+          readOnly && 'bg-slate-50 text-slate-400 cursor-default',
+        )}
         placeholder="0,00"
       />
     </div>
   );
 }
 
-function ResultRow({ label, value, highlight = false, sub = false }: {
-  label: string; value: number | string; highlight?: boolean; sub?: boolean;
+function PctInput({ label, value, onChange, help }: {
+  label: string; value: number; onChange: (v: number) => void; help?: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 py-1.5">
+      <label className="flex-1 text-[12px] font-[500] text-slate-600 leading-snug">{label}</label>
+      {help && <span className="text-[10px] text-slate-400 hidden sm:block shrink-0">{help}</span>}
+      <div className="relative w-36">
+        <input
+          type="number" step="0.001" min="0" max="1"
+          value={value ? (value * 100).toFixed(3) : ''}
+          onChange={e => onChange((parseFloat(e.target.value) || 0) / 100)}
+          className="w-full text-right text-[13px] font-[600] text-[#0F172A] border border-slate-200 rounded-[8px] px-3 py-1.5 pr-6 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30 focus:border-[#781D1D]"
+          placeholder="0,000"
+        />
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">%</span>
+      </div>
+    </div>
+  );
+}
+
+function ResultRow({ label, value, highlight = false, sub = false, positive = false }: {
+  label: string; value: number | string; highlight?: boolean; sub?: boolean; positive?: boolean;
 }) {
   return (
     <div className={cn(
-      'flex items-center justify-between py-2 px-4 rounded-[8px]',
-      highlight ? 'bg-[#781D1D]/8 border border-[#781D1D]/20' : sub ? 'pl-8' : '',
+      'flex items-center justify-between py-2 px-3 rounded-[8px]',
+      highlight ? 'bg-[#781D1D]/8 border border-[#781D1D]/20' : sub ? 'pl-6' : '',
     )}>
       <span className={cn('text-[12px] font-[500] text-slate-600', highlight && 'font-[700] text-[#781D1D]')}>{label}</span>
-      <span className={cn('text-[13px] font-[700] tabular-nums', highlight ? 'text-[#781D1D]' : 'text-[#0F172A]')}>
+      <span className={cn('text-[13px] font-[700] tabular-nums',
+        highlight ? 'text-[#781D1D]' : positive ? 'text-emerald-700' : 'text-[#0F172A]')}>
         {typeof value === 'number' ? fmt(value) + ' €' : value}
       </span>
     </div>
@@ -219,11 +304,9 @@ function Section({ title, defaultOpen = true, children }: { title: string; defau
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="border border-slate-200 rounded-[12px] overflow-hidden">
-      <button
-        type="button"
+      <button type="button"
         className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors text-left"
-        onClick={() => setOpen(o => !o)}
-      >
+        onClick={() => setOpen(o => !o)}>
         <span className="text-[12px] font-[700] text-[#0F172A] uppercase tracking-[0.5px]">{title}</span>
         {open ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
       </button>
@@ -232,10 +315,127 @@ function Section({ title, defaultOpen = true, children }: { title: string; defau
   );
 }
 
-const TABS = ['Identificação', 'Q07 Apuramento', 'Q09 Mat. Coletável', 'TA', 'Resultados'] as const;
+function CalcRow({ label, value, highlight = false, indent = false }: {
+  label: string; value: number; highlight?: boolean; indent?: boolean;
+}) {
+  return (
+    <div className={cn(
+      'flex items-center justify-between py-2 px-3 rounded-[8px]',
+      highlight ? 'bg-[#781D1D]/8 border border-[#781D1D]/20' : 'bg-slate-50',
+      indent && 'ml-4',
+    )}>
+      <span className={cn('text-[12px] font-[700]', highlight ? 'text-[#781D1D]' : 'text-[#0F172A]')}>{label}</span>
+      <span className={cn('text-[13px] font-[800] tabular-nums', highlight ? 'text-[#781D1D]' : 'text-[#0F172A]')}>{fmt(value)} €</span>
+    </div>
+  );
+}
+
+// ─── Q07 campo lists ──────────────────────────────────────────────────────────
+
+const ACRESCER_LABELS: [string, string][] = [
+  ['c709','709 — Encargos não documentados (art.23-A n.1 a))'],
+  ['c710','710 — IRC, IS e outros impostos não dedutíveis'],
+  ['c711','711 — Multas, coimas e encargos de mora'],
+  ['c782','782 — Diferença positiva preço aquisição (OE2014)'],
+  ['c712','712 — Indemnizações pagas'],
+  ['c713','713 — Ajudas de custo e comp. além TA'],
+  ['c714','714 — Encargos de representação além TA'],
+  ['c715','715 — Provisões não aceites (art.39)'],
+  ['c717','717 — Encargos com viaturas (excedente art.34)'],
+  ['c721','721 — Diferença preços de transferência (art.63)'],
+  ['c724','724 — Correções de exercícios anteriores'],
+  ['c725','725 — Outros acréscimos'],
+  ['c716','716 — Perdas por imparidade créditos não aceites'],
+  ['c731','731 — Donativos mecenato excedente'],
+  ['c726','726 — Subcapitalização (art.67)'],
+  ['c783','783 — Correções art.78 n.3 CIRC'],
+  ['c728','728 — Reintegrações e amortizações não aceites'],
+  ['c727','727 — SGPS — perdas e variações de JV'],
+  ['c729','729 — Imparidades em inventários não aceites'],
+  ['c730','730 — Gastos regime R&D (art.59-D)'],
+  ['c732','732 — Mais-valias fiscais (art.46)'],
+  ['c733','733 — Regime tributação grupos (art.70)'],
+  ['c784','784 — Correções OE2008 (art.45-A)'],
+  ['c734','734 — Benefícios pós-emprego — diferença'],
+  ['c735','735 — Perdas em associadas (MEP) não aceites'],
+  ['c780','780 — Contratos construção — alteração regime (+)'],
+  ['c785','785 — Outros acréscimos (art.18 n.9)'],
+  ['c802','802 — Mensuração contratos seguros (+) OE2024'],
+  ['c746','746 — RETGS — excedente'],
+  ['c737','737 — Regime simplificado — diferença'],
+  ['c786','786 — Limitação gastos financiamentos (art.67)'],
+  ['c718','718 — Depreciações e amortizações não aceites'],
+  ['c719','719 — Donativos não aceites (art.62)'],
+  ['c720','720 — Diferenças cambiais não aceites'],
+  ['c722','722 — Regime simplificado grupo — diferença'],
+  ['c723','723 — Despesas de financiamento excessivas (art.67)'],
+  ['c736','736 — Correções art.135 CIRC'],
+  ['c738','738 — Variações patrimoniais positivas (a acrescer)'],
+  ['c739','739 — Rendimentos isentos/não sujeitos (revertidos)'],
+  ['c740','740 — Diferenças cambiais — correção art.18 n.10'],
+  ['c741','741 — Excedentes RETGS'],
+  ['c742','742 — Juros compensatórios (art.102)'],
+  ['c743','743 — Excedente art.67 n.1 (limitação gastos)'],
+  ['c787','787 — Correção SGPS art.32 (ganhos JV)'],
+  ['c744','744 — Outras correções a acrescer'],
+  ['c745','745 — Limitação amortizações art.72'],
+  ['c747','747 — Diferenças temporárias (a acrescer)'],
+  ['c748','748 — IRC pago no estrangeiro (art.91-A n.1b)'],
+  ['c749','749 — Donativos a entidades públicas (excedente)'],
+  ['c788','788 — Depreciações art.34-A'],
+  ['c750','750 — Gastos não aceites — art.23-A'],
+  ['c789','789 — Benefícios fiscais — reposição'],
+  ['c790','790 — Correções cambiais art.18 n.10'],
+  ['c751','751 — Outros acréscimos (especificados)'],
+  ['c803','803 — Transição IFRS 17 (+)'],
+  ['c779','779 — Limitação benefícios fiscais (art.92)'],
+  ['c797','797 — Correção art.48 n.7 (+)'],
+  ['c799','799 — Subvenções art.22-A (a acrescer)'],
+  ['c804','804 — Transição IFRS 17 — reajustamento (+)'],
+  ['c752','752 — Outros acréscimos (campo livre)'],
+];
+
+const DEDUZIR_LABELS: [string, string][] = [
+  ['c754','754 — Rendimentos sujeitos a tributação autónoma'],
+  ['c755','755 — Rendimentos já tributados noutro período'],
+  ['c756','756 — Ajustamentos não aceites (a deduzir)'],
+  ['c757','757 — Reversão de provisões (tributadas)'],
+  ['c791','791 — Diferença negativa preço aquisição (OE2014)'],
+  ['c758','758 — Variações patrimoniais negativas (a deduzir)'],
+  ['c759','759 — Diferenças cambiais (a deduzir)'],
+  ['c760','760 — Perdas de exercícios anteriores (reconhecidas)'],
+  ['c761','761 — Imparidades dívidas a receber (aceites)'],
+  ['c762','762 — Perdas em associadas (MEP) aceites'],
+  ['c763','763 — Rendimentos sujeitos a taxa especial (art.7)'],
+  ['c781','781 — Correções art.78 n.3 CIRC (a deduzir)'],
+  ['c764','764 — Rendimentos estabelecimentos estáveis isentos'],
+  ['c765','765 — Diferenças temporárias (a deduzir)'],
+  ['c766','766 — Reversão prejuízo reconhecido'],
+  ['c792','792 — Correções OE2008 (art.45-A) a deduzir'],
+  ['c767','767 — Dedução lucros reinvestidos (RFAI)'],
+  ['c768','768 — Menos-valias fiscais (art.46)'],
+  ['c769','769 — Deduções regime simplificado'],
+  ['c770','770 — Outros regimes especiais'],
+  ['c793','793 — Outros a deduzir (art.18 n.9)'],
+  ['c771','771 — Remuneração convencional capital social'],
+  ['c794','794 — SGPS art.32 (perdas JV)'],
+  ['c772','772 — Deduções art.67 (excedentes anteriores)'],
+  ['c795','795 — Rendimentos não tributados — dedução'],
+  ['c773','773 — Rendimentos isentos — art.7'],
+  ['c796','796 — Correção art.135 CIRC (a deduzir)'],
+  ['c774','774 — Benefícios fiscais (dedução lucro tributável)'],
+  ['c800','800 — Benefícios RFAI/DLRR (a deduzir no LT)'],
+  ['c801','801 — Deduções art.48 n.7'],
+  ['c798','798 — Subvenções art.22-A (a deduzir)'],
+  ['c775','775 — Outros a deduzir (campo livre)'],
+];
+
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
+
+const TABS = ['Identificação', 'Rendimentos', 'Q07 Apuramento', 'Q09 Mat. Coletável', 'TA', 'Q10 Cálculo'] as const;
 type Tab = typeof TABS[number];
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Main component ───────────────────────────────────────────────────────────
 
 interface Props {
   initialState?: Partial<PreviSaState>;
@@ -246,7 +446,6 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
   const [state, setState] = useState<PreviSaState>(() => ({ ...defaultPreviSaState(), ...initialState }));
   const [tab, setTab] = useState<Tab>('Identificação');
 
-  // Sync when external SAF-T data changes (only non-zero/non-empty fields)
   useEffect(() => {
     if (!initialState || Object.keys(initialState).length === 0) return;
     setState(prev => ({ ...prev, ...initialState }));
@@ -260,37 +459,32 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
     });
   }, [onStateChange]);
 
-  const addViatura = () => {
-    setState(prev => ({
-      ...prev,
-      viaturas: [...prev.viaturas, {
-        id: Math.random().toString(36).slice(2),
-        ano: new Date().getFullYear(),
-        combustivel: 'convencional',
-        custoHistorico: 0,
-        encargos: 0,
-      }],
-    }));
-  };
+  const addViatura = () => setState(prev => ({
+    ...prev,
+    viaturas: [...prev.viaturas, {
+      id: Math.random().toString(36).slice(2),
+      ano: new Date().getFullYear(),
+      combustivel: 'convencional' as FuelType,
+      custoHistorico: 0,
+      encargos: 0,
+    }],
+  }));
 
-  const updateViatura = (id: string, patch: Partial<ViaturaRow>) => {
-    setState(prev => ({
-      ...prev,
-      viaturas: prev.viaturas.map(v => v.id === id ? { ...v, ...patch } : v),
-    }));
-  };
+  const updateViatura = (id: string, patch: Partial<ViaturaRow>) =>
+    setState(prev => ({ ...prev, viaturas: prev.viaturas.map(v => v.id === id ? { ...v, ...patch } : v) }));
 
-  const removeViatura = (id: string) => {
+  const removeViatura = (id: string) =>
     setState(prev => ({ ...prev, viaturas: prev.viaturas.filter(v => v.id !== id) }));
-  };
 
   const res = calculate(state);
+
+  const inputClass = 'w-full text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30 focus:border-[#781D1D]';
 
   return (
     <div className="h-full flex flex-col bg-[#F8FAFC]">
       {/* Header */}
       <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-4 shrink-0">
-        <h1 className="text-[20px] font-[800] text-[#0F172A] leading-tight">Simulador PreviSa</h1>
+        <h1 className="text-[20px] font-[800] text-[#0F172A]">Simulador PreviSa</h1>
         <p className="text-[12px] text-slate-500 font-[500] mt-0.5">IRC — Modelo 22 · Previsão de IRC</p>
       </div>
 
@@ -298,345 +492,423 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
       <div className="bg-white border-b border-slate-200 px-4 sm:px-6 overflow-x-auto scrollbar-none shrink-0">
         <div className="flex gap-0 min-w-max">
           {TABS.map(t => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTab(t)}
+            <button key={t} type="button" onClick={() => setTab(t)}
               className={cn(
                 'px-4 py-3 text-[12px] font-[600] border-b-2 transition-colors whitespace-nowrap',
                 tab === t
                   ? 'border-[#781D1D] text-[#781D1D]'
                   : 'border-transparent text-slate-500 hover:text-[#0F172A] hover:border-slate-300',
-              )}
-            >
+              )}>
               {t}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Two-column layout */}
+      {/* Body */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* Left: inputs */}
+          {/* ── Left: inputs ── */}
           <div className="lg:col-span-2 flex flex-col gap-4">
 
             {/* ── IDENTIFICAÇÃO ── */}
-            {tab === 'Identificação' && (
-              <>
-                <Section title="Identificação da Empresa">
-                  <div className="space-y-3 py-1">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[11px] font-[600] text-slate-500 mb-1">NIF</label>
-                        <input value={state.nif} onChange={e => set('nif', e.target.value)}
-                          placeholder="500000000"
-                          className="w-full text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30 focus:border-[#781D1D]" />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-[600] text-slate-500 mb-1">Período</label>
-                        <input type="number" value={state.periodo} onChange={e => set('periodo', parseInt(e.target.value) || 2024)}
-                          className="w-full text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30 focus:border-[#781D1D]" />
-                      </div>
+            {tab === 'Identificação' && (<>
+              <Section title="Identificação da Empresa">
+                <div className="space-y-3 py-1">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-[600] text-slate-500 mb-1">NIF</label>
+                      <input value={state.nif} onChange={e => set('nif', e.target.value)} placeholder="500000000" className={inputClass} />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-[600] text-slate-500 mb-1">Designação Social</label>
-                      <input value={state.designacao} onChange={e => set('designacao', e.target.value)}
-                        placeholder="Nome da empresa"
-                        className="w-full text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30 focus:border-[#781D1D]" />
+                      <label className="block text-[11px] font-[600] text-slate-500 mb-1">Período</label>
+                      <input type="number" value={state.periodo} onChange={e => set('periodo', parseInt(e.target.value) || 2024)} className={inputClass} />
                     </div>
                   </div>
-                </Section>
-
-                <Section title="Regime Fiscal">
-                  <div className="space-y-3 py-1">
-                    <div>
-                      <label className="block text-[11px] font-[600] text-slate-500 mb-1">Regime</label>
-                      <select value={state.regime} onChange={e => set('regime', e.target.value as Regime)}
-                        className="w-full text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30 focus:border-[#781D1D]">
-                        <option value="geral">Regime Geral (Continental)</option>
-                        <option value="madeira">Região Autónoma da Madeira</option>
-                        <option value="acores">Região Autónoma dos Açores</option>
-                        <option value="interioridade">Interioridade</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-[600] text-slate-500 mb-1">Território</label>
-                      <select value={state.territorio} onChange={e => set('territorio', e.target.value as Territorio)}
-                        className="w-full text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30 focus:border-[#781D1D]">
-                        <option value="continental">Continental</option>
-                        <option value="madeira">Madeira</option>
-                        <option value="acores">Açores</option>
-                      </select>
-                    </div>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={state.isPME} onChange={e => set('isPME', e.target.checked)}
-                        className="w-4 h-4 accent-[#781D1D]" />
-                      <span className="text-[13px] font-[600] text-[#0F172A]">PME (beneficia da taxa reduzida nos primeiros €50.000)</span>
-                    </label>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={state.isStartup} onChange={e => set('isStartup', e.target.checked)}
-                        className="w-4 h-4 accent-[#781D1D]" />
-                      <span className="text-[13px] font-[600] text-[#0F172A]">Startup (Lei 21/2023 — taxa 12,5% em toda a matéria)</span>
-                    </label>
-                    <NumInput label="Volume de Negócios (€)" value={state.volumeNegocios} onChange={v => set('volumeNegocios', v)} help="Para PEC/PC" />
+                  <div>
+                    <label className="block text-[11px] font-[600] text-slate-500 mb-1">Designação Social</label>
+                    <input value={state.designacao} onChange={e => set('designacao', e.target.value)} placeholder="Nome da empresa" className={inputClass} />
                   </div>
-                </Section>
-              </>
-            )}
-
-            {/* ── Q07 ── */}
-            {tab === 'Q07 Apuramento' && (
-              <>
-                <Section title="Ponto de Partida — Campo 708">
-                  <NumInput label="701 — Resultado antes de impostos (RAI)" value={state.c701_rai} onChange={v => set('c701_rai', v)} />
-                  <NumInput label="702 — Variações de justo valor (a acrescer)" value={state.c702} onChange={v => set('c702', v)} indent />
-                  <NumInput label="703 — Ajustamentos e perdas por imparidade (a acrescer)" value={state.c703} onChange={v => set('c703', v)} indent />
-                  <NumInput label="704 — Variações de justo valor (a deduzir)" value={state.c704} onChange={v => set('c704', v)} indent />
-                  <NumInput label="705 — Reversão de ajustamentos (a deduzir)" value={state.c705} onChange={v => set('c705', v)} indent />
-                  <NumInput label="706 — Mais-valias contabilísticas (a acrescer)" value={state.c706} onChange={v => set('c706', v)} indent />
-                  <NumInput label="707 — Menos-valias contabilísticas (a deduzir)" value={state.c707} onChange={v => set('c707', v)} indent />
-                  <div className="flex items-center justify-between py-2 bg-slate-50 rounded-[8px] px-3 mt-1">
-                    <span className="text-[12px] font-[700] text-[#0F172A]">708 — Base de apuramento</span>
-                    <span className="text-[14px] font-[800] text-[#781D1D] tabular-nums">{fmt(res.c708)} €</span>
-                  </div>
-                </Section>
-
-                <Section title="A Acrescer (campos 709–752)" defaultOpen={false}>
-                  {([
-                    ['709','Encargos não documentados'], ['710','Impostos e outros (incl. IRC)'],
-                    ['711','Multas e penalidades'], ['712','Indemnizações'],
-                    ['713','Ajudas de custo e compensações s/ TA'], ['714','Representação s/ TA'],
-                    ['715','Provisões não dedutíveis'], ['716','Perdas por imparidade créditos não aceites'],
-                    ['717','Gastos com viaturas (excedente)'], ['718','Depreciações não aceites'],
-                    ['719','Donativos não dedutíveis'], ['720','Diferenças cambiais'],
-                    ['721','Preços de transferência'], ['722','Regime simplificado — diferença'],
-                    ['723','Despesas de financiamento excessivas'], ['724','Correções de exercícios anteriores'],
-                    ['725','Outros acréscimos'], ['726','Subcapitalização'],
-                    ['727','Limitação de perdas (SGPS)'], ['728','Reintegrações e amortizações excedentes'],
-                    ['729','Imparidades em inventários não aceites'], ['730','Gastos em R&D (regime especial)'],
-                    ['731','Donativos mecenato excedente'], ['732','Mais-valias fiscais'],
-                    ['733','Regime tributação grupos'], ['734','Benefícios pós emprego — diferença'],
-                    ['735','Perdas em assoc. (MEP)'], ['736','Correções art. 135.º'],
-                    ['737','Regime simplif. grupos'], ['738','Variações patrimoniaisPos'],
-                    ['739','Rendimentos isentos (acrescer)'], ['740','Correções cambiais'],
-                    ['741','Excedentes RETGS'], ['742','Juros compensatórios'],
-                    ['743','Art. 67.º CIRC excedente'], ['744','Outras corr. por acrescer'],
-                    ['745','Art. 72.º — limitação amort.'], ['746','Regime fiscal investimento'],
-                    ['747','Diferenças temporárias'], ['748','IRC outros países'],
-                    ['749','Donativos (entidades públicas)'], ['750','Gastos não aceites (outros)'],
-                    ['751','Outros'], ['752','Total acréscimos (calculado)'],
-                  ] as [string, string][]).map(([c, lbl]) => {
-                    const stateKey = `c${c}` as keyof PreviSaState;
-                    if (c === '752') return (
-                      <div key={c} className="flex items-center justify-between py-2 bg-slate-50 rounded-[8px] px-3 mt-1">
-                        <span className="text-[12px] font-[700]">752 — Total a acrescer</span>
-                        <span className="text-[13px] font-[800] text-[#781D1D] tabular-nums">{fmt(res.c753 - res.c708)} €</span>
-                      </div>
-                    );
-                    return (
-                      <div key={c}>
-                        <NumInput label={`${c} — ${lbl}`}
-                          value={state[stateKey] as number}
-                          onChange={v => set(stateKey, v as PreviSaState[typeof stateKey])} indent />
-                      </div>
-                    );
-                  })}
-                  <div className="flex items-center justify-between py-2 bg-slate-50 rounded-[8px] px-3 mt-1">
-                    <span className="text-[12px] font-[700]">753 — Soma (708 + acréscimos)</span>
-                    <span className="text-[14px] font-[800] text-[#781D1D] tabular-nums">{fmt(res.c753)} €</span>
-                  </div>
-                </Section>
-
-                <Section title="A Deduzir (campos 754–776)" defaultOpen={false}>
-                  {([
-                    ['754','Dividendos isentos (art. 51.º)'], ['755','Mais-valias isentas (art. 48.º)'],
-                    ['756','Rendimentos estabelecimentos estáveis isentos'], ['757','Reversão de provisões (tributadas)'],
-                    ['758','Variações patrimoniais negativas'], ['759','Diferenças cambiais (a deduzir)'],
-                    ['760','Perdas de ex. anteriores (reconhecidas)'], ['761','Imparidades em dívidas a receber'],
-                    ['762','Perdas em assoc. (MEP) — dedutíveis'], ['763','Benefício fiscal SIFIDE / CFEI'],
-                    ['764','Rendimentos sujeitos a TE'], ['765','Diferenças temporárias (a deduzir)'],
-                    ['766','Reversão prejuízo reconhecido'], ['767','Dedução lucros reinvestidos (art. 48.º)'],
-                    ['768','Menos-valias fiscais'], ['769','Deduções regime simplif.'],
-                    ['770','Outros regimes especiais'], ['771','Remuneração convencional capital social'],
-                    ['772','Deduções art. 67.º'], ['773','Rendimentos isentos (a deduzir)'],
-                    ['774','Benefícios fiscais (RFAI, SIFIDE…)'], ['775','Outros'],
-                  ] as [string, string][]).map(([c, lbl]) => {
-                    const stateKey = `c${c}` as keyof PreviSaState;
-                    return (
-                      <div key={c}>
-                        <NumInput label={`${c} — ${lbl}`}
-                          value={state[stateKey] as number}
-                          onChange={v => set(stateKey, v as PreviSaState[typeof stateKey])} indent />
-                      </div>
-                    );
-                  })}
-                  <div className="flex items-center justify-between py-2 bg-slate-50 rounded-[8px] px-3 mt-1">
-                    <span className="text-[12px] font-[700]">776 — Total a deduzir</span>
-                    <span className="text-[14px] font-[800] text-emerald-700 tabular-nums">{fmt(res.c776)} €</span>
-                  </div>
-                </Section>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white border border-slate-200 rounded-[12px] p-4">
-                    <p className="text-[11px] font-[600] text-slate-500 uppercase tracking-[0.5px]">778 — Lucro Tributável</p>
-                    <p className="text-[22px] font-[800] text-[#0F172A] tabular-nums mt-1">{fmt(res.lucroTributavel)} €</p>
-                  </div>
-                  <div className="bg-white border border-slate-200 rounded-[12px] p-4">
-                    <p className="text-[11px] font-[600] text-slate-500 uppercase tracking-[0.5px]">777 — Prejuízo Fiscal</p>
-                    <p className="text-[22px] font-[800] text-emerald-700 tabular-nums mt-1">{fmt(res.prejuizoFiscal)} €</p>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* ── Q09 ── */}
-            {tab === 'Q09 Mat. Coletável' && (
-              <Section title="Matéria Coletável — Q09">
-                <div className="py-2 bg-slate-50 rounded-[8px] px-3 flex justify-between items-center">
-                  <span className="text-[12px] font-[700]">Lucro Tributável (de Q07)</span>
-                  <span className="text-[14px] font-[700] tabular-nums">{fmt(res.lucroTributavel)} €</span>
-                </div>
-                <NumInput label="Prejuízos fiscais a deduzir" value={state.prejuizosDeduzir}
-                  onChange={v => set('prejuizosDeduzir', v)}
-                  help={`Limite: ${pct(state.limiteMaisPP ? 0.75 : 0.65)} do LT`} />
-                <label className="flex items-center gap-3 py-1.5 cursor-pointer">
-                  <input type="checkbox" checked={state.limiteMaisPP} onChange={e => set('limiteMaisPP', e.target.checked)}
-                    className="w-4 h-4 accent-[#781D1D]" />
-                  <span className="text-[12px] font-[500] text-slate-600">
-                    Aumentar limite de dedução para 75% (micro/pequenas com perda {'>'} 25% capital próprio)
-                  </span>
-                </label>
-                <NumInput label="Benefícios fiscais (RFAI, SIFIDE, etc.)" value={state.beneficiosFiscais}
-                  onChange={v => set('beneficiosFiscais', v)} />
-                <div className="py-2 bg-[#781D1D]/8 border border-[#781D1D]/20 rounded-[8px] px-3 flex justify-between items-center mt-2">
-                  <span className="text-[12px] font-[700] text-[#781D1D]">Matéria Coletável</span>
-                  <span className="text-[18px] font-[800] text-[#781D1D] tabular-nums">{fmt(res.materiaColetavel)} €</span>
                 </div>
               </Section>
-            )}
+
+              <Section title="Regime Fiscal">
+                <div className="space-y-3 py-1">
+                  <div>
+                    <label className="block text-[11px] font-[600] text-slate-500 mb-1">Regime</label>
+                    <select value={state.regime} onChange={e => set('regime', e.target.value as Regime)} className={inputClass}>
+                      <option value="geral">Regime Geral (Continental)</option>
+                      <option value="madeira">Região Autónoma da Madeira</option>
+                      <option value="acores">Região Autónoma dos Açores</option>
+                      <option value="interioridade">Interioridade</option>
+                      <option value="startup">Startup (Lei 21/2023)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-[600] text-slate-500 mb-1">Território (para PEC/PC/Derrama)</label>
+                    <select value={state.territorio} onChange={e => set('territorio', e.target.value as Territorio)} className={inputClass}>
+                      <option value="continental">Continental</option>
+                      <option value="madeira">Madeira</option>
+                      <option value="acores">Açores</option>
+                    </select>
+                  </div>
+                  <label className="flex items-center gap-3 cursor-pointer py-1">
+                    <input type="checkbox" checked={state.isPME} onChange={e => set('isPME', e.target.checked)} className="w-4 h-4 accent-[#781D1D]" />
+                    <span className="text-[13px] font-[600] text-[#0F172A]">PME — taxa reduzida nos primeiros €50.000</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer py-1">
+                    <input type="checkbox" checked={state.isStartup} onChange={e => set('isStartup', e.target.checked)} className="w-4 h-4 accent-[#781D1D]" />
+                    <span className="text-[13px] font-[600] text-[#0F172A]">Startup (12,5% em toda a matéria coletável)</span>
+                  </label>
+                  <NumInput label="Volume de Negócios (€)" value={state.volumeNegocios} onChange={v => set('volumeNegocios', v)} help="Para PEC/PC" />
+                  <PctInput label="Taxa Derrama Municipal" value={state.taxaDerramaMunicipal} onChange={v => set('taxaDerramaMunicipal', v)} help="Ex: 1,5%" />
+                </div>
+              </Section>
+            </>)}
+
+            {/* ── RENDIMENTOS / RAI ── */}
+            {tab === 'Rendimentos' && (<>
+              <Section title="Cálculo do RAI (Resultado Antes de Impostos)">
+                <div className="py-2">
+                  <label className="flex items-center gap-3 cursor-pointer mb-3">
+                    <input type="checkbox" checked={state.useRaiCalc} onChange={e => set('useRaiCalc', e.target.checked)} className="w-4 h-4 accent-[#781D1D]" />
+                    <span className="text-[13px] font-[600] text-[#0F172A]">Calcular RAI a partir da demonstração de resultados</span>
+                  </label>
+                  {!state.useRaiCalc && (
+                    <NumInput label="701 — RAI (introdução direta)" value={state.c701_rai} onChange={v => set('c701_rai', v)} />
+                  )}
+                </div>
+              </Section>
+
+              {state.useRaiCalc && (<>
+                <Section title="Rendimentos">
+                  <NumInput label="711 — Vendas de mercadorias" value={state.rai_711} onChange={v => set('rai_711', v)} />
+                  <NumInput label="712 — Vendas de produtos acabados e em curso" value={state.rai_712} onChange={v => set('rai_712', v)} />
+                  <NumInput label="72 — Prestações de serviços" value={state.rai_72} onChange={v => set('rai_72', v)} />
+                  <NumInput label="74 — Trabalhos para a própria entidade" value={state.rai_74} onChange={v => set('rai_74', v)} />
+                  <NumInput label="75 — Subsídios à exploração" value={state.rai_75} onChange={v => set('rai_75', v)} />
+                  <NumInput label="76 — Reversões" value={state.rai_76} onChange={v => set('rai_76', v)} />
+                  <NumInput label="77 — Ganhos por aumentos de justo valor" value={state.rai_77} onChange={v => set('rai_77', v)} />
+                  <NumInput label="78 — Outros rendimentos e ganhos" value={state.rai_78} onChange={v => set('rai_78', v)} />
+                  <NumInput label="79 — Juros, dividendos e outros rdtos. financeiros" value={state.rai_79} onChange={v => set('rai_79', v)} />
+                </Section>
+
+                <Section title="Gastos">
+                  <NumInput label="CMV — Custo das mercadorias vendidas" value={state.rai_cmv} onChange={v => set('rai_cmv', v)} />
+                  <NumInput label="CMC — Custo das matérias consumidas" value={state.rai_cmc} onChange={v => set('rai_cmc', v)} />
+                  <NumInput label="62 — FSE — Fornecimentos e serviços externos" value={state.rai_62} onChange={v => set('rai_62', v)} />
+                  <NumInput label="63 — Gastos com pessoal" value={state.rai_63} onChange={v => set('rai_63', v)} />
+                  <NumInput label="64 — Depreciações e amortizações" value={state.rai_64} onChange={v => set('rai_64', v)} />
+                  <NumInput label="65 — Perdas por imparidade" value={state.rai_65} onChange={v => set('rai_65', v)} />
+                  <NumInput label="66 — Perdas por reduções de justo valor" value={state.rai_66} onChange={v => set('rai_66', v)} />
+                  <NumInput label="67 — Provisões" value={state.rai_67} onChange={v => set('rai_67', v)} />
+                  <NumInput label="68 — Outros gastos e perdas" value={state.rai_68} onChange={v => set('rai_68', v)} />
+                  <NumInput label="69 — Gastos de financiamento" value={state.rai_69} onChange={v => set('rai_69', v)} />
+                </Section>
+
+                <Section title="Imposto diferido">
+                  <NumInput label="8122 — Imposto diferido — Débito (+)" value={state.rai_8122_db} onChange={v => set('rai_8122_db', v)} />
+                  <NumInput label="8122 — Imposto diferido — Crédito (−)" value={state.rai_8122_cr} onChange={v => set('rai_8122_cr', v)} />
+                </Section>
+
+                <CalcRow label={`701 — RAI calculado (campo 708 ponto de partida)`} value={res.raiCalc} highlight />
+              </>)}
+            </>)}
+
+            {/* ── Q07 ── */}
+            {tab === 'Q07 Apuramento' && (<>
+              <Section title="Ponto de Partida — Campo 708">
+                {state.useRaiCalc
+                  ? <NumInput label="701 — RAI (calculado na aba Rendimentos)" value={res.raiCalc} readOnly />
+                  : <NumInput label="701 — Resultado antes de impostos (RAI)" value={state.c701_rai} onChange={v => set('c701_rai', v)} />
+                }
+                <NumInput label="702 — Variações patrimoniais positivas (a acrescer)" value={state.c702} onChange={v => set('c702', v)} indent />
+                <NumInput label="703 — Variações patrimoniais pos. — regimes transitórios" value={state.c703} onChange={v => set('c703', v)} indent />
+                <NumInput label="805 — Mensuração passivos contratos seguros (+) OE2024" value={state.c805} onChange={v => set('c805', v)} indent />
+                <NumInput label="704 — Variações patrimoniais negativas (a deduzir)" value={state.c704} onChange={v => set('c704', v)} indent />
+                <NumInput label="705 — Variações patrimoniais neg. — regimes transitórios" value={state.c705} onChange={v => set('c705', v)} indent />
+                <NumInput label="806 — Mensuração passivos contratos seguros (−) OE2024" value={state.c806} onChange={v => set('c806', v)} indent />
+                <NumInput label="706 — Alteração regime contratos construção (+)" value={state.c706} onChange={v => set('c706', v)} indent />
+                <NumInput label="707 — Alteração regime contratos construção (−)" value={state.c707} onChange={v => set('c707', v)} indent />
+                <div className="flex items-center gap-3 py-1.5">
+                  <label className="flex-1 text-[12px] font-[500] text-slate-600">Ignorar cálculo automático do 708 (usar RAI direto)</label>
+                  <input type="checkbox" checked={state.c708_override} onChange={e => set('c708_override', e.target.checked)} className="w-4 h-4 accent-[#781D1D]" />
+                </div>
+                <CalcRow label="708 — Base de apuramento" value={res.c708} highlight />
+              </Section>
+
+              <Section title="A Acrescer (campos 709–804)" defaultOpen={false}>
+                {ACRESCER_LABELS.map(([key, lbl]) => (
+                  <div key={key}>
+                    <NumInput label={lbl} value={state[key as keyof PreviSaState] as number}
+                      onChange={v => set(key as keyof PreviSaState, v as PreviSaState[keyof PreviSaState])} indent />
+                  </div>
+                ))}
+                <CalcRow label="Total acréscimos" value={res.acrescer} />
+                <CalcRow label="753 — Soma (708 + acréscimos)" value={res.c753} highlight />
+              </Section>
+
+              <Section title="A Deduzir (campos 754–775)" defaultOpen={false}>
+                {DEDUZIR_LABELS.map(([key, lbl]) => (
+                  <div key={key}>
+                    <NumInput label={lbl} value={state[key as keyof PreviSaState] as number}
+                      onChange={v => set(key as keyof PreviSaState, v as PreviSaState[keyof PreviSaState])} indent />
+                  </div>
+                ))}
+                <CalcRow label="776 — Total a deduzir" value={res.c776} />
+              </Section>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white border border-slate-200 rounded-[12px] p-4">
+                  <p className="text-[11px] font-[600] text-slate-500 uppercase tracking-[0.5px]">778 — Lucro Tributável</p>
+                  <p className="text-[22px] font-[800] text-[#0F172A] tabular-nums mt-1">{fmt(res.lucroTributavel)} €</p>
+                </div>
+                <div className="bg-white border border-slate-200 rounded-[12px] p-4">
+                  <p className="text-[11px] font-[600] text-slate-500 uppercase tracking-[0.5px]">777 — Prejuízo Fiscal</p>
+                  <p className="text-[22px] font-[800] text-emerald-700 tabular-nums mt-1">{fmt(res.prejuizoFiscal)} €</p>
+                </div>
+              </div>
+            </>)}
+
+            {/* ── Q09 ── */}
+            {tab === 'Q09 Mat. Coletável' && (<>
+              <Section title="Lucro Tributável (de Q07)">
+                <CalcRow label="778 — Lucro tributável" value={res.lucroTributavel} highlight />
+              </Section>
+
+              <Section title="Prejuízos Fiscais Dedutíveis">
+                <NumInput label="Prejuízos 2014–2017 (agrupados)" value={state.prej_ate2017} onChange={v => set('prej_ate2017', v)} />
+                <NumInput label="Prejuízos 2018" value={state.prej_2018} onChange={v => set('prej_2018', v)} indent />
+                <NumInput label="Prejuízos 2019" value={state.prej_2019} onChange={v => set('prej_2019', v)} indent />
+                <NumInput label="Prejuízos 2020" value={state.prej_2020} onChange={v => set('prej_2020', v)} indent />
+                <NumInput label="Prejuízos 2021" value={state.prej_2021} onChange={v => set('prej_2021', v)} indent />
+                <NumInput label="Prejuízos 2022" value={state.prej_2022} onChange={v => set('prej_2022', v)} indent />
+                <NumInput label="Prejuízos 2023" value={state.prej_2023} onChange={v => set('prej_2023', v)} indent />
+                <NumInput label="Prejuízos 2024" value={state.prej_2024} onChange={v => set('prej_2024', v)} indent />
+                <NumInput label="397 — Prejuízos c/ transmissão autorizada (art.15)" value={state.c397} onChange={v => set('c397', v)} />
+                <div className="flex items-center justify-between py-1.5 text-[12px] text-slate-500">
+                  <span>Total prejuízos disponíveis</span>
+                  <span className="font-[700] tabular-nums">{fmt(res.totalPrejuziosDisp)} €</span>
+                </div>
+                <div className="flex items-center justify-between py-1.5 text-[12px] text-slate-500">
+                  <span>Limite de dedução ({state.limiteMaisPP ? '75%' : '65%'} × LT)</span>
+                  <span className="font-[700] tabular-nums">{fmt(res.lucroTributavel * (state.limiteMaisPP ? 0.75 : 0.65))} €</span>
+                </div>
+                <label className="flex items-center gap-3 py-1.5 cursor-pointer">
+                  <input type="checkbox" checked={state.limiteMaisPP} onChange={e => set('limiteMaisPP', e.target.checked)} className="w-4 h-4 accent-[#781D1D]" />
+                  <span className="text-[12px] font-[500] text-slate-600">Aumentar limite para 75% (perda {'>'} 25% capital próprio)</span>
+                </label>
+                <CalcRow label="Prejuízos efetivamente deduzidos" value={res.prejuziosEfetivos} />
+              </Section>
+
+              <Section title="Benefícios Fiscais">
+                <NumInput label="Benefícios fiscais — dedução na matéria coletável" value={state.beneficiosFiscais}
+                  onChange={v => set('beneficiosFiscais', v)} help="c774+c775 (Q09)" />
+              </Section>
+
+              <CalcRow label="Matéria Coletável" value={res.materiaColetavel} highlight />
+            </>)}
 
             {/* ── TA ── */}
-            {tab === 'TA' && (
-              <>
-                <Section title="Tributações Autónomas — Viaturas">
-                  <label className="flex items-center gap-3 py-1.5 cursor-pointer">
-                    <input type="checkbox" checked={state.agravamentoTA} onChange={e => set('agravamentoTA', e.target.checked)}
-                      className="w-4 h-4 accent-[#781D1D]" />
-                    <span className="text-[12px] font-[500] text-slate-600">Agravamento de 10% (empresa com prejuízo fiscal no período)</span>
-                  </label>
+            {tab === 'TA' && (<>
+              <Section title="Tributações Autónomas — Viaturas">
+                <label className="flex items-center gap-3 py-1.5 cursor-pointer">
+                  <input type="checkbox" checked={state.agravamentoTA} onChange={e => set('agravamentoTA', e.target.checked)} className="w-4 h-4 accent-[#781D1D]" />
+                  <span className="text-[12px] font-[500] text-slate-600">Agravamento +10% (empresa com prejuízo fiscal no período)</span>
+                </label>
 
-                  {state.viaturas.length === 0 && (
-                    <p className="text-[12px] text-slate-400 py-3 text-center">Sem viaturas adicionadas</p>
-                  )}
+                {state.viaturas.length === 0 && (
+                  <p className="text-[12px] text-slate-400 py-3 text-center">Sem viaturas adicionadas</p>
+                )}
 
-                  {state.viaturas.map(v => (
-                    <div key={v.id} className="bg-slate-50 rounded-[10px] p-3 flex flex-col gap-2 mt-2 border border-slate-100">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-[700] text-slate-500 uppercase tracking-[0.5px]">Viatura</span>
-                        <button type="button" onClick={() => removeViatura(v.id)}
-                          className="text-red-400 hover:text-red-600 transition-colors">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="block text-[10px] font-[600] text-slate-400 mb-0.5">Combustível</label>
-                          <select value={v.combustivel}
-                            onChange={e => updateViatura(v.id, { combustivel: e.target.value as FuelType })}
-                            className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30">
-                            <option value="convencional">Convencional / GPL / Plug-in</option>
-                            <option value="plug_in_5050">Plug-in (50%/50%)</option>
-                            <option value="gnv">GNV</option>
-                            <option value="eletrico">Elétrico</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-[600] text-slate-400 mb-0.5">Custo histórico (€)</label>
-                          <input type="number" value={v.custoHistorico || ''}
-                            onChange={e => updateViatura(v.id, { custoHistorico: parseFloat(e.target.value) || 0 })}
-                            placeholder="0,00"
-                            className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30 text-right" />
-                        </div>
+                {state.viaturas.map(v => (
+                  <div key={v.id} className="bg-slate-50 rounded-[10px] p-3 flex flex-col gap-2 mt-2 border border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-[700] text-slate-500 uppercase tracking-[0.5px]">Viatura</span>
+                      <button type="button" onClick={() => removeViatura(v.id)} className="text-red-400 hover:text-red-600 transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-[600] text-slate-400 mb-0.5">Combustível</label>
+                        <select value={v.combustivel}
+                          onChange={e => updateViatura(v.id, { combustivel: e.target.value as FuelType })}
+                          className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30">
+                          <option value="convencional">Convencional / GPL</option>
+                          <option value="plug_in">Plug-in híbrido</option>
+                          <option value="plug_in_5050">Plug-in 50%/50%</option>
+                          <option value="gnv">GNV</option>
+                          <option value="eletrico">Elétrico</option>
+                        </select>
                       </div>
                       <div>
-                        <label className="block text-[10px] font-[600] text-slate-400 mb-0.5">Encargos com viatura no período (€)</label>
-                        <input type="number" value={v.encargos || ''}
-                          onChange={e => updateViatura(v.id, { encargos: parseFloat(e.target.value) || 0 })}
+                        <label className="block text-[10px] font-[600] text-slate-400 mb-0.5">Custo histórico (€)</label>
+                        <input type="number" value={v.custoHistorico || ''}
+                          onChange={e => updateViatura(v.id, { custoHistorico: parseFloat(e.target.value) || 0 })}
                           placeholder="0,00"
                           className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30 text-right" />
                       </div>
-                      <div className="flex justify-between text-[11px] font-[600]">
-                        <span className="text-slate-500">TA calculada:</span>
-                        <span className="text-[#781D1D]">{fmt(calcTAVeiculo(v, state.agravamentoTA))} €</span>
-                      </div>
                     </div>
-                  ))}
+                    <div>
+                      <label className="block text-[10px] font-[600] text-slate-400 mb-0.5">Encargos com viatura no período (€)</label>
+                      <input type="number" value={v.encargos || ''}
+                        onChange={e => updateViatura(v.id, { encargos: parseFloat(e.target.value) || 0 })}
+                        placeholder="0,00"
+                        className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30 text-right" />
+                    </div>
+                    <div className="flex justify-between text-[11px] font-[600]">
+                      <span className="text-slate-500">TA calculada:</span>
+                      <span className="text-[#781D1D]">{fmt(calcTAVeiculo(v, state.agravamentoTA))} €</span>
+                    </div>
+                  </div>
+                ))}
 
-                  <button type="button" onClick={addViatura}
-                    className="mt-3 flex items-center gap-2 px-3 py-2 text-[12px] font-[600] text-[#781D1D] border border-dashed border-[#781D1D]/40 rounded-[8px] hover:bg-[#781D1D]/5 transition-colors w-full justify-center">
-                    <Plus className="w-4 h-4" />
-                    Adicionar viatura
-                  </button>
-                </Section>
-
-                <Section title="Outras Tributações Autónomas">
-                  <NumInput label="Despesas não documentadas (suj. atividade principal)" value={state.ta_despNaoDocPrincipal} onChange={v => set('ta_despNaoDocPrincipal', v)} help="50%" />
-                  <NumInput label="Despesas não documentadas (não atividade principal)" value={state.ta_despNaoDocNaoPrincipal} onChange={v => set('ta_despNaoDocNaoPrincipal', v)} help="70%" />
-                  <NumInput label="Encargos de representação" value={state.ta_representacao} onChange={v => set('ta_representacao', v)} help="10%" />
-                  <NumInput label="Ajudas de custo e comp. de viagem" value={state.ta_ajadasCusto} onChange={v => set('ta_ajadasCusto', v)} help="5%" />
-                  <NumInput label="Lucros distribuídos a entidades isentas" value={state.ta_lucrosDistribuidos} onChange={v => set('ta_lucrosDistribuidos', v)} help="23%" />
-                  <NumInput label="Pagamentos a entidades em offshores" value={state.ta_offshores} onChange={v => set('ta_offshores', v)} help="35%" />
-                  <NumInput label="Indemnizações por cessação de funções" value={state.ta_indemCessacao} onChange={v => set('ta_indemCessacao', v)} help="35%" />
-                  <NumInput label="Bónus e remunerações variáveis de gestores" value={state.ta_bonus} onChange={v => set('ta_bonus', v)} help="35%" />
-                </Section>
-              </>
-            )}
-
-            {/* ── RESULTADOS ── */}
-            {tab === 'Resultados' && (
-              <Section title="Pagamentos por Conta e Deduções à Coleta">
-                <NumInput label="Retenções na fonte" value={state.retencoesFonte} onChange={v => set('retencoesFonte', v)} />
-                <NumInput label="PEC — pagamentos efectuados" value={state.pecPagamentos} onChange={v => set('pecPagamentos', v)}
-                  help={`Calculado: ${fmt(res.pecCalculado)} €`} />
-                <NumInput label="PC — pagamentos por conta" value={state.pcPagamentos} onChange={v => set('pcPagamentos', v)}
-                  help={`Estimado: ${fmt(res.pcCalculado)} €`} />
-                <NumInput label="Pagamentos adicionais por conta" value={state.pagamentosAdicionais} onChange={v => set('pagamentosAdicionais', v)} />
+                <button type="button" onClick={addViatura}
+                  className="mt-3 flex items-center gap-2 px-3 py-2 text-[12px] font-[600] text-[#781D1D] border border-dashed border-[#781D1D]/40 rounded-[8px] hover:bg-[#781D1D]/5 transition-colors w-full justify-center">
+                  <Plus className="w-4 h-4" />
+                  Adicionar viatura
+                </button>
               </Section>
-            )}
+
+              <Section title="Outras Tributações Autónomas">
+                <NumInput label="Despesas não documentadas — atividade principal" value={state.ta_despNaoDocPrincipal} onChange={v => set('ta_despNaoDocPrincipal', v)} help="50%" />
+                <NumInput label="Despesas não documentadas — não atividade principal" value={state.ta_despNaoDocNaoPrincipal} onChange={v => set('ta_despNaoDocNaoPrincipal', v)} help="70%" />
+                <NumInput label="Encargos de representação" value={state.ta_representacao} onChange={v => set('ta_representacao', v)} help="10%" />
+                <NumInput label="Ajudas de custo e comp. de viagem" value={state.ta_ajadasCusto} onChange={v => set('ta_ajadasCusto', v)} help="5%" />
+                <NumInput label="Lucros distribuídos a entidades isentas" value={state.ta_lucrosDistribuidos} onChange={v => set('ta_lucrosDistribuidos', v)} help="23%" />
+                <NumInput label="Pagamentos a entidades em paraísos fiscais" value={state.ta_offshores} onChange={v => set('ta_offshores', v)} help="35%" />
+                <NumInput label="Indemnizações por cessação de funções" value={state.ta_indemCessacao} onChange={v => set('ta_indemCessacao', v)} help="35%" />
+                <NumInput label="Bónus e rem. variáveis (gestores/administradores)" value={state.ta_bonus} onChange={v => set('ta_bonus', v)} help="35%" />
+                <div className="pt-1">
+                  <NumInput label="Retenções na fonte a deduzir das TA (art.88 n.12)" value={state.ta_retFonteArt88n12} onChange={v => set('ta_retFonteArt88n12', v)} />
+                </div>
+              </Section>
+
+              <div className="bg-white border border-slate-200 rounded-[12px] p-4 space-y-1">
+                <ResultRow label="TA viaturas" value={res.taViaturas} />
+                <ResultRow label="TA outras" value={res.taOutras} />
+                <ResultRow label="TA bruta" value={res.taBruta} />
+                <ResultRow label="(-) Retenções art.88 n.12" value={state.ta_retFonteArt88n12} />
+                <ResultRow label="TA total líquida (c365)" value={res.taTotal} highlight />
+              </div>
+            </>)}
+
+            {/* ── Q10 ── */}
+            {tab === 'Q10 Cálculo' && (<>
+              <Section title="Coleta IRC">
+                <CalcRow label="Matéria coletável" value={res.materiaColetavel} />
+                <CalcRow label="IRC sobre mat. coletável (c347)" value={res.ircColeta - state.c349 * state.c349_taxa} indent />
+                <div className="flex items-center gap-3 py-1.5 pl-4">
+                  <label className="flex-1 text-[12px] font-[500] text-slate-600">349 — IRC a outras taxas — base</label>
+                  <input type="number" step="0.01" value={state.c349 || ''}
+                    onChange={e => set('c349', parseFloat(e.target.value) || 0)}
+                    className="w-36 text-right text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30"
+                    placeholder="0,00" />
+                </div>
+                <div className="flex items-center gap-3 py-1.5 pl-4">
+                  <label className="flex-1 text-[12px] font-[500] text-slate-600">349 — taxa (%)</label>
+                  <div className="relative w-36">
+                    <input type="number" step="0.1" min="0" max="100"
+                      value={state.c349_taxa ? (state.c349_taxa * 100).toFixed(1) : ''}
+                      onChange={e => set('c349_taxa', (parseFloat(e.target.value) || 0) / 100)}
+                      className="w-full text-right text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-1.5 pr-6 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30"
+                      placeholder="0,0" />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">%</span>
+                  </div>
+                </div>
+                <CalcRow label="351 — Coleta IRC total" value={res.ircColeta} highlight />
+              </Section>
+
+              <Section title="Derramas">
+                <CalcRow label="Derrama estadual (art.87-A)" value={res.derramaEstadual} />
+                <CalcRow label="Derrama municipal" value={res.derrMunicipal} />
+                <div className="text-[11px] text-slate-400 px-1 py-1">
+                  Taxa derrama municipal: {pct(state.taxaDerramaMunicipal)} (configurar em Identificação)
+                </div>
+                <CalcRow label="378 — Total coleta + derramas" value={res.c378} highlight />
+              </Section>
+
+              <Section title="Deduções à Coleta (c357)">
+                <NumInput label="353 — DTJI — dupla tributação jurídica int. (art.91)" value={state.c353} onChange={v => set('c353', v)} />
+                <NumInput label="375 — DTEI — dupla tributação económica int. (art.91-A)" value={state.c375} onChange={v => set('c375', v)} />
+                <NumInput label="355 — Benefícios fiscais (exceto CFEI II e IFR)" value={state.c355_bf} onChange={v => set('c355_bf', v)} />
+                <NumInput label="355 — CFEI II" value={state.c355_cfei} onChange={v => set('c355_cfei', v)} indent />
+                <NumInput label="355 — IFR" value={state.c355_ifr} onChange={v => set('c355_ifr', v)} indent />
+                <NumInput label="470 — Adicional ao IMI (art.135-J CIMI)" value={state.c470} onChange={v => set('c470', v)} />
+                <CalcRow label="357 — Total deduções à coleta" value={res.deducoesColeta} highlight />
+              </Section>
+
+              <CalcRow label="358 — IRC liquidado (c378 − c357)" value={res.c358} highlight />
+
+              <Section title="Pagamentos e Deduções">
+                <NumInput label="356 — PEC efectuado" value={state.pecPagamentos} onChange={v => set('pecPagamentos', v)}
+                  help={`Estimado: ${fmt(res.pecCalculado)} €`} />
+                <NumInput label="359 — Retenções na fonte" value={state.retencoesFonte} onChange={v => set('retencoesFonte', v)} />
+                <NumInput label="360 — PC — pagamentos por conta" value={state.pcPagamentos} onChange={v => set('pcPagamentos', v)}
+                  help={`Estimado: ${fmt(res.pcCalculado)} €`} />
+                <NumInput label="374 — PAC — pagamentos adicionais por conta" value={state.pacPagamentos} onChange={v => set('pacPagamentos', v)} />
+                <NumInput label="379 — DTJI CDT (países com CDT — art.91 n.2)" value={state.c379} onChange={v => set('c379', v)} />
+              </Section>
+
+              <Section title="Outras Correções" defaultOpen={false}>
+                <NumInput label="363 — IRC de períodos anteriores" value={state.c363} onChange={v => set('c363', v)} />
+                <NumInput label="372 — Reposição de benefícios fiscais" value={state.c372} onChange={v => set('c372', v)} />
+                <NumInput label="366 — Juros compensatórios" value={state.c366} onChange={v => set('c366', v)} />
+                <NumInput label="369 — Juros de mora" value={state.c369} onChange={v => set('c369', v)} />
+              </Section>
+
+              <div className="bg-white border border-slate-200 rounded-[12px] p-4 space-y-1">
+                <ResultRow label="IRC liquidado (c358)" value={res.c358} />
+                <ResultRow label="Tributações autónomas (c365)" value={res.taTotal} />
+                <ResultRow label="Juros e correções" value={state.c366 + state.c369 + state.c363 + state.c372} />
+                <ResultRow label="(−) PEC dedutível" value={state.pecPagamentos} sub />
+                <ResultRow label="(−) Retenções + PC + PAC" value={res.totalPagamentos} sub />
+                <ResultRow label="(−) DTJI CDT" value={state.c379} sub />
+                <div className="border-t border-slate-200 my-2" />
+                <ResultRow label={res.c367 >= 0 ? '367 — Total a pagar' : '368 — Total a recuperar'} value={Math.abs(res.c367)} highlight />
+              </div>
+            </>)}
           </div>
 
-          {/* Right: results summary — always visible */}
+          {/* ── Right: summary (always visible) ── */}
           <div className="flex flex-col gap-3 lg:sticky lg:top-6 self-start">
             <div className="bg-white border border-slate-200 rounded-[16px] overflow-hidden">
               <div className="h-1 bg-gradient-to-r from-[#781D1D] to-[#b83030]" />
               <div className="p-4">
                 <p className="text-[11px] font-[700] uppercase tracking-[0.5px] text-slate-400 mb-3">Resumo IRC {state.periodo}</p>
-
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   <ResultRow label="Lucro Tributável" value={res.lucroTributavel} />
-                  <ResultRow label="Prejuízo Fiscal" value={res.prejuizoFiscal} sub />
+                  <ResultRow label="Prejuízo Fiscal" value={res.prejuizoFiscal} sub positive />
                   <ResultRow label="Matéria Coletável" value={res.materiaColetavel} />
                   <div className="border-t border-slate-100 my-1" />
-                  <ResultRow label="IRC (taxa)" value={res.ircBase} />
+                  <ResultRow label="Coleta IRC" value={res.ircColeta} />
                   <ResultRow label="Derrama Estadual" value={res.derramaEstadual} sub />
-                  <ResultRow label="Tributações Autónomas" value={res.taTotal} sub />
-                  <ResultRow label="IRC Liquidação" value={res.ircLiquidacao} highlight />
+                  <ResultRow label="Derrama Municipal" value={res.derrMunicipal} sub />
+                  <ResultRow label="(−) Ded. à Coleta" value={res.deducoesColeta} sub positive />
+                  <ResultRow label="IRC Liquidado (c358)" value={res.c358} highlight />
                   <div className="border-t border-slate-100 my-1" />
-                  <ResultRow label="Deduções à coleta" value={res.totalDeducoesColeta} sub />
-                  <ResultRow label="IRC a pagar" value={res.ircApagar} highlight />
+                  <ResultRow label="Tributações Autónomas" value={res.taTotal} />
+                  <div className="border-t border-slate-100 my-1" />
+                  <ResultRow label={res.c367 >= 0 ? 'Total a Pagar' : 'Total a Recuperar'} value={Math.abs(res.c367)} highlight />
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-100 space-y-1">
+                <div className="mt-4 pt-3 border-t border-slate-100 space-y-1.5">
                   <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-400 font-[500]">Taxa IRC base</span>
+                    <span className="text-slate-400 font-[500]">Taxa IRC</span>
                     <span className="font-[700] text-slate-600">
                       {state.isPME && !state.isStartup
                         ? `${pct(RATES[state.regime].pme)} / ${pct(RATES[state.regime].main)}`
                         : pct(RATES[state.isStartup ? 'startup' : state.regime].main)}
                     </span>
                   </div>
+                  {res.derrMunicipal > 0 && (
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-slate-400 font-[500]">Derrama Municipal</span>
+                      <span className="font-[700] text-slate-600">{pct(state.taxaDerramaMunicipal)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-[11px]">
                     <span className="text-slate-400 font-[500]">PEC estimado</span>
                     <span className="font-[700] text-slate-600">{fmt(res.pecCalculado)} €</span>
@@ -646,20 +918,17 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                     <span className="font-[700] text-slate-600">{fmt(res.pcCalculado)} €</span>
                   </div>
                   <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-400 font-[500]">Taxa efectiva</span>
+                    <span className="text-slate-400 font-[500]">Taxa efectiva s/ RAI</span>
                     <span className="font-[700] text-slate-600">
-                      {state.c701_rai !== 0 ? pct(res.ircLiquidacao / Math.abs(state.c701_rai)) : '—'}
+                      {res.effectiveRai !== 0 ? pct((res.c358 + res.taTotal) / Math.abs(res.effectiveRai)) : '—'}
                     </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setState(defaultPreviSaState())}
-              className="text-[12px] font-[600] text-slate-400 hover:text-red-500 transition-colors py-2 text-center"
-            >
+            <button type="button" onClick={() => setState(defaultPreviSaState())}
+              className="text-[12px] font-[600] text-slate-400 hover:text-red-500 transition-colors py-2 text-center">
               Limpar simulação
             </button>
           </div>
