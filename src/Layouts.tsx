@@ -20,6 +20,8 @@ export interface LayoutProps {
   openUpdates: () => void;
   onSAFTUpload?: (file: File) => void;
   onLogout?: () => void;
+  hasSaftData?: boolean;
+  onOpenSaftViewer?: () => void;
   children: React.ReactNode;
 }
 
@@ -202,7 +204,7 @@ function NavMenu({
   );
 }
 
-export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates, onSAFTUpload, onLogout, children }: LayoutProps) {
+export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates, onSAFTUpload, onLogout, hasSaftData, onOpenSaftViewer, children }: LayoutProps) {
   const active = view === 'legal' || view === 'updates' ? prevView : view;
   const saftInputRef = useRef<HTMLInputElement>(null);
 
@@ -315,6 +317,24 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
               >
                 <Upload className="w-4 h-4 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
                 <span className="hidden sm:inline">Ler SAFT</span>
+              </motion.button>
+            )}
+
+            {hasSaftData && onOpenSaftViewer && (
+              <motion.button
+                type="button"
+                onClick={onOpenSaftViewer}
+                aria-label="Ver dados extraídos do SAF-T"
+                className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] text-[#781D1D] bg-[#781D1D]/8 hover:bg-[#781D1D]/15 transition-colors border border-[#781D1D]/25"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+              >
+                <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5" fill="none" aria-hidden="true">
+                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M8 5v3.5l2 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                <span className="hidden sm:inline">Ver SAFT</span>
               </motion.button>
             )}
 

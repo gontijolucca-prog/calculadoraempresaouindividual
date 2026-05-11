@@ -12,7 +12,7 @@ import type { TicketSimulatorState } from './TicketSimulator';
 import type { ClientProfile as ClientProfileType } from './ClientProfile';
 import { ThemeProvider } from './ThemeContext';
 import { MotionProvider, PageTransition } from './AnimatedPage';
-import { parseSAFT } from './lib/saft';
+import { parseSAFT, type SAFTParseResult } from './lib/saft';
 import { LAYOUTS } from './Layouts';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from './lib/firebase';
@@ -161,6 +161,8 @@ function AppContent() {
     empty: string[];
     warnings: string[];
   } | null>(null);
+  const [saftData, setSaftData] = useState<SAFTParseResult | null>(null);
+  const [showSaftViewer, setShowSaftViewer] = useState(false);
   // Carrega o perfil persistido (se existir) — clientProfile e fichaState são os
   // dois estados que justificam persistência: representam o trabalho do consultor
   // que não pode ser perdido a um refresh acidental.
@@ -227,6 +229,14 @@ function AppContent() {
     return () => document.removeEventListener('keydown', onKey);
   }, [saftModal?.open]);
 
+  // Close the SAFT viewer with Escape
+  useEffect(() => {
+    if (!showSaftViewer) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowSaftViewer(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [showSaftViewer]);
+
   if (!loggedIn) {
     return <LoginPage onLogin={() => setLoggedIn(true)} />;
   }
@@ -250,6 +260,7 @@ function AppContent() {
         const newProfile = { ...defaultProfile, ...result.profile };
         updateProfileWithSimulatorSync(newProfile);
         setView('profile');
+        setSaftData(result);
 
         setSaftModal({
           open: true,
@@ -566,6 +577,108 @@ function AppContent() {
         </div>
       )}
 
+      {/* ── Ver SAFT modal ── */}
+      {showSaftViewer && saftData && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="saft-viewer-title"
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6"
+        >
+          <button
+            type="button"
+            aria-label="Fechar"
+            onClick={() => setShowSaftViewer(false)}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-default"
+          />
+          <div className="relative bg-white rounded-[24px] shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+            {/* Accent bar */}
+            <div className="h-1.5 bg-gradient-to-r from-[#781D1D] to-[#a83030] w-full shrink-0" />
+
+            {/* Header */}
+            <div className="px-6 pt-5 pb-4 flex items-center justify-between shrink-0 border-b border-slate-100">
+              <div>
+                <h2 id="saft-viewer-title" className="text-[18px] font-[800] text-[#0F172A] leading-tight">
+                  Dados extraídos do SAF-T
+                </h2>
+                <p className="text-[12px] text-[#64748B] font-[500] mt-0.5">
+                  {saftData.details.length} campos extraídos
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSaftViewer(false)}
+                aria-label="Fechar"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              >
+                <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" aria-hidden="true">
+                  <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </button>
+            </div>
+
+            {/* Scrollable content */}
+            <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-4">
+
+              {/* Extracted fields */}
+              {saftData.details.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  {saftData.details.map((d, i) => (
+                    <div key={i} className="flex items-baseline gap-3 py-2 border-b border-slate-50 last:border-0">
+                      <span className="text-[11px] font-[700] text-[#781D1D] uppercase tracking-[0.4px] shrink-0 w-[140px]">
+                        {d.label}
+                      </span>
+                      <span className="text-[13px] font-[500] text-[#0F172A] leading-snug">
+                        {d.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Warnings */}
+              {saftData.warnings.length > 0 && (
+                <div className="bg-amber-50 border border-amber-100 rounded-[12px] p-4">
+                  <h3 className="text-[11px] font-[700] uppercase tracking-[0.5px] text-amber-700 mb-2">Avisos</h3>
+                  <ul className="space-y-1.5">
+                    {saftData.warnings.map((w, i) => (
+                      <li key={i} className="text-[12px] text-amber-800 font-[500] leading-snug">{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Empty fields */}
+              {saftData.empty.length > 0 && (
+                <div className="bg-slate-50 border border-slate-100 rounded-[12px] p-4">
+                  <h3 className="text-[11px] font-[700] uppercase tracking-[0.5px] text-slate-500 mb-2">
+                    Não preenchidos pelo SAF-T
+                  </h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {saftData.empty.map((f) => (
+                      <span key={f} className="text-[11px] font-[500] bg-white text-slate-400 px-2 py-0.5 rounded-[6px] border border-slate-200">
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 pb-5 pt-3 shrink-0 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowSaftViewer(false)}
+                className="w-full py-3 rounded-[12px] text-[14px] font-[700] bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0] transition-all"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Layout fills remaining height (skip link target lives on <main> inside) ── */}
       <div className="flex-1 overflow-hidden">
         <CurrentLayout
@@ -576,6 +689,8 @@ function AppContent() {
           openUpdates={openUpdates}
           onSAFTUpload={handleSAFTUpload}
           onLogout={handleLogout}
+          hasSaftData={saftData !== null}
+          onOpenSaftViewer={() => setShowSaftViewer(true)}
         >
           {content}
         </CurrentLayout>

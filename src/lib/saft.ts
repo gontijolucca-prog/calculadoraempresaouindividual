@@ -1,10 +1,16 @@
 import type { ClientProfile } from '../ClientProfile';
 
+export interface SAFTDetail {
+  label: string;
+  value: string;
+}
+
 export interface SAFTParseResult {
   profile: Partial<ClientProfile>;
   warnings: string[];
   filled: string[];
   empty: string[];
+  details: SAFTDetail[];
 }
 
 function el(parent: Element | Document, tag: string): string {
@@ -20,6 +26,7 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
 
   const warnings: string[] = [];
   const filled: string[] = [];
+  const details: SAFTDetail[] = [];
   const profile: Partial<ClientProfile> = {};
 
   const headerEl = doc.getElementsByTagName('Header')[0];
@@ -32,12 +39,14 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   if (companyName) {
     profile.nomeCliente = companyName;
     filled.push('Nome');
+    details.push({ label: 'Nome', value: companyName });
   }
 
   const taxRegNr = el(headerEl, 'TaxRegistrationNumber').replace(/\D/g, '').slice(0, 9);
   if (taxRegNr) {
     profile.nif = taxRegNr;
     filled.push('NIF');
+    details.push({ label: 'NIF', value: taxRegNr });
   }
 
   // Contactos (opcional no SAF-T)
@@ -48,10 +57,12 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     if (telephone) {
       profile.telefone = telephone;
       filled.push('Telefone');
+      details.push({ label: 'Telefone', value: telephone });
     }
     if (email && email.includes('@')) {
       profile.email = email;
       filled.push('Email');
+      details.push({ label: 'Email', value: email });
     }
   }
 
@@ -67,16 +78,20 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
 
     if (addressDetail || buildingNumber) {
       const parts = [addressDetail, buildingNumber].filter(Boolean);
-      profile.morada = parts.join(', ');
+      const morada = parts.join(', ');
+      profile.morada = morada;
       filled.push('Morada');
+      details.push({ label: 'Morada', value: morada });
     }
     if (postalCode && postalCode !== '0000-000') {
       profile.codigoPostal = postalCode;
       filled.push('Código Postal');
+      details.push({ label: 'Código Postal', value: postalCode });
     }
     if (city && city.toLowerCase() !== 'desconhecido') {
       profile.localidade = city;
       filled.push('Localidade');
+      details.push({ label: 'Localidade', value: city });
     }
   }
 
@@ -89,14 +104,20 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     profile.regimeContabilidade = 'organizada';
     warnings.push(`TaxAccountingBasis "${taxBasis}" sugere contabilidade organizada — confirme o tipo de entidade`);
     filled.push('Tipo de entidade', 'Regime de contabilidade');
+    details.push({ label: 'Tipo de Entidade', value: 'Sociedade por Quotas (Lda)' });
+    details.push({ label: 'Regime de Contabilidade', value: 'Contabilidade Organizada' });
   } else if (taxBasis === 'S') {
     profile.tipoEntidade = 'eni';
     profile.regimeContabilidade = 'simplificado';
     filled.push('Tipo de entidade', 'Regime de contabilidade');
+    details.push({ label: 'Tipo de Entidade', value: 'ENI / Recibos Verdes' });
+    details.push({ label: 'Regime de Contabilidade', value: 'Regime Simplificado' });
   } else if (taxBasis === 'F') {
     profile.tipoEntidade = 'eni';
     profile.regimeContabilidade = 'simplificado';
     filled.push('Tipo de entidade', 'Regime de contabilidade');
+    details.push({ label: 'Tipo de Entidade', value: 'ENI / Recibos Verdes' });
+    details.push({ label: 'Regime de Contabilidade', value: 'Regime Simplificado' });
   }
 
   // ═════════════════════════════════════════════════════════════════
@@ -112,6 +133,7 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   if (year > 2000) {
     profile.inicioAtividade = year;
     filled.push('Ano de atividade');
+    details.push({ label: 'Ano Fiscal', value: String(year) + (startDate && endDate ? ` (${startDate} → ${endDate})` : '') });
   }
 
   // ═════════════════════════════════════════════════════════════════
@@ -133,9 +155,11 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   if (hasISE && !hasNormal) {
     profile.regimeIva = 'isento';
     filled.push('Regime de IVA (isento)');
+    details.push({ label: 'Regime de IVA', value: 'Isento (art.º 9.º CIVA)' });
   } else if (hasNormal) {
     profile.regimeIva = 'normal_mensal';
     filled.push('Regime de IVA (normal)');
+    details.push({ label: 'Regime de IVA', value: 'Regime Normal Mensal' });
   }
 
   // ═════════════════════════════════════════════════════════════════
@@ -152,6 +176,7 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   if (eacCode) {
     profile.cae = eacCode;
     filled.push('CAE');
+    details.push({ label: 'CAE', value: eacCode });
   }
 
   // ═════════════════════════════════════════════════════════════════
@@ -177,7 +202,9 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   }
   if (serviceCount > 0 || goodsCount > 0) {
     profile.atividadePrincipal = serviceCount >= goodsCount ? 'servicos' : 'bens';
+    const actLabel = serviceCount >= goodsCount ? 'Serviços' : 'Venda de Bens';
     filled.push('Tipo de atividade (' + (serviceCount >= goodsCount ? 'serviços' : 'bens') + ')');
+    details.push({ label: 'Tipo de Atividade', value: `${actLabel} (${serviceCount} linhas serviços, ${goodsCount} bens)` });
   } else {
     profile.atividadePrincipal = 'servicos';
   }
@@ -207,6 +234,9 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     if (fatAnual > 0) {
       profile.faturaçaoAnualPrevista = fatAnual;
       filled.push('Faturação anual estimada');
+      const raw = totalCredit.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const est = fatAnual.toLocaleString('pt-PT') + ' €';
+      details.push({ label: 'Faturação do Período', value: `${raw} € (${months < 11.5 ? `anualizado → ${est}` : est})` });
     }
   }
 
@@ -216,6 +246,7 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   if ((profile.tipoEntidade === 'eni' || profile.tipoEntidade === 'unipessoal') && profile.faturaçaoAnualPrevista && profile.faturaçaoAnualPrevista > 0) {
     profile.rendimentoMensalEni = Math.round(profile.faturaçaoAnualPrevista / 12);
     filled.push('Rendimento mensal ENI (estimado)');
+    details.push({ label: 'Rendimento Mensal ENI (est.)', value: profile.rendimentoMensalEni.toLocaleString('pt-PT') + ' €/mês' });
   }
 
   // ═════════════════════════════════════════════════════════════════
@@ -225,6 +256,8 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     profile.regimeSs = profile.regimeContabilidade === 'simplificado' ? 'simplified' : 'general';
     profile.tipoRendimentoSs = profile.atividadePrincipal === 'bens' ? 'bens' : 'servicos';
     filled.push('Regime SS (estimado)');
+    const ssLabel = profile.regimeSs === 'simplified' ? 'Regime Simplificado' : 'Regime Geral';
+    details.push({ label: 'Regime SS', value: ssLabel });
   }
 
   // ═════════════════════════════════════════════════════════════════
@@ -246,6 +279,7 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   if (workerNifs.size > 0) {
     profile.nrFuncionarios = workerNifs.size;
     filled.push('Nº de funcionários (estimado)');
+    details.push({ label: 'Nº de Funcionários', value: `${workerNifs.size} (via recibos de vencimento)` });
   }
 
   // Alternative: count WorkDocuments related to salaries
@@ -259,6 +293,7 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     if (salaryDocs > 0) {
       profile.nrFuncionarios = salaryDocs;
       filled.push('Nº de funcionários (estimado via documentos)');
+      details.push({ label: 'Nº de Funcionários', value: `${salaryDocs} (via documentos de trabalho)` });
     }
   }
 
@@ -296,6 +331,9 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   if (vehicles.length > 0) {
     profile.veiculos = vehicles;
     filled.push('Veículos (' + vehicles.length + ' encontrado(s))');
+    vehicles.forEach((v, i) => {
+      details.push({ label: `Veículo ${i + 1}`, value: `${v.desc} — ${v.value.toLocaleString('pt-PT')} €` });
+    });
   }
 
   // ═════════════════════════════════════════════════════════════════
@@ -311,5 +349,5 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   ];
   const empty = allProfileFields.filter(f => !(f in profile) || (profile as any)[f] === '' || (profile as any)[f] === 0 || ((profile as any)[f] ?? []).length === 0);
 
-  return { profile, warnings, filled, empty };
+  return { profile, warnings, filled, empty, details };
 }
