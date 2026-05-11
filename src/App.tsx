@@ -30,6 +30,8 @@ const SalarioLiquidoSimulator = lazy(() => import('./SalarioLiquidoSimulator'));
 const FichaDiagnostico = lazy(() => import('./FichaDiagnostico'));
 const UpdatesList = lazy(() => import('./UpdatesList'));
 const PreviSaSimulator = lazy(() => import('./PreviSaSimulator'));
+import { defaultPreviSaState } from './previSaState';
+import type { PreviSaState } from './previSaState';
 
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
@@ -138,6 +140,27 @@ const getInitialSalarioState = (p: ClientProfileType): SalarioState => ({
   taxaSeguroTrabalho: 1.0,
 });
 
+// Collapsible section for the Ver SAFT modal
+function SaftSection({ title, count, children }: { title: string; count: number; children: React.ReactNode }) {
+  const [open, setOpen] = React.useState(true);
+  return (
+    <div className="border border-slate-200 rounded-[10px] overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-3 py-2.5 bg-slate-50 hover:bg-slate-100 transition-colors text-left gap-2"
+      >
+        <span className="text-[11px] font-[700] text-[#0F172A] uppercase tracking-[0.5px]">{title}</span>
+        <span className="text-[10px] font-[600] text-slate-400 ml-auto mr-2">{count}</span>
+        <svg viewBox="0 0 16 16" className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${open ? '' : '-rotate-90'}`} fill="none">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+      {open && <div className="px-3 py-1">{children}</div>}
+    </div>
+  );
+}
+
 // Inline fallback while a lazy chunk loads
 function ViewLoading() {
   return (
@@ -166,6 +189,7 @@ function AppContent() {
   } | null>(null);
   const [saftData, setSaftData] = useState<SAFTParseResult | null>(null);
   const [showSaftViewer, setShowSaftViewer] = useState(false);
+  const [previSaState, setPreviSaState] = useState<PreviSaState>(() => defaultPreviSaState());
   // Carrega o perfil persistido (se existir) — clientProfile e fichaState são os
   // dois estados que justificam persistência: representam o trabalho do consultor
   // que não pode ser perdido a um refresh acidental.
@@ -264,6 +288,9 @@ function AppContent() {
         updateProfileWithSimulatorSync(newProfile);
         setView('profile');
         setSaftData(result);
+        if (result.previsa && Object.keys(result.previsa).length > 0) {
+          setPreviSaState(prev => ({ ...prev, ...result.previsa }));
+        }
 
         setSaftModal({
           open: true,
@@ -392,7 +419,7 @@ function AppContent() {
           <UpdatesList onBack={() => setView(prevView)} />
         )}
         {view === 'previsa' && (
-          <PreviSaSimulator />
+          <PreviSaSimulator initialState={previSaState} onStateChange={setPreviSaState} />
         )}
       </PageTransition>
     </Suspense>
@@ -608,7 +635,7 @@ function AppContent() {
                   Dados extraídos do SAF-T
                 </h2>
                 <p className="text-[12px] text-[#64748B] font-[500] mt-0.5">
-                  {saftData.details.length} campos extraídos
+                  {saftData.details.length} campos · {Array.from(new Set(saftData.details.map(d => d.group))).length} secções
                 </p>
               </div>
               <button
@@ -624,23 +651,7 @@ function AppContent() {
             </div>
 
             {/* Scrollable content */}
-            <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-4">
-
-              {/* Extracted fields */}
-              {saftData.details.length > 0 && (
-                <div className="flex flex-col gap-1.5">
-                  {saftData.details.map((d, i) => (
-                    <div key={i} className="flex items-baseline gap-3 py-2 border-b border-slate-50 last:border-0">
-                      <span className="text-[11px] font-[700] text-[#781D1D] uppercase tracking-[0.4px] shrink-0 w-[140px]">
-                        {d.label}
-                      </span>
-                      <span className="text-[13px] font-[500] text-[#0F172A] leading-snug">
-                        {d.value}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-3">
 
               {/* Warnings */}
               {saftData.warnings.length > 0 && (
@@ -654,11 +665,31 @@ function AppContent() {
                 </div>
               )}
 
-              {/* Empty fields */}
+              {/* Grouped details — all SAF-T data */}
+              {(() => {
+                const groups: string[] = Array.from(new Set(saftData.details.map(d => d.group)));
+                return groups.map(group => {
+                  const items = saftData.details.filter(d => d.group === group);
+                  return (
+                    <div key={group}>
+                    <SaftSection title={group} count={items.length}>
+                      {items.map((d, i) => (
+                        <div key={i} className="flex items-baseline gap-3 py-1.5 border-b border-slate-50 last:border-0">
+                          <span className="text-[11px] font-[600] text-[#781D1D] shrink-0 w-[150px] leading-snug">{d.label}</span>
+                          <span className="text-[12px] font-[500] text-[#0F172A] leading-snug break-words min-w-0">{d.value}</span>
+                        </div>
+                      ))}
+                    </SaftSection>
+                    </div>
+                  );
+                });
+              })()}
+
+              {/* Empty profile fields */}
               {saftData.empty.length > 0 && (
                 <div className="bg-slate-50 border border-slate-100 rounded-[12px] p-4">
                   <h3 className="text-[11px] font-[700] uppercase tracking-[0.5px] text-slate-500 mb-2">
-                    Não preenchidos pelo SAF-T
+                    Campos do perfil não preenchidos pelo SAF-T
                   </h3>
                   <div className="flex flex-wrap gap-1.5">
                     {saftData.empty.map((f) => (
