@@ -3,10 +3,11 @@ import { motion } from 'motion/react';
 import {
   UserCircle, Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote, Info,
   ClipboardList, Upload, LogOut,
-  ChevronDown, TrendingUp, Settings,
+  ChevronDown, TrendingUp, Settings, UserPlus, Building2, ArrowLeft,
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Tip } from './Tip';
+import type { AppMode } from './ModeSelector';
 
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
@@ -23,8 +24,23 @@ export interface LayoutProps {
   onLogout?: () => void;
   hasSaftData?: boolean;
   onOpenSaftViewer?: () => void;
+  mode: AppMode;
+  onBackToModeSelection: () => void;
   children: React.ReactNode;
 }
+
+// Which simulator views are reachable from each mode (besides legal/updates which are always open).
+const VIEWS_BY_MODE: Record<AppMode, ViewType[]> = {
+  'novo-cliente': ['profile'],
+  empresa: ['profile', 'tax', 'vehicle', 'ticket', 'imoveis', 'imt', 'salario', 'diagnostico', 'previsa'],
+  individual: ['profile', 'tax', 'selfss', 'imt'],
+};
+
+const MODE_META: Record<AppMode, { label: string; Icon: typeof Building2; color: string; soft: string }> = {
+  'novo-cliente': { label: 'Novo Cliente', Icon: UserPlus, color: '#B45309', soft: '#FEF3C7' },
+  empresa:       { label: 'Empresa',       Icon: Building2, color: '#525C66', soft: '#E2E8F0' },
+  individual:    { label: 'Individual',    Icon: User,      color: '#0F766E', soft: '#CCFBF1' },
+};
 
 const NAV_ITEMS = [
   { id: 'profile'    as ViewType, label: 'Perfil',      Icon: UserCircle, group: 'profile' },
@@ -205,9 +221,14 @@ function NavMenu({
   );
 }
 
-export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates, onSAFTUpload, onLogout, hasSaftData, onOpenSaftViewer, children }: LayoutProps) {
+export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates, onSAFTUpload, onLogout, hasSaftData, onOpenSaftViewer, mode, onBackToModeSelection, children }: LayoutProps) {
   const active = view === 'legal' || view === 'updates' ? prevView : view;
   const saftInputRef = useRef<HTMLInputElement>(null);
+  const modeMeta = MODE_META[mode];
+  const ModeIcon = modeMeta.Icon;
+  const allowedViews = VIEWS_BY_MODE[mode];
+  const simItems = NAV_ITEMS.filter(n => n.group === 'sim' && allowedViews.includes(n.id)) as unknown as typeof NAV_ITEMS[number][];
+  const profileVisible = allowedViews.includes('profile');
 
   const handleSAFTInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -222,11 +243,26 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
       <header className="bg-white border-b border-slate-200 shrink-0 flex items-center min-h-[52px] px-3 gap-0 overflow-x-auto shadow-sm scrollbar-none" role="banner">
         <nav aria-label="Navegação principal" className="contents">
 
-          {/* Brand — click navigates to Perfil */}
+          {/* ← Back to mode selection */}
           <motion.button
             type="button"
-            onClick={() => setView('profile')}
-            aria-label="Ir para o Perfil de Cliente"
+            onClick={onBackToModeSelection}
+            aria-label="Voltar à seleção de modo"
+            title="Voltar à seleção de modo"
+            className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] text-slate-500 hover:text-[#525C66] hover:bg-slate-100 transition-colors shrink-0 mr-1"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+          >
+            <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+            <span className="hidden md:inline">Trocar modo</span>
+          </motion.button>
+
+          {/* Brand — click navigates to Perfil (or back to mode selection if profile not in this mode) */}
+          <motion.button
+            type="button"
+            onClick={() => (profileVisible ? setView('profile') : onBackToModeSelection())}
+            aria-label={profileVisible ? 'Ir para o Perfil de Cliente' : 'Voltar à seleção de modo'}
             className="flex items-center gap-2 mr-2 shrink-0 rounded-[8px] hover:bg-slate-50 px-1 py-0.5 transition-colors"
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
@@ -239,10 +275,20 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
             </div>
           </motion.button>
 
+          {/* Mode badge */}
+          <div
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full shrink-0 ml-1"
+            style={{ background: modeMeta.soft, color: modeMeta.color }}
+            aria-label={`Modo activo: ${modeMeta.label}`}
+          >
+            <ModeIcon className="w-3.5 h-3.5" strokeWidth={2.5} aria-hidden="true" />
+            <span className="text-[10px] font-[800] uppercase tracking-[1.2px]">{modeMeta.label}</span>
+          </div>
+
           <div className="h-5 w-px bg-slate-200 mx-2 shrink-0" aria-hidden="true" />
 
-          {/* Profile button */}
-          {NAV_ITEMS.filter(n => n.group === 'profile').map(({ id, label, Icon }) => (
+          {/* Profile button (only when current mode includes the profile view) */}
+          {profileVisible && NAV_ITEMS.filter(n => n.group === 'profile').map(({ id, label, Icon }) => (
             <motion.button
               key={id}
               type="button"
@@ -263,15 +309,19 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
             </motion.button>
           ))}
 
-          <div className="h-5 w-px bg-slate-200 mx-2 shrink-0" aria-hidden="true" />
+          {simItems.length > 0 && (
+            <>
+              <div className="h-5 w-px bg-slate-200 mx-2 shrink-0" aria-hidden="true" />
 
-          <NavMenu
-            label="Simuladores"
-            shortLabel="Sim"
-            items={NAV_ITEMS.filter(n => n.group === 'sim') as unknown as typeof NAV_ITEMS[number][]}
-            active={active}
-            setView={setView}
-          />
+              <NavMenu
+                label="Simuladores"
+                shortLabel="Sim"
+                items={simItems}
+                active={active}
+                setView={setView}
+              />
+            </>
+          )}
 
           {/* Action buttons: checklist + SAFT upload + Legal */}
           <div className="ml-auto shrink-0 flex items-center gap-1.5">

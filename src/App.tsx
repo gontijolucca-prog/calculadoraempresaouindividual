@@ -4,6 +4,7 @@ import ClientProfile, { defaultProfile } from './ClientProfile';
 import LegalInfo from './LegalInfo';
 import LoginPage from './LoginPage';
 import LandingPage from './LandingPage';
+import ModeSelector, { type AppMode } from './ModeSelector';
 import type { DiagnosticoState } from './DiagnosticoAutonomia';
 import type { ImoveisState } from './ImoveisEmpresa';
 import type { IMTState } from './IMTSimulator';
@@ -39,6 +40,13 @@ type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'legal' | 'updates'
   | 'previsa' | 'office-settings';
+
+// Default landing view when the user picks a mode.
+const DEFAULT_VIEW_BY_MODE: Record<AppMode, ViewType> = {
+  'novo-cliente': 'profile',
+  empresa: 'tax',
+  individual: 'selfss',
+};
 
 const VIEW_TITLES: Record<ViewType, string> = {
   profile: 'Perfil do Cliente',
@@ -217,6 +225,9 @@ function ViewLoading() {
 function AppContent() {
   const [loggedIn, setLoggedIn] = useState(() => loadFromStorage('loggedIn', false));
   const [showLogin, setShowLogin] = useState(false);
+  // `mode` is intentionally NOT persisted — every app boot forces the user through
+  // the Mode Selector so they consciously pick a context for this session.
+  const [mode, setMode] = useState<AppMode | null>(null);
   const [showUpdateNotification, setShowUpdateNotification] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [lastDismissedCount, setLastDismissedCount] = useState(() => loadFromStorage('lastDismissedPendingCount', 0));
@@ -321,6 +332,23 @@ function AppContent() {
       ? <LoginPage onLogin={() => setLoggedIn(true)} onBack={() => setShowLogin(false)} />
       : <LandingPage onEnter={() => setShowLogin(true)} />;
   }
+
+  if (mode === null) {
+    return (
+      <ModeSelector
+        onSelect={(m) => {
+          setMode(m);
+          setView(DEFAULT_VIEW_BY_MODE[m]);
+        }}
+        onLogout={() => {
+          setLoggedIn(false);
+          clearStorage('loggedIn');
+        }}
+      />
+    );
+  }
+
+  const backToModeSelection = () => setMode(null);
 
   const openLegal = () => { setPrevView(view); setLegalAnchor(null); setView('legal'); };
   const closeLegal = () => setView(prevView);
@@ -788,6 +816,8 @@ function AppContent() {
           onLogout={handleLogout}
           hasSaftData={saftData !== null}
           onOpenSaftViewer={() => setShowSaftViewer(true)}
+          mode={mode}
+          onBackToModeSelection={backToModeSelection}
         >
           {content}
         </CurrentLayout>
