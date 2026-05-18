@@ -1,8 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
+import { motion } from 'motion/react';
+import { ChevronDown, ChevronRight, Plus, Trash2, ListOrdered, Calculator } from 'lucide-react';
 import { cn } from './lib/utils';
 import type { Regime, Territorio, FuelType, ViaturaRow, PreviSaState } from './previSaState';
 import { defaultPreviSaState } from './previSaState';
+import { FlowWizard, type FlowStep } from './FlowWizard';
+import { useFlowMode } from './AnimatedPage';
 
 export type { PreviSaState } from './previSaState';
 export { defaultPreviSaState } from './previSaState';
@@ -253,7 +256,7 @@ function NumInput({ label, value, onChange, help, indent = false, readOnly = fal
         readOnly={readOnly}
         onChange={e => onChange?.(parseFloat(e.target.value) || 0)}
         className={cn(
-          'w-36 text-right text-[13px] font-[600] text-[#0F172A] border border-slate-200 rounded-[8px] px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30 focus:border-[#781D1D]',
+          'w-36 text-right text-[13px] font-[600] text-[#0F172A] border border-slate-200 rounded-[8px] px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30 focus:border-[#7B98B8]',
           readOnly && 'bg-slate-50 text-slate-400 cursor-default',
         )}
         placeholder="0,00"
@@ -274,7 +277,7 @@ function PctInput({ label, value, onChange, help }: {
           type="number" step="0.001" min="0" max="1"
           value={value ? (value * 100).toFixed(3) : ''}
           onChange={e => onChange((parseFloat(e.target.value) || 0) / 100)}
-          className="w-full text-right text-[13px] font-[600] text-[#0F172A] border border-slate-200 rounded-[8px] px-3 py-1.5 pr-6 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30 focus:border-[#781D1D]"
+          className="w-full text-right text-[13px] font-[600] text-[#0F172A] border border-slate-200 rounded-[8px] px-3 py-1.5 pr-6 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30 focus:border-[#7B98B8]"
           placeholder="0,000"
         />
         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">%</span>
@@ -289,11 +292,11 @@ function ResultRow({ label, value, highlight = false, sub = false, positive = fa
   return (
     <div className={cn(
       'flex items-center justify-between py-2 px-3 rounded-[8px]',
-      highlight ? 'bg-[#781D1D]/8 border border-[#781D1D]/20' : sub ? 'pl-6' : '',
+      highlight ? 'bg-[#7B98B8]/8 border border-[#7B98B8]/20' : sub ? 'pl-6' : '',
     )}>
-      <span className={cn('text-[12px] font-[500] text-slate-600', highlight && 'font-[700] text-[#781D1D]')}>{label}</span>
+      <span className={cn('text-[12px] font-[500] text-slate-600', highlight && 'font-[700] text-[#7B98B8]')}>{label}</span>
       <span className={cn('text-[13px] font-[700] tabular-nums',
-        highlight ? 'text-[#781D1D]' : positive ? 'text-emerald-700' : 'text-[#0F172A]')}>
+        highlight ? 'text-[#7B98B8]' : positive ? 'text-emerald-700' : 'text-[#0F172A]')}>
         {typeof value === 'number' ? fmt(value) + ' €' : value}
       </span>
     </div>
@@ -321,11 +324,11 @@ function CalcRow({ label, value, highlight = false, indent = false }: {
   return (
     <div className={cn(
       'flex items-center justify-between py-2 px-3 rounded-[8px]',
-      highlight ? 'bg-[#781D1D]/8 border border-[#781D1D]/20' : 'bg-slate-50',
+      highlight ? 'bg-[#7B98B8]/8 border border-[#7B98B8]/20' : 'bg-slate-50',
       indent && 'ml-4',
     )}>
-      <span className={cn('text-[12px] font-[700]', highlight ? 'text-[#781D1D]' : 'text-[#0F172A]')}>{label}</span>
-      <span className={cn('text-[13px] font-[800] tabular-nums', highlight ? 'text-[#781D1D]' : 'text-[#0F172A]')}>{fmt(value)} €</span>
+      <span className={cn('text-[12px] font-[700]', highlight ? 'text-[#7B98B8]' : 'text-[#0F172A]')}>{label}</span>
+      <span className={cn('text-[13px] font-[800] tabular-nums', highlight ? 'text-[#7B98B8]' : 'text-[#0F172A]')}>{fmt(value)} €</span>
     </div>
   );
 }
@@ -445,6 +448,7 @@ interface Props {
 export default function PreviSaSimulator({ initialState, onStateChange }: Props = {}) {
   const [state, setState] = useState<PreviSaState>(() => ({ ...defaultPreviSaState(), ...initialState }));
   const [tab, setTab] = useState<Tab>('Identificação');
+  const { flowMode, enterFlow, exitFlow } = useFlowMode();
 
   useEffect(() => {
     if (!initialState || Object.keys(initialState).length === 0) return;
@@ -478,14 +482,540 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
 
   const res = calculate(state);
 
-  const inputClass = 'w-full text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30 focus:border-[#781D1D]';
+  const inputClass = 'w-full text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30 focus:border-[#7B98B8]';
+
+  const wrapSet = (setSt: (u: Partial<PreviSaState>) => void) =>
+    <K extends keyof PreviSaState>(key: K, value: PreviSaState[K]) =>
+      setSt({ [key]: value } as Partial<PreviSaState>);
+
+  const steps: FlowStep<PreviSaState>[] = [
+    {
+      id: 'identificacao',
+      label: 'Identificação',
+      description: 'Dados da empresa e regime fiscal.',
+      render: (st, setSt) => {
+        const s = wrapSet(setSt);
+        return (
+          <div className="flex flex-col gap-4">
+            <Section title="Identificação da Empresa">
+              <div className="space-y-3 py-1">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-[600] text-slate-500 mb-1">NIF</label>
+                    <input value={st.nif} onChange={e => s('nif', e.target.value)} placeholder="500000000" className={inputClass} />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-[600] text-slate-500 mb-1">Período</label>
+                    <input type="number" value={st.periodo} onChange={e => s('periodo', parseInt(e.target.value) || 2024)} className={inputClass} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-[600] text-slate-500 mb-1">Designação Social</label>
+                  <input value={st.designacao} onChange={e => s('designacao', e.target.value)} placeholder="Nome da empresa" className={inputClass} />
+                </div>
+              </div>
+            </Section>
+
+            <Section title="Regime Fiscal">
+              <div className="space-y-3 py-1">
+                <div>
+                  <label className="block text-[11px] font-[600] text-slate-500 mb-1">Regime</label>
+                  <select value={st.regime} onChange={e => s('regime', e.target.value as Regime)} className={inputClass}>
+                    <option value="geral">Regime Geral (Continental)</option>
+                    <option value="madeira">Região Autónoma da Madeira</option>
+                    <option value="acores">Região Autónoma dos Açores</option>
+                    <option value="interioridade">Interioridade</option>
+                    <option value="startup">Startup (Lei 21/2023)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-[600] text-slate-500 mb-1">Território (para PEC/PC/Derrama)</label>
+                  <select value={st.territorio} onChange={e => s('territorio', e.target.value as Territorio)} className={inputClass}>
+                    <option value="continental">Continental</option>
+                    <option value="madeira">Madeira</option>
+                    <option value="acores">Açores</option>
+                  </select>
+                </div>
+                <label className="flex items-center gap-3 cursor-pointer py-1">
+                  <input type="checkbox" checked={st.isPME} onChange={e => s('isPME', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
+                  <span className="text-[13px] font-[600] text-[#0F172A]">PME — taxa reduzida nos primeiros €50.000</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer py-1">
+                  <input type="checkbox" checked={st.isStartup} onChange={e => s('isStartup', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
+                  <span className="text-[13px] font-[600] text-[#0F172A]">Startup (12,5% em toda a matéria coletável)</span>
+                </label>
+                <NumInput label="Volume de Negócios (€)" value={st.volumeNegocios} onChange={v => s('volumeNegocios', v)} help="Para PEC/PC" />
+                <PctInput label="Taxa Derrama Municipal" value={st.taxaDerramaMunicipal} onChange={v => s('taxaDerramaMunicipal', v)} help="Ex: 1,5%" />
+              </div>
+            </Section>
+          </div>
+        );
+      },
+    },
+    {
+      id: 'rendimentos',
+      label: 'Rendimentos',
+      description: 'Cálculo do RAI e demonstração de resultados.',
+      render: (st, setSt) => {
+        const s = wrapSet(setSt);
+        const stepRes = calculate(st);
+        return (
+          <div className="flex flex-col gap-4">
+            <Section title="Cálculo do RAI (Resultado Antes de Impostos)">
+              <div className="py-2">
+                <label className="flex items-center gap-3 cursor-pointer mb-3">
+                  <input type="checkbox" checked={st.useRaiCalc} onChange={e => s('useRaiCalc', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
+                  <span className="text-[13px] font-[600] text-[#0F172A]">Calcular RAI a partir da demonstração de resultados</span>
+                </label>
+                {!st.useRaiCalc && (
+                  <NumInput label="701 — RAI (introdução direta)" value={st.c701_rai} onChange={v => s('c701_rai', v)} />
+                )}
+              </div>
+            </Section>
+
+            {st.useRaiCalc && (<>
+              <Section title="Rendimentos">
+                <NumInput label="711 — Vendas de mercadorias" value={st.rai_711} onChange={v => s('rai_711', v)} />
+                <NumInput label="712 — Vendas de produtos acabados e em curso" value={st.rai_712} onChange={v => s('rai_712', v)} />
+                <NumInput label="72 — Prestações de serviços" value={st.rai_72} onChange={v => s('rai_72', v)} />
+                <NumInput label="74 — Trabalhos para a própria entidade" value={st.rai_74} onChange={v => s('rai_74', v)} />
+                <NumInput label="75 — Subsídios à exploração" value={st.rai_75} onChange={v => s('rai_75', v)} />
+                <NumInput label="76 — Reversões" value={st.rai_76} onChange={v => s('rai_76', v)} />
+                <NumInput label="77 — Ganhos por aumentos de justo valor" value={st.rai_77} onChange={v => s('rai_77', v)} />
+                <NumInput label="78 — Outros rendimentos e ganhos" value={st.rai_78} onChange={v => s('rai_78', v)} />
+                <NumInput label="79 — Juros, dividendos e outros rdtos. financeiros" value={st.rai_79} onChange={v => s('rai_79', v)} />
+              </Section>
+
+              <Section title="Gastos">
+                <NumInput label="CMV — Custo das mercadorias vendidas" value={st.rai_cmv} onChange={v => s('rai_cmv', v)} />
+                <NumInput label="CMC — Custo das matérias consumidas" value={st.rai_cmc} onChange={v => s('rai_cmc', v)} />
+                <NumInput label="62 — FSE — Fornecimentos e serviços externos" value={st.rai_62} onChange={v => s('rai_62', v)} />
+                <NumInput label="63 — Gastos com pessoal" value={st.rai_63} onChange={v => s('rai_63', v)} />
+                <NumInput label="64 — Depreciações e amortizações" value={st.rai_64} onChange={v => s('rai_64', v)} />
+                <NumInput label="65 — Perdas por imparidade" value={st.rai_65} onChange={v => s('rai_65', v)} />
+                <NumInput label="66 — Perdas por reduções de justo valor" value={st.rai_66} onChange={v => s('rai_66', v)} />
+                <NumInput label="67 — Provisões" value={st.rai_67} onChange={v => s('rai_67', v)} />
+                <NumInput label="68 — Outros gastos e perdas" value={st.rai_68} onChange={v => s('rai_68', v)} />
+                <NumInput label="69 — Gastos de financiamento" value={st.rai_69} onChange={v => s('rai_69', v)} />
+              </Section>
+
+              <Section title="Imposto diferido">
+                <NumInput label="8122 — Imposto diferido — Débito (+)" value={st.rai_8122_db} onChange={v => s('rai_8122_db', v)} />
+                <NumInput label="8122 — Imposto diferido — Crédito (−)" value={st.rai_8122_cr} onChange={v => s('rai_8122_cr', v)} />
+              </Section>
+
+              <CalcRow label={`701 — RAI calculado (campo 708 ponto de partida)`} value={stepRes.raiCalc} highlight />
+            </>)}
+          </div>
+        );
+      },
+    },
+    {
+      id: 'q07',
+      label: 'Q07 Apuramento',
+      description: 'Ponto de partida, acréscimos e deduções.',
+      render: (st, setSt) => {
+        const s = wrapSet(setSt);
+        const stepRes = calculate(st);
+        return (
+          <div className="flex flex-col gap-4">
+            <Section title="Ponto de Partida — Campo 708">
+              {st.useRaiCalc
+                ? <NumInput label="701 — RAI (calculado na aba Rendimentos)" value={stepRes.raiCalc} readOnly />
+                : <NumInput label="701 — Resultado antes de impostos (RAI)" value={st.c701_rai} onChange={v => s('c701_rai', v)} />
+              }
+              <NumInput label="702 — Variações patrimoniais positivas (a acrescer)" value={st.c702} onChange={v => s('c702', v)} indent />
+              <NumInput label="703 — Variações patrimoniais pos. — regimes transitórios" value={st.c703} onChange={v => s('c703', v)} indent />
+              <NumInput label="805 — Mensuração passivos contratos seguros (+) OE2024" value={st.c805} onChange={v => s('c805', v)} indent />
+              <NumInput label="704 — Variações patrimoniais negativas (a deduzir)" value={st.c704} onChange={v => s('c704', v)} indent />
+              <NumInput label="705 — Variações patrimoniais neg. — regimes transitórios" value={st.c705} onChange={v => s('c705', v)} indent />
+              <NumInput label="806 — Mensuração passivos contratos seguros (−) OE2024" value={st.c806} onChange={v => s('c806', v)} indent />
+              <NumInput label="706 — Alteração regime contratos construção (+)" value={st.c706} onChange={v => s('c706', v)} indent />
+              <NumInput label="707 — Alteração regime contratos construção (−)" value={st.c707} onChange={v => s('c707', v)} indent />
+              <div className="flex items-center gap-3 py-1.5">
+                <label className="flex-1 text-[12px] font-[500] text-slate-600">Ignorar cálculo automático do 708 (usar RAI direto)</label>
+                <input type="checkbox" checked={st.c708_override} onChange={e => s('c708_override', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
+              </div>
+              <CalcRow label="708 — Base de apuramento" value={stepRes.c708} highlight />
+            </Section>
+
+            <Section title="A Acrescer (campos 709–804)" defaultOpen={false}>
+              {ACRESCER_LABELS.map(([key, lbl]) => (
+                <div key={key}>
+                  <NumInput label={lbl} value={st[key as keyof PreviSaState] as number}
+                    onChange={v => s(key as keyof PreviSaState, v as PreviSaState[keyof PreviSaState])} indent />
+                </div>
+              ))}
+              <CalcRow label="Total acréscimos" value={stepRes.acrescer} />
+              <CalcRow label="753 — Soma (708 + acréscimos)" value={stepRes.c753} highlight />
+            </Section>
+
+            <Section title="A Deduzir (campos 754–775)" defaultOpen={false}>
+              {DEDUZIR_LABELS.map(([key, lbl]) => (
+                <div key={key}>
+                  <NumInput label={lbl} value={st[key as keyof PreviSaState] as number}
+                    onChange={v => s(key as keyof PreviSaState, v as PreviSaState[keyof PreviSaState])} indent />
+                </div>
+              ))}
+              <CalcRow label="776 — Total a deduzir" value={stepRes.c776} />
+            </Section>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white border border-slate-200 rounded-[12px] p-4">
+                <p className="text-[11px] font-[600] text-slate-500 uppercase tracking-[0.5px]">778 — Lucro Tributável</p>
+                <p className="text-[22px] font-[800] text-[#0F172A] tabular-nums mt-1">{fmt(stepRes.lucroTributavel)} €</p>
+              </div>
+              <div className="bg-white border border-slate-200 rounded-[12px] p-4">
+                <p className="text-[11px] font-[600] text-slate-500 uppercase tracking-[0.5px]">777 — Prejuízo Fiscal</p>
+                <p className="text-[22px] font-[800] text-emerald-700 tabular-nums mt-1">{fmt(stepRes.prejuizoFiscal)} €</p>
+              </div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      id: 'q09',
+      label: 'Q09 Mat. Coletável',
+      description: 'Prejuízos fiscais e benefícios.',
+      render: (st, setSt) => {
+        const s = wrapSet(setSt);
+        const stepRes = calculate(st);
+        return (
+          <div className="flex flex-col gap-4">
+            <Section title="Lucro Tributável (de Q07)">
+              <CalcRow label="778 — Lucro tributável" value={stepRes.lucroTributavel} highlight />
+            </Section>
+
+            <Section title="Prejuízos Fiscais Dedutíveis">
+              <NumInput label="Prejuízos 2014–2017 (agrupados)" value={st.prej_ate2017} onChange={v => s('prej_ate2017', v)} />
+              <NumInput label="Prejuízos 2018" value={st.prej_2018} onChange={v => s('prej_2018', v)} indent />
+              <NumInput label="Prejuízos 2019" value={st.prej_2019} onChange={v => s('prej_2019', v)} indent />
+              <NumInput label="Prejuízos 2020" value={st.prej_2020} onChange={v => s('prej_2020', v)} indent />
+              <NumInput label="Prejuízos 2021" value={st.prej_2021} onChange={v => s('prej_2021', v)} indent />
+              <NumInput label="Prejuízos 2022" value={st.prej_2022} onChange={v => s('prej_2022', v)} indent />
+              <NumInput label="Prejuízos 2023" value={st.prej_2023} onChange={v => s('prej_2023', v)} indent />
+              <NumInput label="Prejuízos 2024" value={st.prej_2024} onChange={v => s('prej_2024', v)} indent />
+              <NumInput label="397 — Prejuízos c/ transmissão autorizada (art.15)" value={st.c397} onChange={v => s('c397', v)} />
+              <div className="flex items-center justify-between py-1.5 text-[12px] text-slate-500">
+                <span>Total prejuízos disponíveis</span>
+                <span className="font-[700] tabular-nums">{fmt(stepRes.totalPrejuziosDisp)} €</span>
+              </div>
+              <div className="flex items-center justify-between py-1.5 text-[12px] text-slate-500">
+                <span>Limite de dedução ({st.limiteMaisPP ? '75%' : '65%'} × LT)</span>
+                <span className="font-[700] tabular-nums">{fmt(stepRes.lucroTributavel * (st.limiteMaisPP ? 0.75 : 0.65))} €</span>
+              </div>
+              <label className="flex items-center gap-3 py-1.5 cursor-pointer">
+                <input type="checkbox" checked={st.limiteMaisPP} onChange={e => s('limiteMaisPP', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
+                <span className="text-[12px] font-[500] text-slate-600">Aumentar limite para 75% (perda {'>'} 25% capital próprio)</span>
+              </label>
+              <CalcRow label="Prejuízos efetivamente deduzidos" value={stepRes.prejuziosEfetivos} />
+            </Section>
+
+            <Section title="Benefícios Fiscais">
+              <NumInput label="Benefícios fiscais — dedução na matéria coletável" value={st.beneficiosFiscais}
+                onChange={v => s('beneficiosFiscais', v)} help="c774+c775 (Q09)" />
+            </Section>
+
+            <CalcRow label="Matéria Coletável" value={stepRes.materiaColetavel} highlight />
+          </div>
+        );
+      },
+    },
+    {
+      id: 'ta',
+      label: 'Tributações Autónomas',
+      description: 'Viaturas e outras tributações autónomas.',
+      render: (st, setSt) => {
+        const s = wrapSet(setSt);
+        const stepRes = calculate(st);
+        const addV = () => setSt({
+          viaturas: [...st.viaturas, {
+            id: Math.random().toString(36).slice(2),
+            ano: new Date().getFullYear(),
+            combustivel: 'convencional' as FuelType,
+            custoHistorico: 0,
+            encargos: 0,
+          }],
+        });
+        const updateV = (id: string, patch: Partial<ViaturaRow>) =>
+          setSt({ viaturas: st.viaturas.map(v => v.id === id ? { ...v, ...patch } : v) });
+        const removeV = (id: string) =>
+          setSt({ viaturas: st.viaturas.filter(v => v.id !== id) });
+
+        return (
+          <div className="flex flex-col gap-4">
+            <Section title="Tributações Autónomas — Viaturas">
+              <label className="flex items-center gap-3 py-1.5 cursor-pointer">
+                <input type="checkbox" checked={st.agravamentoTA} onChange={e => s('agravamentoTA', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
+                <span className="text-[12px] font-[500] text-slate-600">Agravamento +10% (empresa com prejuízo fiscal no período)</span>
+              </label>
+
+              {st.viaturas.length === 0 && (
+                <p className="text-[12px] text-slate-400 py-3 text-center">Sem viaturas adicionadas</p>
+              )}
+
+              {st.viaturas.map(v => (
+                <div key={v.id} className="bg-slate-50 rounded-[10px] p-3 flex flex-col gap-2 mt-2 border border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-[700] text-slate-500 uppercase tracking-[0.5px]">Viatura</span>
+                    <button type="button" onClick={() => removeV(v.id)} className="text-red-400 hover:text-red-600 transition-colors">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-[600] text-slate-400 mb-0.5">Combustível</label>
+                      <select value={v.combustivel}
+                        onChange={e => updateV(v.id, { combustivel: e.target.value as FuelType })}
+                        className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30">
+                        <option value="convencional">Convencional / GPL</option>
+                        <option value="plug_in">Plug-in híbrido</option>
+                        <option value="plug_in_5050">Plug-in 50%/50%</option>
+                        <option value="gnv">GNV</option>
+                        <option value="eletrico">Elétrico</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-[600] text-slate-400 mb-0.5">Custo histórico (€)</label>
+                      <input type="number" value={v.custoHistorico || ''}
+                        onChange={e => updateV(v.id, { custoHistorico: parseFloat(e.target.value) || 0 })}
+                        placeholder="0,00"
+                        className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30 text-right" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-[600] text-slate-400 mb-0.5">Encargos com viatura no período (€)</label>
+                    <input type="number" value={v.encargos || ''}
+                      onChange={e => updateV(v.id, { encargos: parseFloat(e.target.value) || 0 })}
+                      placeholder="0,00"
+                      className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30 text-right" />
+                  </div>
+                  <div className="flex justify-between text-[11px] font-[600]">
+                    <span className="text-slate-500">TA calculada:</span>
+                    <span className="text-[#7B98B8]">{fmt(calcTAVeiculo(v, st.agravamentoTA))} €</span>
+                  </div>
+                </div>
+              ))}
+
+              <button type="button" onClick={addV}
+                className="mt-3 flex items-center gap-2 px-3 py-2 text-[12px] font-[600] text-[#7B98B8] border border-dashed border-[#7B98B8]/40 rounded-[8px] hover:bg-[#7B98B8]/5 transition-colors w-full justify-center">
+                <Plus className="w-4 h-4" />
+                Adicionar viatura
+              </button>
+            </Section>
+
+            <Section title="Outras Tributações Autónomas">
+              <NumInput label="Despesas não documentadas — atividade principal" value={st.ta_despNaoDocPrincipal} onChange={v => s('ta_despNaoDocPrincipal', v)} help="50%" />
+              <NumInput label="Despesas não documentadas — não atividade principal" value={st.ta_despNaoDocNaoPrincipal} onChange={v => s('ta_despNaoDocNaoPrincipal', v)} help="70%" />
+              <NumInput label="Encargos de representação" value={st.ta_representacao} onChange={v => s('ta_representacao', v)} help="10%" />
+              <NumInput label="Ajudas de custo e comp. de viagem" value={st.ta_ajadasCusto} onChange={v => s('ta_ajadasCusto', v)} help="5%" />
+              <NumInput label="Lucros distribuídos a entidades isentas" value={st.ta_lucrosDistribuidos} onChange={v => s('ta_lucrosDistribuidos', v)} help="23%" />
+              <NumInput label="Pagamentos a entidades em paraísos fiscais" value={st.ta_offshores} onChange={v => s('ta_offshores', v)} help="35%" />
+              <NumInput label="Indemnizações por cessação de funções" value={st.ta_indemCessacao} onChange={v => s('ta_indemCessacao', v)} help="35%" />
+              <NumInput label="Bónus e rem. variáveis (gestores/administradores)" value={st.ta_bonus} onChange={v => s('ta_bonus', v)} help="35%" />
+              <div className="pt-1">
+                <NumInput label="Retenções na fonte a deduzir das TA (art.88 n.12)" value={st.ta_retFonteArt88n12} onChange={v => s('ta_retFonteArt88n12', v)} />
+              </div>
+            </Section>
+
+            <div className="bg-white border border-slate-200 rounded-[12px] p-4 space-y-1">
+              <ResultRow label="TA viaturas" value={stepRes.taViaturas} />
+              <ResultRow label="TA outras" value={stepRes.taOutras} />
+              <ResultRow label="TA bruta" value={stepRes.taBruta} />
+              <ResultRow label="(-) Retenções art.88 n.12" value={st.ta_retFonteArt88n12} />
+              <ResultRow label="TA total líquida (c365)" value={stepRes.taTotal} highlight />
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      id: 'q10',
+      label: 'Q10 Cálculo',
+      description: 'Coleta IRC, derramas, deduções e pagamentos.',
+      render: (st, setSt) => {
+        const s = wrapSet(setSt);
+        const stepRes = calculate(st);
+        return (
+          <div className="flex flex-col gap-4">
+            <Section title="Coleta IRC">
+              <CalcRow label="Matéria coletável" value={stepRes.materiaColetavel} />
+              <CalcRow label="IRC sobre mat. coletável (c347)" value={stepRes.ircColeta - st.c349 * st.c349_taxa} indent />
+              <div className="flex items-center gap-3 py-1.5 pl-4">
+                <label className="flex-1 text-[12px] font-[500] text-slate-600">349 — IRC a outras taxas — base</label>
+                <input type="number" step="0.01" value={st.c349 || ''}
+                  onChange={e => s('c349', parseFloat(e.target.value) || 0)}
+                  className="w-36 text-right text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30"
+                  placeholder="0,00" />
+              </div>
+              <div className="flex items-center gap-3 py-1.5 pl-4">
+                <label className="flex-1 text-[12px] font-[500] text-slate-600">349 — taxa (%)</label>
+                <div className="relative w-36">
+                  <input type="number" step="0.1" min="0" max="100"
+                    value={st.c349_taxa ? (st.c349_taxa * 100).toFixed(1) : ''}
+                    onChange={e => s('c349_taxa', (parseFloat(e.target.value) || 0) / 100)}
+                    className="w-full text-right text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-1.5 pr-6 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30"
+                    placeholder="0,0" />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">%</span>
+                </div>
+              </div>
+              <CalcRow label="351 — Coleta IRC total" value={stepRes.ircColeta} highlight />
+            </Section>
+
+            <Section title="Derramas">
+              <CalcRow label="Derrama estadual (art.87-A)" value={stepRes.derramaEstadual} />
+              <CalcRow label="Derrama municipal" value={stepRes.derrMunicipal} />
+              <div className="text-[11px] text-slate-400 px-1 py-1">
+                Taxa derrama municipal: {pct(st.taxaDerramaMunicipal)} (configurar em Identificação)
+              </div>
+              <CalcRow label="378 — Total coleta + derramas" value={stepRes.c378} highlight />
+            </Section>
+
+            <Section title="Deduções à Coleta (c357)">
+              <NumInput label="353 — DTJI — dupla tributação jurídica int. (art.91)" value={st.c353} onChange={v => s('c353', v)} />
+              <NumInput label="375 — DTEI — dupla tributação económica int. (art.91-A)" value={st.c375} onChange={v => s('c375', v)} />
+              <NumInput label="355 — Benefícios fiscais (exceto CFEI II e IFR)" value={st.c355_bf} onChange={v => s('c355_bf', v)} />
+              <NumInput label="355 — CFEI II" value={st.c355_cfei} onChange={v => s('c355_cfei', v)} indent />
+              <NumInput label="355 — IFR" value={st.c355_ifr} onChange={v => s('c355_ifr', v)} indent />
+              <NumInput label="470 — Adicional ao IMI (art.135-J CIMI)" value={st.c470} onChange={v => s('c470', v)} />
+              <CalcRow label="357 — Total deduções à coleta" value={stepRes.deducoesColeta} highlight />
+            </Section>
+
+            <CalcRow label="358 — IRC liquidado (c378 − c357)" value={stepRes.c358} highlight />
+
+            <Section title="Pagamentos e Deduções">
+              <NumInput label="356 — PEC efectuado" value={st.pecPagamentos} onChange={v => s('pecPagamentos', v)}
+                help={`Estimado: ${fmt(stepRes.pecCalculado)} €`} />
+              <NumInput label="359 — Retenções na fonte" value={st.retencoesFonte} onChange={v => s('retencoesFonte', v)} />
+              <NumInput label="360 — PC — pagamentos por conta" value={st.pcPagamentos} onChange={v => s('pcPagamentos', v)}
+                help={`Estimado: ${fmt(stepRes.pcCalculado)} €`} />
+              <NumInput label="374 — PAC — pagamentos adicionais por conta" value={st.pacPagamentos} onChange={v => s('pacPagamentos', v)} />
+              <NumInput label="379 — DTJI CDT (países com CDT — art.91 n.2)" value={st.c379} onChange={v => s('c379', v)} />
+            </Section>
+
+            <Section title="Outras Correções" defaultOpen={false}>
+              <NumInput label="363 — IRC de períodos anteriores" value={st.c363} onChange={v => s('c363', v)} />
+              <NumInput label="372 — Reposição de benefícios fiscais" value={st.c372} onChange={v => s('c372', v)} />
+              <NumInput label="366 — Juros compensatórios" value={st.c366} onChange={v => s('c366', v)} />
+              <NumInput label="369 — Juros de mora" value={st.c369} onChange={v => s('c369', v)} />
+            </Section>
+
+            <div className="bg-white border border-slate-200 rounded-[12px] p-4 space-y-1">
+              <ResultRow label="IRC liquidado (c358)" value={stepRes.c358} />
+              <ResultRow label="Tributações autónomas (c365)" value={stepRes.taTotal} />
+              <ResultRow label="Juros e correções" value={st.c366 + st.c369 + st.c363 + st.c372} />
+              <ResultRow label="(−) PEC dedutível" value={st.pecPagamentos} sub />
+              <ResultRow label="(−) Retenções + PC + PAC" value={stepRes.totalPagamentos} sub />
+              <ResultRow label="(−) DTJI CDT" value={st.c379} sub />
+              <div className="border-t border-slate-200 my-2" />
+              <ResultRow label={stepRes.c367 >= 0 ? '367 — Total a pagar' : '368 — Total a recuperar'} value={Math.abs(stepRes.c367)} highlight />
+            </div>
+          </div>
+        );
+      },
+    },
+  ];
+
+  const resultsContent = (
+    <div className="flex flex-col gap-3 lg:sticky lg:top-6 self-start">
+      <div className="bg-white border border-slate-200 rounded-[16px] overflow-hidden">
+        <div className="h-1 bg-gradient-to-r from-[#7B98B8] to-[#b83030]" />
+        <div className="p-4">
+          <p className="text-[11px] font-[700] uppercase tracking-[0.5px] text-slate-400 mb-3">Resumo IRC {state.periodo}</p>
+          <div className="space-y-0.5">
+            <ResultRow label="Lucro Tributável" value={res.lucroTributavel} />
+            <ResultRow label="Prejuízo Fiscal" value={res.prejuizoFiscal} sub positive />
+            <ResultRow label="Matéria Coletável" value={res.materiaColetavel} />
+            <div className="border-t border-slate-100 my-1" />
+            <ResultRow label="Coleta IRC" value={res.ircColeta} />
+            <ResultRow label="Derrama Estadual" value={res.derramaEstadual} sub />
+            <ResultRow label="Derrama Municipal" value={res.derrMunicipal} sub />
+            <ResultRow label="(−) Ded. à Coleta" value={res.deducoesColeta} sub positive />
+            <ResultRow label="IRC Liquidado (c358)" value={res.c358} highlight />
+            <div className="border-t border-slate-100 my-1" />
+            <ResultRow label="Tributações Autónomas" value={res.taTotal} />
+            <div className="border-t border-slate-100 my-1" />
+            <ResultRow label={res.c367 >= 0 ? 'Total a Pagar' : 'Total a Recuperar'} value={Math.abs(res.c367)} highlight />
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-slate-100 space-y-1.5">
+            <div className="flex justify-between text-[11px]">
+              <span className="text-slate-400 font-[500]">Taxa IRC</span>
+              <span className="font-[700] text-slate-600">
+                {state.isPME && !state.isStartup
+                  ? `${pct(RATES[state.regime].pme)} / ${pct(RATES[state.regime].main)}`
+                  : pct(RATES[state.isStartup ? 'startup' : state.regime].main)}
+              </span>
+            </div>
+            {res.derrMunicipal > 0 && (
+              <div className="flex justify-between text-[11px]">
+                <span className="text-slate-400 font-[500]">Derrama Municipal</span>
+                <span className="font-[700] text-slate-600">{pct(state.taxaDerramaMunicipal)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-[11px]">
+              <span className="text-slate-400 font-[500]">PEC estimado</span>
+              <span className="font-[700] text-slate-600">{fmt(res.pecCalculado)} €</span>
+            </div>
+            <div className="flex justify-between text-[11px]">
+              <span className="text-slate-400 font-[500]">PC estimado</span>
+              <span className="font-[700] text-slate-600">{fmt(res.pcCalculado)} €</span>
+            </div>
+            <div className="flex justify-between text-[11px]">
+              <span className="text-slate-400 font-[500]">Taxa efectiva s/ RAI</span>
+              <span className="font-[700] text-slate-600">
+                {res.effectiveRai !== 0 ? pct((res.c358 + res.taTotal) / Math.abs(res.effectiveRai)) : '—'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" onClick={() => setState(defaultPreviSaState())}
+        className="text-[12px] font-[600] text-slate-400 hover:text-red-500 transition-colors py-2 text-center">
+        Limpar simulação
+      </button>
+    </div>
+  );
+
+  if (flowMode) {
+    return (
+      <FlowWizard
+        open={flowMode}
+        onClose={exitFlow}
+        title="Simulador PreviSa"
+        icon={Calculator}
+        steps={steps}
+        resultsStep={{ label: 'Resumo do Modelo 22', description: 'Resultado da previsão de IRC para o período.', render: resultsContent }}
+        state={state}
+        setState={(u) => {
+          setState(prev => {
+            const next = { ...prev, ...u };
+            onStateChange?.(next);
+            return next;
+          });
+        }}
+      />
+    );
+  }
 
   return (
     <div className="h-full flex flex-col bg-[#F8FAFC]">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-4 shrink-0">
-        <h1 className="text-[20px] font-[800] text-[#0F172A]">Simulador PreviSa</h1>
-        <p className="text-[12px] text-slate-500 font-[500] mt-0.5">IRC — Modelo 22 · Previsão de IRC</p>
+      <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-4 shrink-0 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-[20px] font-[800] text-[#0F172A]">Simulador PreviSa</h1>
+          <p className="text-[12px] text-slate-500 font-[500] mt-0.5">IRC — Modelo 22 · Previsão de IRC</p>
+        </div>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={enterFlow}
+          className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#7B98B8] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all"
+        >
+          <ListOrdered className="w-4 h-4" /> Vista simplificada
+        </motion.button>
       </div>
 
       {/* Tabs */}
@@ -496,7 +1026,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               className={cn(
                 'px-4 py-3 text-[12px] font-[600] border-b-2 transition-colors whitespace-nowrap',
                 tab === t
-                  ? 'border-[#781D1D] text-[#781D1D]'
+                  ? 'border-[#7B98B8] text-[#7B98B8]'
                   : 'border-transparent text-slate-500 hover:text-[#0F172A] hover:border-slate-300',
               )}>
               {t}
@@ -554,11 +1084,11 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                     </select>
                   </div>
                   <label className="flex items-center gap-3 cursor-pointer py-1">
-                    <input type="checkbox" checked={state.isPME} onChange={e => set('isPME', e.target.checked)} className="w-4 h-4 accent-[#781D1D]" />
+                    <input type="checkbox" checked={state.isPME} onChange={e => set('isPME', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
                     <span className="text-[13px] font-[600] text-[#0F172A]">PME — taxa reduzida nos primeiros €50.000</span>
                   </label>
                   <label className="flex items-center gap-3 cursor-pointer py-1">
-                    <input type="checkbox" checked={state.isStartup} onChange={e => set('isStartup', e.target.checked)} className="w-4 h-4 accent-[#781D1D]" />
+                    <input type="checkbox" checked={state.isStartup} onChange={e => set('isStartup', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
                     <span className="text-[13px] font-[600] text-[#0F172A]">Startup (12,5% em toda a matéria coletável)</span>
                   </label>
                   <NumInput label="Volume de Negócios (€)" value={state.volumeNegocios} onChange={v => set('volumeNegocios', v)} help="Para PEC/PC" />
@@ -572,7 +1102,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <Section title="Cálculo do RAI (Resultado Antes de Impostos)">
                 <div className="py-2">
                   <label className="flex items-center gap-3 cursor-pointer mb-3">
-                    <input type="checkbox" checked={state.useRaiCalc} onChange={e => set('useRaiCalc', e.target.checked)} className="w-4 h-4 accent-[#781D1D]" />
+                    <input type="checkbox" checked={state.useRaiCalc} onChange={e => set('useRaiCalc', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
                     <span className="text-[13px] font-[600] text-[#0F172A]">Calcular RAI a partir da demonstração de resultados</span>
                   </label>
                   {!state.useRaiCalc && (
@@ -633,7 +1163,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 <NumInput label="707 — Alteração regime contratos construção (−)" value={state.c707} onChange={v => set('c707', v)} indent />
                 <div className="flex items-center gap-3 py-1.5">
                   <label className="flex-1 text-[12px] font-[500] text-slate-600">Ignorar cálculo automático do 708 (usar RAI direto)</label>
-                  <input type="checkbox" checked={state.c708_override} onChange={e => set('c708_override', e.target.checked)} className="w-4 h-4 accent-[#781D1D]" />
+                  <input type="checkbox" checked={state.c708_override} onChange={e => set('c708_override', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
                 </div>
                 <CalcRow label="708 — Base de apuramento" value={res.c708} highlight />
               </Section>
@@ -696,7 +1226,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                   <span className="font-[700] tabular-nums">{fmt(res.lucroTributavel * (state.limiteMaisPP ? 0.75 : 0.65))} €</span>
                 </div>
                 <label className="flex items-center gap-3 py-1.5 cursor-pointer">
-                  <input type="checkbox" checked={state.limiteMaisPP} onChange={e => set('limiteMaisPP', e.target.checked)} className="w-4 h-4 accent-[#781D1D]" />
+                  <input type="checkbox" checked={state.limiteMaisPP} onChange={e => set('limiteMaisPP', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
                   <span className="text-[12px] font-[500] text-slate-600">Aumentar limite para 75% (perda {'>'} 25% capital próprio)</span>
                 </label>
                 <CalcRow label="Prejuízos efetivamente deduzidos" value={res.prejuziosEfetivos} />
@@ -714,7 +1244,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
             {tab === 'TA' && (<>
               <Section title="Tributações Autónomas — Viaturas">
                 <label className="flex items-center gap-3 py-1.5 cursor-pointer">
-                  <input type="checkbox" checked={state.agravamentoTA} onChange={e => set('agravamentoTA', e.target.checked)} className="w-4 h-4 accent-[#781D1D]" />
+                  <input type="checkbox" checked={state.agravamentoTA} onChange={e => set('agravamentoTA', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
                   <span className="text-[12px] font-[500] text-slate-600">Agravamento +10% (empresa com prejuízo fiscal no período)</span>
                 </label>
 
@@ -735,7 +1265,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                         <label className="block text-[10px] font-[600] text-slate-400 mb-0.5">Combustível</label>
                         <select value={v.combustivel}
                           onChange={e => updateViatura(v.id, { combustivel: e.target.value as FuelType })}
-                          className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30">
+                          className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30">
                           <option value="convencional">Convencional / GPL</option>
                           <option value="plug_in">Plug-in híbrido</option>
                           <option value="plug_in_5050">Plug-in 50%/50%</option>
@@ -748,7 +1278,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                         <input type="number" value={v.custoHistorico || ''}
                           onChange={e => updateViatura(v.id, { custoHistorico: parseFloat(e.target.value) || 0 })}
                           placeholder="0,00"
-                          className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30 text-right" />
+                          className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30 text-right" />
                       </div>
                     </div>
                     <div>
@@ -756,17 +1286,17 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                       <input type="number" value={v.encargos || ''}
                         onChange={e => updateViatura(v.id, { encargos: parseFloat(e.target.value) || 0 })}
                         placeholder="0,00"
-                        className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30 text-right" />
+                        className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30 text-right" />
                     </div>
                     <div className="flex justify-between text-[11px] font-[600]">
                       <span className="text-slate-500">TA calculada:</span>
-                      <span className="text-[#781D1D]">{fmt(calcTAVeiculo(v, state.agravamentoTA))} €</span>
+                      <span className="text-[#7B98B8]">{fmt(calcTAVeiculo(v, state.agravamentoTA))} €</span>
                     </div>
                   </div>
                 ))}
 
                 <button type="button" onClick={addViatura}
-                  className="mt-3 flex items-center gap-2 px-3 py-2 text-[12px] font-[600] text-[#781D1D] border border-dashed border-[#781D1D]/40 rounded-[8px] hover:bg-[#781D1D]/5 transition-colors w-full justify-center">
+                  className="mt-3 flex items-center gap-2 px-3 py-2 text-[12px] font-[600] text-[#7B98B8] border border-dashed border-[#7B98B8]/40 rounded-[8px] hover:bg-[#7B98B8]/5 transition-colors w-full justify-center">
                   <Plus className="w-4 h-4" />
                   Adicionar viatura
                 </button>
@@ -804,7 +1334,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                   <label className="flex-1 text-[12px] font-[500] text-slate-600">349 — IRC a outras taxas — base</label>
                   <input type="number" step="0.01" value={state.c349 || ''}
                     onChange={e => set('c349', parseFloat(e.target.value) || 0)}
-                    className="w-36 text-right text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30"
+                    className="w-36 text-right text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30"
                     placeholder="0,00" />
                 </div>
                 <div className="flex items-center gap-3 py-1.5 pl-4">
@@ -813,7 +1343,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                     <input type="number" step="0.1" min="0" max="100"
                       value={state.c349_taxa ? (state.c349_taxa * 100).toFixed(1) : ''}
                       onChange={e => set('c349_taxa', (parseFloat(e.target.value) || 0) / 100)}
-                      className="w-full text-right text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-1.5 pr-6 bg-white focus:outline-none focus:ring-2 focus:ring-[#781D1D]/30"
+                      className="w-full text-right text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-1.5 pr-6 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30"
                       placeholder="0,0" />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">%</span>
                   </div>
@@ -873,65 +1403,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
           </div>
 
           {/* ── Right: summary (always visible) ── */}
-          <div className="flex flex-col gap-3 lg:sticky lg:top-6 self-start">
-            <div className="bg-white border border-slate-200 rounded-[16px] overflow-hidden">
-              <div className="h-1 bg-gradient-to-r from-[#781D1D] to-[#b83030]" />
-              <div className="p-4">
-                <p className="text-[11px] font-[700] uppercase tracking-[0.5px] text-slate-400 mb-3">Resumo IRC {state.periodo}</p>
-                <div className="space-y-0.5">
-                  <ResultRow label="Lucro Tributável" value={res.lucroTributavel} />
-                  <ResultRow label="Prejuízo Fiscal" value={res.prejuizoFiscal} sub positive />
-                  <ResultRow label="Matéria Coletável" value={res.materiaColetavel} />
-                  <div className="border-t border-slate-100 my-1" />
-                  <ResultRow label="Coleta IRC" value={res.ircColeta} />
-                  <ResultRow label="Derrama Estadual" value={res.derramaEstadual} sub />
-                  <ResultRow label="Derrama Municipal" value={res.derrMunicipal} sub />
-                  <ResultRow label="(−) Ded. à Coleta" value={res.deducoesColeta} sub positive />
-                  <ResultRow label="IRC Liquidado (c358)" value={res.c358} highlight />
-                  <div className="border-t border-slate-100 my-1" />
-                  <ResultRow label="Tributações Autónomas" value={res.taTotal} />
-                  <div className="border-t border-slate-100 my-1" />
-                  <ResultRow label={res.c367 >= 0 ? 'Total a Pagar' : 'Total a Recuperar'} value={Math.abs(res.c367)} highlight />
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-slate-100 space-y-1.5">
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-400 font-[500]">Taxa IRC</span>
-                    <span className="font-[700] text-slate-600">
-                      {state.isPME && !state.isStartup
-                        ? `${pct(RATES[state.regime].pme)} / ${pct(RATES[state.regime].main)}`
-                        : pct(RATES[state.isStartup ? 'startup' : state.regime].main)}
-                    </span>
-                  </div>
-                  {res.derrMunicipal > 0 && (
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-slate-400 font-[500]">Derrama Municipal</span>
-                      <span className="font-[700] text-slate-600">{pct(state.taxaDerramaMunicipal)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-400 font-[500]">PEC estimado</span>
-                    <span className="font-[700] text-slate-600">{fmt(res.pecCalculado)} €</span>
-                  </div>
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-400 font-[500]">PC estimado</span>
-                    <span className="font-[700] text-slate-600">{fmt(res.pcCalculado)} €</span>
-                  </div>
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-400 font-[500]">Taxa efectiva s/ RAI</span>
-                    <span className="font-[700] text-slate-600">
-                      {res.effectiveRai !== 0 ? pct((res.c358 + res.taTotal) / Math.abs(res.effectiveRai)) : '—'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <button type="button" onClick={() => setState(defaultPreviSaState())}
-              className="text-[12px] font-[600] text-slate-400 hover:text-red-500 transition-colors py-2 text-center">
-              Limpar simulação
-            </button>
-          </div>
+          {resultsContent}
         </div>
       </div>
     </div>

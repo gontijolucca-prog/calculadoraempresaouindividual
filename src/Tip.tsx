@@ -94,7 +94,7 @@ export function Tip({ children }: TipProps) {
         aria-label="Mais informação"
         aria-expanded={locked}
         aria-describedby={pos ? tipId : undefined}
-        className="inline-flex items-center justify-center w-[15px] h-[15px] rounded-full bg-slate-200 text-slate-500 text-[9px] font-[800] cursor-help hover:bg-[#781D1D] hover:text-white transition-colors select-none ml-1.5 align-middle"
+        className="inline-flex items-center justify-center w-[15px] h-[15px] rounded-full bg-slate-200 text-slate-500 text-[9px] font-[800] cursor-help hover:bg-[#7B98B8] hover:text-white transition-colors select-none ml-1.5 align-middle"
       >?</span>
 
       {pos && (

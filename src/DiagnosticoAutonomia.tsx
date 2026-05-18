@@ -1,6 +1,8 @@
 import { motion } from 'motion/react';
 import React, { useMemo } from 'react';
-import { BarChart2, AlertTriangle, CheckCircle, Circle, TrendingUp, Wallet, Users, Building, Settings } from 'lucide-react';
+import { BarChart2, AlertTriangle, CheckCircle, Circle, TrendingUp, Wallet, Users, Building, Settings, ListOrdered } from 'lucide-react';
+import { FlowWizard, type FlowStep } from './FlowWizard';
+import { useFlowMode } from './AnimatedPage';
 import { cn } from './lib/utils';
 import { useTheme } from './ThemeContext';
 import { Tip } from './Tip';
@@ -134,7 +136,7 @@ function RadarChart({ scores }: { scores: number[] }) {
         <line key={i} x1={cx} y1={cy} x2={op.x} y2={op.y} stroke="#E2E8F0" strokeWidth={0.8} />
       ))}
       {/* Score polygon */}
-      <path d={toPath(scorePoints)} fill="rgba(120,29,29,0.18)" stroke="#781D1D" strokeWidth={2} />
+      <path d={toPath(scorePoints)} fill="rgba(120,29,29,0.18)" stroke="#7B98B8" strokeWidth={2} />
       {/* Score dots */}
       {scorePoints.map((p, i) => (
         <circle key={i} cx={p.x} cy={p.y} r={4} fill={scoreColor(scores[i])} stroke="white" strokeWidth={1.5} />
@@ -188,20 +190,267 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
 
   const pilaresFracos = PILAR_LABELS.filter((_, i) => scores[i] < 3);
 
+  const { flowMode, enterFlow, exitFlow } = useFlowMode();
+
+  const steps: FlowStep<DiagnosticoState>[] = [
+    {
+      id: 'p1',
+      label: 'Autonomia Financeira',
+      description: 'Capitais próprios, ativo total e passivo total.',
+      render: (st, setSt) => (
+        <div className="grid grid-cols-2 gap-[10px]">
+          <div>
+            <label className={labelCls}>Capitais Próprios (€) <Tip>O valor do capital investido pelos sócios mais os lucros acumulados. É o dinheiro 'da empresa' sem considerar dívidas.</Tip></label>
+            <input type="number" min="0" value={st.capitaisProprios === 0 ? '' : st.capitaisProprios} onChange={e => setSt({ capitaisProprios: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+          </div>
+          <div>
+            <label className={labelCls}>Ativo Total (€) <Tip>Tudo o que a empresa possui: dinheiro, equipamentos, imóveis, créditos de clientes. O total do lado esquerdo do balanço.</Tip></label>
+            <input type="number" min="0" value={st.ativoTotal === 0 ? '' : st.ativoTotal} onChange={e => setSt({ ativoTotal: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+          </div>
+          <div className="col-span-2">
+            <label className={labelCls}>Passivo Total (€) <Tip>Tudo o que a empresa deve: empréstimos, dívidas a fornecedores, impostos em atraso. O total das dívidas.</Tip></label>
+            <input type="number" min="0" value={st.passivoTotal === 0 ? '' : st.passivoTotal} onChange={e => setSt({ passivoTotal: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'p2',
+      label: 'Tesouraria',
+      description: 'Ativo corrente, passivo corrente, disponibilidades e custos fixos mensais.',
+      render: (st, setSt) => (
+        <div className="grid grid-cols-2 gap-[10px]">
+          <div>
+            <label className={labelCls}>Ativo Corrente (€) <Tip>Os bens e direitos que se convertem em dinheiro em menos de 1 ano: stock, créditos de clientes, dinheiro em caixa.</Tip></label>
+            <input type="number" min="0" value={st.ativoCorrente === 0 ? '' : st.ativoCorrente} onChange={e => setSt({ ativoCorrente: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+          </div>
+          <div>
+            <label className={labelCls}>Passivo Corrente (€) <Tip>As dívidas a pagar em menos de 1 ano: faturas de fornecedores, impostos correntes, prestações de empréstimos de curto prazo.</Tip></label>
+            <input type="number" min="0" value={st.passivoCorrente === 0 ? '' : st.passivoCorrente} onChange={e => setSt({ passivoCorrente: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+          </div>
+          <div>
+            <label className={labelCls}>Disponibilidades (€) <Tip>O dinheiro em caixa e nas contas bancárias da empresa, disponível imediatamente.</Tip></label>
+            <input type="number" min="0" value={st.disponibilidades === 0 ? '' : st.disponibilidades} onChange={e => setSt({ disponibilidades: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+          </div>
+          <div>
+            <label className={labelCls}>Custo Fixo Mensal (€) <Tip>O total de despesas mensais que a empresa tem independentemente de faturar (rendas, salários, seguros, internet).</Tip></label>
+            <input type="number" min="0" value={st.custoFixoMensal === 0 ? '' : st.custoFixoMensal} onChange={e => setSt({ custoFixoMensal: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'p3',
+      label: 'Rentabilidade',
+      description: 'Resultado líquido, volume de negócios e evolução do EBITDA.',
+      render: (st, setSt) => (
+        <div className="space-y-[14px]">
+          <div className="grid grid-cols-2 gap-[10px]">
+            <div>
+              <label className={labelCls}>Resultado Líquido (€/ano) <Tip>O lucro ou prejuízo da empresa depois de todos os impostos e gastos. Um número positivo é lucro; negativo é prejuízo.</Tip></label>
+              <input type="number" value={st.resultadoLiquido === 0 ? '' : st.resultadoLiquido} onChange={e => setSt({ resultadoLiquido: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+            </div>
+            <div>
+              <label className={labelCls}>Volume de Negócios (€/ano) <Tip>O total de vendas e serviços faturados durante o ano. É a 'receita total' antes de qualquer desconto ou imposto.</Tip></label>
+              <input type="number" min="0" value={st.volumeNegocios === 0 ? '' : st.volumeNegocios} onChange={e => setSt({ volumeNegocios: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+            </div>
+          </div>
+          <div>
+            <label className={labelCls}>EBITDA <Tip>EBITDA é o resultado operacional antes de juros, impostos, depreciações e amortizações. Indica a capacidade de gerar dinheiro com a operação.</Tip></label>
+            <select value={st.ebitda} onChange={e => setSt({ ebitda: e.target.value as DiagnosticoState['ebitda'] })} className={inputCls}>
+              <option value="positivo">Positivo e crescente</option>
+              <option value="marginal">Marginal / estável</option>
+              <option value="negativo">Negativo ou decrescente</option>
+            </select>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'p4',
+      label: 'Dependência',
+      description: 'Concentração de clientes e dependência de financiamento externo.',
+      render: (st, setSt) => (
+        <div className="grid grid-cols-2 gap-[10px]">
+          <div>
+            <label className={labelCls}>Faturação maior cliente (€/ano) <Tip>Quanto representa o cliente mais importante da empresa, em euros anuais. Dependência excessiva de um cliente é um risco.</Tip></label>
+            <input type="number" min="0" value={st.faturacaoMaiorCliente === 0 ? '' : st.faturacaoMaiorCliente} onChange={e => setSt({ faturacaoMaiorCliente: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+          </div>
+          <div>
+            <label className={labelCls}>Financiamento externo (€) <Tip>O valor de empréstimos bancários ou outros financiamentos externos que a empresa tem neste momento.</Tip></label>
+            <input type="number" min="0" value={st.financiamentoExterno === 0 ? '' : st.financiamentoExterno} onChange={e => setSt({ financiamentoExterno: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+          </div>
+          <div className="col-span-2">
+            <label className={labelCls}>Total de fontes de financiamento (€) <Tip>O valor total de todos os financiamentos, incluindo externos e dos sócios (capital social).</Tip></label>
+            <input type="number" min="0" value={st.totalFinanciamento === 0 ? '' : st.totalFinanciamento} onChange={e => setSt({ totalFinanciamento: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'p5',
+      label: 'Maturidade Operacional',
+      description: 'Processos documentados, software de gestão, autonomia da equipa e controlo financeiro.',
+      render: (st, setSt) => (
+        <div className="space-y-[8px]">
+          {[
+            { key: 'processosDefinidos', label: 'Processos e procedimentos documentados', tip: 'Se a empresa tem procedimentos escritos e organizados para as tarefas principais. Reduz a dependência de pessoas específicas.' },
+            { key: 'softwareGestao', label: 'Software de gestão/ERP implementado', tip: 'Se usa software para gerir stock, faturação, contabilidade. Melhora o controlo e a eficiência.' },
+            { key: 'equipaAutonoma', label: 'Equipa capaz de operar sem o gerente', tip: 'Se a equipa consegue trabalhar sem depender constantemente do gerente/dono para decisões do dia a dia.' },
+            { key: 'baixaDependenciaGerente', label: 'Baixa dependência pessoal do gerente/sócio', tip: 'Se a empresa funcionaria bem durante algum tempo sem a presença do gerente. Sinal de maturidade operacional.' },
+            { key: 'controlFinanceiro', label: 'Controlo financeiro e reporting mensal', tip: 'Se existe controlo regular de tesouraria, margem e resultados (relatórios mensais, orçamentos). Essencial para tomar decisões.' },
+          ].map(({ key, label, tip }) => (
+            <label key={key} className="flex items-center gap-3 cursor-pointer group">
+              <div
+                onClick={() => setSt({ [key]: !st[key as keyof DiagnosticoState] } as Partial<DiagnosticoState>)}
+                className={cn(
+                  "w-5 h-5 rounded-[4px] border-2 flex items-center justify-center transition-colors shrink-0",
+                  st[key as keyof DiagnosticoState] ? "bg-[#7B98B8] border-[#7B98B8]" : "border-[#E2E8F0] bg-white"
+                )}
+              >
+                {st[key as keyof DiagnosticoState] && <CheckCircle className="w-3 h-3 text-white" />}
+              </div>
+              <span className="text-[13px] text-[#475569] font-[500] group-hover:text-[#0F172A] transition-colors">{label} <Tip>{tip}</Tip></span>
+            </label>
+          ))}
+        </div>
+      ),
+    },
+  ];
+
+  const resultsContent = (
+    <>
+      {/* Radar Chart + Global Score */}
+      <div className="bg-white border border-[#E2E8F0] rounded-[20px] p-[24px] flex flex-col lg:flex-row items-center gap-[24px]">
+        <div className="flex-1">
+          <RadarChart scores={scores} />
+        </div>
+        <div className="flex-1 flex flex-col gap-[12px]">
+          <div className="text-center lg:text-left">
+            <div className="text-[13px] font-[700] uppercase tracking-[1px] text-[#64748B]">Score Global</div>
+            <div className="text-[48px] font-[900] leading-none mt-1" style={{ color: scoreColor(globalScore) }}>
+              {globalScore.toFixed(1)}
+              <span className="text-[18px] font-[600] text-[#94A3B8]">/5</span>
+            </div>
+            <div className="mt-2 inline-block px-3 py-1 rounded-full text-[12px] font-[700]"
+              style={{ backgroundColor: scoreColor(globalScore) + '22', color: scoreColor(globalScore) }}>
+              {scoreLabel(globalScore)}
+            </div>
+          </div>
+
+          <div className="space-y-[8px] mt-2">
+            {PILAR_LABELS.map((lbl, i) => {
+              const Icon = PILAR_ICONS[i];
+              return (
+                <div key={lbl} className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: scoreColor(scores[i]) + '20' }}>
+                    <Icon className="w-3.5 h-3.5" style={{ color: scoreColor(scores[i]) }} />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[12px] font-[600] text-[#475569]">{lbl}</span>
+                      <span className="text-[12px] font-[800]" style={{ color: scoreColor(scores[i]) }}>{scores[i].toFixed(1)}</span>
+                    </div>
+                    <div className="h-1.5 bg-[#F1F5F9] rounded-full mt-1 overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${(scores[i] / 5) * 100}%`, backgroundColor: scoreColor(scores[i]) }} />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Alertas */}
+      {alertas.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-[16px] p-[18px] space-y-[8px]">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="w-4 h-4 text-red-600" />
+            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-red-700">Alertas de Risco</span>
+          </div>
+          {alertas.map((a, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <Circle className="w-2 h-2 fill-red-500 text-red-500 mt-[5px] shrink-0" />
+              <span className="text-[13px] text-red-700 font-[500]">{a}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Indicadores-chave */}
+      <div className="bg-white border border-[#E2E8F0] rounded-[20px] p-[20px]">
+        <h3 className="text-[13px] font-[700] uppercase tracking-[1px] text-[#64748B] mb-[14px]">Indicadores Calculados</h3>
+        <div className="grid grid-cols-2 gap-[10px]">
+          {[
+            { label: 'Autonomia Financeira', value: d.ativoTotal > 0 ? `${(d.capitaisProprios / d.ativoTotal * 100).toFixed(1)}%` : '—', ok: d.ativoTotal > 0 && d.capitaisProprios / d.ativoTotal >= 0.25 },
+            { label: 'Liquidez Geral', value: d.passivoCorrente > 0 ? `${(d.ativoCorrente / d.passivoCorrente).toFixed(2)}x` : '—', ok: d.passivoCorrente > 0 && d.ativoCorrente / d.passivoCorrente >= 1 },
+            { label: 'Margem Líquida', value: d.volumeNegocios > 0 ? `${(d.resultadoLiquido / d.volumeNegocios * 100).toFixed(1)}%` : '—', ok: d.volumeNegocios > 0 && d.resultadoLiquido / d.volumeNegocios >= 0.05 },
+            { label: 'Meses de Autonomia', value: d.custoFixoMensal > 0 ? `${(d.disponibilidades / d.custoFixoMensal).toFixed(1)}m` : '—', ok: d.custoFixoMensal > 0 && d.disponibilidades / d.custoFixoMensal >= 3 },
+            { label: 'Conc. maior cliente', value: d.volumeNegocios > 0 ? `${(d.faturacaoMaiorCliente / d.volumeNegocios * 100).toFixed(1)}%` : '—', ok: d.volumeNegocios > 0 && d.faturacaoMaiorCliente / d.volumeNegocios <= 0.4 },
+            { label: 'Dep. financiamento ext.', value: d.totalFinanciamento > 0 ? `${(d.financiamentoExterno / d.totalFinanciamento * 100).toFixed(1)}%` : '—', ok: d.totalFinanciamento > 0 && d.financiamentoExterno / d.totalFinanciamento <= 0.60 },
+          ].map(({ label, value, ok }) => (
+            <div key={label} className={cn("p-[12px] rounded-[12px] border", ok ? "bg-emerald-50 border-emerald-100" : "bg-red-50 border-red-100")}>
+              <div className="text-[10px] font-[700] uppercase tracking-[0.5px] text-[#64748B]">{label}</div>
+              <div className={cn("text-[20px] font-[800] mt-[2px]", ok ? "text-emerald-700" : "text-red-600")}>{value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Conclusão */}
+      <div className="bg-[#0F172A] text-white rounded-[20px] p-[20px]">
+        <h3 className="text-[12px] font-[700] uppercase tracking-[1px] text-slate-400 mb-[10px]">Análise Conclusiva</h3>
+        <p className="text-[14px] font-[500] leading-relaxed text-slate-200">
+          A análise demonstra que a empresa apresenta nível de autonomia{' '}
+          <span className="font-[700] text-white">{globalScore >= 4 ? 'elevado' : globalScore >= 2.5 ? 'médio' : 'baixo'}</span>
+          {pilaresFracos.length > 0 ? (
+            <>, recomendando-se intervenção ao nível de{' '}
+              <span className="font-[700] text-white">{pilaresFracos.join(', ')}</span>.</>
+          ) : (
+            <>. A empresa apresenta solidez nos 5 pilares avaliados.</>
+          )}
+        </p>
+      </div>
+    </>
+  );
+
+  if (flowMode) {
+    return (
+      <FlowWizard
+        open={flowMode}
+        onClose={exitFlow}
+        title="Diagnóstico de Autonomia"
+        icon={BarChart2}
+        steps={steps}
+        resultsStep={{ label: 'Resultados do Diagnóstico', description: 'Análise completa dos 5 pilares.', render: resultsContent }}
+        state={d}
+        setState={setState}
+      />
+    );
+  }
+
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }} className={outerCls}>
       {/* Left Pane */}
       <div className={leftCls}>
-        <div>
-          <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Diagnóstico de Autonomia</h2>
-          <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Avaliação por 5 pilares — balanço e gestão empresarial.</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Diagnóstico de Autonomia</h2>
+            <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Avaliação por 5 pilares — balanço e gestão empresarial.</p>
+          </div>
+          <motion.button onClick={enterFlow} className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#7B98B8] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <ListOrdered className="w-4 h-4" /> Vista simplificada
+          </motion.button>
         </div>
 
         {/* P1 — Autonomia Financeira */}
         <section className="space-y-[14px]">
           <div className="flex items-center gap-2">
-            <Building className="w-4 h-4 text-[#781D1D]" />
-            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#781D1D]">Pilar 1 — Autonomia Financeira</span>
+            <Building className="w-4 h-4 text-[#7B98B8]" />
+            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#7B98B8]">Pilar 1 — Autonomia Financeira</span>
           </div>
           <div className="grid grid-cols-2 gap-[10px]">
             <div>
@@ -222,8 +471,8 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
         {/* P2 — Tesouraria */}
         <section className="space-y-[14px]">
           <div className="flex items-center gap-2">
-            <Wallet className="w-4 h-4 text-[#781D1D]" />
-            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#781D1D]">Pilar 2 — Tesouraria</span>
+            <Wallet className="w-4 h-4 text-[#7B98B8]" />
+            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#7B98B8]">Pilar 2 — Tesouraria</span>
           </div>
           <div className="grid grid-cols-2 gap-[10px]">
             <div>
@@ -248,8 +497,8 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
         {/* P3 — Rentabilidade */}
         <section className="space-y-[14px]">
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-[#781D1D]" />
-            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#781D1D]">Pilar 3 — Rentabilidade</span>
+            <TrendingUp className="w-4 h-4 text-[#7B98B8]" />
+            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#7B98B8]">Pilar 3 — Rentabilidade</span>
           </div>
           <div className="grid grid-cols-2 gap-[10px]">
             <div>
@@ -274,8 +523,8 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
         {/* P4 — Dependência */}
         <section className="space-y-[14px]">
           <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-[#781D1D]" />
-            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#781D1D]">Pilar 4 — Dependência</span>
+            <Users className="w-4 h-4 text-[#7B98B8]" />
+            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#7B98B8]">Pilar 4 — Dependência</span>
           </div>
           <div className="grid grid-cols-2 gap-[10px]">
             <div>
@@ -296,8 +545,8 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
         {/* P5 — Operacional */}
         <section className="space-y-[14px]">
           <div className="flex items-center gap-2">
-            <Settings className="w-4 h-4 text-[#781D1D]" />
-            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#781D1D]">Pilar 5 — Maturidade Operacional</span>
+            <Settings className="w-4 h-4 text-[#7B98B8]" />
+            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#7B98B8]">Pilar 5 — Maturidade Operacional</span>
           </div>
           <div className="space-y-[8px]">
             {[
@@ -312,7 +561,7 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
                   onClick={() => setState({ [key]: !d[key as keyof DiagnosticoState] } as Partial<DiagnosticoState>)}
                   className={cn(
                     "w-5 h-5 rounded-[4px] border-2 flex items-center justify-center transition-colors shrink-0",
-                    d[key as keyof DiagnosticoState] ? "bg-[#781D1D] border-[#781D1D]" : "border-[#E2E8F0] bg-white"
+                    d[key as keyof DiagnosticoState] ? "bg-[#7B98B8] border-[#7B98B8]" : "border-[#E2E8F0] bg-white"
                   )}
                 >
                   {d[key as keyof DiagnosticoState] && <CheckCircle className="w-3 h-3 text-white" />}
@@ -326,101 +575,7 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
 
       {/* Right Pane — Results */}
       <div className={rightCls}>
-
-        {/* Radar Chart + Global Score */}
-        <div className="bg-white border border-[#E2E8F0] rounded-[20px] p-[24px] flex flex-col lg:flex-row items-center gap-[24px]">
-          <div className="flex-1">
-            <RadarChart scores={scores} />
-          </div>
-          <div className="flex-1 flex flex-col gap-[12px]">
-            <div className="text-center lg:text-left">
-              <div className="text-[13px] font-[700] uppercase tracking-[1px] text-[#64748B]">Score Global</div>
-              <div className="text-[48px] font-[900] leading-none mt-1" style={{ color: scoreColor(globalScore) }}>
-                {globalScore.toFixed(1)}
-                <span className="text-[18px] font-[600] text-[#94A3B8]">/5</span>
-              </div>
-              <div className="mt-2 inline-block px-3 py-1 rounded-full text-[12px] font-[700]"
-                style={{ backgroundColor: scoreColor(globalScore) + '22', color: scoreColor(globalScore) }}>
-                {scoreLabel(globalScore)}
-              </div>
-            </div>
-
-            <div className="space-y-[8px] mt-2">
-              {PILAR_LABELS.map((lbl, i) => {
-                const Icon = PILAR_ICONS[i];
-                return (
-                  <div key={lbl} className="flex items-center gap-3">
-                    <div className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: scoreColor(scores[i]) + '20' }}>
-                      <Icon className="w-3.5 h-3.5" style={{ color: scoreColor(scores[i]) }} />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[12px] font-[600] text-[#475569]">{lbl}</span>
-                        <span className="text-[12px] font-[800]" style={{ color: scoreColor(scores[i]) }}>{scores[i].toFixed(1)}</span>
-                      </div>
-                      <div className="h-1.5 bg-[#F1F5F9] rounded-full mt-1 overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-500"
-                          style={{ width: `${(scores[i] / 5) * 100}%`, backgroundColor: scoreColor(scores[i]) }} />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Alertas */}
-        {alertas.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-[16px] p-[18px] space-y-[8px]">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle className="w-4 h-4 text-red-600" />
-              <span className="text-[12px] font-[700] uppercase tracking-[1px] text-red-700">Alertas de Risco</span>
-            </div>
-            {alertas.map((a, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <Circle className="w-2 h-2 fill-red-500 text-red-500 mt-[5px] shrink-0" />
-                <span className="text-[13px] text-red-700 font-[500]">{a}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Indicadores-chave */}
-        <div className="bg-white border border-[#E2E8F0] rounded-[20px] p-[20px]">
-          <h3 className="text-[13px] font-[700] uppercase tracking-[1px] text-[#64748B] mb-[14px]">Indicadores Calculados</h3>
-          <div className="grid grid-cols-2 gap-[10px]">
-            {[
-              { label: 'Autonomia Financeira', value: d.ativoTotal > 0 ? `${(d.capitaisProprios / d.ativoTotal * 100).toFixed(1)}%` : '—', ok: d.ativoTotal > 0 && d.capitaisProprios / d.ativoTotal >= 0.25 },
-              { label: 'Liquidez Geral', value: d.passivoCorrente > 0 ? `${(d.ativoCorrente / d.passivoCorrente).toFixed(2)}x` : '—', ok: d.passivoCorrente > 0 && d.ativoCorrente / d.passivoCorrente >= 1 },
-              { label: 'Margem Líquida', value: d.volumeNegocios > 0 ? `${(d.resultadoLiquido / d.volumeNegocios * 100).toFixed(1)}%` : '—', ok: d.volumeNegocios > 0 && d.resultadoLiquido / d.volumeNegocios >= 0.05 },
-              { label: 'Meses de Autonomia', value: d.custoFixoMensal > 0 ? `${(d.disponibilidades / d.custoFixoMensal).toFixed(1)}m` : '—', ok: d.custoFixoMensal > 0 && d.disponibilidades / d.custoFixoMensal >= 3 },
-              { label: 'Conc. maior cliente', value: d.volumeNegocios > 0 ? `${(d.faturacaoMaiorCliente / d.volumeNegocios * 100).toFixed(1)}%` : '—', ok: d.volumeNegocios > 0 && d.faturacaoMaiorCliente / d.volumeNegocios <= 0.4 },
-              { label: 'Dep. financiamento ext.', value: d.totalFinanciamento > 0 ? `${(d.financiamentoExterno / d.totalFinanciamento * 100).toFixed(1)}%` : '—', ok: d.totalFinanciamento > 0 && d.financiamentoExterno / d.totalFinanciamento <= 0.60 },
-            ].map(({ label, value, ok }) => (
-              <div key={label} className={cn("p-[12px] rounded-[12px] border", ok ? "bg-emerald-50 border-emerald-100" : "bg-red-50 border-red-100")}>
-                <div className="text-[10px] font-[700] uppercase tracking-[0.5px] text-[#64748B]">{label}</div>
-                <div className={cn("text-[20px] font-[800] mt-[2px]", ok ? "text-emerald-700" : "text-red-600")}>{value}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Conclusão */}
-        <div className="bg-[#0F172A] text-white rounded-[20px] p-[20px]">
-          <h3 className="text-[12px] font-[700] uppercase tracking-[1px] text-slate-400 mb-[10px]">Análise Conclusiva</h3>
-          <p className="text-[14px] font-[500] leading-relaxed text-slate-200">
-            A análise demonstra que a empresa apresenta nível de autonomia{' '}
-            <span className="font-[700] text-white">{globalScore >= 4 ? 'elevado' : globalScore >= 2.5 ? 'médio' : 'baixo'}</span>
-            {pilaresFracos.length > 0 ? (
-              <>, recomendando-se intervenção ao nível de{' '}
-                <span className="font-[700] text-white">{pilaresFracos.join(', ')}</span>.</>
-            ) : (
-              <>. A empresa apresenta solidez nos 5 pilares avaliados.</>
-            )}
-          </p>
-        </div>
+        {resultsContent}
       </div>
     </motion.div>
   );

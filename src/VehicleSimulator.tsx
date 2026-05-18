@@ -295,12 +295,17 @@ function useVehicleResults(state: VehicleSimulatorState) {
       if (exemptTA) {
         taRate = 0;
       } else {
+        // Tributação Autónoma — viaturas ligeiras de passageiros (CIRC Art. 88º n.os 3-4, OE 2026)
+        // Limites de aquisição: €37.500 e €45.000.
+        // Convencionais (não-PHEV, não-EV): 8% / 25% / 32%.
+        // Híbridos plug-in (PHEV Euro 6e-bis, <80 gCO2/km): 2,5% / 7,5% / 15%.
+        // Eléctricos: isentos até €62.500; 10% acima.
         if (engineType === 'electric') {
           taRate = price >= 62500 ? 0.10 : 0;
         } else if (phevValid) {
-          taRate = price < 27500 ? 0.025 : (price < 35000 ? 0.075 : 0.15);
+          taRate = price < 37500 ? 0.025 : (price < 45000 ? 0.075 : 0.15);
         } else {
-          taRate = price < 27500 ? 0.085 : (price < 35000 ? 0.255 : 0.325);
+          taRate = price < 37500 ? 0.08 : (price < 45000 ? 0.25 : 0.32);
         }
       }
       taValue = totalEncsTA * taRate;
@@ -529,7 +534,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
           </div>
           <motion.button
             onClick={enterFlow}
-            className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#781D1D] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all"
+            className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#7B98B8] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             transition={{ duration: 0.15 }}

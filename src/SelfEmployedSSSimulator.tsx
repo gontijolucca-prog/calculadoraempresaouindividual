@@ -164,18 +164,18 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
               <p className="text-[12px] text-[#64748B] font-[500]">Estimativa por mês</p>
             </div>
 
-            <div className="bg-white border-2 border-[#781D1D] rounded-[24px] p-[24px] md:p-[28px] flex flex-col shadow-sm ring-4 ring-[#781D1D]/10">
+            <div className="bg-white border-2 border-[#7B98B8] rounded-[24px] p-[24px] md:p-[28px] flex flex-col shadow-sm ring-4 ring-[#7B98B8]/10">
               <div className="flex items-center gap-[12px] mb-[16px]">
-                <div className="bg-[#FDF2F2] text-[#781D1D] p-[10px] rounded-[14px]">
+                <div className="bg-[#FDF2F2] text-[#7B98B8] p-[10px] rounded-[14px]">
                   <Calendar className="w-[20px] h-[20px]" />
                 </div>
                 <h3 className="text-[15px] font-[700] text-[#0F172A]">Trimestral <Tip>O valor a pagar à Segurança Social de 3 em 3 meses. Pagamentos em janeiro, abril, julho e outubro, até ao dia 20.</Tip></h3>
               </div>
-              <div className="text-[36px] font-[800] text-[#781D1D] tracking-[-1px] mb-[8px]">
+              <div className="text-[36px] font-[800] text-[#7B98B8] tracking-[-1px] mb-[8px]">
                 {ptEur(result.trimestral)}
               </div>
               <p className="text-[12px] text-[#64748B] font-[500]">Valor a pagar cada trimestre</p>
-              <div className="mt-3 text-[11px] bg-[#FDF2F2] text-[#781D1D] font-[700] rounded-[8px] px-3 py-1.5 text-center">
+              <div className="mt-3 text-[11px] bg-[#FDF2F2] text-[#7B98B8] font-[700] rounded-[8px] px-3 py-1.5 text-center">
                 Jan • Abr • Jul • Out (até dia 20)
               </div>
             </div>
@@ -280,7 +280,7 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
             <h2 className="text-[24px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador SS Independente <Tip>SS Independente = Segurança Social para trabalhadores a recibos verdes ou ENI. Diferente dos trabalhadores por conta de outrem: o próprio paga a sua contribuição trimestralmente.</Tip></h2>
             <p className="text-[14px] text-[#64748B] font-[500] mt-[4px]">Contribuições de trabalhador independente (ENI). <Tip>ENI = Empresário em Nome Individual. É uma forma de trabalhar por conta própria sem criar uma empresa. Paga IRS em Categoria B e SS como independente.</Tip></p>
           </div>
-          <motion.button onClick={enterFlow} className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#781D1D] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <motion.button onClick={enterFlow} className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#7B98B8] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <ListOrdered className="w-4 h-4" /> Vista simplificada
           </motion.button>
         </div>

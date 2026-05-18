@@ -276,7 +276,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
                 isEni ? 'ENI: afetação parcial do imóvel à atividade — regras de separação patrimonial' : 'Responsabilidade limitada da empresa protege o imóvel de dívidas pessoais',
               ].map((p, i) => (
                 <div key={i} className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#781D1D] mt-[6px] shrink-0" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#7B98B8] mt-[6px] shrink-0" />
                   <span className="text-[12px] text-[#475569]">{p}</span>
                 </div>
               ))}
@@ -311,7 +311,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
             <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Imóveis na Empresa</h2>
             <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Arrendamento/Comodato vs. Entrada em Espécie — guia de decisão.</p>
           </div>
-          <motion.button onClick={enterFlow} className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#781D1D] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <motion.button onClick={enterFlow} className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#7B98B8] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <ListOrdered className="w-4 h-4" /> Vista simplificada
           </motion.button>
         </div>

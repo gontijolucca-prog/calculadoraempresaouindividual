@@ -3,13 +3,16 @@ import { motion } from 'motion/react';
 import {
   RefreshCw, TrendingUp, CheckCircle2, Calculator, Briefcase, PieChart, ShieldAlert,
   User, Info, Layers, Activity, Hash, Package, DollarSign, Crown, Globe, Target,
-  Coins, UserCheck, Settings, BarChart2, CircleUser, UserRound, AlertTriangle
+  Coins, UserCheck, Settings, BarChart2, CircleUser, UserRound, AlertTriangle,
+  ListOrdered
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { useTheme } from './ThemeContext';
 import { Tip } from './Tip';
 import type { ClientProfile } from './ClientProfile';
 import { calculateIRS, calcIRSJovem, calcDependentsDeduction } from './lib/pt2026';
+import { FlowWizard, type FlowStep } from './FlowWizard';
+import { useFlowMode } from './AnimatedPage';
 
 interface TaxSimulatorState {
   profSit: string;
@@ -52,6 +55,8 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
   const setState = (updates: Partial<TaxSimulatorState>) => {
     onStateChange({ ...initialState, ...updates });
   };
+
+  const { flowMode, enterFlow, exitFlow } = useFlowMode();
 
   /* ── Icons per mode ── */
   const [I1, I2, I3, I4] = (
@@ -169,7 +174,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
      SHARED SECTION JSX (reused across all modes)
   ════════════════════════════════════════════════ */
   const sectionHeader = (icon: React.ReactNode, title: string) => (
-    <h3 className="text-[14px] font-[800] text-[#781D1D] mb-4 flex items-center border-b pb-2">
+    <h3 className="text-[14px] font-[800] text-[#7B98B8] mb-4 flex items-center border-b pb-2">
       {icon}{title}
     </h3>
   );
@@ -192,7 +197,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
         </div>
         <label className="flex flex-col justify-end gap-2 p-3 bg-slate-50 border border-slate-200 rounded-[8px] cursor-pointer hover:bg-slate-100 transition-colors">
           <span className={lblCls}>Atividade <Tip>Indica se a atividade empresarial é a sua principal fonte de rendimento. Afeta a taxa de Segurança Social aplicável.</Tip></span>
-          <div className="flex items-center gap-2"><input type="checkbox" checked={isMainAct} onChange={e=>setState({isMainAct: e.target.checked})} className="w-4 h-4 accent-[#781D1D]" /><span className="text-[13px] font-[600] text-slate-700">Principal</span></div>
+          <div className="flex items-center gap-2"><input type="checkbox" checked={isMainAct} onChange={e=>setState({isMainAct: e.target.checked})} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Principal</span></div>
         </label>
         <div>
           <label className={lblCls}>Rend. Atual / Ano <Tip>O rendimento bruto que recebe atualmente (antes de impostos e descontos). Serve para comparar o que ganha como empregado vs. empresário.</Tip></label>
@@ -278,15 +283,22 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
     </div>
   );
 
+  const steps: FlowStep<TaxSimulatorState>[] = [
+    { id: 'folha1', label: 'Dados do Promotor', description: 'Situação atual, idade, rendimentos e necessidades mensais.', render: () => folha1 },
+    { id: 'folha2', label: 'O Negócio', description: 'Tipo de venda, público, faturação esperada e transparência fiscal.', render: () => folha2 },
+    { id: 'folha3', label: 'Investimento Inicial', description: 'Equipamento, licenças, obras e fundo de maneio.', render: () => folha3 },
+    { id: 'folha4', label: 'Controlo de Custos', description: 'Custos fixos, variáveis e contabilidade.', render: () => folha4 },
+  ];
+
   const winnerBanner = (
     <section className={cn("p-6 rounded-[20px] border-2 flex flex-col md:flex-row items-start gap-4 shadow-sm",
       winner === 'LDA' ? "bg-[#FDF2F2] border-[#F8B4B4]" : "bg-emerald-50 border-emerald-200")}>
-      <div className={cn("p-3 rounded-[14px]", winner === 'LDA' ? "bg-[#FDE8E8] text-[#781D1D]" : "bg-emerald-100 text-emerald-600")}>
+      <div className={cn("p-3 rounded-[14px]", winner === 'LDA' ? "bg-[#FDE8E8] text-[#7B98B8]" : "bg-emerald-100 text-emerald-600")}>
         <CheckCircle2 className="w-7 h-7"/>
       </div>
       <div className="flex-1">
         <div className="text-[11px] font-[800] uppercase tracking-[1px] mb-1 opacity-70">Parecer & Conclusão</div>
-        <h3 className={cn("text-[20px] font-[800] tracking-tight mb-2", winner === 'LDA' ? "text-[#781D1D]" : "text-emerald-900")}>
+        <h3 className={cn("text-[20px] font-[800] tracking-tight mb-2", winner === 'LDA' ? "text-[#7B98B8]" : "text-emerald-900")}>
           Regime Ideal: {winner === 'LDA' ? 'Sociedade Unipessoal / Lda' : 'Trabalhador Independente (ENI)'}
         </h3>
         <p className={cn("text-[14px] leading-relaxed font-[500]", winner === 'LDA' ? "text-[#5A1313]" : "text-emerald-800")}>
@@ -355,10 +367,10 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
   );
 
   const ldaCard = (
-    <div className={cn("bg-white border-2 rounded-[20px] p-6 shadow-sm flex flex-col", winner === 'LDA' ? "border-[#781D1D] ring-4 ring-[#781D1D]/10" : "border-[#E2E8F0]")}>
+    <div className={cn("bg-white border-2 rounded-[20px] p-6 shadow-sm flex flex-col", winner === 'LDA' ? "border-[#7B98B8] ring-4 ring-[#7B98B8]/10" : "border-[#E2E8F0]")}>
       <h4 className="text-[18px] font-[800] text-[#0F172A] mb-2 flex items-center justify-between">
         Sociedade {results.transparenciaFiscal ? '(Transp. Fiscal)' : '(Lda / Unipessoal)'}
-        {winner === 'LDA' && <span className="bg-[#781D1D] text-white text-[10px] font-[800] uppercase px-3 py-1 rounded-full tracking-widest">Melhor Opção</span>}
+        {winner === 'LDA' && <span className="bg-[#7B98B8] text-white text-[10px] font-[800] uppercase px-3 py-1 rounded-full tracking-widest">Melhor Opção</span>}
       </h4>
       {results.transparenciaFiscal && (
         <div className="mb-4 flex items-center gap-2 bg-purple-50 border border-purple-200 rounded-[8px] px-3 py-2">
@@ -400,7 +412,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
         </div>
         <div className="flex justify-between items-center">
           <span className="text-[11px] font-[700] text-slate-500 uppercase tracking-widest flex items-center gap-1">Cash-Flow Holding Y1 <Tip>Cash-Flow da sociedade (Holding) = lucro da empresa mais a remuneração do gerente, antes de distribuir dividendos. Y1 = Ano 1.</Tip></span>
-          <span className="text-[18px] font-[800] text-[#781D1D]">{ptEur(results.lda.cashFlow)}</span>
+          <span className="text-[18px] font-[800] text-[#7B98B8]">{ptEur(results.lda.cashFlow)}</span>
         </div>
       </div>
       {!results.transparenciaFiscal && results.lda.profit > 0 && (
@@ -478,6 +490,30 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
     </>
   );
 
+  const resultsContent = (
+    <div className="flex flex-col gap-6 lg:gap-8">
+      {winnerBanner}{irsChips}
+      <div className="text-[11px] font-[800] text-[#64748B] uppercase tracking-[1px]">Folha 5 &amp; 6 — Enquadramento Tático (Resultados)</div>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">{eniCard}{ldaCard}</div>
+      {extras}
+    </div>
+  );
+
+  if (flowMode) {
+    return (
+      <FlowWizard
+        open={flowMode}
+        onClose={exitFlow}
+        title="Estudo de Negócio"
+        icon={Calculator}
+        steps={steps}
+        resultsStep={{ label: 'Resultados do Estudo', description: 'Comparação ENI vs Lda com base nos dados introduzidos.', render: resultsContent }}
+        state={initialState}
+        setState={setState}
+      />
+    );
+  }
+
   /* ════════════════════════════════════════════════
      MODE 0 — SPLIT (left inputs / right results)
   ════════════════════════════════════════════════ */
@@ -487,10 +523,20 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
         <div className="lg:w-[460px] shrink-0 bg-white border-b border-[#E2E8F0] lg:border-b-0 lg:border-r lg:overflow-y-auto lg:h-full flex flex-col">
           <div className="p-6 md:p-8 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md z-20 border-b border-[#F1F5F9]">
             <div>
-              <h2 className="text-[20px] font-[800] tracking-[-0.5px] text-[#0F172A]">Recofatima Simuladores</h2>
+              <h2 className="text-[20px] font-[800] tracking-[-0.5px] text-[#0F172A]">Estudo 360</h2>
               <div className="text-[11px] font-[700] uppercase tracking-[1px] text-[#4F46E5] mt-1">Estudo de Negócio • OE 2026</div>
             </div>
-            <button onClick={resetAll} className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-[8px] transition-colors" title="Repor"><RefreshCw size={18} /></button>
+            <div className="flex items-center gap-2">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={enterFlow}
+                className="flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#7B98B8] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all"
+              >
+                <ListOrdered className="w-4 h-4" /> Vista simplificada
+              </motion.button>
+              <button onClick={resetAll} className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-[8px] transition-colors" title="Repor"><RefreshCw size={18} /></button>
+            </div>
           </div>
           <div className="p-6 md:p-8 space-y-10">
             {folha1}{folha2}{folha3}{folha4}
@@ -522,7 +568,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
         {/* Sticky summary bar */}
         <div className="sticky top-0 z-20 bg-[#111827] text-white px-6 py-3 flex items-center gap-6 shadow-lg">
           <span className={cn("text-[11px] font-[900] uppercase tracking-[2px] px-3 py-1 rounded-full",
-            winner === 'LDA' ? "bg-[#781D1D]" : "bg-emerald-600")}>{winner}</span>
+            winner === 'LDA' ? "bg-[#7B98B8]" : "bg-emerald-600")}>{winner}</span>
           <div className="flex gap-6 text-[12px]">
             <span className="text-slate-400">ENI: <strong className="text-white">{ptEur(results.eni.net)}</strong></span>
             <span className="text-slate-400">LDA: <strong className="text-white">{ptEur(results.lda.net)}</strong></span>
@@ -561,7 +607,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           <div className="flex items-center gap-4 mb-5">
             <h1 className="text-[22px] font-[800] text-[#064E3B] tracking-tight">Enquadramento Fiscal 2026</h1>
             <div className={cn("ml-auto px-4 py-1.5 rounded-full text-[12px] font-[800] uppercase tracking-wider",
-              winner === 'LDA' ? "bg-[#781D1D] text-white" : "bg-emerald-600 text-white")}>
+              winner === 'LDA' ? "bg-[#7B98B8] text-white" : "bg-emerald-600 text-white")}>
               {winner === 'LDA' ? 'Sociedade vence' : 'ENI vence'} por {ptEur(diff)}
             </div>
             <button onClick={resetAll} className="p-2 rounded-[8px] text-slate-500 hover:text-slate-900 hover:bg-white transition-colors"><RefreshCw size={16}/></button>
@@ -574,7 +620,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
             <div className="bg-white rounded-[20px] border border-emerald-100 p-5 shadow-sm">{folha2}</div>
 
             {/* Winner summary card */}
-            <div className={cn("rounded-[20px] p-5 shadow-sm", winner === 'LDA' ? "bg-[#781D1D] text-white" : "bg-emerald-600 text-white")}>
+            <div className={cn("rounded-[20px] p-5 shadow-sm", winner === 'LDA' ? "bg-[#7B98B8] text-white" : "bg-emerald-600 text-white")}>
               <div className="text-[11px] font-[800] uppercase tracking-[2px] opacity-80 mb-2">Regime Ideal</div>
               <div className="text-[28px] font-[900] leading-none mb-3">{winner === 'LDA' ? 'Sociedade' : 'ENI'}</div>
               <div className="space-y-2 opacity-90">
@@ -643,7 +689,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           <div className="bg-[#0F172A] rounded-[16px] p-4 grid grid-cols-3 gap-3 text-white">
             <div className="text-center">
               <div className="text-[10px] uppercase font-[700] opacity-60 mb-1">Regime</div>
-              <div className={cn("text-[14px] font-[900] px-2 py-0.5 rounded-full inline-block", winner === 'LDA' ? "bg-[#781D1D]" : "bg-emerald-500")}>{winner}</div>
+              <div className={cn("text-[14px] font-[900] px-2 py-0.5 rounded-full inline-block", winner === 'LDA' ? "bg-[#7B98B8]" : "bg-emerald-500")}>{winner}</div>
             </div>
             <div className="text-center">
               <div className="text-[10px] uppercase font-[700] opacity-60 mb-1">ENI Net</div>
@@ -693,7 +739,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
             )},
           ].map(({ title, icon, content }, i) => (
             <div key={i} className="border border-slate-100 rounded-[12px] p-3">
-              <div className="text-[12px] font-[800] text-[#781D1D] mb-2">{icon}{title}</div>
+              <div className="text-[12px] font-[800] text-[#7B98B8] mb-2">{icon}{title}</div>
               {content}
             </div>
           ))}
@@ -736,7 +782,17 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
                 <span className="ml-3 text-[#D97706] text-[28px]">↑ {ptEur(diff)}</span>
               </h1>
             </div>
-            <button onClick={resetAll} className="mt-1 p-2 rounded-[8px] text-stone-400 hover:text-white hover:bg-stone-800 transition-colors"><RefreshCw size={16}/></button>
+            <div className="flex items-center gap-2">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={enterFlow}
+                className="flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#7B98B8] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all"
+              >
+                <ListOrdered className="w-4 h-4" /> Vista simplificada
+              </motion.button>
+              <button onClick={resetAll} className="mt-1 p-2 rounded-[8px] text-stone-400 hover:text-white hover:bg-stone-800 transition-colors"><RefreshCw size={16}/></button>
+            </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[

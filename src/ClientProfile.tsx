@@ -1,17 +1,22 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { User, Building2, FileText, Download, Ticket, Wallet, MapPin } from 'lucide-react';
+import { User, Building2, FileText, Download, Ticket, Wallet, MapPin, ListOrdered, Package } from 'lucide-react';
+import { FlowWizard, type FlowStep } from './FlowWizard';
+import { useFlowMode } from './AnimatedPage';
 import { Tip } from './Tip';
 import { jsPDF } from 'jspdf';
 import PDFPreviewEditor from './PDFPreviewEditor';
+import ExportPackageModal from './ExportPackageModal';
+import type { OfficeSettings } from './lib/officeSettings';
+import type { HonorariosConfig } from './lib/honorarios';
 
 // Converte o SVG do logotipo para PNG data URL via canvas
 const svgLogoToPng = (): Promise<string> => {
   return new Promise((resolve) => {
-    const svgContent = `<svg viewBox="0 0 100 80" width="400" height="320" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="80" fill="white"/><path d="M 45 10 A 30 30 0 0 0 45 70" stroke="#333333" stroke-width="2.5" stroke-linecap="round"/><path d="M 30 45 L 42 58 L 65 25" stroke="#781D1D" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    const svgContent = `<svg viewBox="0 0 100 100" width="400" height="400" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="white"/><path d="M 70 20 A 35 35 0 1 1 35 22" stroke="#7B98B8" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M 60 10 L 70 20 L 60 30" stroke="#525C66" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="50" y="64" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="700" fill="#525C66" text-anchor="middle">360</text></svg>`;
     const canvas = document.createElement('canvas');
     canvas.width = 400;
-    canvas.height = 320;
+    canvas.height = 400;
     const ctx = canvas.getContext('2d');
     if (!ctx) { resolve(''); return; }
     const img = new Image();
@@ -19,7 +24,7 @@ const svgLogoToPng = (): Promise<string> => {
     const url = URL.createObjectURL(blob);
     img.onload = () => {
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, 400, 320);
+      ctx.fillRect(0, 0, 400, 400);
       ctx.drawImage(img, 0, 0);
       URL.revokeObjectURL(url);
       resolve(canvas.toDataURL('image/png'));
@@ -40,13 +45,15 @@ import {
 } from './lib/pt2026';
 
 /**
- * NIF (Número de Identificação Fiscal) PT validation:
- * 9 digits, first digit denotes entity type, last digit is a mod-11 checksum.
+ * Validação de NIF (Número de Identificação Fiscal) PT.
+ * 9 dígitos; primeiro dígito ∈ {1,2,3,4,5,6,7,8,9} (0 não é atribuído);
+ * último dígito é checksum mod-11. Rejeita também "000000000" (passaria a
+ * checksum por coincidência).
  */
 function isValidNIFPT(nif: string): boolean {
   if (!/^\d{9}$/.test(nif)) return false;
-  const validFirst = ['1', '2', '3', '5', '6', '8', '9'];
-  if (!validFirst.includes(nif[0]) && nif[0] !== '4' && nif[0] !== '7') return false;
+  if (nif[0] === '0') return false;
+  if (/^0+$/.test(nif)) return false;
   let total = 0;
   for (let i = 0; i < 8; i++) total += parseInt(nif[i], 10) * (9 - i);
   const mod = total % 11;
@@ -55,6 +62,7 @@ function isValidNIFPT(nif: string): boolean {
 }
 
 export interface ClientProfile {
+  // ─── 1. Identificação & dados base (steps 1-3) ──────────────────────────
   nomeCliente: string;
   nif: string;
   email: string;
@@ -84,6 +92,47 @@ export interface ClientProfile {
   rendimentoMensalEni: number;
   regimeSs: 'general' | 'simplified';
   tipoRendimentoSs: 'servicos' | 'bens';
+
+  // ─── 2. Diagnóstico aprofundado (steps 4-6, absorvido da antiga Ficha) ─
+  custos: {
+    mercadorias: number; rendas: number; combustiveis: number; viaturas: number;
+    equipamentos: number; servicosExternos: number; outros: number;
+  };
+  investimento: {
+    equipamentos: number; viaturas: number; obras: number; stock: number; outro: number;
+  };
+  viaturasDiag: {
+    tem: 'sim' | 'nao' | '';
+    tipo: { comercial: boolean; passageiros: boolean; eletrico: boolean; hibrido: boolean };
+    valor: number;
+  };
+  societaria: {
+    numeroSocios: number;
+    socios: Array<{ nome: string; percentagem: number }>;
+    gerencia: 'um' | 'varios' | '';
+  };
+  distribuicao: { salario: boolean; dividendos: boolean; reinvestir: boolean; misto: boolean };
+  fiscalAtual: {
+    dividasFiscais: 'sim' | 'nao' | '';
+    dividasSS: 'sim' | 'nao' | '';
+    execucoesFiscais: 'sim' | 'nao' | '';
+  };
+  objetivos: {
+    menosImpostos: boolean; crescer: boolean; imobiliario: boolean;
+    variasEmpresas: boolean; planeamentoFamiliar: boolean;
+  };
+  intencoes: {
+    imoveis: boolean; viaturasEmpresa: boolean; ativosFinanceiros: boolean;
+    grupoEmpresas: boolean; internacionalizar: boolean;
+  };
+  documentos: {
+    irs: boolean; balancete: boolean; ies: boolean; modelo22: boolean;
+    dec_iva: boolean; contratos: boolean; extratos: boolean;
+  };
+  analiseInterna: {
+    eniVsLda: string; simplifVsOrganizada: string; art53VsNormal: string;
+    salarioVsDividendos: string; planeamento: string; observacoes: string; recomendacoes: string;
+  };
 }
 
 interface TaxSimulatorState {
@@ -141,6 +190,9 @@ interface Props {
   vehicleState?: VehicleSimulatorState;
   ticketState?: TicketSimulatorState;
   ssState?: SSState;
+  office?: OfficeSettings;
+  honorarios?: HonorariosConfig;
+  onGoToOfficeSettings?: () => void;
 }
 
 const inputClass = "w-full pl-[16px] pr-[16px] py-[12px] bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-[8px] text-[15px] font-[600] text-[#0F172A] focus:border-[#0F172A] transition-all outline-none";
@@ -149,14 +201,19 @@ const labelClass = "block text-[11px] font-[700] uppercase tracking-[1px] text-[
 const ptEur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(v || 0);
 const ptPct = (v: number) => `${(v * 100).toFixed(1)}%`;
 
-export default function ClientProfile({ profile, onChange, taxState, vehicleState, ticketState, ssState }: Props) {
+export default function ClientProfile({
+  profile, onChange, taxState, vehicleState, ticketState, ssState,
+  office, honorarios, onGoToOfficeSettings,
+}: Props) {
   const [showEditor, setShowEditor] = useState(false);
+  const [showPackage, setShowPackage] = useState(false);
 
   const updateProfile = (field: keyof ClientProfile, value: any) => {
     onChange({ ...profile, [field]: value });
   };
 
   const currentYear = new Date().getFullYear();
+  const { flowMode, enterFlow, exitFlow } = useFlowMode();
 
   // ─── PDF GENERATION ───────────────────────────────────────────────────────
 
@@ -201,7 +258,7 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
     if (logoDataUrl) doc.addImage(logoDataUrl, 'PNG', ml, 2.5, 8, 8);
     textC(NAVY);
     doc.setFontSize(8.5); doc.setFont('helvetica', 'bold');
-    doc.text('RECOFATIMA', ml + 10, 7.5);
+    doc.text('Estudo 360', ml + 10, 7.5);
     textC(SLATE_500);
     doc.setFontSize(6.5); doc.setFont('helvetica', 'normal');
     doc.text('Contabilidade', ml + 10, 11);
@@ -218,7 +275,7 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
     textC(SLATE_500);
     doc.setFontSize(6); doc.setFont('helvetica', 'normal');
     doc.text(
-      'Este relatório é uma estimativa. Consulte sempre um contabilista certificado (OCC).  RECOFATIMA Contabilidade • OE 2026',
+      'Este relatório é uma estimativa. Consulte sempre um contabilista certificado (OCC).  Estudo 360 • OE 2026',
       pw / 2, ph - 4, { align: 'center' }
     );
 
@@ -477,8 +534,515 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
     doc.text(noteLines, ml, y);
 
     // ── GRAVAR ───────────────────────────────────────────────────────────────
-    doc.save(`Recofatima_${profile.nomeCliente || 'Simulacao'}_${today.getFullYear()}.pdf`);
+    doc.save(`Estudo360_${profile.nomeCliente || 'Simulacao'}_${today.getFullYear()}.pdf`);
   };
+
+  const steps: FlowStep<ClientProfile>[] = [
+    {
+      id: 'identificacao',
+      label: 'Identificação do Cliente',
+      description: 'Dados pessoais e de contacto.',
+      render: (st, setSt) => (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+          <div className="col-span-2">
+            <label className={labelClass}>Nome do Cliente / Empresa</label>
+            <input type="text" autoComplete="name" value={st.nomeCliente} onChange={e => setSt({ nomeCliente: e.target.value })} className={inputClass} placeholder="Nome completo ou denominação social" />
+          </div>
+          <div>
+            <label className={labelClass}>NIF</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="\d{9}"
+              maxLength={9}
+              value={st.nif}
+              onChange={e => setSt({ nif: e.target.value.replace(/\D/g, '').slice(0, 9) })}
+              className={inputClass}
+              placeholder="123456789"
+              aria-invalid={st.nif.length > 0 && !isValidNIFPT(st.nif)}
+              aria-describedby="nif-help"
+            />
+            {st.nif.length > 0 && !isValidNIFPT(st.nif) && (
+              <p id="nif-help" className="text-[11px] text-amber-700 font-[600] mt-1">
+                NIF deve ter 9 dígitos e checksum válido.
+              </p>
+            )}
+          </div>
+          <div>
+            <label className={labelClass}>Telefone</label>
+            <input type="tel" autoComplete="tel" inputMode="tel" value={st.telefone} onChange={e => setSt({ telefone: e.target.value })} className={inputClass} placeholder="912345678" />
+          </div>
+          <div className="col-span-2">
+            <label className={labelClass}>Email</label>
+            <input type="email" autoComplete="email" inputMode="email" value={st.email} onChange={e => setSt({ email: e.target.value })} className={inputClass} placeholder="email@empresa.pt" />
+          </div>
+          <div className="col-span-2">
+            <label className={labelClass}>Morada</label>
+            <input type="text" autoComplete="street-address" value={st.morada} onChange={e => setSt({ morada: e.target.value })} className={inputClass} placeholder="Rua, Avenida..." />
+          </div>
+          <div>
+            <label className={labelClass}>Código Postal</label>
+            <input type="text" autoComplete="postal-code" inputMode="numeric" value={st.codigoPostal} onChange={e => setSt({ codigoPostal: e.target.value })} className={inputClass} placeholder="1000-001" maxLength={8} />
+          </div>
+          <div>
+            <label className={labelClass}>Localidade</label>
+            <input type="text" autoComplete="address-level2" value={st.localidade} onChange={e => setSt({ localidade: e.target.value })} className={inputClass} placeholder="Lisboa" />
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'empresariais',
+      label: 'Dados Empresariais',
+      description: 'Tipo de entidade, CAE, faturação, regime de IVA e contabilidade.',
+      render: (st, setSt) => (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+          <div>
+            <label className={labelClass}>Tipo de Entidade <Tip>A forma jurídica do negócio: ENI é Empresário em Nome Individual (sem empresa criada), Lda. é uma sociedade de responsabilidade limitada, SA é uma sociedade anónima.</Tip></label>
+            <select value={st.tipoEntidade} onChange={e => setSt({ tipoEntidade: e.target.value })} className={inputClass}>
+              <option value="eni">ENI (Recibos Verdes)</option>
+              <option value="lda">Lda (Sociedade)</option>
+              <option value="unipessoal">Unipessoal Lda</option>
+              <option value="sa">S.A.</option>
+              <option value="socio_unico">Socio Único</option>
+            </select>
+          </div>
+          <div>
+            <label className={labelClass}>CAE</label>
+            <input type="text" value={st.cae} onChange={e => setSt({ cae: e.target.value })} className={inputClass} placeholder="62020" />
+          </div>
+          <div>
+            <label className={labelClass}>Faturação Anual Prevista <Tip>O total de vendas/serviços que espera faturar num ano. Base para escolher o regime de IVA e calcular impostos.</Tip></label>
+            <input type="number" value={st.faturaçaoAnualPrevista === 0 ? '' : st.faturaçaoAnualPrevista} onChange={e => setSt({ faturaçaoAnualPrevista: Number(e.target.value) || 0 })} className={inputClass} placeholder="60000" />
+          </div>
+          <div>
+            <label className={labelClass}>Nr. Funcionários <Tip>Quantas pessoas trabalham na empresa com contrato de trabalho. Afeta os custos de Segurança Social patronal.</Tip></label>
+            <input type="number" value={st.nrFuncionarios === 0 ? '' : st.nrFuncionarios} onChange={e => setSt({ nrFuncionarios: Number(e.target.value) || 0 })} className={inputClass} placeholder="5" />
+          </div>
+          <div>
+            <label className={labelClass}>Regime IVA <Tip>IVA é o Imposto sobre o Valor Acrescentado. O regime trimestral entrega declarações de 3 em 3 meses; o mensal, todos os meses. Isentos não cobram IVA.</Tip></label>
+            <select value={st.regimeIva} onChange={e => setSt({ regimeIva: e.target.value })} className={inputClass}>
+              <option value="isento">Isento (Art. 53.º CIVA)</option>
+              <option value="normal_trimestral">Normal Trimestral</option>
+              <option value="normal_mensal">Normal Mensal</option>
+              <option value="pequenos_retalhistas">Pequenos Retalhistas</option>
+            </select>
+          </div>
+          <div>
+            <label className={labelClass}>Regime de Contabilidade <Tip>Contabilidade Organizada exige contabilista e permite deduzir mais custos. Regime Simplificado é mais fácil mas com menos deduções.</Tip></label>
+            <select
+              value={st.regimeContabilidade}
+              onChange={e => setSt({ regimeContabilidade: e.target.value })}
+              className={inputClass}
+            >
+              <option value="simplificado">Regime Simplificado</option>
+              <option value="organizada">Contabilidade Organizada</option>
+              {st.tipoEntidade !== 'eni' && <option value="transparencia_fiscal">Transparência Fiscal</option>}
+              {st.tipoEntidade !== 'eni' && <option value="retgs">RETGS (Grupo de Empresas)</option>}
+              <option value="nao_residente">Não Residente</option>
+            </select>
+          </div>
+          <div>
+            <label className={labelClass}>Ano Início Atividade <Tip>O ano em que iniciou a atividade. Determina há quantos anos está ativo para efeitos de IRS Jovem.</Tip></label>
+            <input type="number" value={st.inicioAtividade === 0 ? '' : st.inicioAtividade} onChange={e => setSt({ inicioAtividade: Number(e.target.value) || 0 })} className={inputClass} min={2000} max={currentYear} />
+          </div>
+          <div>
+            <label className={labelClass}>Atividade Principal <Tip>O setor de negócio principal: se presta serviços (consultoria, design, etc.) ou vende bens/produtos físicos.</Tip></label>
+            <select value={st.atividadePrincipal} onChange={e => setSt({ atividadePrincipal: e.target.value })} className={inputClass}>
+              <option value="servicos">Prestação de Serviços</option>
+              <option value="bens">Venda de Bens</option>
+            </select>
+          </div>
+          <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-[8px] cursor-pointer">
+            <input type="checkbox" checked={st.isSazonal} onChange={e => setSt({ isSazonal: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" />
+            <span className="text-[13px] font-[600] text-slate-700">Atividade Sazonal <Tip>Se o negócio só funciona em certas épocas (ex: turismo de praia, agricultura). Afeta os cálculos de SS.</Tip></span>
+          </label>
+          {/* Regime warnings */}
+          {st.tipoEntidade === 'eni' && st.regimeContabilidade === 'simplificado' && st.faturaçaoAnualPrevista > 200000 && (
+            <div className="col-span-2 flex gap-2 p-3 bg-amber-50 border border-amber-200 rounded-[8px]">
+              <span className="text-amber-600 shrink-0 mt-0.5">⚠</span>
+              <p className="text-[12px] text-amber-900 font-[600]">Faturação prevista excede €200.000 — <strong>Regime Simplificado não é permitido</strong>. Altere para Contabilidade Organizada (obrigatório acima deste limite — Art. 28.º CIRS).</p>
+            </div>
+          )}
+          {st.tipoEntidade === 'eni' && st.regimeContabilidade === 'transparencia_fiscal' && (
+            <div className="col-span-2 flex gap-2 p-3 bg-red-50 border border-red-200 rounded-[8px]">
+              <span className="text-red-600 shrink-0 mt-0.5">✕</span>
+              <p className="text-[12px] text-red-900 font-[600]">Transparência Fiscal não se aplica a ENI — aplica-se apenas a sociedades de profissionais (Lda./SA). Selecione outro regime.</p>
+            </div>
+          )}
+          {(st.tipoEntidade === 'lda' || st.tipoEntidade === 'unipessoal' || st.tipoEntidade === 'sa' || st.tipoEntidade === 'socio_unico') && st.regimeContabilidade === 'simplificado' && st.faturaçaoAnualPrevista > 200000 && (
+            <div className="col-span-2 flex gap-2 p-3 bg-amber-50 border border-amber-200 rounded-[8px]">
+              <span className="text-amber-600 shrink-0 mt-0.5">⚠</span>
+              <p className="text-[12px] text-amber-900 font-[600]">Regime Simplificado IRC apenas disponível até €200.000 de faturação (Art. 86.º-A CIRC). Considere Contabilidade Organizada.</p>
+            </div>
+          )}
+          {st.regimeContabilidade === 'retgs' && (
+            <div className="col-span-2 flex gap-2 p-3 bg-blue-50 border border-blue-200 rounded-[8px]">
+              <span className="text-blue-600 shrink-0 mt-0.5">ℹ</span>
+              <p className="text-[12px] text-blue-900 font-[600]">RETGS aplica-se a grupos de sociedades com participação ≥75%. Os simuladores desta ferramenta não cobrem o regime de tributação consolidada.</p>
+            </div>
+          )}
+          {st.regimeContabilidade === 'nao_residente' && (
+            <div className="col-span-2 flex gap-2 p-3 bg-blue-50 border border-blue-200 rounded-[8px]">
+              <span className="text-blue-600 shrink-0 mt-0.5">ℹ</span>
+              <p className="text-[12px] text-blue-900 font-[600]">Não residentes: tributação depende de convenções de dupla tributação e da natureza dos rendimentos (estabelecimento estável, retenções na fonte, etc.).</p>
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: 'fiscais',
+      label: 'Dados Fiscais e Família',
+      description: 'Idade, estado civil, dependentes e benefícios fiscais.',
+      render: (st, setSt) => (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+          <div>
+            <label className={labelClass}>Idade <Tip>A sua idade. Determina se tem direito ao benefício de IRS Jovem (até 35 anos).</Tip></label>
+            <input type="number" value={st.idade === 0 ? '' : st.idade} onChange={e => setSt({ idade: Number(e.target.value) || 0 })} className={inputClass} min={18} max={100} />
+          </div>
+          <div>
+            <label className={labelClass}>Estado Civil <Tip>O estado civil afeta as tabelas de retenção de IRS (quanto desconta por mês). Casado com dois titulares tem tabelas diferentes.</Tip></label>
+            <select value={st.estadoCivil} onChange={e => setSt({ estadoCivil: e.target.value })} className={inputClass}>
+              <option value="solteiro">Solteiro</option>
+              <option value="casado">Casado</option>
+              <option value="uniao_facto">União de Facto</option>
+              <option value="divorciado">Divorciado</option>
+              <option value="viuvo">Viúvo</option>
+            </select>
+          </div>
+          <div>
+            <label className={labelClass}>Nr. Dependentes <Tip>Número de filhos ou dependentes a cargo. Cada dependente dá direito a deduções no IRS.</Tip></label>
+            <input type="number" value={st.nrDependentes === 0 ? '' : st.nrDependentes} onChange={e => setSt({ nrDependentes: Number(e.target.value) || 0 })} className={inputClass} min={0} max={10} />
+          </div>
+          <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-[8px] cursor-pointer">
+            <input type="checkbox" checked={st.cônjugeRendimentos} onChange={e => setSt({ cônjugeRendimentos: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" />
+            <span className="text-[13px] font-[600] text-slate-700">Cônjuge c/ Rendimentos</span>
+          </label>
+          <label className="col-span-2 flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-[8px] cursor-pointer">
+            <input type="checkbox" checked={st.beneficioJovem} onChange={e => setSt({ beneficioJovem: e.target.checked })} className="w-4 h-4 accent-blue-600" />
+            <span className="text-[13px] font-[600] text-blue-900">Benefício Jovem IRS (≤35 anos — CIRS Art. 12º-B) <Tip>Isenção parcial de IRS para jovens até 35 anos nos primeiros 10 anos de carreira (100% ano 1; 75% anos 2-4; 50% anos 5-7; 25% anos 8-10).</Tip></span>
+          </label>
+        </div>
+      ),
+    },
+    {
+      id: 'custos',
+      label: 'Custos & Investimento',
+      description: 'Estrutura de custos anuais correntes e investimento inicial previsto.',
+      render: (st, setSt) => {
+        const setCustos = (patch: Partial<ClientProfile['custos']>) => setSt({ custos: { ...st.custos, ...patch } });
+        const setInvest = (patch: Partial<ClientProfile['investimento']>) => setSt({ investimento: { ...st.investimento, ...patch } });
+        const num = (v: number) => v === 0 ? '' : v;
+        return (
+          <div className="space-y-7">
+            <div>
+              <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Custos Anuais (€)</h3>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+                <div><label className={labelClass}>Mercadorias / Matérias-primas</label><input type="number" inputMode="decimal" value={num(st.custos.mercadorias)} onChange={e => setCustos({ mercadorias: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
+                <div><label className={labelClass}>Rendas e Espaço</label><input type="number" inputMode="decimal" value={num(st.custos.rendas)} onChange={e => setCustos({ rendas: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
+                <div><label className={labelClass}>Combustíveis</label><input type="number" inputMode="decimal" value={num(st.custos.combustiveis)} onChange={e => setCustos({ combustiveis: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
+                <div><label className={labelClass}>Manutenção de Viaturas</label><input type="number" inputMode="decimal" value={num(st.custos.viaturas)} onChange={e => setCustos({ viaturas: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
+                <div><label className={labelClass}>Equipamentos / Material</label><input type="number" inputMode="decimal" value={num(st.custos.equipamentos)} onChange={e => setCustos({ equipamentos: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
+                <div><label className={labelClass}>Serviços Externos (contabilista, advocacia…)</label><input type="number" inputMode="decimal" value={num(st.custos.servicosExternos)} onChange={e => setCustos({ servicosExternos: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
+                <div className="col-span-2"><label className={labelClass}>Outros Custos</label><input type="number" inputMode="decimal" value={num(st.custos.outros)} onChange={e => setCustos({ outros: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Investimento Inicial (€)</h3>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+                <div><label className={labelClass}>Equipamentos</label><input type="number" inputMode="decimal" value={num(st.investimento.equipamentos)} onChange={e => setInvest({ equipamentos: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
+                <div><label className={labelClass}>Viaturas</label><input type="number" inputMode="decimal" value={num(st.investimento.viaturas)} onChange={e => setInvest({ viaturas: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
+                <div><label className={labelClass}>Obras / Adaptações</label><input type="number" inputMode="decimal" value={num(st.investimento.obras)} onChange={e => setInvest({ obras: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
+                <div><label className={labelClass}>Stock Inicial</label><input type="number" inputMode="decimal" value={num(st.investimento.stock)} onChange={e => setInvest({ stock: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
+                <div className="col-span-2"><label className={labelClass}>Outro Investimento</label><input type="number" inputMode="decimal" value={num(st.investimento.outro)} onChange={e => setInvest({ outro: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
+              </div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      id: 'viaturas-socios',
+      label: 'Viaturas, Sócios & Dívidas',
+      description: 'Veículos da empresa, estrutura societária e situação fiscal atual.',
+      render: (st, setSt) => {
+        const setVD = (patch: Partial<ClientProfile['viaturasDiag']>) => setSt({ viaturasDiag: { ...st.viaturasDiag, ...patch } });
+        const setVDTipo = (patch: Partial<ClientProfile['viaturasDiag']['tipo']>) => setSt({ viaturasDiag: { ...st.viaturasDiag, tipo: { ...st.viaturasDiag.tipo, ...patch } } });
+        const setSoc = (patch: Partial<ClientProfile['societaria']>) => setSt({ societaria: { ...st.societaria, ...patch } });
+        const setFA = (patch: Partial<ClientProfile['fiscalAtual']>) => setSt({ fiscalAtual: { ...st.fiscalAtual, ...patch } });
+        const setDist = (patch: Partial<ClientProfile['distribuicao']>) => setSt({ distribuicao: { ...st.distribuicao, ...patch } });
+        const num = (v: number) => v === 0 ? '' : v;
+        const cbCls = "flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-[8px] cursor-pointer";
+        return (
+          <div className="space-y-7">
+            <div>
+              <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Viaturas da Empresa</h3>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+                <div>
+                  <label className={labelClass}>Tem viaturas afectas?</label>
+                  <select value={st.viaturasDiag.tem} onChange={e => setVD({ tem: e.target.value as 'sim'|'nao'|'' })} className={inputClass}>
+                    <option value="">—</option><option value="sim">Sim</option><option value="nao">Não</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>Valor total (€)</label>
+                  <input type="number" inputMode="decimal" value={num(st.viaturasDiag.valor)} onChange={e => setVD({ valor: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" />
+                </div>
+                <div className="col-span-2">
+                  <label className={labelClass}>Tipo de viaturas</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className={cbCls}><input type="checkbox" checked={st.viaturasDiag.tipo.comercial} onChange={e => setVDTipo({ comercial: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Comercial / Mercadorias</span></label>
+                    <label className={cbCls}><input type="checkbox" checked={st.viaturasDiag.tipo.passageiros} onChange={e => setVDTipo({ passageiros: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Ligeira Passageiros</span></label>
+                    <label className={cbCls}><input type="checkbox" checked={st.viaturasDiag.tipo.eletrico} onChange={e => setVDTipo({ eletrico: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Eléctrica</span></label>
+                    <label className={cbCls}><input type="checkbox" checked={st.viaturasDiag.tipo.hibrido} onChange={e => setVDTipo({ hibrido: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Híbrida Plug-in</span></label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Estrutura Societária</h3>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-4 mb-3">
+                <div>
+                  <label className={labelClass}>Nº de Sócios</label>
+                  <input type="number" min={1} max={20} value={num(st.societaria.numeroSocios)} onChange={e => {
+                    const n = Math.max(1, Math.min(20, Number(e.target.value) || 1));
+                    const cur = st.societaria.socios;
+                    const next = cur.length === n ? cur :
+                      n > cur.length
+                        ? [...cur, ...Array(n - cur.length).fill(0).map(() => ({ nome: '', percentagem: 0 }))]
+                        : cur.slice(0, n);
+                    setSoc({ numeroSocios: n, socios: next });
+                  }} className={inputClass} placeholder="1" />
+                </div>
+                <div>
+                  <label className={labelClass}>Gerência</label>
+                  <select value={st.societaria.gerencia} onChange={e => setSoc({ gerencia: e.target.value as 'um'|'varios'|'' })} className={inputClass}>
+                    <option value="">—</option><option value="um">Sócio gerente único</option><option value="varios">Vários sócios gerentes</option>
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {st.societaria.socios.map((socio, i) => (
+                  <div key={i} className="grid grid-cols-[1fr_120px] gap-2 items-center">
+                    <input type="text" value={socio.nome} onChange={e => {
+                      const next = [...st.societaria.socios]; next[i] = { ...next[i], nome: e.target.value }; setSoc({ socios: next });
+                    }} className={inputClass} placeholder={`Sócio ${i+1} — nome`} />
+                    <input type="number" min={0} max={100} value={socio.percentagem === 0 ? '' : socio.percentagem} onChange={e => {
+                      const next = [...st.societaria.socios]; next[i] = { ...next[i], percentagem: Number(e.target.value) || 0 }; setSoc({ socios: next });
+                    }} className={inputClass} placeholder="% capital" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Distribuição de Resultados (preferência)</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <label className={cbCls}><input type="checkbox" checked={st.distribuicao.salario} onChange={e => setDist({ salario: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Salário ao sócio-gerente</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.distribuicao.dividendos} onChange={e => setDist({ dividendos: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Dividendos</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.distribuicao.reinvestir} onChange={e => setDist({ reinvestir: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Reinvestir lucros</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.distribuicao.misto} onChange={e => setDist({ misto: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Misto</span></label>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Situação Fiscal Actual</h3>
+              <div className="grid grid-cols-3 gap-x-4 gap-y-4">
+                <div>
+                  <label className={labelClass}>Dívidas fiscais (AT)</label>
+                  <select value={st.fiscalAtual.dividasFiscais} onChange={e => setFA({ dividasFiscais: e.target.value as 'sim'|'nao'|'' })} className={inputClass}>
+                    <option value="">—</option><option value="nao">Não</option><option value="sim">Sim</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>Dívidas à SS</label>
+                  <select value={st.fiscalAtual.dividasSS} onChange={e => setFA({ dividasSS: e.target.value as 'sim'|'nao'|'' })} className={inputClass}>
+                    <option value="">—</option><option value="nao">Não</option><option value="sim">Sim</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>Execuções fiscais</label>
+                  <select value={st.fiscalAtual.execucoesFiscais} onChange={e => setFA({ execucoesFiscais: e.target.value as 'sim'|'nao'|'' })} className={inputClass}>
+                    <option value="">—</option><option value="nao">Não</option><option value="sim">Sim</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      id: 'objetivos',
+      label: 'Objetivos, Intenções & Documentos',
+      description: 'Objectivos do cliente, planeamento futuro e documentação disponível.',
+      render: (st, setSt) => {
+        const setObj = (patch: Partial<ClientProfile['objetivos']>) => setSt({ objetivos: { ...st.objetivos, ...patch } });
+        const setInt = (patch: Partial<ClientProfile['intencoes']>) => setSt({ intencoes: { ...st.intencoes, ...patch } });
+        const setDoc = (patch: Partial<ClientProfile['documentos']>) => setSt({ documentos: { ...st.documentos, ...patch } });
+        const setAI = (patch: Partial<ClientProfile['analiseInterna']>) => setSt({ analiseInterna: { ...st.analiseInterna, ...patch } });
+        const cbCls = "flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-[8px] cursor-pointer";
+        const taCls = "w-full px-3 py-2 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] text-[#0F172A] focus:border-[#7B98B8] outline-none transition-all resize-y";
+        return (
+          <div className="space-y-7">
+            <div>
+              <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Objetivos do Cliente</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <label className={cbCls}><input type="checkbox" checked={st.objetivos.menosImpostos} onChange={e => setObj({ menosImpostos: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Pagar menos impostos</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.objetivos.crescer} onChange={e => setObj({ crescer: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Crescer o negócio</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.objetivos.imobiliario} onChange={e => setObj({ imobiliario: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Investir em imobiliário</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.objetivos.variasEmpresas} onChange={e => setObj({ variasEmpresas: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Várias empresas / grupo</span></label>
+                <label className={`col-span-2 ${cbCls}`}><input type="checkbox" checked={st.objetivos.planeamentoFamiliar} onChange={e => setObj({ planeamentoFamiliar: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Planeamento sucessório / familiar</span></label>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Intenções a Médio Prazo</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <label className={cbCls}><input type="checkbox" checked={st.intencoes.imoveis} onChange={e => setInt({ imoveis: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Adquirir imóveis</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.intencoes.viaturasEmpresa} onChange={e => setInt({ viaturasEmpresa: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Comprar viaturas para a empresa</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.intencoes.ativosFinanceiros} onChange={e => setInt({ ativosFinanceiros: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Adquirir ativos financeiros</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.intencoes.grupoEmpresas} onChange={e => setInt({ grupoEmpresas: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Constituir grupo de empresas</span></label>
+                <label className={`col-span-2 ${cbCls}`}><input type="checkbox" checked={st.intencoes.internacionalizar} onChange={e => setInt({ internacionalizar: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Internacionalizar a atividade</span></label>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Documentos Disponíveis</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <label className={cbCls}><input type="checkbox" checked={st.documentos.irs} onChange={e => setDoc({ irs: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Declarações de IRS</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.documentos.balancete} onChange={e => setDoc({ balancete: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Balancete</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.documentos.ies} onChange={e => setDoc({ ies: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">IES</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.documentos.modelo22} onChange={e => setDoc({ modelo22: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Modelo 22 (IRC)</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.documentos.dec_iva} onChange={e => setDoc({ dec_iva: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Declarações de IVA</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.documentos.contratos} onChange={e => setDoc({ contratos: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Contratos relevantes</span></label>
+                <label className={`col-span-2 ${cbCls}`}><input type="checkbox" checked={st.documentos.extratos} onChange={e => setDoc({ extratos: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Extractos bancários</span></label>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Análise Interna (notas do contabilista)</h3>
+              <div className="grid grid-cols-1 gap-3">
+                <div><label className={labelClass}>ENI vs Lda</label><textarea rows={2} value={st.analiseInterna.eniVsLda} onChange={e => setAI({ eniVsLda: e.target.value })} className={taCls} /></div>
+                <div><label className={labelClass}>Simplificado vs Organizada</label><textarea rows={2} value={st.analiseInterna.simplifVsOrganizada} onChange={e => setAI({ simplifVsOrganizada: e.target.value })} className={taCls} /></div>
+                <div><label className={labelClass}>Art. 53.º vs Normal (IVA)</label><textarea rows={2} value={st.analiseInterna.art53VsNormal} onChange={e => setAI({ art53VsNormal: e.target.value })} className={taCls} /></div>
+                <div><label className={labelClass}>Salário vs Dividendos</label><textarea rows={2} value={st.analiseInterna.salarioVsDividendos} onChange={e => setAI({ salarioVsDividendos: e.target.value })} className={taCls} /></div>
+                <div><label className={labelClass}>Planeamento Fiscal</label><textarea rows={2} value={st.analiseInterna.planeamento} onChange={e => setAI({ planeamento: e.target.value })} className={taCls} /></div>
+                <div><label className={labelClass}>Observações Gerais</label><textarea rows={3} value={st.analiseInterna.observacoes} onChange={e => setAI({ observacoes: e.target.value })} className={taCls} /></div>
+                <div><label className={labelClass}>Recomendações</label><textarea rows={3} value={st.analiseInterna.recomendacoes} onChange={e => setAI({ recomendacoes: e.target.value })} className={taCls} /></div>
+              </div>
+            </div>
+          </div>
+        );
+      },
+    },
+  ];
+
+  const resultsContent = (
+    <>
+      <div>
+        <h1 className="text-[32px] md:text-[40px] font-[800] tracking-[-1.5px] text-[#0F172A] leading-[1.1]">Resumo de Parâmetros</h1>
+        <p className="text-[15px] font-[500] text-[#64748B] mt-1">Estes valores são aplicados automaticamente nos simuladores.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white border-2 border-[#E2E8F0] rounded-[20px] p-6 shadow-sm">
+          <h4 className="text-[16px] font-[800] text-[#0F172A] mb-4 flex items-center gap-2">
+            <FileText className="w-5 h-5 text-[#7B98B8]" />
+            Dados Fiscais
+          </h4>
+          <div className="space-y-3 text-[14px]">
+            <div className="flex justify-between"><span className="text-slate-500">Regime IVA:</span><span className="font-[600] text-slate-800">{{ isento: 'Isento Art. 53.º', normal_mensal: 'Normal Mensal', normal_trimestral: 'Normal Trimestral', pequenos_retalhistas: 'Peq. Retalhistas' }[profile.regimeIva]}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Regime Contab.:</span><span className="font-[600] text-slate-800">{{ simplificado: 'Simplificado', organizada: 'Org. Organizada', transparencia_fiscal: 'Transparência Fiscal', retgs: 'RETGS', nao_residente: 'Não Residente' }[profile.regimeContabilidade]}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Tipo Entidade:</span><span className="font-[600] text-slate-800 uppercase">{profile.tipoEntidade}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Atividade:</span><span className="font-[600] text-slate-800">{profile.atividadePrincipal === 'servicos' ? 'Serviços' : 'Bens'}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Faturação Prevista:</span><span className="font-[600] text-slate-800">{ptEur(profile.faturaçaoAnualPrevista)}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Início Atividade:</span><span className="font-[600] text-slate-800">{profile.inicioAtividade} ({currentYear - profile.inicioAtividade} anos)</span></div>
+          </div>
+        </div>
+
+        <div className="bg-white border-2 border-[#E2E8F0] rounded-[20px] p-6 shadow-sm">
+          <h4 className="text-[16px] font-[800] text-[#0F172A] mb-4 flex items-center gap-2">
+            <User className="w-5 h-5 text-[#7B98B8]" />
+            Dados Familiares
+          </h4>
+          <div className="space-y-3 text-[14px]">
+            <div className="flex justify-between"><span className="text-slate-500">Idade:</span><span className="font-[600] text-slate-800">{profile.idade} anos</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Estado Civil:</span><span className="font-[600] text-slate-800 capitalize">{profile.estadoCivil.replace('_', ' ')}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Dependentes:</span><span className="font-[600] text-slate-800">{profile.nrDependentes} {profile.nrDependentes > 0 && <span className="text-emerald-600 text-[12px]">(ded. €{profile.nrDependentes <= 3 ? profile.nrDependentes * 600 : 3 * 600 + (profile.nrDependentes - 3) * 900})</span>}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Benefício Jovem:</span><span className={cn("font-[600]", profile.beneficioJovem ? "text-blue-600" : "text-slate-800")}>{profile.beneficioJovem ? 'Sim — IRS Jovem ativo' : 'Não'}</span></div>
+          </div>
+        </div>
+
+        <div className="bg-white border-2 border-[#E2E8F0] rounded-[20px] p-6 shadow-sm">
+          <h4 className="text-[16px] font-[800] text-[#0F172A] mb-4 flex items-center gap-2">
+            <Ticket className="w-5 h-5 text-[#7B98B8]" />
+            Tickets / Vales
+          </h4>
+          <div className="space-y-3 text-[14px]">
+            <div className="flex justify-between"><span className="text-slate-500">Nr. Funcionários:</span><span className="font-[600] text-slate-800">{profile.nrFuncionarios}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Valor Unitário:</span><span className="font-[600] text-slate-800">{ptEur(profile.valorTicket)}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Setor:</span><span className="font-[600] text-slate-800 capitalize">{profile.setorTicket}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Limite Legal:</span><span className="font-[600] text-slate-800">€10,46 (cartão) / €6,15 (dinheiro)/dia</span></div>
+          </div>
+        </div>
+
+        <div className="bg-white border-2 border-[#E2E8F0] rounded-[20px] p-6 shadow-sm">
+          <h4 className="text-[16px] font-[800] text-[#0F172A] mb-4 flex items-center gap-2">
+            <Wallet className="w-5 h-5 text-[#7B98B8]" />
+            SS Independente
+          </h4>
+          <div className="space-y-3 text-[14px]">
+            <div className="flex justify-between"><span className="text-slate-500">Rendimento Mensal:</span><span className="font-[600] text-slate-800">{ptEur(profile.rendimentoMensalEni)}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Regime:</span><span className="font-[600] text-slate-800 capitalize">{profile.regimeSs}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Tipo Rendimento:</span><span className="font-[600] text-slate-800">{profile.tipoRendimentoSs === 'servicos' ? 'Serviços (70%)' : 'Bens (20%)'}</span></div>
+          </div>
+        </div>
+      </div>
+
+      {profile.morada && (
+        <div className="bg-white border-2 border-[#E2E8F0] rounded-[20px] p-6 shadow-sm">
+          <h4 className="text-[16px] font-[800] text-[#0F172A] mb-3 flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-[#7B98B8]" />
+            Morada Registada
+          </h4>
+          <p className="text-[14px] text-slate-700 font-[500]">
+            {profile.morada}{profile.codigoPostal ? `, ${profile.codigoPostal}` : ''}{profile.localidade ? ` ${profile.localidade}` : ''}
+          </p>
+        </div>
+      )}
+
+      <section className="mt-4 bg-amber-50 border border-amber-200 rounded-[20px] p-6">
+        <h4 className="text-[16px] font-[800] text-amber-900 mb-4">Notas para o Contabilista</h4>
+        <div className="space-y-3 text-[14px] text-amber-800">
+          <p><strong>• Regra IVA (Art. 53º CIVA):</strong> Se a faturação é ≤15.000€ e só B2C, considere o regime isento.</p>
+          <p><strong>• IRS Jovem (Art. 12º-B CIRS):</strong> Aplica-se até 35 anos nos primeiros 10 anos de carreira. Ano 1: 100%, Anos 2-4: 75%, Anos 5-7: 50%, Anos 8-10: 25% (OE 2026). Teto 55×IAS = €29.542,15.</p>
+          <p><strong>• Dependentes (Art. 78º-A CIRS):</strong> €600 por dependente &gt;3 anos, €726 para 1.º filho ≤3 anos, €900 a partir do 2.º filho ≤3 anos.</p>
+          <p><strong>• Subsídio refeição 2026:</strong> Limite isento €10,46/dia (cartão) ou €6,15/dia (dinheiro). Dedutível a 60% para a empresa.</p>
+          <p><strong>• SS Independente:</strong> Taxa de 21,4% sobre 70% (serviços) ou 20% (bens). Isenção no 1.º ano de atividade.</p>
+          <p><strong>• Pagamentos por Conta (PPC):</strong> ENI com IRS significativo deve prever 3 prestações em julho, setembro e dezembro.</p>
+        </div>
+      </section>
+    </>
+  );
+
+  if (flowMode) {
+    return (
+      <FlowWizard
+        open={flowMode}
+        onClose={exitFlow}
+        title="Perfil do Cliente"
+        icon={User}
+        steps={steps}
+        resultsStep={{ label: 'Resumo de Parâmetros', description: 'Estes valores são aplicados automaticamente nos simuladores.', render: resultsContent }}
+        state={profile}
+        setState={(u) => onChange({ ...profile, ...u })}
+      />
+    );
+  }
+
 
   // ─── RENDER ───────────────────────────────────────────────────────────────
 
@@ -497,20 +1061,32 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.35, delay: 0.05, ease: [0.32, 0.72, 0, 1] }}
       >
-        <div className="p-6 md:p-8 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md z-20 border-b border-[#F1F5F9]">
-          <div>
-            <h2 className="text-[20px] font-[800] tracking-[-0.5px] text-[#0F172A]">Perfil do Cliente</h2>
+        <div className="p-4 md:p-8 flex flex-wrap items-center justify-between gap-y-3 sticky top-0 bg-white/90 backdrop-blur-md z-20 border-b border-[#F1F5F9]">
+          <div className="min-w-0">
+            <h2 className="text-[18px] md:text-[20px] font-[800] tracking-[-0.5px] text-[#0F172A]">Perfil do Cliente</h2>
           </div>
-          <button onClick={() => setShowEditor(true)} className="flex shrink-0 items-center gap-2 bg-[#781D1D] text-white px-4 py-2 rounded-[10px] text-[13px] font-[700] hover:bg-[#5A1313] transition-colors shadow-lg">
-            <Download size={16} />
-            Exportar PDF
-          </button>
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            <motion.button onClick={enterFlow} className="shrink-0 flex items-center gap-1.5 px-2.5 md:px-3 py-2 text-[12px] md:text-[13px] font-[700] text-[#7B98B8] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <ListOrdered className="w-4 h-4" />
+              <span className="hidden sm:inline">Vista simplificada</span>
+              <span className="sm:hidden">Simples</span>
+            </motion.button>
+            <button onClick={() => setShowEditor(true)} className="hidden md:flex shrink-0 items-center gap-2 bg-white border border-[#E2E8F0] text-[#525C66] px-3 py-2 rounded-[10px] text-[13px] font-[700] hover:bg-slate-50 transition-colors">
+              <Download size={16} />
+              Só simulação
+            </button>
+            <button onClick={() => setShowPackage(true)} className="flex shrink-0 items-center gap-1.5 md:gap-2 bg-gradient-to-br from-[#7B98B8] to-[#525C66] text-white px-3 md:px-4 py-2 rounded-[10px] text-[12px] md:text-[13px] font-[800] hover:brightness-105 active:scale-[0.98] transition-all shadow-lg shadow-[#7B98B8]/30">
+              <Package size={16} />
+              <span className="hidden sm:inline">Exportar Pacote</span>
+              <span className="sm:hidden">Pacote</span>
+            </button>
+          </div>
         </div>
 
         <div className="p-6 md:p-8 space-y-8">
           {/* Identificação */}
           <section>
-            <h3 className="text-[14px] font-[800] mb-4 text-[#781D1D] flex items-center border-b pb-2">
+            <h3 className="text-[14px] font-[800] mb-4 text-[#7B98B8] flex items-center border-b pb-2">
               <User className="w-5 h-5 opacity-80 mr-2" />
               Identificação do Cliente
             </h3>
@@ -564,7 +1140,7 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
 
           {/* Dados Empresariais */}
           <section>
-            <h3 className="text-[14px] font-[800] mb-4 text-[#781D1D] flex items-center border-b pb-2">
+            <h3 className="text-[14px] font-[800] mb-4 text-[#7B98B8] flex items-center border-b pb-2">
               <Building2 className="w-5 h-5 opacity-80 mr-2" />
               Dados Empresariais
             </h3>
@@ -626,7 +1202,7 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
                 </select>
               </div>
               <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-[8px] cursor-pointer">
-                <input type="checkbox" checked={profile.isSazonal} onChange={e => updateProfile('isSazonal', e.target.checked)} className="w-4 h-4 accent-[#781D1D]" />
+                <input type="checkbox" checked={profile.isSazonal} onChange={e => updateProfile('isSazonal', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
                 <span className="text-[13px] font-[600] text-slate-700">Atividade Sazonal <Tip>Se o negócio só funciona em certas épocas (ex: turismo de praia, agricultura). Afeta os cálculos de SS.</Tip></span>
               </label>
               {/* Regime warnings */}
@@ -665,7 +1241,7 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
 
           {/* Dados Fiscais e Família */}
           <section>
-            <h3 className="text-[14px] font-[800] mb-4 text-[#781D1D] flex items-center border-b pb-2">
+            <h3 className="text-[14px] font-[800] mb-4 text-[#7B98B8] flex items-center border-b pb-2">
               <FileText className="w-5 h-5 opacity-80 mr-2" />
               Dados Fiscais e Família
             </h3>
@@ -689,103 +1265,32 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
                 <input type="number" value={profile.nrDependentes === 0 ? '' : profile.nrDependentes} onChange={e => updateProfile('nrDependentes', Number(e.target.value) || 0)} className={inputClass} min={0} max={10} />
               </div>
               <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-[8px] cursor-pointer">
-                <input type="checkbox" checked={profile.cônjugeRendimentos} onChange={e => updateProfile('cônjugeRendimentos', e.target.checked)} className="w-4 h-4 accent-[#781D1D]" />
+                <input type="checkbox" checked={profile.cônjugeRendimentos} onChange={e => updateProfile('cônjugeRendimentos', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
                 <span className="text-[13px] font-[600] text-slate-700">Cônjuge c/ Rendimentos</span>
               </label>
               <label className="col-span-2 flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-[8px] cursor-pointer">
                 <input type="checkbox" checked={profile.beneficioJovem} onChange={e => updateProfile('beneficioJovem', e.target.checked)} className="w-4 h-4 accent-blue-600" />
-                <span className="text-[13px] font-[600] text-blue-900">Benefício Jovem IRS (≤35 anos — CIRS Art. 12º-B) <Tip>Isenção parcial de IRS para jovens até 35 anos nos primeiros anos de trabalho. Reduz significativamente o imposto a pagar.</Tip></span>
+                <span className="text-[13px] font-[600] text-blue-900">Benefício Jovem IRS (≤35 anos — CIRS Art. 12º-B) <Tip>Isenção parcial de IRS para jovens até 35 anos nos primeiros 10 anos de carreira (100% ano 1; 75% anos 2-4; 50% anos 5-7; 25% anos 8-10).</Tip></span>
               </label>
             </div>
           </section>
+
+          {/* Secções extra (4-6) — render reaproveitando os steps do wizard para evitar duplicação. */}
+          {steps.slice(3).map(step => (
+            <section key={step.id}>
+              <h3 className="text-[14px] font-[800] mb-4 text-[#7B98B8] flex items-center border-b pb-2">
+                <FileText className="w-5 h-5 opacity-80 mr-2" />
+                {step.label}
+              </h3>
+              {step.render(profile, (u) => onChange({ ...profile, ...u }))}
+            </section>
+          ))}
         </div>
       </motion.div>
 
       {/* RIGHT PANEL */}
       <div className="flex-1 p-4 sm:p-6 lg:p-10 lg:overflow-y-auto lg:h-full w-full flex flex-col gap-6 lg:gap-8 relative max-w-7xl mx-auto">
-        <div>
-          <h1 className="text-[32px] md:text-[40px] font-[800] tracking-[-1.5px] text-[#0F172A] leading-[1.1]">Resumo de Parâmetros</h1>
-          <p className="text-[15px] font-[500] text-[#64748B] mt-1">Estes valores são aplicados automaticamente nos simuladores.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white border-2 border-[#E2E8F0] rounded-[20px] p-6 shadow-sm">
-            <h4 className="text-[16px] font-[800] text-[#0F172A] mb-4 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-[#781D1D]" />
-              Dados Fiscais
-            </h4>
-            <div className="space-y-3 text-[14px]">
-              <div className="flex justify-between"><span className="text-slate-500">Regime IVA:</span><span className="font-[600] text-slate-800">{{ isento: 'Isento Art. 53.º', normal_mensal: 'Normal Mensal', normal_trimestral: 'Normal Trimestral', pequenos_retalhistas: 'Peq. Retalhistas' }[profile.regimeIva]}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Regime Contab.:</span><span className="font-[600] text-slate-800">{{ simplificado: 'Simplificado', organizada: 'Org. Organizada', transparencia_fiscal: 'Transparência Fiscal', retgs: 'RETGS', nao_residente: 'Não Residente' }[profile.regimeContabilidade]}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Tipo Entidade:</span><span className="font-[600] text-slate-800 uppercase">{profile.tipoEntidade}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Atividade:</span><span className="font-[600] text-slate-800">{profile.atividadePrincipal === 'servicos' ? 'Serviços' : 'Bens'}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Faturação Prevista:</span><span className="font-[600] text-slate-800">{ptEur(profile.faturaçaoAnualPrevista)}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Início Atividade:</span><span className="font-[600] text-slate-800">{profile.inicioAtividade} ({currentYear - profile.inicioAtividade} anos)</span></div>
-            </div>
-          </div>
-
-          <div className="bg-white border-2 border-[#E2E8F0] rounded-[20px] p-6 shadow-sm">
-            <h4 className="text-[16px] font-[800] text-[#0F172A] mb-4 flex items-center gap-2">
-              <User className="w-5 h-5 text-[#781D1D]" />
-              Dados Familiares
-            </h4>
-            <div className="space-y-3 text-[14px]">
-              <div className="flex justify-between"><span className="text-slate-500">Idade:</span><span className="font-[600] text-slate-800">{profile.idade} anos</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Estado Civil:</span><span className="font-[600] text-slate-800 capitalize">{profile.estadoCivil.replace('_', ' ')}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Dependentes:</span><span className="font-[600] text-slate-800">{profile.nrDependentes} {profile.nrDependentes > 0 && <span className="text-emerald-600 text-[12px]">(ded. €{profile.nrDependentes <= 3 ? profile.nrDependentes * 600 : 3 * 600 + (profile.nrDependentes - 3) * 900})</span>}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Benefício Jovem:</span><span className={cn("font-[600]", profile.beneficioJovem ? "text-blue-600" : "text-slate-800")}>{profile.beneficioJovem ? 'Sim — IRS Jovem ativo' : 'Não'}</span></div>
-            </div>
-          </div>
-
-          <div className="bg-white border-2 border-[#E2E8F0] rounded-[20px] p-6 shadow-sm">
-            <h4 className="text-[16px] font-[800] text-[#0F172A] mb-4 flex items-center gap-2">
-              <Ticket className="w-5 h-5 text-[#781D1D]" />
-              Tickets / Vales
-            </h4>
-            <div className="space-y-3 text-[14px]">
-              <div className="flex justify-between"><span className="text-slate-500">Nr. Funcionários:</span><span className="font-[600] text-slate-800">{profile.nrFuncionarios}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Valor Unitário:</span><span className="font-[600] text-slate-800">{ptEur(profile.valorTicket)}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Setor:</span><span className="font-[600] text-slate-800 capitalize">{profile.setorTicket}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Limite Legal:</span><span className="font-[600] text-slate-800">€10,46 (cartão) / €6,15 (dinheiro)/dia</span></div>
-            </div>
-          </div>
-
-          <div className="bg-white border-2 border-[#E2E8F0] rounded-[20px] p-6 shadow-sm">
-            <h4 className="text-[16px] font-[800] text-[#0F172A] mb-4 flex items-center gap-2">
-              <Wallet className="w-5 h-5 text-[#781D1D]" />
-              SS Independente
-            </h4>
-            <div className="space-y-3 text-[14px]">
-              <div className="flex justify-between"><span className="text-slate-500">Rendimento Mensal:</span><span className="font-[600] text-slate-800">{ptEur(profile.rendimentoMensalEni)}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Regime:</span><span className="font-[600] text-slate-800 capitalize">{profile.regimeSs}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Tipo Rendimento:</span><span className="font-[600] text-slate-800">{profile.tipoRendimentoSs === 'servicos' ? 'Serviços (70%)' : 'Bens (20%)'}</span></div>
-            </div>
-          </div>
-        </div>
-
-        {profile.morada && (
-          <div className="bg-white border-2 border-[#E2E8F0] rounded-[20px] p-6 shadow-sm">
-            <h4 className="text-[16px] font-[800] text-[#0F172A] mb-3 flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-[#781D1D]" />
-              Morada Registada
-            </h4>
-            <p className="text-[14px] text-slate-700 font-[500]">
-              {profile.morada}{profile.codigoPostal ? `, ${profile.codigoPostal}` : ''}{profile.localidade ? ` ${profile.localidade}` : ''}
-            </p>
-          </div>
-        )}
-
-        <section className="mt-4 bg-amber-50 border border-amber-200 rounded-[20px] p-6">
-          <h4 className="text-[16px] font-[800] text-amber-900 mb-4">Notas para o Contabilista</h4>
-          <div className="space-y-3 text-[14px] text-amber-800">
-            <p><strong>• Regra IVA (Art. 53º CIVA):</strong> Se a faturação é ≤15.000€ e só B2C, considere o regime isento.</p>
-            <p><strong>• IRS Jovem (Art. 12º-B CIRS):</strong> Aplica-se até 35 anos nos primeiros 5 anos de atividade. Ano 1: 100%, Anos 2-3: 75%, Anos 4-5: 50% de isenção.</p>
-            <p><strong>• Dependentes (Art. 78º-A CIRS):</strong> Dedução à coleta de €600/dependente (€900 a partir do 4.º).</p>
-            <p><strong>• Tickets:</strong> Limite de €5/dia (€7 em hotelaria/construção). Dedutível a 60% para a empresa.</p>
-            <p><strong>• SS Independente:</strong> Taxa de 21,4% sobre 70% (serviços) ou 20% (bens). Isenção no 1.º ano de atividade.</p>
-            <p><strong>• Pagamentos por Conta (PPC):</strong> ENI com IRS significativo deve prever 3 prestações em julho, setembro e dezembro.</p>
-          </div>
-        </section>
+        {resultsContent}
       </div>
     </motion.div>
 
@@ -797,6 +1302,24 @@ export default function ClientProfile({ profile, onChange, taxState, vehicleStat
         ticketState={ticketState}
         ssState={ssState}
         onClose={() => setShowEditor(false)}
+        office={office}
+      />
+    )}
+
+    {showPackage && office && honorarios && (
+      <ExportPackageModal
+        profile={profile}
+        office={office}
+        honorarios={honorarios}
+        taxState={taxState}
+        vehicleState={vehicleState}
+        ticketState={ticketState}
+        ssState={ssState}
+        onClose={() => setShowPackage(false)}
+        onGoToOfficeSettings={() => {
+          setShowPackage(false);
+          onGoToOfficeSettings?.();
+        }}
       />
     )}
     </>
@@ -832,5 +1355,15 @@ export const defaultProfile: ClientProfile = {
   setorTicket: 'normal',
   rendimentoMensalEni: 0,
   regimeSs: 'general',
-  tipoRendimentoSs: 'servicos'
+  tipoRendimentoSs: 'servicos',
+  custos: { mercadorias: 0, rendas: 0, combustiveis: 0, viaturas: 0, equipamentos: 0, servicosExternos: 0, outros: 0 },
+  investimento: { equipamentos: 0, viaturas: 0, obras: 0, stock: 0, outro: 0 },
+  viaturasDiag: { tem: '', tipo: { comercial: false, passageiros: false, eletrico: false, hibrido: false }, valor: 0 },
+  societaria: { numeroSocios: 1, socios: [{ nome: '', percentagem: 100 }], gerencia: '' },
+  distribuicao: { salario: false, dividendos: false, reinvestir: false, misto: false },
+  fiscalAtual: { dividasFiscais: '', dividasSS: '', execucoesFiscais: '' },
+  objetivos: { menosImpostos: false, crescer: false, imobiliario: false, variasEmpresas: false, planeamentoFamiliar: false },
+  intencoes: { imoveis: false, viaturasEmpresa: false, ativosFinanceiros: false, grupoEmpresas: false, internacionalizar: false },
+  documentos: { irs: false, balancete: false, ies: false, modelo22: false, dec_iva: false, contratos: false, extratos: false },
+  analiseInterna: { eniVsLda: '', simplifVsOrganizada: '', art53VsNormal: '', salarioVsDividendos: '', planeamento: '', observacoes: '', recomendacoes: '' },
 };

@@ -25,17 +25,23 @@ export const WORK_INSURANCE_DEFAULT_RATE = 0.01; // 1%
 // Taxa de contribuição do Trabalhador por conta própria (ENI)
 export const SS_RATE_SELF_EMPLOYED = 0.214; // 21.4% - taxa oficial 2026
 
-// Escalões IRS 2026 (VALIDATED_2026_APRIL)
+// Escalões IRS 2026 — Lei n.º 73-A/2025 (OE 2026), Art. 68º CIRS.
+// Cross-validado contra Economia e Finanças, Cofidis e Jornal de Negócios
+// (publicações pós-aprovação OE 2026). Limites = limites_2025 × 1,0351 (factor
+// automático de atualização). Taxas marginais reduzidas em 0,5 p.p. no 1º
+// escalão e 0,3-0,4 p.p. nos 2º-8º. Parcelas a abater calculadas por
+// `parcela_n = limite_n-1 × (taxa_n − taxa_n-1) + parcela_n-1`,
+// validadas por re-cálculo escalão-a-escalão (erro < €0,10).
 export const IRS_BRACKETS_2026 = [
-  { limit: 8235,    rate: 0.13,  ded: 0 },
-  { limit: 12301,   rate: 0.165, ded: 288.23 },
-  { limit: 17540,   rate: 0.22,  ded: 964.78 },
-  { limit: 22779,   rate: 0.25,  ded: 1490.98 },
-  { limit: 28987,   rate: 0.32,  ded: 3085.51 },
-  { limit: 42250,   rate: 0.355, ded: 4100.06 },
-  { limit: 55428,   rate: 0.435, ded: 7480.06 },
-  { limit: 86510,   rate: 0.45,  ded: 8311.48 },
-  { limit: Infinity, rate: 0.48, ded: 10906.78 },
+  { limit:  8342,    rate: 0.125, ded:     0    },
+  { limit: 12587,    rate: 0.157, ded:   266.94 },
+  { limit: 17838,    rate: 0.212, ded:   959.22 },
+  { limit: 23089,    rate: 0.241, ded:  1476.53 },
+  { limit: 29397,    rate: 0.311, ded:  3092.76 },
+  { limit: 43090,    rate: 0.349, ded:  4209.84 },
+  { limit: 46566,    rate: 0.431, ded:  7743.30 },
+  { limit: 86634,    rate: 0.446, ded:  8441.80 },
+  { limit: Infinity, rate: 0.48,  ded: 11387.36 },
 ];
 
 /**
@@ -54,17 +60,19 @@ export function calculateIRS(taxableIncome: number): number {
 
 /**
  * Calcula a isenção de IRS Jovem para trabalhadores ≤35 anos.
- * CIRS Art. 12º-B (OE 2025/2026)
+ * CIRS Art. 12º-B (regime alargado pela Lei 45-A/2024, mantido no OE 2026).
  *
- * Regras 2026:
- * - Aplica-se nos primeiros 5 anos de atividade profissional (após conclusão de estudos)
- * - Ano 1: isenção de 100% até 5× IAS anual (~€32.529)
- * - Anos 2-3: isenção de 75%
- * - Anos 4-5: isenção de 50%
- * - Teto máximo de isenção: 5× IAS anual = €32.529 (2026)
+ * Regras OE 2026:
+ * - Aplica-se nos primeiros 10 anos de atividade profissional, até aos 35 anos.
+ * - Ano 1:        100%
+ * - Anos 2 a 4:    75%
+ * - Anos 5 a 7:    50%
+ * - Anos 8 a 10:   25%
+ * - Teto de rendimentos abrangidos: 55 × IAS mensal = €29.542,15 (IAS 2026 €537,13).
+ *   (€29.377,15 era o teto 2025; em 2026 sobe pela atualização do IAS.)
  *
- * @param anosAtividade anos de atividade profissional (0 = 1º ano)
- * @param rendimentoColetavel rendimento coletável total
+ * @param anosAtividade anos completos de atividade (0 = 1º ano, 9 = 10º ano)
+ * @param rendimentoColetavel rendimento coletável da categoria A/B
  * @param idade idade do contribuinte
  * @returns valor de isenção a deduzir do rendimento coletável
  */
@@ -73,31 +81,54 @@ export function calcIRSJovem(
   rendimentoColetavel: number,
   idade: number
 ): number {
-  if (idade > 35) return 0;
-  if (anosAtividade > 5) return 0;
+  if (idade > 35 || anosAtividade < 0 || anosAtividade > 9) return 0;
 
-  const tetoIsencao = IAS_2026 * 12 * 5; // 5× IAS anual ≈ €32.529
+  const tetoIsencao = IAS_2026 * 55; // ≈ €29.542,15
 
   let taxaIsencao = 0;
-  if (anosAtividade <= 1) taxaIsencao = 1.0;
-  else if (anosAtividade <= 3) taxaIsencao = 0.75;
-  else if (anosAtividade <= 5) taxaIsencao = 0.5;
+  if (anosAtividade < 1)      taxaIsencao = 1.00; // 1º ano
+  else if (anosAtividade < 4) taxaIsencao = 0.75; // anos 2-4
+  else if (anosAtividade < 7) taxaIsencao = 0.50; // anos 5-7
+  else                        taxaIsencao = 0.25; // anos 8-10
 
-  return Math.min(rendimentoColetavel * taxaIsencao, tetoIsencao * taxaIsencao);
+  return Math.min(rendimentoColetavel, tetoIsencao) * taxaIsencao;
 }
 
 /**
- * Calcula a dedução por dependentes (dedução à coleta).
- * CIRS Art. 78º-A
+ * Calcula a dedução à coleta por dependentes (CIRS Art. 78º-A, OE 2026).
  *
- * @param nrDependentes número de dependentes
+ * Regras OE 2026:
+ *  - Dependente com mais de 3 anos: €600
+ *  - 1º dependente com idade ≤ 3 anos: €726
+ *  - A partir do 2º dependente com idade ≤ 3 anos: €900
+ *
+ * Aceita dois formatos para retro-compatibilidade:
+ *  - `number`: assume todos os dependentes com mais de 3 anos (legacy).
+ *  - `{ total, ate3Anos? }`: distingue por idade.
+ *
+ * NOTA(fiscal): OE 2026 estende a faixa €900 ao "2º+ dependente com idade ≤ 6 anos
+ * (independentemente da idade do 1º)". Para activar essa regra adicional é preciso
+ * passar também `entre4e6Anos` no profile — não implementado nesta versão para evitar
+ * UI churn. A regra "≤ 3 anos" abaixo apanha o caso mais comum (filhos pequenos).
+ *
  * @returns dedução total à coleta (€)
  */
-export function calcDependentsDeduction(nrDependentes: number): number {
-  if (nrDependentes <= 0) return 0;
-  if (nrDependentes <= 3) return nrDependentes * 600;
-  // A partir do 4º dependente: €900/dependente adicional
-  return 3 * 600 + (nrDependentes - 3) * 900;
+export function calcDependentsDeduction(
+  arg: number | { total: number; ate3Anos?: number }
+): number {
+  const total = typeof arg === 'number' ? arg : arg.total;
+  const ate3 = typeof arg === 'number' ? 0 : (arg.ate3Anos ?? 0);
+
+  if (total <= 0) return 0;
+  if (ate3 < 0 || ate3 > total) return 0;
+
+  const mais3 = total - ate3;
+  let deducao = mais3 * 600;
+
+  if (ate3 >= 1) deducao += 726;                 // 1º filho ≤ 3 anos
+  if (ate3 >= 2) deducao += (ate3 - 1) * 900;    // 2º+ filhos ≤ 3 anos
+
+  return deducao;
 }
 
 /**

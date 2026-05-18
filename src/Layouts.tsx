@@ -2,16 +2,16 @@ import React, { useState, useRef, useEffect, useCallback, useId } from 'react';
 import { motion } from 'motion/react';
 import {
   UserCircle, Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote, Info,
-  ClipboardCheck, ClipboardList, Upload, LogOut,
-  ChevronDown, TrendingUp,
+  ClipboardList, Upload, LogOut,
+  ChevronDown, TrendingUp, Settings,
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Tip } from './Tip';
 
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
-  | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'ficha' | 'legal' | 'updates'
-  | 'previsa';
+  | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'legal' | 'updates'
+  | 'previsa' | 'office-settings';
 
 export interface LayoutProps {
   view: ViewType;
@@ -36,12 +36,11 @@ const NAV_ITEMS = [
   { id: 'imoveis'    as ViewType, label: 'Imóveis',      Icon: Home,       group: 'sim'     },
   { id: 'imt'        as ViewType, label: 'IMT',          Icon: Building,   group: 'sim'     },
   { id: 'salario'    as ViewType, label: 'Salário',      Icon: Banknote,   group: 'sim'     },
-  { id: 'ficha'      as ViewType, label: 'Ficha',        Icon: ClipboardCheck, group: 'sim' },
   { id: 'previsa'    as ViewType, label: 'PreviSa',      Icon: TrendingUp,     group: 'sim' },
 ] as const;
 
 const NAV_TIPS: Record<string, string> = {
-  profile: 'Dados do cliente: situação fiscal, idade, faturação. Alimenta automaticamente todos os simuladores.',
+  profile: 'Perfil do cliente em 6 passos: identificação, dados empresariais, fiscais & família, custos & investimento, viaturas/sócios/dívidas, objetivos & documentos. Alimenta todos os simuladores.',
   tax: 'Simulador fiscal: compara a carga de IRS/IRC entre ENI (recibos verdes) e Lda para a sua situação.',
   vehicle: 'Calcula o IVA recuperável na compra/manutenção de viaturas e a Tributação Autónoma sobre encargos.',
   ticket: 'Subsídio de alimentação em vales: isento de IRS e SS até ao limite legal. Calcula a poupança anual.',
@@ -50,15 +49,14 @@ const NAV_TIPS: Record<string, string> = {
   imoveis: 'Guia de decisão: arrendar o imóvel à empresa vs. transferi-lo como entrada em espécie.',
   imt: 'Imposto Municipal sobre Transmissões: calcula o IMT e o Imposto de Selo na compra de imóveis.',
   salario: 'Calcula o salário líquido mensal de um trabalhador e o custo total para a empresa.',
-  ficha: 'Ficha de Diagnóstico Fiscal e Empresarial: levantamento estruturado de 16 secções (identificação, atividade, IVA, custos, RH, SS, viaturas, sociedade, dívidas, objetivos) com referências cruzadas à Base Legal.',
   previsa: 'Simulador PreviSa — previsão de IRC (Modelo 22): apuramento Q07, matéria coletável Q09, tributações autónomas, PEC/PC e liquidação.',
 };
 
 function Logo({ className = 'w-7 h-7' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 100 80" className={className} fill="none" aria-hidden="true" focusable="false">
-      <path d="M 45 10 A 30 30 0 0 0 45 70" stroke="#333333" strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M 30 45 L 42 58 L 65 25" stroke="#781D1D" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+    <svg viewBox="0 0 100 100" className={className} fill="none" aria-hidden="true" focusable="false">
+      <path d="M 70 20 A 35 35 0 1 1 35 22" stroke="#7B98B8" strokeWidth="10" strokeLinecap="round" />
+      <path d="M 60 10 L 70 20 L 60 30" stroke="#525C66" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -160,7 +158,7 @@ function NavMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={menuId}
-        className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] transition-colors text-slate-500 hover:text-[#781D1D] hover:bg-[#781D1D]/8 border border-slate-200"
+        className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] transition-colors text-slate-500 hover:text-[#7B98B8] hover:bg-[#7B98B8]/8 border border-slate-200"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         transition={{ duration: 0.15 }}
@@ -190,8 +188,8 @@ function NavMenu({
               className={cn(
                 "flex items-center gap-1.5 px-3 py-2 text-left w-full text-[12px] font-[600] transition-colors",
                 active === id
-                  ? "bg-[#781D1D] text-white"
-                  : "text-slate-500 hover:bg-[#781D1D]/8 hover:text-[#781D1D]"
+                  ? "bg-[#7B98B8] text-white"
+                  : "text-slate-500 hover:bg-[#7B98B8]/8 hover:text-[#7B98B8]"
               )}
               whileHover={{ scale: 1.02, x: 2 }}
               whileTap={{ scale: 0.98 }}
@@ -236,8 +234,8 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
           >
             <Logo />
             <div className="hidden sm:block text-left">
-              <div className="text-[13px] font-[800] text-[#1E293B] tracking-[-0.3px] leading-none">RECOFATIMA</div>
-              <div className="text-[9px] font-[600] text-[#781D1D] uppercase tracking-[0.5px] leading-none mt-[2px]">Contabilidade</div>
+              <div className="text-[13px] font-[800] text-[#1E293B] tracking-[-0.3px] leading-none">Estudo 360</div>
+              <div className="text-[9px] font-[600] text-[#7B98B8] uppercase tracking-[0.5px] leading-none mt-[2px]">Ferramentas Fiscais</div>
             </div>
           </motion.button>
 
@@ -286,8 +284,8 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
               className={cn(
                 "flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] transition-colors border border-slate-200",
                 view === 'updates'
-                  ? "bg-[#781D1D] text-white border-[#781D1D]"
-                  : "text-slate-500 hover:text-[#781D1D] hover:bg-[#781D1D]/8"
+                  ? "bg-[#7B98B8] text-white border-[#7B98B8]"
+                  : "text-slate-500 hover:text-[#7B98B8] hover:bg-[#7B98B8]/8"
               )}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -313,7 +311,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
                 type="button"
                 onClick={() => saftInputRef.current?.click()}
                 aria-label="Importar ficheiro SAF-T"
-                className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] text-slate-500 hover:text-[#781D1D] hover:bg-[#781D1D]/8 transition-colors border border-slate-200"
+                className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] text-slate-500 hover:text-[#7B98B8] hover:bg-[#7B98B8]/8 transition-colors border border-slate-200"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ duration: 0.15 }}
@@ -328,7 +326,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
                 type="button"
                 onClick={onOpenSaftViewer}
                 aria-label="Ver dados extraídos do SAF-T"
-                className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] text-[#781D1D] bg-[#781D1D]/8 hover:bg-[#781D1D]/15 transition-colors border border-[#781D1D]/25"
+                className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] text-[#7B98B8] bg-[#7B98B8]/8 hover:bg-[#7B98B8]/15 transition-colors border border-[#7B98B8]/25"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ duration: 0.15 }}
@@ -343,9 +341,28 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
 
             <motion.button
               type="button"
+              onClick={() => setView('office-settings')}
+              aria-current={view === 'office-settings' ? 'page' : undefined}
+              aria-label="Definições do escritório"
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] transition-colors border",
+                view === 'office-settings'
+                  ? "bg-[#525C66] text-white border-[#525C66]"
+                  : "text-slate-500 hover:text-[#525C66] hover:bg-[#525C66]/8 border-slate-200"
+              )}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+            >
+              <Settings className="w-4 h-4 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
+              <span className="hidden sm:inline">Escritório</span>
+            </motion.button>
+
+            <motion.button
+              type="button"
               onClick={openLegal}
               aria-label="Abrir base legal"
-              className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] text-slate-500 hover:text-[#781D1D] hover:bg-[#781D1D]/8 transition-colors border border-slate-200"
+              className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] text-slate-500 hover:text-[#7B98B8] hover:bg-[#7B98B8]/8 transition-colors border border-slate-200"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               transition={{ duration: 0.15 }}

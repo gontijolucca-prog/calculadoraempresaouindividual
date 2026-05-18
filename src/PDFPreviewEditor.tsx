@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { X, Download } from 'lucide-react';
 import type { ClientProfile } from './ClientProfile';
+import type { OfficeSettings } from './lib/officeSettings';
 import {
   calculateIRS, calcIRSJovem, calcDependentsDeduction,
   calcTicketSavings, calcSelfSSContribution, calculateIRC,
@@ -33,6 +34,57 @@ interface Props {
   ticketState?: TicketSimulatorState;
   ssState?: SSState;
   onClose: () => void;
+  /** Quando true, o editor renderiza dentro do fluxo (sem overlay nem toolbar próprio). */
+  embedded?: boolean;
+  /** Definições do escritório — quando preenchidas, substituem o branding "Estudo 360" pela marca do escritório. */
+  office?: OfficeSettings;
+}
+
+interface Brand {
+  /** Cor primária — usada em headers/footers/MetricCards/SecHead. */
+  color: string;
+  /** Nome a exibir no cabeçalho. */
+  name: string;
+  /** Subtítulo (curto, para banner) — "Contabilidade". */
+  subtitleShort: string;
+  /** Subtítulo longo (capa) — "Contabilidade & Consultoria Fiscal". */
+  subtitleLong: string;
+  /** Logo data URL (opcional). Se null, mostra o SVG fallback. */
+  logoDataUrl: string | null;
+}
+
+function brandFromOffice(office?: OfficeSettings): Brand {
+  const o = office;
+  const hasOffice = !!(o && (o.nome || o.logoDataUrl));
+  if (!hasOffice) {
+    return {
+      color: '#7B98B8',
+      name: 'Estudo 360',
+      subtitleShort: 'Contabilidade',
+      subtitleLong: 'Contabilidade & Consultoria Fiscal',
+      logoDataUrl: null,
+    };
+  }
+  return {
+    color: o!.corPrimaria || '#7B98B8',
+    name: o!.nome || 'Estudo 360',
+    subtitleShort: o!.tipo === 'sociedade' ? 'Sociedade de Contabilidade' : 'Contabilidade Certificada',
+    subtitleLong: o!.tipo === 'sociedade' ? 'Sociedade de Contabilidade Certificada' : 'Contabilista Certificado',
+    logoDataUrl: o!.logoDataUrl || null,
+  };
+}
+
+/** Logo: usa imagem do escritório se disponível, senão o SVG fallback do produto. */
+function BrandLogo({ brand, width, height }: { brand: Brand; width: number; height: number }) {
+  if (brand.logoDataUrl) {
+    return <img src={brand.logoDataUrl} alt="" style={{ width, height, objectFit: 'contain', display: 'block' }} />;
+  }
+  return (
+    <svg viewBox="0 0 100 100" style={{ width, height, display: 'block' }} fill="none" aria-hidden="true" focusable="false">
+      <path d="M 70 20 A 35 35 0 1 1 35 22" stroke={brand.color} strokeWidth="10" strokeLinecap="round" />
+      <path d="M 60 10 L 70 20 L 60 30" stroke="#525C66" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 }
 
 const ptEur = (v: number) =>
@@ -87,24 +139,21 @@ const DR2 = ({ l1, v1, l2, v2 }: { l1: string; v1: string; l2: string; v2: strin
   </div>
 );
 
-const SecHead = ({ title, bg = '#781D1D' }: { title: string; bg?: string }) => (
+const SecHead = ({ title, bg }: { title: string; bg: string }) => (
   <div style={{ background: bg, color: 'white', padding: '4px 8px', fontSize: '8pt', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: 10 }}>
     <span contentEditable suppressContentEditableWarning style={{ outline: 'none', cursor: 'text' }}>{title}</span>
   </div>
 );
 
-const PageHeader = ({ title, pageNum }: { title: string; pageNum: number }) => (
-  <div style={{ background: '#781D1D', color: 'white', padding: '4px 14mm', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '8pt' }}>
+const PageHeader = ({ title, pageNum, brand }: { title: string; pageNum: number; brand: Brand }) => (
+  <div style={{ background: brand.color, color: 'white', padding: '4px 14mm', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '8pt' }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <div style={{ background: 'white', borderRadius: 3, padding: '2px 3px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 18 }}>
-        <svg viewBox="0 0 100 80" style={{ width: '100%', height: '100%' }} fill="none" aria-hidden="true" focusable="false">
-          <path d="M 45 10 A 30 30 0 0 0 45 70" stroke="#333333" strokeWidth="2.5" strokeLinecap="round" />
-          <path d="M 30 45 L 42 58 L 65 25" stroke="#781D1D" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <BrandLogo brand={brand} width={18} height={14} />
       </div>
       <div>
-        <div style={{ fontWeight: 800, fontSize: '7.5pt' }}>RECOFATIMA</div>
-        <div style={{ fontSize: '6pt', opacity: 0.8 }}>Contabilidade</div>
+        <div style={{ fontWeight: 800, fontSize: '7.5pt' }}>{brand.name}</div>
+        <div style={{ fontSize: '6pt', opacity: 0.8 }}>{brand.subtitleShort}</div>
       </div>
     </div>
     <span contentEditable suppressContentEditableWarning
@@ -113,8 +162,8 @@ const PageHeader = ({ title, pageNum }: { title: string; pageNum: number }) => (
   </div>
 );
 
-const PageFooter = () => (
-  <div style={{ background: '#781D1D', color: 'white', padding: '4px 14mm', fontSize: '6.5pt', textAlign: 'center', marginTop: 'auto' }}>
+const PageFooter = ({ brand }: { brand: Brand }) => (
+  <div style={{ background: brand.color, color: 'white', padding: '4px 14mm', fontSize: '6.5pt', textAlign: 'center', marginTop: 'auto' }}>
     <span contentEditable suppressContentEditableWarning
       style={{ outline: 'none', cursor: 'text' }}
     >Dados atualizados conforme OE 2026 • Este relatório é uma estimativa. Consulte o seu contabilista certificado.</span>
@@ -137,7 +186,8 @@ const pageStyle: React.CSSProperties = {
   pageBreakAfter: 'always', breakAfter: 'page',
 };
 
-export default function PDFPreviewEditor({ profile, taxState, vehicleState, ticketState, ssState, onClose }: Props) {
+export default function PDFPreviewEditor({ profile, taxState, vehicleState, ticketState, ssState, onClose, embedded = false, office }: Props) {
+  const brand = brandFromOffice(office);
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -294,58 +344,63 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
     ['Tickets — SS e IRS', 'EBF Art. 18º-A — Isenção SS e IRS para o trabalhador (até ao limite)'],
   ];
 
+  const rootStyle: React.CSSProperties = embedded
+    ? { background: 'transparent', display: 'flex', flexDirection: 'column' }
+    : { position: 'fixed', inset: 0, background: '#e2e8f0', zIndex: 1000, display: 'flex', flexDirection: 'column' };
+
   return (
-    <div id="pdf-editor-root" style={{ position: 'fixed', inset: 0, background: '#e2e8f0', zIndex: 1000, display: 'flex', flexDirection: 'column' }}>
+    <div id="pdf-editor-root" style={rootStyle}>
 
-      {/* ── Toolbar ── */}
-      <div className="no-print" style={{ background: '#0f172a', color: 'white', padding: '10px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontWeight: 800, fontSize: 15 }}>Editor de Relatório</span>
-          <span style={{ fontSize: 12, color: '#64748b', background: '#1e293b', padding: '3px 10px', borderRadius: 6 }}>
-            Clique em qualquer texto para editar
-          </span>
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            onClick={() => window.print()}
-            style={{ background: '#781D1D', color: 'white', border: 'none', padding: '8px 18px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}
-          >
-            <Download size={15} /> Download PDF
-          </button>
-          <button
-            onClick={onClose}
-            style={{ background: '#1e293b', color: 'white', border: 'none', padding: '8px 14px', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 14 }}
-          >
-            <X size={15} /> Fechar
-          </button>
-        </div>
-      </div>
+      {!embedded && (
+        <>
+          {/* ── Toolbar ── */}
+          <div className="no-print" style={{ background: '#0f172a', color: 'white', padding: '10px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontWeight: 800, fontSize: 15 }}>Editor de Relatório</span>
+              <span style={{ fontSize: 12, color: '#64748b', background: '#1e293b', padding: '3px 10px', borderRadius: 6 }}>
+                Clique em qualquer texto para editar
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => window.print()}
+                style={{ background: '#7B98B8', color: 'white', border: 'none', padding: '8px 18px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}
+              >
+                <Download size={15} /> Download PDF
+              </button>
+              <button
+                onClick={onClose}
+                style={{ background: '#1e293b', color: 'white', border: 'none', padding: '8px 14px', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 14 }}
+              >
+                <X size={15} /> Fechar
+              </button>
+            </div>
+          </div>
 
-      {/* ── Print tip ── */}
-      <div className="no-print" style={{ background: '#f0fdf4', borderBottom: '1px solid #bbf7d0', padding: '6px 24px', fontSize: 12, color: '#166534', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span>💡</span>
-        <span>Ao clicar <strong>Download PDF</strong>, selecione <strong>"Guardar como PDF"</strong> na janela de impressão do browser. Certifique-se de desativar cabeçalhos/rodapés de browser nas opções avançadas.</span>
-      </div>
+          {/* ── Print tip ── */}
+          <div className="no-print" style={{ background: '#f0fdf4', borderBottom: '1px solid #bbf7d0', padding: '6px 24px', fontSize: 12, color: '#166534', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>💡</span>
+            <span>Ao clicar <strong>Download PDF</strong>, selecione <strong>"Guardar como PDF"</strong> na janela de impressão do browser. Certifique-se de desativar cabeçalhos/rodapés de browser nas opções avançadas.</span>
+          </div>
+        </>
+      )}
 
       {/* ── Scrollable pages ── */}
-      <div style={{ flex: 1, overflow: 'auto', padding: '24px' }}>
+      <div style={embedded ? { padding: '0' } : { flex: 1, overflow: 'auto', padding: '24px' }}>
 
         {/* ════ PÁGINA 1 — CAPA + DADOS CLIENTE ════ */}
         <div className="pdf-page" style={pageStyle}>
 
           {/* Cover header */}
-          <div style={{ background: '#781D1D', color: 'white', padding: '14mm 14mm 10mm 14mm', display: 'flex', alignItems: 'center', gap: '10mm' }}>
+          <div style={{ background: brand.color, color: 'white', padding: '14mm 14mm 10mm 14mm', display: 'flex', alignItems: 'center', gap: '10mm' }}>
             <div style={{ background: 'white', borderRadius: 5, padding: '4px 4px 2px 4px', flexShrink: 0 }}>
-              <svg viewBox="0 0 100 80" style={{ width: 44, height: 36, display: 'block' }} fill="none">
-                <path d="M 45 10 A 30 30 0 0 0 45 70" stroke="#333333" strokeWidth="2.5" strokeLinecap="round" />
-                <path d="M 30 45 L 42 58 L 65 25" stroke="#781D1D" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <BrandLogo brand={brand} width={44} height={36} />
             </div>
             <div style={{ flex: 1 }}>
               <div contentEditable suppressContentEditableWarning
-                style={{ fontSize: '22pt', fontWeight: 800, outline: 'none', cursor: 'text', lineHeight: 1.1 }}>RECOFATIMA</div>
+                style={{ fontSize: '22pt', fontWeight: 800, outline: 'none', cursor: 'text', lineHeight: 1.1 }}>{brand.name}</div>
               <div contentEditable suppressContentEditableWarning
-                style={{ fontSize: '10pt', outline: 'none', cursor: 'text', marginTop: 3 }}>Contabilidade & Consultoria Fiscal</div>
+                style={{ fontSize: '10pt', outline: 'none', cursor: 'text', marginTop: 3 }}>{brand.subtitleLong}</div>
               <div contentEditable suppressContentEditableWarning
                 style={{ fontSize: '8pt', outline: 'none', cursor: 'text', marginTop: 3, opacity: 0.85 }}>Relatório de Simulação Fiscal • OE 2026</div>
             </div>
@@ -360,7 +415,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
           {/* Content */}
           <div style={{ padding: '5mm 14mm 8mm 14mm', flex: 1 }}>
 
-            <SecHead title="Dados do Cliente" />
+            <SecHead title="Dados do Cliente" bg={brand.color} />
             <div style={{ background: '#f8fafc' }}>
               <DR2 l1="Nome / Empresa:" v1={profile.nomeCliente || '—'} l2="NIF:" v2={profile.nif || '—'} />
               <DR2 l1="Email:" v1={profile.email || '—'} l2="Telefone:" v2={profile.telefone || '—'} />
@@ -379,10 +434,10 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
 
             {taxR && (
               <>
-                <SecHead title="Resumo Executivo — Recomendação" bg={taxR.winner === 'LDA' ? '#781D1D' : '#059669'} />
+                <SecHead title="Resumo Executivo — Recomendação" bg={taxR.winner === 'LDA' ? brand.color : '#059669'} />
                 <div style={{ background: taxR.winner === 'LDA' ? '#fdf2f2' : '#ecfdf5', padding: '8px', marginBottom: 8 }}>
                   <div contentEditable suppressContentEditableWarning
-                    style={{ fontSize: '12pt', fontWeight: 800, color: taxR.winner === 'LDA' ? '#781D1D' : '#059669', outline: 'none', cursor: 'text', marginBottom: 4 }}
+                    style={{ fontSize: '12pt', fontWeight: 800, color: taxR.winner === 'LDA' ? brand.color : '#059669', outline: 'none', cursor: 'text', marginBottom: 4 }}
                   >{`Regime Ideal: ${taxR.winner === 'LDA' ? 'Sociedade (Lda / Unipessoal)' : 'Trabalhador Independente (ENI)'}`}</div>
                   <div contentEditable suppressContentEditableWarning
                     style={{ fontSize: '8.5pt', color: taxR.winner === 'LDA' ? '#5a1313' : '#065f46', outline: 'none', cursor: 'text' }}
@@ -390,23 +445,23 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <MetricCard label="Net Income ENI (Rend. Líquido)" value={ptEur(taxR.eniNet)} bg="#ecfdf5" color="#059669" />
-                  <MetricCard label="Net Income Lda (Rend. Líquido)" value={ptEur(taxR.ldaNet)} bg="#fdf2f2" color="#781D1D" />
+                  <MetricCard label="Net Income Lda (Rend. Líquido)" value={ptEur(taxR.ldaNet)} bg="#fdf2f2" color={brand.color} />
                 </div>
               </>
             )}
           </div>
-          <PageFooter />
+          <PageFooter brand={brand} />
         </div>
 
         {/* ════ PÁGINA 2 — ENQUADRAMENTO FISCAL ════ */}
         {taxState && taxR && (
           <div className="pdf-page" style={pageStyle}>
-            <PageHeader title="Enquadramento Fiscal — ENI vs Sociedade" pageNum={2} />
+            <PageHeader title="Enquadramento Fiscal — ENI vs Sociedade" pageNum={2} brand={brand} />
             <div style={{ flex: 1, padding: '5mm 14mm 8mm 14mm' }}>
 
               {/* Comparison table header */}
               <div style={{ display: 'flex', marginBottom: 0 }}>
-                <div style={{ flex: 1, background: '#781D1D', color: 'white', padding: '6px 8px', fontWeight: 700, fontSize: '9pt', marginRight: 2 }}>
+                <div style={{ flex: 1, background: brand.color, color: 'white', padding: '6px 8px', fontWeight: 700, fontSize: '9pt', marginRight: 2 }}>
                   ENI (Recibos Verdes)
                 </div>
                 <div style={{ flex: 1, background: '#334155', color: 'white', padding: '6px 8px', fontWeight: 700, fontSize: '9pt' }}>
@@ -452,16 +507,16 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
                 <div style={{ flex: 1, background: taxR.winner === 'LDA' ? '#fdf2f2' : '#f8fafc', padding: '8px' }}>
                   <div style={{ fontSize: '7pt', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rendimento Líquido Anual</div>
                   <div contentEditable suppressContentEditableWarning
-                    style={{ fontSize: '14pt', fontWeight: 800, color: taxR.winner === 'LDA' ? '#781D1D' : '#0f172a', outline: 'none', cursor: 'text' }}
+                    style={{ fontSize: '14pt', fontWeight: 800, color: taxR.winner === 'LDA' ? brand.color : '#0f172a', outline: 'none', cursor: 'text' }}
                   >{ptEur(taxR.ldaNet)}</div>
-                  {taxR.winner === 'LDA' && <div style={{ fontSize: '7pt', color: '#781D1D', fontWeight: 700, marginTop: 2 }}>✓ MELHOR OPÇÃO</div>}
+                  {taxR.winner === 'LDA' && <div style={{ fontSize: '7pt', color: brand.color, fontWeight: 700, marginTop: 2 }}>✓ MELHOR OPÇÃO</div>}
                 </div>
               </div>
 
               {/* Cash flows */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                 <MetricCard label="Cash-Flow Livre ENI (Ano 1)" value={ptEur(taxR.eniCashFlow)} bg="#ecfdf5" color="#059669" />
-                <MetricCard label="Cash-Flow Holding Lda (Ano 1)" value={ptEur(taxR.ldaCashFlow)} bg="#fdf2f2" color="#781D1D" />
+                <MetricCard label="Cash-Flow Holding Lda (Ano 1)" value={ptEur(taxR.ldaCashFlow)} bg="#fdf2f2" color={brand.color} />
               </div>
 
               {/* Break-even */}
@@ -492,16 +547,16 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
                 >{taxState.rev <= 15000 && !taxState.b2b ? 'Com faturação ≤15.000€ e mercado B2C, é possível ativar a isenção do Art. 53º do CIVA. Preços sem IVA = mais competitivos.' : `Com este volume e mercado ${taxState.b2b ? 'B2B' : 'B2C'}, o enquadramento no Regime Normal de IVA é obrigatório e vantajoso para dedução de despesas.`}</div>
               </div>
             </div>
-            <PageFooter />
+            <PageFooter brand={brand} />
           </div>
         )}
 
         {/* ════ PÁGINA 3 — VIATURAS ════ */}
         {vehicleState && vehR && (
           <div className="pdf-page" style={pageStyle}>
-            <PageHeader title="Viaturas Ligeiras — IVA e Tributação Autónoma" pageNum={3} />
+            <PageHeader title="Viaturas Ligeiras — IVA e Tributação Autónoma" pageNum={3} brand={brand} />
             <div style={{ flex: 1, padding: '5mm 14mm 8mm 14mm' }}>
-              <SecHead title={`${vehicleState.category === 'passageiros' ? 'Ligeiro de Passageiros' : 'Veículo Comercial'} — ${vehicleState.engineType.toUpperCase()}`} />
+              <SecHead title={`${vehicleState.category === 'passageiros' ? 'Ligeiro de Passageiros' : 'Veículo Comercial'} — ${vehicleState.engineType.toUpperCase()}`} bg={brand.color} />
               <div style={{ background: '#f8fafc' }}>
                 <DR2 l1="Preço Aquisição (s/ IVA):" v1={ptEur(vehicleState.price)} l2="Regime Aquisição:" v2={vehicleState.ivaRegime === 'normal' ? 'Compra Nova c/ IVA' : vehicleState.ivaRegime === 'second_hand' ? '2ª Mão' : 'Leasing/Renting'} />
                 <DR2 l1="IVA Aquisição Total:" v1={ptEur(vehR.totalIvaAq)} l2="Taxa Dedução IVA:" v2={`${(vehR.ivaAqRate * 100).toFixed(0)}%`} />
@@ -532,19 +587,19 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
                 </div>
               </div>
             </div>
-            <PageFooter />
+            <PageFooter brand={brand} />
           </div>
         )}
 
         {/* ════ PÁGINA 4 — BENEFÍCIOS E SS ════ */}
         {(ticketState || ssState) && (
           <div className="pdf-page" style={pageStyle}>
-            <PageHeader title="Benefícios Laborais e Segurança Social" pageNum={vehicleState ? 4 : 3} />
+            <PageHeader title="Benefícios Laborais e Segurança Social" pageNum={vehicleState ? 4 : 3} brand={brand} />
             <div style={{ flex: 1, padding: '5mm 14mm 8mm 14mm' }}>
 
               {tickR && ticketState && (
                 <>
-                  <SecHead title="Tickets de Refeição — Benefícios Fiscais" />
+                  <SecHead title="Tickets de Refeição — Benefícios Fiscais" bg={brand.color} />
                   <div style={{ background: '#f8fafc' }}>
                     <DR2 l1="Funcionários:" v1={`${ticketState.employees}`} l2="Valor diário:" v2={`€${ticketState.ticketValue}/dia`} />
                     <DR2 l1="Dias por mês:" v1={`${ticketState.daysPerMonth}`} l2="Meses:" v2={`${ticketState.months}`} />
@@ -552,7 +607,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
                   <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                     <MetricCard label="Custo Total Tickets/Ano" value={ptEur(tickR.ticketCost)} bg="#eff6ff" color="#2563eb" />
                     <MetricCard label="Poupança SS (23,75%)/Ano" value={ptEur(tickR.savings)} bg="#ecfdf5" color="#059669" />
-                    <MetricCard label="Custo Dedutível (60%)/Ano" value={ptEur(tickR.custoDedutivelEmpresa)} bg="#fdf2f2" color="#781D1D" />
+                    <MetricCard label="Custo Dedutível (60%)/Ano" value={ptEur(tickR.custoDedutivelEmpresa)} bg="#fdf2f2" color={brand.color} />
                   </div>
                 </>
               )}
@@ -573,27 +628,27 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
                   ) : (
                     <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                       <MetricCard label="Contribuição Mensal" value={ptEur(ssR.mensal)} bg="#eff6ff" color="#2563eb" />
-                      <MetricCard label="Contribuição Trimestral" value={ptEur(ssR.trimestral)} bg="#fdf2f2" color="#781D1D" />
+                      <MetricCard label="Contribuição Trimestral" value={ptEur(ssR.trimestral)} bg="#fdf2f2" color={brand.color} />
                       <MetricCard label="Contribuição Anual" value={ptEur(ssR.anual)} bg="#ecfdf5" color="#059669" />
                     </div>
                   )}
                 </>
               )}
             </div>
-            <PageFooter />
+            <PageFooter brand={brand} />
           </div>
         )}
 
         {/* ════ ÚLTIMA PÁGINA — NOTAS LEGAIS ════ */}
         <div className="pdf-page" style={{ ...pageStyle, pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
-          <PageHeader title="Base Legal e Notas" pageNum={[taxState, vehicleState, ticketState || ssState].filter(Boolean).length + 2} />
+          <PageHeader title="Base Legal e Notas" pageNum={[taxState, vehicleState, ticketState || ssState].filter(Boolean).length + 2} brand={brand} />
           <div style={{ flex: 1, padding: '5mm 14mm 8mm 14mm' }}>
-            <SecHead title="Legislação de Referência — Simuladores Recofatima 2026" />
+            <SecHead title={`Legislação de Referência — ${brand.name} · Simuladores 2026`} bg={brand.color} />
             <div style={{ background: '#f8fafc' }}>
               {legalItems.map(([topic, desc], i) => (
                 <div key={i} style={{ display: 'flex', padding: '3px 8px', background: i % 2 === 0 ? '#f1f5f9' : 'white', borderBottom: '1px solid #e2e8f0', fontSize: '8pt' }}>
                   <span contentEditable suppressContentEditableWarning
-                    style={{ color: '#781D1D', fontWeight: 700, width: 130, flexShrink: 0, outline: 'none', cursor: 'text' }}
+                    style={{ color: brand.color, fontWeight: 700, width: 130, flexShrink: 0, outline: 'none', cursor: 'text' }}
                   >{topic}</span>
                   <span contentEditable suppressContentEditableWarning
                     style={{ color: '#0f172a', flex: 1, outline: 'none', cursor: 'text' }}
@@ -613,24 +668,21 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
             </div>
 
             {/* Branding block */}
-            <div style={{ background: '#781D1D', borderRadius: 4, padding: '8px 12px', marginTop: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ background: brand.color, borderRadius: 4, padding: '8px 12px', marginTop: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ background: 'white', borderRadius: 4, padding: '3px 3px 1px 3px', flexShrink: 0 }}>
-                <svg viewBox="0 0 100 80" style={{ width: 28, height: 22, display: 'block' }} fill="none">
-                  <path d="M 45 10 A 30 30 0 0 0 45 70" stroke="#333333" strokeWidth="2.5" strokeLinecap="round" />
-                  <path d="M 30 45 L 42 58 L 65 25" stroke="#781D1D" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                <BrandLogo brand={brand} width={28} height={22} />
               </div>
               <div>
                 <div contentEditable suppressContentEditableWarning
                   style={{ color: 'white', fontWeight: 800, fontSize: '9pt', outline: 'none', cursor: 'text' }}
-                >RECOFATIMA Contabilidade</div>
+                >{brand.name}</div>
                 <div contentEditable suppressContentEditableWarning
                   style={{ color: 'rgba(255,255,255,0.8)', fontSize: '8pt', outline: 'none', cursor: 'text', marginTop: 2 }}
                 >{`Relatório gerado em ${dateStr} • OE 2026`}</div>
               </div>
             </div>
           </div>
-          <PageFooter />
+          <PageFooter brand={brand} />
         </div>
 
       </div>

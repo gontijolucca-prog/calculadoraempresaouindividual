@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 import ClientProfile, { defaultProfile } from './ClientProfile';
 import LegalInfo from './LegalInfo';
 import LoginPage from './LoginPage';
-import { defaultFichaState, applyProfileToFicha, type FichaState } from './fichaState';
+import LandingPage from './LandingPage';
 import type { DiagnosticoState } from './DiagnosticoAutonomia';
 import type { ImoveisState } from './ImoveisEmpresa';
 import type { IMTState } from './IMTSimulator';
@@ -17,6 +17,8 @@ import { LAYOUTS } from './Layouts';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from './lib/firebase';
 import { loadFromStorage, saveToStorage, clearStorage } from './lib/storage';
+import { loadOfficeSettings, saveOfficeSettings, type OfficeSettings } from './lib/officeSettings';
+import { loadHonorariosConfig, saveHonorariosConfig, type HonorariosConfig } from './lib/honorarios';
 
 // Code-split heavy simulators — keeps the initial bundle small.
 const TaxSimulator = lazy(() => import('./TaxSimulator'));
@@ -27,16 +29,16 @@ const DiagnosticoAutonomia = lazy(() => import('./DiagnosticoAutonomia'));
 const ImoveisEmpresa = lazy(() => import('./ImoveisEmpresa'));
 const IMTSimulator = lazy(() => import('./IMTSimulator'));
 const SalarioLiquidoSimulator = lazy(() => import('./SalarioLiquidoSimulator'));
-const FichaDiagnostico = lazy(() => import('./FichaDiagnostico'));
 const UpdatesList = lazy(() => import('./UpdatesList'));
 const PreviSaSimulator = lazy(() => import('./PreviSaSimulator'));
+const OfficeSettingsView = lazy(() => import('./OfficeSettingsView'));
 import { defaultPreviSaState } from './previSaState';
 import type { PreviSaState } from './previSaState';
 
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
-  | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'ficha' | 'legal' | 'updates'
-  | 'previsa';
+  | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'legal' | 'updates'
+  | 'previsa' | 'office-settings';
 
 const VIEW_TITLES: Record<ViewType, string> = {
   profile: 'Perfil do Cliente',
@@ -48,11 +50,50 @@ const VIEW_TITLES: Record<ViewType, string> = {
   imoveis: 'Imóveis na Empresa',
   imt: 'Simulador IMT',
   salario: 'Salário Líquido',
-  ficha: 'Ficha de Diagnóstico',
   legal: 'Base Legal & Referências',
   updates: 'Checklist de Atualizações',
   previsa: 'Simulador PreviSa',
+  'office-settings': 'Definições do Escritório',
 };
+
+/**
+ * Migração legada: a antiga view "Ficha" foi fundida no Perfil do Cliente.
+ * Lê o `fichaState` antigo do localStorage (se existir), faz merge dos campos
+ * de diagnóstico para o `clientProfile`, persiste e remove a chave legada.
+ * Idempotente — se já não houver ficha antiga, devolve o perfil intacto.
+ */
+function loadProfileWithFichaMerge(): ClientProfileType {
+  const loaded = loadFromStorage('clientProfile', defaultProfile);
+  if (typeof window === 'undefined' || !window.localStorage) return loaded;
+  try {
+    const raw = window.localStorage.getItem('recofatima:v1:fichaState');
+    if (!raw) return loaded;
+    const parsed = JSON.parse(raw);
+    const f = parsed?.data;
+    if (!f) {
+      window.localStorage.removeItem('recofatima:v1:fichaState');
+      return loaded;
+    }
+    const merged: ClientProfileType = {
+      ...loaded,
+      custos:          f.custos          ?? loaded.custos,
+      investimento:    f.investimento    ?? loaded.investimento,
+      viaturasDiag:    f.viaturas        ?? loaded.viaturasDiag,
+      societaria:      f.societaria      ?? loaded.societaria,
+      distribuicao:    f.distribuicao    ?? loaded.distribuicao,
+      fiscalAtual:     f.fiscalAtual     ?? loaded.fiscalAtual,
+      objetivos:       f.objetivos       ?? loaded.objetivos,
+      intencoes:       f.intencoes       ?? loaded.intencoes,
+      documentos:      f.documentos      ?? loaded.documentos,
+      analiseInterna:  f.analiseInterna  ?? loaded.analiseInterna,
+    };
+    saveToStorage('clientProfile', merged);
+    window.localStorage.removeItem('recofatima:v1:fichaState');
+    return merged;
+  } catch {
+    return loaded;
+  }
+}
 
 interface TaxSimulatorState {
   profSit: string; currentInc: number; age: number; isMainAct: boolean;
@@ -166,7 +207,7 @@ function ViewLoading() {
   return (
     <div role="status" aria-live="polite" className="h-full flex items-center justify-center bg-[#F8FAFC]">
       <div className="flex flex-col items-center gap-3">
-        <Loader2 className="w-8 h-8 text-[#781D1D] animate-spin" aria-hidden="true" />
+        <Loader2 className="w-8 h-8 text-[#7B98B8] animate-spin" aria-hidden="true" />
         <p className="text-[12px] font-[600] text-[#94A3B8]">A carregar…</p>
       </div>
     </div>
@@ -175,6 +216,7 @@ function ViewLoading() {
 
 function AppContent() {
   const [loggedIn, setLoggedIn] = useState(() => loadFromStorage('loggedIn', false));
+  const [showLogin, setShowLogin] = useState(false);
   const [showUpdateNotification, setShowUpdateNotification] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [lastDismissedCount, setLastDismissedCount] = useState(() => loadFromStorage('lastDismissedPendingCount', 0));
@@ -190,10 +232,10 @@ function AppContent() {
   const [saftData, setSaftData] = useState<SAFTParseResult | null>(null);
   const [showSaftViewer, setShowSaftViewer] = useState(false);
   const [previSaState, setPreviSaState] = useState<PreviSaState>(() => defaultPreviSaState());
-  // Carrega o perfil persistido (se existir) — clientProfile e fichaState são os
-  // dois estados que justificam persistência: representam o trabalho do consultor
-  // que não pode ser perdido a um refresh acidental.
-  const [clientProfile, setClientProfile] = useState<ClientProfileType>(() => loadFromStorage('clientProfile', defaultProfile));
+  // Carrega o perfil persistido. O perfil é o único estado de longa duração — guarda
+  // o trabalho do consultor entre sessões. A antiga `fichaState` foi fundida aqui
+  // via migração (loadProfileWithFichaMerge).
+  const [clientProfile, setClientProfile] = useState<ClientProfileType>(loadProfileWithFichaMerge);
   const [taxState, setTaxState] = useState<TaxSimulatorState>(() => getInitialTaxState(clientProfile));
   const [vehicleState, setVehicleState] = useState<VehicleSimulatorState>(getInitialVehicleState);
   const [ticketState, setTicketState] = useState<TicketSimulatorState>(() => getInitialTicketState(clientProfile));
@@ -202,17 +244,27 @@ function AppContent() {
   const [imoveisState, setImoveisState] = useState<ImoveisState>(() => getInitialImoveisState(clientProfile));
   const [imtState, setImtState] = useState<IMTState>(() => getInitialIMTState(clientProfile));
   const [salarioState, setSalarioState] = useState<SalarioState>(() => getInitialSalarioState(clientProfile));
-  const [fichaState, setFichaState] = useState<FichaState>(() => loadFromStorage('fichaState', defaultFichaState(clientProfile)));
+
+  // Definições do escritório (branding + honorários). Persistidas em localStorage —
+  // não pertencem ao cliente activo, são definições de licenciado.
+  const [officeSettings, setOfficeSettings] = useState<OfficeSettings>(() => loadOfficeSettings());
+  const [honorariosConfig, setHonorariosConfig] = useState<HonorariosConfig>(() => loadHonorariosConfig());
 
   // Auto-save em localStorage — debounce implícito via React batching.
   useEffect(() => { saveToStorage('clientProfile', clientProfile); }, [clientProfile]);
-  useEffect(() => { saveToStorage('fichaState', fichaState); }, [fichaState]);
   useEffect(() => { saveToStorage('loggedIn', loggedIn); }, [loggedIn]);
   useEffect(() => { saveToStorage('lastDismissedPendingCount', lastDismissedCount); }, [lastDismissedCount]);
+  useEffect(() => { saveOfficeSettings(officeSettings); }, [officeSettings]);
+  useEffect(() => { saveHonorariosConfig(honorariosConfig); }, [honorariosConfig]);
 
   // Sync document.title with the active view (helps history & screen readers)
   useEffect(() => {
-    document.title = `${VIEW_TITLES[view]} · Recofatima Simuladores`;
+    document.title = `${VIEW_TITLES[view]} · Estudo 360`;
+  }, [view]);
+
+  useEffect(() => {
+    const main = document.getElementById('main-content');
+    if (main) main.scrollTop = 0;
   }, [view]);
 
   useEffect(() => {
@@ -265,7 +317,9 @@ function AppContent() {
   }, [showSaftViewer]);
 
   if (!loggedIn) {
-    return <LoginPage onLogin={() => setLoggedIn(true)} />;
+    return showLogin
+      ? <LoginPage onLogin={() => setLoggedIn(true)} onBack={() => setShowLogin(false)} />
+      : <LandingPage onEnter={() => setShowLogin(true)} />;
   }
 
   const openLegal = () => { setPrevView(view); setLegalAnchor(null); setView('legal'); };
@@ -349,7 +403,6 @@ function AppContent() {
       anosAtividade: Math.max(0, new Date().getFullYear() - newProfile.inicioAtividade),
     }));
     setImtState(prev => ({ ...prev, idadeComprador: newProfile.idade }));
-    setFichaState(prev => applyProfileToFicha(newProfile, prev));
   };
 
   const handleTaxStateChange = (newState: TaxSimulatorState) => {
@@ -383,7 +436,9 @@ function AppContent() {
       <PageTransition pageKey={view}>
         {view === 'profile' && (
           <ClientProfile profile={clientProfile} onChange={updateProfileWithSimulatorSync}
-            taxState={taxState} vehicleState={vehicleState} ticketState={ticketState} ssState={ssState} />
+            taxState={taxState} vehicleState={vehicleState} ticketState={ticketState} ssState={ssState}
+            office={officeSettings} honorarios={honorariosConfig}
+            onGoToOfficeSettings={() => setView('office-settings')} />
         )}
         {view === 'tax' && (
           <TaxSimulator initialState={taxState} onStateChange={handleTaxStateChange} profile={clientProfile} />
@@ -409,9 +464,6 @@ function AppContent() {
         {view === 'salario' && (
           <SalarioLiquidoSimulator initialState={salarioState} onStateChange={setSalarioState} />
         )}
-        {view === 'ficha' && (
-          <FichaDiagnostico initialState={fichaState} onStateChange={setFichaState} openLegalAt={openLegalAt} clientProfile={clientProfile} />
-        )}
         {view === 'legal' && (
           <LegalInfo onBack={closeLegal} onOpenUpdates={openUpdates} clientProfile={clientProfile} vehicleState={vehicleState} ticketState={ticketState} initialAnchor={legalAnchor} />
         )}
@@ -420,6 +472,14 @@ function AppContent() {
         )}
         {view === 'previsa' && (
           <PreviSaSimulator initialState={previSaState} onStateChange={setPreviSaState} />
+        )}
+        {view === 'office-settings' && (
+          <OfficeSettingsView
+            office={officeSettings}
+            onOfficeChange={setOfficeSettings}
+            honorarios={honorariosConfig}
+            onHonorariosChange={setHonorariosConfig}
+          />
         )}
       </PageTransition>
     </Suspense>
@@ -626,7 +686,7 @@ function AppContent() {
           />
           <div className="relative bg-white rounded-[24px] shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
             {/* Accent bar */}
-            <div className="h-1.5 bg-gradient-to-r from-[#781D1D] to-[#a83030] w-full shrink-0" />
+            <div className="h-1.5 bg-gradient-to-r from-[#7B98B8] to-[#525C66] w-full shrink-0" />
 
             {/* Header */}
             <div className="px-6 pt-5 pb-4 flex items-center justify-between shrink-0 border-b border-slate-100">
@@ -675,7 +735,7 @@ function AppContent() {
                     <SaftSection title={group} count={items.length}>
                       {items.map((d, i) => (
                         <div key={i} className="flex items-baseline gap-3 py-1.5 border-b border-slate-50 last:border-0">
-                          <span className="text-[11px] font-[600] text-[#781D1D] shrink-0 w-[150px] leading-snug">{d.label}</span>
+                          <span className="text-[11px] font-[600] text-[#7B98B8] shrink-0 w-[150px] leading-snug">{d.label}</span>
                           <span className="text-[12px] font-[500] text-[#0F172A] leading-snug break-words min-w-0">{d.value}</span>
                         </div>
                       ))}

@@ -58,20 +58,30 @@ export function calcSalarioLiquido(p: SalarioParams): SalarioResult {
   // 1. SS trabalhador (mensal)
   const ssTrabalhador = p.salarioBruto * SS_RATE_EMPLOYEE;
 
-  // 2. Rendimento anual bruto para cálculo IRS
-  const rendimentoAnualBruto = p.salarioBruto * nrPagamentos;
+  // 2. Subsídio de alimentação (mensal) — calculado primeiro porque o excesso
+  // sobre o limite isento é rendimento sujeito a IRS (CIRS Art. 2º n.º 3 c)).
+  const limiteIsento = TICKET_LIMITS_2026[p.tipoSubsidio];
+  const valorDiario = p.subsidioAlimentacaoDiario;
+  const subsidioIsento = Math.min(valorDiario, limiteIsento) * p.diasSubsidio;
+  const subsidioTotal = valorDiario * p.diasSubsidio;
+  const subsidioTributavel = Math.max(0, subsidioTotal - subsidioIsento);
 
-  // 3. Dedução específica Cat. A (mínimo €4.104 ou 72% do rendimento)
+  // 3. Rendimento anual bruto = salário + excesso tributável do subsídio.
+  // Assume-se 11 meses de subsídio (excluindo férias) — convenção contabilística mais comum.
+  const subsidioTributavelAnual = subsidioTributavel * 11;
+  const rendimentoAnualBruto = p.salarioBruto * nrPagamentos + subsidioTributavelAnual;
+
+  // 4. Dedução específica Cat. A (mínimo €4.104 ou 72% do rendimento)
   const deducaoEspecifica = Math.max(DEDUCAO_ESPECIFICA_MIN, rendimentoAnualBruto * DEDUCAO_ESPECIFICA_RATE);
   const baseIRSAnual = Math.max(0, rendimentoAnualBruto - deducaoEspecifica);
 
-  // 4. Coleta IRS (tabela escalões 2026)
+  // 5. Coleta IRS (tabela escalões 2026)
   let coletaIRS = calculateIRS(baseIRSAnual);
 
-  // 5. Dedução dependentes — CIRS Art. 78º-A
+  // 6. Dedução dependentes — CIRS Art. 78º-A
   coletaIRS = Math.max(0, coletaIRS - calcDependentsDeduction(p.nrDependentes));
 
-  // 6. IRS Jovem — CIRS Art. 12º-B
+  // 7. IRS Jovem — CIRS Art. 12º-B
   let irsJovemIsencao = 0;
   if (p.irsJovem && p.idade <= 35) {
     const isencao = calcIRSJovem(p.anosAtividade, baseIRSAnual, p.idade);
@@ -80,15 +90,8 @@ export function calcSalarioLiquido(p: SalarioParams): SalarioResult {
     coletaIRS = irsComIsencao;
   }
 
-  // 7. Retenção mensal na fonte
+  // 8. Retenção mensal na fonte
   const retencaoIRS = coletaIRS / nrPagamentos;
-
-  // 8. Subsídio de alimentação
-  const limiteIsento = TICKET_LIMITS_2026[p.tipoSubsidio];
-  const valorDiario = p.subsidioAlimentacaoDiario;
-  const subsidioIsento = Math.min(valorDiario, limiteIsento) * p.diasSubsidio;
-  const subsidioTotal = valorDiario * p.diasSubsidio;
-  const subsidioTributavel = Math.max(0, subsidioTotal - subsidioIsento);
 
   // 9. Salário líquido mensal
   const salarioLiquido = p.salarioBruto - ssTrabalhador - retencaoIRS + subsidioIsento;

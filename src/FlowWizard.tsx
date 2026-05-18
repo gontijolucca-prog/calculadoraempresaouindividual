@@ -71,7 +71,7 @@ export function FlowWizard<T>({
       {/* Top progress bar */}
       <div className="shrink-0 w-full h-1.5 bg-[#F1F5F9]">
         <motion.div
-          className="h-full bg-[#781D1D]"
+          className="h-full bg-[#7B98B8]"
           initial={false}
           animate={{ width: `${progress}%` }}
           transition={{ duration: 0.5, ease: PREMIUM_EASE }}
@@ -95,13 +95,23 @@ export function FlowWizard<T>({
         </button>
       </div>
 
-      {/* Main content area */}
+      {/* Main content area.
+          Outer scrolls; inner uses `min-h-full + justify-center` so o conteúdo é
+          centrado verticalmente quando cabe e cresce para baixo quando não cabe
+          — evita o bug clássico de `flex justify-center + overflow-auto` em que o
+          topo do conteúdo é cortado pelo header acima. */}
       <div
         className={cn(
-          "flex-1 flex flex-col items-center px-6 sm:px-12 lg:px-20 pb-8 overflow-y-auto",
-          isResultsStep ? "justify-start pt-6" : "justify-center"
+          "flex-1",
+          isResultsStep ? "overflow-hidden" : "overflow-y-auto"
         )}
       >
+        <div
+          className={cn(
+            "min-h-full w-full flex flex-col items-center px-6 sm:px-12 lg:px-20",
+            isResultsStep ? "pt-6 pb-8 h-full" : "py-10 sm:py-14 justify-center"
+          )}
+        >
         <div className={cn("w-full max-w-6xl", isResultsStep && "h-full")}>
           <AnimatePresence mode="wait">
             <motion.div
@@ -229,6 +239,7 @@ export function FlowWizard<T>({
               )}
             </motion.div>
           </AnimatePresence>
+        </div>
         </div>
       </div>
     </div>

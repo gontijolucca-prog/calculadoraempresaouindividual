@@ -218,7 +218,7 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
             <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador IMT <Tip>IMT = Imposto Municipal sobre Transmissões Onerosas de Imóveis. É pago pelo comprador no momento da escritura de compra e venda. Em 2026, jovens até 35 anos na 1ª habitação têm isenção total até €330.539.</Tip></h2>
             <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Imposto Municipal sobre Transmissões + Imposto de Selo (2026). <Tip>Para além do IMT, a compra de imóveis tem sempre Imposto de Selo de 0,8% sobre o valor de transação. Juntos, são o principal custo fiscal da compra.</Tip></p>
           </div>
-          <motion.button onClick={enterFlow} className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#781D1D] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <motion.button onClick={enterFlow} className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#7B98B8] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <ListOrdered className="w-4 h-4" /> Vista simplificada
           </motion.button>
         </div>

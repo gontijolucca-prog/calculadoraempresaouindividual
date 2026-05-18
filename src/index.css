@@ -30,23 +30,27 @@ body {
   input, select, textarea { font-size: 16px !important; }
 }
 
+/* Placeholder com contraste AA (4.5:1) sobre bg-slate-50.
+   O default do browser usa cinza claro que falha WCAG. */
+::placeholder { color: #64748B; opacity: 1; }
+
 /* Visible keyboard focus everywhere we removed default outline.
    `outline-none` is fine for mouse but harms keyboard users — restore a clear ring via :focus-visible. */
 :focus-visible {
-  outline: 2px solid #781D1D;
+  outline: 2px solid #7B98B8;
   outline-offset: 2px;
   border-radius: 6px;
 }
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid #781D1D;
+  outline: 2px solid #7B98B8;
   outline-offset: 2px;
 }
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 [contenteditable]:focus-visible {
-  outline: 2px solid #781D1D;
+  outline: 2px solid #7B98B8;
   outline-offset: 1px;
 }
 
