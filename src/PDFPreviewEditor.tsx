@@ -198,11 +198,23 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
         #pdf-editor-root { visibility: visible; position: fixed; top: 0; left: 0; width: 100%; background: white; overflow: visible; z-index: 99999; }
         #pdf-editor-root * { visibility: visible; }
         .no-print { display: none !important; }
-        .pdf-page { box-shadow: none !important; margin: 0 !important; page-break-after: always; break-after: page; }
+        .pdf-page { box-shadow: none !important; margin: 0 !important; page-break-after: always; break-after: page; zoom: 1 !important; }
         .pdf-page:last-child { page-break-after: avoid; break-after: avoid; }
         * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
         [contenteditable] { outline: none !important; }
         @page { size: A4; margin: 0; }
+      }
+      /* Em ecrãs estreitos a página A4 (210mm) é mais larga que o ecrã;
+         reduz com CSS zoom para mostrar a folha completa. O utilizador
+         pode ampliar manualmente com pinça. Impressão fica intacta. */
+      @media screen and (max-width: 820px) {
+        #pdf-editor-root .pdf-page { zoom: 0.46; }
+      }
+      @media screen and (max-width: 480px) {
+        #pdf-editor-root .pdf-page { zoom: 0.42; }
+      }
+      @media screen and (max-width: 380px) {
+        #pdf-editor-root .pdf-page { zoom: 0.38; }
       }
     `;
     document.head.appendChild(style);
@@ -366,7 +378,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
                 onClick={() => window.print()}
                 style={{ background: '#7B98B8', color: 'white', border: 'none', padding: '8px 18px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}
               >
-                <Download size={15} /> Download PDF
+                <Download size={15} /> Transferir PDF
               </button>
               <button
                 onClick={onClose}
@@ -380,7 +392,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
           {/* ── Print tip ── */}
           <div className="no-print" style={{ background: '#f0fdf4', borderBottom: '1px solid #bbf7d0', padding: '6px 24px', fontSize: 12, color: '#166534', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span>💡</span>
-            <span>Ao clicar <strong>Download PDF</strong>, selecione <strong>"Guardar como PDF"</strong> na janela de impressão do browser. Certifique-se de desativar cabeçalhos/rodapés de browser nas opções avançadas.</span>
+            <span>Ao clicar <strong>Transferir PDF</strong>, selecione <strong>"Guardar como PDF"</strong> na janela de impressão do navegador. Certifique-se de desativar cabeçalhos/rodapés do navegador nas opções avançadas.</span>
           </div>
         </>
       )}

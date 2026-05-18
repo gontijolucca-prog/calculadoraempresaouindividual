@@ -174,7 +174,7 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
     const concentracao = d.volumeNegocios > 0 ? d.faturacaoMaiorCliente / d.volumeNegocios : 0;
     if (liquidez < 1) al.push('RISCO DE TESOURARIA — rácio de liquidez inferior a 1');
     if (concentracao > 0.40) al.push('Dependência crítica de cliente — mais de 40% da faturação num só cliente');
-    if (autonomia < 0.25) al.push('Baixa autonomia financeira — menos de 25% dos activos financiados por capitais próprios');
+    if (autonomia < 0.25) al.push('Baixa autonomia financeira — menos de 25% dos ativos financiados por capitais próprios');
     if (globalScore < 3) al.push('Empresa vulnerável a choques externos — score global inferior a 3/5');
     return al;
   }, [d, globalScore]);

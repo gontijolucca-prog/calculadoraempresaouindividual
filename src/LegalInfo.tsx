@@ -1242,10 +1242,10 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
                 <LegalRow label="Âmbito" value="Combustível e despesas de assistência automóvel nas viaturas da empresa — aceite em +1.800 postos. Vales de €5, €10 e €15." />
                 <LegalRow label="Isenção IRS" value="Não existe — gasto de viatura não isento para o trabalhador" note="CIRS Art. 2.º n.º 3 b) — remuneração em espécie sujeita a IRS se não for viatura da empresa" />
                 <LegalRow label="Isenção SS" value="Não existe — incide contribuição normal" />
-                <LegalRow label="Dedutibilidade IRC" value="100% dedutível como gasto com viaturas" note="CIRC Art. 23.º n.º 1 h) — gastos suportados com viaturas afectas à actividade" />
+                <LegalRow label="Dedutibilidade IRC" value="100% dedutível como gasto com viaturas" note="CIRC Art. 23.º n.º 1 h) — gastos suportados com viaturas afetas à atividade" />
                 <LegalRow label="IVA — Ligeiros de passageiros" value="0% de IVA dedutível em combustível e manutenção" note="CIVA Art. 21.º n.º 1 a) — exclusão total de viaturas de passageiros" />
                 <LegalRow label="IVA — Ligeiros mistos / pick-up" value="50% de IVA dedutível" note="CIVA Art. 21.º n.º 2 — dedução parcial para veículos de uso misto" />
-                <LegalRow label="IVA — Viaturas comerciais / mercadorias" value="100% de IVA dedutível" note="CIVA Art. 21.º — viaturas exclusivamente afectas à actividade" />
+                <LegalRow label="IVA — Viaturas comerciais / mercadorias" value="100% de IVA dedutível" note="CIVA Art. 21.º — viaturas exclusivamente afetas à atividade" />
                 <LegalRow label="Tributação Autónoma (TA)" value="Pode aplicar-se sobre as despesas com viaturas — taxa varia conforme o custo de aquisição e o ano" note="CIRC Art. 88.º n.º 3 — taxa de 10%, 27,5% ou 35% consoante o valor de aquisição da viatura" />
               </div>
             </div>
@@ -1501,7 +1501,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
             <Article code="CIRS Art. 31.º" description="Regime Simplificado — coeficientes de 0,15 (bens) e 0,75 (serviços)" />
             <Article code="CIRS Art. 68.º" description="Taxas gerais de IRS 2026 — 9 escalões progressivos de 12,5% a 48% (Lei n.º 73-A/2025)" />
             <Article code="CIRS Art. 78.º-A" description="Dedução por dependentes — €600 (>3 anos) / €726 (1.º filho ≤3 anos) / €900 (2.º+ filho ≤3 anos)" />
-            <Article code="Lei n.º 73-A/2025" description="Orçamento do Estado 2026 — actualiza escalões IRS em 3,51% e reduz taxas marginais 1.º a 5.º escalões" />
+            <Article code="Lei n.º 73-A/2025" description="Orçamento do Estado 2026 — atualiza escalões IRS em 3,51% e reduz taxas marginais 1.º a 5.º escalões" />
             <Article code="Lei n.º 55-A/2025" description="Alteração ao Art. 68.º CIRS — redução das taxas marginais aprovada em Julho 2025" />
             <Article code="Lei n.º 45-A/2024" description="OE 2025 — alargamento do IRS Jovem para 10 anos com escalões 100/75/50/25%" />
             <Article code="CIRS Art. 101.º" description="Retenção na fonte — Categoria B: 11,5% para serviços profissionais" />

@@ -225,9 +225,9 @@ function ViewLoading() {
 function AppContent() {
   const [loggedIn, setLoggedIn] = useState(() => loadFromStorage('loggedIn', false));
   const [showLogin, setShowLogin] = useState(false);
-  // `mode` is intentionally NOT persisted — every app boot forces the user through
-  // the Mode Selector so they consciously pick a context for this session.
-  const [mode, setMode] = useState<AppMode | null>(null);
+  // Mode is persisted: ao actualizar a página o utilizador continua no mesmo contexto.
+  // Limpa quando faz `Trocar modo` (manual) ou logout.
+  const [mode, setMode] = useState<AppMode | null>(() => loadFromStorage<AppMode | null>('mode', null));
   const [showUpdateNotification, setShowUpdateNotification] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [lastDismissedCount, setLastDismissedCount] = useState(() => loadFromStorage('lastDismissedPendingCount', 0));
@@ -264,6 +264,7 @@ function AppContent() {
   // Auto-save em localStorage — debounce implícito via React batching.
   useEffect(() => { saveToStorage('clientProfile', clientProfile); }, [clientProfile]);
   useEffect(() => { saveToStorage('loggedIn', loggedIn); }, [loggedIn]);
+  useEffect(() => { saveToStorage('mode', mode); }, [mode]);
   useEffect(() => { saveToStorage('lastDismissedPendingCount', lastDismissedCount); }, [lastDismissedCount]);
   useEffect(() => { saveOfficeSettings(officeSettings); }, [officeSettings]);
   useEffect(() => { saveHonorariosConfig(honorariosConfig); }, [honorariosConfig]);
@@ -342,13 +343,18 @@ function AppContent() {
         }}
         onLogout={() => {
           setLoggedIn(false);
+          setMode(null);
           clearStorage('loggedIn');
+          clearStorage('mode');
         }}
       />
     );
   }
 
-  const backToModeSelection = () => setMode(null);
+  const backToModeSelection = () => {
+    setMode(null);
+    clearStorage('mode');
+  };
 
   const openLegal = () => { setPrevView(view); setLegalAnchor(null); setView('legal'); };
   const closeLegal = () => setView(prevView);
@@ -396,7 +402,9 @@ function AppContent() {
   const openUpdates = () => { setPrevView(view); setView('updates'); };
   const handleLogout = () => {
     setLoggedIn(false);
+    setMode(null);
     clearStorage('loggedIn');
+    clearStorage('mode');
   };
   // Deep-link from Ficha → Legal at a given anchor.
   // The anchor is passed via state; LegalInfo handles the scroll on mount via useEffect,

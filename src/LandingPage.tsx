@@ -277,7 +277,7 @@ function ValueStrip() {
   const items = [
     ['10', 'Simuladores fiscais'],
     ['3', 'Documentos num clique'],
-    ['OE 2026', 'Sempre actualizado'],
+    ['OE 2026', 'Sempre atualizado'],
     ['100%', 'Sob a sua marca'],
   ];
   return (
@@ -310,7 +310,7 @@ function HowItWorks() {
     {
       step: '03',
       title: 'Um clique → pacote pronto.',
-      body: 'Simulação fiscal + proposta de honorários + minuta de contrato OCC, todos com a sua marca. Edita inline, imprime ou guarda em PDF.',
+      body: 'Simulação fiscal + proposta de honorários + minuta de contrato OCC, todos com a sua marca. Edita diretamente na página, imprime ou guarda em PDF.',
     },
   ];
   return (

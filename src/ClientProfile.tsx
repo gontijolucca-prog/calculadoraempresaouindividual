@@ -780,7 +780,7 @@ export default function ClientProfile({
               <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Viaturas da Empresa</h3>
               <div className="grid grid-cols-2 gap-x-4 gap-y-4">
                 <div>
-                  <label className={labelClass}>Tem viaturas afectas?</label>
+                  <label className={labelClass}>Tem viaturas afetas?</label>
                   <select value={st.viaturasDiag.tem} onChange={e => setVD({ tem: e.target.value as 'sim'|'nao'|'' })} className={inputClass}>
                     <option value="">—</option><option value="sim">Sim</option><option value="nao">Não</option>
                   </select>

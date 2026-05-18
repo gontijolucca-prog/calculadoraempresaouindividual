@@ -90,9 +90,19 @@ export default function MinutaContrato({
           body * { visibility: hidden; }
           #${printRootId}, #${printRootId} * { visibility: visible; }
           #${printRootId} { position: absolute; top: 0; left: 0; width: 100%; }
-          #${printRootId} .mc-page { box-shadow: none; margin: 0; page-break-after: always; }
+          #${printRootId} .mc-page { box-shadow: none; margin: 0; page-break-after: always; zoom: 1 !important; }
           #${printRootId} .mc-page:last-child { page-break-after: auto; }
           @page { size: A4; margin: 0; }
+        }
+        /* Em ecrãs estreitos a folha A4 não cabe — encolhe com zoom (impressão fica intacta). */
+        @media screen and (max-width: 820px) {
+          #${printRootId} .mc-page { zoom: 0.46; }
+        }
+        @media screen and (max-width: 480px) {
+          #${printRootId} .mc-page { zoom: 0.42; }
+        }
+        @media screen and (max-width: 380px) {
+          #${printRootId} .mc-page { zoom: 0.38; }
         }
       `}</style>
 

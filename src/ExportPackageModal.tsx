@@ -262,7 +262,7 @@ export default function ExportPackageModal({
                     </div>
                     <h3 className="text-[16px] font-[800] text-[#0F172A]">Minuta saltada</h3>
                     <p className="text-[13px] text-[#64748B] mt-2 font-[500]">
-                      Esta proposta vai sair apenas com a simulação e a carta de honorários. Active novamente em cima caso queira incluir o contrato.
+                      Esta proposta vai sair apenas com a simulação e a carta de honorários. Ative novamente em cima caso queira incluir o contrato.
                     </p>
                     <button
                       type="button"

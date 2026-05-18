@@ -60,8 +60,18 @@ export default function Proposta({ profile, office, honorarios, servicosIds, onS
           body * { visibility: hidden; }
           #${printRootId}, #${printRootId} * { visibility: visible; }
           #${printRootId} { position: absolute; top: 0; left: 0; width: 100%; }
-          #${printRootId} .pp-page { box-shadow: none; margin: 0; }
+          #${printRootId} .pp-page { box-shadow: none; margin: 0; zoom: 1 !important; }
           @page { size: A4; margin: 0; }
+        }
+        /* Em ecrãs estreitos a folha A4 não cabe — encolhe com zoom (impressão fica intacta). */
+        @media screen and (max-width: 820px) {
+          #${printRootId} .pp-page { zoom: 0.46; }
+        }
+        @media screen and (max-width: 480px) {
+          #${printRootId} .pp-page { zoom: 0.42; }
+        }
+        @media screen and (max-width: 380px) {
+          #${printRootId} .pp-page { zoom: 0.38; }
         }
       `}</style>
 
