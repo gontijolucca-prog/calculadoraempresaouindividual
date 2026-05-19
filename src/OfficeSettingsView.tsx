@@ -94,14 +94,18 @@ function EscritorioForm({ office, onChange }: { office: OfficeSettings; onChange
   const fileRef = useRef<HTMLInputElement>(null);
   const set = <K extends keyof OfficeSettings>(k: K, v: OfficeSettings[K]) => onChange({ ...office, [k]: v });
 
-  const onLogoUpload = (file: File) => {
-    if (file.size > 1024 * 1024) {
-      alert('Logo demasiado grande. Máximo 1 MB.');
-      return;
+  const [logoBusy, setLogoBusy] = useState(false);
+
+  const onLogoUpload = async (file: File) => {
+    setLogoBusy(true);
+    try {
+      const dataUrl = await downscaleImageToDataURL(file, 1024 * 1024);
+      set('logoDataUrl', dataUrl);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Não foi possível carregar a imagem.');
+    } finally {
+      setLogoBusy(false);
     }
-    const reader = new FileReader();
-    reader.onload = () => set('logoDataUrl', String(reader.result || ''));
-    reader.readAsDataURL(file);
   };
 
   return (
@@ -124,12 +128,13 @@ function EscritorioForm({ office, onChange }: { office: OfficeSettings; onChange
             <div className="flex gap-2 mt-3">
               <button
                 onClick={() => fileRef.current?.click()}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[#0F172A] text-white text-[12px] font-[700] rounded-[8px] hover:bg-[#1E293B] transition-colors"
+                disabled={logoBusy}
+                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[#0F172A] text-white text-[12px] font-[700] rounded-[8px] hover:bg-[#1E293B] transition-colors disabled:opacity-60 disabled:cursor-progress"
               >
                 <Upload className="w-3.5 h-3.5" />
-                {office.logoDataUrl ? 'Substituir' : 'Carregar logo'}
+                {logoBusy ? 'A otimizar…' : office.logoDataUrl ? 'Substituir' : 'Carregar logo'}
               </button>
-              {office.logoDataUrl && (
+              {office.logoDataUrl && !logoBusy && (
                 <button
                   onClick={() => set('logoDataUrl', '')}
                   className="px-3 py-2 bg-[#FEF2F2] text-[#B91C1C] text-[12px] font-[700] rounded-[8px] hover:bg-[#FEE2E2] transition-colors"
@@ -139,8 +144,8 @@ function EscritorioForm({ office, onChange }: { office: OfficeSettings; onChange
                 </button>
               )}
             </div>
-            <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/svg+xml" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onLogoUpload(f); e.target.value = ''; }} />
-            <p className="text-[10px] text-[#94A3B8] mt-2 leading-snug">PNG, JPG ou SVG. Máx. 1 MB. Fundo transparente recomendado.</p>
+            <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp,image/gif,image/bmp" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onLogoUpload(f); e.target.value = ''; }} />
+            <p className="text-[10px] text-[#94A3B8] mt-2 leading-snug">PNG, JPG, SVG ou WebP. Qualquer tamanho — o sistema otimiza automaticamente. Fundo transparente recomendado.</p>
           </div>
 
           <div className="grid grid-cols-1 gap-4">
@@ -407,4 +412,94 @@ function HonorariosForm({ config, onChange }: { config: HonorariosConfig; onChan
       </div>
     </div>
   );
+}
+
+// ─── Auto-redimensionamento de imagens ─────────────────────────────────────
+//
+// Aceita qualquer tamanho/formato suportado pelo navegador (PNG, JPG, WebP, SVG)
+// e devolve um Data URL com o ficheiro decodificado a caber em `maxBytes` bytes
+// (binário). SVG passa direto (vetorial, normalmente pequeno). Bitmaps são
+// re-encodados em canvas com dimensão progressivamente menor até caber.
+//
+// Preserva transparência: começa em PNG; se mesmo a 640px ainda não couber,
+// converte para JPEG (mais compacto, sem alfa).
+function fileToDataURL(file: Blob): Promise<string> {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result || ''));
+    r.onerror = () => rej(new Error('Não foi possível ler o ficheiro.'));
+    r.readAsDataURL(file);
+  });
+}
+
+function loadImage(dataUrl: string): Promise<HTMLImageElement> {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = () => rej(new Error('Ficheiro de imagem inválido.'));
+    img.src = dataUrl;
+  });
+}
+
+// Tamanho do conteúdo binário codificado em base64 dentro de um data URL.
+function dataUrlBytes(dataUrl: string): number {
+  const commaIdx = dataUrl.indexOf(',');
+  if (commaIdx < 0) return dataUrl.length;
+  const b64 = dataUrl.slice(commaIdx + 1);
+  // base64: cada 4 chars → 3 bytes (descontando padding '=')
+  const padding = (b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0);
+  return Math.floor((b64.length * 3) / 4) - padding;
+}
+
+async function downscaleImageToDataURL(file: File, maxBytes: number): Promise<string> {
+  // SVG é texto vetorial — não compensa rasterizar. Mantém intacto.
+  if (file.type === 'image/svg+xml' || /\.svg$/i.test(file.name)) {
+    return fileToDataURL(file);
+  }
+
+  // Carrega para um <img> sem alocar memória extra.
+  const originalDataUrl = await fileToDataURL(file);
+  const img = await loadImage(originalDataUrl);
+
+  // Caminho rápido: se já é pequeno e não precisa de mexer, devolve o original.
+  if (file.size <= maxBytes) {
+    return originalDataUrl;
+  }
+
+  const wantsAlpha = file.type === 'image/png' || /\.png$/i.test(file.name);
+  const MAX_WIDTH = 1600;
+  let format: 'png' | 'jpeg' = wantsAlpha ? 'png' : 'jpeg';
+  let quality = 0.92;
+  let maxW = Math.min(MAX_WIDTH, img.naturalWidth);
+  let out = '';
+
+  // Até 10 iterações é mais que suficiente para convergir.
+  for (let i = 0; i < 10; i++) {
+    const scale = Math.min(1, maxW / img.naturalWidth);
+    const w = Math.max(64, Math.round(img.naturalWidth * scale));
+    const h = Math.max(64, Math.round(img.naturalHeight * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('O navegador não suporta canvas para redimensionar a imagem.');
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, w, h);
+    out = canvas.toDataURL(`image/${format}`, quality);
+    if (dataUrlBytes(out) <= maxBytes) return out;
+
+    // Estratégia de redução: primeiro tenta diminuir resolução,
+    // depois qualidade JPEG; finalmente converte PNG → JPEG se ainda for grande.
+    if (format === 'png' && maxW <= 640) {
+      format = 'jpeg';
+      quality = 0.85;
+      maxW = Math.min(MAX_WIDTH, img.naturalWidth);
+    } else if (format === 'jpeg' && quality > 0.55) {
+      quality = Math.max(0.55, quality - 0.1);
+    } else {
+      maxW = Math.max(256, Math.round(maxW * 0.8));
+    }
+  }
+  // Devolve a última tentativa mesmo que esteja acima — é o melhor possível.
+  return out;
 }
