@@ -1,5 +1,5 @@
 import type { ClientProfile } from '../ClientProfile';
-import type { PreviSaState, Territorio } from '../previSaState';
+import type { PreviSaState } from '../previSaState';
 
 export interface SAFTDetail {
   label: string;
@@ -16,13 +16,128 @@ export interface SAFTParseResult {
   details: SAFTDetail[];
 }
 
-function el(parent: Element | Document, tag: string): string {
-  return parent.getElementsByTagName(tag)[0]?.textContent?.trim() ?? '';
+// ════════════════════════════════════════════════════════════════════════════
+// Helpers — namespace-agnostic (matches by localName, ignoring xmlns prefix)
+// ════════════════════════════════════════════════════════════════════════════
+
+function localChildren(parent: Element, name: string): Element[] {
+  const out: Element[] = [];
+  const kids = parent.children;
+  for (let i = 0; i < kids.length; i++) {
+    const k = kids[i];
+    if (k.localName === name) out.push(k);
+  }
+  return out;
+}
+
+function localChild(parent: Element, name: string): Element | null {
+  const kids = parent.children;
+  for (let i = 0; i < kids.length; i++) {
+    if (kids[i].localName === name) return kids[i];
+  }
+  return null;
+}
+
+function localDescendants(root: Element | Document, name: string): Element[] {
+  const out: Element[] = [];
+  const walk = (n: Element) => {
+    if (n.localName === name) out.push(n);
+    const c = n.children;
+    for (let i = 0; i < c.length; i++) walk(c[i]);
+  };
+  const rootEl = (root as Document).documentElement ?? (root as Element);
+  if (rootEl) walk(rootEl);
+  return out;
+}
+
+function text(parent: Element | null, name: string): string {
+  if (!parent) return '';
+  const c = localChild(parent, name);
+  return c?.textContent?.trim() ?? '';
+}
+
+function num(parent: Element | null, name: string): number {
+  const t = text(parent, name);
+  if (!t) return 0;
+  const v = parseFloat(t.replace(',', '.'));
+  return Number.isFinite(v) ? v : 0;
 }
 
 function fmtEur(n: number): string {
   return n.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 }
+
+function fmtNum(n: number): string {
+  return n.toLocaleString('pt-PT', { maximumFractionDigits: 0 });
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Account aggregation — collapse leaves into class-level totals
+// ════════════════════════════════════════════════════════════════════════════
+
+interface GLAccount {
+  id: string;
+  desc: string;
+  openDebit: number;
+  openCredit: number;
+  closeDebit: number;
+  closeCredit: number;
+  totalDebit: number;   // period movement (from GeneralLedgerEntries) — optional
+  totalCredit: number;
+}
+
+/** Returns the net balance as a signed number; positive = credit side. */
+function netCredit(a: GLAccount): number {
+  return (a.closeCredit - a.closeDebit);
+}
+
+/** Returns absolute period turnover from movement, falling back to closing-opening. */
+function periodTurnover(a: GLAccount, side: 'debit' | 'credit'): number {
+  if (a.totalDebit > 0 || a.totalCredit > 0) {
+    return side === 'debit' ? a.totalDebit : a.totalCredit;
+  }
+  // Fallback: closing - opening
+  if (side === 'debit') return Math.max(0, a.closeDebit - a.openDebit);
+  return Math.max(0, a.closeCredit - a.openCredit);
+}
+
+function valueOnSide(a: GLAccount, side: 'debit' | 'credit'): number {
+  const net = Math.abs(netCredit(a));
+  if (net > 0) {
+    // Use net balance — its sign tells us the natural side
+    if (side === 'credit' && netCredit(a) >= 0) return net;
+    if (side === 'debit'  && netCredit(a) <  0) return net;
+    // If asking for the "wrong" side, prefer raw closing balance on that side
+  }
+  return side === 'debit' ? a.closeDebit : a.closeCredit;
+}
+
+/**
+ * Sum the closing balance of accounts under a given prefix. In SNC the parent account
+ * already aggregates its children's balances, so we prefer the most-aggregate match.
+ * Strategy:
+ *  1. If an exact prefix match exists, use it (it's the canonical aggregate).
+ *  2. Else sum the shortest-depth descendants (siblings at the same level).
+ */
+function sumLeaves(accounts: GLAccount[], prefix: string, side: 'debit' | 'credit'): number {
+  const matching = accounts.filter(a => a.id.startsWith(prefix));
+  if (matching.length === 0) return 0;
+
+  // Exact-match parent — trust it as the aggregate
+  const exact = matching.find(a => a.id === prefix);
+  if (exact) return valueOnSide(exact, side);
+
+  // No parent — sum the shortest-depth descendants only (avoid double-counting deeper levels)
+  let minLen = Infinity;
+  for (const a of matching) if (a.id.length < minLen) minLen = a.id.length;
+  return matching
+    .filter(a => a.id.length === minLen)
+    .reduce((sum, a) => sum + valueOnSide(a, side), 0);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Main parser
+// ════════════════════════════════════════════════════════════════════════════
 
 export function parseSAFT(xmlText: string): SAFTParseResult {
   const parser = new DOMParser();
@@ -31,43 +146,62 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   const parseError = doc.querySelector('parsererror');
   if (parseError) throw new Error('Ficheiro XML inválido ou corrompido');
 
+  const root = doc.documentElement;
+  if (!root) throw new Error('Documento XML vazio');
+
   const warnings: string[] = [];
   const filled: string[] = [];
   const details: SAFTDetail[] = [];
   const profile: Partial<ClientProfile> = {};
   const previsa: Partial<PreviSaState> = {};
 
-  const headerEl = doc.getElementsByTagName('Header')[0];
+  const headerEl = localChild(root, 'Header');
   if (!headerEl) throw new Error('Elemento <Header> não encontrado — não é um ficheiro SAF-T PT válido');
 
   // ═════════════════════════════════════════════════════════════════
-  // CABEÇALHO — todos os campos
+  // CABEÇALHO
   // ═════════════════════════════════════════════════════════════════
-  const auditVersion    = el(headerEl, 'AuditFileVersion');
-  const companyID       = el(headerEl, 'CompanyID');
-  const taxRegNrRaw     = el(headerEl, 'TaxRegistrationNumber');
-  const taxBasis        = el(headerEl, 'TaxAccountingBasis');
-  const companyName     = el(headerEl, 'CompanyName');
-  const businessName    = el(headerEl, 'BusinessName');
-  const fiscalYear      = el(headerEl, 'FiscalYear');
-  const startDate       = el(headerEl, 'StartDate');
-  const endDate         = el(headerEl, 'EndDate');
-  const currencyCode    = el(headerEl, 'CurrencyCode');
-  const dateCreated     = el(headerEl, 'DateCreated');
-  const taxEntity       = el(headerEl, 'TaxEntity');
-  const productCoTaxID  = el(headerEl, 'ProductCompanyTaxID');
-  const softwareCertNr  = el(headerEl, 'SoftwareCertificateNumber');
-  const productID       = el(headerEl, 'ProductID');
-  const productVersion  = el(headerEl, 'ProductVersion');
+  const auditVersion    = text(headerEl, 'AuditFileVersion');
+  const companyID       = text(headerEl, 'CompanyID');
+  const taxRegNrRaw     = text(headerEl, 'TaxRegistrationNumber');
+  const taxBasis        = text(headerEl, 'TaxAccountingBasis');
+  const companyName     = text(headerEl, 'CompanyName');
+  const businessName    = text(headerEl, 'BusinessName');
+  const fiscalYear      = text(headerEl, 'FiscalYear');
+  const startDate       = text(headerEl, 'StartDate');
+  const endDate         = text(headerEl, 'EndDate');
+  const currencyCode    = text(headerEl, 'CurrencyCode');
+  const dateCreated     = text(headerEl, 'DateCreated');
+  const taxEntity       = text(headerEl, 'TaxEntity');
+  const productCoTaxID  = text(headerEl, 'ProductCompanyTaxID');
+  const softwareCertNr  = text(headerEl, 'SoftwareCertificateNumber');
+  const productID       = text(headerEl, 'ProductID');
+  const productVersion  = text(headerEl, 'ProductVersion');
+  const taxonomyRef     = text(headerEl, 'TaxonomyReference');
+  const headerComment   = text(headerEl, 'HeaderComment');
+  const telephoneHdr    = text(headerEl, 'Telephone');
+  const faxHdr          = text(headerEl, 'Fax');
+  const emailHdr        = text(headerEl, 'Email');
+  const websiteHdr      = text(headerEl, 'Website');
 
-  if (auditVersion)   details.push({ group: 'Cabeçalho', label: 'Versão SAF-T',            value: auditVersion });
-  if (companyID)      details.push({ group: 'Cabeçalho', label: 'ID da Empresa',            value: companyID });
-  if (taxEntity)      details.push({ group: 'Cabeçalho', label: 'Entidade Fiscal',          value: taxEntity });
-  if (dateCreated)    details.push({ group: 'Cabeçalho', label: 'Data de Criação do Ficheiro', value: dateCreated });
-  if (currencyCode)   details.push({ group: 'Cabeçalho', label: 'Moeda',                   value: currencyCode });
-  if (productID)      details.push({ group: 'Cabeçalho', label: 'Software',                value: productID + (productVersion ? ` v${productVersion}` : '') });
-  if (productCoTaxID) details.push({ group: 'Cabeçalho', label: 'NIF do Software',         value: productCoTaxID });
-  if (softwareCertNr) details.push({ group: 'Cabeçalho', label: 'Certificado Software',    value: softwareCertNr });
+  if (auditVersion)   details.push({ group: 'Cabeçalho', label: 'Versão SAF-T',                value: auditVersion });
+  if (companyID)      details.push({ group: 'Cabeçalho', label: 'ID da Empresa',                value: companyID });
+  if (taxEntity)      details.push({ group: 'Cabeçalho', label: 'Entidade Fiscal',              value: taxEntity });
+  if (dateCreated)    details.push({ group: 'Cabeçalho', label: 'Data de Criação do Ficheiro',  value: dateCreated });
+  if (currencyCode)   details.push({ group: 'Cabeçalho', label: 'Moeda',                        value: currencyCode });
+  if (productID)      details.push({ group: 'Cabeçalho', label: 'Software',                     value: productID + (productVersion ? ` v${productVersion}` : '') });
+  if (productCoTaxID) details.push({ group: 'Cabeçalho', label: 'NIF do Software',              value: productCoTaxID });
+  if (softwareCertNr) details.push({ group: 'Cabeçalho', label: 'Certificado Software',         value: softwareCertNr });
+  if (taxonomyRef) {
+    const taxMap: Record<string, string> = {
+      'S': 'SNC — Contabilidade',
+      'M': 'Micro-entidades',
+      'N': 'Não normalizada',
+      'O': 'Outras',
+    };
+    details.push({ group: 'Cabeçalho', label: 'Referencial Contabilístico', value: taxMap[taxonomyRef] ?? taxonomyRef });
+  }
+  if (headerComment) details.push({ group: 'Cabeçalho', label: 'Comentário', value: headerComment });
 
   const taxBasisMap: Record<string, string> = {
     C: 'C — Contabilidade Organizada',
@@ -78,6 +212,7 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     R: 'R — Recibos',
     T: 'T — Autofaturação',
     I: 'I — Dados Integrados',
+    E: 'E — Faturação emitida por terceiros',
   };
   if (taxBasis) details.push({ group: 'Cabeçalho', label: 'Tipo de Contabilidade', value: taxBasisMap[taxBasis] ?? taxBasis });
 
@@ -95,135 +230,296 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   if (fiscalYear)  details.push({ group: 'Empresa', label: 'Ano Fiscal',       value: fiscalYear });
 
   // Address
-  const addrEl = headerEl.getElementsByTagName('CompanyAddress')[0];
+  const addrEl = localChild(headerEl, 'CompanyAddress');
+  let cpNumeric = 0;
+  let regionTxt = '';
   if (addrEl) {
-    const buildingNumber  = el(addrEl, 'BuildingNumber');
-    const streetName      = el(addrEl, 'StreetName');
-    const addressDetail   = el(addrEl, 'AddressDetail');
-    const city            = el(addrEl, 'City');
-    const postalCode      = el(addrEl, 'PostalCode');
-    const region          = el(addrEl, 'Region');
-    const country         = el(addrEl, 'Country');
+    const buildingNumber  = text(addrEl, 'BuildingNumber');
+    const streetName      = text(addrEl, 'StreetName');
+    const addressDetail   = text(addrEl, 'AddressDetail');
+    const city            = text(addrEl, 'City');
+    const postalCode      = text(addrEl, 'PostalCode');
+    regionTxt             = text(addrEl, 'Region');
+    const country         = text(addrEl, 'Country');
 
-    const line1 = [streetName, buildingNumber].filter(Boolean).join(' ') || addressDetail;
+    // Prefer streetName + buildingNumber, fall back to addressDetail; combine when both
+    // forms carry info (e.g., streetName empty but addressDetail has the full street).
+    const streetPart = [streetName, buildingNumber].filter(Boolean).join(' ');
+    const line1 = streetPart && addressDetail && !streetPart.includes(addressDetail)
+                    ? `${addressDetail}, ${streetPart}`
+                    : (streetPart || addressDetail);
     if (line1)                                                 details.push({ group: 'Empresa', label: 'Morada',         value: line1 });
     if (postalCode && postalCode !== '0000-000')               details.push({ group: 'Empresa', label: 'Código Postal',  value: postalCode });
     if (city && city.toLowerCase() !== 'desconhecido')         details.push({ group: 'Empresa', label: 'Localidade',     value: city });
-    if (region)                                                details.push({ group: 'Empresa', label: 'Região',         value: region });
+    if (regionTxt)                                             details.push({ group: 'Empresa', label: 'Região',         value: regionTxt });
     if (country)                                               details.push({ group: 'Empresa', label: 'País',           value: country });
 
-    // Territory from postal code
-    const cp = parseInt((postalCode || '').replace('-', '').replace(/\D/g, '').slice(0, 4), 10) || 0;
-    if (cp >= 9000 && cp <= 9399) previsa.territorio = 'madeira';
-    else if (cp >= 9400 && cp <= 9999) previsa.territorio = 'acores';
-    else if (cp > 0) previsa.territorio = 'continental';
-    if (region) {
-      const r = region.toLowerCase();
-      if (r.includes('madeira')) previsa.territorio = 'madeira';
-      else if (r.includes('açores') || r.includes('acores') || r.includes('açor')) previsa.territorio = 'acores';
-    }
+    cpNumeric = parseInt((postalCode || '').replace('-', '').replace(/\D/g, '').slice(0, 4), 10) || 0;
   }
 
-  // Contacts
-  const contactEl = headerEl.getElementsByTagName('CompanyContact')[0];
-  if (contactEl) {
-    const telephone = el(contactEl, 'Telephone');
-    const fax       = el(contactEl, 'Fax');
-    const email     = el(contactEl, 'Email');
-    const website   = el(contactEl, 'Website');
-    if (telephone) details.push({ group: 'Empresa', label: 'Telefone', value: telephone });
-    if (fax)       details.push({ group: 'Empresa', label: 'Fax',      value: fax });
-    if (email && email.includes('@')) details.push({ group: 'Empresa', label: 'Email', value: email });
-    if (website)   details.push({ group: 'Empresa', label: 'Website',  value: website });
+  // Territory from postal code + region
+  if (cpNumeric >= 9000 && cpNumeric <= 9399) previsa.territorio = 'madeira';
+  else if (cpNumeric >= 9400 && cpNumeric <= 9999) previsa.territorio = 'acores';
+  else if (cpNumeric > 0) previsa.territorio = 'continental';
+  if (regionTxt) {
+    const r = regionTxt.toLowerCase();
+    if (r.includes('madeira')) previsa.territorio = 'madeira';
+    else if (r.includes('açores') || r.includes('acores') || r.includes('açor')) previsa.territorio = 'acores';
   }
 
+  // Contacts (Header or CompanyAddress)
+  const contactEl = localChild(headerEl, 'CompanyContact');
+  const telephone = telephoneHdr || text(contactEl, 'Telephone');
+  const fax       = faxHdr       || text(contactEl, 'Fax');
+  const email     = emailHdr     || text(contactEl, 'Email');
+  const website   = websiteHdr   || text(contactEl, 'Website');
+  if (telephone) details.push({ group: 'Empresa', label: 'Telefone', value: telephone });
+  if (fax)       details.push({ group: 'Empresa', label: 'Fax',      value: fax });
+  if (email && email.includes('@')) details.push({ group: 'Empresa', label: 'Email', value: email });
+  if (website)   details.push({ group: 'Empresa', label: 'Website',  value: website });
+
   // ═════════════════════════════════════════════════════════════════
-  // MASTER FILES — Plano de Contas (GeneralLedger)
+  // MASTER FILES — GeneralLedger (Plano de Contas)
   // ═════════════════════════════════════════════════════════════════
-  const glEls = doc.getElementsByTagName('GeneralLedger');
-  let resultadoEstimado = 0;
-  let glCount = 0;
+  // Some files put accounts under <GeneralLedgerAccounts><Account>; older or
+  // simplified files use <GeneralLedger> at the top level. Cover both.
+  const glAccountEls = [
+    ...localDescendants(root, 'Account'),
+    ...localDescendants(root, 'GeneralLedger'),
+  ];
 
-  if (glEls.length > 0) {
-    const glByClass: Record<string, { debit: number; credit: number; accounts: number }> = {};
+  const accounts: GLAccount[] = [];
+  for (const el of glAccountEls) {
+    const accountID = text(el, 'AccountID');
+    if (!accountID) continue;
+    // Skip Customer/Supplier <AccountID> wrappers — they don't carry balances
+    if (!text(el, 'OpeningDebitBalance') && !text(el, 'OpeningCreditBalance') &&
+        !text(el, 'ClosingDebitBalance') && !text(el, 'ClosingCreditBalance') &&
+        !text(el, 'AccountDescription')) continue;
 
-    for (let i = 0; i < glEls.length; i++) {
-      const accountID   = el(glEls[i], 'AccountID');
-      const desc        = el(glEls[i], 'AccountDescription');
-      const openDebit   = parseFloat(el(glEls[i], 'OpeningDebitBalance'))  || 0;
-      const openCredit  = parseFloat(el(glEls[i], 'OpeningCreditBalance')) || 0;
-      const closeDebit  = parseFloat(el(glEls[i], 'ClosingDebitBalance'))  || 0;
-      const closeCredit = parseFloat(el(glEls[i], 'ClosingCreditBalance')) || 0;
+    accounts.push({
+      id: accountID,
+      desc: text(el, 'AccountDescription'),
+      openDebit:   num(el, 'OpeningDebitBalance'),
+      openCredit:  num(el, 'OpeningCreditBalance'),
+      closeDebit:  num(el, 'ClosingDebitBalance'),
+      closeCredit: num(el, 'ClosingCreditBalance'),
+      totalDebit:  num(el, 'TotalDebit'),
+      totalCredit: num(el, 'TotalCredit'),
+    });
+  }
 
-      if (!accountID) continue;
-      glCount++;
-
-      const cls = accountID.charAt(0);
-      if (!glByClass[cls]) glByClass[cls] = { debit: 0, credit: 0, accounts: 0 };
-      glByClass[cls].accounts++;
-      glByClass[cls].debit  += closeDebit;
-      glByClass[cls].credit += closeCredit;
-
-      // Account 81x → RAI estimate
-      if (accountID.startsWith('81')) {
-        resultadoEstimado += closeCredit - closeDebit;
+  // Optionally augment account turnover by iterating GeneralLedgerEntries lines
+  const glEntriesEl = localChild(root, 'GeneralLedgerEntries')
+    ?? localDescendants(root, 'GeneralLedgerEntries')[0]
+    ?? null;
+  if (glEntriesEl && accounts.length > 0) {
+    const byId = new Map(accounts.map(a => [a.id, a]));
+    const journalEls = localDescendants(glEntriesEl, 'Journal');
+    for (const j of journalEls) {
+      const transactionEls = localDescendants(j, 'Transaction');
+      for (const t of transactionEls) {
+        const lineEls = localDescendants(t, 'Line');
+        for (const line of lineEls) {
+          const accId = text(line, 'AccountID');
+          if (!accId) continue;
+          const debit  = num(line, 'DebitAmount');
+          const credit = num(line, 'CreditAmount');
+          const a = byId.get(accId);
+          if (a) {
+            // Add to turnover ONLY if the file didn't already provide TotalDebit/TotalCredit
+            if (!a.totalDebit && !a.totalCredit) {
+              a.totalDebit  = (a.totalDebit  ?? 0) + debit;
+              a.totalCredit = (a.totalCredit ?? 0) + credit;
+            }
+          }
+        }
       }
-
-      // Show each account line
-      const balance = closeCredit - closeDebit;
-      const openBal = openCredit - openDebit;
-      const label   = `${accountID} — ${desc}`;
-      const valStr  = `Saldo: ${fmtEur(Math.abs(balance))} ${balance >= 0 ? 'Crédito' : 'Débito'}` +
-                      (openBal !== 0 ? ` (abertura: ${fmtEur(Math.abs(openBal))} ${openBal >= 0 ? 'Cr' : 'Db'})` : '');
-      details.push({ group: 'Plano de Contas', label, value: valStr });
     }
+  }
 
-    // Summary by class
-    const classNames: Record<string, string> = {
-      '1': 'Classe 1 — Meios Financeiros', '2': 'Classe 2 — Contas a Receber/Pagar',
-      '3': 'Classe 3 — Inventários', '4': 'Classe 4 — Investimentos',
-      '5': 'Classe 5 — Capital Próprio', '6': 'Classe 6 — Gastos',
-      '7': 'Classe 7 — Rendimentos', '8': 'Classe 8 — Resultados',
-      '9': 'Classe 9 — Contab. Analítica',
-    };
-    for (const [cls, totals] of Object.entries(glByClass)) {
+  // Summary by class
+  const classNames: Record<string, string> = {
+    '1': 'Classe 1 — Meios Financeiros',
+    '2': 'Classe 2 — Contas a Receber/Pagar',
+    '3': 'Classe 3 — Inventários',
+    '4': 'Classe 4 — Investimentos',
+    '5': 'Classe 5 — Capital Próprio',
+    '6': 'Classe 6 — Gastos',
+    '7': 'Classe 7 — Rendimentos',
+    '8': 'Classe 8 — Resultados',
+    '9': 'Classe 9 — Contab. Analítica',
+  };
+  if (accounts.length > 0) {
+    const byClass: Record<string, { debit: number; credit: number; count: number }> = {};
+    for (const a of accounts) {
+      const cls = a.id.charAt(0);
+      if (!byClass[cls]) byClass[cls] = { debit: 0, credit: 0, count: 0 };
+      byClass[cls].count++;
+      byClass[cls].debit  += a.closeDebit;
+      byClass[cls].credit += a.closeCredit;
+    }
+    for (const [cls, totals] of Object.entries(byClass).sort(([a], [b]) => a.localeCompare(b))) {
       const net = totals.credit - totals.debit;
       details.push({
         group: 'Resumo por Classe',
         label: classNames[cls] ?? `Classe ${cls}`,
-        value: `${totals.accounts} conta(s) · Saldo líquido: ${fmtEur(Math.abs(net))} ${net >= 0 ? 'Crédito' : 'Débito'}`,
+        value: `${totals.count} conta(s) · Saldo líquido: ${fmtEur(Math.abs(net))} ${net >= 0 ? 'Crédito' : 'Débito'}`,
+      });
+    }
+
+    // Top accounts in classes 6 & 7 — show user where the money is
+    const interesting = accounts
+      .filter(a => /^[678]/.test(a.id))
+      .map(a => ({ a, abs: Math.abs(netCredit(a)) }))
+      .filter(x => x.abs >= 1)
+      .sort((x, y) => y.abs - x.abs)
+      .slice(0, 30);
+    for (const { a, abs } of interesting) {
+      details.push({
+        group: 'Contas 6/7/8 (maiores valores)',
+        label: `${a.id} — ${a.desc}`,
+        value: `${fmtEur(abs)} ${netCredit(a) >= 0 ? 'Crédito' : 'Débito'}`,
       });
     }
   }
 
-  // ─── Customers ───────────────────────────────────────────────────
-  const customerEls = doc.getElementsByTagName('Customer');
+  // ═════════════════════════════════════════════════════════════════
+  // PREVISA — Rendimentos (Class 7) e Gastos (Class 6) a partir do GL
+  // ═════════════════════════════════════════════════════════════════
+  const useRaiCalc = (taxBasis === 'C' || taxBasis === 'L' || taxBasis === 'I') && accounts.length > 0;
+  if (useRaiCalc) {
+    previsa.useRaiCalc = true;
+    // Class 7
+    const r711 = sumLeaves(accounts, '711', 'credit');
+    const r712 = sumLeaves(accounts, '712', 'credit');
+    const r72  = sumLeaves(accounts, '72',  'credit');
+    const r74  = sumLeaves(accounts, '74',  'credit');
+    const r75  = sumLeaves(accounts, '75',  'credit');
+    const r76  = sumLeaves(accounts, '76',  'credit');
+    const r77  = sumLeaves(accounts, '77',  'credit');
+    const r78  = sumLeaves(accounts, '78',  'credit');
+    const r79  = sumLeaves(accounts, '79',  'credit');
+    if (r711) { previsa.rai_711 = Math.round(r711); filled.push('Vendas de mercadorias (711)'); }
+    if (r712) { previsa.rai_712 = Math.round(r712); filled.push('Vendas de produtos (712)'); }
+    if (r72)  { previsa.rai_72  = Math.round(r72);  filled.push('Prestações de serviços (72)'); }
+    if (r74)  { previsa.rai_74  = Math.round(r74);  filled.push('Trabalhos própria entidade (74)'); }
+    if (r75)  { previsa.rai_75  = Math.round(r75);  filled.push('Subsídios à exploração (75)'); }
+    if (r76)  { previsa.rai_76  = Math.round(r76);  filled.push('Reversões (76)'); }
+    if (r77)  { previsa.rai_77  = Math.round(r77);  filled.push('Ganhos JV (77)'); }
+    if (r78)  { previsa.rai_78  = Math.round(r78);  filled.push('Outros rendimentos (78)'); }
+    if (r79)  { previsa.rai_79  = Math.round(r79);  filled.push('Juros e dividendos (79)'); }
+
+    // Class 6 — CMV vs CMC (61), FSE (62), Pessoal (63), Amort. (64), etc.
+    const cmv  = sumLeaves(accounts, '611', 'debit')
+               + sumLeaves(accounts, '612', 'debit')
+               + sumLeaves(accounts, '613', 'debit')
+               + sumLeaves(accounts, '614', 'debit')
+               + sumLeaves(accounts, '615', 'debit')
+               + sumLeaves(accounts, '616', 'debit')
+               + sumLeaves(accounts, '617', 'debit');
+    const cmc  = sumLeaves(accounts, '618', 'debit')
+               + sumLeaves(accounts, '619', 'debit');
+    // If neither sub split, fall back to total 61
+    const c61Total = sumLeaves(accounts, '61', 'debit');
+    const cmvFinal = cmv > 0 ? cmv : c61Total;
+    const cmcFinal = cmc > 0 ? cmc : 0;
+
+    const c62 = sumLeaves(accounts, '62', 'debit');
+    const c63 = sumLeaves(accounts, '63', 'debit');
+    const c64 = sumLeaves(accounts, '64', 'debit');
+    const c65 = sumLeaves(accounts, '65', 'debit');
+    const c66 = sumLeaves(accounts, '66', 'debit');
+    const c67 = sumLeaves(accounts, '67', 'debit');
+    const c68 = sumLeaves(accounts, '68', 'debit');
+    const c69 = sumLeaves(accounts, '69', 'debit');
+
+    if (cmvFinal) { previsa.rai_cmv = Math.round(cmvFinal); filled.push('CMV (61)'); }
+    if (cmcFinal) { previsa.rai_cmc = Math.round(cmcFinal); filled.push('CMC (618/619)'); }
+    if (c62) { previsa.rai_62 = Math.round(c62); filled.push('FSE (62)'); }
+    if (c63) { previsa.rai_63 = Math.round(c63); filled.push('Gastos com pessoal (63)'); }
+    if (c64) { previsa.rai_64 = Math.round(c64); filled.push('Amortizações (64)'); }
+    if (c65) { previsa.rai_65 = Math.round(c65); filled.push('Imparidades (65)'); }
+    if (c66) { previsa.rai_66 = Math.round(c66); filled.push('Reduções de JV (66)'); }
+    if (c67) { previsa.rai_67 = Math.round(c67); filled.push('Provisões (67)'); }
+    if (c68) { previsa.rai_68 = Math.round(c68); filled.push('Outros gastos (68)'); }
+    if (c69) { previsa.rai_69 = Math.round(c69); filled.push('Gastos financiamento (69)'); }
+
+    // Tributações Autónomas — heurísticas a partir de contas SNC
+    const taRepresentacao = sumLeaves(accounts, '6266', 'debit')
+                          + sumLeaves(accounts, '6262', 'debit');
+    const taAjudasCusto   = sumLeaves(accounts, '6325', 'debit');
+    const taDespNaoDoc    = sumLeaves(accounts, '6888', 'debit')
+                          + sumLeaves(accounts, '6886', 'debit');
+    if (taRepresentacao) { previsa.ta_representacao = Math.round(taRepresentacao); filled.push('TA — Representação (6266/6262)'); }
+    if (taAjudasCusto)   { previsa.ta_ajadasCusto   = Math.round(taAjudasCusto);   filled.push('TA — Ajudas de Custo (6325)'); }
+    if (taDespNaoDoc) {
+      previsa.ta_despNaoDocPrincipal = Math.round(taDespNaoDoc);
+      filled.push('TA — Despesas não documentadas (688x)');
+    }
+
+    // Class 8 — RAI/IRC
+    const r811 = sumLeaves(accounts, '811', 'credit');
+    if (r811) {
+      previsa.c701_rai = Math.round(r811);
+      filled.push('RAI (811)');
+      details.push({
+        group: 'Resultados Apurados',
+        label: '811 — Resultado antes de impostos',
+        value: fmtEur(r811),
+      });
+    }
+    const r8122db = sumLeaves(accounts, '8122', 'debit');
+    const r8122cr = sumLeaves(accounts, '8122', 'credit');
+    if (r8122db) { previsa.rai_8122_db = Math.round(r8122db); filled.push('Imposto diferido — Débito (8122)'); }
+    if (r8122cr) { previsa.rai_8122_cr = Math.round(r8122cr); filled.push('Imposto diferido — Crédito (8122)'); }
+
+    // Detalhe agregado para o utilizador
+    const totalRendimentos = r711 + r712 + r72 + r74 + r75 + r76 + r77 + r78 + r79;
+    const totalGastos      = cmvFinal + cmcFinal + c62 + c63 + c64 + c65 + c66 + c67 + c68 + c69;
+    if (totalRendimentos) details.push({ group: 'Resultados Apurados', label: 'Total Rendimentos (7)', value: fmtEur(totalRendimentos) });
+    if (totalGastos)      details.push({ group: 'Resultados Apurados', label: 'Total Gastos (6)',      value: fmtEur(totalGastos) });
+    if (totalRendimentos || totalGastos) {
+      const raiCalc = totalRendimentos - totalGastos;
+      details.push({
+        group: 'Resultados Apurados',
+        label: 'RAI implícito (7 − 6)',
+        value: `${fmtEur(Math.abs(raiCalc))} ${raiCalc >= 0 ? 'Lucro' : 'Prejuízo'}`,
+      });
+    }
+  }
+
+  // ═════════════════════════════════════════════════════════════════
+  // CUSTOMERS / SUPPLIERS / PRODUCTS / TAX TABLE
+  // ═════════════════════════════════════════════════════════════════
+  const customerEls = localDescendants(root, 'Customer');
   if (customerEls.length > 0) {
     details.push({ group: 'Clientes', label: 'Total de Clientes', value: String(customerEls.length) });
-    for (let i = 0; i < Math.min(customerEls.length, 50); i++) {
-      const cName  = el(customerEls[i], 'CompanyName') || el(customerEls[i], 'Name');
-      const cNif   = el(customerEls[i], 'CustomerTaxID');
-      const cAcct  = el(customerEls[i], 'AccountID');
+    const limit = Math.min(customerEls.length, 50);
+    for (let i = 0; i < limit; i++) {
+      const cName  = text(customerEls[i], 'CompanyName') || text(customerEls[i], 'Name');
+      const cNif   = text(customerEls[i], 'CustomerTaxID');
+      const cAcct  = text(customerEls[i], 'AccountID');
       if (cName) {
         details.push({
           group: 'Clientes',
           label: `Cliente ${i + 1}${cNif ? ` (NIF: ${cNif})` : ''}`,
-          value: cName + (cAcct ? ` · Conta: ${cAcct}` : ''),
+          value: cName + (cAcct && cAcct !== 'Desconhecido' ? ` · Conta: ${cAcct}` : ''),
         });
       }
     }
-    if (customerEls.length > 50) {
-      details.push({ group: 'Clientes', label: '…', value: `+ ${customerEls.length - 50} clientes adicionais` });
+    if (customerEls.length > limit) {
+      details.push({ group: 'Clientes', label: '…', value: `+ ${customerEls.length - limit} clientes adicionais` });
     }
   }
 
-  // ─── Suppliers ───────────────────────────────────────────────────
-  const supplierEls = doc.getElementsByTagName('Supplier');
+  const supplierEls = localDescendants(root, 'Supplier');
   if (supplierEls.length > 0) {
     details.push({ group: 'Fornecedores', label: 'Total de Fornecedores', value: String(supplierEls.length) });
-    for (let i = 0; i < Math.min(supplierEls.length, 30); i++) {
-      const sName = el(supplierEls[i], 'CompanyName') || el(supplierEls[i], 'Name');
-      const sNif  = el(supplierEls[i], 'SupplierTaxID');
+    const limit = Math.min(supplierEls.length, 30);
+    for (let i = 0; i < limit; i++) {
+      const sName = text(supplierEls[i], 'CompanyName') || text(supplierEls[i], 'Name');
+      const sNif  = text(supplierEls[i], 'SupplierTaxID');
       if (sName) {
         details.push({
           group: 'Fornecedores',
@@ -232,19 +528,36 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
         });
       }
     }
-    if (supplierEls.length > 30) {
-      details.push({ group: 'Fornecedores', label: '…', value: `+ ${supplierEls.length - 30} fornecedores adicionais` });
+    if (supplierEls.length > limit) {
+      details.push({ group: 'Fornecedores', label: '…', value: `+ ${supplierEls.length - limit} fornecedores adicionais` });
     }
   }
 
-  // ─── Products ────────────────────────────────────────────────────
-  const productEls = doc.getElementsByTagName('Product');
+  // Products — count by type, lets us deduce serviços vs bens
+  const productEls = localDescendants(root, 'Product');
+  const productTypeCount: Record<string, number> = { P: 0, S: 0, O: 0, E: 0, I: 0 };
   if (productEls.length > 0) {
     details.push({ group: 'Produtos / Serviços', label: 'Total de Artigos', value: String(productEls.length) });
-    for (let i = 0; i < Math.min(productEls.length, 50); i++) {
-      const pCode = el(productEls[i], 'ProductCode');
-      const pDesc = el(productEls[i], 'ProductDescription');
-      const pType = el(productEls[i], 'ProductType');
+    for (let i = 0; i < productEls.length; i++) {
+      const pType = text(productEls[i], 'ProductType');
+      if (pType && pType in productTypeCount) productTypeCount[pType]++;
+    }
+    const ptypeLabels: Record<string, string> = {
+      P: 'Bens (P)',
+      S: 'Serviços (S)',
+      O: 'Outros (O)',
+      E: 'Impostos especiais (E)',
+      I: 'Impostos / taxas (I)',
+    };
+    for (const [k, n] of Object.entries(productTypeCount)) {
+      if (n > 0) details.push({ group: 'Produtos / Serviços', label: ptypeLabels[k], value: `${n} artigo(s)` });
+    }
+
+    const limit = Math.min(productEls.length, 50);
+    for (let i = 0; i < limit; i++) {
+      const pCode = text(productEls[i], 'ProductCode');
+      const pDesc = text(productEls[i], 'ProductDescription');
+      const pType = text(productEls[i], 'ProductType');
       if (pDesc) {
         details.push({
           group: 'Produtos / Serviços',
@@ -253,24 +566,25 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
         });
       }
     }
-    if (productEls.length > 50) {
-      details.push({ group: 'Produtos / Serviços', label: '…', value: `+ ${productEls.length - 50} artigos adicionais` });
+    if (productEls.length > limit) {
+      details.push({ group: 'Produtos / Serviços', label: '…', value: `+ ${productEls.length - limit} artigos adicionais` });
     }
   }
 
-  // ─── Tax Table ────────────────────────────────────────────────────
-  const taxTableEls = doc.getElementsByTagName('TaxTableEntry');
+  // Tax table
+  const taxTableEls = localDescendants(root, 'TaxTableEntry');
   for (let i = 0; i < taxTableEls.length; i++) {
-    const taxType        = el(taxTableEls[i], 'TaxType');
-    const taxCountryReg  = el(taxTableEls[i], 'TaxCountryRegion');
-    const taxCode        = el(taxTableEls[i], 'TaxCode');
-    const desc           = el(taxTableEls[i], 'Description');
-    const taxPct         = el(taxTableEls[i], 'TaxPercentage');
+    const taxType        = text(taxTableEls[i], 'TaxType');
+    const taxCountryReg  = text(taxTableEls[i], 'TaxCountryRegion');
+    const taxCode        = text(taxTableEls[i], 'TaxCode');
+    const desc           = text(taxTableEls[i], 'Description');
+    const taxPct         = text(taxTableEls[i], 'TaxPercentage');
+    const taxAmt         = text(taxTableEls[i], 'TaxAmount');
     if (taxType) {
       details.push({
         group: 'Tabela de Impostos',
         label: `${taxType} ${taxCode} (${taxCountryReg})`,
-        value: desc + (taxPct ? ` — ${taxPct}%` : ''),
+        value: desc + (taxPct ? ` — ${taxPct}%` : '') + (taxAmt ? ` — ${fmtEur(parseFloat(taxAmt) || 0)}` : ''),
       });
     }
   }
@@ -278,184 +592,273 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   // ═════════════════════════════════════════════════════════════════
   // SOURCE DOCUMENTS — SalesInvoices
   // ═════════════════════════════════════════════════════════════════
-  const salesEl = doc.getElementsByTagName('SalesInvoices')[0];
-  let totalCredit = 0;
+  const salesEl = localDescendants(root, 'SalesInvoices')[0] ?? null;
+  let salesNetTotal = 0;       // soma líquida (NC subtraído)
+  let totalCredit = 0;          // TotalCredit do bloco
+  let hasNormalIVA = false;
+  let hasISE = false;
+  let cashVATCount = 0;
+  let eacCodeDetected = '';
+  let invoiceCountWithEAC = 0;
+  let salesNetIVA = { continental: 0, madeira: 0, acores: 0 };
+
+  // Para detectar funcionários nos pagamentos
+  let workerNifsCount = 0;
+  const workerNifs = new Set<string>();
+
   if (salesEl) {
-    const nEntries   = el(salesEl, 'NumberOfEntries');
-    const totalDebit = el(salesEl, 'TotalDebit');
-    const totalCrStr = el(salesEl, 'TotalCredit');
-    totalCredit      = parseFloat(totalCrStr) || 0;
+    const nEntries   = text(salesEl, 'NumberOfEntries');
+    const totalDebit = text(salesEl, 'TotalDebit');
+    const totalCrStr = text(salesEl, 'TotalCredit');
+    totalCredit = parseFloat(totalCrStr) || 0;
 
-    if (nEntries)   details.push({ group: 'Documentos de Venda', label: 'Nº de Documentos',    value: nEntries });
-    if (totalDebit) details.push({ group: 'Documentos de Venda', label: 'Total Débito',         value: fmtEur(parseFloat(totalDebit) || 0) });
-    if (totalCrStr) details.push({ group: 'Documentos de Venda', label: 'Total Crédito (VN)',   value: fmtEur(totalCredit) });
+    if (nEntries)   details.push({ group: 'Documentos de Venda', label: 'Nº de Documentos',  value: nEntries });
+    if (totalDebit) details.push({ group: 'Documentos de Venda', label: 'Total Débito (NC)',  value: fmtEur(parseFloat(totalDebit) || 0) });
+    if (totalCrStr) details.push({ group: 'Documentos de Venda', label: 'Total Crédito (FT)', value: fmtEur(totalCredit) });
 
-    // Invoice breakdown by type
-    const invoiceEls = salesEl.getElementsByTagName('Invoice');
-    const byType: Record<string, { count: number; total: number }> = {};
-    let hasNormal = false;
-    let hasISE    = false;
-    let eacCode   = '';
+    const invoiceEls = localChildren(salesEl, 'Invoice');
+    const byType: Record<string, { count: number; gross: number; net: number }> = {};
 
     for (let i = 0; i < invoiceEls.length; i++) {
-      const invType  = el(invoiceEls[i], 'InvoiceType');
-      const grossVal = parseFloat(el(invoiceEls[i], 'GrossTotal')) || 0;
-      if (invType) {
-        if (!byType[invType]) byType[invType] = { count: 0, total: 0 };
-        byType[invType].count++;
-        byType[invType].total += grossVal;
+      const inv = invoiceEls[i];
+      const invType  = text(inv, 'InvoiceType');
+      const totals   = localChild(inv, 'DocumentTotals');
+      const gross    = num(totals, 'GrossTotal');
+      const net      = num(totals, 'NetTotal');
+      const docStatus = localChild(inv, 'DocumentStatus');
+      const isCancelled = text(docStatus, 'InvoiceStatus') === 'A'; // Anulada
+      const isCashVAT = text(inv, 'CashVATSchemeIndicator') === '1';
+      if (isCashVAT) cashVATCount++;
+
+      if (!invType) continue;
+      if (!byType[invType]) byType[invType] = { count: 0, gross: 0, net: 0 };
+      byType[invType].count++;
+
+      // NC (Nota Crédito) subtracts; the rest add. Cancelled invoices ignored.
+      let sign = 1;
+      if (invType === 'NC' || invType === 'ND') sign = invType === 'NC' ? -1 : 1;
+      const effective = isCancelled ? 0 : net * sign;
+      byType[invType].gross += gross;
+      byType[invType].net   += effective;
+      if (!isCancelled) salesNetTotal += effective;
+
+      // EAC code
+      const eac = text(inv, 'EACCode');
+      if (eac && /^\d{5}$/.test(eac)) {
+        if (!eacCodeDetected) eacCodeDetected = eac;
+        invoiceCountWithEAC++;
       }
-      const lines = invoiceEls[i].getElementsByTagName('Line');
-      for (let j = 0; j < lines.length; j++) {
-        const taxCode = lines[j].getElementsByTagName('TaxCode')[0]?.textContent?.trim() ?? '';
-        if (taxCode === 'NOR' || taxCode === 'INT' || taxCode === 'RED') hasNormal = true;
+
+      // Taxes per line — classify IVA regime and region
+      const lineEls = localChildren(inv, 'Line');
+      for (let j = 0; j < lineEls.length; j++) {
+        const taxEl = localChild(lineEls[j], 'Tax');
+        const taxCode = text(taxEl, 'TaxCode');
+        const taxCountry = text(taxEl, 'TaxCountryRegion');
+        if (taxCode === 'NOR' || taxCode === 'INT' || taxCode === 'RED') hasNormalIVA = true;
         if (taxCode === 'ISE') hasISE = true;
-        const eac = invoiceEls[i].getElementsByTagName('EACCode')[0]?.textContent?.trim() ?? '';
-        if (eac && /^\d{5}$/.test(eac) && !eacCode) eacCode = eac;
+        if (taxCountry === 'PT-MA') salesNetIVA.madeira += num(lineEls[j], 'CreditAmount');
+        else if (taxCountry === 'PT-AC') salesNetIVA.acores += num(lineEls[j], 'CreditAmount');
+        else if (taxCountry === 'PT') salesNetIVA.continental += num(lineEls[j], 'CreditAmount');
       }
     }
 
+    const typeLabels: Record<string, string> = {
+      FT: 'Fatura',
+      FS: 'Fatura Simplificada',
+      FR: 'Fatura/Recibo',
+      ND: 'Nota Débito',
+      NC: 'Nota Crédito',
+      VD: 'Venda a dinheiro',
+      TV: 'Talão de venda',
+      TD: 'Talão de devolução',
+      AA: 'Alienação ativos',
+      DA: 'Devolução ativos',
+      RP: 'Prémio/recibo prémio',
+      RE: 'Estorno prémio',
+      CS: 'Imputação a coseguradoras',
+      LD: 'Imputação a coseguradora líder',
+      RA: 'Resseguro aceite',
+    };
     for (const [invType, stats] of Object.entries(byType)) {
+      const lbl = typeLabels[invType] ?? invType;
       details.push({
         group: 'Documentos de Venda',
-        label: `Tipo ${invType}`,
-        value: `${stats.count} documento(s) · ${fmtEur(stats.total)}`,
+        label: `${invType} — ${lbl}`,
+        value: `${stats.count} doc · ${fmtEur(stats.gross)} bruto · ${fmtEur(Math.abs(stats.net))} líq ${stats.net < 0 ? '(NC)' : ''}`,
       });
     }
+    details.push({
+      group: 'Documentos de Venda',
+      label: 'Volume de Negócios (líq., NC subtraído)',
+      value: fmtEur(salesNetTotal),
+    });
+    if (cashVATCount > 0) {
+      details.push({ group: 'Documentos de Venda', label: 'Faturas em Regime de IVA de Caixa', value: `${cashVATCount} documento(s)` });
+    }
 
-    if (hasISE && !hasNormal) {
+    if (hasISE && !hasNormalIVA) {
       profile.regimeIva = 'isento';
       filled.push('Regime de IVA (isento)');
       details.push({ group: 'Dados Fiscais', label: 'Regime de IVA', value: 'Isento (art.º 9.º CIVA)' });
-    } else if (hasNormal) {
+    } else if (hasNormalIVA) {
       profile.regimeIva = 'normal_mensal';
       filled.push('Regime de IVA (normal)');
-      details.push({ group: 'Dados Fiscais', label: 'Regime de IVA', value: 'Regime Normal Mensal' });
+      details.push({ group: 'Dados Fiscais', label: 'Regime de IVA', value: 'Regime Normal' });
     }
 
-    if (eacCode) {
-      profile.cae = eacCode;
+    if (eacCodeDetected) {
+      profile.cae = eacCodeDetected;
       filled.push('CAE');
-      details.push({ group: 'Dados Fiscais', label: 'CAE (código atividade)', value: eacCode });
+      details.push({
+        group: 'Dados Fiscais',
+        label: 'CAE (código atividade)',
+        value: `${eacCodeDetected}${invoiceCountWithEAC > 1 ? ` (em ${invoiceCountWithEAC} documentos)` : ''}`,
+      });
     }
   }
 
   // ─── Purchases ───────────────────────────────────────────────────
-  const purchasesEl = doc.getElementsByTagName('Purchases')[0]
-    ?? doc.getElementsByTagName('PurchasesInvoices')[0];
+  const purchasesEl = localDescendants(root, 'Purchases')[0]
+    ?? localDescendants(root, 'PurchasesInvoices')[0]
+    ?? null;
   if (purchasesEl) {
-    const nEntries   = el(purchasesEl, 'NumberOfEntries');
-    const totalDebit = el(purchasesEl, 'TotalDebit');
-    const totalCr    = el(purchasesEl, 'TotalCredit');
+    const nEntries   = text(purchasesEl, 'NumberOfEntries');
+    const totalDebit = text(purchasesEl, 'TotalDebit');
+    const totalCr    = text(purchasesEl, 'TotalCredit');
     if (nEntries)   details.push({ group: 'Documentos de Compra', label: 'Nº de Documentos', value: nEntries });
     if (totalDebit) details.push({ group: 'Documentos de Compra', label: 'Total Débito',      value: fmtEur(parseFloat(totalDebit) || 0) });
     if (totalCr)    details.push({ group: 'Documentos de Compra', label: 'Total Crédito',     value: fmtEur(parseFloat(totalCr)   || 0) });
   }
 
   // ─── MovementOfGoods ─────────────────────────────────────────────
-  const movGoodsEl = doc.getElementsByTagName('MovementOfGoods')[0];
+  const movGoodsEl = localDescendants(root, 'MovementOfGoods')[0] ?? null;
   if (movGoodsEl) {
-    const nEntries = el(movGoodsEl, 'NumberOfMovementLines');
-    const total    = el(movGoodsEl, 'TotalQuantityIssued');
+    const nEntries = text(movGoodsEl, 'NumberOfMovementLines');
+    const totalQty = text(movGoodsEl, 'TotalQuantityIssued');
     if (nEntries) details.push({ group: 'Movimentos de Stock', label: 'Nº de Linhas', value: nEntries });
-    if (total)    details.push({ group: 'Movimentos de Stock', label: 'Qtd. Total Emitida', value: total });
+    if (totalQty) details.push({ group: 'Movimentos de Stock', label: 'Qtd. Total Emitida', value: totalQty });
   }
 
   // ─── WorkingDocuments ────────────────────────────────────────────
-  const workDocsEl = doc.getElementsByTagName('WorkingDocuments')[0];
+  const workDocsEl = localDescendants(root, 'WorkingDocuments')[0] ?? null;
   if (workDocsEl) {
-    const nEntries = el(workDocsEl, 'NumberOfEntries');
-    const totalDr  = el(workDocsEl, 'TotalDebit');
-    const totalCr  = el(workDocsEl, 'TotalCredit');
+    const nEntries = text(workDocsEl, 'NumberOfEntries');
+    const totalDr  = text(workDocsEl, 'TotalDebit');
+    const totalCr  = text(workDocsEl, 'TotalCredit');
     if (nEntries) details.push({ group: 'Documentos de Trabalho', label: 'Nº de Documentos', value: nEntries });
     if (totalDr)  details.push({ group: 'Documentos de Trabalho', label: 'Total Débito',      value: fmtEur(parseFloat(totalDr) || 0) });
     if (totalCr)  details.push({ group: 'Documentos de Trabalho', label: 'Total Crédito',     value: fmtEur(parseFloat(totalCr) || 0) });
   }
 
   // ─── Payments ────────────────────────────────────────────────────
-  const paymentsEl = doc.getElementsByTagName('Payments')[0];
-  let workerNifsCount = 0;
+  const paymentsEl = localDescendants(root, 'Payments')[0] ?? null;
   if (paymentsEl) {
-    const nEntries = el(paymentsEl, 'NumberOfEntries');
-    const totalDr  = el(paymentsEl, 'TotalDebit');
-    const totalCr  = el(paymentsEl, 'TotalCredit');
+    const nEntries = text(paymentsEl, 'NumberOfEntries');
+    const totalDr  = text(paymentsEl, 'TotalDebit');
+    const totalCr  = text(paymentsEl, 'TotalCredit');
     if (nEntries) details.push({ group: 'Pagamentos / Recibos', label: 'Nº de Documentos', value: nEntries });
     if (totalDr)  details.push({ group: 'Pagamentos / Recibos', label: 'Total Débito',      value: fmtEur(parseFloat(totalDr) || 0) });
     if (totalCr)  details.push({ group: 'Pagamentos / Recibos', label: 'Total Crédito',     value: fmtEur(parseFloat(totalCr) || 0) });
 
-    // Salary payments → estimate employees
-    const paymentDocEls = paymentsEl.getElementsByTagName('Payment');
-    const workerNifs = new Set<string>();
+    // Detect employees from RG/RV payments
+    const paymentDocEls = localChildren(paymentsEl, 'Payment');
+    const byMethod: Record<string, { count: number; amount: number }> = {};
     for (let i = 0; i < paymentDocEls.length; i++) {
-      const type = el(paymentDocEls[i], 'PaymentType');
+      const type = text(paymentDocEls[i], 'PaymentType');
+      // Lines may include CustomerID / SupplierID
+      const lineEls = localChildren(paymentDocEls[i], 'Line');
       if (type === 'RG' || type === 'RV') {
-        const lineEls = paymentDocEls[i].getElementsByTagName('Line');
         for (let j = 0; j < lineEls.length; j++) {
-          const wNif = el(lineEls[j], 'EmployeeID');
+          const wNif = text(lineEls[j], 'EmployeeID');
           if (wNif) workerNifs.add(wNif);
+        }
+      }
+      const methodEls = localDescendants(paymentDocEls[i], 'PaymentMethod');
+      for (const m of methodEls) {
+        const mech = text(m, 'PaymentMechanism');
+        const amt  = num(m, 'PaymentAmount');
+        if (mech) {
+          if (!byMethod[mech]) byMethod[mech] = { count: 0, amount: 0 };
+          byMethod[mech].count++;
+          byMethod[mech].amount += amt;
         }
       }
     }
     workerNifsCount = workerNifs.size;
+
+    const mechLabels: Record<string, string> = {
+      CC: 'Cartão de Crédito',
+      CD: 'Cartão de Débito',
+      CH: 'Cheque',
+      CI: 'Crédito documentário',
+      CO: 'Cheque ou ordem (vale postal)',
+      CS: 'Compensação de saldos em conta corrente',
+      DE: 'Dinheiro electrónico',
+      LC: 'Letra Comercial',
+      MB: 'Multibanco (Referência)',
+      NU: 'Numerário',
+      OU: 'Outros',
+      PR: 'Permuta de bens',
+      TB: 'Transferência Bancária',
+      TR: 'Vale (refeição/cultura)',
+    };
+    for (const [mech, stats] of Object.entries(byMethod)) {
+      details.push({
+        group: 'Métodos de Pagamento',
+        label: `${mech} — ${mechLabels[mech] ?? mech}`,
+        value: `${stats.count} ocorrência(s) · ${fmtEur(stats.amount)}`,
+      });
+    }
   }
 
-  // ─── GeneralLedgerEntries (for type C) ───────────────────────────
-  const glEntriesEl = doc.getElementsByTagName('GeneralLedgerEntries')[0];
+  // ─── GeneralLedgerEntries summary ────────────────────────────────
   if (glEntriesEl) {
-    const nJournals = el(glEntriesEl, 'NumberOfJournals');
-    const nTrans    = el(glEntriesEl, 'NumberOfTransactions');
-    const nEntries  = el(glEntriesEl, 'NumberOfEntries');
-    const totalDr   = el(glEntriesEl, 'TotalDebit');
-    const totalCr   = el(glEntriesEl, 'TotalCredit');
+    const nJournals = text(glEntriesEl, 'NumberOfJournals');
+    const nEntries  = text(glEntriesEl, 'NumberOfEntries');
+    const totalDr   = text(glEntriesEl, 'TotalDebit');
+    const totalCr   = text(glEntriesEl, 'TotalCredit');
     if (nJournals) details.push({ group: 'Diário Contabilístico', label: 'Nº de Diários',     value: nJournals });
-    if (nTrans)    details.push({ group: 'Diário Contabilístico', label: 'Nº de Transações',   value: nTrans });
-    if (nEntries)  details.push({ group: 'Diário Contabilístico', label: 'Nº de Lançamentos',  value: nEntries });
-    if (totalDr)   details.push({ group: 'Diário Contabilístico', label: 'Total Débito',       value: fmtEur(parseFloat(totalDr) || 0) });
-    if (totalCr)   details.push({ group: 'Diário Contabilístico', label: 'Total Crédito',      value: fmtEur(parseFloat(totalCr) || 0) });
+    if (nEntries)  details.push({ group: 'Diário Contabilístico', label: 'Nº de Lançamentos', value: nEntries });
+    if (totalDr)   details.push({ group: 'Diário Contabilístico', label: 'Total Débito',      value: fmtEur(parseFloat(totalDr) || 0) });
+    if (totalCr)   details.push({ group: 'Diário Contabilístico', label: 'Total Crédito',     value: fmtEur(parseFloat(totalCr) || 0) });
   }
 
   // ═════════════════════════════════════════════════════════════════
-  // PROFILE population (same as before)
+  // PROFILE population
   // ═════════════════════════════════════════════════════════════════
-  if (companyName) {
-    profile.nomeCliente = companyName;
-    filled.push('Nome');
-  }
-  if (taxRegNr) {
-    profile.nif = taxRegNr;
-    filled.push('NIF');
-  }
-
-  if (contactEl) {
-    const telephone = el(contactEl, 'Telephone');
-    const email     = el(contactEl, 'Email');
-    if (telephone) { profile.telefone = telephone; filled.push('Telefone'); }
-    if (email && email.includes('@')) { profile.email = email; filled.push('Email'); }
-  }
+  if (companyName) { profile.nomeCliente = companyName; filled.push('Nome'); }
+  if (taxRegNr)    { profile.nif         = taxRegNr;    filled.push('NIF'); }
+  if (telephone)   { profile.telefone    = telephone;   filled.push('Telefone'); }
+  if (email && email.includes('@')) { profile.email = email; filled.push('Email'); }
 
   if (addrEl) {
-    const buildingNumber = el(addrEl, 'BuildingNumber');
-    const streetName     = el(addrEl, 'StreetName');
-    const addressDetail  = el(addrEl, 'AddressDetail');
-    const city           = el(addrEl, 'City');
-    const postalCode     = el(addrEl, 'PostalCode');
+    const buildingNumber = text(addrEl, 'BuildingNumber');
+    const streetName     = text(addrEl, 'StreetName');
+    const addressDetail  = text(addrEl, 'AddressDetail');
+    const city           = text(addrEl, 'City');
+    const postalCode     = text(addrEl, 'PostalCode');
 
-    const line1 = [streetName, buildingNumber].filter(Boolean).join(' ') || addressDetail;
+    const streetPart = [streetName, buildingNumber].filter(Boolean).join(' ');
+    const line1 = streetPart && addressDetail && !streetPart.includes(addressDetail)
+                    ? `${addressDetail}, ${streetPart}`
+                    : (streetPart || addressDetail);
     if (line1) { profile.morada = line1; filled.push('Morada'); }
     if (postalCode && postalCode !== '0000-000') { profile.codigoPostal = postalCode; filled.push('Código Postal'); }
     if (city && city.toLowerCase() !== 'desconhecido') { profile.localidade = city; filled.push('Localidade'); }
   }
 
-  if (taxBasis === 'C' || taxBasis === 'L') {
+  if (taxBasis === 'C' || taxBasis === 'L' || taxBasis === 'I') {
     profile.tipoEntidade = 'lda';
     profile.regimeContabilidade = 'organizada';
-    warnings.push(`TaxAccountingBasis "${taxBasis}" sugere contabilidade organizada — confirme o tipo de entidade`);
+    if (taxBasis !== 'I') warnings.push(`TaxAccountingBasis "${taxBasis}" sugere contabilidade organizada — confirme o tipo de entidade`);
     filled.push('Tipo de entidade', 'Regime de contabilidade');
   } else if (taxBasis === 'S') {
     profile.tipoEntidade = 'eni';
     profile.regimeContabilidade = 'simplificado';
     filled.push('Tipo de entidade', 'Regime de contabilidade');
-  } else if (taxBasis === 'F') {
+  } else if (taxBasis === 'F' || taxBasis === 'R' || taxBasis === 'T' || taxBasis === 'E') {
+    // Simplified billing — sem GL: provavelmente ENI
     profile.tipoEntidade = 'eni';
     profile.regimeContabilidade = 'simplificado';
     filled.push('Tipo de entidade', 'Regime de contabilidade');
@@ -466,32 +869,43 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     filled.push('Ano de atividade');
   }
 
-  // Activity type from invoice lines
-  let serviceCount = 0;
-  let goodsCount   = 0;
-  const eacCodeFromSales = details.find(d => d.group === 'Dados Fiscais' && d.label.startsWith('CAE'))?.value ?? '';
-  const allLines = doc.getElementsByTagName('Line');
-  for (let i = 0; i < Math.min(allLines.length, 200); i++) {
-    const desc = allLines[i].getElementsByTagName('Description')[0]?.textContent?.trim().toLowerCase() ?? '';
-    const isService = /(consultoria|servi[cç]o|presta[cç][aã]o|assessoria|forma[cç][aã]o|repara[cç][aã]o|manuten[cç][aã]o|transporte|aluguer|software|design|marketing|contabilidade|auditoria|jur[ií]dico|m[eé]dico|arquitetura|engenharia|inform[aá]tica)/.test(desc);
-    const isGoods   = /(venda|produto|mercadoria|artigo|material|equipamento|stock|armaz[eé]m|compra|fornecedor)/.test(desc);
-    if (isService) serviceCount++;
-    else if (isGoods) goodsCount++;
-    else {
-      const cp = parseInt(eacCodeFromSales.slice(0, 2), 10) || 0;
-      if (cp >= 45 && cp <= 47) goodsCount++;
-      else if (cp >= 49 && cp <= 99) serviceCount++;
+  // Activity type — primary signal: Product types; fallback: invoice line descriptions; final: EAC code
+  let activityType: 'servicos' | 'bens' = 'servicos';
+  if (productTypeCount.S + productTypeCount.P > 0) {
+    activityType = productTypeCount.S >= productTypeCount.P ? 'servicos' : 'bens';
+  } else {
+    let serviceCount = 0;
+    let goodsCount   = 0;
+    const allLines = localDescendants(root, 'Line');
+    const cap = Math.min(allLines.length, 300);
+    for (let i = 0; i < cap; i++) {
+      const desc = (localChild(allLines[i], 'Description')?.textContent ?? '').trim().toLowerCase();
+      const isService = /(consultoria|servi[cç]o|presta[cç][aã]o|assessoria|forma[cç][aã]o|repara[cç][aã]o|manuten[cç][aã]o|transporte|aluguer|software|design|marketing|contabilidade|auditoria|jur[ií]dico|m[eé]dico|arquitetura|engenharia|inform[aá]tica|mensalidade|aula|explica[cç][aã]o|pacote)/.test(desc);
+      const isGoods   = /(venda|produto|mercadoria|artigo|material|equipamento|stock|armaz[eé]m|compra|fornecedor)/.test(desc);
+      if (isService) serviceCount++;
+      else if (isGoods) goodsCount++;
+    }
+    if (serviceCount + goodsCount > 0) {
+      activityType = serviceCount >= goodsCount ? 'servicos' : 'bens';
+    } else if (eacCodeDetected) {
+      const cae2 = parseInt(eacCodeDetected.slice(0, 2), 10) || 0;
+      activityType = (cae2 >= 45 && cae2 <= 47) ? 'bens' : 'servicos';
     }
   }
-  if (serviceCount > 0 || goodsCount > 0) {
-    profile.atividadePrincipal = serviceCount >= goodsCount ? 'servicos' : 'bens';
-    filled.push('Tipo de atividade');
-  } else {
-    profile.atividadePrincipal = 'servicos';
+  profile.atividadePrincipal = activityType;
+  filled.push('Tipo de atividade');
+
+  // Revenue / VN: prefer SalesInvoices netTotal (NC subtracted), fall back to gross credit
+  let revenue = salesNetTotal > 0 ? salesNetTotal : totalCredit;
+  // For organizada, prefer class 7 total
+  if (useRaiCalc) {
+    const cls7 = (previsa.rai_711 ?? 0) + (previsa.rai_712 ?? 0) + (previsa.rai_72 ?? 0)
+               + (previsa.rai_74 ?? 0) + (previsa.rai_75 ?? 0) + (previsa.rai_76 ?? 0)
+               + (previsa.rai_77 ?? 0) + (previsa.rai_78 ?? 0) + (previsa.rai_79 ?? 0);
+    if (cls7 > 0) revenue = cls7;
   }
 
-  // Revenue / VN
-  if (totalCredit > 0 && startDate && endDate) {
+  if (revenue > 0 && startDate && endDate) {
     const start  = new Date(startDate);
     const end    = new Date(endDate);
     const days   = (end.getTime() - start.getTime()) / 86400000 + 1;
@@ -499,10 +913,10 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
 
     let fatAnual: number;
     if (months < 11.5) {
-      fatAnual = Math.round((totalCredit / months) * 12);
-      warnings.push(`Faturação anualizada: ${totalCredit.toFixed(2)} € em ${months.toFixed(1)} mês(es) → estimativa anual ${fatAnual.toLocaleString('pt-PT')} €`);
+      fatAnual = Math.round((revenue / months) * 12);
+      warnings.push(`Faturação anualizada: ${fmtEur(revenue)} em ${months.toFixed(1)} mês(es) → estimativa anual ${fmtNum(fatAnual)} €`);
     } else {
-      fatAnual = Math.round(totalCredit);
+      fatAnual = Math.round(revenue);
     }
     if (fatAnual > 0) {
       profile.faturaçaoAnualPrevista = fatAnual;
@@ -510,9 +924,12 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
       details.push({
         group: 'Dados Fiscais',
         label: 'Faturação do Período',
-        value: `${fmtEur(totalCredit)}${months < 11.5 ? ` (anualizado → ${fatAnual.toLocaleString('pt-PT')} €)` : ''}`,
+        value: `${fmtEur(revenue)}${months < 11.5 ? ` (anualizado → ${fmtNum(fatAnual)} €)` : ''}`,
       });
     }
+  } else if (revenue > 0) {
+    profile.faturaçaoAnualPrevista = Math.round(revenue);
+    filled.push('Faturação anual estimada');
   }
 
   if ((profile.tipoEntidade === 'eni' || profile.tipoEntidade === 'unipessoal') && profile.faturaçaoAnualPrevista) {
@@ -520,26 +937,36 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     filled.push('Rendimento mensal ENI (estimado)');
   }
   if (profile.tipoEntidade === 'eni' || profile.tipoEntidade === 'unipessoal') {
-    profile.regimeSs  = profile.regimeContabilidade === 'simplificado' ? 'simplified' : 'general';
-    profile.tipoRendimentoSs = profile.atividadePrincipal === 'bens' ? 'bens' : 'servicos';
+    profile.regimeSs = profile.regimeContabilidade === 'simplificado' ? 'simplified' : 'general';
+    profile.tipoRendimentoSs = activityType === 'bens' ? 'bens' : 'servicos';
     filled.push('Regime SS (estimado)');
   }
 
+  // Employees — combine recibos + class 63 ratio (rough)
   if (workerNifsCount > 0) {
     profile.nrFuncionarios = workerNifsCount;
-    filled.push('Nº de funcionários (estimado)');
+    filled.push('Nº de funcionários');
     details.push({ group: 'Dados Fiscais', label: 'Nº de Funcionários', value: `${workerNifsCount} (via recibos de vencimento)` });
+  } else if (useRaiCalc && (previsa.rai_63 ?? 0) > 0) {
+    // Rough estimate: average gross + SS employer ≈ 25k/yr per employee
+    const est = Math.round((previsa.rai_63 ?? 0) / 25000);
+    if (est > 0) {
+      profile.nrFuncionarios = est;
+      filled.push('Nº de funcionários (estimado de 63)');
+      details.push({ group: 'Dados Fiscais', label: 'Nº de Funcionários (estimado)', value: `~${est} (a partir de classe 63)` });
+    }
   }
 
   // Fixed assets / vehicles
-  const fixedAssetEls = doc.getElementsByTagName('Asset');
+  const fixedAssetEls = localDescendants(root, 'Asset');
   const vehicles: { desc: string; value: number }[] = [];
   for (let i = 0; i < fixedAssetEls.length; i++) {
-    const desc     = el(fixedAssetEls[i], 'Description').toLowerCase();
+    const desc      = (text(fixedAssetEls[i], 'Description') || text(fixedAssetEls[i], 'AssetDescription')).toLowerCase();
     const isVehicle = /(viatura|ve[ií]culo|carro|autom[oó]vel|carrinha|cami[aã]o|motociclo|moto)/.test(desc);
     if (isVehicle) {
-      const val = parseFloat(el(fixedAssetEls[i], 'AcquisitionAndProductionCosts')) || 0;
-      if (val > 0) vehicles.push({ desc: el(fixedAssetEls[i], 'Description'), value: val });
+      const val = num(fixedAssetEls[i], 'AcquisitionAndProductionCosts')
+              || num(fixedAssetEls[i], 'AcquisitionCost');
+      if (val > 0) vehicles.push({ desc: text(fixedAssetEls[i], 'Description') || text(fixedAssetEls[i], 'AssetDescription'), value: val });
     }
   }
   if (vehicles.length > 0) {
@@ -551,7 +978,7 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   }
 
   // ═════════════════════════════════════════════════════════════════
-  // PREVISA population
+  // PREVISA population (resto)
   // ═════════════════════════════════════════════════════════════════
   if (taxRegNr)     previsa.nif        = taxRegNr;
   if (companyName)  previsa.designacao  = companyName;
@@ -560,19 +987,8 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   // Volume de negócios para PEC/PC
   if (profile.faturaçaoAnualPrevista && profile.faturaçaoAnualPrevista > 0) {
     previsa.volumeNegocios = profile.faturaçaoAnualPrevista;
-  } else if (totalCredit > 0) {
-    previsa.volumeNegocios = Math.round(totalCredit);
-  }
-
-  // RAI estimado a partir das contas de classe 8 (apenas SAF-T tipo C)
-  if (glCount > 0 && resultadoEstimado !== 0) {
-    previsa.c701_rai = Math.round(resultadoEstimado * 100) / 100;
-    warnings.push(`RAI estimado das contas 81x: ${fmtEur(Math.abs(resultadoEstimado))} ${resultadoEstimado >= 0 ? '(lucro)' : '(prejuízo)'}. Confirme com a contabilidade.`);
-    details.push({
-      group: 'Dados Fiscais',
-      label: 'RAI estimado (conta 81x)',
-      value: `${fmtEur(Math.abs(resultadoEstimado))} ${resultadoEstimado >= 0 ? 'Lucro' : 'Prejuízo'}`,
-    });
+  } else if (revenue > 0) {
+    previsa.volumeNegocios = Math.round(revenue);
   }
 
   // PME / Regime
@@ -584,7 +1000,7 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   }
 
   // ═════════════════════════════════════════════════════════════════
-  // Empty fields
+  // Empty fields list
   // ═════════════════════════════════════════════════════════════════
   const allProfileFields: (keyof ClientProfile)[] = [
     'nomeCliente', 'nif', 'email', 'telefone', 'morada', 'codigoPostal', 'localidade',
