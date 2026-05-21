@@ -245,9 +245,18 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     // Prefer streetName + buildingNumber, fall back to addressDetail; combine when both
     // forms carry info (e.g., streetName empty but addressDetail has the full street).
     const streetPart = [streetName, buildingNumber].filter(Boolean).join(' ');
-    const line1 = streetPart && addressDetail && !streetPart.includes(addressDetail)
-                    ? `${addressDetail}, ${streetPart}`
-                    : (streetPart || addressDetail);
+    // AddressDetail often already contains the street + number (it's the "free-form" line).
+    // Avoid duplication: prefer the longer of the two if one contains the other.
+    let line1: string;
+    if (streetPart && addressDetail) {
+      const s = streetPart.toLowerCase();
+      const a = addressDetail.toLowerCase();
+      if (a.includes(s) || a === s) line1 = addressDetail;
+      else if (s.includes(a)) line1 = streetPart;
+      else line1 = `${addressDetail}, ${streetPart}`;
+    } else {
+      line1 = streetPart || addressDetail;
+    }
     if (line1)                                                 details.push({ group: 'Empresa', label: 'Morada',         value: line1 });
     if (postalCode && postalCode !== '0000-000')               details.push({ group: 'Empresa', label: 'Código Postal',  value: postalCode });
     if (city && city.toLowerCase() !== 'desconhecido')         details.push({ group: 'Empresa', label: 'Localidade',     value: city });
@@ -840,9 +849,18 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     const postalCode     = text(addrEl, 'PostalCode');
 
     const streetPart = [streetName, buildingNumber].filter(Boolean).join(' ');
-    const line1 = streetPart && addressDetail && !streetPart.includes(addressDetail)
-                    ? `${addressDetail}, ${streetPart}`
-                    : (streetPart || addressDetail);
+    // AddressDetail often already contains the street + number (it's the "free-form" line).
+    // Avoid duplication: prefer the longer of the two if one contains the other.
+    let line1: string;
+    if (streetPart && addressDetail) {
+      const s = streetPart.toLowerCase();
+      const a = addressDetail.toLowerCase();
+      if (a.includes(s) || a === s) line1 = addressDetail;
+      else if (s.includes(a)) line1 = streetPart;
+      else line1 = `${addressDetail}, ${streetPart}`;
+    } else {
+      line1 = streetPart || addressDetail;
+    }
     if (line1) { profile.morada = line1; filled.push('Morada'); }
     if (postalCode && postalCode !== '0000-000') { profile.codigoPostal = postalCode; filled.push('Código Postal'); }
     if (city && city.toLowerCase() !== 'desconhecido') { profile.localidade = city; filled.push('Localidade'); }
