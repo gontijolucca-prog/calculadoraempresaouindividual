@@ -1,12 +1,11 @@
-import React, { useState, useRef, useEffect, useCallback, useId } from 'react';
-import { motion } from 'motion/react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   UserCircle, Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote, Info,
   ClipboardList, Upload, LogOut,
   ChevronDown, TrendingUp, Settings, UserPlus, Building2, ArrowLeft,
+  Menu, X, Clock,
 } from 'lucide-react';
 import { cn } from './lib/utils';
-import { Tip } from './Tip';
 import type { AppMode } from './ModeSelector';
 
 type ViewType =
@@ -77,150 +76,6 @@ function Logo({ className = 'w-7 h-7' }: { className?: string }) {
   );
 }
 
-/**
- * Accessible menu dropdown. Trigger has aria-haspopup/aria-expanded; menu items
- * use role="menuitem"; ↑/↓ navigate between items, Home/End jump to ends,
- * Escape closes and returns focus to the trigger.
- */
-function NavMenu({
-  label,
-  shortLabel,
-  items,
-  active,
-  setView,
-}: {
-  label: string;
-  shortLabel: string;
-  items: typeof NAV_ITEMS[number][];
-  active: ViewType;
-  setView: (v: ViewType) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const menuId = useId();
-
-  const close = useCallback(() => setOpen(false), []);
-
-  const openMenu = useCallback(() => {
-    if (!triggerRef.current) return;
-    const rect = triggerRef.current.getBoundingClientRect();
-    setPos({ top: rect.bottom + 4, left: rect.left });
-    setOpen(true);
-  }, []);
-
-  // Close on Escape, outside click; focus first item on open
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        close();
-        triggerRef.current?.focus();
-      }
-    };
-    const onClick = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (menuRef.current?.contains(target) || triggerRef.current?.contains(target)) return;
-      close();
-    };
-    document.addEventListener('keydown', onKey);
-    document.addEventListener('mousedown', onClick);
-    // Focus first item on next tick
-    const t = window.setTimeout(() => itemRefs.current[0]?.focus(), 0);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('mousedown', onClick);
-      window.clearTimeout(t);
-    };
-  }, [open, close]);
-
-  const handleMenuKey = (e: React.KeyboardEvent, idx: number) => {
-    const last = items.length - 1;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      itemRefs.current[Math.min(idx + 1, last)]?.focus();
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      itemRefs.current[Math.max(idx - 1, 0)]?.focus();
-    } else if (e.key === 'Home') {
-      e.preventDefault();
-      itemRefs.current[0]?.focus();
-    } else if (e.key === 'End') {
-      e.preventDefault();
-      itemRefs.current[last]?.focus();
-    } else if (e.key === 'Tab') {
-      // Tab closes the menu naturally
-      close();
-    }
-  };
-
-  const handleTriggerKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      openMenu();
-    }
-  };
-
-  return (
-    <div className="relative">
-      <motion.button
-        ref={triggerRef}
-        type="button"
-        onClick={() => (open ? close() : openMenu())}
-        onKeyDown={handleTriggerKey}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-controls={menuId}
-        className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] transition-colors text-slate-500 hover:text-[#7B98B8] hover:bg-[#7B98B8]/8 border border-slate-200"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        transition={{ duration: 0.15 }}
-      >
-        <span className="hidden md:block">{label}</span>
-        <span className="hidden sm:block md:hidden">{shortLabel}</span>
-        <ChevronDown className={`w-3 h-3 ml-1 transition-transform duration-200 ${open ? "rotate-180" : ""}`} aria-hidden="true" />
-      </motion.button>
-
-      {open && (
-        <div
-          ref={menuRef}
-          id={menuId}
-          role="menu"
-          aria-label={label}
-          className="fixed z-50 w-56 bg-white border border-slate-200 rounded-md shadow-lg"
-          style={{ top: pos.top, left: pos.left }}
-        >
-          {items.map(({ id, label: itemLabel, Icon }, idx) => (
-            <motion.button
-              key={id}
-              ref={el => { itemRefs.current[idx] = el; }}
-              type="button"
-              role="menuitem"
-              onClick={() => { setView(id); close(); }}
-              onKeyDown={e => handleMenuKey(e, idx)}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-2 text-left w-full text-[12px] font-[600] transition-colors",
-                active === id
-                  ? "bg-[#7B98B8] text-white"
-                  : "text-slate-500 hover:bg-[#7B98B8]/8 hover:text-[#7B98B8]"
-              )}
-              whileHover={{ scale: 1.02, x: 2 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ duration: 0.15 }}
-            >
-              <Icon className="w-4 h-4" aria-hidden="true" />
-              <span className="ml-3">{itemLabel} <Tip>{NAV_TIPS[id]}</Tip></span>
-            </motion.button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates, onSAFTUpload, onLogout, hasSaftData, onOpenSaftViewer, mode, onBackToModeSelection, children }: LayoutProps) {
   const active = view === 'legal' || view === 'updates' ? prevView : view;
   const saftInputRef = useRef<HTMLInputElement>(null);
@@ -229,220 +84,155 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
   const allowedViews = VIEWS_BY_MODE[mode];
   const simItems = NAV_ITEMS.filter(n => n.group === 'sim' && allowedViews.includes(n.id)) as unknown as typeof NAV_ITEMS[number][];
   const profileVisible = allowedViews.includes('profile');
+  const isSimActive = simItems.some(s => s.id === active);
+
+  // Gaveta no telemóvel + secção "Simuladores" colapsável (auto-abre no sim activo).
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [simOpen, setSimOpen] = useState<boolean>(isSimActive);
+  useEffect(() => { if (isSimActive) setSimOpen(true); }, [isSimActive]);
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setDrawerOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [drawerOpen]);
 
   const handleSAFTInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && onSAFTUpload) onSAFTUpload(file);
-    // Reset so the same file can be re-uploaded if needed
     e.target.value = '';
   };
 
-  return (
-    <div className="h-full w-full flex flex-col bg-[#F8FAFC]">
-      {/* Top Navigation Bar */}
-      <header className="bg-white border-b border-slate-200 shrink-0 flex items-center min-h-[52px] px-3 gap-0 overflow-x-auto shadow-sm scrollbar-none" role="banner">
-        <nav aria-label="Navegação principal" className="contents">
+  const go = (v: ViewType) => { setView(v); setDrawerOpen(false); };
+  const runAction = (fn?: () => void) => { if (fn) fn(); setDrawerOpen(false); };
 
-          {/* ← Back to mode selection */}
-          <motion.button
-            type="button"
-            onClick={onBackToModeSelection}
-            aria-label="Voltar à seleção de modo"
-            title="Voltar à seleção de modo"
-            className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] text-slate-500 hover:text-[#525C66] hover:bg-slate-100 transition-colors shrink-0 mr-1"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-          >
-            <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-            <span className="hidden md:inline">Trocar modo</span>
-          </motion.button>
+  const NavItem = ({ label, Icon, onClick, current, tone = 'default', title }: {
+    label: string; Icon: React.ComponentType<{ className?: string }>;
+    onClick: () => void; current?: boolean; tone?: 'default' | 'danger'; title?: string;
+  }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      aria-current={current ? 'page' : undefined}
+      className={cn(
+        'w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[14px] font-[600] transition-colors text-left',
+        current
+          ? 'bg-[#0F172A] text-white shadow-sm'
+          : tone === 'danger'
+            ? 'text-slate-600 hover:text-red-700 hover:bg-red-50'
+            : 'text-slate-600 hover:text-[#0F172A] hover:bg-slate-100'
+      )}
+    >
+      <Icon className="w-[18px] h-[18px] shrink-0" />
+      <span className="truncate">{label}</span>
+    </button>
+  );
 
-          {/* Brand — click navigates to Perfil (or back to mode selection if profile not in this mode) */}
-          <motion.button
-            type="button"
-            onClick={() => (profileVisible ? setView('profile') : onBackToModeSelection())}
-            aria-label={profileVisible ? 'Ir para o Perfil de Cliente' : 'Voltar à seleção de modo'}
-            className="flex items-center gap-2 mr-2 shrink-0 rounded-[8px] hover:bg-slate-50 px-1 py-0.5 transition-colors"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            transition={{ duration: 0.15 }}
-          >
-            <Logo />
-            <div className="hidden sm:block text-left">
-              <div className="text-[13px] font-[800] text-[#1E293B] tracking-[-0.3px] leading-none">Estudo 360</div>
-              <div className="text-[9px] font-[600] text-[#7B98B8] uppercase tracking-[0.5px] leading-none mt-[2px]">Ferramentas Fiscais</div>
+  const SectionLabel = ({ children }: { children: React.ReactNode }) => (
+    <div className="px-3 pt-4 pb-1.5 text-[10px] font-[800] uppercase tracking-[1.5px] text-slate-400">{children}</div>
+  );
+
+  const sidebar = (
+    <div className="h-full flex flex-col bg-white">
+      <div className="px-4 pt-4 pb-3 border-b border-slate-100">
+        <div className="flex items-center justify-between">
+          <button type="button" onClick={() => (profileVisible ? go('profile') : runAction(onBackToModeSelection))} className="flex items-center gap-2.5 rounded-[8px] hover:bg-slate-50 px-1 py-1 -mx-1 transition-colors" aria-label="Ir para o inicio">
+            <Logo className="w-8 h-8" />
+            <div className="text-left leading-none">
+              <div className="text-[14px] font-[800] text-[#1E293B] tracking-[-0.3px]">Estudo 360</div>
+              <div className="text-[9px] font-[600] text-[#7B98B8] uppercase tracking-[0.5px] mt-[3px]">Ferramentas Fiscais</div>
             </div>
-          </motion.button>
+          </button>
+          <button type="button" onClick={() => setDrawerOpen(false)} className="md:hidden p-1.5 rounded-[8px] text-slate-400 hover:bg-slate-100" aria-label="Fechar menu">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="mt-3 flex items-center justify-between gap-2 rounded-[10px] px-2.5 py-1.5" style={{ background: modeMeta.soft }}>
+          <span className="flex items-center gap-1.5 text-[11px] font-[800] uppercase tracking-[1px]" style={{ color: modeMeta.color }}>
+            <ModeIcon className="w-3.5 h-3.5" strokeWidth={2.5} /> {modeMeta.label}
+          </span>
+          <button type="button" onClick={() => runAction(onBackToModeSelection)} className="flex items-center gap-1 text-[11px] font-[700] text-slate-500 hover:text-[#0F172A]" title="Trocar de modo">
+            <ArrowLeft className="w-3 h-3" /> trocar
+          </button>
+        </div>
+      </div>
 
-          {/* Mode badge */}
-          <div
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full shrink-0 ml-1"
-            style={{ background: modeMeta.soft, color: modeMeta.color }}
-            aria-label={`Modo activo: ${modeMeta.label}`}
-          >
-            <ModeIcon className="w-3.5 h-3.5" strokeWidth={2.5} aria-hidden="true" />
-            <span className="text-[10px] font-[800] uppercase tracking-[1.2px]">{modeMeta.label}</span>
+      <nav aria-label="Navegacao principal" className="flex-1 overflow-y-auto px-2 py-1">
+        {profileVisible && (
+          <>
+            <SectionLabel>Cliente</SectionLabel>
+            <NavItem label="Perfil do Cliente" Icon={UserCircle} onClick={() => go('profile')} current={active === 'profile'} title={NAV_TIPS.profile} />
+          </>
+        )}
+
+        {simItems.length > 0 && (
+          <>
+            <button type="button" onClick={() => setSimOpen(o => !o)} aria-expanded={simOpen} className="w-full flex items-center justify-between px-3 pt-4 pb-1.5 text-[10px] font-[800] uppercase tracking-[1.5px] text-slate-400 hover:text-slate-600 transition-colors">
+              <span>Simuladores</span>
+              <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', simOpen ? '' : '-rotate-90')} />
+            </button>
+            {simOpen && (
+              <div className="space-y-0.5">
+                {simItems.map(({ id, label, Icon }) => (
+                  <React.Fragment key={id}>
+                    <NavItem label={label} Icon={Icon} onClick={() => go(id)} current={active === id} title={NAV_TIPS[id]} />
+                  </React.Fragment>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        <SectionLabel>Ferramentas</SectionLabel>
+        <NavItem label="Atualizacoes" Icon={ClipboardList} onClick={() => runAction(openUpdates)} current={view === 'updates'} />
+        {onSAFTUpload && (
+          <NavItem label="Ler SAF-T" Icon={Upload} onClick={() => { saftInputRef.current?.click(); }} title="Importar ficheiro SAF-T" />
+        )}
+        {hasSaftData && onOpenSaftViewer && (
+          <NavItem label="Ver dados SAF-T" Icon={Clock} onClick={() => runAction(onOpenSaftViewer)} />
+        )}
+        <NavItem label="Base Legal" Icon={Info} onClick={() => runAction(openLegal)} current={view === 'legal'} />
+      </nav>
+
+      <div className="border-t border-slate-100 px-2 py-2 space-y-0.5">
+        <NavItem label="Definicoes do Escritorio" Icon={Settings} onClick={() => go('office-settings')} current={view === 'office-settings'} />
+        {onLogout && <NavItem label="Sair" Icon={LogOut} onClick={() => runAction(onLogout)} tone="danger" />}
+      </div>
+
+      <input ref={saftInputRef} type="file" accept=".xml,text/xml,application/xml" className="sr-only" aria-hidden="true" tabIndex={-1} onChange={handleSAFTInputChange} />
+    </div>
+  );
+
+  return (
+    <div className="h-full w-full flex bg-[#F8FAFC]">
+      <aside className={cn(
+        'z-40 w-64 shrink-0 transition-transform duration-200 md:static md:translate-x-0',
+        'fixed inset-y-0 left-0',
+        drawerOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
+      )}>
+        {sidebar}
+      </aside>
+
+      {drawerOpen && (
+        <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={() => setDrawerOpen(false)} aria-hidden="true" />
+      )}
+
+      <div className="flex-1 flex flex-col min-w-0">
+        <div className="md:hidden flex items-center gap-2 bg-white border-b border-slate-200 px-3 min-h-[52px] shrink-0">
+          <button type="button" onClick={() => setDrawerOpen(true)} className="p-2 -ml-1 rounded-[8px] text-slate-600 hover:bg-slate-100" aria-label="Abrir menu" aria-expanded={drawerOpen}>
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-2">
+            <Logo className="w-6 h-6" />
+            <span className="text-[13px] font-[800] text-[#1E293B]">Estudo 360</span>
           </div>
+        </div>
 
-          <div className="h-5 w-px bg-slate-200 mx-2 shrink-0" aria-hidden="true" />
-
-          {/* Profile button (only when current mode includes the profile view) */}
-          {profileVisible && NAV_ITEMS.filter(n => n.group === 'profile').map(({ id, label, Icon }) => (
-            <motion.button
-              key={id}
-              type="button"
-              onClick={() => setView(id)}
-              aria-current={active === id ? 'page' : undefined}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] transition-colors shrink-0",
-                active === id
-                  ? "bg-[#0F172A] text-white shadow-sm"
-                  : "text-slate-500 hover:text-[#0F172A] hover:bg-slate-100"
-              )}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ duration: 0.15 }}
-            >
-              <Icon className="w-4 h-4 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
-              <span className="hidden sm:inline">{label} <Tip>{NAV_TIPS[id]}</Tip></span>
-            </motion.button>
-          ))}
-
-          {simItems.length > 0 && (
-            <>
-              <div className="h-5 w-px bg-slate-200 mx-2 shrink-0" aria-hidden="true" />
-
-              <NavMenu
-                label="Simuladores"
-                shortLabel="Sim"
-                items={simItems}
-                active={active}
-                setView={setView}
-              />
-            </>
-          )}
-
-          {/* Action buttons: checklist + SAFT upload + Legal */}
-          <div className="ml-auto shrink-0 flex items-center gap-1.5">
-            {/* Checklist de Atualizações quick-access button */}
-            <motion.button
-              type="button"
-              onClick={openUpdates}
-              aria-current={view === 'updates' ? 'page' : undefined}
-              aria-label="Checklist de Atualizações"
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] transition-colors border border-slate-200",
-                view === 'updates'
-                  ? "bg-[#7B98B8] text-white border-[#7B98B8]"
-                  : "text-slate-500 hover:text-[#7B98B8] hover:bg-[#7B98B8]/8"
-              )}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ duration: 0.15 }}
-            >
-              <ClipboardList className="w-4 h-4 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
-              <span className="hidden sm:inline">Atualizações</span>
-            </motion.button>
-
-            {/* Hidden file input for SAFT */}
-            <input
-              ref={saftInputRef}
-              type="file"
-              accept=".xml,text/xml,application/xml"
-              className="sr-only"
-              aria-hidden="true"
-              tabIndex={-1}
-              onChange={handleSAFTInputChange}
-            />
-
-            {onSAFTUpload && (
-              <motion.button
-                type="button"
-                onClick={() => saftInputRef.current?.click()}
-                aria-label="Importar ficheiro SAF-T"
-                className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] text-slate-500 hover:text-[#7B98B8] hover:bg-[#7B98B8]/8 transition-colors border border-slate-200"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ duration: 0.15 }}
-              >
-                <Upload className="w-4 h-4 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
-                <span className="hidden sm:inline">Ler SAFT</span>
-              </motion.button>
-            )}
-
-            {hasSaftData && onOpenSaftViewer && (
-              <motion.button
-                type="button"
-                onClick={onOpenSaftViewer}
-                aria-label="Ver dados extraídos do SAF-T"
-                className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] text-[#7B98B8] bg-[#7B98B8]/8 hover:bg-[#7B98B8]/15 transition-colors border border-[#7B98B8]/25"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ duration: 0.15 }}
-              >
-                <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5" fill="none" aria-hidden="true">
-                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/>
-                  <path d="M8 5v3.5l2 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
-                <span className="hidden sm:inline">Ver SAFT</span>
-              </motion.button>
-            )}
-
-            <motion.button
-              type="button"
-              onClick={() => setView('office-settings')}
-              aria-current={view === 'office-settings' ? 'page' : undefined}
-              aria-label="Definições do escritório"
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] transition-colors border",
-                view === 'office-settings'
-                  ? "bg-[#525C66] text-white border-[#525C66]"
-                  : "text-slate-500 hover:text-[#525C66] hover:bg-[#525C66]/8 border-slate-200"
-              )}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ duration: 0.15 }}
-            >
-              <Settings className="w-4 h-4 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
-              <span className="hidden sm:inline">Escritório</span>
-            </motion.button>
-
-            <motion.button
-              type="button"
-              onClick={openLegal}
-              aria-label="Abrir base legal"
-              className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] text-slate-500 hover:text-[#7B98B8] hover:bg-[#7B98B8]/8 transition-colors border border-slate-200"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ duration: 0.15 }}
-            >
-              <Info className="w-4 h-4 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
-              <span className="hidden sm:inline">Legal</span>
-            </motion.button>
-
-            {onLogout && (
-              <motion.button
-                type="button"
-                onClick={onLogout}
-                aria-label="Terminar sessão"
-                className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] text-[12px] font-[600] text-slate-500 hover:text-red-700 hover:bg-red-50 transition-colors border border-slate-200"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ duration: 0.15 }}
-              >
-                <LogOut className="w-4 h-4 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
-                <span className="hidden sm:inline">Sair</span>
-              </motion.button>
-            )}
-          </div>
-        </nav>
-      </header>
-
-      {/* Main content (target of the skip link) */}
-      <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto">
-        {children}
-      </main>
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
