@@ -23,7 +23,7 @@ export default function LandingPage({ onEnter }: Props) {
   const heroFade = useTransform(scrollY, [0, 400], [1, 0.2]);
 
   return (
-    <div className="min-h-screen w-full bg-[#0E1620] text-white overflow-x-hidden">
+    <div className="min-h-screen w-full bg-[#EEF3F8] text-[#0E1620] overflow-x-hidden">
       <FontInjector />
       <NavBar onEnter={onEnter} />
 
@@ -47,7 +47,7 @@ function FontInjector() {
       @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,200;9..144,400;9..144,700;9..144,900&family=JetBrains+Mono:wght@500;700&display=swap');
       .display-serif { font-family: 'Fraunces', Georgia, serif; font-optical-sizing: auto; }
       .mono { font-family: 'JetBrains Mono', monospace; }
-      html, body, #root { background: #0E1620; }
+      html, body, #root { background: #EEF3F8; }
     `}</style>
   );
 }
@@ -56,35 +56,35 @@ function FontInjector() {
 function NavBar({ onEnter }: { onEnter: () => void }) {
   const [open, setOpen] = useState(false);
   return (
-    <header className="sticky top-0 z-50 bg-[#0E1620]/85 backdrop-blur-xl border-b border-white/5">
+    <header className="sticky top-0 z-50 bg-[#EEF3F8]/85 backdrop-blur-xl border-b border-[#0E1620]/8">
       <div className="max-w-7xl mx-auto px-5 md:px-8 h-[64px] flex items-center justify-between">
         <a href="#top" className="flex items-center gap-3 group">
           <BrandMark size={32} />
           <div className="leading-none">
-            <div className="text-[15px] font-[800] tracking-[-0.3px]">Estudo <span className="text-[#7B98B8]">360</span></div>
-            <div className="text-[9px] mono uppercase tracking-[2px] text-white/40 mt-[3px]">Ferramentas Fiscais</div>
+            <div className="text-[15px] font-[800] tracking-[-0.3px] text-[#0E1620]">Estudo <span className="text-[#7B98B8]">360</span></div>
+            <div className="text-[9px] mono uppercase tracking-[2px] text-[#0E1620]/45 mt-[3px]">Ferramentas Fiscais</div>
           </div>
         </a>
 
-        <nav className="hidden md:flex items-center gap-7 text-[13px] font-[600] text-white/70">
-          <a href="#funciona" className="hover:text-white transition-colors">Como funciona</a>
-          <a href="#simuladores" className="hover:text-white transition-colors">Simuladores</a>
-          <a href="#pacote" className="hover:text-white transition-colors">Pacote do cliente</a>
-          <a href="#precos" className="hover:text-white transition-colors">Preços</a>
+        <nav className="hidden md:flex items-center gap-7 text-[13px] font-[600] text-[#0E1620]/70">
+          <a href="#funciona" className="hover:text-[#0E1620] transition-colors">Como funciona</a>
+          <a href="#simuladores" className="hover:text-[#0E1620] transition-colors">Simuladores</a>
+          <a href="#pacote" className="hover:text-[#0E1620] transition-colors">Pacote do cliente</a>
+          <a href="#precos" className="hover:text-[#0E1620] transition-colors">Preços</a>
         </nav>
 
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onEnter}
-            className="hidden sm:inline-flex items-center gap-1.5 text-[12px] font-[700] text-white/80 hover:text-white px-3 py-2 rounded-[10px] border border-white/10 hover:bg-white/5 transition-all"
+            className="hidden sm:inline-flex items-center gap-1.5 text-[12px] font-[700] text-[#0E1620]/75 hover:text-[#0E1620] px-3 py-2 rounded-[10px] border border-[#0E1620]/10 hover:bg-[#0E1620]/5 transition-all"
           >
             Entrar
           </button>
           <button
             type="button"
             onClick={onEnter}
-            className="inline-flex items-center gap-1.5 text-[12px] font-[800] text-[#0E1620] bg-white hover:bg-[#E2E8F0] px-4 py-2 rounded-[10px] transition-all"
+            className="inline-flex items-center gap-1.5 text-[12px] font-[800] text-white bg-[#0E1620] hover:bg-[#26323f] px-4 py-2 rounded-[10px] transition-all"
           >
             Pedir demo <ArrowRight className="w-3.5 h-3.5" />
           </button>
@@ -92,19 +92,19 @@ function NavBar({ onEnter }: { onEnter: () => void }) {
             type="button"
             onClick={() => setOpen(o => !o)}
             aria-label="Menu"
-            className="md:hidden w-9 h-9 inline-flex items-center justify-center rounded-[10px] border border-white/10 hover:bg-white/5"
+            className="md:hidden w-9 h-9 inline-flex items-center justify-center rounded-[10px] border border-[#0E1620]/10 hover:bg-[#0E1620]/5"
           >
             <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
           </button>
         </div>
       </div>
       {open && (
-        <div className="md:hidden border-t border-white/5 px-5 py-4 space-y-3 text-[14px] font-[600] text-white/80">
+        <div className="md:hidden border-t border-[#0E1620]/8 px-5 py-4 space-y-3 text-[14px] font-[600] text-[#0E1620]/75">
           <a onClick={() => setOpen(false)} href="#funciona" className="block">Como funciona</a>
           <a onClick={() => setOpen(false)} href="#simuladores" className="block">Simuladores</a>
           <a onClick={() => setOpen(false)} href="#pacote" className="block">Pacote do cliente</a>
           <a onClick={() => setOpen(false)} href="#precos" className="block">Preços</a>
-          <button type="button" onClick={onEnter} className="block w-full text-left text-white">Entrar</button>
+          <button type="button" onClick={onEnter} className="block w-full text-left text-[#0E1620]">Entrar</button>
         </div>
       )}
     </header>
@@ -122,12 +122,12 @@ function Hero({ onEnter, parallaxY, fadeOpacity }: { onEnter: () => void; parall
         className="absolute inset-0 -z-10"
       >
         <div className="absolute inset-0" style={{
-          background: 'radial-gradient(60% 50% at 80% 10%, rgba(123,152,184,0.35) 0%, transparent 60%), radial-gradient(50% 40% at 10% 60%, rgba(82,92,102,0.45) 0%, transparent 70%), linear-gradient(180deg, #0E1620 0%, #0E1620 100%)',
+          background: 'radial-gradient(60% 50% at 80% 10%, rgba(123,152,184,0.35) 0%, transparent 60%), radial-gradient(50% 40% at 10% 60%, rgba(82,92,102,0.45) 0%, transparent 70%), linear-gradient(180deg, #EEF3F8 0%, #EEF3F8 100%)',
         }} />
         <div className="absolute inset-0 opacity-[0.04]" style={{
           backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
         }} />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,#0E1620_85%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,#EEF3F8_85%)]" />
       </motion.div>
 
       <div className="max-w-7xl mx-auto px-5 md:px-8 grid lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center">
@@ -136,7 +136,7 @@ function Hero({ onEnter, parallaxY, fadeOpacity }: { onEnter: () => void; parall
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.05, ease: [0.32, 0.72, 0, 1] }}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] backdrop-blur-sm text-[11px] mono uppercase tracking-[2.5px] text-white/70"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#0E1620]/10 bg-white backdrop-blur-sm text-[11px] mono uppercase tracking-[2.5px] text-[#0E1620]/70"
           >
             <Sparkles className="w-3 h-3 text-[#7B98B8]" /> Actualizado · OE 2026
           </motion.div>
@@ -156,10 +156,10 @@ function Hero({ onEnter, parallaxY, fadeOpacity }: { onEnter: () => void; parall
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.25 }}
-            className="mt-6 text-[16px] md:text-[18px] leading-[1.55] text-white/65 font-[400] max-w-xl"
+            className="mt-6 text-[16px] md:text-[18px] leading-[1.55] text-[#0E1620]/65 font-[400] max-w-xl"
           >
             Ferramenta para escritórios de contabilidade em Portugal. Enquanto o cliente fala,
-            preenche o perfil. Um clique gera <strong className="text-white">simulação fiscal, proposta
+            preenche o perfil. Um clique gera <strong className="text-[#0E1620]">simulação fiscal, proposta
             de honorários e minuta de contrato</strong> — com a sua marca.
           </motion.p>
 
@@ -172,7 +172,7 @@ function Hero({ onEnter, parallaxY, fadeOpacity }: { onEnter: () => void; parall
             <button
               type="button"
               onClick={onEnter}
-              className="group inline-flex items-center justify-center gap-2 bg-white text-[#0E1620] px-6 py-4 rounded-[14px] text-[14px] font-[800] tracking-tight hover:bg-[#E2E8F0] active:scale-[0.98] transition-all"
+              className="group inline-flex items-center justify-center gap-2 bg-[#0E1620] text-white px-6 py-4 rounded-[14px] text-[14px] font-[800] tracking-tight hover:bg-[#26323f] active:scale-[0.98] transition-all"
             >
               Experimentar agora
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -180,7 +180,7 @@ function Hero({ onEnter, parallaxY, fadeOpacity }: { onEnter: () => void; parall
             <button
               type="button"
               onClick={onEnter}
-              className="inline-flex items-center justify-center gap-2 border border-white/15 bg-white/[0.04] text-white/85 hover:bg-white/[0.08] px-6 py-4 rounded-[14px] text-[14px] font-[700] transition-all"
+              className="inline-flex items-center justify-center gap-2 border border-[#0E1620]/12 bg-[#0E1620]/[0.03] text-[#0E1620]/80 hover:bg-[#0E1620]/[0.07] px-6 py-4 rounded-[14px] text-[14px] font-[700] transition-all"
             >
               Ver demo de 3 minutos
             </button>
@@ -190,7 +190,7 @@ function Hero({ onEnter, parallaxY, fadeOpacity }: { onEnter: () => void; parall
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.55 }}
-            className="mt-10 flex flex-wrap items-center gap-x-7 gap-y-3 text-[11px] mono uppercase tracking-[2px] text-white/45"
+            className="mt-10 flex flex-wrap items-center gap-x-7 gap-y-3 text-[11px] mono uppercase tracking-[2px] text-[#0E1620]/50"
           >
             <span className="flex items-center gap-2"><Check className="w-3 h-3 text-[#7B98B8]" /> Sem cartão</span>
             <span className="flex items-center gap-2"><Check className="w-3 h-3 text-[#7B98B8]" /> Demo guiada</span>
@@ -211,7 +211,7 @@ function Hero({ onEnter, parallaxY, fadeOpacity }: { onEnter: () => void; parall
               style={{ background: 'linear-gradient(135deg, rgba(123,152,184,0.35) 0%, rgba(82,92,102,0.4) 100%)' }}
               aria-hidden="true"
             />
-            <div className="relative bg-white text-[#0E1620] rounded-[26px] shadow-2xl border border-white/10 overflow-hidden">
+            <div className="relative bg-white text-[#0E1620] rounded-[26px] shadow-2xl border border-[#0E1620]/10 overflow-hidden">
               <div className="px-6 py-3 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
@@ -281,12 +281,12 @@ function ValueStrip() {
     ['100%', 'Sob a sua marca'],
   ];
   return (
-    <section className="border-y border-white/5 bg-white/[0.015]">
+    <section className="border-y border-[#0E1620]/8 bg-white/70">
       <div className="max-w-7xl mx-auto px-5 md:px-8 py-8 md:py-10 grid grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-4">
         {items.map(([n, l]) => (
           <div key={l} className="text-left">
             <div className="display-serif text-[34px] md:text-[44px] font-[800] leading-none tracking-tight">{n}</div>
-            <div className="mt-2 text-[10px] md:text-[11px] mono uppercase tracking-[2px] text-white/45">{l}</div>
+            <div className="mt-2 text-[10px] md:text-[11px] mono uppercase tracking-[2px] text-[#0E1620]/50">{l}</div>
           </div>
         ))}
       </div>
@@ -328,11 +328,11 @@ function HowItWorks() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.5, delay: i * 0.1, ease: [0.32, 0.72, 0, 1] }}
-              className="relative bg-white/[0.04] border border-white/10 rounded-[20px] p-7 hover:bg-white/[0.06] hover:border-white/15 transition-all"
+              className="relative bg-white border border-[#0E1620]/10 rounded-[20px] p-7 hover:bg-[#EAF0F5] hover:border-[#0E1620]/12 transition-all"
             >
               <div className="mono text-[40px] md:text-[52px] font-[700] text-[#7B98B8] leading-none">{s.step}</div>
               <div className="display-serif text-[22px] md:text-[26px] font-[800] mt-4 leading-tight">{s.title}</div>
-              <p className="text-[14px] mt-3 text-white/65 leading-[1.6]">{s.body}</p>
+              <p className="text-[14px] mt-3 text-[#0E1620]/65 leading-[1.6]">{s.body}</p>
             </motion.div>
           ))}
         </div>
@@ -356,7 +356,7 @@ function ToolsCatalog() {
     { label: 'Base Legal', sub: '30+ fontes', Icon: BookOpen },
   ];
   return (
-    <section id="simuladores" className="py-24 md:py-32 border-t border-white/5">
+    <section id="simuladores" className="py-24 md:py-32 border-t border-[#0E1620]/8">
       <div className="max-w-7xl mx-auto px-5 md:px-8 grid lg:grid-cols-[0.9fr_1.1fr] gap-12 lg:gap-20 items-start">
         <div className="lg:sticky lg:top-32">
           <SectionLabel>Catálogo</SectionLabel>
@@ -365,7 +365,7 @@ function ToolsCatalog() {
             <br />
             Um cliente, todos os ângulos.
           </h2>
-          <p className="mt-5 text-[15px] text-white/65 leading-[1.6] max-w-lg">
+          <p className="mt-5 text-[15px] text-[#0E1620]/65 leading-[1.6] max-w-lg">
             Construídos para contabilistas certificados, com base na legislação portuguesa em vigor.
             Cada simulador é independente, mas todos partilham o mesmo perfil — preenche uma vez,
             usa em todo o lado.
@@ -380,11 +380,11 @@ function ToolsCatalog() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.35, delay: i * 0.04 }}
-              className="group bg-white/[0.04] border border-white/10 rounded-[16px] p-4 md:p-5 hover:bg-white/[0.08] hover:border-[#7B98B8]/40 transition-all"
+              className="group bg-white border border-[#0E1620]/10 rounded-[16px] p-4 md:p-5 hover:bg-[#E7EDF3] hover:border-[#7B98B8]/40 transition-all"
             >
               <t.Icon className="w-5 h-5 text-[#7B98B8]" />
               <div className="display-serif text-[18px] md:text-[20px] font-[800] mt-3 leading-tight">{t.label}</div>
-              <div className="text-[11px] mono uppercase tracking-[1.5px] text-white/40 mt-1">{t.sub}</div>
+              <div className="text-[11px] mono uppercase tracking-[1.5px] text-[#0E1620]/45 mt-1">{t.sub}</div>
             </motion.div>
           ))}
         </div>
@@ -413,7 +413,7 @@ function PackageBlock() {
             <br />
             <span className="italic font-[800] text-[#7B98B8]">Um clique.</span>
           </h2>
-          <p className="mt-6 text-[15px] md:text-[17px] text-white/65 leading-[1.6] max-w-2xl">
+          <p className="mt-6 text-[15px] md:text-[17px] text-[#0E1620]/65 leading-[1.6] max-w-2xl">
             Em vez de copiar dados entre Word, Excel e PDF, o Estudo 360 puxa tudo do mesmo perfil.
             Define uma vez o logo e a tabela de honorários — depois exporta o pacote completo por cada cliente.
           </p>
@@ -427,7 +427,7 @@ function PackageBlock() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="relative bg-gradient-to-br from-white/[0.06] to-white/[0.02] border border-white/10 rounded-[22px] p-7 md:p-8 overflow-hidden"
+              className="relative bg-gradient-to-br from-white to-[#F4F8FB] border border-[#0E1620]/10 rounded-[22px] p-7 md:p-8 overflow-hidden"
             >
               <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-[#7B98B8]/15 blur-2xl" aria-hidden="true" />
               <div className="relative">
@@ -435,7 +435,7 @@ function PackageBlock() {
                   <d.Icon className="w-5 h-5 text-[#7B98B8]" />
                 </div>
                 <div className="display-serif text-[24px] font-[800] mt-5 leading-tight">{d.label}</div>
-                <p className="text-[13.5px] mt-3 text-white/60 leading-[1.6]">{d.body}</p>
+                <p className="text-[13.5px] mt-3 text-[#0E1620]/60 leading-[1.6]">{d.body}</p>
               </div>
             </motion.div>
           ))}
@@ -448,7 +448,7 @@ function PackageBlock() {
 /* ───────── Compliance ───────── */
 function Compliance() {
   return (
-    <section className="py-24 md:py-32 border-t border-white/5">
+    <section className="py-24 md:py-32 border-t border-[#0E1620]/8">
       <div className="max-w-7xl mx-auto px-5 md:px-8 grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
         <div>
           <SectionLabel>Conformidade</SectionLabel>
@@ -457,7 +457,7 @@ function Compliance() {
             <br />
             <span className="italic font-[800]">Orçamento do Estado.</span>
           </h2>
-          <p className="mt-5 text-[15px] text-white/65 leading-[1.6] max-w-xl">
+          <p className="mt-5 text-[15px] text-[#0E1620]/65 leading-[1.6] max-w-xl">
             Escalões de IRS, taxas de IRC, IRS Jovem, IMT, tributação autónoma de viaturas,
             limites de tickets de refeição — todos validados contra a legislação publicada e
             cruzados com fontes profissionais. Quando algo muda, vê-o no Checklist de Atualizações.
@@ -472,9 +472,9 @@ function Compliance() {
             ['Lei 73-A/2025', 'OE 2026 final'],
             ['EOCC', 'Estatuto da Ordem'],
           ].map(([k, v]) => (
-            <div key={k} className="bg-white/[0.03] border border-white/10 rounded-[14px] p-4">
+            <div key={k} className="bg-white border border-[#0E1620]/10 rounded-[14px] p-4">
               <div className="mono text-[11px] uppercase tracking-[1.5px] text-[#7B98B8]">{k}</div>
-              <div className="text-[14px] font-[700] mt-1 text-white/90">{v}</div>
+              <div className="text-[14px] font-[700] mt-1 text-[#0E1620]/90">{v}</div>
             </div>
           ))}
         </div>
@@ -509,14 +509,14 @@ function Pricing({ onEnter }: { onEnter: () => void }) {
     },
   ];
   return (
-    <section id="precos" className="py-24 md:py-32 border-t border-white/5">
+    <section id="precos" className="py-24 md:py-32 border-t border-[#0E1620]/8">
       <div className="max-w-7xl mx-auto px-5 md:px-8">
         <div className="text-center max-w-2xl mx-auto">
           <SectionLabel>Preços</SectionLabel>
           <h2 className="display-serif mt-4 text-[36px] md:text-[56px] leading-[1] tracking-[-0.03em] font-[200]">
             Justo para o tamanho do escritório.
           </h2>
-          <p className="mt-5 text-[15px] text-white/65 leading-[1.6]">
+          <p className="mt-5 text-[15px] text-[#0E1620]/65 leading-[1.6]">
             Mensal. Sem fidelização. Sem custo por cliente.
           </p>
         </div>
@@ -529,7 +529,7 @@ function Pricing({ onEnter }: { onEnter: () => void }) {
                 'relative rounded-[22px] p-7 md:p-8 flex flex-col',
                 t.featured
                   ? 'bg-gradient-to-br from-[#7B98B8] to-[#525C66] text-white border border-white/20 shadow-2xl shadow-[#7B98B8]/30 md:scale-[1.03]'
-                  : 'bg-white/[0.04] border border-white/10 text-white',
+                  : 'bg-white border border-[#0E1620]/10 text-[#0E1620]',
               ].join(' ')}
             >
               {t.featured && (
@@ -547,7 +547,7 @@ function Pricing({ onEnter }: { onEnter: () => void }) {
                 {t.features.map(f => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className={`w-4 h-4 mt-0.5 shrink-0 ${t.featured ? 'text-white' : 'text-[#7B98B8]'}`} />
-                    <span className={t.featured ? 'opacity-95' : 'text-white/75'}>{f}</span>
+                    <span className={t.featured ? 'opacity-95' : 'text-[#0E1620]/70'}>{f}</span>
                   </li>
                 ))}
               </ul>
@@ -558,7 +558,7 @@ function Pricing({ onEnter }: { onEnter: () => void }) {
                   'mt-7 inline-flex items-center justify-center gap-2 py-3.5 rounded-[12px] text-[13px] font-[800] transition-all',
                   t.featured
                     ? 'bg-white text-[#0E1620] hover:bg-[#E2E8F0]'
-                    : 'border border-white/15 hover:bg-white/[0.08] text-white',
+                    : 'border border-[#0E1620]/12 hover:bg-[#0E1620]/[0.05] text-[#0E1620]',
                 ].join(' ')}
               >
                 Começar agora <ArrowRight className="w-3.5 h-3.5" />
@@ -584,11 +584,11 @@ function FinalCTA({ onEnter }: { onEnter: () => void }) {
         <button
           type="button"
           onClick={onEnter}
-          className="mt-10 inline-flex items-center gap-2 bg-white text-[#0E1620] px-7 py-4 rounded-[14px] text-[14px] font-[800] hover:bg-[#E2E8F0] active:scale-[0.98] transition-all"
+          className="mt-10 inline-flex items-center gap-2 bg-[#0E1620] text-white px-7 py-4 rounded-[14px] text-[14px] font-[800] hover:bg-[#26323f] active:scale-[0.98] transition-all"
         >
           Experimentar o Estudo 360 <ArrowRight className="w-4 h-4" />
         </button>
-        <p className="mt-4 text-[11px] mono uppercase tracking-[2.5px] text-white/40">
+        <p className="mt-4 text-[11px] mono uppercase tracking-[2.5px] text-[#0E1620]/45">
           Sem cartão · acesso imediato
         </p>
       </div>
@@ -599,17 +599,17 @@ function FinalCTA({ onEnter }: { onEnter: () => void }) {
 /* ───────── Footer ───────── */
 function Footer() {
   return (
-    <footer className="border-t border-white/5 py-12">
+    <footer className="border-t border-[#0E1620]/8 py-12">
       <div className="max-w-7xl mx-auto px-5 md:px-8 flex flex-col md:flex-row gap-6 md:gap-10 md:items-center justify-between">
         <div className="flex items-center gap-3">
           <BrandMark size={24} />
-          <div className="text-[12px] text-white/50">© {new Date().getFullYear()} Estudo 360 · Ferramentas para contabilistas certificados</div>
+          <div className="text-[12px] text-[#0E1620]/55">© {new Date().getFullYear()} Estudo 360 · Ferramentas para contabilistas certificados</div>
         </div>
-        <div className="flex flex-wrap gap-x-5 gap-y-2 text-[12px] text-white/50">
-          <a href="#funciona" className="hover:text-white transition-colors">Como funciona</a>
-          <a href="#simuladores" className="hover:text-white transition-colors">Simuladores</a>
-          <a href="#pacote" className="hover:text-white transition-colors">Pacote</a>
-          <a href="#precos" className="hover:text-white transition-colors">Preços</a>
+        <div className="flex flex-wrap gap-x-5 gap-y-2 text-[12px] text-[#0E1620]/55">
+          <a href="#funciona" className="hover:text-[#0E1620] transition-colors">Como funciona</a>
+          <a href="#simuladores" className="hover:text-[#0E1620] transition-colors">Simuladores</a>
+          <a href="#pacote" className="hover:text-[#0E1620] transition-colors">Pacote</a>
+          <a href="#precos" className="hover:text-[#0E1620] transition-colors">Preços</a>
         </div>
       </div>
     </footer>
