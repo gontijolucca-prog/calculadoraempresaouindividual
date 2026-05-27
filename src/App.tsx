@@ -74,12 +74,16 @@ function loadProfileWithFichaMerge(): ClientProfileType {
   const loaded = loadFromStorage('clientProfile', defaultProfile);
   if (typeof window === 'undefined' || !window.localStorage) return loaded;
   try {
-    const raw = window.localStorage.getItem('estudo360:v1:fichaState');
+    // Lê a ficha; se a chave nova estiver vazia, recupera da antiga (pré-rebrand)
+    // para o utilizador não perder a ficha guardada.
+    const raw = window.localStorage.getItem('estudo360:v1:fichaState')
+      || window.localStorage.getItem('recofatima:v1:fichaState');
     if (!raw) return loaded;
     const parsed = JSON.parse(raw);
     const f = parsed?.data;
     if (!f) {
       window.localStorage.removeItem('estudo360:v1:fichaState');
+      window.localStorage.removeItem('recofatima:v1:fichaState');
       return loaded;
     }
     const merged: ClientProfileType = {
@@ -97,6 +101,7 @@ function loadProfileWithFichaMerge(): ClientProfileType {
     };
     saveToStorage('clientProfile', merged);
     window.localStorage.removeItem('estudo360:v1:fichaState');
+    window.localStorage.removeItem('recofatima:v1:fichaState');
     return merged;
   } catch {
     return loaded;

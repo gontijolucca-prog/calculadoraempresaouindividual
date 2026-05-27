@@ -8,6 +8,9 @@
  */
 
 const STORAGE_PREFIX = 'estudo360:v1:';
+// Prefixo antigo (antes do rebrand RECOFATIMA → Estudo 360). Lido como fallback
+// e migrado para o novo, para quem já usava a app não perder o trabalho guardado.
+const LEGACY_PREFIX = 'recofatima:v1:';
 const SCHEMA_VERSION = 1;
 
 interface Envelope<T> {
@@ -18,7 +21,17 @@ interface Envelope<T> {
 export function loadFromStorage<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined' || !window.localStorage) return fallback;
   try {
-    const raw = window.localStorage.getItem(STORAGE_PREFIX + key);
+    let raw = window.localStorage.getItem(STORAGE_PREFIX + key);
+    // Migração: se não há nada na chave nova, recupera da chave antiga
+    // (pré-rebrand) e move-a para a nova, para o utilizador não perder dados.
+    if (!raw) {
+      const legacy = window.localStorage.getItem(LEGACY_PREFIX + key);
+      if (legacy) {
+        raw = legacy;
+        window.localStorage.setItem(STORAGE_PREFIX + key, legacy);
+        window.localStorage.removeItem(LEGACY_PREFIX + key);
+      }
+    }
     if (!raw) return fallback;
     const parsed = JSON.parse(raw) as Envelope<T>;
     if (!parsed || parsed.v !== SCHEMA_VERSION || !parsed.data) return fallback;
