@@ -74,12 +74,12 @@ function loadProfileWithFichaMerge(): ClientProfileType {
   const loaded = loadFromStorage('clientProfile', defaultProfile);
   if (typeof window === 'undefined' || !window.localStorage) return loaded;
   try {
-    const raw = window.localStorage.getItem('recofatima:v1:fichaState');
+    const raw = window.localStorage.getItem('estudo360:v1:fichaState');
     if (!raw) return loaded;
     const parsed = JSON.parse(raw);
     const f = parsed?.data;
     if (!f) {
-      window.localStorage.removeItem('recofatima:v1:fichaState');
+      window.localStorage.removeItem('estudo360:v1:fichaState');
       return loaded;
     }
     const merged: ClientProfileType = {
@@ -96,7 +96,7 @@ function loadProfileWithFichaMerge(): ClientProfileType {
       analiseInterna:  f.analiseInterna  ?? loaded.analiseInterna,
     };
     saveToStorage('clientProfile', merged);
-    window.localStorage.removeItem('recofatima:v1:fichaState');
+    window.localStorage.removeItem('estudo360:v1:fichaState');
     return merged;
   } catch {
     return loaded;

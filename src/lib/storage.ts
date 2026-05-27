@@ -7,7 +7,7 @@
  * incompatível — dados antigos são descartados em vez de causar TypeError.
  */
 
-const STORAGE_PREFIX = 'recofatima:v1:';
+const STORAGE_PREFIX = 'estudo360:v1:';
 const SCHEMA_VERSION = 1;
 
 interface Envelope<T> {

@@ -1,7 +1,7 @@
 {
-  "productName": "Recofátima Simuladores",
+  "productName": "Estudo 360 Simuladores",
   "version": "1.0.0",
-  "identifier": "com.recofatima.simuladores",
+  "identifier": "pt.estudo360.simuladores",
   "build": {
     "beforeDevCommand": "",
     "beforeBuildCommand": ""
@@ -9,8 +9,8 @@
   "app": {
     "windows": [
       {
-        "title": "Recofátima Simuladores",
-        "url": "https://recofatima.github.io/recofatima-simuladores-v1/",
+        "title": "Estudo 360 Simuladores",
+        "url": "https://estudo360.pt",
         "width": 1440,
         "height": 900,
         "minWidth": 900,

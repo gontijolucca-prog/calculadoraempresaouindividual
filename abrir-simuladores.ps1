@@ -1,7 +1,7 @@
 # Script para abrir os Simuladores Recofátima como uma aplicação nativa no Windows
 # Não requer instalação. Basta clicar com o botão direito e "Executar com o PowerShell".
 
-$url = "https://recofatima.github.io/recofatima-simuladores-v1/"
+$url = "https://estudo360.pt"
 $edgePath = "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe"
 
 if (-not (Test-Path $edgePath)) {
