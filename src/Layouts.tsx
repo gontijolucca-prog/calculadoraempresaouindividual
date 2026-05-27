@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   UserCircle, Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote, Info,
-  ClipboardList, Upload, LogOut,
-  ChevronDown, TrendingUp, Settings, UserPlus, Building2, ArrowLeft,
+  ClipboardList, Upload, LogOut, Receipt,
+  ChevronDown, TrendingUp, Settings, UserPlus, Building2,
   Menu, X, Clock,
 } from 'lucide-react';
 import { cn } from './lib/utils';
@@ -10,7 +10,7 @@ import type { AppMode } from './ModeSelector';
 
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
-  | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'legal' | 'updates'
+  | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal' | 'updates'
   | 'previsa' | 'office-settings';
 
 export interface LayoutProps {
@@ -25,21 +25,23 @@ export interface LayoutProps {
   onOpenSaftViewer?: () => void;
   mode: AppMode;
   onBackToModeSelection: () => void;
+  onSelectMode: (m: AppMode) => void;
   children: React.ReactNode;
 }
 
 // Which simulator views are reachable from each mode (besides legal/updates which are always open).
 const VIEWS_BY_MODE: Record<AppMode, ViewType[]> = {
   'novo-cliente': ['profile'],
-  empresa: ['profile', 'tax', 'vehicle', 'ticket', 'imoveis', 'imt', 'salario', 'diagnostico', 'previsa'],
-  individual: ['profile', 'tax', 'selfss', 'imt'],
+  empresa: ['profile', 'tax', 'vehicle', 'ticket', 'selfss', 'imoveis', 'imt', 'salario', 'irs', 'diagnostico', 'previsa'],
 };
 
 const MODE_META: Record<AppMode, { label: string; Icon: typeof Building2; color: string; soft: string }> = {
   'novo-cliente': { label: 'Novo Cliente', Icon: UserPlus, color: '#B45309', soft: '#FEF3C7' },
   empresa:       { label: 'Empresa',       Icon: Building2, color: '#525C66', soft: '#E2E8F0' },
-  individual:    { label: 'Individual',    Icon: User,      color: '#0F766E', soft: '#CCFBF1' },
 };
+
+// Ordem dos modos no seletor da sidebar.
+const MODE_ORDER: AppMode[] = ['novo-cliente', 'empresa'];
 
 const NAV_ITEMS = [
   { id: 'profile'    as ViewType, label: 'Perfil',      Icon: UserCircle, group: 'profile' },
@@ -51,6 +53,7 @@ const NAV_ITEMS = [
   { id: 'imoveis'    as ViewType, label: 'Imóveis',      Icon: Home,       group: 'sim'     },
   { id: 'imt'        as ViewType, label: 'IMT',          Icon: Building,   group: 'sim'     },
   { id: 'salario'    as ViewType, label: 'Salário',      Icon: Banknote,   group: 'sim'     },
+  { id: 'irs'        as ViewType, label: 'IRS',          Icon: Receipt,    group: 'sim'     },
   { id: 'previsa'    as ViewType, label: 'PreviSa',      Icon: TrendingUp,     group: 'sim' },
 ] as const;
 
@@ -64,6 +67,7 @@ const NAV_TIPS: Record<string, string> = {
   imoveis: 'Guia de decisão: arrendar o imóvel à empresa vs. transferi-lo como entrada em espécie.',
   imt: 'Imposto Municipal sobre Transmissões: calcula o IMT e o Imposto de Selo na compra de imóveis.',
   salario: 'Calcula o salário líquido mensal de um trabalhador e o custo total para a empresa.',
+  irs: 'Simulador de IRS anual (Modelo 3): rendimento coletável, escalões, IRS Jovem, deduções à coleta e benefício municipal — estima reembolso ou imposto a pagar.',
   previsa: 'Simulador PreviSa — previsão de IRC (Modelo 22): apuramento Q07, matéria coletável Q09, tributações autónomas, PEC/PC e liquidação.',
 };
 
@@ -76,11 +80,9 @@ function Logo({ className = 'w-7 h-7' }: { className?: string }) {
   );
 }
 
-export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates, onSAFTUpload, onLogout, hasSaftData, onOpenSaftViewer, mode, onBackToModeSelection, children }: LayoutProps) {
+export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates, onSAFTUpload, onLogout, hasSaftData, onOpenSaftViewer, mode, onSelectMode, children }: LayoutProps) {
   const active = view === 'legal' || view === 'updates' ? prevView : view;
   const saftInputRef = useRef<HTMLInputElement>(null);
-  const modeMeta = MODE_META[mode];
-  const ModeIcon = modeMeta.Icon;
   const allowedViews = VIEWS_BY_MODE[mode];
   const simItems = NAV_ITEMS.filter(n => n.group === 'sim' && allowedViews.includes(n.id)) as unknown as typeof NAV_ITEMS[number][];
   const profileVisible = allowedViews.includes('profile');
@@ -137,7 +139,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
     <div className="h-full flex flex-col bg-white">
       <div className="px-4 pt-4 pb-3 border-b border-slate-100">
         <div className="flex items-center justify-between">
-          <button type="button" onClick={() => (profileVisible ? go('profile') : runAction(onBackToModeSelection))} className="flex items-center gap-2.5 rounded-[8px] hover:bg-slate-50 px-1 py-1 -mx-1 transition-colors" aria-label="Ir para o inicio">
+          <button type="button" onClick={() => go('profile')} className="flex items-center gap-2.5 rounded-[8px] hover:bg-slate-50 px-1 py-1 -mx-1 transition-colors" aria-label="Ir para o Perfil">
             <Logo className="w-8 h-8" />
             <div className="text-left leading-none">
               <div className="text-[14px] font-[800] text-[#1E293B] tracking-[-0.3px]">Estudo 360</div>
@@ -148,13 +150,28 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="mt-3 flex items-center justify-between gap-2 rounded-[10px] px-2.5 py-1.5" style={{ background: modeMeta.soft }}>
-          <span className="flex items-center gap-1.5 text-[11px] font-[800] uppercase tracking-[1px]" style={{ color: modeMeta.color }}>
-            <ModeIcon className="w-3.5 h-3.5" strokeWidth={2.5} /> {modeMeta.label}
-          </span>
-          <button type="button" onClick={() => runAction(onBackToModeSelection)} className="flex items-center gap-1 text-[11px] font-[700] text-slate-500 hover:text-[#0F172A]" title="Trocar de modo">
-            <ArrowLeft className="w-3 h-3" /> trocar
-          </button>
+        {/* Selector de modo — directamente na sidebar */}
+        <div className="mt-3 grid grid-cols-2 gap-1 p-1 rounded-[10px] bg-slate-100" role="group" aria-label="Modo de trabalho">
+          {MODE_ORDER.map((m) => {
+            const meta = MODE_META[m];
+            const MIcon = meta.Icon;
+            const on = m === mode;
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => onSelectMode(m)}
+                aria-pressed={on}
+                className={cn(
+                  'flex items-center justify-center gap-1.5 px-2 py-2 rounded-[8px] text-[11px] font-[700] whitespace-nowrap transition-colors',
+                  on ? 'bg-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                )}
+                style={on ? { color: meta.color } : undefined}
+              >
+                <MIcon className="w-3.5 h-3.5 shrink-0" strokeWidth={2.5} /> {meta.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 

@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { UserPlus, Building2, User, ArrowRight, LogOut } from 'lucide-react';
+import { UserPlus, Building2, ArrowRight, LogOut } from 'lucide-react';
 
-export type AppMode = 'novo-cliente' | 'empresa' | 'individual';
+export type AppMode = 'novo-cliente' | 'empresa';
 
 interface Props {
   onSelect: (mode: AppMode) => void;
@@ -41,16 +41,6 @@ const MODES: ModeCard[] = [
     accentSoft: '#E2E8F0',
     shortcut: '2',
   },
-  {
-    id: 'individual',
-    label: 'Individual',
-    tagline: 'Trabalhador independente · ENI',
-    description: 'Segurança social, fiscal e IMT para empresários em nome individual.',
-    Icon: User,
-    accent: '#0F766E',
-    accentSoft: '#CCFBF1',
-    shortcut: '3',
-  },
 ];
 
 /** Estudo 360 mark — open circle + arrow tip (matches LoginPage / Layouts). */
@@ -78,7 +68,6 @@ export default function ModeSelector({ onSelect, onLogout }: Props) {
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) return;
       if (e.key === '1') { e.preventDefault(); onSelect('novo-cliente'); }
       else if (e.key === '2') { e.preventDefault(); onSelect('empresa'); }
-      else if (e.key === '3') { e.preventDefault(); onSelect('individual'); }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
@@ -170,7 +159,7 @@ export default function ModeSelector({ onSelect, onLogout }: Props) {
         <div
           role="group"
           aria-label="Seleção de modo de trabalho"
-          className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-5"
+          className="w-full max-w-3xl grid grid-cols-1 md:grid-cols-2 gap-5"
         >
           {MODES.map((mode, idx) => (
             <ModeCardButton
@@ -193,7 +182,6 @@ export default function ModeSelector({ onSelect, onLogout }: Props) {
           <span>Atalho:</span>
           <kbd className="px-2 py-0.5 rounded bg-white border border-slate-200 font-mono text-[10px] shadow-sm">1</kbd>
           <kbd className="px-2 py-0.5 rounded bg-white border border-slate-200 font-mono text-[10px] shadow-sm">2</kbd>
-          <kbd className="px-2 py-0.5 rounded bg-white border border-slate-200 font-mono text-[10px] shadow-sm">3</kbd>
           <span>para escolher</span>
         </motion.div>
       </main>

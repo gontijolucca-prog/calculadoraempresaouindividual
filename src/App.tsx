@@ -9,6 +9,7 @@ import type { DiagnosticoState } from './DiagnosticoAutonomia';
 import type { ImoveisState } from './ImoveisEmpresa';
 import type { IMTState } from './IMTSimulator';
 import type { SalarioState } from './SalarioLiquidoSimulator';
+import { defaultIRSState, type IRSState } from './lib/irs';
 import type { TicketSimulatorState } from './TicketSimulator';
 import type { ClientProfile as ClientProfileType } from './ClientProfile';
 import { ThemeProvider } from './ThemeContext';
@@ -30,6 +31,7 @@ const DiagnosticoAutonomia = lazy(() => import('./DiagnosticoAutonomia'));
 const ImoveisEmpresa = lazy(() => import('./ImoveisEmpresa'));
 const IMTSimulator = lazy(() => import('./IMTSimulator'));
 const SalarioLiquidoSimulator = lazy(() => import('./SalarioLiquidoSimulator'));
+const IRSSimulator = lazy(() => import('./IRSSimulator'));
 const UpdatesList = lazy(() => import('./UpdatesList'));
 const PreviSaSimulator = lazy(() => import('./PreviSaSimulator'));
 const OfficeSettingsView = lazy(() => import('./OfficeSettingsView'));
@@ -38,14 +40,13 @@ import type { PreviSaState } from './previSaState';
 
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
-  | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'legal' | 'updates'
+  | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal' | 'updates'
   | 'previsa' | 'office-settings';
 
 // Default landing view when the user picks a mode.
 const DEFAULT_VIEW_BY_MODE: Record<AppMode, ViewType> = {
   'novo-cliente': 'profile',
   empresa: 'tax',
-  individual: 'selfss',
 };
 
 const VIEW_TITLES: Record<ViewType, string> = {
@@ -58,6 +59,7 @@ const VIEW_TITLES: Record<ViewType, string> = {
   imoveis: 'Imóveis na Empresa',
   imt: 'Simulador IMT',
   salario: 'Salário Líquido',
+  irs: 'Simulador de IRS',
   legal: 'Base Legal & Referências',
   updates: 'Checklist de Atualizações',
   previsa: 'Simulador PreviSa',
@@ -232,7 +234,11 @@ function AppContent() {
   const [showLogin, setShowLogin] = useState(false);
   // Mode is persisted: ao actualizar a página o utilizador continua no mesmo contexto.
   // Limpa quando faz `Trocar modo` (manual) ou logout.
-  const [mode, setMode] = useState<AppMode | null>(() => loadFromStorage<AppMode | null>('mode', null));
+  const [mode, setMode] = useState<AppMode | null>(() => {
+    // Guarda contra modos antigos já removidos (ex.: 'individual') guardados no localStorage.
+    const m = loadFromStorage<AppMode | null>('mode', null);
+    return m === 'novo-cliente' || m === 'empresa' ? m : null;
+  });
   const [showUpdateNotification, setShowUpdateNotification] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [lastDismissedCount, setLastDismissedCount] = useState(() => loadFromStorage('lastDismissedPendingCount', 0));
@@ -260,6 +266,7 @@ function AppContent() {
   const [imoveisState, setImoveisState] = useState<ImoveisState>(() => getInitialImoveisState(clientProfile));
   const [imtState, setImtState] = useState<IMTState>(() => getInitialIMTState(clientProfile));
   const [salarioState, setSalarioState] = useState<SalarioState>(() => getInitialSalarioState(clientProfile));
+  const [irsState, setIrsState] = useState<IRSState>(() => loadFromStorage('irsState', defaultIRSState()));
 
   // Definições do escritório (branding + honorários). Persistidas em localStorage —
   // não pertencem ao cliente activo, são definições de licenciado.
@@ -268,6 +275,7 @@ function AppContent() {
 
   // Auto-save em localStorage — debounce implícito via React batching.
   useEffect(() => { saveToStorage('clientProfile', clientProfile); }, [clientProfile]);
+  useEffect(() => { saveToStorage('irsState', irsState); }, [irsState]);
   useEffect(() => { saveToStorage('loggedIn', loggedIn); }, [loggedIn]);
   useEffect(() => { saveToStorage('mode', mode); }, [mode]);
   useEffect(() => { saveToStorage('lastDismissedPendingCount', lastDismissedCount); }, [lastDismissedCount]);
@@ -359,6 +367,12 @@ function AppContent() {
   const backToModeSelection = () => {
     setMode(null);
     clearStorage('mode');
+  };
+
+  // Trocar de modo directamente a partir da sidebar (sem voltar ao ecrã inicial).
+  const selectMode = (m: AppMode) => {
+    setMode(m);
+    setView(DEFAULT_VIEW_BY_MODE[m]);
   };
 
   const openLegal = () => { setPrevView(view); setLegalAnchor(null); setView('legal'); };
@@ -504,6 +518,9 @@ function AppContent() {
         )}
         {view === 'salario' && (
           <SalarioLiquidoSimulator initialState={salarioState} onStateChange={setSalarioState} />
+        )}
+        {view === 'irs' && (
+          <IRSSimulator initialState={irsState} onStateChange={setIrsState} />
         )}
         {view === 'legal' && (
           <LegalInfo onBack={closeLegal} onOpenUpdates={openUpdates} clientProfile={clientProfile} vehicleState={vehicleState} ticketState={ticketState} initialAnchor={legalAnchor} />
@@ -831,6 +848,7 @@ function AppContent() {
           onOpenSaftViewer={() => setShowSaftViewer(true)}
           mode={mode}
           onBackToModeSelection={backToModeSelection}
+          onSelectMode={selectMode}
         >
           {content}
         </CurrentLayout>
