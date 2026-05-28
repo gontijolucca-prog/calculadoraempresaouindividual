@@ -1050,18 +1050,41 @@ export default function ClientProfile({
     </>
   );
 
+  // Modal de exportação: definido uma vez e renderizado em AMBOS os ramos
+  // (flow + detalhada) para que "Exportar documentos" da sidebar funcione
+  // independentemente da vista activa.
+  const packageModal = showPackage && office && honorarios && (
+    <ExportPackageModal
+      profile={profile}
+      office={office}
+      honorarios={honorarios}
+      taxState={taxState}
+      vehicleState={vehicleState}
+      ticketState={ticketState}
+      ssState={ssState}
+      onClose={() => setShowPackage(false)}
+      onGoToOfficeSettings={() => {
+        setShowPackage(false);
+        onGoToOfficeSettings?.();
+      }}
+    />
+  );
+
   if (flowMode) {
     return (
-      <FlowWizard
-        open={flowMode}
-        onClose={exitFlow}
-        title="Perfil do Cliente"
-        icon={User}
-        steps={steps}
-        resultsStep={{ label: 'Resumo de Parâmetros', description: 'Estes valores são aplicados automaticamente nos simuladores.', render: resultsContent }}
-        state={profile}
-        setState={(u) => onChange({ ...profile, ...u })}
-      />
+      <>
+        <FlowWizard
+          open={flowMode}
+          onClose={exitFlow}
+          title="Perfil do Cliente"
+          icon={User}
+          steps={steps}
+          resultsStep={{ label: 'Resumo de Parâmetros', description: 'Estes valores são aplicados automaticamente nos simuladores.', render: resultsContent }}
+          state={profile}
+          setState={(u) => onChange({ ...profile, ...u })}
+        />
+        {packageModal}
+      </>
     );
   }
 
@@ -1298,22 +1321,7 @@ export default function ClientProfile({
       </div>
     </motion.div>
 
-    {showPackage && office && honorarios && (
-      <ExportPackageModal
-        profile={profile}
-        office={office}
-        honorarios={honorarios}
-        taxState={taxState}
-        vehicleState={vehicleState}
-        ticketState={ticketState}
-        ssState={ssState}
-        onClose={() => setShowPackage(false)}
-        onGoToOfficeSettings={() => {
-          setShowPackage(false);
-          onGoToOfficeSettings?.();
-        }}
-      />
-    )}
+    {packageModal}
     </>
   );
 }

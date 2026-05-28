@@ -206,7 +206,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
         </div>
       </div>
 
-      <nav aria-label="Navegacao principal" className="flex-1 overflow-y-auto px-2 py-1">
+      <nav aria-label="Navegação principal" className="flex-1 overflow-y-auto px-2 py-1">
         {mode === 'empresa' && (
           <>
             <SectionLabel>Carteira</SectionLabel>
@@ -254,7 +254,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
         )}
 
         <SectionLabel>Ferramentas</SectionLabel>
-        <NavItem label="Atualizacoes" Icon={ClipboardList} onClick={() => runAction(openUpdates)} current={view === 'updates'} />
+        <NavItem label="Atualizações" Icon={ClipboardList} onClick={() => runAction(openUpdates)} current={view === 'updates'} />
         {onSAFTUpload && (
           <NavItem label="Ler SAF-T" Icon={Upload} onClick={() => { saftInputRef.current?.click(); }} title="Importar ficheiro SAF-T" />
         )}
@@ -265,7 +265,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
       </nav>
 
       <div className="border-t border-slate-100 px-2 py-2 space-y-0.5">
-        <NavItem label="Definicoes do Escritorio" Icon={Settings} onClick={() => go('office-settings')} current={view === 'office-settings'} />
+        <NavItem label="Definições do Escritório" Icon={Settings} onClick={() => go('office-settings')} current={view === 'office-settings'} />
         {onLogout && <NavItem label="Sair" Icon={LogOut} onClick={() => runAction(onLogout)} tone="danger" />}
       </div>
 
