@@ -109,7 +109,19 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
     window.addEventListener('profile:flowModeChange', onChange);
     return () => window.removeEventListener('profile:flowModeChange', onChange);
   }, []);
-  const fireProfileEvent = (name: string) => { window.dispatchEvent(new CustomEvent(name)); setDrawerOpen(false); };
+  // Se a sidebar disparar a acção fora do Perfil, navegamos primeiro e damos
+  // tempo ao ClientProfile montar antes do dispatch — senão o listener ainda
+  // não existe e o evento perde-se.
+  const fireProfileEvent = (name: string) => {
+    const dispatch = () => window.dispatchEvent(new CustomEvent(name));
+    if (active !== 'profile') {
+      setView('profile');
+      window.setTimeout(dispatch, 80);
+    } else {
+      dispatch();
+    }
+    setDrawerOpen(false);
+  };
   useEffect(() => {
     if (!drawerOpen) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setDrawerOpen(false); };
@@ -205,28 +217,26 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
           <>
             <SectionLabel>Cliente</SectionLabel>
             <NavItem label="Perfil do Cliente" Icon={UserCircle} onClick={() => go('profile')} current={active === 'profile'} title={NAV_TIPS.profile} />
-            {active === 'profile' && (
-              <div className="pl-3 mt-1 mb-2 space-y-0.5 border-l-2 border-slate-100">
-                <NavItem
-                  label={profileFlowMode ? 'Vista detalhada' : 'Vista simplificada'}
-                  Icon={ListOrdered}
-                  onClick={() => fireProfileEvent('profile:toggleFlow')}
-                  title={profileFlowMode ? 'Sair do flow guiado e ver todas as secções.' : 'Entrar no flow guiado em 6 passos.'}
-                />
-                <NavItem
-                  label="Só simulação"
-                  Icon={FileText}
-                  onClick={() => fireProfileEvent('profile:openEditor')}
-                  title="Abrir editor da carta de simulação."
-                />
-                <NavItem
-                  label="Exportar Pacote"
-                  Icon={Package}
-                  onClick={() => fireProfileEvent('profile:openPackage')}
-                  title="Gerar pacote PDF (proposta + simulação) do cliente."
-                />
-              </div>
-            )}
+            <div className="pl-3 mt-1 mb-2 space-y-0.5 border-l-2 border-slate-100">
+              <NavItem
+                label={profileFlowMode ? 'Vista detalhada' : 'Vista simplificada'}
+                Icon={ListOrdered}
+                onClick={() => fireProfileEvent('profile:toggleFlow')}
+                title={profileFlowMode ? 'Sair do flow guiado e ver todas as secções.' : 'Entrar no flow guiado em 6 passos.'}
+              />
+              <NavItem
+                label="Só simulação"
+                Icon={FileText}
+                onClick={() => fireProfileEvent('profile:openEditor')}
+                title="Abrir editor da carta de simulação."
+              />
+              <NavItem
+                label="Exportar Pacote"
+                Icon={Package}
+                onClick={() => fireProfileEvent('profile:openPackage')}
+                title="Gerar pacote PDF (proposta + simulação) do cliente."
+              />
+            </div>
           </>
         )}
 
