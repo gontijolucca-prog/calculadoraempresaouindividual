@@ -10,7 +10,18 @@ import { cn } from './lib/utils';
 import { useTheme } from './ThemeContext';
 import { Tip } from './Tip';
 import type { ClientProfile } from './ClientProfile';
-import { calculateIRS, calcIRSJovem, calcDependentsDeduction } from './lib/pt2026';
+import {
+  calculateIRS, calcIRSJovem, calcDependentsDeduction,
+  calcSelfSSContribution, SS_RATE_EMPLOYER, SS_RATE_EMPLOYEE, IAS_2026,
+} from './lib/pt2026';
+
+// Dedução específica Cat A 2026 — 8,54 × IAS (art. 25.º CIRS).
+const DED_ESPECIFICA_CAT_A_2026 = Math.round(8.54 * IAS_2026 * 100) / 100; // 4587.09
+// Limiar para a regra de justificação de 15% das despesas no regime simplificado
+// (art. 31.º n.º 13 CIRS, OE 2026). Indexado a 4 × IAS × 12 / 14 ≈ €27.360 (valor de 2025);
+// para 2026 mantemos o mesmo valor (a Portaria de atualização ainda não foi publicada).
+// NOTA(fiscal): rever este valor anualmente — fonte: Portaria de atualização art. 31.º.
+const LIMIAR_JUSTIFICACAO_15PCT = 27360;
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 
@@ -85,15 +96,22 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
 
     let eniSS = 0;
     if (profSit === 'tco' && !isMainAct && rev <= 20000) {
+      // Isenção: ENI complementar com rendimento ≤€20.000/ano (art. 168.º-A CRCSPSS).
       eniSS = 0;
     } else {
-      eniSS = rev * (isServices ? 0.70 : 0.20) * 0.214;
+      // SS independente — usa o motor central (pt2026): 21,4% × (70% serviços / 20% bens).
+      // rev é a receita anual; calcSelfSSContribution espera mensal, logo /12 × *12 = mesmo total.
+      const monthly = calcSelfSSContribution(rev / 12, isServices ? 'servicos' : 'bens', false);
+      eniSS = monthly.anual;
     }
 
     let eniRendColetavel = rev * (isServices ? 0.75 : 0.15);
-    if (isServices && rev > 27360) {
+    if (isServices && rev > LIMIAR_JUSTIFICACAO_15PCT) {
+      // Regra do art. 31.º n.º 13 CIRS: para coef. 0,75 e rendimento bruto > limiar,
+      // o sujeito passivo tem de justificar despesas equivalentes a 15% da receita bruta;
+      // a parte não justificada é adicionada ao rendimento coletável.
       const requiredJustDocs = rev * 0.15;
-      const justDocsPresented = costsEniOutPocket + 4104;
+      const justDocsPresented = costsEniOutPocket + DED_ESPECIFICA_CAT_A_2026;
       if (justDocsPresented < requiredJustDocs) {
         eniRendColetavel += (requiredJustDocs - justDocsPresented);
       }
@@ -117,8 +135,8 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
 
     const rawGross     = monthlyNeed / 0.70;
     const grossSalaryYr = rawGross * 14;
-    const ldaSSCompany = grossSalaryYr * 0.2375;
-    const ldaSSManager = grossSalaryYr * 0.11;
+    const ldaSSCompany = grossSalaryYr * SS_RATE_EMPLOYER; // 23,75% (art. 53.º CRCSPSS)
+    const ldaSSManager = grossSalaryYr * SS_RATE_EMPLOYEE; // 11% (art. 53.º CRCSPSS)
     const ldaIRSManager = calculateIRS(grossSalaryYr);
     const profit = rev - costsLdaOutPocket - dpNaoAceite - grossSalaryYr - ldaSSCompany;
 

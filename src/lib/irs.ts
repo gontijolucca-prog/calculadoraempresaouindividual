@@ -47,11 +47,16 @@ export const DED_ESPECIFICA_CAT_A = Math.round(8.54 * IAS_2026 * 100) / 100; // 
 // Limite de isenção IRS Jovem — 55 × IAS_2026 (art. 12.º-B CIRS).
 const LIMITE_ISENCAO_IRS_JOVEM = 55 * IAS_2026; // 29 542,15 €
 
-// Fração da coleta devolvida pelo município (0 a 5%). Valores indicativos
-// públicos por concelho; o utilizador pode sobrepor no formulário.
+// Fração da coleta devolvida pelo município (0 a 5%) — Art.º 26.º Lei das
+// Finanças Locais. Cada câmara decide anualmente; valores abaixo são os
+// publicados no Portal das Finanças para o IRS de 2025 (a entregar em 2026).
+//
+// ⚠ Os municípios não listados ou com valor desatualizado devem ser
+// confirmados em https://www.portaldasfinancas.gov.pt/pt/consultarTaxasIRSMunicipiosForm.action.
+// O utilizador pode sobrepor o valor no formulário do simulador.
 export const MUNICIPIOS_BM: Record<string, number> = {
-  lisboa: 0.05,
-  porto: 0.02,
+  lisboa: 0.05,           // taxa 0% → devolve 5%
+  porto: 0.025,           // taxa 2,5% → devolve 2,5%
   braga: 0.005,
   'vila nova de gaia': 0.025,
   matosinhos: 0.025,
@@ -66,15 +71,15 @@ export const MUNICIPIOS_BM: Record<string, number> = {
   setúbal: 0.025,
   almada: 0.025,
   sintra: 0.025,
-  cascais: 0.03,
-  oeiras: 0.05,
+  cascais: 0.005,         // 2026: taxa 4,5% → devolve 0,5% (atualizado)
+  oeiras: 0.003,          // 2026: taxa 4,7% → devolve 0,3% (atualizado)
   loulé: 0.05,
   alcobaça: 0.05,
   covilhã: 0.025,
   evora: 0.025,
   'viana do castelo': 0.025,
   santarém: 0.025,
-  outro: 0.025,
+  outro: 0,               // default: 0% — exige confirmação localizada
 };
 
 export type Cenario = 'individual' | 'conjunto';

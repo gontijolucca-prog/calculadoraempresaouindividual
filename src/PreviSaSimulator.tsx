@@ -14,26 +14,39 @@ export { defaultPreviSaState } from './previSaState';
 
 const PME_BRACKET = 50_000;
 
+// Taxas de IRC OE 2026 — CIRC Art. 87.º (Lei 73-A/2025, em vigor a 1-jan-2026).
+// Taxa geral baixou de 20% para 19%; PME continua 15% sobre os primeiros €50.000.
+// Madeira: 13,3% geral (era 14%) / 10,5% PME (era 11,2%) — DL Regional 8/2025/M.
+// Açores: redução de 20% sobre a taxa do continente; PME beneficia de taxa especial 8,75%.
+// Interior: 12,5% PME (EBF art. 41º-B) — sem redução na taxa geral.
+// Startup: 12,5% — regime IFICI (Lei 21/2023), aplica-se sobre a totalidade.
 const RATES: Record<Regime, { main: number; pme: number }> = {
-  geral:         { main: 0.20,   pme: 0.16 },
-  madeira:       { main: 0.14,   pme: 0.0875 },
-  acores:        { main: 0.14,   pme: 0.0875 },
-  interioridade: { main: 0.20,   pme: 0.125 },
-  startup:       { main: 0.125,  pme: 0.125 },
+  geral:         { main: 0.19,   pme: 0.15   },
+  madeira:       { main: 0.133,  pme: 0.105  },
+  acores:        { main: 0.152,  pme: 0.0875 },
+  interioridade: { main: 0.19,   pme: 0.125  },
+  startup:       { main: 0.125,  pme: 0.125  },
 };
 
+// Derrama estadual — CIRC Art. 87.º-A (OE 2026, sem alterações vs 2025):
+//   0%   até        €1.500.000
+//   3%   €1,5M  a   €7,5M
+//   5%   €7,5M  a   €35M
+//   9%   acima de   €35M
+// Para os Açores aplica-se a redução de 20% da Lei das Finanças Regionais (2026):
+// taxas multiplicadas por 0,80 = 2,4% / 4,0% / 7,2%.
 const DERRAMA_TIERS: Record<'continental' | 'acores', { limit: number; rate: number }[]> = {
   continental: [
-    { limit: 1_500_000,  rate: 0.03 },
-    { limit: 7_500_000,  rate: 0.05 },
-    { limit: 35_000_000, rate: 0.09 },
+    { limit: 1_500_000,  rate: 0    },  // isento até €1,5M
+    { limit: 7_500_000,  rate: 0.03 },
+    { limit: 35_000_000, rate: 0.05 },
     { limit: Infinity,   rate: 0.09 },
   ],
   acores: [
-    { limit: 1_500_000,  rate: 0.021 },
-    { limit: 7_500_000,  rate: 0.035 },
-    { limit: 35_000_000, rate: 0.063 },
-    { limit: Infinity,   rate: 0.063 },
+    { limit: 1_500_000,  rate: 0     }, // isento até €1,5M
+    { limit: 7_500_000,  rate: 0.024 }, // 3% × 0,80
+    { limit: 35_000_000, rate: 0.04  }, // 5% × 0,80
+    { limit: Infinity,   rate: 0.072 }, // 9% × 0,80
   ],
 };
 
