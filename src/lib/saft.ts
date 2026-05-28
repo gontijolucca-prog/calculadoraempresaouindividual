@@ -409,15 +409,15 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     const r77  = sumLeaves(accounts, '77',  'credit');
     const r78  = sumLeaves(accounts, '78',  'credit');
     const r79  = sumLeaves(accounts, '79',  'credit');
-    if (r711) { previsa.rai_711 = Math.round(r711); filled.push('Vendas de mercadorias (711)'); }
-    if (r712) { previsa.rai_712 = Math.round(r712); filled.push('Vendas de produtos (712)'); }
-    if (r72)  { previsa.rai_72  = Math.round(r72);  filled.push('Prestações de serviços (72)'); }
-    if (r74)  { previsa.rai_74  = Math.round(r74);  filled.push('Trabalhos própria entidade (74)'); }
-    if (r75)  { previsa.rai_75  = Math.round(r75);  filled.push('Subsídios à exploração (75)'); }
-    if (r76)  { previsa.rai_76  = Math.round(r76);  filled.push('Reversões (76)'); }
-    if (r77)  { previsa.rai_77  = Math.round(r77);  filled.push('Ganhos JV (77)'); }
-    if (r78)  { previsa.rai_78  = Math.round(r78);  filled.push('Outros rendimentos (78)'); }
-    if (r79)  { previsa.rai_79  = Math.round(r79);  filled.push('Juros e dividendos (79)'); }
+    if (r711) { previsa.rai_711 = Math.round(r711 * 100) / 100; filled.push('Vendas de mercadorias (711)'); }
+    if (r712) { previsa.rai_712 = Math.round(r712 * 100) / 100; filled.push('Vendas de produtos (712)'); }
+    if (r72)  { previsa.rai_72  = Math.round(r72 * 100) / 100;  filled.push('Prestações de serviços (72)'); }
+    if (r74)  { previsa.rai_74  = Math.round(r74 * 100) / 100;  filled.push('Trabalhos própria entidade (74)'); }
+    if (r75)  { previsa.rai_75  = Math.round(r75 * 100) / 100;  filled.push('Subsídios à exploração (75)'); }
+    if (r76)  { previsa.rai_76  = Math.round(r76 * 100) / 100;  filled.push('Reversões (76)'); }
+    if (r77)  { previsa.rai_77  = Math.round(r77 * 100) / 100;  filled.push('Ganhos JV (77)'); }
+    if (r78)  { previsa.rai_78  = Math.round(r78 * 100) / 100;  filled.push('Outros rendimentos (78)'); }
+    if (r79)  { previsa.rai_79  = Math.round(r79 * 100) / 100;  filled.push('Juros e dividendos (79)'); }
 
     // Class 6 — CMV vs CMC (61), FSE (62), Pessoal (63), Amort. (64), etc.
     const cmv  = sumLeaves(accounts, '611', 'debit')
@@ -443,16 +443,16 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     const c68 = sumLeaves(accounts, '68', 'debit');
     const c69 = sumLeaves(accounts, '69', 'debit');
 
-    if (cmvFinal) { previsa.rai_cmv = Math.round(cmvFinal); filled.push('CMV (61)'); }
-    if (cmcFinal) { previsa.rai_cmc = Math.round(cmcFinal); filled.push('CMC (618/619)'); }
-    if (c62) { previsa.rai_62 = Math.round(c62); filled.push('FSE (62)'); }
-    if (c63) { previsa.rai_63 = Math.round(c63); filled.push('Gastos com pessoal (63)'); }
-    if (c64) { previsa.rai_64 = Math.round(c64); filled.push('Amortizações (64)'); }
-    if (c65) { previsa.rai_65 = Math.round(c65); filled.push('Imparidades (65)'); }
-    if (c66) { previsa.rai_66 = Math.round(c66); filled.push('Reduções de JV (66)'); }
-    if (c67) { previsa.rai_67 = Math.round(c67); filled.push('Provisões (67)'); }
-    if (c68) { previsa.rai_68 = Math.round(c68); filled.push('Outros gastos (68)'); }
-    if (c69) { previsa.rai_69 = Math.round(c69); filled.push('Gastos financiamento (69)'); }
+    if (cmvFinal) { previsa.rai_cmv = Math.round(cmvFinal * 100) / 100; filled.push('CMV (61)'); }
+    if (cmcFinal) { previsa.rai_cmc = Math.round(cmcFinal * 100) / 100; filled.push('CMC (618/619)'); }
+    if (c62) { previsa.rai_62 = Math.round(c62 * 100) / 100; filled.push('FSE (62)'); }
+    if (c63) { previsa.rai_63 = Math.round(c63 * 100) / 100; filled.push('Gastos com pessoal (63)'); }
+    if (c64) { previsa.rai_64 = Math.round(c64 * 100) / 100; filled.push('Amortizações (64)'); }
+    if (c65) { previsa.rai_65 = Math.round(c65 * 100) / 100; filled.push('Imparidades (65)'); }
+    if (c66) { previsa.rai_66 = Math.round(c66 * 100) / 100; filled.push('Reduções de JV (66)'); }
+    if (c67) { previsa.rai_67 = Math.round(c67 * 100) / 100; filled.push('Provisões (67)'); }
+    if (c68) { previsa.rai_68 = Math.round(c68 * 100) / 100; filled.push('Outros gastos (68)'); }
+    if (c69) { previsa.rai_69 = Math.round(c69 * 100) / 100; filled.push('Gastos financiamento (69)'); }
 
     // Tributações Autónomas — heurísticas a partir de contas SNC
     const taRepresentacao = sumLeaves(accounts, '6266', 'debit')
@@ -460,17 +460,17 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     const taAjudasCusto   = sumLeaves(accounts, '6325', 'debit');
     const taDespNaoDoc    = sumLeaves(accounts, '6888', 'debit')
                           + sumLeaves(accounts, '6886', 'debit');
-    if (taRepresentacao) { previsa.ta_representacao = Math.round(taRepresentacao); filled.push('TA — Representação (6266/6262)'); }
-    if (taAjudasCusto)   { previsa.ta_ajadasCusto   = Math.round(taAjudasCusto);   filled.push('TA — Ajudas de Custo (6325)'); }
+    if (taRepresentacao) { previsa.ta_representacao = Math.round(taRepresentacao * 100) / 100; filled.push('TA — Representação (6266/6262)'); }
+    if (taAjudasCusto)   { previsa.ta_ajadasCusto   = Math.round(taAjudasCusto * 100) / 100;   filled.push('TA — Ajudas de Custo (6325)'); }
     if (taDespNaoDoc) {
-      previsa.ta_despNaoDocPrincipal = Math.round(taDespNaoDoc);
+      previsa.ta_despNaoDocPrincipal = Math.round(taDespNaoDoc * 100) / 100;
       filled.push('TA — Despesas não documentadas (688x)');
     }
 
     // Class 8 — RAI/IRC
     const r811 = sumLeaves(accounts, '811', 'credit');
     if (r811) {
-      previsa.c701_rai = Math.round(r811);
+      previsa.c701_rai = Math.round(r811 * 100) / 100;
       filled.push('RAI (811)');
       details.push({
         group: 'Resultados Apurados',
@@ -480,8 +480,8 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     }
     const r8122db = sumLeaves(accounts, '8122', 'debit');
     const r8122cr = sumLeaves(accounts, '8122', 'credit');
-    if (r8122db) { previsa.rai_8122_db = Math.round(r8122db); filled.push('Imposto diferido — Débito (8122)'); }
-    if (r8122cr) { previsa.rai_8122_cr = Math.round(r8122cr); filled.push('Imposto diferido — Crédito (8122)'); }
+    if (r8122db) { previsa.rai_8122_db = Math.round(r8122db * 100) / 100; filled.push('Imposto diferido — Débito (8122)'); }
+    if (r8122cr) { previsa.rai_8122_cr = Math.round(r8122cr * 100) / 100; filled.push('Imposto diferido — Crédito (8122)'); }
 
     // Detalhe agregado para o utilizador
     const totalRendimentos = r711 + r712 + r72 + r74 + r75 + r76 + r77 + r78 + r79;
@@ -1006,7 +1006,7 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   if (profile.faturaçaoAnualPrevista && profile.faturaçaoAnualPrevista > 0) {
     previsa.volumeNegocios = profile.faturaçaoAnualPrevista;
   } else if (revenue > 0) {
-    previsa.volumeNegocios = Math.round(revenue);
+    previsa.volumeNegocios = Math.round(revenue * 100) / 100;
   }
 
   // PME / Regime

@@ -34,7 +34,11 @@ export const ESCALOES_OFICIAL_2026: Escalao[] = [
 export const ESCALOES_OFICIAL_2025 = ESCALOES_OFICIAL_2026;
 export const ESCALOES_DEMO = ESCALOES_OFICIAL_2026;
 
-const REGIOES: Record<string, number> = { continente: 1.0, acores: 0.7, madeira: 0.765 };
+// Redução regional sobre as taxas do Continente, em vigor em 2026:
+//   Madeira — diferencial máximo de 30% (DL Regional 8/2025/M, alargado a todos os 9 escalões).
+//   Açores — redução de 20% (Despacho 1179/2026; mesma proporção em capitais 22,4% vs 28%).
+// O multiplicador é (1 − redução): mais baixo = mais favorável ao residente.
+const REGIOES: Record<string, number> = { continente: 1.0, acores: 0.80, madeira: 0.70 };
 
 // Mínimo de existência 2026 — 14 × SMN (art. 70.º CIRS, OE 2026).
 export const MINIMO_EXISTENCIA = 14 * SMN_2026; // 12.880,00 €
@@ -173,12 +177,24 @@ function deducoesColeta(d: {
   dependentes?: number;
   dep0a3?: number;
   pensoes?: number;
+  cenario?: Cenario;
+  monoparental?: boolean;
 }): DeducoesColeta {
+  // Tetos OE 2026 (Lei 73-A/2025):
+  //   Saúde: 15%, teto €1.000
+  //   Educação: 30%, teto €800 (até €1.000 quando há rendas de estudante deslocado)
+  //   Habitação (rendas HPP): 15%, teto subiu para €900 em 2026 (era €700)
+  //   Lares: 25%, teto €403,75
+  //   Pensões de alimentos: 20%, teto €419,22
+  //   Gerais e familiares: 35%, teto €250/SP (€500 em tributação conjunta);
+  //     em famílias monoparentais sobe a 45% com teto €335
   const dSaude = Math.min((d.saude || 0) * 0.15, 1000);
   const dEducacao = Math.min((d.educacao || 0) * 0.3, 800);
-  const dHabitacao = Math.min((d.habitacao || 0) * 0.15, 700);
+  const dHabitacao = Math.min((d.habitacao || 0) * 0.15, 900); // OE 2026: €900 (era €700)
   const dLares = Math.min((d.lares || 0) * 0.25, 403.75);
-  const dGerais = (d.gerais || 0) * 0.35; // 35% sem teto neste motor
+  const taxaGerais = d.monoparental ? 0.45 : 0.35;
+  const tetoGerais = d.monoparental ? 335 : (d.cenario === 'conjunto' ? 500 : 250);
+  const dGerais = Math.min((d.gerais || 0) * taxaGerais, tetoGerais);
   // Dedução por dependente — Art. 78.º-A CIRS, OE 2026:
   //  €600 por dependente > 3 anos
   //  €726 1.º dependente ≤ 3 anos
@@ -308,6 +324,8 @@ export function simular(sim: IRSSim, opts: { tabela?: Tabela } = {}): IRSResulta
     dependentes: +sim.dependentes || 0,
     dep0a3: +sim.dep0a3 || 0,
     pensoes: +sim.despesas?.pensoes || 0,
+    cenario: sim.cenario,
+    monoparental: (sim as { monoparental?: boolean }).monoparental,
   });
 
   const concelho = (sim.concelho || '').toLowerCase();
@@ -454,7 +472,7 @@ export const EXPLICACOES_M3: Record<string, string> = {
   '01': 'Soma dos rendimentos sujeitos a tributação (trabalho + atividade). No IRS Jovem mostra já o tributável (sem a parcela isenta).',
   '02': 'Dedução automática do art.º 25.º do CIRS: 8,54 × IAS = 4 587,09 € (ou as contribuições obrigatórias, se forem superiores).',
   '03': 'Perdas declaradas em anos anteriores que podem ser reportadas (até 5 anos).',
-  '04': 'Parcela isenta ao abrigo do IRS Jovem (art.º 72.º-A). Não tributa mas continua a contar para a taxa marginal.',
+  '04': 'Parcela isenta ao abrigo do IRS Jovem (art.º 12.º-B, renumerado pela Lei 45-A/2024). Não tributa mas continua a contar para a taxa marginal.',
   '06': 'Base coletável: rendimento global menos dedução específica e perdas. É o valor a que se aplicam os escalões.',
   '08': 'Rendimentos isentos re-englobados apenas para determinar a taxa marginal aplicável.',
   '09': 'Total considerado para escolher o escalão (rendimento coletável + isentos englobados).',
