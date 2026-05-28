@@ -14,6 +14,9 @@ import {
   migrateLegacyProfileIfNeeded,
   upsertEmpresa,
   newId as newEmpresaId,
+  syncEmpresasFromFirestore,
+  saveEmpresasToFirestore,
+  listEmpresas,
 } from './lib/empresas';
 import type { DiagnosticoState } from './DiagnosticoAutonomia';
 import type { ImoveisState } from './ImoveisEmpresa';
@@ -312,6 +315,37 @@ function AppContent() {
   useEffect(() => {
     if (currentEmpresaId) syncProfileIntoEmpresa(currentEmpresaId, clientProfile);
   }, [clientProfile, currentEmpresaId]);
+
+  // ── Persistência permanente em Firestore ─────────────────────────────────
+  // No arranque: faz merge com o que está na cloud (usa o NIF do escritório
+  // como tenant-id, ou 'default' se ainda não estiver definido).
+  useEffect(() => {
+    if (!loggedIn) return;
+    let cancelled = false;
+    (async () => {
+      const merged = await syncEmpresasFromFirestore(officeSettings.nif);
+      if (cancelled) return;
+      setEmpresasRefresh(n => n + 1);
+      // Se a empresa actual foi carregada da cloud, atualiza o perfil em memória.
+      if (currentEmpresaId) {
+        const emp = merged.find(e => e.id === currentEmpresaId);
+        if (emp) setClientProfile(emp.profile);
+      }
+    })();
+    return () => { cancelled = true; };
+    // Intencionalmente apenas no login (não a cada mudança de office.nif para evitar
+    // sync infinitos quando a UI das definições do escritório está aberta).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loggedIn]);
+
+  // Empurra alterações ao registry para Firestore com debounce de 2s.
+  useEffect(() => {
+    if (!loggedIn) return;
+    const t = setTimeout(() => {
+      saveEmpresasToFirestore(officeSettings.nif, listEmpresas()).catch(() => {});
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [loggedIn, clientProfile, currentEmpresaId, empresasRefresh, officeSettings.nif]);
 
   // Sync document.title with the active view (helps history & screen readers)
   useEffect(() => {

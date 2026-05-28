@@ -30,6 +30,14 @@ service cloud.firestore {
       allow delete: if resource.data.aprovado == true;
     }
 
+    // Registry de empresas por escritório (multi-tenant via officeId = NIF do escritório).
+    // Ainda sem auth: validamos estruturalmente que o payload é um array de empresas.
+    // Quando integrares Firebase Auth, restringir a request.auth.uid == officeId.
+    match /empresas/{officeId} {
+      allow read: if true;
+      allow write: if isValidEmpresasPayload(request.resource.data);
+    }
+
     // Bloquear tudo o resto explicitamente até existir auth real.
     match /{document=**} {
       allow read, write: if false;
@@ -52,4 +60,13 @@ function isToggleOnly(before, after) {
       && after.createdAt == before.createdAt
       && after.atualizado is bool
       && after.aprovado is bool;
+}
+
+function isValidEmpresasPayload(data) {
+  // Estrutura esperada: { list: [...], updatedAt: <number> }.
+  // Limite estrutural para evitar payloads absurdos.
+  return data.keys().hasOnly(['list', 'updatedAt'])
+      && data.list is list
+      && data.list.size() < 500
+      && data.updatedAt is number;
 }
