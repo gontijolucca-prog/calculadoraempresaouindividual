@@ -241,7 +241,9 @@ export function AnimatedCard({
   );
 }
 
-// Hook reutilizável para gerir estado do flow mode
+// Hook reutilizável para gerir estado do flow mode. Difunde o estado actual
+// num bus de eventos global para que um toggle flutuante (fora da árvore)
+// possa exibir o label correcto e disparar a inversão sem props.
 export function useFlowMode() {
   const [flowMode, setFlowMode] = React.useState(true);
   const [currentStep, setCurrentStep] = React.useState(0);
@@ -255,6 +257,16 @@ export function useFlowMode() {
     setFlowMode(false);
     setCurrentStep(0);
   }, []);
+
+  React.useEffect(() => {
+    window.dispatchEvent(new CustomEvent('flowmode:change', { detail: { active: flowMode } }));
+  }, [flowMode]);
+
+  React.useEffect(() => {
+    const onToggle = () => { (flowMode ? exitFlow : enterFlow)(); };
+    window.addEventListener('flowmode:toggle', onToggle);
+    return () => window.removeEventListener('flowmode:toggle', onToggle);
+  }, [flowMode, enterFlow, exitFlow]);
 
   return { flowMode, enterFlow, exitFlow, currentStep, setCurrentStep };
 }

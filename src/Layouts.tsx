@@ -3,8 +3,9 @@ import {
   UserCircle, Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote, Info,
   ClipboardList, Upload, LogOut, Receipt,
   ChevronDown, TrendingUp, Settings, UserPlus, Building2,
-  Menu, X, Clock, Briefcase, ListOrdered, FileText, Package,
+  Menu, X, Clock, Briefcase, ListOrdered, Package,
 } from 'lucide-react';
+import FloatingFlowToggle from './FloatingFlowToggle';
 import { cn } from './lib/utils';
 import type { AppMode } from './ModeSelector';
 
@@ -98,16 +99,16 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
   useEffect(() => { if (isSimActive) setSimOpen(true); }, [isSimActive]);
 
   // Acções do Perfil migradas para a sidebar: a sidebar dispara custom events e
-  // o ClientProfile responde. O flowMode actual chega aqui via event "profile:flowModeChange"
-  // para alternar o label "Vista simplificada" ↔ "Vista detalhada".
+  // o ClientProfile responde. O flowMode actual chega aqui via bus global
+  // "flowmode:change" para alternar o label "Vista simplificada" ↔ "Vista detalhada".
   const [profileFlowMode, setProfileFlowMode] = useState(true);
   useEffect(() => {
     const onChange = (e: Event) => {
       const detail = (e as CustomEvent<{ active: boolean }>).detail;
       setProfileFlowMode(!!detail?.active);
     };
-    window.addEventListener('profile:flowModeChange', onChange);
-    return () => window.removeEventListener('profile:flowModeChange', onChange);
+    window.addEventListener('flowmode:change', onChange);
+    return () => window.removeEventListener('flowmode:change', onChange);
   }, []);
   // Se a sidebar disparar a acção fora do Perfil, navegamos primeiro e damos
   // tempo ao ClientProfile montar antes do dispatch — senão o listener ainda
@@ -221,20 +222,14 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
               <NavItem
                 label={profileFlowMode ? 'Vista detalhada' : 'Vista simplificada'}
                 Icon={ListOrdered}
-                onClick={() => fireProfileEvent('profile:toggleFlow')}
+                onClick={() => fireProfileEvent('flowmode:toggle')}
                 title={profileFlowMode ? 'Sair do flow guiado e ver todas as secções.' : 'Entrar no flow guiado em 6 passos.'}
               />
               <NavItem
-                label="Só simulação"
-                Icon={FileText}
-                onClick={() => fireProfileEvent('profile:openEditor')}
-                title="Abrir editor da carta de simulação."
-              />
-              <NavItem
-                label="Exportar Pacote"
+                label="Exportar documentos"
                 Icon={Package}
                 onClick={() => fireProfileEvent('profile:openPackage')}
-                title="Gerar pacote PDF (proposta + simulação) do cliente."
+                title="Gerar pacote de documentos PDF (proposta + simulação) do cliente."
               />
             </div>
           </>
@@ -307,9 +302,13 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
           {children}
         </main>
       </div>
+
+      <FloatingFlowToggle currentView={active} visibleViews={FLOW_VIEWS} />
     </div>
   );
 }
+
+const FLOW_VIEWS = ['profile','diagnostico','imoveis','imt','vehicle','salario','selfss','ticket','previsa','tax'] as const;
 
 export const LAYOUTS = [
   { id: 'sidebar', name: 'Top Bar Maroon', component: SidebarLayout },

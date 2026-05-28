@@ -5,7 +5,6 @@ import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { Tip } from './Tip';
 import { jsPDF } from 'jspdf';
-import PDFPreviewEditor from './PDFPreviewEditor';
 import ExportPackageModal from './ExportPackageModal';
 import type { OfficeSettings } from './lib/officeSettings';
 import type { HonorariosConfig } from './lib/honorarios';
@@ -210,7 +209,6 @@ export default function ClientProfile({
   profile, onChange, taxState, vehicleState, ticketState, ssState,
   office, honorarios, onGoToOfficeSettings,
 }: Props) {
-  const [showEditor, setShowEditor] = useState(false);
   const [showPackage, setShowPackage] = useState(false);
 
   const updateProfile = (field: keyof ClientProfile, value: any) => {
@@ -218,27 +216,15 @@ export default function ClientProfile({
   };
 
   const currentYear = new Date().getFullYear();
-  const { flowMode, enterFlow, exitFlow } = useFlowMode();
+  const { flowMode, exitFlow } = useFlowMode();
 
-  // Sincronização com a sidebar: as 3 acções do header migraram para NavItems.
-  // Aqui ouvimos os eventos da sidebar e propagamos o flowMode para que ela
-  // saiba alternar entre "Vista simplificada" e "Vista detalhada".
+  // Acção "Exportar documentos" disparada pela sidebar. O toggle de Vista
+  // simplificada/detalhada é tratado pelo bus global em useFlowMode.
   useEffect(() => {
-    window.dispatchEvent(new CustomEvent('profile:flowModeChange', { detail: { active: flowMode } }));
-  }, [flowMode]);
-  useEffect(() => {
-    const onToggle = () => { (flowMode ? exitFlow : enterFlow)(); };
-    const onEditor = () => setShowEditor(true);
     const onPackage = () => setShowPackage(true);
-    window.addEventListener('profile:toggleFlow', onToggle);
-    window.addEventListener('profile:openEditor', onEditor);
     window.addEventListener('profile:openPackage', onPackage);
-    return () => {
-      window.removeEventListener('profile:toggleFlow', onToggle);
-      window.removeEventListener('profile:openEditor', onEditor);
-      window.removeEventListener('profile:openPackage', onPackage);
-    };
-  }, [flowMode, enterFlow, exitFlow]);
+    return () => window.removeEventListener('profile:openPackage', onPackage);
+  }, []);
 
   // ─── PDF GENERATION ───────────────────────────────────────────────────────
 
@@ -1311,18 +1297,6 @@ export default function ClientProfile({
         {resultsContent}
       </div>
     </motion.div>
-
-    {showEditor && (
-      <PDFPreviewEditor
-        profile={profile}
-        taxState={taxState}
-        vehicleState={vehicleState}
-        ticketState={ticketState}
-        ssState={ssState}
-        onClose={() => setShowEditor(false)}
-        office={office}
-      />
-    )}
 
     {showPackage && office && honorarios && (
       <ExportPackageModal
