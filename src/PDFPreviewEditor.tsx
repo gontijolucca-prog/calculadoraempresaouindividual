@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { motion } from 'motion/react';
 import { X, Download } from 'lucide-react';
 import type { ClientProfile } from './ClientProfile';
 import type { OfficeSettings } from './lib/officeSettings';
@@ -358,9 +359,9 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
 
   const rootStyle: React.CSSProperties = embedded
     ? { background: 'transparent', display: 'flex', flexDirection: 'column' }
-    : { position: 'fixed', inset: 0, background: '#e2e8f0', zIndex: 1000, display: 'flex', flexDirection: 'column' };
+    : { background: '#e2e8f0', height: '100%', display: 'flex', flexDirection: 'column' };
 
-  return (
+  const inner = (
     <div id="pdf-editor-root" style={rootStyle}>
 
       {!embedded && (
@@ -698,6 +699,33 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
         </div>
 
       </div>
+    </div>
+  );
+
+  if (embedded) return inner;
+
+  // Drawer alinhado à direita (mesma forma que o ExportPackageModal).
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Editor de relatório"
+      className="fixed inset-0 z-[1100] flex items-stretch no-print"
+    >
+      <button
+        type="button"
+        aria-label="Fechar"
+        onClick={onClose}
+        className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm cursor-default"
+      />
+      <motion.div
+        initial={{ opacity: 0, x: 24 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
+        className="relative ml-auto w-full max-w-[1280px] h-full bg-[#e2e8f0] shadow-2xl flex flex-col overflow-hidden"
+      >
+        {inner}
+      </motion.div>
     </div>
   );
 }
