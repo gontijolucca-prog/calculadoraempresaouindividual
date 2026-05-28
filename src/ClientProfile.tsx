@@ -6,6 +6,7 @@ import { useFlowMode } from './AnimatedPage';
 import { Tip } from './Tip';
 import { jsPDF } from 'jspdf';
 import ExportPackageModal from './ExportPackageModal';
+import { consumeOpenPackage, consumeFlowToggle } from './lib/profileIntent';
 import type { OfficeSettings } from './lib/officeSettings';
 import type { HonorariosConfig } from './lib/honorarios';
 
@@ -223,7 +224,13 @@ export default function ClientProfile({
   useEffect(() => {
     const onPackage = () => setShowPackage(true);
     window.addEventListener('profile:openPackage', onPackage);
+    // Consome intenções que a sidebar registou ANTES deste componente montar
+    // (clicar "Exportar documentos" / toggle de vista vindo de outra vista).
+    // Sem race: não depende de timing de montagem.
+    if (consumeOpenPackage()) setShowPackage(true);
+    if (consumeFlowToggle()) exitFlow();
     return () => window.removeEventListener('profile:openPackage', onPackage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ─── PDF GENERATION ───────────────────────────────────────────────────────

@@ -6,6 +6,7 @@ import {
   Menu, X, Clock, Briefcase, ListOrdered, Package,
 } from 'lucide-react';
 import FloatingFlowToggle from './FloatingFlowToggle';
+import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
 import { cn } from './lib/utils';
 import type { AppMode } from './ModeSelector';
 
@@ -114,12 +115,15 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
   // tempo ao ClientProfile montar antes do dispatch — senão o listener ainda
   // não existe e o evento perde-se.
   const fireProfileEvent = (name: string) => {
-    const dispatch = () => window.dispatchEvent(new CustomEvent(name));
     if (active !== 'profile') {
+      // Regista a intenção e muda de vista; o ClientProfile consome-a no seu
+      // mount — sem depender de um setTimeout (que perdia o evento se a
+      // montagem demorasse > 80 ms, obrigando a refresh).
+      if (name === 'profile:openPackage') requestOpenPackage();
+      else if (name === 'flowmode:toggle') requestFlowToggle();
       setView('profile');
-      window.setTimeout(dispatch, 80);
     } else {
-      dispatch();
+      window.dispatchEvent(new CustomEvent(name));
     }
     setDrawerOpen(false);
   };
