@@ -40,7 +40,7 @@ export default function LoginPage({ onLogin, onBack }: Props) {
         {/* Logo centrado */}
         <div className="flex flex-col items-center mb-10">
           <img
-            src="/logo.png"
+            src="/logo.svg"
             alt="Estudo 360"
             width={96}
             height={96}

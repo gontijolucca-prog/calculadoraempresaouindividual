@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { Plus, Building2, FileUp, Trash2, ChevronRight, Search } from 'lucide-react';
+import { Plus, Building2, FileUp, Trash2, ChevronRight, Search, FileText, Pencil, X } from 'lucide-react';
 import {
   listEmpresas,
   deleteEmpresa,
@@ -14,18 +14,29 @@ import { defaultProfile } from './ClientProfile';
 interface Props {
   onOpenEmpresa: (empId: string) => void;
   onNovaEmpresa: (empId: string) => void;
+  onNovaEmpresaFromSAFT: (file: File) => void;
   onSAFTUpload: (file: File, empId: string) => void;
   refreshKey?: number;
 }
 
-export default function EmpresasList({ onOpenEmpresa, onNovaEmpresa, onSAFTUpload, refreshKey }: Props) {
+export default function EmpresasList({ onOpenEmpresa, onNovaEmpresa, onNovaEmpresaFromSAFT, onSAFTUpload, refreshKey }: Props) {
   const [empresas, setEmpresas] = useState<EmpresaRecord[]>(() => listEmpresas());
   const [query, setQuery] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<EmpresaRecord | null>(null);
+  const [showNovaModal, setShowNovaModal] = useState(false);
+  const novaSaftInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setEmpresas(listEmpresas());
   }, [refreshKey]);
+
+  // Close modal with Escape
+  useEffect(() => {
+    if (!showNovaModal) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowNovaModal(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [showNovaModal]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -36,7 +47,9 @@ export default function EmpresasList({ onOpenEmpresa, onNovaEmpresa, onSAFTUploa
     );
   }, [empresas, query]);
 
-  const handleNova = () => {
+  const startNova = () => setShowNovaModal(true);
+
+  const handleNovaManual = () => {
     const id = newId();
     upsertEmpresa({
       id,
@@ -47,7 +60,13 @@ export default function EmpresasList({ onOpenEmpresa, onNovaEmpresa, onSAFTUploa
       profile: { ...defaultProfile },
     });
     setCurrentEmpresaId(id);
+    setShowNovaModal(false);
     onNovaEmpresa(id);
+  };
+
+  const handleNovaFromSAFT = (file: File) => {
+    setShowNovaModal(false);
+    onNovaEmpresaFromSAFT(file);
   };
 
   const handleOpen = (id: string) => {
@@ -78,7 +97,7 @@ export default function EmpresasList({ onOpenEmpresa, onNovaEmpresa, onSAFTUploa
             </h1>
             <button
               type="button"
-              onClick={handleNova}
+              onClick={startNova}
               className="inline-flex items-center gap-2 bg-[#0677FF] text-white px-4 py-2.5 rounded-[10px] text-[13px] font-[700] hover:bg-[#0556CC] active:scale-[0.98] transition-all shadow-md shadow-[#0677FF]/25"
             >
               <Plus className="w-4 h-4" /> Nova Empresa
@@ -104,7 +123,7 @@ export default function EmpresasList({ onOpenEmpresa, onNovaEmpresa, onSAFTUploa
 
         {/* Lista */}
         {filtered.length === 0 ? (
-          <EmptyState onNova={handleNova} hasQuery={query.length > 0} />
+          <EmptyState onNova={startNova} hasQuery={query.length > 0} />
         ) : (
           <ul className="grid gap-3" role="list">
             {filtered.map(emp => (
@@ -159,6 +178,86 @@ export default function EmpresasList({ onOpenEmpresa, onNovaEmpresa, onSAFTUploa
               >
                 Eliminar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Nova Empresa: escolher fluxo (SAFT vs manual) */}
+      {showNovaModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="nova-modal-title"
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-6"
+        >
+          <button
+            type="button"
+            aria-label="Cancelar"
+            onClick={() => setShowNovaModal(false)}
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
+          />
+          <div className="relative bg-white rounded-[22px] shadow-2xl max-w-xl w-full overflow-hidden">
+            <div className="h-1.5 bg-gradient-to-r from-[#0677FF] to-[#00C2FF] w-full" />
+            <div className="p-7">
+              <div className="flex items-start justify-between mb-1">
+                <h2 id="nova-modal-title" className="text-[22px] font-[800] text-[#0B1D2D] leading-tight">
+                  Nova Empresa
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setShowNovaModal(false)}
+                  aria-label="Fechar"
+                  className="w-8 h-8 -mt-1 -mr-1 rounded-full flex items-center justify-center text-[#6B7280] hover:text-[#0B1D2D] hover:bg-[#F1F5F9] transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-[13px] text-[#6B7280] font-[500] mb-5">
+                Como queres adicionar esta empresa à tua carteira?
+              </p>
+
+              <div className="grid sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => novaSaftInputRef.current?.click()}
+                  className="text-left p-5 rounded-[14px] border-2 border-[#E5E9F0] hover:border-[#0677FF] hover:bg-[#0677FF]/4 transition-all group focus-visible:border-[#0677FF]"
+                >
+                  <div className="w-10 h-10 rounded-[10px] bg-[#0677FF]/12 text-[#0677FF] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div className="text-[15px] font-[800] text-[#0B1D2D]">A partir de SAF-T</div>
+                  <p className="text-[12px] text-[#6B7280] font-[500] mt-1 leading-snug">
+                    Importa o ficheiro SAF-T e preenchemos automaticamente os dados da empresa.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleNovaManual}
+                  className="text-left p-5 rounded-[14px] border-2 border-[#E5E9F0] hover:border-[#0B1D2D] hover:bg-[#0B1D2D]/4 transition-all group focus-visible:border-[#0B1D2D]"
+                >
+                  <div className="w-10 h-10 rounded-[10px] bg-[#0B1D2D]/10 text-[#0B1D2D] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                    <Pencil className="w-5 h-5" />
+                  </div>
+                  <div className="text-[15px] font-[800] text-[#0B1D2D]">Inserir à mão</div>
+                  <p className="text-[12px] text-[#6B7280] font-[500] mt-1 leading-snug">
+                    Abre o Perfil do Cliente em branco para preencheres os dados manualmente.
+                  </p>
+                </button>
+              </div>
+
+              <input
+                ref={novaSaftInputRef}
+                type="file"
+                accept=".xml,application/xml,text/xml"
+                className="hidden"
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) handleNovaFromSAFT(file);
+                  e.target.value = '';
+                }}
+              />
             </div>
           </div>
         </div>

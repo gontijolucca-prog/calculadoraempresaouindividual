@@ -415,6 +415,25 @@ function AppContent() {
     handleSAFTUpload(file);
   };
 
+  /** Fluxo: cria empresa nova vazia, define como activa, importa SAFT (preenche o perfil
+   *  e leva à vista Perfil via handleSAFTUpload). O useEffect de sync grava os dados
+   *  do SAFT na empresa recém-criada. */
+  const handleNovaEmpresaFromSAFT = (file: File) => {
+    const id = newEmpresaId();
+    upsertEmpresa({
+      id,
+      nome: '',
+      nif: '',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      profile: { ...defaultProfile },
+    });
+    setCurrentEmpresaId(id);
+    setCurrentEmpresaIdState(id);
+    setEmpresasRefresh(n => n + 1);
+    handleSAFTUpload(file);
+  };
+
   const openLegal = () => { setPrevView(view); setLegalAnchor(null); setView('legal'); };
   const closeLegal = () => setView(prevView);
 
@@ -535,6 +554,7 @@ function AppContent() {
             refreshKey={empresasRefresh}
             onOpenEmpresa={openEmpresa}
             onNovaEmpresa={handleNovaEmpresa}
+            onNovaEmpresaFromSAFT={handleNovaEmpresaFromSAFT}
             onSAFTUpload={handleEmpresaSAFT}
           />
         )}

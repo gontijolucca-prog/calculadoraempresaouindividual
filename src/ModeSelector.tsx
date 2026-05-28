@@ -47,7 +47,7 @@ const MODES: ModeCard[] = [
 function BrandMark({ className = 'w-10 h-10' }: { className?: string }) {
   return (
     <img
-      src="/logo.png"
+      src="/logo.svg"
       alt=""
       className={`${className} object-contain select-none shrink-0`}
       draggable={false}

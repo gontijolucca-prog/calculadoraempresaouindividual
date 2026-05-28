@@ -621,7 +621,7 @@ function Footer() {
 function BrandMark({ size = 32 }: { size?: number }) {
   return (
     <img
-      src="/logo.png"
+      src="/logo.svg"
       alt=""
       width={size}
       height={size}

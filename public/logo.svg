@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Estudo 360">
+  <defs>
+    <radialGradient id="orb" cx="42%" cy="42%" r="58%">
+      <stop offset="0%" stop-color="#9FE2FF"/>
+      <stop offset="35%" stop-color="#00C2FF"/>
+      <stop offset="70%" stop-color="#0677FF"/>
+      <stop offset="100%" stop-color="#0B1D2D"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00C2FF" stop-opacity="0.55"/>
+      <stop offset="60%" stop-color="#0677FF" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#0677FF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ring-h" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0B1D2D"/>
+      <stop offset="50%" stop-color="#0677FF"/>
+      <stop offset="100%" stop-color="#0B1D2D"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Soft outer glow halo (subtle) -->
+  <circle cx="60" cy="60" r="56" fill="url(#glow)"/>
+
+  <!-- Outer ring — segmented dial style. Stroke + dasharray creates the tick gaps. -->
+  <circle cx="60" cy="60" r="44" fill="none" stroke="#0677FF" stroke-width="3.6"
+          stroke-dasharray="14 6" stroke-linecap="round"/>
+
+  <!-- Four cardinal tick stems anchored just outside the outer ring -->
+  <g stroke="#0677FF" stroke-width="3" stroke-linecap="round">
+    <line x1="60" y1="6"   x2="60" y2="14"/>
+    <line x1="60" y1="106" x2="60" y2="114"/>
+    <line x1="6"  y1="60"  x2="14" y2="60"/>
+    <line x1="106" y1="60" x2="114" y2="60"/>
+  </g>
+
+  <!-- Tilted orbital ellipse — passes behind the sphere -->
+  <ellipse cx="60" cy="60" rx="52" ry="15"
+           fill="none" stroke="url(#ring-h)" stroke-width="4"
+           transform="rotate(-22 60 60)"/>
+
+  <!-- Inner sphere (the glowing planet) -->
+  <circle cx="60" cy="60" r="20" fill="url(#orb)"/>
+  <!-- Specular highlight on the upper-left of the sphere -->
+  <ellipse cx="53" cy="52" rx="5" ry="3.2" fill="#ffffff" opacity="0.75"/>
+  <circle cx="50" cy="50" r="1.6" fill="#ffffff" opacity="0.9"/>
+
+  <!-- Orbital ellipse foreground arc (re-drawn over the sphere to sell the 3D pass-through) -->
+  <path d="M 25.5 71 A 52 15 -22 0 0 94 49"
+        fill="none" stroke="#0677FF" stroke-width="4" stroke-linecap="round"
+        transform="rotate(-22 60 60)" opacity="0"/>
+</svg>

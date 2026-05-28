@@ -75,7 +75,7 @@ const NAV_TIPS: Record<string, string> = {
 function Logo({ className = 'w-7 h-7' }: { className?: string }) {
   return (
     <img
-      src="/logo.png"
+      src="/logo.svg"
       alt=""
       className={`${className} object-contain select-none shrink-0`}
       draggable={false}
