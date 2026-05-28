@@ -42,7 +42,12 @@ import {
   calcSelfSSContribution,
   calculateIRC,
   SS_RATE_EMPLOYER,
+  IAS_2026,
+  coefFromProfile,
 } from './lib/pt2026';
+
+// Dedução específica Cat A 2026 (8,54 × IAS) — usada no preview do imposto.
+const DED_ESPECIFICA_CAT_A_2026 = Math.round(8.54 * IAS_2026 * 100) / 100; // 4587.09
 
 /**
  * Validação de NIF (Número de Identificação Fiscal) PT.
@@ -74,7 +79,7 @@ export interface ClientProfile {
   regimeContabilidade: 'simplificado' | 'organizada' | 'transparencia_fiscal' | 'nao_residente' | 'retgs';
   cae: string;
   inicioAtividade: number;
-  atividadePrincipal: 'servicos' | 'bens';
+  atividadePrincipal: 'servicos' | 'bens' | 'servicos_outros' | 'vendas_restauracao' | 'servicos_listados' | 'mining_cripto';
   isSazonal: boolean;
   idade: number;
   estadoCivil: 'solteiro' | 'casado' | 'uniao_facto' | 'divorciado' | 'viuvo';
@@ -317,12 +322,19 @@ export default function ClientProfile({
       const dpNaoAceite = invCapex * 0.25;
 
       let eniSS = 0;
-      if (!(taxState.profSit === 'tco' && !taxState.isMainAct && taxState.rev <= 20000))
-        eniSS = taxState.rev * (taxState.isServices ? 0.70 : 0.20) * 0.214;
+      if (!(taxState.profSit === 'tco' && !taxState.isMainAct && taxState.rev <= 20000)) {
+        const ssMo = calcSelfSSContribution(taxState.rev / 12, taxState.isServices ? 'servicos' : 'bens', false);
+        eniSS = ssMo.anual;
+      }
 
-      let eniRC = taxState.rev * (taxState.isServices ? 0.75 : 0.15);
-      const reqJust = taxState.isServices && taxState.rev > 27360 ? taxState.rev * 0.15 : 0;
-      const justDocs = costsEni + 4104;
+      // Coeficiente art.º 31.º CIRS via tipo de atividade do perfil.
+      const coefArt31 = profile?.atividadePrincipal
+        ? coefFromProfile(profile.atividadePrincipal)
+        : (taxState.isServices ? 0.75 : 0.15);
+      let eniRC = taxState.rev * coefArt31;
+      const aplicaJustificacao = coefArt31 === 0.75 || coefArt31 === 0.35;
+      const reqJust = aplicaJustificacao && taxState.rev > 27360 ? taxState.rev * 0.15 : 0;
+      const justDocs = costsEni + DED_ESPECIFICA_CAT_A_2026;
       if (reqJust > 0 && justDocs < reqJust) eniRC += reqJust - justDocs;
       if (profile.beneficioJovem && profile.idade <= 35)
         eniRC = Math.max(0, eniRC - calcIRSJovem(taxState.anosAtividade || 0, eniRC, profile.idade));
@@ -647,10 +659,14 @@ export default function ClientProfile({
             <input type="number" value={st.inicioAtividade === 0 ? '' : st.inicioAtividade} onChange={e => setSt({ inicioAtividade: Number(e.target.value) || 0 })} className={inputClass} min={2000} max={currentYear} />
           </div>
           <div>
-            <label className={labelClass}>Atividade Principal <Tip>O setor de negócio principal: se presta serviços (consultoria, design, etc.) ou vende bens/produtos físicos.</Tip></label>
-            <select value={st.atividadePrincipal} onChange={e => setSt({ atividadePrincipal: e.target.value })} className={inputClass}>
-              <option value="servicos">Prestação de Serviços</option>
-              <option value="bens">Venda de Bens</option>
+            <label className={labelClass}>Atividade Principal <Tip>Define o coeficiente do art.º 31.º CIRS para o regime simplificado. Vendas/restauração/hotelaria = 15%. Serviços listados no art.º 151.º (médicos, advogados, designers) = 75%. Outros serviços = 35%.</Tip></label>
+            <select value={st.atividadePrincipal} onChange={e => setSt({ atividadePrincipal: e.target.value as ClientProfile['atividadePrincipal'] })} className={inputClass}>
+              <option value="servicos_listados">Profissionais do art.º 151.º — médicos, advogados, designers (75%)</option>
+              <option value="servicos_outros">Outros serviços (35%)</option>
+              <option value="vendas_restauracao">Vendas, restauração, hotelaria (15%)</option>
+              <option value="mining_cripto">Mining de criptoativos (95%)</option>
+              <option value="servicos">Serviços (legacy — usa 75%)</option>
+              <option value="bens">Bens (legacy — usa 15%)</option>
             </select>
           </div>
           <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-[8px] cursor-pointer">

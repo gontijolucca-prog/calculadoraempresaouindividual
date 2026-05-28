@@ -13,6 +13,7 @@ import type { ClientProfile } from './ClientProfile';
 import {
   calculateIRS, calcIRSJovem, calcDependentsDeduction,
   calcSelfSSContribution, SS_RATE_EMPLOYER, SS_RATE_EMPLOYEE, IAS_2026,
+  coefFromProfile,
 } from './lib/pt2026';
 
 // Dedução específica Cat A 2026 — 8,54 × IAS (art. 25.º CIRS).
@@ -105,8 +106,16 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
       eniSS = monthly.anual;
     }
 
-    let eniRendColetavel = rev * (isServices ? 0.75 : 0.15);
-    if (isServices && rev > LIMIAR_JUSTIFICACAO_15PCT) {
+    // Coeficiente art.º 31.º CIRS — usa o tipo de atividade do perfil quando disponível
+    // (vendas/restauração/hotelaria 0,15; serviços profissionais 0,75; outros serviços 0,35;
+    // mining cripto 0,95). Cai para o binário (isServices) por retro-compatibilidade.
+    const coefArt31 = profile?.atividadePrincipal
+      ? coefFromProfile(profile.atividadePrincipal)
+      : (isServices ? 0.75 : 0.15);
+    let eniRendColetavel = rev * coefArt31;
+    // A regra do art.º 31.º n.º 13 (justificação de 15%) só se aplica aos coef. 0,75 e 0,35.
+    const aplicaJustificacao = coefArt31 === 0.75 || coefArt31 === 0.35;
+    if (aplicaJustificacao && rev > LIMIAR_JUSTIFICACAO_15PCT) {
       // Regra do art. 31.º n.º 13 CIRS: para coef. 0,75 e rendimento bruto > limiar,
       // o sujeito passivo tem de justificar despesas equivalentes a 15% da receita bruta;
       // a parte não justificada é adicionada ao rendimento coletável.

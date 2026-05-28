@@ -264,13 +264,71 @@ export function calculateIRC(profit: number): number {
 }
 
 /**
+ * Coeficientes do art.º 31.º CIRS (regime simplificado) — em vigor 2026.
+ *
+ * 0,15 — vendas de mercadorias e produtos; restauração e similares; hotelaria;
+ *        operações com criptoativos (exceto mining).
+ * 0,35 — prestações de serviços não compreendidas nas categorias específicas.
+ * 0,75 — atividades profissionais listadas na tabela anexa ao art.º 151.º
+ *        (médicos, advogados, engenheiros, designers, consultores, etc.).
+ * 0,95 — mining de criptoativos e outros rendimentos específicos.
+ */
+export type TipoAtividadeCAE =
+  | 'vendas_restauracao'   // 0,15
+  | 'servicos_outros'      // 0,35
+  | 'servicos_listados'    // 0,75
+  | 'mining_cripto'        // 0,95
+  ;
+
+export const COEFICIENTES_ART31_2026: Record<TipoAtividadeCAE, number> = {
+  vendas_restauracao: 0.15,
+  servicos_outros:    0.35,
+  servicos_listados:  0.75,
+  mining_cripto:      0.95,
+};
+
+export const COEFICIENTES_ART31_LABELS: Record<TipoAtividadeCAE, string> = {
+  vendas_restauracao: 'Vendas, restauração ou hotelaria (15%)',
+  servicos_outros:    'Outros serviços (35%)',
+  servicos_listados:  'Profissionais do art.º 151.º — médicos, advogados, etc. (75%)',
+  mining_cripto:      'Mining de criptoativos (95%)',
+};
+
+export function coefAtividade(tipo: TipoAtividadeCAE): number {
+  return COEFICIENTES_ART31_2026[tipo] ?? 0.75;
+}
+
+/**
+ * Mapeia o valor armazenado em `profile.atividadePrincipal` (que aceita os
+ * códigos legacy 'servicos'/'bens' E os novos códigos do art.º 31.º) para o
+ * coeficiente correto. Usado por simuladores que ainda dependem do binário.
+ */
+export function coefFromProfile(
+  atividade: 'servicos' | 'bens' | TipoAtividadeCAE | string
+): number {
+  switch (atividade) {
+    case 'vendas_restauracao': return 0.15;
+    case 'servicos_outros':    return 0.35;
+    case 'servicos_listados':  return 0.75;
+    case 'mining_cripto':      return 0.95;
+    // legacy fallbacks
+    case 'bens':               return 0.15;
+    case 'servicos':           return 0.75;
+    default:                   return 0.75;
+  }
+}
+
+/**
  * Calcula o rendimento coletável ENI segundo o regime simplificado.
- * CIRS Art. 31º
+ * CIRS Art. 31º.
+ *
+ * Aceita `coef` explícito (preferido) ou cai para `0,75` por retro-compatibilidade.
  */
 export function calculateTaxableIncome(
   grossIncome: number,
-  isSimplifiedRegime: boolean
+  isSimplifiedRegime: boolean,
+  coef: number = 0.75
 ): number {
-  if (isSimplifiedRegime) return grossIncome * 0.75;
+  if (isSimplifiedRegime) return grossIncome * coef;
   return grossIncome;
 }
