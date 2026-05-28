@@ -17,6 +17,7 @@ import {
   syncEmpresasFromFirestore,
   saveEmpresasToFirestore,
   listEmpresas,
+  deleteEmpresa,
 } from './lib/empresas';
 import type { DiagnosticoState } from './DiagnosticoAutonomia';
 import type { ImoveisState } from './ImoveisEmpresa';
@@ -435,6 +436,21 @@ function AppContent() {
     setView('profile');
   };
 
+  /** Eliminação AUTORITATIVA: remove do localStorage E propaga já ao Firestore.
+   *  Sem isto, o merge de arranque (união por id) ressuscitava a empresa apagada
+   *  a partir da cloud ("Hydra"). Também limpa o currentEmpresaId em memória. */
+  const handleDeleteEmpresa = (id: string) => {
+    deleteEmpresa(id);
+    if (currentEmpresaId === id) {
+      setCurrentEmpresaIdState(null);
+      setClientProfile({ ...defaultProfile });
+    }
+    setEmpresasRefresh(n => n + 1);
+    // Propaga a lista já reduzida — síncrono o suficiente para o próximo arranque
+    // ler o Firestore sem a empresa apagada.
+    saveEmpresasToFirestore(officeSettings.nif, listEmpresas()).catch(() => {});
+  };
+
   const handleNovaEmpresa = (id: string) => {
     setCurrentEmpresaId(id);
     setCurrentEmpresaIdState(id);
@@ -590,6 +606,7 @@ function AppContent() {
             onNovaEmpresa={handleNovaEmpresa}
             onNovaEmpresaFromSAFT={handleNovaEmpresaFromSAFT}
             onSAFTUpload={handleEmpresaSAFT}
+            onDeleteEmpresa={handleDeleteEmpresa}
           />
         )}
         {view === 'profile' && (

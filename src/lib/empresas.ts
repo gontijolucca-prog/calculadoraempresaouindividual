@@ -154,9 +154,30 @@ export async function syncEmpresasFromFirestore(officeNif: string | undefined): 
     const existing = byId.get(e.id);
     if (!existing || (e.updatedAt ?? 0) > (existing.updatedAt ?? 0)) byId.set(e.id, e);
   }
-  const merged = Array.from(byId.values());
+  const merged = dedupeByNif(Array.from(byId.values()));
   saveEmpresas(merged);
   return merged;
+}
+
+/**
+ * Remove empresas duplicadas com o MESMO NIF válido (9 dígitos), mantendo a de
+ * `updatedAt` mais recente. Limpa o lixo acumulado por importações repetidas do
+ * mesmo SAF-T (cada uma criava uma empresa com id diferente → "Hydra"). Empresas
+ * sem NIF válido (recém-criadas, por preencher) são todas preservadas — são distintas.
+ */
+function dedupeByNif(list: EmpresaRecord[]): EmpresaRecord[] {
+  const byNif = new Map<string, EmpresaRecord>();
+  const noNif: EmpresaRecord[] = [];
+  for (const e of list) {
+    const nif = (e.nif ?? '').replace(/\D/g, '');
+    if (/^\d{9}$/.test(nif)) {
+      const ex = byNif.get(nif);
+      if (!ex || (e.updatedAt ?? 0) > (ex.updatedAt ?? 0)) byNif.set(nif, e);
+    } else {
+      noNif.push(e);
+    }
+  }
+  return [...byNif.values(), ...noNif];
 }
 
 /**

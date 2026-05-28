@@ -3,7 +3,6 @@ import { motion } from 'motion/react';
 import { Plus, Building2, FileUp, Trash2, ChevronRight, Search, FileText, Pencil, X } from 'lucide-react';
 import {
   listEmpresas,
-  deleteEmpresa,
   setCurrentEmpresaId,
   newId,
   upsertEmpresa,
@@ -16,10 +15,11 @@ interface Props {
   onNovaEmpresa: (empId: string) => void;
   onNovaEmpresaFromSAFT: (file: File) => void;
   onSAFTUpload: (file: File, empId: string) => void;
+  onDeleteEmpresa: (empId: string) => void;
   refreshKey?: number;
 }
 
-export default function EmpresasList({ onOpenEmpresa, onNovaEmpresa, onNovaEmpresaFromSAFT, onSAFTUpload, refreshKey }: Props) {
+export default function EmpresasList({ onOpenEmpresa, onNovaEmpresa, onNovaEmpresaFromSAFT, onSAFTUpload, onDeleteEmpresa, refreshKey }: Props) {
   const [empresas, setEmpresas] = useState<EmpresaRecord[]>(() => listEmpresas());
   const [query, setQuery] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<EmpresaRecord | null>(null);
@@ -75,7 +75,9 @@ export default function EmpresasList({ onOpenEmpresa, onNovaEmpresa, onNovaEmpre
   };
 
   const handleDelete = (emp: EmpresaRecord) => {
-    deleteEmpresa(emp.id);
+    // Delega no App: remove localmente E propaga a eliminação ao Firestore
+    // (autoritativo). Sem isto, o merge de arranque ressuscitava a empresa.
+    onDeleteEmpresa(emp.id);
     setEmpresas(listEmpresas());
     setConfirmDelete(null);
   };
