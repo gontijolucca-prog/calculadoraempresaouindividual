@@ -7,7 +7,7 @@
 
 import {
   calculateIRS, calcIRSJovem, calcDependentsDeduction,
-  TICKET_LIMITS_2026, SS_RATE_EMPLOYER, SS_RATE_EMPLOYEE,
+  TICKET_LIMITS_2026, SS_RATE_EMPLOYER, SS_RATE_EMPLOYEE, IAS_2026,
   type TipoSubsidioRefeicao,
 } from './pt2026';
 
@@ -48,8 +48,10 @@ export interface SalarioResult {
   irsJovemIsencao: number;
 }
 
-// Dedução específica mínima categoria A — CIRS Art. 25º
-const DEDUCAO_ESPECIFICA_MIN = 4104;
+// Dedução específica categoria A — CIRS Art. 25º (OE 2026).
+// Fórmula: max(8,54 × IAS, contribuições obrigatórias). Para 2026: €4.587,09.
+const DEDUCAO_ESPECIFICA_MIN = Math.round(8.54 * IAS_2026 * 100) / 100; // 4587.09
+// Rate 72% mantido apenas como cap superior heurístico (não consta do CIRS).
 const DEDUCAO_ESPECIFICA_RATE = 0.72;
 
 export function calcSalarioLiquido(p: SalarioParams): SalarioResult {

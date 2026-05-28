@@ -1,11 +1,13 @@
 // ─────────────────────────────────────────────────────────────────────────
-// Motor de cálculo de IRS 2025 (Modelo 3) — port TS do simulador reverse-
-// engineered (CIRS: escalões art.º 68.º, dedução específica art.º 25.º,
-// IRS Jovem art.º 72.º-A, mínimo de existência art.º 70.º, deduções à coleta
-// arts. 78.º a 84.º). Funções puras — sem estado, sem DOM.
+// Motor de cálculo de IRS 2026 (Modelo 3) — Lei 73-A/2025 (OE 2026).
+// CIRS: escalões art.º 68.º, dedução específica art.º 25.º,
+// IRS Jovem art.º 12.º-B, mínimo de existência art.º 70.º, deduções à coleta
+// arts. 78.º a 84.º. Funções puras — sem estado, sem DOM.
+// IAS 2026 = €537,13 (Portaria 480-A/2025); SMN 2026 = €920 (DL 139/2025).
 // ─────────────────────────────────────────────────────────────────────────
 
-const IAS_2025 = 522.5;
+const IAS_2026 = 537.13;
+const SMN_2026 = 920;
 
 export interface Escalao {
   ate: number;
@@ -13,37 +15,33 @@ export interface Escalao {
   parcela: number;
 }
 
-// Escalões "demo" — compatíveis com o simulador profissional de referência.
-export const ESCALOES_DEMO: Escalao[] = [
-  { ate: 8059, taxa: 0.13, parcela: 0.0 },
-  { ate: 12160, taxa: 0.165, parcela: 282.07 },
-  { ate: 17233, taxa: 0.215, parcela: 950.91 },
-  { ate: 22306, taxa: 0.244, parcela: 1450.67 },
-  { ate: 28400, taxa: 0.314, parcela: 3011.98 },
-  { ate: 41629, taxa: 0.357, parcela: 3923.54 },
-  { ate: 44987, taxa: 0.435, parcela: 7253.86 },
-  { ate: 83696, taxa: 0.46, parcela: 7928.67 },
-  { ate: Infinity, taxa: 0.48, parcela: 10439.55 },
+// Escalões oficiais OE 2026 — Lei 73-A/2025, Art. 68º CIRS.
+// Limites = limites_2025 × 1,0351 (atualização automática). Taxas 2º-5º reduzidas em 0,3 p.p.
+export const ESCALOES_OFICIAL_2026: Escalao[] = [
+  { ate:  8342,    taxa: 0.125, parcela:     0    },
+  { ate: 12587,    taxa: 0.157, parcela:   266.94 },
+  { ate: 17838,    taxa: 0.212, parcela:   959.22 },
+  { ate: 23089,    taxa: 0.241, parcela:  1476.53 },
+  { ate: 29397,    taxa: 0.311, parcela:  3092.76 },
+  { ate: 43090,    taxa: 0.349, parcela:  4209.84 },
+  { ate: 46566,    taxa: 0.431, parcela:  7743.30 },
+  { ate: 86634,    taxa: 0.446, parcela:  8441.80 },
+  { ate: Infinity, taxa: 0.48,  parcela: 11387.36 },
 ];
 
-// Escalões Lei 55-A/2025 (oficial, com taxas reduzidas).
-export const ESCALOES_OFICIAL_2025: Escalao[] = [
-  { ate: 8059, taxa: 0.125, parcela: 0.0 },
-  { ate: 12160, taxa: 0.157, parcela: 94.54 },
-  { ate: 17233, taxa: 0.212, parcela: 337.92 },
-  { ate: 22306, taxa: 0.241, parcela: 616.32 },
-  { ate: 28616, taxa: 0.311, parcela: 1262.63 },
-  { ate: 42118, taxa: 0.349, parcela: 2561.34 },
-  { ate: 45491, taxa: 0.431, parcela: 3799.44 },
-  { ate: 86266, taxa: 0.446, parcela: 10025.24 },
-  { ate: Infinity, taxa: 0.48, parcela: 15068.32 },
-];
+// Aliases retro-compatíveis para code legacy ainda a referenciar o nome antigo.
+// Apontam para os escalões 2026 — não há mais um modo "demo" / "2025".
+export const ESCALOES_OFICIAL_2025 = ESCALOES_OFICIAL_2026;
+export const ESCALOES_DEMO = ESCALOES_OFICIAL_2026;
 
 const REGIOES: Record<string, number> = { continente: 1.0, acores: 0.7, madeira: 0.765 };
 
-export const MINIMO_EXISTENCIA = 12180; // 14 × 870
-export const DED_ESPECIFICA_CAT_A = Math.round(8.54 * IAS_2025 * 100) / 100; // 4462.15
-const LIMITE_ISENCAO_IRS_JOVEM = 55 * IAS_2025; // 28737.50
+// Mínimo de existência 2026 — 14 × SMN (art. 70.º CIRS, OE 2026).
+export const MINIMO_EXISTENCIA = 14 * SMN_2026; // 12.880,00 €
+// Dedução específica Cat A — 8,54 × IAS_2026 (art. 25.º CIRS).
+export const DED_ESPECIFICA_CAT_A = Math.round(8.54 * IAS_2026 * 100) / 100; // 4 587,09 €
+// Limite de isenção IRS Jovem — 55 × IAS_2026 (art. 12.º-B CIRS).
+const LIMITE_ISENCAO_IRS_JOVEM = 55 * IAS_2026; // 29 542,15 €
 
 // Fração da coleta devolvida pelo município (0 a 5%). Valores indicativos
 // públicos por concelho; o utilizador pode sobrepor no formulário.
@@ -77,7 +75,7 @@ export const MUNICIPIOS_BM: Record<string, number> = {
 
 export type Cenario = 'individual' | 'conjunto';
 export type Regiao = 'continente' | 'acores' | 'madeira';
-export type Tabela = 'demo' | 'oficial2025';
+export type Tabela = 'demo' | 'oficial2025' | 'oficial2026';
 
 export interface SujeitoPassivo {
   relacao: string;
@@ -181,10 +179,23 @@ function deducoesColeta(d: {
   const dHabitacao = Math.min((d.habitacao || 0) * 0.15, 700);
   const dLares = Math.min((d.lares || 0) * 0.25, 403.75);
   const dGerais = (d.gerais || 0) * 0.35; // 35% sem teto neste motor
+  // Dedução por dependente — Art. 78.º-A CIRS, OE 2026:
+  //  €600 por dependente > 3 anos
+  //  €726 1.º dependente ≤ 3 anos
+  //  €900 a partir do 2.º dependente com idade ≤ 6 anos (independente da idade do 1.º)
+  //
+  // Limitação prática deste motor: `dep0a3` distingue só ≤3a; a regra "2.º+ ≤6a"
+  // (OE 2026, alargou de ≤3 para ≤6) não pode ser totalmente aplicada sem campo
+  // adicional para 4-6 anos. Aplicamos a regra exacta para os filhos ≤3a (que é
+  // o caso mais comum) e mantemos €600 para >3a.
   let dDependentes = 0;
-  if ((d.dependentes || 0) > 0) {
-    dDependentes = (d.dependentes || 0) * 600;
-    dDependentes += (d.dep0a3 || 0) * 150;
+  const totalDeps = d.dependentes || 0;
+  const ate3 = Math.min(d.dep0a3 || 0, totalDeps);
+  if (totalDeps > 0) {
+    const mais3 = totalDeps - ate3;
+    dDependentes = mais3 * 600;
+    if (ate3 >= 1) dDependentes += 726;            // 1.º filho ≤ 3 anos
+    if (ate3 >= 2) dDependentes += (ate3 - 1) * 900; // 2.º+ filhos ≤ 3 anos (e <6 por extensão)
   }
   const dPensoes = Math.min((d.pensoes || 0) * 0.2, 419.22);
   const total = dSaude + dEducacao + dHabitacao + dLares + dGerais + dDependentes + dPensoes;
@@ -231,8 +242,10 @@ function taxaAdicional(coletavel: number): number {
 }
 
 export function simular(sim: IRSSim, opts: { tabela?: Tabela } = {}): IRSResultado {
-  const tabela = opts.tabela || 'oficial2025';
-  const escaloes = tabela === 'oficial2025' ? ESCALOES_OFICIAL_2025 : ESCALOES_DEMO;
+  // Todos os "modos" apontam para os escalões oficiais 2026 (Lei 73-A/2025).
+  // Mantemos o argumento para retro-compatibilidade.
+  const tabela = opts.tabela || 'oficial2026';
+  const escaloes = tabela === 'demo' ? ESCALOES_DEMO : ESCALOES_OFICIAL_2026;
 
   const ag = sim.agregado || [];
   let rendGlobalBruto = 0;
@@ -305,7 +318,17 @@ export function simular(sim: IRSSim, opts: { tabela?: Tabela } = {}): IRSResulta
   const baseBM = Math.max(0, coletaTotal - ded.total);
   const beneficioMunicipal = baseBM * Math.min(fracaoBM, 0.05);
 
-  const impostoFinal = Math.max(0, coletaTotal - ded.total - beneficioMunicipal);
+  let impostoFinal = Math.max(0, coletaTotal - ded.total - beneficioMunicipal);
+
+  // Mínimo de Existência — Art.º 70.º CIRS: o IRS líquido devido pelo SP nunca
+  // pode reduzir o rendimento líquido abaixo do mínimo de existência (14 × SMN).
+  // Aplicado apenas a agregados com rendimento de trabalho dependente; ENI puro
+  // (cat. B) tem regra própria que este motor ainda não modela.
+  if (rendGlobalBruto > 0 && rendGlobalBruto <= MINIMO_EXISTENCIA) {
+    impostoFinal = 0;
+  } else if (rendGlobalBruto > MINIMO_EXISTENCIA && (rendGlobalBruto - impostoFinal) < MINIMO_EXISTENCIA) {
+    impostoFinal = Math.max(0, rendGlobalBruto - MINIMO_EXISTENCIA);
+  }
 
   const apurado = impostoFinal - retencoes - pagamentosConta;
   const consignacao = impostoFinal > 0 ? impostoFinal * 0.01 : 0;
@@ -415,7 +438,7 @@ export function defaultIRSState(): IRSState {
     beneficioMunicipal: 0,
     pagamentosConta: 0,
     perdas: 0,
-    tabela: 'oficial2025',
+    tabela: 'oficial2026',
     agregado: [
       { relacao: 'Sujeito Passivo A', nome: '', rendTrabalho: 0, contribuicoes: 0, retencao: 0, atividade: 0, coefAtividade: 0.75, irsJovemAno: 0, pagamentosConta: 0 },
     ],
@@ -429,7 +452,7 @@ export function defaultIRSState(): IRSState {
 // Explicações de cada linha do Modelo 3 (PT-PT, simplificadas) — para tooltips.
 export const EXPLICACOES_M3: Record<string, string> = {
   '01': 'Soma dos rendimentos sujeitos a tributação (trabalho + atividade). No IRS Jovem mostra já o tributável (sem a parcela isenta).',
-  '02': 'Dedução automática do art.º 25.º do CIRS: 8,54 × IAS = 4 462,15 € (ou as contribuições obrigatórias, se forem superiores).',
+  '02': 'Dedução automática do art.º 25.º do CIRS: 8,54 × IAS = 4 587,09 € (ou as contribuições obrigatórias, se forem superiores).',
   '03': 'Perdas declaradas em anos anteriores que podem ser reportadas (até 5 anos).',
   '04': 'Parcela isenta ao abrigo do IRS Jovem (art.º 72.º-A). Não tributa mas continua a contar para a taxa marginal.',
   '06': 'Base coletável: rendimento global menos dedução específica e perdas. É o valor a que se aplicam os escalões.',

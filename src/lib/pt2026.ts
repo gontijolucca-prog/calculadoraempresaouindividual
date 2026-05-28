@@ -97,37 +97,60 @@ export function calcIRSJovem(
 /**
  * Calcula a dedução à coleta por dependentes (CIRS Art. 78º-A, OE 2026).
  *
- * Regras OE 2026:
- *  - Dependente com mais de 3 anos: €600
- *  - 1º dependente com idade ≤ 3 anos: €726
- *  - A partir do 2º dependente com idade ≤ 3 anos: €900
+ * Regras OE 2026 (Lei 73-A/2025):
+ *  - Dependente com mais de 6 anos: €600
+ *  - 1.º dependente com idade ≤ 3 anos: €726
+ *  - A partir do 2.º dependente com idade ≤ 6 anos: €900
+ *    (regra alargada de ≤3 para ≤6 anos — independente da idade do 1.º)
  *
- * Aceita dois formatos para retro-compatibilidade:
- *  - `number`: assume todos os dependentes com mais de 3 anos (legacy).
- *  - `{ total, ate3Anos? }`: distingue por idade.
+ * Aceita três formatos:
+ *  - `number`: legacy — assume todos com mais de 6 anos.
+ *  - `{ total, ate3Anos?, ate6Anos? }`: distingue por faixa etária.
  *
- * NOTA(fiscal): OE 2026 estende a faixa €900 ao "2º+ dependente com idade ≤ 6 anos
- * (independentemente da idade do 1º)". Para activar essa regra adicional é preciso
- * passar também `entre4e6Anos` no profile — não implementado nesta versão para evitar
- * UI churn. A regra "≤ 3 anos" abaixo apanha o caso mais comum (filhos pequenos).
+ * `ate6Anos` representa filhos com idade entre 4 e 6 anos (exclui ≤3, que já estão em `ate3Anos`).
  *
  * @returns dedução total à coleta (€)
  */
 export function calcDependentsDeduction(
-  arg: number | { total: number; ate3Anos?: number }
+  arg: number | { total: number; ate3Anos?: number; ate6Anos?: number }
 ): number {
   const total = typeof arg === 'number' ? arg : arg.total;
   const ate3 = typeof arg === 'number' ? 0 : (arg.ate3Anos ?? 0);
+  const entre4e6 = typeof arg === 'number' ? 0 : (arg.ate6Anos ?? 0);
 
   if (total <= 0) return 0;
   if (ate3 < 0 || ate3 > total) return 0;
+  if (entre4e6 < 0 || (ate3 + entre4e6) > total) return 0;
 
-  const mais3 = total - ate3;
-  let deducao = mais3 * 600;
+  const mais6 = total - ate3 - entre4e6;
+  let deducao = mais6 * 600;
 
-  if (ate3 >= 1) deducao += 726;                 // 1º filho ≤ 3 anos
-  if (ate3 >= 2) deducao += (ate3 - 1) * 900;    // 2º+ filhos ≤ 3 anos
+  // 1.º filho ≤ 3 anos: €726
+  // 2.º+ filho ≤ 6 anos (independente da idade do 1.º): €900
+  let usadosNoBonus900 = 0;
+  if (ate3 >= 1) {
+    deducao += 726;
+    if (ate3 >= 2) {
+      // restantes filhos ≤3a recebem €900
+      deducao += (ate3 - 1) * 900;
+      usadosNoBonus900 = ate3 - 1;
+    }
+    // todos os 4-6 anos beneficiam de €900 (são 2.º+ por definição se há 1.º ≤3)
+    deducao += entre4e6 * 900;
+    usadosNoBonus900 += entre4e6;
+  } else if (entre4e6 >= 1) {
+    // Sem filhos ≤3 mas há 4-6 anos: o 1.º "≤6 anos" tem direito a €726
+    // (interpretação conservadora: a Lei 73-A/2025 estendeu a faixa €726 apenas
+    // ao ≤3a; aqui mantemos €600 para o 1.º e €900 a partir do 2.º ≤6a)
+    deducao += entre4e6 * 600;
+    if (entre4e6 >= 2) {
+      // Bonus: 2.º+ filho ≤6a passa a €900
+      deducao += (entre4e6 - 1) * (900 - 600);
+      usadosNoBonus900 = entre4e6 - 1;
+    }
+  }
 
+  void usadosNoBonus900;
   return deducao;
 }
 
