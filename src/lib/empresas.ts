@@ -12,6 +12,18 @@ import { loadFromStorage, saveToStorage } from './storage';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
+/** Uma simulação guardada no histórico de um cliente (torna os simuladores
+ *  "não descartáveis"). `state` é o snapshot do estado do simulador (permite
+ *  reabrir/restaurar); `resumo` é a frase-resultado para a lista. */
+export interface SimulationRecord {
+  id: string;
+  tipo: string;        // chave da view: 'tax','salario','vehicle','ticket','selfss','imt','irs','previsa','imoveis','diagnostico'
+  label: string;       // nome legível, ex. "Simulador Fiscal"
+  createdAt: number;
+  resumo: string;      // resultado numa linha, ex. "LDA poupa 4.200 €/ano"
+  state: unknown;      // snapshot do estado do simulador
+}
+
 export interface EmpresaRecord {
   id: string;
   nome: string;
@@ -21,13 +33,30 @@ export interface EmpresaRecord {
   profile: ClientProfile;
   saftFileName?: string;
   saftImportedAt?: number;
+  saftXml?: string;                 // SAF-T importado em bruto (para re-exportar)
+  simulacoes?: SimulationRecord[];  // histórico de simulações deste cliente
 }
 
 const REGISTRY_KEY = 'empresas';
 const CURRENT_KEY = 'currentEmpresaId';
+// Relógio do registry (last-write-wins ao nível do documento). Qualquer mutação
+// local — incluindo ELIMINAR — avança este stamp; a sincronização compara-o com
+// o stamp do Firestore para decidir quem vence. É isto que faz uma eliminação
+// "pegar": a lista mais recente substitui a outra por inteiro, em vez de se
+// fazer união por id (que nunca conseguia representar uma remoção → "Hydra").
+const STAMP_KEY = 'empresasUpdatedAt';
 
 export function newId(): string {
   return 'emp_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+}
+
+export function getEmpresasStamp(): number {
+  const n = loadFromStorage<number>(STAMP_KEY, 0);
+  return typeof n === 'number' && Number.isFinite(n) ? n : 0;
+}
+
+function setEmpresasStamp(n: number): void {
+  saveToStorage(STAMP_KEY, n);
 }
 
 export function listEmpresas(): EmpresaRecord[] {
@@ -35,8 +64,21 @@ export function listEmpresas(): EmpresaRecord[] {
   return Array.isArray(list) ? list : [];
 }
 
+// Mutação local: grava a lista E avança o relógio do registry. O stamp é
+// MONOTÓNICO — `max(agora, último+1)` — para que qualquer edição local fique
+// estritamente acima de qualquer stamp já visto (incluindo um adoptado do
+// Firestore). Isto fecha dois buracos: (a) editar no mesmo milissegundo em que
+// se adoptou o remoto, e (b) relógios dessincronizados entre dispositivos.
 export function saveEmpresas(list: EmpresaRecord[]): void {
   saveToStorage(REGISTRY_KEY, list);
+  setEmpresasStamp(Math.max(Date.now(), getEmpresasStamp() + 1));
+}
+
+// Adopta uma lista vinda do Firestore SEM avançar o relógio — fica com o stamp
+// remoto, para que sincronizações seguintes não pensem que o local é mais novo.
+function adoptRemoteEmpresas(list: EmpresaRecord[], remoteStamp: number): void {
+  saveToStorage(REGISTRY_KEY, list);
+  setEmpresasStamp(remoteStamp);
 }
 
 export function getEmpresa(id: string): EmpresaRecord | undefined {
@@ -90,6 +132,53 @@ export function syncProfileIntoEmpresa(id: string, profile: ClientProfile): Empr
   return upsertEmpresa(updated);
 }
 
+// ─── Histórico de simulações por cliente ─────────────────────────────────────
+
+export function newSimId(): string {
+  return 'sim_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+}
+
+export function listSimulacoes(empresaId: string): SimulationRecord[] {
+  const emp = getEmpresa(empresaId);
+  const list = emp?.simulacoes;
+  return Array.isArray(list) ? [...list].sort((a, b) => b.createdAt - a.createdAt) : [];
+}
+
+/** Guarda uma simulação no histórico do cliente. Devolve o registo criado (ou
+ *  null se a empresa não existir). Prepende — mais recentes primeiro. */
+export function addSimulacao(
+  empresaId: string,
+  sim: { tipo: string; label: string; resumo: string; state: unknown },
+): SimulationRecord | null {
+  const emp = getEmpresa(empresaId);
+  if (!emp) return null;
+  const record: SimulationRecord = {
+    id: newSimId(),
+    tipo: sim.tipo,
+    label: sim.label,
+    resumo: sim.resumo,
+    state: sim.state,
+    createdAt: Date.now(),
+  };
+  const next: EmpresaRecord = {
+    ...emp,
+    simulacoes: [record, ...(emp.simulacoes ?? [])],
+    updatedAt: Date.now(),
+  };
+  upsertEmpresa(next);
+  return record;
+}
+
+export function deleteSimulacao(empresaId: string, simId: string): void {
+  const emp = getEmpresa(empresaId);
+  if (!emp || !emp.simulacoes) return;
+  upsertEmpresa({
+    ...emp,
+    simulacoes: emp.simulacoes.filter(s => s.id !== simId),
+    updatedAt: Date.now(),
+  });
+}
+
 // ─── Sincronização com Firestore (persistência permanente entre dispositivos) ────
 //
 // Estratégia: a app é single-tenant por escritório de contabilidade. Usamos o
@@ -107,12 +196,19 @@ export function getOfficeId(officeNif?: string): string {
   return /^\d{9}$/.test(nif) ? nif : 'default';
 }
 
-export async function saveEmpresasToFirestore(officeNif: string | undefined, list: EmpresaRecord[]): Promise<void> {
+export async function saveEmpresasToFirestore(
+  officeNif: string | undefined,
+  list: EmpresaRecord[],
+  stamp?: number,
+): Promise<void> {
   const officeId = getOfficeId(officeNif);
   try {
     await setDoc(doc(db, FIRESTORE_COLLECTION, officeId), {
       list,
-      updatedAt: Date.now(),
+      // Propaga o relógio do registry local. Sem isto, cada escrita levava
+      // updatedAt=now e a sincronização nunca distinguia uma eliminação de
+      // um estado mais antigo legítimo.
+      updatedAt: stamp ?? getEmpresasStamp() ?? Date.now(),
     });
   } catch (err) {
     // Falha silenciosa — localStorage continua a ter os dados.
@@ -120,14 +216,17 @@ export async function saveEmpresasToFirestore(officeNif: string | undefined, lis
   }
 }
 
-export async function loadEmpresasFromFirestore(officeNif: string | undefined): Promise<EmpresaRecord[] | null> {
+export async function loadEmpresasFromFirestore(
+  officeNif: string | undefined,
+): Promise<{ list: EmpresaRecord[]; updatedAt: number } | null> {
   const officeId = getOfficeId(officeNif);
   try {
     const snap = await getDoc(doc(db, FIRESTORE_COLLECTION, officeId));
     if (!snap.exists()) return null;
     const data = snap.data();
     if (!Array.isArray(data?.list)) return null;
-    return data.list as EmpresaRecord[];
+    const updatedAt = typeof data?.updatedAt === 'number' ? data.updatedAt : 0;
+    return { list: data.list as EmpresaRecord[], updatedAt };
   } catch (err) {
     console.warn('[empresas] firestore load falhou:', err);
     return null;
@@ -135,28 +234,48 @@ export async function loadEmpresasFromFirestore(officeNif: string | undefined): 
 }
 
 /**
- * Sincroniza Firestore → localStorage no arranque da app.
- * Estratégia merge: Firestore wins por id+updatedAt; novos items do
- * localStorage que não existam no Firestore são adicionados ao registry.
+ * Sincroniza Firestore ↔ localStorage. Last-write-wins ao nível do DOCUMENTO,
+ * usando o relógio do registry (`empresasUpdatedAt`):
+ *
+ *   • remoto mais recente  → adopta a lista remota (suporta edições/eliminações
+ *                            feitas noutro dispositivo);
+ *   • local mais recente   → empurra a lista local para a cloud (faz a
+ *                            ELIMINAÇÃO local vencer — mata o bug "Hydra", em
+ *                            que a união por id ressuscitava empresas apagadas);
+ *   • empate               → já estão sincronizados, não faz nada.
+ *
+ * Trade-off assumido: é LWW de documento inteiro, não merge por campo. Num
+ * cenário multi-dispositivo com edições verdadeiramente concorrentes, o lado
+ * mais recente sobrepõe-se ao outro. Para um escritório single-user é o
+ * comportamento correto e previsível.
  */
 export async function syncEmpresasFromFirestore(officeNif: string | undefined): Promise<EmpresaRecord[]> {
   const remote = await loadEmpresasFromFirestore(officeNif);
   const local = listEmpresas();
+  const localStamp = getEmpresasStamp();
+
   if (!remote) {
     // Primeira vez nesta firestore — promove o localStorage para a cloud.
-    if (local.length > 0) await saveEmpresasToFirestore(officeNif, local);
+    if (local.length > 0) await saveEmpresasToFirestore(officeNif, local, localStamp || Date.now());
     return local;
   }
-  // Merge by id, mais recente updatedAt vence.
-  const byId = new Map<string, EmpresaRecord>();
-  for (const e of remote) byId.set(e.id, e);
-  for (const e of local) {
-    const existing = byId.get(e.id);
-    if (!existing || (e.updatedAt ?? 0) > (existing.updatedAt ?? 0)) byId.set(e.id, e);
+
+  if (remote.updatedAt > localStamp) {
+    // Remoto vence → adopta a lista remota por inteiro.
+    const deduped = dedupeByNif(remote.list);
+    adoptRemoteEmpresas(deduped, remote.updatedAt);
+    return deduped;
   }
-  const merged = dedupeByNif(Array.from(byId.values()));
-  saveEmpresas(merged);
-  return merged;
+
+  // Local mais recente (ou igual). Se for estritamente mais recente, propaga
+  // para a cloud — é assim que uma eliminação local "pega" mesmo que o push
+  // imediato do delete tenha falhado silenciosamente.
+  const deduped = dedupeByNif(local);
+  if (deduped.length !== local.length) saveEmpresas(deduped);
+  if (localStamp > remote.updatedAt) {
+    await saveEmpresasToFirestore(officeNif, deduped, getEmpresasStamp() || Date.now());
+  }
+  return deduped;
 }
 
 /**

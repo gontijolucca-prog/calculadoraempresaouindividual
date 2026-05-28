@@ -508,6 +508,16 @@ function AppContent() {
           setPreviSaState(prev => ({ ...prev, ...result.previsa }));
         }
 
+        // Guarda o SAF-T em bruto na empresa actual para poder re-exportá-lo
+        // depois. Usa o id da storage (o state pode estar stale neste callback
+        // assíncrono do FileReader). syncProfileIntoEmpresa espalha ...emp, por
+        // isso o saftXml sobrevive às escritas seguintes do perfil.
+        const empId = getCurrentEmpresaId();
+        if (empId) {
+          const emp = getEmpresa(empId);
+          if (emp) upsertEmpresa({ ...emp, saftXml: text, saftFileName: file.name, saftImportedAt: Date.now() });
+        }
+
         setSaftModal({
           open: true,
           filled: result.filled,

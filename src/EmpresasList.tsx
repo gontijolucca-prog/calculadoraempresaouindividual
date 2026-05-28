@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { Plus, Building2, FileUp, Trash2, ChevronRight, Search, FileText, Pencil, X } from 'lucide-react';
+import { Plus, Building2, FileUp, Trash2, ChevronRight, Search, FileText, Pencil, X, Download } from 'lucide-react';
 import {
   listEmpresas,
   setCurrentEmpresaId,
@@ -329,6 +329,27 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, onOpen, onUploadSaft, on
           >
             <FileUp className="w-4 h-4" />
           </button>
+          {emp.saftXml && (
+            <button
+              type="button"
+              onClick={() => {
+                const blob = new Blob([emp.saftXml as string], { type: 'application/xml' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = emp.saftFileName || `SAFT_${(emp.nif || emp.nome || emp.id).replace(/\s+/g, '_')}.xml`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+              }}
+              title="Exportar (descarregar) o SAF-T deste cliente"
+              className="p-2 rounded-[8px] text-[#6B7280] hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+              aria-label={`Exportar SAF-T de ${displayNome}`}
+            >
+              <Download className="w-4 h-4" />
+            </button>
+          )}
           <button
             type="button"
             onClick={onAskDelete}
