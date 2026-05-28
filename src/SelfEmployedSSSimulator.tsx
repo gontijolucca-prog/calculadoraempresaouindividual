@@ -36,13 +36,13 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
     return null;
   }, [income, tipoRendimento, primeiroAno]);
 
-  const inputClass = "w-full pl-[16px] pr-[16px] py-[12px] bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-[8px] text-[15px] font-[600] text-[#0F172A] focus:border-[#0F172A] transition-all outline-none";
+  const inputClass = "w-full pl-[16px] pr-[16px] py-[12px] bg-[#F5F7FA] border-2 border-[#E2E8F0] rounded-[8px] text-[15px] font-[600] text-[#0F172A] focus:border-[#0F172A] transition-all outline-none";
   const labelClass = "block text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B] mb-[8px]";
 
   const ptEur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(v || 0);
   const ptEurSigned = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', signDisplay: 'exceptZero' }).format(v || 0);
   const { simMode } = useTheme();
-  const outerCls = { split: "overflow-y-auto lg:overflow-hidden lg:h-full lg:grid lg:grid-cols-[400px_1fr] bg-[#F8FAFC] text-[#1E293B]", stacked: "h-full flex flex-col bg-[#F0F4F8] text-[#1E293B] overflow-y-auto", mosaic: "h-full bg-[#F0FDF4] text-[#1E293B] md:grid md:grid-cols-2 gap-4 p-4", compact: "h-full overflow-y-auto bg-white text-[#1E293B]", hero: "h-full flex md:flex-row-reverse overflow-hidden bg-[#F5F5F4] text-[#1E293B]" }[simMode];
+  const outerCls = { split: "overflow-y-auto lg:overflow-hidden lg:h-full lg:grid lg:grid-cols-[400px_1fr] bg-[#F5F7FA] text-[#1E293B]", stacked: "h-full flex flex-col bg-[#F0F4F8] text-[#1E293B] overflow-y-auto", mosaic: "h-full bg-[#F0FDF4] text-[#1E293B] md:grid md:grid-cols-2 gap-4 p-4", compact: "h-full overflow-y-auto bg-white text-[#1E293B]", hero: "h-full flex md:flex-row-reverse overflow-hidden bg-[#F5F5F4] text-[#1E293B]" }[simMode];
   const leftCls = { split: "bg-white border-b border-[#E2E8F0] lg:border-b-0 lg:border-r lg:overflow-y-auto p-4 sm:p-6 lg:p-[40px] flex flex-col gap-5 lg:gap-[32px] lg:h-full", stacked: "bg-white border-b-2 border-[#E2E8F0] p-6 flex flex-col gap-6", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pb-0 w-full", hero: "md:w-[420px] shrink-0 bg-white border-l border-[#E2E8F0] overflow-y-auto p-6 flex flex-col gap-5 h-full" }[simMode];
   const rightCls = { split: "p-4 sm:p-6 lg:p-[40px] lg:overflow-y-auto lg:h-full max-w-7xl mx-auto w-full flex flex-col gap-5 lg:gap-[32px]", stacked: "p-6 flex flex-col gap-6 max-w-7xl mx-auto w-full", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pt-2 w-full border-t border-slate-100", hero: "flex-1 p-6 md:p-[40px] overflow-y-auto flex flex-col gap-5" }[simMode];
 
@@ -164,18 +164,18 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
               <p className="text-[12px] text-[#64748B] font-[500]">Estimativa por mês</p>
             </div>
 
-            <div className="bg-white border-2 border-[#7B98B8] rounded-[24px] p-[24px] md:p-[28px] flex flex-col shadow-sm ring-4 ring-[#7B98B8]/10">
+            <div className="bg-white border-2 border-[#0677FF] rounded-[24px] p-[24px] md:p-[28px] flex flex-col shadow-sm ring-4 ring-[#0677FF]/10">
               <div className="flex items-center gap-[12px] mb-[16px]">
-                <div className="bg-[#FDF2F2] text-[#7B98B8] p-[10px] rounded-[14px]">
+                <div className="bg-[#FDF2F2] text-[#0677FF] p-[10px] rounded-[14px]">
                   <Calendar className="w-[20px] h-[20px]" />
                 </div>
                 <h3 className="text-[15px] font-[700] text-[#0F172A]">Trimestral <Tip>O valor a pagar à Segurança Social de 3 em 3 meses. Pagamentos em janeiro, abril, julho e outubro, até ao dia 20.</Tip></h3>
               </div>
-              <div className="text-[36px] font-[800] text-[#7B98B8] tracking-[-1px] mb-[8px]">
+              <div className="text-[36px] font-[800] text-[#0677FF] tracking-[-1px] mb-[8px]">
                 {ptEur(result.trimestral)}
               </div>
               <p className="text-[12px] text-[#64748B] font-[500]">Valor a pagar cada trimestre</p>
-              <div className="mt-3 text-[11px] bg-[#FDF2F2] text-[#7B98B8] font-[700] rounded-[8px] px-3 py-1.5 text-center">
+              <div className="mt-3 text-[11px] bg-[#FDF2F2] text-[#0677FF] font-[700] rounded-[8px] px-3 py-1.5 text-center">
                 Jan • Abr • Jul • Out (até dia 20)
               </div>
             </div>
@@ -280,7 +280,7 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
             <h2 className="text-[24px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador SS Independente <Tip>SS Independente = Segurança Social para trabalhadores a recibos verdes ou ENI. Diferente dos trabalhadores por conta de outrem: o próprio paga a sua contribuição trimestralmente.</Tip></h2>
             <p className="text-[14px] text-[#64748B] font-[500] mt-[4px]">Contribuições de trabalhador independente (ENI). <Tip>ENI = Empresário em Nome Individual. É uma forma de trabalhar por conta própria sem criar uma empresa. Paga IRS em Categoria B e SS como independente.</Tip></p>
           </div>
-          <motion.button onClick={enterFlow} className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#7B98B8] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <motion.button onClick={enterFlow} className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#0677FF] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <ListOrdered className="w-4 h-4" /> Vista simplificada
           </motion.button>
         </div>
@@ -329,7 +329,7 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
             </div>
           </label>
 
-          <div className="p-5 border-2 border-[#E2E8F0] rounded-[16px] bg-[#F8FAFC]">
+          <div className="p-5 border-2 border-[#E2E8F0] rounded-[16px] bg-[#F5F7FA]">
             <h3 className="text-[12px] font-[800] text-[#0F172A] mb-4">REGRAS 2026 (CRCSPSS)</h3>
             <ul className="text-[13px] text-[#64748B] font-[500] leading-relaxed space-y-2">
               <li>• <strong>Serviços:</strong> 70% do rendimento × 21,4%</li>

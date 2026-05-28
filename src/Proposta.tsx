@@ -45,7 +45,7 @@ export default function Proposta({ profile, office, honorarios, servicosIds, onS
     [profile, honorarios, idsAtuais]
   );
 
-  const cor = office.corPrimaria || '#7B98B8';
+  const cor = office.corPrimaria || '#0677FF';
 
   return (
     <div id={printRootId} className="bg-white" style={{ color: '#1E293B' }}>
@@ -55,7 +55,7 @@ export default function Proposta({ profile, office, honorarios, servicosIds, onS
         #${printRootId} .pp-band { height: 6px; background: ${cor}; }
         #${printRootId} table { border-collapse: collapse; width: 100%; }
         #${printRootId} th, #${printRootId} td { padding: 8px 10px; border-bottom: 1px solid #E2E8F0; text-align: left; font-size: 11pt; }
-        #${printRootId} th { font-size: 9pt; text-transform: uppercase; letter-spacing: 1px; color: #64748B; background: #F8FAFC; border-bottom: 2px solid ${cor}; }
+        #${printRootId} th { font-size: 9pt; text-transform: uppercase; letter-spacing: 1px; color: #64748B; background: #F5F7FA; border-bottom: 2px solid ${cor}; }
         @media print {
           body * { visibility: hidden; }
           #${printRootId}, #${printRootId} * { visibility: visible; }
@@ -143,7 +143,7 @@ Os serviços listados abaixo cobrem as obrigações contabilísticas e fiscais c
                 <td style={{ textAlign: 'right', fontWeight: 600 }}>{eur(item.valorMensal)}</td>
               </tr>
             ))}
-            <tr style={{ background: '#F8FAFC' }}>
+            <tr style={{ background: '#F5F7FA' }}>
               <td style={{ fontWeight: 700 }}>Mensalidade (sem IVA)</td>
               <td style={{ textAlign: 'right', fontWeight: 700 }}>{eur(proposta.mensalSemIVA)}</td>
             </tr>

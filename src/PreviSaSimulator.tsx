@@ -256,7 +256,7 @@ function NumInput({ label, value, onChange, help, indent = false, readOnly = fal
         readOnly={readOnly}
         onChange={e => onChange?.(parseFloat(e.target.value) || 0)}
         className={cn(
-          'w-36 text-right text-[13px] font-[600] text-[#0F172A] border border-slate-200 rounded-[8px] px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30 focus:border-[#7B98B8]',
+          'w-36 text-right text-[13px] font-[600] text-[#0F172A] border border-slate-200 rounded-[8px] px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30 focus:border-[#0677FF]',
           readOnly && 'bg-slate-50 text-slate-400 cursor-default',
         )}
         placeholder="0,00"
@@ -277,7 +277,7 @@ function PctInput({ label, value, onChange, help }: {
           type="number" step="0.001" min="0" max="1"
           value={value ? (value * 100).toFixed(3) : ''}
           onChange={e => onChange((parseFloat(e.target.value) || 0) / 100)}
-          className="w-full text-right text-[13px] font-[600] text-[#0F172A] border border-slate-200 rounded-[8px] px-3 py-1.5 pr-6 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30 focus:border-[#7B98B8]"
+          className="w-full text-right text-[13px] font-[600] text-[#0F172A] border border-slate-200 rounded-[8px] px-3 py-1.5 pr-6 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30 focus:border-[#0677FF]"
           placeholder="0,000"
         />
         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">%</span>
@@ -292,11 +292,11 @@ function ResultRow({ label, value, highlight = false, sub = false, positive = fa
   return (
     <div className={cn(
       'flex items-center justify-between py-2 px-3 rounded-[8px]',
-      highlight ? 'bg-[#7B98B8]/8 border border-[#7B98B8]/20' : sub ? 'pl-6' : '',
+      highlight ? 'bg-[#0677FF]/8 border border-[#0677FF]/20' : sub ? 'pl-6' : '',
     )}>
-      <span className={cn('text-[12px] font-[500] text-slate-600', highlight && 'font-[700] text-[#7B98B8]')}>{label}</span>
+      <span className={cn('text-[12px] font-[500] text-slate-600', highlight && 'font-[700] text-[#0677FF]')}>{label}</span>
       <span className={cn('text-[13px] font-[700] tabular-nums',
-        highlight ? 'text-[#7B98B8]' : positive ? 'text-emerald-700' : 'text-[#0F172A]')}>
+        highlight ? 'text-[#0677FF]' : positive ? 'text-emerald-700' : 'text-[#0F172A]')}>
         {typeof value === 'number' ? fmt(value) + ' €' : value}
       </span>
     </div>
@@ -324,11 +324,11 @@ function CalcRow({ label, value, highlight = false, indent = false }: {
   return (
     <div className={cn(
       'flex items-center justify-between py-2 px-3 rounded-[8px]',
-      highlight ? 'bg-[#7B98B8]/8 border border-[#7B98B8]/20' : 'bg-slate-50',
+      highlight ? 'bg-[#0677FF]/8 border border-[#0677FF]/20' : 'bg-slate-50',
       indent && 'ml-4',
     )}>
-      <span className={cn('text-[12px] font-[700]', highlight ? 'text-[#7B98B8]' : 'text-[#0F172A]')}>{label}</span>
-      <span className={cn('text-[13px] font-[800] tabular-nums', highlight ? 'text-[#7B98B8]' : 'text-[#0F172A]')}>{fmt(value)} €</span>
+      <span className={cn('text-[12px] font-[700]', highlight ? 'text-[#0677FF]' : 'text-[#0F172A]')}>{label}</span>
+      <span className={cn('text-[13px] font-[800] tabular-nums', highlight ? 'text-[#0677FF]' : 'text-[#0F172A]')}>{fmt(value)} €</span>
     </div>
   );
 }
@@ -482,7 +482,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
 
   const res = calculate(state);
 
-  const inputClass = 'w-full text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30 focus:border-[#7B98B8]';
+  const inputClass = 'w-full text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30 focus:border-[#0677FF]';
 
   const wrapSet = (setSt: (u: Partial<PreviSaState>) => void) =>
     <K extends keyof PreviSaState>(key: K, value: PreviSaState[K]) =>
@@ -537,11 +537,11 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                   </select>
                 </div>
                 <label className="flex items-center gap-3 cursor-pointer py-1">
-                  <input type="checkbox" checked={st.isPME} onChange={e => s('isPME', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
+                  <input type="checkbox" checked={st.isPME} onChange={e => s('isPME', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
                   <span className="text-[13px] font-[600] text-[#0F172A]">PME — taxa reduzida nos primeiros €50.000</span>
                 </label>
                 <label className="flex items-center gap-3 cursor-pointer py-1">
-                  <input type="checkbox" checked={st.isStartup} onChange={e => s('isStartup', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
+                  <input type="checkbox" checked={st.isStartup} onChange={e => s('isStartup', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
                   <span className="text-[13px] font-[600] text-[#0F172A]">Startup (12,5% em toda a matéria coletável)</span>
                 </label>
                 <NumInput label="Volume de Negócios (€)" value={st.volumeNegocios} onChange={v => s('volumeNegocios', v)} help="Para PEC/PC" />
@@ -564,7 +564,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
             <Section title="Cálculo do RAI (Resultado Antes de Impostos)">
               <div className="py-2">
                 <label className="flex items-center gap-3 cursor-pointer mb-3">
-                  <input type="checkbox" checked={st.useRaiCalc} onChange={e => s('useRaiCalc', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
+                  <input type="checkbox" checked={st.useRaiCalc} onChange={e => s('useRaiCalc', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
                   <span className="text-[13px] font-[600] text-[#0F172A]">Calcular RAI a partir da demonstração de resultados</span>
                 </label>
                 {!st.useRaiCalc && (
@@ -634,7 +634,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <NumInput label="707 — Alteração regime contratos construção (−)" value={st.c707} onChange={v => s('c707', v)} indent />
               <div className="flex items-center gap-3 py-1.5">
                 <label className="flex-1 text-[12px] font-[500] text-slate-600">Ignorar cálculo automático do 708 (usar RAI direto)</label>
-                <input type="checkbox" checked={st.c708_override} onChange={e => s('c708_override', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
+                <input type="checkbox" checked={st.c708_override} onChange={e => s('c708_override', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
               </div>
               <CalcRow label="708 — Base de apuramento" value={stepRes.c708} highlight />
             </Section>
@@ -706,7 +706,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 <span className="font-[700] tabular-nums">{fmt(stepRes.lucroTributavel * (st.limiteMaisPP ? 0.75 : 0.65))} €</span>
               </div>
               <label className="flex items-center gap-3 py-1.5 cursor-pointer">
-                <input type="checkbox" checked={st.limiteMaisPP} onChange={e => s('limiteMaisPP', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
+                <input type="checkbox" checked={st.limiteMaisPP} onChange={e => s('limiteMaisPP', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
                 <span className="text-[12px] font-[500] text-slate-600">Aumentar limite para 75% (perda {'>'} 25% capital próprio)</span>
               </label>
               <CalcRow label="Prejuízos efetivamente deduzidos" value={stepRes.prejuziosEfetivos} />
@@ -747,7 +747,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
           <div className="flex flex-col gap-4">
             <Section title="Tributações Autónomas — Viaturas">
               <label className="flex items-center gap-3 py-1.5 cursor-pointer">
-                <input type="checkbox" checked={st.agravamentoTA} onChange={e => s('agravamentoTA', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
+                <input type="checkbox" checked={st.agravamentoTA} onChange={e => s('agravamentoTA', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
                 <span className="text-[12px] font-[500] text-slate-600">Agravamento +10% (empresa com prejuízo fiscal no período)</span>
               </label>
 
@@ -768,7 +768,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                       <label className="block text-[10px] font-[600] text-slate-400 mb-0.5">Combustível</label>
                       <select value={v.combustivel}
                         onChange={e => updateV(v.id, { combustivel: e.target.value as FuelType })}
-                        className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30">
+                        className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30">
                         <option value="convencional">Convencional / GPL</option>
                         <option value="plug_in">Plug-in híbrido</option>
                         <option value="plug_in_5050">Plug-in 50%/50%</option>
@@ -781,7 +781,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                       <input type="number" value={v.custoHistorico || ''}
                         onChange={e => updateV(v.id, { custoHistorico: parseFloat(e.target.value) || 0 })}
                         placeholder="0,00"
-                        className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30 text-right" />
+                        className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30 text-right" />
                     </div>
                   </div>
                   <div>
@@ -789,17 +789,17 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                     <input type="number" value={v.encargos || ''}
                       onChange={e => updateV(v.id, { encargos: parseFloat(e.target.value) || 0 })}
                       placeholder="0,00"
-                      className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30 text-right" />
+                      className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30 text-right" />
                   </div>
                   <div className="flex justify-between text-[11px] font-[600]">
                     <span className="text-slate-500">TA calculada:</span>
-                    <span className="text-[#7B98B8]">{fmt(calcTAVeiculo(v, st.agravamentoTA))} €</span>
+                    <span className="text-[#0677FF]">{fmt(calcTAVeiculo(v, st.agravamentoTA))} €</span>
                   </div>
                 </div>
               ))}
 
               <button type="button" onClick={addV}
-                className="mt-3 flex items-center gap-2 px-3 py-2 text-[12px] font-[600] text-[#7B98B8] border border-dashed border-[#7B98B8]/40 rounded-[8px] hover:bg-[#7B98B8]/5 transition-colors w-full justify-center">
+                className="mt-3 flex items-center gap-2 px-3 py-2 text-[12px] font-[600] text-[#0677FF] border border-dashed border-[#0677FF]/40 rounded-[8px] hover:bg-[#0677FF]/5 transition-colors w-full justify-center">
                 <Plus className="w-4 h-4" />
                 Adicionar viatura
               </button>
@@ -846,7 +846,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 <label className="flex-1 text-[12px] font-[500] text-slate-600">349 — IRC a outras taxas — base</label>
                 <input type="number" step="0.01" value={st.c349 || ''}
                   onChange={e => s('c349', parseFloat(e.target.value) || 0)}
-                  className="w-36 text-right text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30"
+                  className="w-36 text-right text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30"
                   placeholder="0,00" />
               </div>
               <div className="flex items-center gap-3 py-1.5 pl-4">
@@ -855,7 +855,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                   <input type="number" step="0.1" min="0" max="100"
                     value={st.c349_taxa ? (st.c349_taxa * 100).toFixed(1) : ''}
                     onChange={e => s('c349_taxa', (parseFloat(e.target.value) || 0) / 100)}
-                    className="w-full text-right text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-1.5 pr-6 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30"
+                    className="w-full text-right text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-1.5 pr-6 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30"
                     placeholder="0,0" />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">%</span>
                 </div>
@@ -920,7 +920,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
   const resultsContent = (
     <div className="flex flex-col gap-3 lg:sticky lg:top-6 self-start">
       <div className="bg-white border border-slate-200 rounded-[16px] overflow-hidden">
-        <div className="h-1 bg-gradient-to-r from-[#7B98B8] to-[#b83030]" />
+        <div className="h-1 bg-gradient-to-r from-[#0677FF] to-[#b83030]" />
         <div className="p-4">
           <p className="text-[11px] font-[700] uppercase tracking-[0.5px] text-slate-400 mb-3">Resumo IRC {state.periodo}</p>
           <div className="space-y-0.5">
@@ -1001,7 +1001,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
   }
 
   return (
-    <div className="h-full flex flex-col bg-[#F8FAFC]">
+    <div className="h-full flex flex-col bg-[#F5F7FA]">
       {/* Header */}
       <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-4 shrink-0 flex items-start justify-between gap-4">
         <div>
@@ -1012,7 +1012,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={enterFlow}
-          className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#7B98B8] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all"
+          className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#0677FF] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all"
         >
           <ListOrdered className="w-4 h-4" /> Vista simplificada
         </motion.button>
@@ -1026,7 +1026,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               className={cn(
                 'px-4 py-3 text-[12px] font-[600] border-b-2 transition-colors whitespace-nowrap',
                 tab === t
-                  ? 'border-[#7B98B8] text-[#7B98B8]'
+                  ? 'border-[#0677FF] text-[#0677FF]'
                   : 'border-transparent text-slate-500 hover:text-[#0F172A] hover:border-slate-300',
               )}>
               {t}
@@ -1084,11 +1084,11 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                     </select>
                   </div>
                   <label className="flex items-center gap-3 cursor-pointer py-1">
-                    <input type="checkbox" checked={state.isPME} onChange={e => set('isPME', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
+                    <input type="checkbox" checked={state.isPME} onChange={e => set('isPME', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
                     <span className="text-[13px] font-[600] text-[#0F172A]">PME — taxa reduzida nos primeiros €50.000</span>
                   </label>
                   <label className="flex items-center gap-3 cursor-pointer py-1">
-                    <input type="checkbox" checked={state.isStartup} onChange={e => set('isStartup', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
+                    <input type="checkbox" checked={state.isStartup} onChange={e => set('isStartup', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
                     <span className="text-[13px] font-[600] text-[#0F172A]">Startup (12,5% em toda a matéria coletável)</span>
                   </label>
                   <NumInput label="Volume de Negócios (€)" value={state.volumeNegocios} onChange={v => set('volumeNegocios', v)} help="Para PEC/PC" />
@@ -1102,7 +1102,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <Section title="Cálculo do RAI (Resultado Antes de Impostos)">
                 <div className="py-2">
                   <label className="flex items-center gap-3 cursor-pointer mb-3">
-                    <input type="checkbox" checked={state.useRaiCalc} onChange={e => set('useRaiCalc', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
+                    <input type="checkbox" checked={state.useRaiCalc} onChange={e => set('useRaiCalc', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
                     <span className="text-[13px] font-[600] text-[#0F172A]">Calcular RAI a partir da demonstração de resultados</span>
                   </label>
                   {!state.useRaiCalc && (
@@ -1163,7 +1163,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 <NumInput label="707 — Alteração regime contratos construção (−)" value={state.c707} onChange={v => set('c707', v)} indent />
                 <div className="flex items-center gap-3 py-1.5">
                   <label className="flex-1 text-[12px] font-[500] text-slate-600">Ignorar cálculo automático do 708 (usar RAI direto)</label>
-                  <input type="checkbox" checked={state.c708_override} onChange={e => set('c708_override', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
+                  <input type="checkbox" checked={state.c708_override} onChange={e => set('c708_override', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
                 </div>
                 <CalcRow label="708 — Base de apuramento" value={res.c708} highlight />
               </Section>
@@ -1226,7 +1226,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                   <span className="font-[700] tabular-nums">{fmt(res.lucroTributavel * (state.limiteMaisPP ? 0.75 : 0.65))} €</span>
                 </div>
                 <label className="flex items-center gap-3 py-1.5 cursor-pointer">
-                  <input type="checkbox" checked={state.limiteMaisPP} onChange={e => set('limiteMaisPP', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
+                  <input type="checkbox" checked={state.limiteMaisPP} onChange={e => set('limiteMaisPP', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
                   <span className="text-[12px] font-[500] text-slate-600">Aumentar limite para 75% (perda {'>'} 25% capital próprio)</span>
                 </label>
                 <CalcRow label="Prejuízos efetivamente deduzidos" value={res.prejuziosEfetivos} />
@@ -1244,7 +1244,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
             {tab === 'TA' && (<>
               <Section title="Tributações Autónomas — Viaturas">
                 <label className="flex items-center gap-3 py-1.5 cursor-pointer">
-                  <input type="checkbox" checked={state.agravamentoTA} onChange={e => set('agravamentoTA', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
+                  <input type="checkbox" checked={state.agravamentoTA} onChange={e => set('agravamentoTA', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
                   <span className="text-[12px] font-[500] text-slate-600">Agravamento +10% (empresa com prejuízo fiscal no período)</span>
                 </label>
 
@@ -1265,7 +1265,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                         <label className="block text-[10px] font-[600] text-slate-400 mb-0.5">Combustível</label>
                         <select value={v.combustivel}
                           onChange={e => updateViatura(v.id, { combustivel: e.target.value as FuelType })}
-                          className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30">
+                          className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30">
                           <option value="convencional">Convencional / GPL</option>
                           <option value="plug_in">Plug-in híbrido</option>
                           <option value="plug_in_5050">Plug-in 50%/50%</option>
@@ -1278,7 +1278,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                         <input type="number" value={v.custoHistorico || ''}
                           onChange={e => updateViatura(v.id, { custoHistorico: parseFloat(e.target.value) || 0 })}
                           placeholder="0,00"
-                          className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30 text-right" />
+                          className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30 text-right" />
                       </div>
                     </div>
                     <div>
@@ -1286,17 +1286,17 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                       <input type="number" value={v.encargos || ''}
                         onChange={e => updateViatura(v.id, { encargos: parseFloat(e.target.value) || 0 })}
                         placeholder="0,00"
-                        className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30 text-right" />
+                        className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30 text-right" />
                     </div>
                     <div className="flex justify-between text-[11px] font-[600]">
                       <span className="text-slate-500">TA calculada:</span>
-                      <span className="text-[#7B98B8]">{fmt(calcTAVeiculo(v, state.agravamentoTA))} €</span>
+                      <span className="text-[#0677FF]">{fmt(calcTAVeiculo(v, state.agravamentoTA))} €</span>
                     </div>
                   </div>
                 ))}
 
                 <button type="button" onClick={addViatura}
-                  className="mt-3 flex items-center gap-2 px-3 py-2 text-[12px] font-[600] text-[#7B98B8] border border-dashed border-[#7B98B8]/40 rounded-[8px] hover:bg-[#7B98B8]/5 transition-colors w-full justify-center">
+                  className="mt-3 flex items-center gap-2 px-3 py-2 text-[12px] font-[600] text-[#0677FF] border border-dashed border-[#0677FF]/40 rounded-[8px] hover:bg-[#0677FF]/5 transition-colors w-full justify-center">
                   <Plus className="w-4 h-4" />
                   Adicionar viatura
                 </button>
@@ -1334,7 +1334,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                   <label className="flex-1 text-[12px] font-[500] text-slate-600">349 — IRC a outras taxas — base</label>
                   <input type="number" step="0.01" value={state.c349 || ''}
                     onChange={e => set('c349', parseFloat(e.target.value) || 0)}
-                    className="w-36 text-right text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30"
+                    className="w-36 text-right text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30"
                     placeholder="0,00" />
                 </div>
                 <div className="flex items-center gap-3 py-1.5 pl-4">
@@ -1343,7 +1343,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                     <input type="number" step="0.1" min="0" max="100"
                       value={state.c349_taxa ? (state.c349_taxa * 100).toFixed(1) : ''}
                       onChange={e => set('c349_taxa', (parseFloat(e.target.value) || 0) / 100)}
-                      className="w-full text-right text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-1.5 pr-6 bg-white focus:outline-none focus:ring-2 focus:ring-[#7B98B8]/30"
+                      className="w-full text-right text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-1.5 pr-6 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30"
                       placeholder="0,0" />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">%</span>
                   </div>

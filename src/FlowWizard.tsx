@@ -71,7 +71,7 @@ export function FlowWizard<T>({
       {/* Top progress bar */}
       <div className="shrink-0 w-full h-1.5 bg-[#F1F5F9]">
         <motion.div
-          className="h-full bg-[#7B98B8]"
+          className="h-full bg-[#0677FF]"
           initial={false}
           animate={{ width: `${progress}%` }}
           transition={{ duration: 0.5, ease: PREMIUM_EASE }}
@@ -88,7 +88,7 @@ export function FlowWizard<T>({
         </div>
         <button
           onClick={onClose}
-          className="flex items-center gap-2 px-4 py-2.5 text-[14px] font-[700] text-[#64748B] hover:text-[#0F172A] hover:bg-[#F8FAFC] rounded-[10px] transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 text-[14px] font-[700] text-[#64748B] hover:text-[#0F172A] hover:bg-[#F5F7FA] rounded-[10px] transition-colors"
         >
           <X className="w-4 h-4" />
           Vista detalhada
@@ -158,7 +158,7 @@ export function FlowWizard<T>({
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.96 }}
                         onClick={goBack}
-                        className="flex items-center justify-center gap-2 px-8 py-4 text-[16px] font-[700] text-[#64748B] rounded-[16px] hover:bg-[#F8FAFC] transition-colors"
+                        className="flex items-center justify-center gap-2 px-8 py-4 text-[16px] font-[700] text-[#64748B] rounded-[16px] hover:bg-[#F5F7FA] transition-colors"
                       >
                         <ArrowLeft className="w-5 h-5" />
                         Voltar
@@ -219,7 +219,7 @@ export function FlowWizard<T>({
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.96 }}
                       onClick={() => setCurrentStep(0)}
-                      className="flex items-center justify-center gap-2 px-8 py-4 text-[16px] font-[700] text-[#64748B] rounded-[16px] hover:bg-[#F8FAFC] transition-colors"
+                      className="flex items-center justify-center gap-2 px-8 py-4 text-[16px] font-[700] text-[#64748B] rounded-[16px] hover:bg-[#F5F7FA] transition-colors"
                     >
                       <ArrowLeft className="w-5 h-5" />
                       Refazer

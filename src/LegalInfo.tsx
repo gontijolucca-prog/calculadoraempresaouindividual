@@ -23,7 +23,7 @@ interface Props {
 
 const ptEur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(v);
 
-const SectionHeader = ({ icon: Icon, title, color = '#7B98B8' }: { icon: React.ElementType; title: string; color?: string }) => (
+const SectionHeader = ({ icon: Icon, title, color = '#0677FF' }: { icon: React.ElementType; title: string; color?: string }) => (
   <div className="flex items-center gap-3 mb-5 pb-3 border-b-2" style={{ borderColor: color }}>
     <div className="p-2 rounded-[10px]" style={{ backgroundColor: `${color}15` }}>
       <Icon className="w-5 h-5" style={{ color }} />
@@ -44,7 +44,7 @@ const LegalRow = ({ label, value, note }: { label: string; value: string; note?:
 
 const Article = ({ code, description }: { code: string; description: string }) => (
   <div className="flex gap-3 py-[8px] border-b border-[#F1F5F9] last:border-0">
-    <span className="text-[11px] font-[800] text-[#7B98B8] bg-[#FDF2F2] px-2 py-1 rounded-[6px] h-fit shrink-0 whitespace-nowrap">{code}</span>
+    <span className="text-[11px] font-[800] text-[#0677FF] bg-[#FDF2F2] px-2 py-1 rounded-[6px] h-fit shrink-0 whitespace-nowrap">{code}</span>
     <span className="text-[13px] font-[500] text-[#334155]">{description}</span>
   </div>
 );
@@ -75,7 +75,7 @@ const PriceInput = ({
         step={5}
         value={value}
         onChange={e => onChange(Math.max(0, parseFloat(e.target.value) || 0))}
-        className="w-28 px-3 py-2 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] font-[700] text-[#0F172A] focus:border-[#7B98B8] outline-none"
+        className="w-28 px-3 py-2 bg-[#F5F7FA] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] font-[700] text-[#0F172A] focus:border-[#0677FF] outline-none"
       />
       <span className="text-[12px] text-[#64748B] font-[500]">{suffix}</span>
     </div>
@@ -91,12 +91,12 @@ type LegalSectionEntry = {
 };
 
 const LEGAL_SECTIONS: LegalSectionEntry[] = [
-  { id: 'legal-honorarios', label: 'Honorários',           Icon: Briefcase, color: '#7B98B8' },
+  { id: 'legal-honorarios', label: 'Honorários',           Icon: Briefcase, color: '#0677FF' },
   { id: 'legal-regimes',    label: 'Regimes Contab. & IVA', Icon: Layers,    color: '#334155' },
   { id: 'legal-cae',        label: 'CAE & Art.9 CIVA',     Icon: ClipboardList, color: '#334155', parentId: 'legal-regimes' },
   { id: 'legal-docs',       label: 'Documentos obrig.',    Icon: ClipboardList, color: '#334155', parentId: 'legal-regimes' },
-  { id: 'legal-irs',        label: 'IRS',                  Icon: BookOpen,  color: '#7B98B8' },
-  { id: 'legal-distribuicao', label: 'Salário vs Dividendos', Icon: Banknote, color: '#7B98B8', parentId: 'legal-irs' },
+  { id: 'legal-irs',        label: 'IRS',                  Icon: BookOpen,  color: '#0677FF' },
+  { id: 'legal-distribuicao', label: 'Salário vs Dividendos', Icon: Banknote, color: '#0677FF', parentId: 'legal-irs' },
   { id: 'legal-irc',        label: 'IRC',                  Icon: Scale,     color: '#334155' },
   { id: 'legal-csc',        label: 'Estrutura Societária', Icon: Building,  color: '#334155', parentId: 'legal-irc' },
   { id: 'legal-iva',        label: 'IVA',                  Icon: Scale,     color: '#1D4ED8' },
@@ -165,11 +165,11 @@ function LegalSidebar() {
             className={
               `w-full flex items-center gap-2 ${indent} pr-3 py-1.5 rounded-[8px] text-[12px] font-[600] transition-all text-left border-l-2 ` +
               (isActive
-                ? 'bg-[#FDF2F2] text-[#7B98B8] border-[#7B98B8] font-[700]'
+                ? 'bg-[#FDF2F2] text-[#0677FF] border-[#0677FF] font-[700]'
                 : 'border-transparent text-slate-600 hover:text-[#0F172A] hover:bg-slate-50')
             }
           >
-            <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: isActive ? '#7B98B8' : color }} aria-hidden="true" />
+            <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: isActive ? '#0677FF' : color }} aria-hidden="true" />
             <span className="truncate">{label}</span>
           </button>
         );
@@ -226,12 +226,12 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
       : null;
 
   return (
-    <motion.div className="h-full bg-[#F8FAFC] overflow-y-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}>
+    <motion.div className="h-full bg-[#F5F7FA] overflow-y-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}>
       {/* Header */}
       <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-[#E2E8F0] px-6 md:px-10 py-4 flex items-center gap-4">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-[13px] font-[700] text-[#475569] hover:text-[#7B98B8] transition-colors px-3 py-2 rounded-[8px] hover:bg-[#FDF2F2]"
+          className="flex items-center gap-2 text-[13px] font-[700] text-[#475569] hover:text-[#0677FF] transition-colors px-3 py-2 rounded-[8px] hover:bg-[#FDF2F2]"
         >
           <ArrowLeft size={16} />
           Voltar
@@ -239,7 +239,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
         <div className="h-6 w-px bg-[#E2E8F0]" />
         <div>
           <h1 className="text-[18px] font-[800] text-[#0F172A]">Base Legal & Referências</h1>
-          <p className="text-[11px] font-[600] text-[#7B98B8] uppercase tracking-[1px]">Legislação • Taxas • Limites • OE 2026</p>
+          <p className="text-[11px] font-[600] text-[#0677FF] uppercase tracking-[1px]">Legislação • Taxas • Limites • OE 2026</p>
         </div>
         <div className="ml-auto flex items-center gap-3">
           <span className="text-[11px] font-[700] bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full">
@@ -248,7 +248,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
           {onOpenUpdates && (
             <button
               onClick={onOpenUpdates}
-              className="flex items-center gap-2 text-[13px] font-[700] text-white bg-[#7B98B8] hover:bg-[#5C7A9E] px-4 py-2 rounded-[10px] transition-all active:scale-[0.98] shadow-sm shadow-[#7B98B8]/20"
+              className="flex items-center gap-2 text-[13px] font-[700] text-white bg-[#0677FF] hover:bg-[#0556CC] px-4 py-2 rounded-[10px] transition-all active:scale-[0.98] shadow-sm shadow-[#0677FF]/20"
             >
               <ClipboardList size={15} />
               Checklist
@@ -276,10 +276,10 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
         {/* TABELA DE HONORÁRIOS                                        */}
         {/* ═══════════════════════════════════════════════════════════ */}
         <section id="legal-honorarios" className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0] scroll-mt-24">
-          <div className="flex items-center justify-between mb-5 pb-3 border-b-2 border-[#7B98B8]">
+          <div className="flex items-center justify-between mb-5 pb-3 border-b-2 border-[#0677FF]">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-[10px] bg-[#7B98B815]">
-                <Briefcase className="w-5 h-5 text-[#7B98B8]" />
+              <div className="p-2 rounded-[10px] bg-[#0677FF15]">
+                <Briefcase className="w-5 h-5 text-[#0677FF]" />
               </div>
               <h2 className="text-[18px] font-[800] text-[#0F172A]">Tabela de Honorários</h2>
             </div>
@@ -436,7 +436,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
                     <div className="mb-4">
                       <p className="text-[11px] font-[700] uppercase tracking-[1px] text-[#94A3B8] mb-1">Estimativa para</p>
                       <p className="text-[16px] font-[800]">{clientProfile!.nomeCliente || 'Cliente'}</p>
-                      <span className="inline-block mt-1 text-[11px] font-[700] bg-[#7B98B8] text-white px-2 py-0.5 rounded-full">
+                      <span className="inline-block mt-1 text-[11px] font-[700] bg-[#0677FF] text-white px-2 py-0.5 rounded-full">
                         {estimate.entityLabel}
                       </span>
                     </div>
@@ -494,7 +494,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
                     </p>
                   </div>
                 ) : (
-                  <div className="bg-[#F8FAFC] border-2 border-dashed border-[#E2E8F0] rounded-[20px] p-6 text-center">
+                  <div className="bg-[#F5F7FA] border-2 border-dashed border-[#E2E8F0] rounded-[20px] p-6 text-center">
                     <Briefcase className="w-10 h-10 text-[#CBD5E1] mx-auto mb-3" />
                     <p className="text-[13px] font-[600] text-[#64748B]">Preencha o nome do cliente no Perfil para ver a estimativa de honorários.</p>
                   </div>
@@ -522,13 +522,13 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
             {(() => {
               const isActive = clientProfile?.regimeContabilidade === 'simplificado';
               return (
-                <div className={`rounded-[16px] border-2 p-5 ${isActive ? 'border-[#7B98B8] bg-[#FDF2F2]' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}>
+                <div className={`rounded-[16px] border-2 p-5 ${isActive ? 'border-[#0677FF] bg-[#FDF2F2]' : 'border-[#E2E8F0] bg-[#F5F7FA]'}`}>
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div>
-                      <span className="text-[11px] font-[800] text-[#7B98B8] bg-[#FDF2F2] border border-[#F8B4B4] px-2 py-0.5 rounded-full">Art. 28.º CIRS / Art. 86.º-A CIRC</span>
+                      <span className="text-[11px] font-[800] text-[#0677FF] bg-[#FDF2F2] border border-[#F8B4B4] px-2 py-0.5 rounded-full">Art. 28.º CIRS / Art. 86.º-A CIRC</span>
                       <h4 className="text-[15px] font-[800] text-[#0F172A] mt-2">Regime Simplificado</h4>
                     </div>
-                    {isActive && <span className="shrink-0 text-[10px] font-[800] bg-[#7B98B8] text-white px-2 py-1 rounded-full uppercase">Cliente Atual</span>}
+                    {isActive && <span className="shrink-0 text-[10px] font-[800] bg-[#0677FF] text-white px-2 py-1 rounded-full uppercase">Cliente Atual</span>}
                   </div>
                   <div className="space-y-1.5 text-[13px]">
                     <p className="text-[#475569] font-[500]"><strong className="text-[#0F172A]">Para quem:</strong> ENI (Cat. B) e pequenas sociedades com faturação até <strong>€200.000/ano</strong>.</p>
@@ -536,12 +536,12 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
                     <div className="mt-2 grid grid-cols-2 gap-2">
                       <div className="bg-white rounded-[8px] border border-[#E2E8F0] p-2 text-center">
                         <div className="text-[11px] text-[#94A3B8] font-[600]">Serviços</div>
-                        <div className="text-[18px] font-[800] text-[#7B98B8]">75%</div>
+                        <div className="text-[18px] font-[800] text-[#0677FF]">75%</div>
                         <div className="text-[10px] text-[#94A3B8]">rendimento coletável</div>
                       </div>
                       <div className="bg-white rounded-[8px] border border-[#E2E8F0] p-2 text-center">
                         <div className="text-[11px] text-[#94A3B8] font-[600]">Mercadorias</div>
-                        <div className="text-[18px] font-[800] text-[#7B98B8]">15%</div>
+                        <div className="text-[18px] font-[800] text-[#0677FF]">15%</div>
                         <div className="text-[10px] text-[#94A3B8]">rendimento coletável</div>
                       </div>
                     </div>
@@ -555,7 +555,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
             {(() => {
               const isActive = clientProfile?.regimeContabilidade === 'organizada';
               return (
-                <div className={`rounded-[16px] border-2 p-5 ${isActive ? 'border-[#0F172A] bg-slate-50' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}>
+                <div className={`rounded-[16px] border-2 p-5 ${isActive ? 'border-[#0F172A] bg-slate-50' : 'border-[#E2E8F0] bg-[#F5F7FA]'}`}>
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div>
                       <span className="text-[11px] font-[800] text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">SNC + CIRS/CIRC</span>
@@ -577,7 +577,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
             {(() => {
               const isActive = clientProfile?.regimeContabilidade === 'transparencia_fiscal';
               return (
-                <div className={`rounded-[16px] border-2 p-5 ${isActive ? 'border-purple-500 bg-purple-50' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}>
+                <div className={`rounded-[16px] border-2 p-5 ${isActive ? 'border-purple-500 bg-purple-50' : 'border-[#E2E8F0] bg-[#F5F7FA]'}`}>
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div>
                       <span className="text-[11px] font-[800] text-purple-700 bg-purple-100 border border-purple-200 px-2 py-0.5 rounded-full">Art. 6.º CIRC</span>
@@ -599,7 +599,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
             {(() => {
               const isActive = clientProfile?.regimeContabilidade === 'retgs';
               return (
-                <div className={`rounded-[16px] border-2 p-5 ${isActive ? 'border-blue-500 bg-blue-50' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}>
+                <div className={`rounded-[16px] border-2 p-5 ${isActive ? 'border-blue-500 bg-blue-50' : 'border-[#E2E8F0] bg-[#F5F7FA]'}`}>
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div>
                       <span className="text-[11px] font-[800] text-blue-700 bg-blue-100 border border-blue-200 px-2 py-0.5 rounded-full">Art. 69.º CIRC</span>
@@ -620,7 +620,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
             {(() => {
               const isActive = clientProfile?.regimeContabilidade === 'nao_residente';
               return (
-                <div className={`rounded-[16px] border-2 p-5 col-span-full md:col-span-1 ${isActive ? 'border-amber-500 bg-amber-50' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}>
+                <div className={`rounded-[16px] border-2 p-5 col-span-full md:col-span-1 ${isActive ? 'border-amber-500 bg-amber-50' : 'border-[#E2E8F0] bg-[#F5F7FA]'}`}>
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div>
                       <span className="text-[11px] font-[800] text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">CIRS/CIRC + CDT</span>
@@ -646,7 +646,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
             {(() => {
               const isActive = clientProfile?.regimeIva === 'isento';
               return (
-                <div className={`rounded-[16px] border-2 p-4 ${isActive ? 'border-emerald-500 bg-emerald-50' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}>
+                <div className={`rounded-[16px] border-2 p-4 ${isActive ? 'border-emerald-500 bg-emerald-50' : 'border-[#E2E8F0] bg-[#F5F7FA]'}`}>
                   <span className="text-[11px] font-[800] text-emerald-700 bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-full">Art. 53.º CIVA</span>
                   <h4 className="text-[14px] font-[800] text-[#0F172A] mt-2 mb-2 flex items-center justify-between">
                     Isenção de IVA
@@ -662,7 +662,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
             {(() => {
               const isActive = clientProfile?.regimeIva === 'normal_trimestral';
               return (
-                <div className={`rounded-[16px] border-2 p-4 ${isActive ? 'border-[#0F172A] bg-slate-50' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}>
+                <div className={`rounded-[16px] border-2 p-4 ${isActive ? 'border-[#0F172A] bg-slate-50' : 'border-[#E2E8F0] bg-[#F5F7FA]'}`}>
                   <span className="text-[11px] font-[800] text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">CIVA Normal</span>
                   <h4 className="text-[14px] font-[800] text-[#0F172A] mt-2 mb-2 flex items-center justify-between">
                     Regime Normal Trimestral
@@ -678,11 +678,11 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
             {(() => {
               const isActive = clientProfile?.regimeIva === 'normal_mensal';
               return (
-                <div className={`rounded-[16px] border-2 p-4 ${isActive ? 'border-[#7B98B8] bg-[#FDF2F2]' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}>
-                  <span className="text-[11px] font-[800] text-[#7B98B8] bg-[#FDF2F2] border border-[#F8B4B4] px-2 py-0.5 rounded-full">CIVA Normal</span>
+                <div className={`rounded-[16px] border-2 p-4 ${isActive ? 'border-[#0677FF] bg-[#FDF2F2]' : 'border-[#E2E8F0] bg-[#F5F7FA]'}`}>
+                  <span className="text-[11px] font-[800] text-[#0677FF] bg-[#FDF2F2] border border-[#F8B4B4] px-2 py-0.5 rounded-full">CIVA Normal</span>
                   <h4 className="text-[14px] font-[800] text-[#0F172A] mt-2 mb-2 flex items-center justify-between">
                     Regime Normal Mensal
-                    {isActive && <span className="text-[10px] font-[800] bg-[#7B98B8] text-white px-2 py-0.5 rounded-full">Cliente Atual</span>}
+                    {isActive && <span className="text-[10px] font-[800] bg-[#0677FF] text-white px-2 py-0.5 rounded-full">Cliente Atual</span>}
                   </h4>
                   <p className="text-[12px] text-[#475569] font-[500] mb-2">Declaração periódica mensal (12×/ano). Obrigatório para faturação ≥ €650.000/ano.</p>
                   <p className="text-[11px] text-[#94A3B8] font-[500]">Entrega até ao dia 20 do 2.º mês seguinte. Mais obrigações mas cashback de IVA mais rápido.</p>
@@ -694,7 +694,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
             {(() => {
               const isActive = clientProfile?.regimeIva === 'pequenos_retalhistas';
               return (
-                <div className={`rounded-[16px] border-2 p-4 ${isActive ? 'border-amber-500 bg-amber-50' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}>
+                <div className={`rounded-[16px] border-2 p-4 ${isActive ? 'border-amber-500 bg-amber-50' : 'border-[#E2E8F0] bg-[#F5F7FA]'}`}>
                   <span className="text-[11px] font-[800] text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">Art. 60.º-A CIVA</span>
                   <h4 className="text-[14px] font-[800] text-[#0F172A] mt-2 mb-2 flex items-center justify-between">
                     Regime dos Pequenos Retalhistas
@@ -707,7 +707,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
             })()}
 
             {/* Isenção específica */}
-            <div className="rounded-[16px] border-2 border-[#E2E8F0] bg-[#F8FAFC] p-4">
+            <div className="rounded-[16px] border-2 border-[#E2E8F0] bg-[#F5F7FA] p-4">
               <span className="text-[11px] font-[800] text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">Art. 9.º CIVA</span>
               <h4 className="text-[14px] font-[800] text-[#0F172A] mt-2 mb-2">Isenção por Natureza da Atividade</h4>
               <p className="text-[12px] text-[#475569] font-[500] mb-2">Certas atividades estão isentas por natureza: saúde, educação, seguros, serviços financeiros, etc.</p>
@@ -736,7 +736,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
                   ['Transparência Fiscal', 'Obrigatório', 'Trimestral ou Mensal', 'Mod. 22 + Mod. 3', 'Sim (IES)'],
                   ['RETGS', 'Obrigatório', 'Trimestral ou Mensal', 'Consolidado', 'Sim (consolidado)'],
                 ].map(([regime, occ, iva, imp, ies], i) => (
-                  <tr key={i} className={i % 2 === 0 ? 'bg-[#F8FAFC]' : 'bg-white'}>
+                  <tr key={i} className={i % 2 === 0 ? 'bg-[#F5F7FA]' : 'bg-white'}>
                     <td className="px-4 py-2 font-[700] text-[#0F172A]">{regime}</td>
                     <td className="px-3 py-2 text-center">{occ}</td>
                     <td className="px-3 py-2 text-center">{iva}</td>
@@ -816,13 +816,13 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
                   </thead>
                   <tbody>
                     {IRS_BRACKETS_2026.map((b, i) => (
-                      <tr key={i} className={i % 2 === 0 ? 'bg-[#F8FAFC]' : 'bg-white'}>
+                      <tr key={i} className={i % 2 === 0 ? 'bg-[#F5F7FA]' : 'bg-white'}>
                         <td className="px-4 py-2 font-[500]">
                           {i === 0 ? `Até ${ptEur(b.limit)}` :
                            b.limit === Infinity ? `Acima de ${ptEur(IRS_BRACKETS_2026[i-1].limit)}` :
                            `${ptEur(IRS_BRACKETS_2026[i-1].limit)} – ${ptEur(b.limit)}`}
                         </td>
-                        <td className="px-4 py-2 text-right font-[700] text-[#7B98B8]">{(b.rate * 100).toFixed(1)}%</td>
+                        <td className="px-4 py-2 text-right font-[700] text-[#0677FF]">{(b.rate * 100).toFixed(1)}%</td>
                         <td className="px-4 py-2 text-right font-mono">{ptEur(b.ded)}</td>
                       </tr>
                     ))}
@@ -846,7 +846,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
                   { ano: '2.º e 3.º anos', taxa: '75%', desc: 'Isenção de 75% do rendimento coletável' },
                   { ano: '4.º e 5.º anos', taxa: '50%', desc: 'Isenção de 50% do rendimento coletável' },
                 ].map(({ ano, taxa, desc }) => (
-                  <div key={ano} className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[12px] p-4 text-center">
+                  <div key={ano} className="bg-[#F5F7FA] border border-[#E2E8F0] rounded-[12px] p-4 text-center">
                     <div className="text-[11px] font-[700] text-[#64748B] uppercase mb-1">{ano}</div>
                     <div className="text-[24px] font-[800] text-blue-600">{taxa}</div>
                     <div className="text-[11px] text-[#64748B] font-[500] mt-1">{desc}</div>
@@ -934,7 +934,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
               <div className="overflow-x-auto">
                 <table className="w-full text-[13px]">
                   <thead>
-                    <tr className="bg-[#7B98B8] text-white">
+                    <tr className="bg-[#0677FF] text-white">
                       <th className="text-left px-4 py-2 rounded-tl-[8px]">Custo Aquisição (s/ IVA)</th>
                       <th className="text-right px-4 py-2">Combustão / Híbrido</th>
                       <th className="text-right px-4 py-2">PHEV Conforme</th>
@@ -1341,7 +1341,7 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
             </div>
 
             {/* Outros custos */}
-            <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[12px] p-4">
+            <div className="bg-[#F5F7FA] border border-[#E2E8F0] rounded-[12px] p-4">
               <h4 className="text-[13px] font-[700] text-[#0F172A] mb-2">Outros Custos de Aquisição (estimativas)</h4>
               <div className="space-y-1 text-[12px] text-[#64748B]">
                 <div>• Escritura notarial: ~0,5% do valor de transação</div>
@@ -1540,64 +1540,64 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
         <section id="legal-fontes" className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0] scroll-mt-24">
           <SectionHeader icon={BookOpen} title="Fontes Web Consultadas (validação OE 2026)" color="#475569" />
           <p className="text-[13px] text-[#475569] mb-5 leading-relaxed">
-            Os valores fiscais hardcoded nos simuladores foram cruzados com as fontes abaixo (Maio 2026). Antes de produção, validar contra a publicação oficial no <a href="https://info.portaldasfinancas.gov.pt" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Portal das Finanças</a> e no <a href="https://dre.pt" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Diário da República (dre.pt)</a>.
+            Os valores fiscais hardcoded nos simuladores foram cruzados com as fontes abaixo (Maio 2026). Antes de produção, validar contra a publicação oficial no <a href="https://info.portaldasfinancas.gov.pt" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Portal das Finanças</a> e no <a href="https://dre.pt" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Diário da República (dre.pt)</a>.
           </p>
 
           <div className="space-y-5">
             <div>
               <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-2">Fontes oficiais</h3>
               <ul className="space-y-1.5 text-[13px] text-[#1E293B]">
-                <li>• <a href="https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/codigos_tributarios/cirs_rep/Pages/irs68.aspx" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Portal das Finanças — Art. 68.º CIRS (escalões IRS)</a></li>
-                <li>• <a href="https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/codigos_tributarios/CIRC_2R/Pages/irc88.aspx" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Portal das Finanças — Art. 88.º CIRC (Tributação Autónoma viaturas)</a></li>
-                <li>• <a href="https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/codigos_tributarios/cimt/Pages/cimt17.aspx" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Portal das Finanças — Art. 17.º CIMT (escalões IMT)</a></li>
-                <li>• <a href="https://info.portaldasfinancas.gov.pt/pt/apoio_contribuinte/questoes_frequentes/Pages/faqs-00053.aspx" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Portal das Finanças — FAQ IRS Jovem</a></li>
-                <li>• <a href="https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/legislacao/Despachos_SEAF/Documents/Despacho-SEAF-2026-01-05-XXV.pdf" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Despacho SEAF 2026 — Tabelas de Retenção na Fonte (Janeiro 2026)</a></li>
-                <li>• <a href="https://www.oe.gov.pt/" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Orçamento do Estado 2026 — Portal oficial do Governo</a></li>
-                <li>• <a href="https://at.madeira.gov.pt/Ficheiros/NL/AFJaneiro2026.pdf" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">AT Madeira — Agenda Fiscal Janeiro 2026 (PDF)</a></li>
+                <li>• <a href="https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/codigos_tributarios/cirs_rep/Pages/irs68.aspx" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Portal das Finanças — Art. 68.º CIRS (escalões IRS)</a></li>
+                <li>• <a href="https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/codigos_tributarios/CIRC_2R/Pages/irc88.aspx" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Portal das Finanças — Art. 88.º CIRC (Tributação Autónoma viaturas)</a></li>
+                <li>• <a href="https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/codigos_tributarios/cimt/Pages/cimt17.aspx" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Portal das Finanças — Art. 17.º CIMT (escalões IMT)</a></li>
+                <li>• <a href="https://info.portaldasfinancas.gov.pt/pt/apoio_contribuinte/questoes_frequentes/Pages/faqs-00053.aspx" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Portal das Finanças — FAQ IRS Jovem</a></li>
+                <li>• <a href="https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/legislacao/Despachos_SEAF/Documents/Despacho-SEAF-2026-01-05-XXV.pdf" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Despacho SEAF 2026 — Tabelas de Retenção na Fonte (Janeiro 2026)</a></li>
+                <li>• <a href="https://www.oe.gov.pt/" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Orçamento do Estado 2026 — Portal oficial do Governo</a></li>
+                <li>• <a href="https://at.madeira.gov.pt/Ficheiros/NL/AFJaneiro2026.pdf" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">AT Madeira — Agenda Fiscal Janeiro 2026 (PDF)</a></li>
               </ul>
             </div>
 
             <div>
               <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-2">Guias profissionais (consultoras)</h3>
               <ul className="space-y-1.5 text-[13px] text-[#1E293B]">
-                <li>• <a href="https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/irs.html" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">PwC Portugal — Guia Fiscal 2026 (IRS)</a></li>
-                <li>• <a href="https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/irc.html" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">PwC Portugal — Guia Fiscal 2026 (IRC)</a></li>
-                <li>• <a href="https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/imt.html" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">PwC Portugal — Guia Fiscal 2026 (IMT)</a></li>
-                <li>• <a href="https://www.pwc.pt/pt/pwcinforfisco/orcamentoestado/irs-e-seguranca-social/regime-de-isencao-para-jovens.html" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">PwC Portugal — IRS Jovem OE 2026</a></li>
-                <li>• <a href="https://www.pwc.pt/pt/pwcinforfisco/orcamento-estado/2026/pwc-lei-orcamento-estado-2026.pdf" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">PwC — Lei OE 2026: análise completa (PDF)</a></li>
-                <li>• <a href="https://www.crowe.com/pt/insights/orcamento-do-estado-para-2026" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Crowe Portugal — Orçamento do Estado 2026</a></li>
-                <li>• <a href="https://www.deloitte.com/pt/pt/services/tax/perspectives/taxlab/potencial-impacto-regulamento-euro-6e-tributacao-autonoma.html" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Deloitte Portugal — Tributação Autónoma Euro 6e</a></li>
-                <li>• <a href="https://www.occ.pt/sites/default/files/public/2025-11/Alt_IRC.pdf" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">OCC — Alteração das Taxas de IRC (Nov 2025, PDF)</a></li>
+                <li>• <a href="https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/irs.html" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">PwC Portugal — Guia Fiscal 2026 (IRS)</a></li>
+                <li>• <a href="https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/irc.html" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">PwC Portugal — Guia Fiscal 2026 (IRC)</a></li>
+                <li>• <a href="https://www.pwc.pt/pt/pwcinforfisco/guia-fiscal/2026/imt.html" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">PwC Portugal — Guia Fiscal 2026 (IMT)</a></li>
+                <li>• <a href="https://www.pwc.pt/pt/pwcinforfisco/orcamentoestado/irs-e-seguranca-social/regime-de-isencao-para-jovens.html" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">PwC Portugal — IRS Jovem OE 2026</a></li>
+                <li>• <a href="https://www.pwc.pt/pt/pwcinforfisco/orcamento-estado/2026/pwc-lei-orcamento-estado-2026.pdf" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">PwC — Lei OE 2026: análise completa (PDF)</a></li>
+                <li>• <a href="https://www.crowe.com/pt/insights/orcamento-do-estado-para-2026" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Crowe Portugal — Orçamento do Estado 2026</a></li>
+                <li>• <a href="https://www.deloitte.com/pt/pt/services/tax/perspectives/taxlab/potencial-impacto-regulamento-euro-6e-tributacao-autonoma.html" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Deloitte Portugal — Tributação Autónoma Euro 6e</a></li>
+                <li>• <a href="https://www.occ.pt/sites/default/files/public/2025-11/Alt_IRC.pdf" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">OCC — Alteração das Taxas de IRC (Nov 2025, PDF)</a></li>
               </ul>
             </div>
 
             <div>
               <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-2">Tabelas e simuladores (validação cruzada)</h3>
               <ul className="space-y-1.5 text-[13px] text-[#1E293B]">
-                <li>• <a href="https://economiafinancas.com/2025/escaloes-irs-2026/" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Economia e Finanças — Tabela escalões IRS 2026</a></li>
-                <li>• <a href="https://contasconnosco.cofidis.pt/impostos/escaloes-irs" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Cofidis (Contas Connosco) — Escalões IRS 2026</a></li>
-                <li>• <a href="https://www.coverflex.com/pt/tabelas-irs" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Coverflex — Tabelas IRS 2026</a></li>
-                <li>• <a href="https://crncontabilidade.pt/blog/escaloes-de-irs-em-2026-tabela-actualizada-e-como-calcular-o-seu-imposto/" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">CRN-Contabilidade — Escalões IRS 2026</a></li>
-                <li>• <a href="https://ricavida.pt/escaloes-irs-2026-tabela-atualizada/" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Rica Vida — Escalões IRS 2026 (retenção)</a></li>
-                <li>• <a href="https://www.pwc.pt/pt/pwcinforfisco/flash/imi-imt-e-selo/imt-novas-tabelas-praticas-imt-vigorar-janeiro-2026.html" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">PwC — Tabelas práticas IMT Janeiro 2026</a></li>
-                <li>• <a href="https://www.coverflex.com/pt/blog/tributacao-autonoma" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Coverflex — Tributação Autónoma 2026</a></li>
-                <li>• <a href="https://www.coverflex.com/pt/blog/irs-jovem" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Coverflex — IRS Jovem 2026</a></li>
+                <li>• <a href="https://economiafinancas.com/2025/escaloes-irs-2026/" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Economia e Finanças — Tabela escalões IRS 2026</a></li>
+                <li>• <a href="https://contasconnosco.cofidis.pt/impostos/escaloes-irs" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Cofidis (Contas Connosco) — Escalões IRS 2026</a></li>
+                <li>• <a href="https://www.coverflex.com/pt/tabelas-irs" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Coverflex — Tabelas IRS 2026</a></li>
+                <li>• <a href="https://crncontabilidade.pt/blog/escaloes-de-irs-em-2026-tabela-actualizada-e-como-calcular-o-seu-imposto/" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">CRN-Contabilidade — Escalões IRS 2026</a></li>
+                <li>• <a href="https://ricavida.pt/escaloes-irs-2026-tabela-atualizada/" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Rica Vida — Escalões IRS 2026 (retenção)</a></li>
+                <li>• <a href="https://www.pwc.pt/pt/pwcinforfisco/flash/imi-imt-e-selo/imt-novas-tabelas-praticas-imt-vigorar-janeiro-2026.html" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">PwC — Tabelas práticas IMT Janeiro 2026</a></li>
+                <li>• <a href="https://www.coverflex.com/pt/blog/tributacao-autonoma" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Coverflex — Tributação Autónoma 2026</a></li>
+                <li>• <a href="https://www.coverflex.com/pt/blog/irs-jovem" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Coverflex — IRS Jovem 2026</a></li>
               </ul>
             </div>
 
             <div>
               <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-2">Imprensa (contexto e cronologia)</h3>
               <ul className="space-y-1.5 text-[13px] text-[#1E293B]">
-                <li>• <a href="https://www.publico.pt/2025/10/09/economia/noticia/irs-governo-confirma-revisao-escaloes-alivio-prometido-julho-chega-2150182" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Público — Revisão escalões IRS confirmada (9 Out 2025)</a></li>
-                <li>• <a href="https://www.publico.pt/2025/10/03/economia/noticia/valores-escaloes-irs-actualizados-351-proximo-ano-2149490" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Público — Escalões IRS sobem 3,51% em 2026</a></li>
-                <li>• <a href="https://eco.sapo.pt/2025/10/09/escaloes-de-irs-sobem-351-e-taxas-descem-entre-2-o-e-5-o-escaloes/" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">ECO — Escalões IRS sobem 3,51% (taxas 2-5 descem)</a></li>
-                <li>• <a href="https://www.jornaldenegocios.pt/economia/impostos/irs/detalhe/escaloes-de-irs-so-sobem-3-51-em-2026-veja-aqui-a-nova-tabela" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Jornal de Negócios — Nova tabela IRS 2026</a></li>
-                <li>• <a href="https://executivedigest.sapo.pt/irs-2026-atencao-pais-filhos-com-estas-idades-deixam-de-dar-direito-a-deducao-fiscal/" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Executive Digest — Dedução dependentes 2026 (€600/€726/€900)</a></li>
-                <li>• <a href="https://fleetmagazine.pt/tributacao-autonoma-2026/" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Fleet Magazine — Tributação Autónoma viaturas 2026</a></li>
-                <li>• <a href="https://caetano.pt/blog/tributacao-autonoma/" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Caetano — Tributação Autónoma viaturas 2026</a></li>
-                <li>• <a href="https://www.tsf.pt/brands-life/artigo/as-novidades-na-tributacao-autonoma-em-2026/18055226" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">TSF — Novidades Tributação Autónoma 2026</a></li>
-                <li>• <a href="https://www.comparaja.pt/financas-pessoais/artigos/deducoes-irs" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">Comparaja — Deduções IRS 2026</a></li>
-                <li>• <a href="https://www.cgd.pt/Site/Saldo-Positivo/leis-e-impostos/Pages/novidades-IRS.aspx" target="_blank" rel="noopener noreferrer" className="text-[#7B98B8] font-[700] hover:underline">CGD Saldo Positivo — Novidades IRS 2026</a></li>
+                <li>• <a href="https://www.publico.pt/2025/10/09/economia/noticia/irs-governo-confirma-revisao-escaloes-alivio-prometido-julho-chega-2150182" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Público — Revisão escalões IRS confirmada (9 Out 2025)</a></li>
+                <li>• <a href="https://www.publico.pt/2025/10/03/economia/noticia/valores-escaloes-irs-actualizados-351-proximo-ano-2149490" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Público — Escalões IRS sobem 3,51% em 2026</a></li>
+                <li>• <a href="https://eco.sapo.pt/2025/10/09/escaloes-de-irs-sobem-351-e-taxas-descem-entre-2-o-e-5-o-escaloes/" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">ECO — Escalões IRS sobem 3,51% (taxas 2-5 descem)</a></li>
+                <li>• <a href="https://www.jornaldenegocios.pt/economia/impostos/irs/detalhe/escaloes-de-irs-so-sobem-3-51-em-2026-veja-aqui-a-nova-tabela" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Jornal de Negócios — Nova tabela IRS 2026</a></li>
+                <li>• <a href="https://executivedigest.sapo.pt/irs-2026-atencao-pais-filhos-com-estas-idades-deixam-de-dar-direito-a-deducao-fiscal/" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Executive Digest — Dedução dependentes 2026 (€600/€726/€900)</a></li>
+                <li>• <a href="https://fleetmagazine.pt/tributacao-autonoma-2026/" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Fleet Magazine — Tributação Autónoma viaturas 2026</a></li>
+                <li>• <a href="https://caetano.pt/blog/tributacao-autonoma/" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Caetano — Tributação Autónoma viaturas 2026</a></li>
+                <li>• <a href="https://www.tsf.pt/brands-life/artigo/as-novidades-na-tributacao-autonoma-em-2026/18055226" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">TSF — Novidades Tributação Autónoma 2026</a></li>
+                <li>• <a href="https://www.comparaja.pt/financas-pessoais/artigos/deducoes-irs" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Comparaja — Deduções IRS 2026</a></li>
+                <li>• <a href="https://www.cgd.pt/Site/Saldo-Positivo/leis-e-impostos/Pages/novidades-IRS.aspx" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">CGD Saldo Positivo — Novidades IRS 2026</a></li>
               </ul>
             </div>
           </div>

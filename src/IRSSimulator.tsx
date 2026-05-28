@@ -24,7 +24,7 @@ const ptEur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency',
 const ptEur0 = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v || 0);
 const ptPct = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'percent', minimumFractionDigits: 2 }).format(v || 0);
 
-const inputCls = 'w-full px-[14px] py-[11px] bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] font-[600] text-[#0F172A] focus:border-[#0F172A] transition-all outline-none';
+const inputCls = 'w-full px-[14px] py-[11px] bg-[#F5F7FA] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] font-[600] text-[#0F172A] focus:border-[#0F172A] transition-all outline-none';
 const labelCls = 'block text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B] mb-[6px]';
 const sectionTitleCls = 'flex items-center gap-2 text-[12px] font-[800] uppercase tracking-[1px] text-[#0F172A]';
 
@@ -82,12 +82,12 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
   const pct = (n: number) => ((n / totalBar) * 100).toFixed(1);
 
   return (
-    <div className="overflow-y-auto lg:overflow-hidden lg:h-full lg:grid lg:grid-cols-[440px_1fr] bg-[#F8FAFC] text-[#1E293B]">
+    <div className="overflow-y-auto lg:overflow-hidden lg:h-full lg:grid lg:grid-cols-[440px_1fr] bg-[#F5F7FA] text-[#1E293B]">
       {/* ── Formulário ─────────────────────────────────────────── */}
       <div className="bg-white border-b border-[#E2E8F0] lg:border-b-0 lg:border-r lg:overflow-y-auto p-4 sm:p-5 lg:p-[28px] flex flex-col gap-6 lg:h-full">
         <div>
           <h1 className="text-[22px] font-[800] text-[#0F172A] leading-tight tracking-[-0.4px] flex items-center gap-2">
-            <Receipt className="w-6 h-6 text-[#7B98B8]" strokeWidth={2.25} /> Simulador de IRS
+            <Receipt className="w-6 h-6 text-[#0677FF]" strokeWidth={2.25} /> Simulador de IRS
           </h1>
           <p className="text-[13px] font-[500] text-[#64748B] mt-1.5 leading-relaxed">
             Estimativa do IRS anual (Modelo 3) segundo o CIRS. Atualiza a cada alteração.
@@ -96,7 +96,7 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
 
         {/* Dados do agregado */}
         <section className="flex flex-col gap-4">
-          <h2 className={sectionTitleCls}><Users className="w-4 h-4 text-[#7B98B8]" /> Agregado familiar</h2>
+          <h2 className={sectionTitleCls}><Users className="w-4 h-4 text-[#0677FF]" /> Agregado familiar</h2>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelCls}>Tributação</label>
@@ -139,7 +139,7 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
         {/* Sujeitos passivos */}
         <section className="flex flex-col gap-3">
           {s.agregado.map((p, i) => (
-            <fieldset key={i} className="rounded-[12px] border border-[#E2E8F0] bg-[#F8FAFC] p-4">
+            <fieldset key={i} className="rounded-[12px] border border-[#E2E8F0] bg-[#F5F7FA] p-4">
               <legend className="px-1.5 flex items-center gap-2">
                 <span className="text-[11px] font-[800] uppercase tracking-[0.5px] text-[#475569]">{p.relacao}</span>
                 {s.agregado.length > 1 && (
@@ -185,14 +185,14 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
               </div>
             </fieldset>
           ))}
-          <button type="button" onClick={addPessoa} className="self-start inline-flex items-center gap-1.5 px-3 py-2 rounded-[8px] border-2 border-dashed border-[#CBD5E1] text-[12px] font-[700] text-[#475569] hover:border-[#7B98B8] hover:text-[#0F172A] transition-colors">
+          <button type="button" onClick={addPessoa} className="self-start inline-flex items-center gap-1.5 px-3 py-2 rounded-[8px] border-2 border-dashed border-[#CBD5E1] text-[12px] font-[700] text-[#475569] hover:border-[#0677FF] hover:text-[#0F172A] transition-colors">
             <Plus className="w-4 h-4" /> Adicionar Sujeito Passivo B
           </button>
         </section>
 
         {/* Despesas dedutíveis */}
         <section className="flex flex-col gap-3">
-          <h2 className={sectionTitleCls}><Wallet className="w-4 h-4 text-[#7B98B8]" /> Despesas dedutíveis (anuais)</h2>
+          <h2 className={sectionTitleCls}><Wallet className="w-4 h-4 text-[#0677FF]" /> Despesas dedutíveis (anuais)</h2>
           <div className="grid grid-cols-2 gap-3">
             {([
               ['gerais', 'Despesas gerais (€)', '35%'],
@@ -248,7 +248,7 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
           transition={{ duration: 0.3 }}
           className={cn(
             'rounded-[20px] p-6 text-white shadow-lg',
-            reembolso ? 'bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-emerald-600/20' : 'bg-gradient-to-br from-[#525C66] to-[#0F172A] shadow-slate-900/20',
+            reembolso ? 'bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-emerald-600/20' : 'bg-gradient-to-br from-[#0B1D2D] to-[#0F172A] shadow-slate-900/20',
           )}
         >
           <p className="text-[11px] font-[800] uppercase tracking-[1.5px] opacity-80">{reembolso ? 'Estimativa de reembolso' : 'IRS a pagar'}</p>
@@ -264,12 +264,12 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
           <h3 className="text-[12px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Distribuição do rendimento global</h3>
           <div className="flex h-3.5 rounded-full overflow-hidden bg-slate-100">
             <div className="bg-amber-400" style={{ width: `${pct(ded)}%` }} title={`Deduções: ${ptEur(ded)}`} />
-            <div className="bg-[#525C66]" style={{ width: `${pct(imp)}%` }} title={`IRS final: ${ptEur(imp)}`} />
+            <div className="bg-[#0B1D2D]" style={{ width: `${pct(imp)}%` }} title={`IRS final: ${ptEur(imp)}`} />
             <div className="bg-emerald-500" style={{ width: `${pct(liq)}%` }} title={`Líquido: ${ptEur(liq)}`} />
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[11px] font-[600] text-[#64748B]">
             <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" /> Deduções ({pct(ded)}%)</span>
-            <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-full bg-[#525C66] inline-block" /> IRS ({pct(imp)}%)</span>
+            <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-full bg-[#0B1D2D] inline-block" /> IRS ({pct(imp)}%)</span>
             <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" /> Líquido ({pct(liq)}%)</span>
           </div>
         </div>
@@ -332,28 +332,28 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
             </div>
 
             <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-5">
-              <h3 className="text-[12px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3 flex items-center gap-2"><Sliders className="w-3.5 h-3.5 text-[#7B98B8]" /> E se…</h3>
+              <h3 className="text-[12px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3 flex items-center gap-2"><Sliders className="w-3.5 h-3.5 text-[#0677FF]" /> E se…</h3>
               <div className="space-y-3.5">
                 <div>
                   <label className="flex items-center justify-between text-[11px] font-[600] text-[#64748B] mb-1">
                     <span>Rendimento ajustado</span>
                     <span className="font-[700] text-[#0F172A]">{s.wifRend >= 0 ? '+' : ''}{ptEur0(s.wifRend)}</span>
                   </label>
-                  <input type="range" min={-10000} max={10000} step={500} value={s.wifRend} onChange={(e) => set({ wifRend: +e.target.value })} className="w-full accent-[#525C66]" />
+                  <input type="range" min={-10000} max={10000} step={500} value={s.wifRend} onChange={(e) => set({ wifRend: +e.target.value })} className="w-full accent-[#0B1D2D]" />
                 </div>
                 <div>
                   <label className="flex items-center justify-between text-[11px] font-[600] text-[#64748B] mb-1">
                     <span>Dependentes adicionais</span>
                     <span className="font-[700] text-[#0F172A]">+{s.wifDep}</span>
                   </label>
-                  <input type="range" min={0} max={4} step={1} value={s.wifDep} onChange={(e) => set({ wifDep: +e.target.value })} className="w-full accent-[#525C66]" />
+                  <input type="range" min={0} max={4} step={1} value={s.wifDep} onChange={(e) => set({ wifDep: +e.target.value })} className="w-full accent-[#0B1D2D]" />
                 </div>
                 <div>
                   <label className="flex items-center justify-between text-[11px] font-[600] text-[#64748B] mb-1">
                     <span>PPR adicional</span>
                     <span className="font-[700] text-[#0F172A]">+{ptEur0(s.wifPpr)}</span>
                   </label>
-                  <input type="range" min={0} max={2000} step={100} value={s.wifPpr} onChange={(e) => set({ wifPpr: +e.target.value })} className="w-full accent-[#525C66]" />
+                  <input type="range" min={0} max={2000} step={100} value={s.wifPpr} onChange={(e) => set({ wifPpr: +e.target.value })} className="w-full accent-[#0B1D2D]" />
                 </div>
                 {whatIf ? (
                   <div className="pt-2 border-t border-slate-100 space-y-1.5 text-[12.5px]">

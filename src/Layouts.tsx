@@ -3,7 +3,7 @@ import {
   UserCircle, Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote, Info,
   ClipboardList, Upload, LogOut, Receipt,
   ChevronDown, TrendingUp, Settings, UserPlus, Building2,
-  Menu, X, Clock,
+  Menu, X, Clock, Briefcase,
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import type { AppMode } from './ModeSelector';
@@ -11,7 +11,7 @@ import type { AppMode } from './ModeSelector';
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal' | 'updates'
-  | 'previsa' | 'office-settings';
+  | 'previsa' | 'office-settings' | 'empresas';
 
 export interface LayoutProps {
   view: ViewType;
@@ -32,18 +32,19 @@ export interface LayoutProps {
 // Which simulator views are reachable from each mode (besides legal/updates which are always open).
 const VIEWS_BY_MODE: Record<AppMode, ViewType[]> = {
   'novo-cliente': ['profile'],
-  empresa: ['profile', 'tax', 'vehicle', 'ticket', 'selfss', 'imoveis', 'imt', 'salario', 'irs', 'diagnostico', 'previsa'],
+  empresa: ['empresas', 'profile', 'tax', 'vehicle', 'ticket', 'selfss', 'imoveis', 'imt', 'salario', 'irs', 'diagnostico', 'previsa'],
 };
 
 const MODE_META: Record<AppMode, { label: string; Icon: typeof Building2; color: string; soft: string }> = {
   'novo-cliente': { label: 'Novo Cliente', Icon: UserPlus, color: '#B45309', soft: '#FEF3C7' },
-  empresa:       { label: 'Empresa',       Icon: Building2, color: '#525C66', soft: '#E2E8F0' },
+  empresa:       { label: 'Empresas',      Icon: Building2, color: '#0B1D2D', soft: '#E2E8F0' },
 };
 
 // Ordem dos modos no seletor da sidebar.
 const MODE_ORDER: AppMode[] = ['novo-cliente', 'empresa'];
 
 const NAV_ITEMS = [
+  { id: 'empresas'   as ViewType, label: 'Lista de Empresas', Icon: Briefcase,  group: 'carteira' },
   { id: 'profile'    as ViewType, label: 'Perfil',      Icon: UserCircle, group: 'profile' },
   { id: 'tax'        as ViewType, label: 'Fiscal',       Icon: Calculator, group: 'sim'     },
   { id: 'vehicle'    as ViewType, label: 'Viaturas',     Icon: Car,        group: 'sim'     },
@@ -73,10 +74,13 @@ const NAV_TIPS: Record<string, string> = {
 
 function Logo({ className = 'w-7 h-7' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 100 100" className={className} fill="none" aria-hidden="true" focusable="false">
-      <path d="M 70 20 A 35 35 0 1 1 35 22" stroke="#7B98B8" strokeWidth="10" strokeLinecap="round" />
-      <path d="M 60 10 L 70 20 L 60 30" stroke="#525C66" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <img
+      src="/logo.png"
+      alt=""
+      className={`${className} object-contain select-none shrink-0`}
+      draggable={false}
+      aria-hidden="true"
+    />
   );
 }
 
@@ -140,10 +144,10 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
       <div className="px-4 pt-4 pb-3 border-b border-slate-100">
         <div className="flex items-center justify-between">
           <button type="button" onClick={() => go('profile')} className="flex items-center gap-2.5 rounded-[8px] hover:bg-slate-50 px-1 py-1 -mx-1 transition-colors" aria-label="Ir para o Perfil">
-            <Logo className="w-8 h-8" />
+            <Logo className="w-9 h-9" />
             <div className="text-left leading-none">
-              <div className="text-[14px] font-[800] text-[#1E293B] tracking-[-0.3px]">Estudo 360</div>
-              <div className="text-[9px] font-[600] text-[#7B98B8] uppercase tracking-[0.5px] mt-[3px]">Ferramentas Fiscais</div>
+              <div className="text-[14px] font-[800] text-[#0B1D2D] tracking-[-0.2px]">ESTUDO<span className="text-[#0677FF]">360°</span></div>
+              <div className="text-[9px] font-[600] text-[#6B7280] uppercase tracking-[2px] mt-[3px]">Análise · Estratégia · Decisão</div>
             </div>
           </button>
           <button type="button" onClick={() => setDrawerOpen(false)} className="md:hidden p-1.5 rounded-[8px] text-slate-400 hover:bg-slate-100" aria-label="Fechar menu">
@@ -176,6 +180,13 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
       </div>
 
       <nav aria-label="Navegacao principal" className="flex-1 overflow-y-auto px-2 py-1">
+        {mode === 'empresa' && (
+          <>
+            <SectionLabel>Carteira</SectionLabel>
+            <NavItem label="Lista de Empresas" Icon={Briefcase} onClick={() => go('empresas')} current={active === 'empresas'} title="Carteira de empresas guardadas." />
+          </>
+        )}
+
         {profileVisible && (
           <>
             <SectionLabel>Cliente</SectionLabel>
@@ -222,7 +233,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
   );
 
   return (
-    <div className="h-full w-full flex bg-[#F8FAFC]">
+    <div className="h-full w-full flex bg-[#F5F7FA]">
       <aside className={cn(
         'z-40 w-64 shrink-0 transition-transform duration-200 md:static md:translate-x-0',
         'fixed inset-y-0 left-0',
@@ -241,8 +252,8 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2">
-            <Logo className="w-6 h-6" />
-            <span className="text-[13px] font-[800] text-[#1E293B]">Estudo 360</span>
+            <Logo className="w-7 h-7" />
+            <span className="text-[13px] font-[800] text-[#0B1D2D]">ESTUDO<span className="text-[#0677FF]">360°</span></span>
           </div>
         </div>
 

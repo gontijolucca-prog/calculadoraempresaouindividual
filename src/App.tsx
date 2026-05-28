@@ -4,7 +4,17 @@ import ClientProfile, { defaultProfile } from './ClientProfile';
 import LegalInfo from './LegalInfo';
 import LoginPage from './LoginPage';
 import LandingPage from './LandingPage';
-import ModeSelector, { type AppMode } from './ModeSelector';
+import EmpresasList from './EmpresasList';
+import type { AppMode } from './ModeSelector';
+import {
+  getCurrentEmpresaId,
+  setCurrentEmpresaId,
+  getEmpresa,
+  syncProfileIntoEmpresa,
+  migrateLegacyProfileIfNeeded,
+  upsertEmpresa,
+  newId as newEmpresaId,
+} from './lib/empresas';
 import type { DiagnosticoState } from './DiagnosticoAutonomia';
 import type { ImoveisState } from './ImoveisEmpresa';
 import type { IMTState } from './IMTSimulator';
@@ -41,15 +51,16 @@ import type { PreviSaState } from './previSaState';
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal' | 'updates'
-  | 'previsa' | 'office-settings';
+  | 'previsa' | 'office-settings' | 'empresas';
 
 // Default landing view when the user picks a mode.
 const DEFAULT_VIEW_BY_MODE: Record<AppMode, ViewType> = {
   'novo-cliente': 'profile',
-  empresa: 'tax',
+  empresa: 'empresas',
 };
 
 const VIEW_TITLES: Record<ViewType, string> = {
+  empresas: 'Lista de Empresas',
   profile: 'Perfil do Cliente',
   tax: 'Simulador Fiscal',
   vehicle: 'Simulador de Viaturas',
@@ -220,9 +231,9 @@ function SaftSection({ title, count, children }: { title: string; count: number;
 // Inline fallback while a lazy chunk loads
 function ViewLoading() {
   return (
-    <div role="status" aria-live="polite" className="h-full flex items-center justify-center bg-[#F8FAFC]">
+    <div role="status" aria-live="polite" className="h-full flex items-center justify-center bg-[#F5F7FA]">
       <div className="flex flex-col items-center gap-3">
-        <Loader2 className="w-8 h-8 text-[#7B98B8] animate-spin" aria-hidden="true" />
+        <Loader2 className="w-8 h-8 text-[#0677FF] animate-spin" aria-hidden="true" />
         <p className="text-[12px] font-[600] text-[#94A3B8]">A carregar…</p>
       </div>
     </div>
@@ -233,17 +244,24 @@ function AppContent() {
   const [loggedIn, setLoggedIn] = useState(() => loadFromStorage('loggedIn', false));
   const [showLogin, setShowLogin] = useState(false);
   // Mode is persisted: ao actualizar a página o utilizador continua no mesmo contexto.
-  // Limpa quando faz `Trocar modo` (manual) ou logout.
-  const [mode, setMode] = useState<AppMode | null>(() => {
-    // Guarda contra modos antigos já removidos (ex.: 'individual') guardados no localStorage.
+  // Default = 'empresa' (CRM): após login vai directo para a Lista de Empresas. O
+  // selector "Como queres trabalhar hoje?" foi removido do fluxo.
+  const [mode, setMode] = useState<AppMode>(() => {
     const m = loadFromStorage<AppMode | null>('mode', null);
-    return m === 'novo-cliente' || m === 'empresa' ? m : null;
+    return m === 'novo-cliente' || m === 'empresa' ? m : 'empresa';
   });
   const [showUpdateNotification, setShowUpdateNotification] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [lastDismissedCount, setLastDismissedCount] = useState(() => loadFromStorage('lastDismissedPendingCount', 0));
-  const [view, setView] = useState<ViewType>('profile');
+  const [view, setView] = useState<ViewType>(() => {
+    const m = loadFromStorage<AppMode | null>('mode', null);
+    const initialMode: AppMode = m === 'novo-cliente' || m === 'empresa' ? m : 'empresa';
+    return DEFAULT_VIEW_BY_MODE[initialMode];
+  });
   const [prevView, setPrevView] = useState<ViewType>('profile');
+  // Bump para forçar refresh da Lista de Empresas após mutações (criar/eliminar/SAFT).
+  const [empresasRefresh, setEmpresasRefresh] = useState(0);
+  const [currentEmpresaId, setCurrentEmpresaIdState] = useState<string | null>(() => getCurrentEmpresaId());
   const [legalAnchor, setLegalAnchor] = useState<string | null>(null);
   const [saftModal, setSaftModal] = useState<{
     open: boolean;
@@ -257,7 +275,16 @@ function AppContent() {
   // Carrega o perfil persistido. O perfil é o único estado de longa duração — guarda
   // o trabalho do consultor entre sessões. A antiga `fichaState` foi fundida aqui
   // via migração (loadProfileWithFichaMerge).
-  const [clientProfile, setClientProfile] = useState<ClientProfileType>(loadProfileWithFichaMerge);
+  const [clientProfile, setClientProfile] = useState<ClientProfileType>(() => {
+    const legacy = loadProfileWithFichaMerge();
+    migrateLegacyProfileIfNeeded(legacy);
+    const empId = getCurrentEmpresaId();
+    if (empId) {
+      const emp = getEmpresa(empId);
+      if (emp) return emp.profile;
+    }
+    return legacy;
+  });
   const [taxState, setTaxState] = useState<TaxSimulatorState>(() => getInitialTaxState(clientProfile));
   const [vehicleState, setVehicleState] = useState<VehicleSimulatorState>(getInitialVehicleState);
   const [ticketState, setTicketState] = useState<TicketSimulatorState>(() => getInitialTicketState(clientProfile));
@@ -281,6 +308,10 @@ function AppContent() {
   useEffect(() => { saveToStorage('lastDismissedPendingCount', lastDismissedCount); }, [lastDismissedCount]);
   useEffect(() => { saveOfficeSettings(officeSettings); }, [officeSettings]);
   useEffect(() => { saveHonorariosConfig(honorariosConfig); }, [honorariosConfig]);
+  // Sincroniza alterações do perfil para a empresa actual no registry.
+  useEffect(() => {
+    if (currentEmpresaId) syncProfileIntoEmpresa(currentEmpresaId, clientProfile);
+  }, [clientProfile, currentEmpresaId]);
 
   // Sync document.title with the active view (helps history & screen readers)
   useEffect(() => {
@@ -347,32 +378,41 @@ function AppContent() {
       : <LandingPage onEnter={() => setShowLogin(true)} />;
   }
 
-  if (mode === null) {
-    return (
-      <ModeSelector
-        onSelect={(m) => {
-          setMode(m);
-          setView(DEFAULT_VIEW_BY_MODE[m]);
-        }}
-        onLogout={() => {
-          setLoggedIn(false);
-          setMode(null);
-          clearStorage('loggedIn');
-          clearStorage('mode');
-        }}
-      />
-    );
-  }
-
+  // O selector "Como queres trabalhar hoje?" foi removido: após login vai-se directo
+  // para a sidebar no modo `empresa` (Lista de Empresas). O utilizador troca de modo
+  // via o pill no topo da sidebar.
   const backToModeSelection = () => {
-    setMode(null);
-    clearStorage('mode');
+    setMode('empresa');
+    setView('empresas');
   };
 
-  // Trocar de modo directamente a partir da sidebar (sem voltar ao ecrã inicial).
+  // Trocar de modo directamente a partir da sidebar.
   const selectMode = (m: AppMode) => {
     setMode(m);
     setView(DEFAULT_VIEW_BY_MODE[m]);
+  };
+
+  const openEmpresa = (id: string) => {
+    const emp = getEmpresa(id);
+    if (!emp) return;
+    setCurrentEmpresaId(id);
+    setCurrentEmpresaIdState(id);
+    updateProfileWithSimulatorSync(emp.profile);
+    setView('profile');
+  };
+
+  const handleNovaEmpresa = (id: string) => {
+    setCurrentEmpresaId(id);
+    setCurrentEmpresaIdState(id);
+    updateProfileWithSimulatorSync({ ...defaultProfile });
+    setView('profile');
+    setEmpresasRefresh(n => n + 1);
+  };
+
+  const handleEmpresaSAFT = (file: File, empId: string) => {
+    setCurrentEmpresaId(empId);
+    setCurrentEmpresaIdState(empId);
+    handleSAFTUpload(file);
   };
 
   const openLegal = () => { setPrevView(view); setLegalAnchor(null); setView('legal'); };
@@ -421,7 +461,8 @@ function AppContent() {
   const openUpdates = () => { setPrevView(view); setView('updates'); };
   const handleLogout = () => {
     setLoggedIn(false);
-    setMode(null);
+    setMode('empresa');
+    setView('empresas');
     clearStorage('loggedIn');
     clearStorage('mode');
   };
@@ -489,6 +530,14 @@ function AppContent() {
   const content = (
     <Suspense fallback={<ViewLoading />}>
       <PageTransition pageKey={view}>
+        {view === 'empresas' && (
+          <EmpresasList
+            refreshKey={empresasRefresh}
+            onOpenEmpresa={openEmpresa}
+            onNovaEmpresa={handleNovaEmpresa}
+            onSAFTUpload={handleEmpresaSAFT}
+          />
+        )}
         {view === 'profile' && (
           <ClientProfile profile={clientProfile} onChange={updateProfileWithSimulatorSync}
             taxState={taxState} vehicleState={vehicleState} ticketState={ticketState} ssState={ssState}
@@ -744,7 +793,7 @@ function AppContent() {
           />
           <div className="relative bg-white rounded-[24px] shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
             {/* Accent bar */}
-            <div className="h-1.5 bg-gradient-to-r from-[#7B98B8] to-[#525C66] w-full shrink-0" />
+            <div className="h-1.5 bg-gradient-to-r from-[#0677FF] to-[#0B1D2D] w-full shrink-0" />
 
             {/* Header */}
             <div className="px-6 pt-5 pb-4 flex items-center justify-between shrink-0 border-b border-slate-100">
@@ -793,7 +842,7 @@ function AppContent() {
                     <SaftSection title={group} count={items.length}>
                       {items.map((d, i) => (
                         <div key={i} className="flex items-baseline gap-3 py-1.5 border-b border-slate-50 last:border-0">
-                          <span className="text-[11px] font-[600] text-[#7B98B8] shrink-0 w-[150px] leading-snug">{d.label}</span>
+                          <span className="text-[11px] font-[600] text-[#0677FF] shrink-0 w-[150px] leading-snug">{d.label}</span>
                           <span className="text-[12px] font-[500] text-[#0F172A] leading-snug break-words min-w-0">{d.value}</span>
                         </div>
                       ))}

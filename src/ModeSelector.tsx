@@ -37,19 +37,22 @@ const MODES: ModeCard[] = [
     tagline: 'Simuladores empresariais',
     description: 'Fiscal, viaturas, tickets de refeição, imóveis, IMT, salário, diagnóstico e PreviSa (Modelo 22).',
     Icon: Building2,
-    accent: '#525C66',
+    accent: '#0B1D2D',
     accentSoft: '#E2E8F0',
     shortcut: '2',
   },
 ];
 
-/** Estudo 360 mark — open circle + arrow tip (matches LoginPage / Layouts). */
+/** Estudo 360 mark — raster orbital sphere lockup. */
 function BrandMark({ className = 'w-10 h-10' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 100 100" className={className} fill="none" aria-hidden="true" focusable="false">
-      <path d="M 70 20 A 35 35 0 1 1 35 22" stroke="#7B98B8" strokeWidth="10" strokeLinecap="round" />
-      <path d="M 60 10 L 70 20 L 60 30" stroke="#525C66" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <img
+      src="/logo.png"
+      alt=""
+      className={`${className} object-contain select-none shrink-0`}
+      draggable={false}
+      aria-hidden="true"
+    />
   );
 }
 
@@ -78,9 +81,9 @@ export default function ModeSelector({ onSelect, onLogout }: Props) {
       className="min-h-screen relative overflow-hidden flex flex-col"
       style={{
         background:
-          'radial-gradient(ellipse 70% 60% at 80% 0%, rgba(123, 152, 184, 0.18) 0%, transparent 60%), ' +
-          'radial-gradient(ellipse 65% 50% at 10% 100%, rgba(82, 92, 102, 0.10) 0%, transparent 60%), ' +
-          'linear-gradient(180deg, #FCFCFD 0%, #F8FAFC 100%)',
+          'radial-gradient(ellipse 70% 60% at 80% 0%, rgba(6, 119, 255, 0.18) 0%, transparent 60%), ' +
+          'radial-gradient(ellipse 65% 50% at 10% 100%, rgba(11, 29, 45, 0.10) 0%, transparent 60%), ' +
+          'linear-gradient(180deg, #FCFCFD 0%, #F5F7FA 100%)',
       }}
     >
       {/* Subtle noise overlay for atmospheric depth */}
@@ -101,13 +104,13 @@ export default function ModeSelector({ onSelect, onLogout }: Props) {
           transition={{ duration: 0.4 }}
           className="flex items-center gap-3"
         >
-          <BrandMark className="w-9 h-9" />
+          <BrandMark className="w-10 h-10" />
           <div className="leading-none">
-            <div className="text-[15px] font-[800] text-[#525C66] tracking-[-0.3px]">
-              Estudo <span className="text-[#7B98B8]">360</span>
+            <div className="text-[15px] font-[800] text-[#0B1D2D] tracking-[-0.2px]">
+              ESTUDO<span className="text-[#0677FF]">360°</span>
             </div>
-            <div className="text-[10px] font-[600] text-[#7B98B8] uppercase tracking-[1.5px] mt-1">
-              Ferramentas Fiscais · OE 2026
+            <div className="text-[10px] font-[600] text-[#6B7280] uppercase tracking-[2px] mt-1">
+              Análise · Estratégia · Decisão
             </div>
           </div>
         </motion.div>
@@ -119,7 +122,7 @@ export default function ModeSelector({ onSelect, onLogout }: Props) {
             transition={{ duration: 0.4, delay: 0.6 }}
             type="button"
             onClick={onLogout}
-            className="flex items-center gap-1.5 text-[12px] font-[600] text-[#94A3B8] hover:text-[#525C66] transition-colors px-3 py-2 rounded-[8px] hover:bg-white"
+            className="flex items-center gap-1.5 text-[12px] font-[600] text-[#94A3B8] hover:text-[#0B1D2D] transition-colors px-3 py-2 rounded-[8px] hover:bg-white"
             aria-label="Terminar sessão"
           >
             <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
@@ -137,7 +140,7 @@ export default function ModeSelector({ onSelect, onLogout }: Props) {
           className="text-center max-w-2xl mb-14"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 mb-6 shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#7B98B8] animate-pulse" aria-hidden="true" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#0677FF] animate-pulse" aria-hidden="true" />
             <span className="text-[10px] font-[800] uppercase tracking-[2px] text-[#64748B]">
               Escolhe uma área
             </span>
@@ -145,8 +148,8 @@ export default function ModeSelector({ onSelect, onLogout }: Props) {
           <h1 className="text-[44px] sm:text-[56px] font-[200] text-[#0F172A] leading-[0.95] tracking-[-1.5px]">
             Como queres
             <br />
-            <span className="font-[800] text-[#525C66]">
-              trabalhar <span className="italic font-[700] text-[#7B98B8]">hoje?</span>
+            <span className="font-[800] text-[#0B1D2D]">
+              trabalhar <span className="italic font-[700] text-[#0677FF]">hoje?</span>
             </span>
           </h1>
           <p className="text-[14px] sm:text-[15px] font-[500] text-[#64748B] mt-5 max-w-xl mx-auto leading-relaxed">

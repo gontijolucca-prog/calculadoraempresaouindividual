@@ -78,11 +78,11 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
 
   const ptEur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v || 0);
   const { simMode } = useTheme();
-  const outerCls = { split: "overflow-y-auto lg:overflow-hidden lg:h-full lg:grid lg:grid-cols-[380px_1fr] bg-[#F8FAFC] text-[#1E293B]", stacked: "h-full flex flex-col bg-[#F0F4F8] text-[#1E293B] overflow-y-auto", mosaic: "h-full bg-[#F0FDF4] text-[#1E293B] md:grid md:grid-cols-2 gap-4 p-4", compact: "h-full overflow-y-auto bg-white text-[#1E293B]", hero: "h-full flex md:flex-row-reverse overflow-hidden bg-[#F5F5F4] text-[#1E293B]" }[simMode];
+  const outerCls = { split: "overflow-y-auto lg:overflow-hidden lg:h-full lg:grid lg:grid-cols-[380px_1fr] bg-[#F5F7FA] text-[#1E293B]", stacked: "h-full flex flex-col bg-[#F0F4F8] text-[#1E293B] overflow-y-auto", mosaic: "h-full bg-[#F0FDF4] text-[#1E293B] md:grid md:grid-cols-2 gap-4 p-4", compact: "h-full overflow-y-auto bg-white text-[#1E293B]", hero: "h-full flex md:flex-row-reverse overflow-hidden bg-[#F5F5F4] text-[#1E293B]" }[simMode];
   const leftCls = { split: "bg-white border-b border-[#E2E8F0] lg:border-b-0 lg:border-r lg:overflow-y-auto p-4 sm:p-5 lg:p-[28px] flex flex-col gap-4 lg:gap-[22px] lg:h-full", stacked: "bg-white border-b-2 border-[#E2E8F0] p-6 flex flex-col gap-5", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pb-0 w-full", hero: "md:w-[400px] shrink-0 bg-white border-l border-[#E2E8F0] overflow-y-auto p-6 flex flex-col gap-5 h-full" }[simMode];
   const rightCls = { split: "p-4 sm:p-5 lg:p-[28px] lg:overflow-y-auto lg:h-full flex flex-col gap-4 lg:gap-[16px]", stacked: "p-6 flex flex-col gap-4 max-w-7xl mx-auto w-full", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-4 h-full", compact: "max-w-xl mx-auto p-4 pt-2 w-full border-t border-slate-100", hero: "flex-1 overflow-y-auto p-6 flex flex-col gap-4" }[simMode];
 
-  const inputCls = "w-full px-[14px] py-[11px] bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] font-[600] text-[#0F172A] focus:border-[#0F172A] transition-all outline-none";
+  const inputCls = "w-full px-[14px] py-[11px] bg-[#F5F7FA] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] font-[600] text-[#0F172A] focus:border-[#0F172A] transition-all outline-none";
   const labelCls = "block text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B] mb-[6px]";
 
   const pros_arrendamento = [
@@ -171,7 +171,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
             { key: 'precisaReforcoCE', label: 'Quer reforçar os capitais próprios da empresa', tip: 'Se o objetivo é melhorar o balanço da empresa (aumentar o capital próprio).' },
             { key: 'temApoiosPT2030', label: 'A empresa tem ou planeja apoios PT2030 (pode condicionar transmissões)', tip: 'Se a empresa beneficia de fundos europeus PT2030.' },
           ].map(({ key, label, tip }) => (
-            <label key={key} className={cn("flex items-center gap-3 p-[14px] rounded-[12px] border-2 cursor-pointer transition-colors", st[key as keyof ImoveisState] ? "bg-[#0F172A]/5 border-[#0F172A]" : "bg-[#F8FAFC] border-[#E2E8F0] hover:border-[#94A3B8]")}>
+            <label key={key} className={cn("flex items-center gap-3 p-[14px] rounded-[12px] border-2 cursor-pointer transition-colors", st[key as keyof ImoveisState] ? "bg-[#0F172A]/5 border-[#0F172A]" : "bg-[#F5F7FA] border-[#E2E8F0] hover:border-[#94A3B8]")}>
               <input type="checkbox" checked={!!st[key as keyof ImoveisState]} onChange={e => setSt({ [key]: e.target.checked } as Partial<ImoveisState>)} className="hidden" />
               <div className={cn("w-5 h-5 rounded-[4px] border-2 flex items-center justify-center shrink-0 transition-colors", st[key as keyof ImoveisState] ? "bg-[#0F172A] border-[#0F172A]" : "border-[#E2E8F0]")}>
                 {st[key as keyof ImoveisState] && <span className="text-white text-[10px] font-[900]">✓</span>}
@@ -179,7 +179,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
               <span className="text-[13px] font-[500] text-[#475569]">{label} <Tip>{tip}</Tip></span>
             </label>
           ))}
-          <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[12px] p-[12px]">
+          <div className="bg-[#F5F7FA] border border-[#E2E8F0] rounded-[12px] p-[12px]">
             <div className="text-[11px] font-[600] text-[#64748B]">
               Entidade: <span className="font-[700] text-[#0F172A]">{profile.tipoEntidade.toUpperCase()}</span>
               {profile.tipoEntidade === 'eni' && <span className="text-orange-600 ml-2">— ENI: regras específicas</span>}
@@ -276,7 +276,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
                 isEni ? 'ENI: afetação parcial do imóvel à atividade — regras de separação patrimonial' : 'Responsabilidade limitada da empresa protege o imóvel de dívidas pessoais',
               ].map((p, i) => (
                 <div key={i} className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#7B98B8] mt-[6px] shrink-0" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#0677FF] mt-[6px] shrink-0" />
                   <span className="text-[12px] text-[#475569]">{p}</span>
                 </div>
               ))}
@@ -311,7 +311,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
             <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Imóveis na Empresa</h2>
             <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Arrendamento/Comodato vs. Entrada em Espécie — guia de decisão.</p>
           </div>
-          <motion.button onClick={enterFlow} className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#7B98B8] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <motion.button onClick={enterFlow} className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#0677FF] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <ListOrdered className="w-4 h-4" /> Vista simplificada
           </motion.button>
         </div>
@@ -364,7 +364,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
           ].map(({ key, label, tip }) => (
             <label key={key} className={cn(
               "flex items-center gap-3 p-[14px] rounded-[12px] border-2 cursor-pointer transition-colors",
-              s[key as keyof ImoveisState] ? "bg-[#0F172A]/5 border-[#0F172A]" : "bg-[#F8FAFC] border-[#E2E8F0] hover:border-[#94A3B8]"
+              s[key as keyof ImoveisState] ? "bg-[#0F172A]/5 border-[#0F172A]" : "bg-[#F5F7FA] border-[#E2E8F0] hover:border-[#94A3B8]"
             )}>
               <input type="checkbox" checked={!!s[key as keyof ImoveisState]} onChange={e => setState({ [key]: e.target.checked } as Partial<ImoveisState>)} className="hidden" />
               <div className={cn("w-5 h-5 rounded-[4px] border-2 flex items-center justify-center shrink-0 transition-colors",
@@ -375,7 +375,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
             </label>
           ))}
 
-          <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[12px] p-[12px]">
+          <div className="bg-[#F5F7FA] border border-[#E2E8F0] rounded-[12px] p-[12px]">
             <div className="text-[11px] font-[600] text-[#64748B]">
               Entidade: <span className="font-[700] text-[#0F172A]">{profile.tipoEntidade.toUpperCase()}</span>
               {isEni && <span className="text-orange-600 ml-2">— ENI: regras específicas</span>}

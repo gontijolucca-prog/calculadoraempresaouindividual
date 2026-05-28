@@ -106,7 +106,7 @@ export default function UpdatesList({ onBack }: Props) {
   const doneCount = items.filter(i => i.atualizado && i.aprovado).length;
 
   return (
-    <motion.div className="h-full bg-[#F8FAFC] overflow-y-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}>
+    <motion.div className="h-full bg-[#F5F7FA] overflow-y-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}>
 
       {/* Header */}
       <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-[#E2E8F0] px-6 md:px-10 py-4 flex items-center gap-4">
@@ -114,19 +114,19 @@ export default function UpdatesList({ onBack }: Props) {
           type="button"
           onClick={onBack}
           aria-label="Voltar à página anterior"
-          className="flex items-center gap-2 text-[13px] font-[700] text-[#475569] hover:text-[#7B98B8] transition-colors px-3 py-2 rounded-[8px] hover:bg-[#FDF2F2]"
+          className="flex items-center gap-2 text-[13px] font-[700] text-[#475569] hover:text-[#0677FF] transition-colors px-3 py-2 rounded-[8px] hover:bg-[#FDF2F2]"
         >
           <ArrowLeft size={16} aria-hidden="true" />
           Voltar
         </button>
         <div className="h-6 w-px bg-[#E2E8F0]" />
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-[10px] bg-[#7B98B815]">
-            <ClipboardList className="w-5 h-5 text-[#7B98B8]" />
+          <div className="p-2 rounded-[10px] bg-[#0677FF15]">
+            <ClipboardList className="w-5 h-5 text-[#0677FF]" />
           </div>
           <div>
             <h1 className="text-[18px] font-[800] text-[#0F172A]">Checklist de Atualizações</h1>
-            <p className="text-[11px] font-[600] text-[#7B98B8] uppercase tracking-[1px]">Sincronizado em tempo real</p>
+            <p className="text-[11px] font-[600] text-[#0677FF] uppercase tracking-[1px]">Sincronizado em tempo real</p>
           </div>
         </div>
         <div className="ml-auto flex items-center gap-2">
@@ -158,14 +158,14 @@ export default function UpdatesList({ onBack }: Props) {
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } }}
               placeholder="Descreva a atualização efetuada..."
               disabled={adding}
-              className="flex-1 px-4 py-3 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-[10px] text-[14px] font-[600] text-[#0F172A] focus:border-[#7B98B8] outline-none transition-all placeholder:text-[#94A3B8] disabled:opacity-60"
+              className="flex-1 px-4 py-3 bg-[#F5F7FA] border-2 border-[#E2E8F0] rounded-[10px] text-[14px] font-[600] text-[#0F172A] focus:border-[#0677FF] outline-none transition-all placeholder:text-[#94A3B8] disabled:opacity-60"
             />
             <button
               type="button"
               onClick={addItem}
               disabled={!newText.trim() || adding}
               aria-busy={adding}
-              className="flex items-center gap-2 bg-[#7B98B8] text-white px-5 py-3 rounded-[10px] text-[14px] font-[700] hover:bg-[#5C7A9E] active:scale-[0.98] transition-all shadow-md shadow-[#7B98B8]/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+              className="flex items-center gap-2 bg-[#0677FF] text-white px-5 py-3 rounded-[10px] text-[14px] font-[700] hover:bg-[#0556CC] active:scale-[0.98] transition-all shadow-md shadow-[#0677FF]/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
             >
               {adding ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : <Plus size={16} aria-hidden="true" />}
               {adding ? 'A guardar…' : 'Adicionar'}
@@ -194,7 +194,7 @@ export default function UpdatesList({ onBack }: Props) {
         {/* Loading */}
         {loading && (
           <div className="bg-white rounded-[20px] p-12 shadow-sm border border-[#E2E8F0] flex flex-col items-center gap-3">
-            <Loader2 className="w-8 h-8 text-[#7B98B8] animate-spin" />
+            <Loader2 className="w-8 h-8 text-[#0677FF] animate-spin" />
             <p className="text-[13px] font-[600] text-[#94A3B8]">A carregar da cloud...</p>
           </div>
         )}

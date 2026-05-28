@@ -86,7 +86,7 @@ function VehicleResults({ state, results, flow = false }: { state: VehicleSimula
               </div>
             ))}
           </div>
-          <div className="mt-4 p-3 bg-[#F8FAFC] rounded-[10px] text-[12px] text-[#64748B] font-[600] leading-relaxed">
+          <div className="mt-4 p-3 bg-[#F5F7FA] rounded-[10px] text-[12px] text-[#64748B] font-[600] leading-relaxed">
             Seguro está isento de IVA — margem de recuperação 0€.
           </div>
         </div>
@@ -168,7 +168,7 @@ function VehicleResults({ state, results, flow = false }: { state: VehicleSimula
           </div>
         </div>
 
-        <div className="mt-[32px] p-[16px] bg-[#F8FAFC] rounded-[12px] text-[12px] text-[#64748B] font-[500] leading-relaxed">
+        <div className="mt-[32px] p-[16px] bg-[#F5F7FA] rounded-[12px] text-[12px] text-[#64748B] font-[500] leading-relaxed">
           Nota: O Seguro Automóvel em Portugal está isento de IVA (sujeito apenas a Imposto de Selo), logo a margem de recuperação dessa despesa é 0€ por natureza de imposto.
         </div>
       </div>
@@ -336,7 +336,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
   };
 
   const { simMode } = useTheme();
-  const outerCls = { split: "overflow-y-auto lg:overflow-hidden lg:h-full lg:grid lg:grid-cols-[400px_1fr] bg-[#F8FAFC] text-[#1E293B]", stacked: "h-full flex flex-col bg-[#F0F4F8] text-[#1E293B] overflow-y-auto", mosaic: "h-full bg-[#F0FDF4] text-[#1E293B] md:grid md:grid-cols-2 gap-4 p-4", compact: "h-full overflow-y-auto bg-white text-[#1E293B]", hero: "h-full flex md:flex-row-reverse overflow-hidden bg-[#F5F5F4] text-[#1E293B]" }[simMode];
+  const outerCls = { split: "overflow-y-auto lg:overflow-hidden lg:h-full lg:grid lg:grid-cols-[400px_1fr] bg-[#F5F7FA] text-[#1E293B]", stacked: "h-full flex flex-col bg-[#F0F4F8] text-[#1E293B] overflow-y-auto", mosaic: "h-full bg-[#F0FDF4] text-[#1E293B] md:grid md:grid-cols-2 gap-4 p-4", compact: "h-full overflow-y-auto bg-white text-[#1E293B]", hero: "h-full flex md:flex-row-reverse overflow-hidden bg-[#F5F5F4] text-[#1E293B]" }[simMode];
   const leftCls = { split: "bg-white border-b border-[#E2E8F0] lg:border-b-0 lg:border-r lg:overflow-y-auto p-4 sm:p-6 lg:p-[40px] flex flex-col gap-5 lg:gap-[32px] lg:h-full", stacked: "bg-white border-b-2 border-[#E2E8F0] p-6 flex flex-col gap-6", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pb-0 w-full", hero: "md:w-[420px] shrink-0 bg-white border-l border-[#E2E8F0] overflow-y-auto p-6 flex flex-col gap-5 h-full" }[simMode];
   const rightCls = { split: "p-4 sm:p-6 lg:p-[40px] lg:overflow-y-auto lg:h-full max-w-7xl mx-auto w-full flex flex-col gap-5 lg:gap-[32px]", stacked: "p-6 flex flex-col gap-6 max-w-7xl mx-auto w-full", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pt-2 w-full border-t border-slate-100", hero: "flex-1 p-6 md:p-[40px] overflow-y-auto flex flex-col gap-5" }[simMode];
 
@@ -344,7 +344,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
 
   const ptEur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(v || 0);
 
-  const inputClass = "w-full pl-[16px] pr-[16px] py-[12px] bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-[8px] text-[15px] font-[600] text-[#0F172A] focus:border-[#0F172A] transition-all outline-none";
+  const inputClass = "w-full pl-[16px] pr-[16px] py-[12px] bg-[#F5F7FA] border-2 border-[#E2E8F0] rounded-[8px] text-[15px] font-[600] text-[#0F172A] focus:border-[#0F172A] transition-all outline-none";
   const labelClass = "block text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B] mb-[8px]";
 
   type StepDef = {
@@ -534,7 +534,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
           </div>
           <motion.button
             onClick={enterFlow}
-            className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#7B98B8] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all"
+            className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#0677FF] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             transition={{ duration: 0.15 }}
@@ -600,7 +600,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
             </select>
           </div>
 
-          <div className="p-5 border-2 border-[#E2E8F0] rounded-[16px] bg-[#F8FAFC]">
+          <div className="p-5 border-2 border-[#E2E8F0] rounded-[16px] bg-[#F5F7FA]">
             <h3 className="text-[12px] font-[800] text-[#0F172A] mb-4">ENCARGOS ANUAIS (COM IVA) <Tip>Os custos anuais de operação da viatura (manutenção, seguro e combustível) com IVA incluído. São usados para calcular a base da Tributação Autónoma.</Tip></h3>
             <div className="space-y-[16px]">
               <div>

@@ -33,7 +33,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
   const setState = (u: Partial<SalarioState>) => onStateChange({ ...s, ...u });
   const { simMode } = useTheme();
   const { flowMode, enterFlow, exitFlow } = useFlowMode();
-  const outerCls = { split: "overflow-y-auto lg:overflow-hidden lg:h-full lg:grid lg:grid-cols-[400px_1fr] bg-[#F8FAFC] text-[#1E293B]", stacked: "h-full flex flex-col bg-[#F0F4F8] text-[#1E293B] overflow-y-auto", mosaic: "h-full bg-[#F0FDF4] text-[#1E293B] md:grid md:grid-cols-2 gap-4 p-4", compact: "h-full overflow-y-auto bg-white text-[#1E293B]", hero: "h-full flex md:flex-row-reverse overflow-hidden bg-[#F5F5F4] text-[#1E293B]" }[simMode];
+  const outerCls = { split: "overflow-y-auto lg:overflow-hidden lg:h-full lg:grid lg:grid-cols-[400px_1fr] bg-[#F5F7FA] text-[#1E293B]", stacked: "h-full flex flex-col bg-[#F0F4F8] text-[#1E293B] overflow-y-auto", mosaic: "h-full bg-[#F0FDF4] text-[#1E293B] md:grid md:grid-cols-2 gap-4 p-4", compact: "h-full overflow-y-auto bg-white text-[#1E293B]", hero: "h-full flex md:flex-row-reverse overflow-hidden bg-[#F5F5F4] text-[#1E293B]" }[simMode];
   const leftCls = { split: "bg-white border-b border-[#E2E8F0] lg:border-b-0 lg:border-r lg:overflow-y-auto p-4 sm:p-5 lg:p-[28px] flex flex-col gap-4 lg:gap-[22px] lg:h-full", stacked: "bg-white border-b-2 border-[#E2E8F0] p-6 flex flex-col gap-5", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pb-0 w-full", hero: "md:w-[420px] shrink-0 bg-white border-l border-[#E2E8F0] overflow-y-auto p-6 flex flex-col gap-5 h-full" }[simMode];
   const rightCls = { split: "p-4 sm:p-5 lg:p-[28px] lg:overflow-y-auto lg:h-full flex flex-col gap-4 lg:gap-[16px]", stacked: "p-6 flex flex-col gap-4 max-w-7xl mx-auto w-full", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-4 h-full", compact: "max-w-xl mx-auto p-4 pt-2 w-full border-t border-slate-100", hero: "flex-1 overflow-y-auto p-6 flex flex-col gap-4" }[simMode];
 
@@ -59,7 +59,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
   const ptEur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v || 0);
   const pctOf = (part: number, total: number) => total > 0 ? `${((part / total) * 100).toFixed(1)}%` : '—';
 
-  const inputCls = "w-full px-[14px] py-[11px] bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] font-[600] text-[#0F172A] focus:border-[#0F172A] transition-all outline-none";
+  const inputCls = "w-full px-[14px] py-[11px] bg-[#F5F7FA] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] font-[600] text-[#0F172A] focus:border-[#0F172A] transition-all outline-none";
   const labelCls = "block text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B] mb-[6px]";
 
   const steps: FlowStep<SalarioState>[] = [
@@ -134,7 +134,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
         <div className="space-y-[18px]">
           <label className={cn(
             "flex items-center gap-3 p-[14px] rounded-[12px] border-2 cursor-pointer transition-colors",
-            state.duodecimos ? "bg-[#0F172A]/5 border-[#0F172A]" : "bg-[#F8FAFC] border-[#E2E8F0] hover:border-[#94A3B8]"
+            state.duodecimos ? "bg-[#0F172A]/5 border-[#0F172A]" : "bg-[#F5F7FA] border-[#E2E8F0] hover:border-[#94A3B8]"
           )}>
             <input type="checkbox" checked={state.duodecimos} onChange={e => setSt({ duodecimos: e.target.checked })} className="hidden" />
             <div className={cn("w-5 h-5 rounded-[4px] border-2 flex items-center justify-center shrink-0",
@@ -214,7 +214,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
 
           <label className={cn(
             "flex items-center gap-3 p-[14px] rounded-[12px] border-2 cursor-pointer transition-colors",
-            state.irsJovem && state.idade <= 35 ? "bg-emerald-50 border-emerald-300" : "bg-[#F8FAFC] border-[#E2E8F0] hover:border-[#94A3B8]"
+            state.irsJovem && state.idade <= 35 ? "bg-emerald-50 border-emerald-300" : "bg-[#F5F7FA] border-[#E2E8F0] hover:border-[#94A3B8]"
           )}>
             <input type="checkbox" checked={state.irsJovem} onChange={e => setSt({ irsJovem: e.target.checked })} className="hidden" />
             <div className={cn("w-5 h-5 rounded-[4px] border-2 flex items-center justify-center shrink-0",
@@ -446,7 +446,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
           </div>
           <button
             onClick={enterFlow}
-            className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#64748B] hover:text-[#0F172A] hover:bg-[#F8FAFC] rounded-[10px] transition-colors border border-[#E2E8F0]"
+            className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#64748B] hover:text-[#0F172A] hover:bg-[#F5F7FA] rounded-[10px] transition-colors border border-[#E2E8F0]"
           >
             <ListOrdered className="w-4 h-4" />
             Vista simplificada
@@ -508,7 +508,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
           {/* Duodécimos */}
           <label className={cn(
             "flex items-center gap-3 p-[14px] rounded-[12px] border-2 cursor-pointer transition-colors",
-            s.duodecimos ? "bg-[#0F172A]/5 border-[#0F172A]" : "bg-[#F8FAFC] border-[#E2E8F0] hover:border-[#94A3B8]"
+            s.duodecimos ? "bg-[#0F172A]/5 border-[#0F172A]" : "bg-[#F5F7FA] border-[#E2E8F0] hover:border-[#94A3B8]"
           )}>
             <input type="checkbox" checked={s.duodecimos} onChange={e => setState({ duodecimos: e.target.checked })} className="hidden" />
             <div className={cn("w-5 h-5 rounded-[4px] border-2 flex items-center justify-center shrink-0",
@@ -583,7 +583,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
           {/* IRS Jovem */}
           <label className={cn(
             "flex items-center gap-3 p-[14px] rounded-[12px] border-2 cursor-pointer transition-colors",
-            s.irsJovem && s.idade <= 35 ? "bg-emerald-50 border-emerald-300" : "bg-[#F8FAFC] border-[#E2E8F0] hover:border-[#94A3B8]"
+            s.irsJovem && s.idade <= 35 ? "bg-emerald-50 border-emerald-300" : "bg-[#F5F7FA] border-[#E2E8F0] hover:border-[#94A3B8]"
           )}>
             <input type="checkbox" checked={s.irsJovem} onChange={e => setState({ irsJovem: e.target.checked })} className="hidden" />
             <div className={cn("w-5 h-5 rounded-[4px] border-2 flex items-center justify-center shrink-0",

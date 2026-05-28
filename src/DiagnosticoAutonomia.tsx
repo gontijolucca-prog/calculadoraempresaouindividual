@@ -136,7 +136,7 @@ function RadarChart({ scores }: { scores: number[] }) {
         <line key={i} x1={cx} y1={cy} x2={op.x} y2={op.y} stroke="#E2E8F0" strokeWidth={0.8} />
       ))}
       {/* Score polygon */}
-      <path d={toPath(scorePoints)} fill="rgba(120,29,29,0.18)" stroke="#7B98B8" strokeWidth={2} />
+      <path d={toPath(scorePoints)} fill="rgba(120,29,29,0.18)" stroke="#0677FF" strokeWidth={2} />
       {/* Score dots */}
       {scorePoints.map((p, i) => (
         <circle key={i} cx={p.x} cy={p.y} r={4} fill={scoreColor(scores[i])} stroke="white" strokeWidth={1.5} />
@@ -179,12 +179,12 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
     return al;
   }, [d, globalScore]);
 
-  const inputCls = "w-full px-[14px] py-[10px] bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] font-[600] text-[#0F172A] focus:border-[#0F172A] transition-all outline-none";
+  const inputCls = "w-full px-[14px] py-[10px] bg-[#F5F7FA] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] font-[600] text-[#0F172A] focus:border-[#0F172A] transition-all outline-none";
   const labelCls = "block text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B] mb-[6px]";
 
   const ptEur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v || 0);
   const { simMode } = useTheme();
-  const outerCls = { split: "overflow-y-auto lg:overflow-hidden lg:h-full lg:grid lg:grid-cols-[420px_1fr] bg-[#F8FAFC] text-[#1E293B]", stacked: "h-full flex flex-col bg-[#F0F4F8] text-[#1E293B] overflow-y-auto", mosaic: "h-full bg-[#F0FDF4] text-[#1E293B] md:grid md:grid-cols-2 gap-4 p-4", compact: "h-full overflow-y-auto bg-white text-[#1E293B]", hero: "h-full flex md:flex-row-reverse overflow-hidden bg-[#F5F5F4] text-[#1E293B]" }[simMode];
+  const outerCls = { split: "overflow-y-auto lg:overflow-hidden lg:h-full lg:grid lg:grid-cols-[420px_1fr] bg-[#F5F7FA] text-[#1E293B]", stacked: "h-full flex flex-col bg-[#F0F4F8] text-[#1E293B] overflow-y-auto", mosaic: "h-full bg-[#F0FDF4] text-[#1E293B] md:grid md:grid-cols-2 gap-4 p-4", compact: "h-full overflow-y-auto bg-white text-[#1E293B]", hero: "h-full flex md:flex-row-reverse overflow-hidden bg-[#F5F5F4] text-[#1E293B]" }[simMode];
   const leftCls = { split: "bg-white border-b border-[#E2E8F0] lg:border-b-0 lg:border-r lg:overflow-y-auto p-4 sm:p-5 lg:p-[28px] flex flex-col gap-4 lg:gap-[24px] lg:h-full", stacked: "bg-white border-b-2 border-[#E2E8F0] p-6 flex flex-col gap-5", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pb-0 w-full", hero: "md:w-[440px] shrink-0 bg-white border-l border-[#E2E8F0] overflow-y-auto p-6 flex flex-col gap-5 h-full" }[simMode];
   const rightCls = { split: "p-4 sm:p-5 lg:p-[28px] lg:overflow-y-auto lg:h-full flex flex-col gap-4 lg:gap-[20px]", stacked: "p-6 flex flex-col gap-5 max-w-7xl mx-auto w-full", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pt-2 w-full border-t border-slate-100", hero: "flex-1 overflow-y-auto p-6 flex flex-col gap-5" }[simMode];
 
@@ -305,7 +305,7 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
                 onClick={() => setSt({ [key]: !st[key as keyof DiagnosticoState] } as Partial<DiagnosticoState>)}
                 className={cn(
                   "w-5 h-5 rounded-[4px] border-2 flex items-center justify-center transition-colors shrink-0",
-                  st[key as keyof DiagnosticoState] ? "bg-[#7B98B8] border-[#7B98B8]" : "border-[#E2E8F0] bg-white"
+                  st[key as keyof DiagnosticoState] ? "bg-[#0677FF] border-[#0677FF]" : "border-[#E2E8F0] bg-white"
                 )}
               >
                 {st[key as keyof DiagnosticoState] && <CheckCircle className="w-3 h-3 text-white" />}
@@ -441,7 +441,7 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
             <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Diagnóstico de Autonomia</h2>
             <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Avaliação por 5 pilares — balanço e gestão empresarial.</p>
           </div>
-          <motion.button onClick={enterFlow} className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#7B98B8] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <motion.button onClick={enterFlow} className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#0677FF] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <ListOrdered className="w-4 h-4" /> Vista simplificada
           </motion.button>
         </div>
@@ -449,8 +449,8 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
         {/* P1 — Autonomia Financeira */}
         <section className="space-y-[14px]">
           <div className="flex items-center gap-2">
-            <Building className="w-4 h-4 text-[#7B98B8]" />
-            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#7B98B8]">Pilar 1 — Autonomia Financeira</span>
+            <Building className="w-4 h-4 text-[#0677FF]" />
+            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#0677FF]">Pilar 1 — Autonomia Financeira</span>
           </div>
           <div className="grid grid-cols-2 gap-[10px]">
             <div>
@@ -471,8 +471,8 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
         {/* P2 — Tesouraria */}
         <section className="space-y-[14px]">
           <div className="flex items-center gap-2">
-            <Wallet className="w-4 h-4 text-[#7B98B8]" />
-            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#7B98B8]">Pilar 2 — Tesouraria</span>
+            <Wallet className="w-4 h-4 text-[#0677FF]" />
+            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#0677FF]">Pilar 2 — Tesouraria</span>
           </div>
           <div className="grid grid-cols-2 gap-[10px]">
             <div>
@@ -497,8 +497,8 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
         {/* P3 — Rentabilidade */}
         <section className="space-y-[14px]">
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-[#7B98B8]" />
-            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#7B98B8]">Pilar 3 — Rentabilidade</span>
+            <TrendingUp className="w-4 h-4 text-[#0677FF]" />
+            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#0677FF]">Pilar 3 — Rentabilidade</span>
           </div>
           <div className="grid grid-cols-2 gap-[10px]">
             <div>
@@ -523,8 +523,8 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
         {/* P4 — Dependência */}
         <section className="space-y-[14px]">
           <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-[#7B98B8]" />
-            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#7B98B8]">Pilar 4 — Dependência</span>
+            <Users className="w-4 h-4 text-[#0677FF]" />
+            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#0677FF]">Pilar 4 — Dependência</span>
           </div>
           <div className="grid grid-cols-2 gap-[10px]">
             <div>
@@ -545,8 +545,8 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
         {/* P5 — Operacional */}
         <section className="space-y-[14px]">
           <div className="flex items-center gap-2">
-            <Settings className="w-4 h-4 text-[#7B98B8]" />
-            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#7B98B8]">Pilar 5 — Maturidade Operacional</span>
+            <Settings className="w-4 h-4 text-[#0677FF]" />
+            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#0677FF]">Pilar 5 — Maturidade Operacional</span>
           </div>
           <div className="space-y-[8px]">
             {[
@@ -561,7 +561,7 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
                   onClick={() => setState({ [key]: !d[key as keyof DiagnosticoState] } as Partial<DiagnosticoState>)}
                   className={cn(
                     "w-5 h-5 rounded-[4px] border-2 flex items-center justify-center transition-colors shrink-0",
-                    d[key as keyof DiagnosticoState] ? "bg-[#7B98B8] border-[#7B98B8]" : "border-[#E2E8F0] bg-white"
+                    d[key as keyof DiagnosticoState] ? "bg-[#0677FF] border-[#0677FF]" : "border-[#E2E8F0] bg-white"
                   )}
                 >
                   {d[key as keyof DiagnosticoState] && <CheckCircle className="w-3 h-3 text-white" />}

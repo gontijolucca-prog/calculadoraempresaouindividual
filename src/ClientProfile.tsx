@@ -13,7 +13,7 @@ import type { HonorariosConfig } from './lib/honorarios';
 // Converte o SVG do logotipo para PNG data URL via canvas
 const svgLogoToPng = (): Promise<string> => {
   return new Promise((resolve) => {
-    const svgContent = `<svg viewBox="0 0 100 100" width="400" height="400" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="white"/><path d="M 70 20 A 35 35 0 1 1 35 22" stroke="#7B98B8" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M 60 10 L 70 20 L 60 30" stroke="#525C66" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="50" y="64" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="700" fill="#525C66" text-anchor="middle">360</text></svg>`;
+    const svgContent = `<svg viewBox="0 0 100 100" width="400" height="400" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="white"/><path d="M 70 20 A 35 35 0 1 1 35 22" stroke="#0677FF" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M 60 10 L 70 20 L 60 30" stroke="#0B1D2D" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="50" y="64" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="700" fill="#0B1D2D" text-anchor="middle">360</text></svg>`;
     const canvas = document.createElement('canvas');
     canvas.width = 400;
     canvas.height = 400;
@@ -195,7 +195,7 @@ interface Props {
   onGoToOfficeSettings?: () => void;
 }
 
-const inputClass = "w-full pl-[16px] pr-[16px] py-[12px] bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-[8px] text-[15px] font-[600] text-[#0F172A] focus:border-[#0F172A] transition-all outline-none";
+const inputClass = "w-full pl-[16px] pr-[16px] py-[12px] bg-[#F5F7FA] border-2 border-[#E2E8F0] rounded-[8px] text-[15px] font-[600] text-[#0F172A] focus:border-[#0F172A] transition-all outline-none";
 const labelClass = "block text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B] mb-[8px]";
 
 const ptEur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(v || 0);
@@ -654,7 +654,7 @@ export default function ClientProfile({
             </select>
           </div>
           <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-[8px] cursor-pointer">
-            <input type="checkbox" checked={st.isSazonal} onChange={e => setSt({ isSazonal: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" />
+            <input type="checkbox" checked={st.isSazonal} onChange={e => setSt({ isSazonal: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" />
             <span className="text-[13px] font-[600] text-slate-700">Atividade Sazonal <Tip>Se o negócio só funciona em certas épocas (ex: turismo de praia, agricultura). Afeta os cálculos de SS.</Tip></span>
           </label>
           {/* Regime warnings */}
@@ -716,7 +716,7 @@ export default function ClientProfile({
             <input type="number" value={st.nrDependentes === 0 ? '' : st.nrDependentes} onChange={e => setSt({ nrDependentes: Number(e.target.value) || 0 })} className={inputClass} min={0} max={10} />
           </div>
           <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-[8px] cursor-pointer">
-            <input type="checkbox" checked={st.cônjugeRendimentos} onChange={e => setSt({ cônjugeRendimentos: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" />
+            <input type="checkbox" checked={st.cônjugeRendimentos} onChange={e => setSt({ cônjugeRendimentos: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" />
             <span className="text-[13px] font-[600] text-slate-700">Cônjuge c/ Rendimentos</span>
           </label>
           <label className="col-span-2 flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-[8px] cursor-pointer">
@@ -792,10 +792,10 @@ export default function ClientProfile({
                 <div className="col-span-2">
                   <label className={labelClass}>Tipo de viaturas</label>
                   <div className="grid grid-cols-2 gap-2">
-                    <label className={cbCls}><input type="checkbox" checked={st.viaturasDiag.tipo.comercial} onChange={e => setVDTipo({ comercial: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Comercial / Mercadorias</span></label>
-                    <label className={cbCls}><input type="checkbox" checked={st.viaturasDiag.tipo.passageiros} onChange={e => setVDTipo({ passageiros: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Ligeira Passageiros</span></label>
-                    <label className={cbCls}><input type="checkbox" checked={st.viaturasDiag.tipo.eletrico} onChange={e => setVDTipo({ eletrico: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Eléctrica</span></label>
-                    <label className={cbCls}><input type="checkbox" checked={st.viaturasDiag.tipo.hibrido} onChange={e => setVDTipo({ hibrido: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Híbrida Plug-in</span></label>
+                    <label className={cbCls}><input type="checkbox" checked={st.viaturasDiag.tipo.comercial} onChange={e => setVDTipo({ comercial: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Comercial / Mercadorias</span></label>
+                    <label className={cbCls}><input type="checkbox" checked={st.viaturasDiag.tipo.passageiros} onChange={e => setVDTipo({ passageiros: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Ligeira Passageiros</span></label>
+                    <label className={cbCls}><input type="checkbox" checked={st.viaturasDiag.tipo.eletrico} onChange={e => setVDTipo({ eletrico: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Eléctrica</span></label>
+                    <label className={cbCls}><input type="checkbox" checked={st.viaturasDiag.tipo.hibrido} onChange={e => setVDTipo({ hibrido: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Híbrida Plug-in</span></label>
                   </div>
                 </div>
               </div>
@@ -840,10 +840,10 @@ export default function ClientProfile({
             <div>
               <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Distribuição de Resultados (preferência)</h3>
               <div className="grid grid-cols-2 gap-2">
-                <label className={cbCls}><input type="checkbox" checked={st.distribuicao.salario} onChange={e => setDist({ salario: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Salário ao sócio-gerente</span></label>
-                <label className={cbCls}><input type="checkbox" checked={st.distribuicao.dividendos} onChange={e => setDist({ dividendos: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Dividendos</span></label>
-                <label className={cbCls}><input type="checkbox" checked={st.distribuicao.reinvestir} onChange={e => setDist({ reinvestir: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Reinvestir lucros</span></label>
-                <label className={cbCls}><input type="checkbox" checked={st.distribuicao.misto} onChange={e => setDist({ misto: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Misto</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.distribuicao.salario} onChange={e => setDist({ salario: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Salário ao sócio-gerente</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.distribuicao.dividendos} onChange={e => setDist({ dividendos: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Dividendos</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.distribuicao.reinvestir} onChange={e => setDist({ reinvestir: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Reinvestir lucros</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.distribuicao.misto} onChange={e => setDist({ misto: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Misto</span></label>
               </div>
             </div>
 
@@ -884,41 +884,41 @@ export default function ClientProfile({
         const setDoc = (patch: Partial<ClientProfile['documentos']>) => setSt({ documentos: { ...st.documentos, ...patch } });
         const setAI = (patch: Partial<ClientProfile['analiseInterna']>) => setSt({ analiseInterna: { ...st.analiseInterna, ...patch } });
         const cbCls = "flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-[8px] cursor-pointer";
-        const taCls = "w-full px-3 py-2 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] text-[#0F172A] focus:border-[#7B98B8] outline-none transition-all resize-y";
+        const taCls = "w-full px-3 py-2 bg-[#F5F7FA] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] text-[#0F172A] focus:border-[#0677FF] outline-none transition-all resize-y";
         return (
           <div className="space-y-7">
             <div>
               <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Objetivos do Cliente</h3>
               <div className="grid grid-cols-2 gap-2">
-                <label className={cbCls}><input type="checkbox" checked={st.objetivos.menosImpostos} onChange={e => setObj({ menosImpostos: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Pagar menos impostos</span></label>
-                <label className={cbCls}><input type="checkbox" checked={st.objetivos.crescer} onChange={e => setObj({ crescer: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Crescer o negócio</span></label>
-                <label className={cbCls}><input type="checkbox" checked={st.objetivos.imobiliario} onChange={e => setObj({ imobiliario: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Investir em imobiliário</span></label>
-                <label className={cbCls}><input type="checkbox" checked={st.objetivos.variasEmpresas} onChange={e => setObj({ variasEmpresas: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Várias empresas / grupo</span></label>
-                <label className={`col-span-2 ${cbCls}`}><input type="checkbox" checked={st.objetivos.planeamentoFamiliar} onChange={e => setObj({ planeamentoFamiliar: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Planeamento sucessório / familiar</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.objetivos.menosImpostos} onChange={e => setObj({ menosImpostos: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Pagar menos impostos</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.objetivos.crescer} onChange={e => setObj({ crescer: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Crescer o negócio</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.objetivos.imobiliario} onChange={e => setObj({ imobiliario: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Investir em imobiliário</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.objetivos.variasEmpresas} onChange={e => setObj({ variasEmpresas: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Várias empresas / grupo</span></label>
+                <label className={`col-span-2 ${cbCls}`}><input type="checkbox" checked={st.objetivos.planeamentoFamiliar} onChange={e => setObj({ planeamentoFamiliar: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Planeamento sucessório / familiar</span></label>
               </div>
             </div>
 
             <div>
               <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Intenções a Médio Prazo</h3>
               <div className="grid grid-cols-2 gap-2">
-                <label className={cbCls}><input type="checkbox" checked={st.intencoes.imoveis} onChange={e => setInt({ imoveis: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Adquirir imóveis</span></label>
-                <label className={cbCls}><input type="checkbox" checked={st.intencoes.viaturasEmpresa} onChange={e => setInt({ viaturasEmpresa: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Comprar viaturas para a empresa</span></label>
-                <label className={cbCls}><input type="checkbox" checked={st.intencoes.ativosFinanceiros} onChange={e => setInt({ ativosFinanceiros: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Adquirir ativos financeiros</span></label>
-                <label className={cbCls}><input type="checkbox" checked={st.intencoes.grupoEmpresas} onChange={e => setInt({ grupoEmpresas: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Constituir grupo de empresas</span></label>
-                <label className={`col-span-2 ${cbCls}`}><input type="checkbox" checked={st.intencoes.internacionalizar} onChange={e => setInt({ internacionalizar: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Internacionalizar a atividade</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.intencoes.imoveis} onChange={e => setInt({ imoveis: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Adquirir imóveis</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.intencoes.viaturasEmpresa} onChange={e => setInt({ viaturasEmpresa: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Comprar viaturas para a empresa</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.intencoes.ativosFinanceiros} onChange={e => setInt({ ativosFinanceiros: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Adquirir ativos financeiros</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.intencoes.grupoEmpresas} onChange={e => setInt({ grupoEmpresas: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Constituir grupo de empresas</span></label>
+                <label className={`col-span-2 ${cbCls}`}><input type="checkbox" checked={st.intencoes.internacionalizar} onChange={e => setInt({ internacionalizar: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Internacionalizar a atividade</span></label>
               </div>
             </div>
 
             <div>
               <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Documentos Disponíveis</h3>
               <div className="grid grid-cols-2 gap-2">
-                <label className={cbCls}><input type="checkbox" checked={st.documentos.irs} onChange={e => setDoc({ irs: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Declarações de IRS</span></label>
-                <label className={cbCls}><input type="checkbox" checked={st.documentos.balancete} onChange={e => setDoc({ balancete: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Balancete</span></label>
-                <label className={cbCls}><input type="checkbox" checked={st.documentos.ies} onChange={e => setDoc({ ies: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">IES</span></label>
-                <label className={cbCls}><input type="checkbox" checked={st.documentos.modelo22} onChange={e => setDoc({ modelo22: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Modelo 22 (IRC)</span></label>
-                <label className={cbCls}><input type="checkbox" checked={st.documentos.dec_iva} onChange={e => setDoc({ dec_iva: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Declarações de IVA</span></label>
-                <label className={cbCls}><input type="checkbox" checked={st.documentos.contratos} onChange={e => setDoc({ contratos: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Contratos relevantes</span></label>
-                <label className={`col-span-2 ${cbCls}`}><input type="checkbox" checked={st.documentos.extratos} onChange={e => setDoc({ extratos: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" /><span className="text-[13px] font-[600] text-slate-700">Extractos bancários</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.documentos.irs} onChange={e => setDoc({ irs: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Declarações de IRS</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.documentos.balancete} onChange={e => setDoc({ balancete: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Balancete</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.documentos.ies} onChange={e => setDoc({ ies: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">IES</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.documentos.modelo22} onChange={e => setDoc({ modelo22: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Modelo 22 (IRC)</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.documentos.dec_iva} onChange={e => setDoc({ dec_iva: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Declarações de IVA</span></label>
+                <label className={cbCls}><input type="checkbox" checked={st.documentos.contratos} onChange={e => setDoc({ contratos: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Contratos relevantes</span></label>
+                <label className={`col-span-2 ${cbCls}`}><input type="checkbox" checked={st.documentos.extratos} onChange={e => setDoc({ extratos: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Extractos bancários</span></label>
               </div>
             </div>
 
@@ -950,7 +950,7 @@ export default function ClientProfile({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white border-2 border-[#E2E8F0] rounded-[20px] p-6 shadow-sm">
           <h4 className="text-[16px] font-[800] text-[#0F172A] mb-4 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-[#7B98B8]" />
+            <FileText className="w-5 h-5 text-[#0677FF]" />
             Dados Fiscais
           </h4>
           <div className="space-y-3 text-[14px]">
@@ -965,7 +965,7 @@ export default function ClientProfile({
 
         <div className="bg-white border-2 border-[#E2E8F0] rounded-[20px] p-6 shadow-sm">
           <h4 className="text-[16px] font-[800] text-[#0F172A] mb-4 flex items-center gap-2">
-            <User className="w-5 h-5 text-[#7B98B8]" />
+            <User className="w-5 h-5 text-[#0677FF]" />
             Dados Familiares
           </h4>
           <div className="space-y-3 text-[14px]">
@@ -978,7 +978,7 @@ export default function ClientProfile({
 
         <div className="bg-white border-2 border-[#E2E8F0] rounded-[20px] p-6 shadow-sm">
           <h4 className="text-[16px] font-[800] text-[#0F172A] mb-4 flex items-center gap-2">
-            <Ticket className="w-5 h-5 text-[#7B98B8]" />
+            <Ticket className="w-5 h-5 text-[#0677FF]" />
             Tickets / Vales
           </h4>
           <div className="space-y-3 text-[14px]">
@@ -991,7 +991,7 @@ export default function ClientProfile({
 
         <div className="bg-white border-2 border-[#E2E8F0] rounded-[20px] p-6 shadow-sm">
           <h4 className="text-[16px] font-[800] text-[#0F172A] mb-4 flex items-center gap-2">
-            <Wallet className="w-5 h-5 text-[#7B98B8]" />
+            <Wallet className="w-5 h-5 text-[#0677FF]" />
             SS Independente
           </h4>
           <div className="space-y-3 text-[14px]">
@@ -1005,7 +1005,7 @@ export default function ClientProfile({
       {profile.morada && (
         <div className="bg-white border-2 border-[#E2E8F0] rounded-[20px] p-6 shadow-sm">
           <h4 className="text-[16px] font-[800] text-[#0F172A] mb-3 flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-[#7B98B8]" />
+            <MapPin className="w-5 h-5 text-[#0677FF]" />
             Morada Registada
           </h4>
           <p className="text-[14px] text-slate-700 font-[500]">
@@ -1049,7 +1049,7 @@ export default function ClientProfile({
   return (
     <>
     <motion.div
-      className="overflow-y-auto lg:overflow-hidden lg:h-full lg:flex lg:flex-row bg-[#F8FAFC]"
+      className="overflow-y-auto lg:overflow-hidden lg:h-full lg:flex lg:flex-row bg-[#F5F7FA]"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
@@ -1066,16 +1066,16 @@ export default function ClientProfile({
             <h2 className="text-[18px] md:text-[20px] font-[800] tracking-[-0.5px] text-[#0F172A]">Perfil do Cliente</h2>
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end">
-            <motion.button onClick={enterFlow} className="shrink-0 flex items-center gap-1.5 px-2.5 md:px-3 py-2 text-[12px] md:text-[13px] font-[700] text-[#7B98B8] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <motion.button onClick={enterFlow} className="shrink-0 flex items-center gap-1.5 px-2.5 md:px-3 py-2 text-[12px] md:text-[13px] font-[700] text-[#0677FF] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <ListOrdered className="w-4 h-4" />
               <span className="hidden sm:inline">Vista simplificada</span>
               <span className="sm:hidden">Simples</span>
             </motion.button>
-            <button onClick={() => setShowEditor(true)} className="hidden md:flex shrink-0 items-center gap-2 bg-white border border-[#E2E8F0] text-[#525C66] px-3 py-2 rounded-[10px] text-[13px] font-[700] hover:bg-slate-50 transition-colors">
+            <button onClick={() => setShowEditor(true)} className="hidden md:flex shrink-0 items-center gap-2 bg-white border border-[#E2E8F0] text-[#0B1D2D] px-3 py-2 rounded-[10px] text-[13px] font-[700] hover:bg-slate-50 transition-colors">
               <Download size={16} />
               Só simulação
             </button>
-            <button onClick={() => setShowPackage(true)} className="flex shrink-0 items-center gap-1.5 md:gap-2 bg-gradient-to-br from-[#7B98B8] to-[#525C66] text-white px-3 md:px-4 py-2 rounded-[10px] text-[12px] md:text-[13px] font-[800] hover:brightness-105 active:scale-[0.98] transition-all shadow-lg shadow-[#7B98B8]/30">
+            <button onClick={() => setShowPackage(true)} className="flex shrink-0 items-center gap-1.5 md:gap-2 bg-gradient-to-br from-[#0677FF] to-[#0B1D2D] text-white px-3 md:px-4 py-2 rounded-[10px] text-[12px] md:text-[13px] font-[800] hover:brightness-105 active:scale-[0.98] transition-all shadow-lg shadow-[#0677FF]/30">
               <Package size={16} />
               <span className="hidden sm:inline">Exportar Pacote</span>
               <span className="sm:hidden">Pacote</span>
@@ -1086,7 +1086,7 @@ export default function ClientProfile({
         <div className="p-6 md:p-8 space-y-8">
           {/* Identificação */}
           <section>
-            <h3 className="text-[14px] font-[800] mb-4 text-[#7B98B8] flex items-center border-b pb-2">
+            <h3 className="text-[14px] font-[800] mb-4 text-[#0677FF] flex items-center border-b pb-2">
               <User className="w-5 h-5 opacity-80 mr-2" />
               Identificação do Cliente
             </h3>
@@ -1140,7 +1140,7 @@ export default function ClientProfile({
 
           {/* Dados Empresariais */}
           <section>
-            <h3 className="text-[14px] font-[800] mb-4 text-[#7B98B8] flex items-center border-b pb-2">
+            <h3 className="text-[14px] font-[800] mb-4 text-[#0677FF] flex items-center border-b pb-2">
               <Building2 className="w-5 h-5 opacity-80 mr-2" />
               Dados Empresariais
             </h3>
@@ -1202,7 +1202,7 @@ export default function ClientProfile({
                 </select>
               </div>
               <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-[8px] cursor-pointer">
-                <input type="checkbox" checked={profile.isSazonal} onChange={e => updateProfile('isSazonal', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
+                <input type="checkbox" checked={profile.isSazonal} onChange={e => updateProfile('isSazonal', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
                 <span className="text-[13px] font-[600] text-slate-700">Atividade Sazonal <Tip>Se o negócio só funciona em certas épocas (ex: turismo de praia, agricultura). Afeta os cálculos de SS.</Tip></span>
               </label>
               {/* Regime warnings */}
@@ -1241,7 +1241,7 @@ export default function ClientProfile({
 
           {/* Dados Fiscais e Família */}
           <section>
-            <h3 className="text-[14px] font-[800] mb-4 text-[#7B98B8] flex items-center border-b pb-2">
+            <h3 className="text-[14px] font-[800] mb-4 text-[#0677FF] flex items-center border-b pb-2">
               <FileText className="w-5 h-5 opacity-80 mr-2" />
               Dados Fiscais e Família
             </h3>
@@ -1265,7 +1265,7 @@ export default function ClientProfile({
                 <input type="number" value={profile.nrDependentes === 0 ? '' : profile.nrDependentes} onChange={e => updateProfile('nrDependentes', Number(e.target.value) || 0)} className={inputClass} min={0} max={10} />
               </div>
               <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-[8px] cursor-pointer">
-                <input type="checkbox" checked={profile.cônjugeRendimentos} onChange={e => updateProfile('cônjugeRendimentos', e.target.checked)} className="w-4 h-4 accent-[#7B98B8]" />
+                <input type="checkbox" checked={profile.cônjugeRendimentos} onChange={e => updateProfile('cônjugeRendimentos', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
                 <span className="text-[13px] font-[600] text-slate-700">Cônjuge c/ Rendimentos</span>
               </label>
               <label className="col-span-2 flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-[8px] cursor-pointer">
@@ -1278,7 +1278,7 @@ export default function ClientProfile({
           {/* Secções extra (4-6) — render reaproveitando os steps do wizard para evitar duplicação. */}
           {steps.slice(3).map(step => (
             <section key={step.id}>
-              <h3 className="text-[14px] font-[800] mb-4 text-[#7B98B8] flex items-center border-b pb-2">
+              <h3 className="text-[14px] font-[800] mb-4 text-[#0677FF] flex items-center border-b pb-2">
                 <FileText className="w-5 h-5 opacity-80 mr-2" />
                 {step.label}
               </h3>

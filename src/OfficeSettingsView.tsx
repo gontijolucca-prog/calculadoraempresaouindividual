@@ -14,7 +14,7 @@ interface Props {
 
 type Tab = 'escritorio' | 'honorarios';
 
-const inputCls = "w-full px-3 py-2 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] font-[600] text-[#0F172A] focus:border-[#7B98B8] outline-none transition-all";
+const inputCls = "w-full px-3 py-2 bg-[#F5F7FA] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] font-[600] text-[#0F172A] focus:border-[#0677FF] outline-none transition-all";
 const labelCls = "block text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B] mb-1.5";
 const sectionTitleCls = "text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3";
 const eur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(v || 0);
@@ -33,7 +33,7 @@ export default function OfficeSettingsView({ office, onOfficeChange, honorarios,
 
   return (
     <motion.div
-      className="h-full overflow-y-auto bg-[#F8FAFC]"
+      className="h-full overflow-y-auto bg-[#F5F7FA]"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
@@ -78,7 +78,7 @@ function TabButton({ active, onClick, icon: Icon, children }: { active: boolean;
       onClick={onClick}
       className={`flex items-center gap-2 px-4 py-2.5 text-[13px] font-[700] border-b-2 -mb-px transition-colors ${
         active
-          ? 'text-[#0F172A] border-[#7B98B8]'
+          ? 'text-[#0F172A] border-[#0677FF]'
           : 'text-[#64748B] border-transparent hover:text-[#0F172A]'
       }`}
     >
@@ -116,7 +116,7 @@ function EscritorioForm({ office, onChange }: { office: OfficeSettings; onChange
         <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-6 items-start">
           <div>
             <div
-              className="w-[200px] h-[160px] border-2 border-dashed border-[#CBD5E1] rounded-[12px] bg-[#F8FAFC] flex items-center justify-center overflow-hidden"
+              className="w-[200px] h-[160px] border-2 border-dashed border-[#CBD5E1] rounded-[12px] bg-[#F5F7FA] flex items-center justify-center overflow-hidden"
               aria-label="Pré-visualização do logo"
             >
               {office.logoDataUrl ? (
@@ -153,7 +153,7 @@ function EscritorioForm({ office, onChange }: { office: OfficeSettings; onChange
               <label className={labelCls}>Cor primária do branding</label>
               <div className="flex gap-2 items-center">
                 <input type="color" value={office.corPrimaria} onChange={e => set('corPrimaria', e.target.value)} className="w-12 h-10 rounded-[8px] border-2 border-[#E2E8F0] cursor-pointer" />
-                <input type="text" value={office.corPrimaria} onChange={e => set('corPrimaria', e.target.value)} className={inputCls + ' max-w-[140px] font-mono'} placeholder="#7B98B8" />
+                <input type="text" value={office.corPrimaria} onChange={e => set('corPrimaria', e.target.value)} className={inputCls + ' max-w-[140px] font-mono'} placeholder="#0677FF" />
                 <div className="flex-1 h-10 rounded-[8px]" style={{ backgroundColor: office.corPrimaria }} aria-hidden="true" />
               </div>
               <p className="text-[11px] text-[#64748B] mt-1">Usada em cabeçalhos de proposta, contratos e PDFs.</p>
@@ -279,11 +279,11 @@ function RadioCard({ checked, onClick, title, subtitle }: { checked: boolean; on
       onClick={onClick}
       aria-pressed={checked}
       className={`text-left p-3 rounded-[10px] border-2 transition-all ${
-        checked ? 'border-[#7B98B8] bg-[#7B98B8]/5' : 'border-[#E2E8F0] bg-white hover:border-[#CBD5E1]'
+        checked ? 'border-[#0677FF] bg-[#0677FF]/5' : 'border-[#E2E8F0] bg-white hover:border-[#CBD5E1]'
       }`}
     >
       <div className="flex items-center gap-2">
-        <span className={`w-4 h-4 rounded-full border-2 ${checked ? 'border-[#7B98B8] bg-[#7B98B8]' : 'border-[#CBD5E1]'}`} aria-hidden="true" />
+        <span className={`w-4 h-4 rounded-full border-2 ${checked ? 'border-[#0677FF] bg-[#0677FF]' : 'border-[#CBD5E1]'}`} aria-hidden="true" />
         <span className="text-[13px] font-[700] text-[#0F172A]">{title}</span>
       </div>
       <p className="text-[11px] text-[#64748B] font-[500] mt-1 pl-6">{subtitle}</p>
@@ -317,7 +317,7 @@ function HonorariosForm({ config, onChange }: { config: HonorariosConfig; onChan
         <p className="text-[12px] text-[#64748B] mb-4">Valor mensal base (€), antes de funcionários extra e majorações de faturação.</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {(Object.keys(config.baseMensal) as TipoEntidadeCliente[]).map(tipo => (
-            <div key={tipo} className="flex items-center gap-3 p-3 bg-[#F8FAFC] rounded-[10px]">
+            <div key={tipo} className="flex items-center gap-3 p-3 bg-[#F5F7FA] rounded-[10px]">
               <span className="text-[13px] font-[700] text-[#0F172A] flex-1">{TIPO_LABELS[tipo]}</span>
               <div className="flex items-center gap-1">
                 <input type="number" min={0} step={5} value={config.baseMensal[tipo]} onChange={e => setBase(tipo, Number(e.target.value) || 0)} className={inputCls + ' w-24 text-right'} />
@@ -361,18 +361,18 @@ function HonorariosForm({ config, onChange }: { config: HonorariosConfig; onChan
       <section className="bg-white rounded-[16px] border border-[#E2E8F0] p-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className={sectionTitleCls + ' mb-0'}>Catálogo de Serviços Extra</h2>
-          <button onClick={addServico} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#7B98B8] text-white text-[12px] font-[700] rounded-[8px] hover:bg-[#5C7A9E] transition-colors">
+          <button onClick={addServico} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0677FF] text-white text-[12px] font-[700] rounded-[8px] hover:bg-[#0556CC] transition-colors">
             <Plus className="w-3.5 h-3.5" /> Adicionar
           </button>
         </div>
         <div className="space-y-2">
           {config.servicosExtra.map((s, i) => (
-            <div key={s.id} className="grid grid-cols-[1fr_2fr_100px_100px_36px] gap-2 items-center p-2 bg-[#F8FAFC] rounded-[10px]">
+            <div key={s.id} className="grid grid-cols-[1fr_2fr_100px_100px_36px] gap-2 items-center p-2 bg-[#F5F7FA] rounded-[10px]">
               <input type="text" value={s.nome} onChange={e => setServico(i, { nome: e.target.value })} className={inputCls} placeholder="Nome" />
               <input type="text" value={s.descricao} onChange={e => setServico(i, { descricao: e.target.value })} className={inputCls} placeholder="Descrição" />
               <input type="number" min={0} step={5} value={s.precoMensal} onChange={e => setServico(i, { precoMensal: Number(e.target.value) || 0 })} className={inputCls + ' text-right'} placeholder="€/mês" />
               <label className="flex items-center justify-center gap-1 text-[11px] font-[700] text-[#475569] cursor-pointer">
-                <input type="checkbox" checked={s.ativoPorDefeito} onChange={e => setServico(i, { ativoPorDefeito: e.target.checked })} className="w-4 h-4 accent-[#7B98B8]" />
+                <input type="checkbox" checked={s.ativoPorDefeito} onChange={e => setServico(i, { ativoPorDefeito: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" />
                 Default
               </label>
               <button onClick={() => removeServico(i)} className="p-2 text-[#B91C1C] hover:bg-[#FEF2F2] rounded-[6px] transition-colors" aria-label="Remover">

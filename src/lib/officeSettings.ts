@@ -74,7 +74,7 @@ export const defaultOfficeSettings: OfficeSettings = {
   iban: '',
   foroComarca: 'Lisboa',
   logoDataUrl: '',
-  corPrimaria: '#7B98B8',
+  corPrimaria: '#0677FF',
 };
 
 const STORAGE_KEY = 'officeSettings';

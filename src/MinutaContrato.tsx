@@ -58,7 +58,7 @@ export default function MinutaContrato({
   const moradaCliente = [profile.morada, profile.codigoPostal, profile.localidade].filter(Boolean).join(', ');
   const moradaEscritorio = [office.morada, office.codigoPostal, office.localidade].filter(Boolean).join(', ');
 
-  const cor = office.corPrimaria || '#7B98B8';
+  const cor = office.corPrimaria || '#0677FF';
 
   // Identificação do contabilista responsável (cláusula 1.ª nº 3).
   const ccResponsavel = escritorioSociedade ? (office.contabilistaResponsavel || office.nome) : office.nome;

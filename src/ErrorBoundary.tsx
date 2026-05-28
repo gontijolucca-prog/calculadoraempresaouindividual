@@ -40,7 +40,7 @@ export default class ErrorBoundary extends Component<Props, State> {
       <div
         role="alert"
         aria-live="assertive"
-        className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6"
+        className="min-h-screen bg-[#F5F7FA] flex items-center justify-center p-6"
       >
         <div className="bg-white rounded-[24px] p-8 md:p-10 shadow-xl max-w-md w-full text-center">
           <div className="w-16 h-16 mx-auto rounded-full bg-red-50 border-4 border-red-100 flex items-center justify-center mb-5">
@@ -61,7 +61,7 @@ export default class ErrorBoundary extends Component<Props, State> {
           <button
             type="button"
             onClick={this.handleReload}
-            className="mt-6 w-full inline-flex items-center justify-center gap-2 bg-[#7B98B8] text-white py-3 rounded-[10px] text-[14px] font-[700] hover:bg-[#5C7A9E] active:scale-[0.98] transition-all shadow-md shadow-[#7B98B8]/20"
+            className="mt-6 w-full inline-flex items-center justify-center gap-2 bg-[#0677FF] text-white py-3 rounded-[10px] text-[14px] font-[700] hover:bg-[#0556CC] active:scale-[0.98] transition-all shadow-md shadow-[#0677FF]/20"
           >
             <RefreshCw className="w-4 h-4" aria-hidden="true" />
             Recarregar

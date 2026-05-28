@@ -1,14 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Helvetica Neue", Helvetica, Arial, "Inter", sans-serif;
+  --font-sans: "Montserrat", "Helvetica Neue", Helvetica, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --brand-navy: #0B1D2D;
+  --brand-blue: #0677FF;
+  --brand-cyan: #00C2FF;
+  --brand-gray: #6B7280;
+  --brand-surface: #F5F7FA;
 }
 
 body {
   font-family: var(--font-sans);
-  background-color: #F8FAFC;
-  color: #1E293B;
+  background-color: var(--brand-surface);
+  color: var(--brand-navy);
 }
 
 /* Hide scrollbar but keep scrollability (used on nav) */
@@ -37,20 +44,20 @@ body {
 /* Visible keyboard focus everywhere we removed default outline.
    `outline-none` is fine for mouse but harms keyboard users — restore a clear ring via :focus-visible. */
 :focus-visible {
-  outline: 2px solid #7B98B8;
+  outline: 2px solid #0677FF;
   outline-offset: 2px;
   border-radius: 6px;
 }
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid #7B98B8;
+  outline: 2px solid #0677FF;
   outline-offset: 2px;
 }
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 [contenteditable]:focus-visible {
-  outline: 2px solid #7B98B8;
+  outline: 2px solid #0677FF;
   outline-offset: 1px;
 }
 

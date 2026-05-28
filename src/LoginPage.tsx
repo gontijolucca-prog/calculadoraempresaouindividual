@@ -24,7 +24,7 @@ export default function LoginPage({ onLogin, onBack }: Props) {
   };
 
   return (
-    <motion.div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4 relative" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}>
+    <motion.div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center p-4 relative" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}>
       {onBack && (
         <button
           type="button"
@@ -39,14 +39,20 @@ export default function LoginPage({ onLogin, onBack }: Props) {
 
         {/* Logo centrado */}
         <div className="flex flex-col items-center mb-10">
-          <div className="w-24 h-24 mb-4">
-            <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-              <path d="M 70 20 A 35 35 0 1 1 35 22" stroke="#7B98B8" strokeWidth="10" strokeLinecap="round"/>
-              <path d="M 60 10 L 70 20 L 60 30" stroke="#525C66" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <h1 className="text-[26px] font-[800] tracking-[-0.5px] text-[#525C66]">Estudo <span className="text-[#7B98B8]">360</span></h1>
-          <p className="text-[13px] tracking-[0.5px] text-[#7B98B8] font-[600] mt-0.5">Ferramentas Fiscais · OE 2026</p>
+          <img
+            src="/logo.png"
+            alt="Estudo 360"
+            width={96}
+            height={96}
+            className="w-24 h-24 mb-4 object-contain select-none"
+            draggable={false}
+          />
+          <h1 className="text-[28px] font-[800] tracking-[-0.6px] text-[#0B1D2D]">
+            ESTUDO<span className="text-[#0677FF]">360°</span>
+          </h1>
+          <p className="text-[10px] tracking-[3px] uppercase text-[#6B7280] font-[600] mt-2">
+            Análise · Estratégia · Decisão
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5" noValidate>
@@ -63,7 +69,7 @@ export default function LoginPage({ onLogin, onBack }: Props) {
               autoComplete="email"
               inputMode="email"
               required
-              className="w-full px-4 py-3 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-[10px] text-[15px] font-[600] text-[#0F172A] focus:border-[#7B98B8] outline-none transition-all"
+              className="w-full px-4 py-3 bg-[#F5F7FA] border-2 border-[#E2E8F0] rounded-[10px] text-[15px] font-[600] text-[#0F172A] focus:border-[#0677FF] outline-none transition-all"
             />
           </div>
 
@@ -79,21 +85,21 @@ export default function LoginPage({ onLogin, onBack }: Props) {
               placeholder="••••••••"
               autoComplete="current-password"
               required
-              className="w-full px-4 py-3 bg-[#F8FAFC] border-2 border-[#E2E8F0] rounded-[10px] text-[15px] font-[600] text-[#0F172A] focus:border-[#7B98B8] outline-none transition-all"
+              className="w-full px-4 py-3 bg-[#F5F7FA] border-2 border-[#E2E8F0] rounded-[10px] text-[15px] font-[600] text-[#0F172A] focus:border-[#0677FF] outline-none transition-all"
             />
           </div>
 
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-[#7B98B8] text-white py-3.5 rounded-[10px] text-[15px] font-[700] hover:bg-[#5C7A9E] active:scale-[0.98] transition-all mt-2 shadow-md shadow-[#7B98B8]/20 disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100"
+            className="w-full bg-[#0677FF] text-white py-3.5 rounded-[10px] text-[15px] font-[700] hover:bg-[#0556CC] active:scale-[0.98] transition-all mt-2 shadow-md shadow-[#0677FF]/20 disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100"
           >
             {submitting ? 'A entrar…' : 'Entrar'}
           </button>
         </form>
 
-        <p className="text-center text-[11px] text-[#94A3B8] mt-8 font-[500]">
-          Estudo 360 • Simuladores OE 2026
+        <p className="text-center text-[11px] text-[#6B7280] mt-8 font-[500]">
+          Estudo 360 · Plataforma inteligente de apoio à decisão
         </p>
       </div>
     </motion.div>
