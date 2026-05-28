@@ -79,20 +79,11 @@ export function FlowWizard<T>({
       </div>
 
       {/* Header */}
-      <div className="shrink-0 flex items-center justify-between px-6 sm:px-10 lg:px-16 py-5">
-        <div className="flex items-center gap-3">
-          <div className="bg-[#F1F5F9] text-[#0F172A] p-2.5 rounded-[12px]">
-            <Icon className="w-5 h-5" />
-          </div>
-          <span className="text-[15px] font-[800] tracking-[-0.3px] text-[#0F172A]">{title}</span>
+      <div className="shrink-0 flex items-center gap-3 px-6 sm:px-10 lg:px-16 py-5">
+        <div className="bg-[#F1F5F9] text-[#0F172A] p-2.5 rounded-[12px]">
+          <Icon className="w-5 h-5" />
         </div>
-        <button
-          onClick={onClose}
-          className="flex items-center gap-2 px-4 py-2.5 text-[14px] font-[700] text-[#64748B] hover:text-[#0F172A] hover:bg-[#F5F7FA] rounded-[10px] transition-colors"
-        >
-          <X className="w-4 h-4" />
-          Vista detalhada
-        </button>
+        <span className="text-[15px] font-[800] tracking-[-0.3px] text-[#0F172A]">{title}</span>
       </div>
 
       {/* Main content area.

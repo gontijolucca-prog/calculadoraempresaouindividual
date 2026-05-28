@@ -3,7 +3,7 @@ import {
   UserCircle, Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote, Info,
   ClipboardList, Upload, LogOut, Receipt,
   ChevronDown, TrendingUp, Settings, UserPlus, Building2,
-  Menu, X, Clock, Briefcase,
+  Menu, X, Clock, Briefcase, ListOrdered, FileText, Package,
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import type { AppMode } from './ModeSelector';
@@ -96,6 +96,20 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [simOpen, setSimOpen] = useState<boolean>(isSimActive);
   useEffect(() => { if (isSimActive) setSimOpen(true); }, [isSimActive]);
+
+  // Acções do Perfil migradas para a sidebar: a sidebar dispara custom events e
+  // o ClientProfile responde. O flowMode actual chega aqui via event "profile:flowModeChange"
+  // para alternar o label "Vista simplificada" ↔ "Vista detalhada".
+  const [profileFlowMode, setProfileFlowMode] = useState(true);
+  useEffect(() => {
+    const onChange = (e: Event) => {
+      const detail = (e as CustomEvent<{ active: boolean }>).detail;
+      setProfileFlowMode(!!detail?.active);
+    };
+    window.addEventListener('profile:flowModeChange', onChange);
+    return () => window.removeEventListener('profile:flowModeChange', onChange);
+  }, []);
+  const fireProfileEvent = (name: string) => { window.dispatchEvent(new CustomEvent(name)); setDrawerOpen(false); };
   useEffect(() => {
     if (!drawerOpen) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setDrawerOpen(false); };
@@ -191,6 +205,28 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
           <>
             <SectionLabel>Cliente</SectionLabel>
             <NavItem label="Perfil do Cliente" Icon={UserCircle} onClick={() => go('profile')} current={active === 'profile'} title={NAV_TIPS.profile} />
+            {active === 'profile' && (
+              <div className="pl-3 mt-1 mb-2 space-y-0.5 border-l-2 border-slate-100">
+                <NavItem
+                  label={profileFlowMode ? 'Vista detalhada' : 'Vista simplificada'}
+                  Icon={ListOrdered}
+                  onClick={() => fireProfileEvent('profile:toggleFlow')}
+                  title={profileFlowMode ? 'Sair do flow guiado e ver todas as secções.' : 'Entrar no flow guiado em 6 passos.'}
+                />
+                <NavItem
+                  label="Só simulação"
+                  Icon={FileText}
+                  onClick={() => fireProfileEvent('profile:openEditor')}
+                  title="Abrir editor da carta de simulação."
+                />
+                <NavItem
+                  label="Exportar Pacote"
+                  Icon={Package}
+                  onClick={() => fireProfileEvent('profile:openPackage')}
+                  title="Gerar pacote PDF (proposta + simulação) do cliente."
+                />
+              </div>
+            )}
           </>
         )}
 

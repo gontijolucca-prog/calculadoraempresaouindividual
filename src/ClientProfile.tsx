@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { User, Building2, FileText, Download, Ticket, Wallet, MapPin, ListOrdered, Package } from 'lucide-react';
+import { User, Building2, FileText, Ticket, Wallet, MapPin } from 'lucide-react';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { Tip } from './Tip';
@@ -219,6 +219,26 @@ export default function ClientProfile({
 
   const currentYear = new Date().getFullYear();
   const { flowMode, enterFlow, exitFlow } = useFlowMode();
+
+  // Sincronização com a sidebar: as 3 acções do header migraram para NavItems.
+  // Aqui ouvimos os eventos da sidebar e propagamos o flowMode para que ela
+  // saiba alternar entre "Vista simplificada" e "Vista detalhada".
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('profile:flowModeChange', { detail: { active: flowMode } }));
+  }, [flowMode]);
+  useEffect(() => {
+    const onToggle = () => { (flowMode ? exitFlow : enterFlow)(); };
+    const onEditor = () => setShowEditor(true);
+    const onPackage = () => setShowPackage(true);
+    window.addEventListener('profile:toggleFlow', onToggle);
+    window.addEventListener('profile:openEditor', onEditor);
+    window.addEventListener('profile:openPackage', onPackage);
+    return () => {
+      window.removeEventListener('profile:toggleFlow', onToggle);
+      window.removeEventListener('profile:openEditor', onEditor);
+      window.removeEventListener('profile:openPackage', onPackage);
+    };
+  }, [flowMode, enterFlow, exitFlow]);
 
   // ─── PDF GENERATION ───────────────────────────────────────────────────────
 
@@ -1077,26 +1097,8 @@ export default function ClientProfile({
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.35, delay: 0.05, ease: [0.32, 0.72, 0, 1] }}
       >
-        <div className="p-4 md:p-8 flex flex-wrap items-center justify-between gap-y-3 sticky top-0 bg-white/90 backdrop-blur-md z-20 border-b border-[#F1F5F9]">
-          <div className="min-w-0">
-            <h2 className="text-[18px] md:text-[20px] font-[800] tracking-[-0.5px] text-[#0F172A]">Perfil do Cliente</h2>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap justify-end">
-            <motion.button onClick={enterFlow} className="shrink-0 flex items-center gap-1.5 px-2.5 md:px-3 py-2 text-[12px] md:text-[13px] font-[700] text-[#0677FF] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <ListOrdered className="w-4 h-4" />
-              <span className="hidden sm:inline">Vista simplificada</span>
-              <span className="sm:hidden">Simples</span>
-            </motion.button>
-            <button onClick={() => setShowEditor(true)} className="hidden md:flex shrink-0 items-center gap-2 bg-white border border-[#E2E8F0] text-[#0B1D2D] px-3 py-2 rounded-[10px] text-[13px] font-[700] hover:bg-slate-50 transition-colors">
-              <Download size={16} />
-              Só simulação
-            </button>
-            <button onClick={() => setShowPackage(true)} className="flex shrink-0 items-center gap-1.5 md:gap-2 bg-gradient-to-br from-[#0677FF] to-[#0B1D2D] text-white px-3 md:px-4 py-2 rounded-[10px] text-[12px] md:text-[13px] font-[800] hover:brightness-105 active:scale-[0.98] transition-all shadow-lg shadow-[#0677FF]/30">
-              <Package size={16} />
-              <span className="hidden sm:inline">Exportar Pacote</span>
-              <span className="sm:hidden">Pacote</span>
-            </button>
-          </div>
+        <div className="p-4 md:p-8 sticky top-0 bg-white/90 backdrop-blur-md z-20 border-b border-[#F1F5F9]">
+          <h2 className="text-[18px] md:text-[20px] font-[800] tracking-[-0.5px] text-[#0F172A]">Perfil do Cliente</h2>
         </div>
 
         <div className="p-6 md:p-8 space-y-8">
