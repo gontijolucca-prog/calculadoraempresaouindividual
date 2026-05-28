@@ -3,7 +3,6 @@ import React, { useMemo } from 'react';
 import {
   UtensilsCrossed, Baby, GraduationCap, Heart, Gift, Car,
   Euro, ShieldCheck, Calculator, AlertTriangle, TrendingUp, Info, Fuel,
-  ListOrdered,
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { TICKET_LIMITS_2026, TICKET_IRC_FACTOR, TICKET_CAR_IVA_RATE, SS_RATE_EMPLOYER } from './lib/pt2026';
@@ -86,7 +85,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
   const setState = (u: Partial<TicketSimulatorState>) => onStateChange({ ...s, ...u });
   const { simMode } = useTheme();
 
-  const { flowMode, enterFlow, exitFlow } = useFlowMode();
+  const { flowMode, exitFlow } = useFlowMode();
 
   const tipo = s.tipoTicket;
   const meta = TICKET_META[tipo];
@@ -589,10 +588,6 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
           </h2>
           <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Todos os tipos Ticket.pt — benefícios fiscais 2026</p>
         </div>
-
-        <motion.button onClick={enterFlow} className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#0677FF] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <ListOrdered className="w-4 h-4" /> Vista simplificada
-        </motion.button>
 
         {/* Type selector */}
         <div>

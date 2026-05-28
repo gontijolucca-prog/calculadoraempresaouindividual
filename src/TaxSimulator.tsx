@@ -3,8 +3,7 @@ import { motion } from 'motion/react';
 import {
   RefreshCw, TrendingUp, CheckCircle2, Calculator, Briefcase, PieChart, ShieldAlert,
   User, Info, Layers, Activity, Hash, Package, DollarSign, Crown, Globe, Target,
-  Coins, UserCheck, Settings, BarChart2, CircleUser, UserRound, AlertTriangle,
-  ListOrdered
+  Coins, UserCheck, Settings, BarChart2, CircleUser, UserRound, AlertTriangle
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { useTheme } from './ThemeContext';
@@ -68,7 +67,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
     onStateChange({ ...initialState, ...updates });
   };
 
-  const { flowMode, enterFlow, exitFlow } = useFlowMode();
+  const { flowMode, exitFlow } = useFlowMode();
 
   /* ── Icons per mode ── */
   const [I1, I2, I3, I4] = (
@@ -554,14 +553,6 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
               <div className="text-[11px] font-[700] uppercase tracking-[1px] text-[#4F46E5] mt-1">Estudo de Negócio • OE 2026</div>
             </div>
             <div className="flex items-center gap-2">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={enterFlow}
-                className="flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#0677FF] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all"
-              >
-                <ListOrdered className="w-4 h-4" /> Vista simplificada
-              </motion.button>
               <button onClick={resetAll} className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-[8px] transition-colors" title="Repor"><RefreshCw size={18} /></button>
             </div>
           </div>
@@ -810,14 +801,6 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
               </h1>
             </div>
             <div className="flex items-center gap-2">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={enterFlow}
-                className="flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#0677FF] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all"
-              >
-                <ListOrdered className="w-4 h-4" /> Vista simplificada
-              </motion.button>
               <button onClick={resetAll} className="mt-1 p-2 rounded-[8px] text-stone-400 hover:text-white hover:bg-stone-800 transition-colors"><RefreshCw size={16}/></button>
             </div>
           </div>

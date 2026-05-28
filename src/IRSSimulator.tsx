@@ -117,11 +117,11 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelCls}>Dependentes</label>
-              <input type="number" min={0} step={1} className={inputCls} value={s.dependentes} onChange={(e) => set({ dependentes: parseInt(e.target.value) || 0 })} />
+              <input type="number" min={0} step={1} className={inputCls} value={s.dependentes === 0 ? '' : s.dependentes} placeholder="0" onChange={(e) => set({ dependentes: parseInt(e.target.value) || 0 })} />
             </div>
             <div>
               <label className={labelCls}>… dos quais ≤ 3 anos</label>
-              <input type="number" min={0} step={1} className={inputCls} value={s.dep0a3} onChange={(e) => set({ dep0a3: parseInt(e.target.value) || 0 })} />
+              <input type="number" min={0} step={1} className={inputCls} value={s.dep0a3 === 0 ? '' : s.dep0a3} placeholder="0" onChange={(e) => set({ dep0a3: parseInt(e.target.value) || 0 })} />
             </div>
           </div>
           <div>
@@ -167,7 +167,7 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
                 </div>
                 <div>
                   <label className={labelCls}>IRS Jovem — ano <Tip>Ano de aplicação do IRS Jovem (1 a 10). 1.º=100%, 2-4=75%, 5-7=50%, 8-10=25% de isenção. 0 = não aplicável.</Tip></label>
-                  <input type="number" min={0} max={10} className={inputCls} value={p.irsJovemAno || 0} onChange={(e) => setPessoa(i, { irsJovemAno: parseInt(e.target.value) || 0 })} />
+                  <input type="number" min={0} max={10} className={inputCls} value={p.irsJovemAno || ''} placeholder="0" onChange={(e) => setPessoa(i, { irsJovemAno: parseInt(e.target.value) || 0 })} />
                 </div>
                 <div>
                   <label className={labelCls}>Rend. Cat. B / atividade (€)</label>

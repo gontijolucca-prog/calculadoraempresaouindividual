@@ -76,7 +76,7 @@ const VIEW_TITLES: Record<ViewType, string> = {
   irs: 'Simulador de IRS',
   legal: 'Base Legal & Referências',
   updates: 'Checklist de Atualizações',
-  previsa: 'Simulador PreviSa',
+  previsa: 'Simulador Previsa',
   'office-settings': 'Definições do Escritório',
 };
 

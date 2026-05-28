@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import React, { useMemo } from 'react';
-import { Home, CheckCircle, XCircle, AlertTriangle, ArrowRight, Building, ListOrdered } from 'lucide-react';
+import { Home, CheckCircle, XCircle, AlertTriangle, ArrowRight, Building } from 'lucide-react';
 import { cn } from './lib/utils';
 import type { ClientProfile } from './ClientProfile';
 import { calcIMT } from './lib/imt';
@@ -111,7 +111,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
     'Obrigatoriedade de avaliação fiscal',
   ];
 
-  const { flowMode, enterFlow, exitFlow } = useFlowMode();
+  const { flowMode, exitFlow } = useFlowMode();
 
   const steps: FlowStep<ImoveisState>[] = [
     {
@@ -311,9 +311,6 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
             <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Imóveis na Empresa</h2>
             <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Arrendamento/Comodato vs. Entrada em Espécie — guia de decisão.</p>
           </div>
-          <motion.button onClick={enterFlow} className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#0677FF] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <ListOrdered className="w-4 h-4" /> Vista simplificada
-          </motion.button>
         </div>
 
         <div className="space-y-[18px]">

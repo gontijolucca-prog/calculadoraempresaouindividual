@@ -353,7 +353,7 @@ function ToolsCatalog() {
     { label: 'Imóveis', sub: 'Arrendar vs entrada', Icon: Building2 },
     { label: 'IMT', sub: 'Aquisição', Icon: BookOpen },
     { label: 'Salário', sub: 'Líquido + custo', Icon: BadgeCheck },
-    { label: 'PreviSa', sub: 'Modelo 22/IRC', Icon: Calculator },
+    { label: 'Previsa', sub: 'Modelo 22/IRC', Icon: Calculator },
     { label: 'Base Legal', sub: '30+ fontes', Icon: BookOpen },
   ];
   return (

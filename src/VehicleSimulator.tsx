@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Car, Euro, AlertTriangle, ShieldCheck, ListOrdered } from 'lucide-react';
+import { Car, Euro, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { cn } from './lib/utils';
 import { useTheme } from './ThemeContext';
 import { Tip } from './Tip';
@@ -329,7 +329,7 @@ function useVehicleResults(state: VehicleSimulatorState) {
 export default function VehicleSimulator({ initialState, onStateChange }: Props) {
   const { category, engineType, price, ivaRegime, activity, maintenanceCost, insuranceCost, fuelCost, exemptTA, phevCompliant } = initialState;
 
-  const { flowMode, enterFlow, exitFlow } = useFlowMode();
+  const { flowMode, exitFlow } = useFlowMode();
 
   const setState = (updates: Partial<VehicleSimulatorState>) => {
     onStateChange({ ...initialState, ...updates });
@@ -532,16 +532,6 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
             <h2 className="text-[24px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador Viaturas <Tip>Calcula o IVA que a empresa pode recuperar na compra e manutenção do carro, e a Tributação Autónoma sobre encargos com viaturas de passageiros.</Tip></h2>
             <p className="text-[14px] text-[#64748B] font-[500] mt-[4px]">Cálculo IVA e Tributação Autónoma. <Tip>IVA é o Imposto sobre o Valor Acrescentado — as empresas podem recuperar parte do IVA pago se usarem o carro para atividade tributável. Tributação Autónoma é um imposto extra sobre encargos com carros da empresa.</Tip></p>
           </div>
-          <motion.button
-            onClick={enterFlow}
-            className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#0677FF] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-          >
-            <ListOrdered className="w-4 h-4" />
-            Vista simplificada
-          </motion.button>
         </div>
 
         <div className="space-y-[24px]">

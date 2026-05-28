@@ -56,7 +56,7 @@ const NAV_ITEMS = [
   { id: 'imt'        as ViewType, label: 'IMT',          Icon: Building,   group: 'sim'     },
   { id: 'salario'    as ViewType, label: 'Salário',      Icon: Banknote,   group: 'sim'     },
   { id: 'irs'        as ViewType, label: 'IRS',          Icon: Receipt,    group: 'sim'     },
-  { id: 'previsa'    as ViewType, label: 'PreviSa',      Icon: TrendingUp,     group: 'sim' },
+  { id: 'previsa'    as ViewType, label: 'Previsa',      Icon: TrendingUp,     group: 'sim' },
 ] as const;
 
 const NAV_TIPS: Record<string, string> = {
@@ -70,7 +70,7 @@ const NAV_TIPS: Record<string, string> = {
   imt: 'Imposto Municipal sobre Transmissões: calcula o IMT e o Imposto de Selo na compra de imóveis.',
   salario: 'Calcula o salário líquido mensal de um trabalhador e o custo total para a empresa.',
   irs: 'Simulador de IRS anual (Modelo 3): rendimento coletável, escalões, IRS Jovem, deduções à coleta e benefício municipal — estima reembolso ou imposto a pagar.',
-  previsa: 'Simulador PreviSa — previsão de IRC (Modelo 22): apuramento Q07, matéria coletável Q09, tributações autónomas, PEC/PC e liquidação.',
+  previsa: 'Simulador Previsa — previsão de IRC (Modelo 22): apuramento Q07, matéria coletável Q09, tributações autónomas, PEC/PC e liquidação.',
 };
 
 function Logo({ className = 'w-7 h-7' }: { className?: string }) {

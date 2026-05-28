@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import React, { useMemo } from 'react';
-import { BarChart2, AlertTriangle, CheckCircle, Circle, TrendingUp, Wallet, Users, Building, Settings, ListOrdered } from 'lucide-react';
+import { BarChart2, AlertTriangle, CheckCircle, Circle, TrendingUp, Wallet, Users, Building, Settings } from 'lucide-react';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { cn } from './lib/utils';
@@ -190,7 +190,7 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
 
   const pilaresFracos = PILAR_LABELS.filter((_, i) => scores[i] < 3);
 
-  const { flowMode, enterFlow, exitFlow } = useFlowMode();
+  const { flowMode, exitFlow } = useFlowMode();
 
   const steps: FlowStep<DiagnosticoState>[] = [
     {
@@ -441,9 +441,6 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
             <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Diagnóstico de Autonomia</h2>
             <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Avaliação por 5 pilares — balanço e gestão empresarial.</p>
           </div>
-          <motion.button onClick={enterFlow} className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#0677FF] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <ListOrdered className="w-4 h-4" /> Vista simplificada
-          </motion.button>
         </div>
 
         {/* P1 — Autonomia Financeira */}

@@ -35,7 +35,7 @@ const MODES: ModeCard[] = [
     id: 'empresa',
     label: 'Empresa',
     tagline: 'Simuladores empresariais',
-    description: 'Fiscal, viaturas, tickets de refeição, imóveis, IMT, salário, diagnóstico e PreviSa (Modelo 22).',
+    description: 'Fiscal, viaturas, tickets de refeição, imóveis, IMT, salário, diagnóstico e Previsa (Modelo 22).',
     Icon: Building2,
     accent: '#0B1D2D',
     accentSoft: '#E2E8F0',

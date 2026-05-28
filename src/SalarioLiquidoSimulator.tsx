@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import React, { useMemo } from 'react';
-import { Banknote, User, ChevronDown, ShieldCheck, Euro, ListOrdered } from 'lucide-react';
+import { Banknote, User, ChevronDown, ShieldCheck, Euro } from 'lucide-react';
 import { cn } from './lib/utils';
 import { calcSalarioLiquido, type EstadoCivil, type SalarioParams } from './lib/salario';
 import { useTheme } from './ThemeContext';
@@ -32,7 +32,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
   const s = initialState;
   const setState = (u: Partial<SalarioState>) => onStateChange({ ...s, ...u });
   const { simMode } = useTheme();
-  const { flowMode, enterFlow, exitFlow } = useFlowMode();
+  const { flowMode, exitFlow } = useFlowMode();
   const outerCls = { split: "overflow-y-auto lg:overflow-hidden lg:h-full lg:grid lg:grid-cols-[400px_1fr] bg-[#F5F7FA] text-[#1E293B]", stacked: "h-full flex flex-col bg-[#F0F4F8] text-[#1E293B] overflow-y-auto", mosaic: "h-full bg-[#F0FDF4] text-[#1E293B] md:grid md:grid-cols-2 gap-4 p-4", compact: "h-full overflow-y-auto bg-white text-[#1E293B]", hero: "h-full flex md:flex-row-reverse overflow-hidden bg-[#F5F5F4] text-[#1E293B]" }[simMode];
   const leftCls = { split: "bg-white border-b border-[#E2E8F0] lg:border-b-0 lg:border-r lg:overflow-y-auto p-4 sm:p-5 lg:p-[28px] flex flex-col gap-4 lg:gap-[22px] lg:h-full", stacked: "bg-white border-b-2 border-[#E2E8F0] p-6 flex flex-col gap-5", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-5 h-full", compact: "max-w-xl mx-auto p-4 pb-0 w-full", hero: "md:w-[420px] shrink-0 bg-white border-l border-[#E2E8F0] overflow-y-auto p-6 flex flex-col gap-5 h-full" }[simMode];
   const rightCls = { split: "p-4 sm:p-5 lg:p-[28px] lg:overflow-y-auto lg:h-full flex flex-col gap-4 lg:gap-[16px]", stacked: "p-6 flex flex-col gap-4 max-w-7xl mx-auto w-full", mosaic: "bg-white rounded-[20px] border border-emerald-100 shadow-sm overflow-y-auto p-5 flex flex-col gap-4 h-full", compact: "max-w-xl mx-auto p-4 pt-2 w-full border-t border-slate-100", hero: "flex-1 overflow-y-auto p-6 flex flex-col gap-4" }[simMode];
@@ -444,13 +444,6 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
             <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Salário Líquido (TCO)</h2>
             <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Simulador para trabalhadores por conta de outrem — 2026.</p>
           </div>
-          <button
-            onClick={enterFlow}
-            className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#64748B] hover:text-[#0F172A] hover:bg-[#F5F7FA] rounded-[10px] transition-colors border border-[#E2E8F0]"
-          >
-            <ListOrdered className="w-4 h-4" />
-            Vista simplificada
-          </button>
         </div>
 
         <div className="space-y-[18px]">

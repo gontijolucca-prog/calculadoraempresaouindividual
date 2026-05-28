@@ -320,7 +320,7 @@ function HonorariosForm({ config, onChange }: { config: HonorariosConfig; onChan
             <div key={tipo} className="flex items-center gap-3 p-3 bg-[#F5F7FA] rounded-[10px]">
               <span className="text-[13px] font-[700] text-[#0F172A] flex-1">{TIPO_LABELS[tipo]}</span>
               <div className="flex items-center gap-1">
-                <input type="number" min={0} step={5} value={config.baseMensal[tipo]} onChange={e => setBase(tipo, Number(e.target.value) || 0)} className={inputCls + ' w-24 text-right'} />
+                <input type="number" min={0} step={5} value={config.baseMensal[tipo] === 0 ? '' : config.baseMensal[tipo]} placeholder="0" onChange={e => setBase(tipo, Number(e.target.value) || 0)} className={inputCls + ' w-24 text-right'} />
                 <span className="text-[12px] font-[700] text-[#64748B]">€/mês</span>
               </div>
             </div>
@@ -334,11 +334,11 @@ function HonorariosForm({ config, onChange }: { config: HonorariosConfig; onChan
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Funcionários incluídos no valor base</label>
-            <input type="number" min={0} value={config.funcionariosIncluidos} onChange={e => set('funcionariosIncluidos', Number(e.target.value) || 0)} className={inputCls} />
+            <input type="number" min={0} value={config.funcionariosIncluidos === 0 ? '' : config.funcionariosIncluidos} placeholder="0" onChange={e => set('funcionariosIncluidos', Number(e.target.value) || 0)} className={inputCls} />
           </div>
           <div>
             <label className={labelCls}>Acréscimo €/mês por funcionário adicional</label>
-            <input type="number" min={0} step={1} value={config.acrescimoPorFuncionario} onChange={e => set('acrescimoPorFuncionario', Number(e.target.value) || 0)} className={inputCls} />
+            <input type="number" min={0} step={1} value={config.acrescimoPorFuncionario === 0 ? '' : config.acrescimoPorFuncionario} placeholder="0" onChange={e => set('acrescimoPorFuncionario', Number(e.target.value) || 0)} className={inputCls} />
           </div>
         </div>
       </section>
@@ -350,8 +350,8 @@ function HonorariosForm({ config, onChange }: { config: HonorariosConfig; onChan
           {config.escaloesFaturacao.map((e, i) => (
             <div key={i} className="grid grid-cols-[1fr_140px_140px] gap-2 items-center">
               <input type="text" value={e.descricao} onChange={ev => setEscalao(i, { descricao: ev.target.value })} className={inputCls} />
-              <input type="number" min={0} step={1000} value={e.minFaturacao} onChange={ev => setEscalao(i, { minFaturacao: Number(ev.target.value) || 0 })} className={inputCls + ' text-right'} placeholder="Min (€)" />
-              <input type="number" min={0} step={5} value={e.acrescimoMensal} onChange={ev => setEscalao(i, { acrescimoMensal: Number(ev.target.value) || 0 })} className={inputCls + ' text-right'} placeholder="Acrésc. €/mês" />
+              <input type="number" min={0} step={1000} value={e.minFaturacao === 0 ? '' : e.minFaturacao} onChange={ev => setEscalao(i, { minFaturacao: Number(ev.target.value) || 0 })} className={inputCls + ' text-right'} placeholder="Min (€)" />
+              <input type="number" min={0} step={5} value={e.acrescimoMensal === 0 ? '' : e.acrescimoMensal} onChange={ev => setEscalao(i, { acrescimoMensal: Number(ev.target.value) || 0 })} className={inputCls + ' text-right'} placeholder="Acrésc. €/mês" />
             </div>
           ))}
         </div>
@@ -370,7 +370,7 @@ function HonorariosForm({ config, onChange }: { config: HonorariosConfig; onChan
             <div key={s.id} className="grid grid-cols-[1fr_2fr_100px_100px_36px] gap-2 items-center p-2 bg-[#F5F7FA] rounded-[10px]">
               <input type="text" value={s.nome} onChange={e => setServico(i, { nome: e.target.value })} className={inputCls} placeholder="Nome" />
               <input type="text" value={s.descricao} onChange={e => setServico(i, { descricao: e.target.value })} className={inputCls} placeholder="Descrição" />
-              <input type="number" min={0} step={5} value={s.precoMensal} onChange={e => setServico(i, { precoMensal: Number(e.target.value) || 0 })} className={inputCls + ' text-right'} placeholder="€/mês" />
+              <input type="number" min={0} step={5} value={s.precoMensal === 0 ? '' : s.precoMensal} onChange={e => setServico(i, { precoMensal: Number(e.target.value) || 0 })} className={inputCls + ' text-right'} placeholder="€/mês" />
               <label className="flex items-center justify-center gap-1 text-[11px] font-[700] text-[#475569] cursor-pointer">
                 <input type="checkbox" checked={s.ativoPorDefeito} onChange={e => setServico(i, { ativoPorDefeito: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" />
                 Default
@@ -398,7 +398,7 @@ function HonorariosForm({ config, onChange }: { config: HonorariosConfig; onChan
           <div>
             <label className={labelCls}>Mínimo mensal absoluto</label>
             <div className="flex items-center gap-1">
-              <input type="number" min={0} step={5} value={config.minimoMensal} onChange={e => set('minimoMensal', Number(e.target.value) || 0)} className={inputCls + ' text-right'} />
+              <input type="number" min={0} step={5} value={config.minimoMensal === 0 ? '' : config.minimoMensal} placeholder="0" onChange={e => set('minimoMensal', Number(e.target.value) || 0)} className={inputCls + ' text-right'} />
               <span className="text-[12px] font-[700] text-[#64748B]">€/mês</span>
             </div>
             <p className="text-[11px] text-[#64748B] mt-1">Propostas nunca caem abaixo deste valor.</p>

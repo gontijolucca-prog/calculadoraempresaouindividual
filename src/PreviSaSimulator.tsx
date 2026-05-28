@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ChevronDown, ChevronRight, Plus, Trash2, ListOrdered, Calculator } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Trash2, Calculator } from 'lucide-react';
 import { cn } from './lib/utils';
 import type { Regime, Territorio, FuelType, ViaturaRow, PreviSaState } from './previSaState';
 import { defaultPreviSaState } from './previSaState';
@@ -461,7 +461,7 @@ interface Props {
 export default function PreviSaSimulator({ initialState, onStateChange }: Props = {}) {
   const [state, setState] = useState<PreviSaState>(() => ({ ...defaultPreviSaState(), ...initialState }));
   const [tab, setTab] = useState<Tab>('Identificação');
-  const { flowMode, enterFlow, exitFlow } = useFlowMode();
+  const { flowMode, exitFlow } = useFlowMode();
 
   useEffect(() => {
     if (!initialState || Object.keys(initialState).length === 0) return;
@@ -997,7 +997,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
       <FlowWizard
         open={flowMode}
         onClose={exitFlow}
-        title="Simulador PreviSa"
+        title="Simulador Previsa"
         icon={Calculator}
         steps={steps}
         resultsStep={{ label: 'Resumo do Modelo 22', description: 'Resultado da previsão de IRC para o período.', render: resultsContent }}
@@ -1018,17 +1018,9 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
       {/* Header */}
       <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-4 shrink-0 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-[20px] font-[800] text-[#0F172A]">Simulador PreviSa</h1>
+          <h1 className="text-[20px] font-[800] text-[#0F172A]">Simulador Previsa</h1>
           <p className="text-[12px] text-slate-500 font-[500] mt-0.5">IRC — Modelo 22 · Previsão de IRC</p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={enterFlow}
-          className="shrink-0 flex items-center gap-2 px-3 py-2 text-[13px] font-[700] text-[#0677FF] bg-[#FEF2F2] border border-[#FECACA] rounded-[10px] hover:bg-[#FEE2E2] transition-all"
-        >
-          <ListOrdered className="w-4 h-4" /> Vista simplificada
-        </motion.button>
       </div>
 
       {/* Tabs */}
