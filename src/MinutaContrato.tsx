@@ -92,6 +92,7 @@ export default function MinutaContrato({
           #${printRootId} { position: absolute; top: 0; left: 0; width: 100%; }
           #${printRootId} .mc-page { box-shadow: none; margin: 0; page-break-after: always; zoom: 1 !important; }
           #${printRootId} .mc-page:last-child { page-break-after: auto; }
+          #${printRootId} [contenteditable] { outline: none !important; }
           @page { size: A4; margin: 0; }
         }
         /* Em ecrãs estreitos a folha A4 não cabe — encolhe com zoom (impressão fica intacta). */
@@ -106,7 +107,13 @@ export default function MinutaContrato({
         }
       `}</style>
 
-      <div className="mc-page">
+      {/* Dica de edição (não imprime) */}
+      <div className="no-print" style={{ maxWidth: '210mm', margin: '0 auto 8px auto', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, fontSize: '12px', color: '#1D4ED8', fontWeight: 600 }}>
+        <span aria-hidden>✏️</span>
+        <span>Clique em qualquer cláusula ou texto para o editar antes de imprimir.</span>
+      </div>
+
+      <div className="mc-page" contentEditable suppressContentEditableWarning>
         <div className="mc-band" />
 
         <h1>Minuta de Contrato de Prestação de Serviços</h1>
@@ -201,7 +208,7 @@ export default function MinutaContrato({
       </div>
 
       {/* ─── PÁGINA 2 ─── */}
-      <div className="mc-page">
+      <div className="mc-page" contentEditable suppressContentEditableWarning>
         <div className="mc-band" />
 
         <h2>Cláusula Terceira</h2>
@@ -244,7 +251,7 @@ export default function MinutaContrato({
       </div>
 
       {/* ─── PÁGINA 3 ─── */}
-      <div className="mc-page">
+      <div className="mc-page" contentEditable suppressContentEditableWarning>
         <div className="mc-band" />
 
         <h2>Cláusula Sexta</h2>

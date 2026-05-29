@@ -164,7 +164,7 @@ const PageHeader = ({ title, pageNum, brand }: { title: string; pageNum: number;
 );
 
 const PageFooter = ({ brand }: { brand: Brand }) => (
-  <div style={{ background: brand.color, color: 'white', padding: '4px 14mm', fontSize: '6.5pt', textAlign: 'center', marginTop: 'auto' }}>
+  <div style={{ background: brand.color, color: 'white', padding: '4px 14mm', fontSize: '6.5pt', textAlign: 'center', marginTop: 14 }}>
     <span contentEditable suppressContentEditableWarning
       style={{ outline: 'none', cursor: 'text' }}
     >Dados atualizados conforme OE 2026 • Este relatório é uma estimativa. Consulte o seu contabilista certificado.</span>
@@ -179,8 +179,15 @@ const MetricCard = ({ label, value, bg, color }: { label: string; value: string;
   </div>
 );
 
+// Cada secção é uma folha A4 (210mm de largura) que QUEBRA de página na
+// impressão (page-break-after). Antes forçávamos minHeight: 297mm + conteúdo
+// flex:1 + rodapé empurrado para o fundo (marginTop:auto) — em páginas pouco
+// preenchidas (capa, viaturas, notas) isso abria um enorme vazio entre o
+// conteúdo e o rodapé. Agora a folha tem a altura do conteúdo: o rodapé segue
+// logo a seguir e a folha física pode ficar mais curta que A4 (espaço em branco
+// só no fim, não a meio). Documento muito mais compacto.
 const pageStyle: React.CSSProperties = {
-  width: '210mm', minHeight: '297mm', background: 'white',
+  width: '210mm', background: 'white',
   boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
   margin: '0 auto 24px auto', display: 'flex', flexDirection: 'column',
   fontFamily: 'Arial, Helvetica, sans-serif', boxSizing: 'border-box',
@@ -426,7 +433,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
           </div>
 
           {/* Content */}
-          <div style={{ padding: '5mm 14mm 8mm 14mm', flex: 1 }}>
+          <div style={{ padding: '5mm 14mm 8mm 14mm' }}>
 
             <SecHead title="Dados do Cliente" bg={brand.color} />
             <div style={{ background: '#F5F7FA' }}>
@@ -470,7 +477,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
         {taxState && taxR && (
           <div className="pdf-page" style={pageStyle}>
             <PageHeader title="Enquadramento Fiscal — ENI vs Sociedade" pageNum={2} brand={brand} />
-            <div style={{ flex: 1, padding: '5mm 14mm 8mm 14mm' }}>
+            <div style={{ padding: '5mm 14mm 8mm 14mm' }}>
 
               {/* Comparison table header */}
               <div style={{ display: 'flex', marginBottom: 0 }}>
@@ -568,7 +575,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
         {vehicleState && vehR && (
           <div className="pdf-page" style={pageStyle}>
             <PageHeader title="Viaturas Ligeiras — IVA e Tributação Autónoma" pageNum={3} brand={brand} />
-            <div style={{ flex: 1, padding: '5mm 14mm 8mm 14mm' }}>
+            <div style={{ padding: '5mm 14mm 8mm 14mm' }}>
               <SecHead title={`${vehicleState.category === 'passageiros' ? 'Ligeiro de Passageiros' : 'Veículo Comercial'} — ${vehicleState.engineType.toUpperCase()}`} bg={brand.color} />
               <div style={{ background: '#F5F7FA' }}>
                 <DR2 l1="Preço Aquisição (s/ IVA):" v1={ptEur(vehicleState.price)} l2="Regime Aquisição:" v2={vehicleState.ivaRegime === 'normal' ? 'Compra Nova c/ IVA' : vehicleState.ivaRegime === 'second_hand' ? '2ª Mão' : 'Leasing/Renting'} />
@@ -608,7 +615,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
         {(ticketState || ssState) && (
           <div className="pdf-page" style={pageStyle}>
             <PageHeader title="Benefícios Laborais e Segurança Social" pageNum={vehicleState ? 4 : 3} brand={brand} />
-            <div style={{ flex: 1, padding: '5mm 14mm 8mm 14mm' }}>
+            <div style={{ padding: '5mm 14mm 8mm 14mm' }}>
 
               {tickR && ticketState && (
                 <>
@@ -655,7 +662,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
         {/* ════ ÚLTIMA PÁGINA — NOTAS LEGAIS ════ */}
         <div className="pdf-page" style={{ ...pageStyle, pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
           <PageHeader title="Base Legal e Notas" pageNum={[taxState, vehicleState, ticketState || ssState].filter(Boolean).length + 2} brand={brand} />
-          <div style={{ flex: 1, padding: '5mm 14mm 8mm 14mm' }}>
+          <div style={{ padding: '5mm 14mm 8mm 14mm' }}>
             <SecHead title={`Legislação de Referência — ${brand.name} · Simuladores 2026`} bg={brand.color} />
             <div style={{ background: '#F5F7FA' }}>
               {legalItems.map(([topic, desc], i) => (

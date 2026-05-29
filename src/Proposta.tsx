@@ -61,6 +61,7 @@ export default function Proposta({ profile, office, honorarios, servicosIds, onS
           #${printRootId}, #${printRootId} * { visibility: visible; }
           #${printRootId} { position: absolute; top: 0; left: 0; width: 100%; }
           #${printRootId} .pp-page { box-shadow: none; margin: 0; zoom: 1 !important; }
+          #${printRootId} [contenteditable] { outline: none !important; }
           @page { size: A4; margin: 0; }
         }
         /* Em ecrãs estreitos a folha A4 não cabe — encolhe com zoom (impressão fica intacta). */
@@ -75,7 +76,13 @@ export default function Proposta({ profile, office, honorarios, servicosIds, onS
         }
       `}</style>
 
-      <div className="pp-page">
+      {/* Dica de edição (não imprime) */}
+      <div className="no-print" style={{ maxWidth: '210mm', margin: '0 auto 8px auto', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, fontSize: '12px', color: '#1D4ED8', fontWeight: 600 }}>
+        <span aria-hidden>✏️</span>
+        <span>Clique em qualquer texto para o editar antes de imprimir.</span>
+      </div>
+
+      <div className="pp-page" contentEditable suppressContentEditableWarning>
         <div className="pp-band" style={{ margin: '-16mm -18mm 12mm -18mm' }} />
 
         {/* Cabeçalho */}
@@ -162,8 +169,9 @@ Os serviços listados abaixo cobrem as obrigações contabilísticas e fiscais c
           </tbody>
         </table>
 
-        {/* Toggle de serviços extra (apenas visível em ecrã, oculto na impressão) */}
-        <div className="no-print" style={{ marginTop: 14, padding: 12, background: '#F1F5F9', borderRadius: 8 }}>
+        {/* Toggle de serviços extra (apenas visível em ecrã, oculto na impressão).
+            contentEditable={false} para continuar interactivo dentro da página editável. */}
+        <div className="no-print" contentEditable={false} style={{ marginTop: 14, padding: 12, background: '#F1F5F9', borderRadius: 8 }}>
           <div style={{ fontSize: '9pt', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
             Serviços extra a incluir (clique para alternar)
           </div>
