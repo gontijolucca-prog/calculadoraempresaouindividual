@@ -6,6 +6,7 @@ import type { Regime, Territorio, FuelType, ViaturaRow, PreviSaState } from './p
 import { defaultPreviSaState } from './previSaState';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
+import { downloadPrevisaExcel } from './lib/previsaExcel';
 
 export type { PreviSaState } from './previSaState';
 export { defaultPreviSaState } from './previSaState';
@@ -511,83 +512,17 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
 
   const [exporting, setExporting] = useState(false);
 
-  // Descarregar Modelo 22 preenchido em Excel (.xlsx). xlsx é lazy-imported
-  // para não pesar no bundle principal — só carrega quando o utilizador clica.
+  // Descarregar o Previsa preenchido — IGUAL ao modelo original PrevisaV25_01.xls.
+  // Usa o PRÓPRIO ficheiro como template (preserva as 13 folhas e 100% das
+  // fórmulas) e escreve só as células de input com os dados da empresa.
+  // Ver src/lib/previsaExcel.ts para o mapa de células.
   const handleExportExcel = useCallback(async () => {
     setExporting(true);
     try {
-      const r = calculate(state);
-      const taxas = RATES[state.regime];
-      // [secção, valor?] — string sozinha = cabeçalho; [label, número] = linha.
-      const rows: (string | number)[][] = [];
-      const H = (t: string) => rows.push([t]);
-      const L = (label: string, v: number | string) => rows.push([label, v as number]);
-      const BLANK = () => rows.push([]);
-
-      H('PREVISÃO DE IRC — MODELO 22');
-      L('Designação social', state.designacao || '—');
-      L('NIF', state.nif || '—');
-      L('Período (exercício)', state.periodo);
-      L('Território', state.territorio);
-      L('Regime', state.regime + (state.isPME ? ' (PME)' : '') + (state.isStartup ? ' (Startup)' : ''));
-      L('Volume de negócios', state.volumeNegocios);
-      BLANK();
-
-      H('QUADRO 07 — APURAMENTO DO LUCRO TRIBUTÁVEL');
-      H('Rendimentos');
-      L('711 — Vendas de mercadorias', state.rai_711);
-      L('712 — Vendas de produtos', state.rai_712);
-      L('72 — Prestações de serviços', state.rai_72);
-      L('74 — Trabalhos para a própria entidade', state.rai_74);
-      L('75 — Subsídios à exploração', state.rai_75);
-      L('76 — Reversões', state.rai_76);
-      L('77 — Ganhos por aumentos de justo valor', state.rai_77);
-      L('78 — Outros rendimentos e ganhos', state.rai_78);
-      L('79 — Juros, dividendos e outros rdtos. financeiros', state.rai_79);
-      H('Gastos');
-      L('CMV — Custo das mercadorias vendidas', state.rai_cmv);
-      L('CMC — Custo das matérias consumidas', state.rai_cmc);
-      L('62 — FSE — Fornecimentos e serviços externos', state.rai_62);
-      L('63 — Gastos com pessoal', state.rai_63);
-      L('64 — Depreciações e amortizações', state.rai_64);
-      L('65 — Perdas por imparidade', state.rai_65);
-      L('66 — Perdas por reduções de justo valor', state.rai_66);
-      L('67 — Provisões', state.rai_67);
-      L('68 — Outros gastos e perdas', state.rai_68);
-      L('69 — Gastos de financiamento', state.rai_69);
-      L('8122 — Imposto diferido (Débito +)', state.rai_8122_db);
-      L('8122 — Imposto diferido (Crédito −)', state.rai_8122_cr);
-      L('701 — Resultado antes de impostos (RAI)', r.effectiveRai);
-      L('778 — Lucro tributável', r.lucroTributavel);
-      BLANK();
-
-      H('QUADRO 09 — MATÉRIA COLETÁVEL');
-      L('Prejuízos fiscais dedutíveis no período', r.prejuziosEfetivos);
-      L('Benefícios fiscais (dedução)', state.beneficiosFiscais);
-      L('311/336 — Matéria coletável', r.materiaColetavel);
-      BLANK();
-
-      H('QUADRO 10 — CÁLCULO DO IMPOSTO');
-      L(`Coleta IRC (PME ${pct(taxas.pme)} / geral ${pct(taxas.main)})`, r.ircColeta);
-      L('Derrama estadual (art. 87.º-A)', r.derramaEstadual);
-      L(`Derrama municipal (${pct(state.taxaDerramaMunicipal)})`, r.derrMunicipal);
-      L('378 — Total da coleta + derramas', r.c378);
-      L('357 — Deduções à coleta', r.deducoesColeta);
-      L('358 — IRC liquidado', r.c358);
-      L('365 — Tributações autónomas (líquidas)', r.taTotal);
-      L('Pagamentos (retenções + PC + PAC)', r.totalPagamentos);
-      L('PEC — Pagamento especial por conta', state.pecPagamentos);
-      L(r.c367 >= 0 ? '367 — IRC A PAGAR' : '367 — IRC A RECUPERAR', Math.abs(r.c367));
-      BLANK();
-      L('Documento gerado por', 'Estudo 360 · estudo360.pt');
-
-      const XLSX = await import('xlsx');
-      const ws = XLSX.utils.aoa_to_sheet(rows);
-      ws['!cols'] = [{ wch: 50 }, { wch: 18 }];
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Modelo 22');
-      const slug = (state.designacao || 'empresa').normalize('NFD').replace(/[^\w]+/g, '_').replace(/^_+|_+$/g, '') || 'empresa';
-      XLSX.writeFile(wb, `Previsa_Modelo22_${slug}_${state.periodo}.xlsx`);
+      await downloadPrevisaExcel(state);
+    } catch (e) {
+      console.error('Falha ao exportar o Previsa:', e);
+      alert('Não foi possível gerar o Excel do Previsa. Tenta novamente.');
     } finally {
       setExporting(false);
     }
