@@ -207,7 +207,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
       <nav aria-label="Navegação principal" className="flex-1 overflow-y-auto px-2 py-1">
         <SectionLabel>Carteira</SectionLabel>
             <NavItem label="Lista de Empresas" Icon={Briefcase} onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }} current={active === 'empresas'} title="Carteira de clientes — cada um abre o seu menu (perfil, simuladores, histórico). Aqui também adicionas novas empresas." />
-            <NavItem label="Exportar relatório" Icon={FileDown} onClick={() => { setView('exportar'); setDrawerOpen(false); }} current={active === 'exportar'} title="Escolhe a empresa e exporta os documentos em Word." />
+            <NavItem label="Exportar documentos" Icon={FileDown} onClick={() => { setView('exportar'); setDrawerOpen(false); }} current={active === 'exportar'} title="Escolhe a empresa e o tipo de documento e descarrega em Word." />
             {/* "A trabalhar em": deixa sempre claro o cliente activo. Por baixo,
                 o menu específico desse cliente (perfil, pacote, histórico e os
                 simuladores) — atalho directo sem ter de abrir a lista. */}

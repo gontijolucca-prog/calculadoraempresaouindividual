@@ -92,7 +92,7 @@ const VIEW_TITLES: Record<ViewType, string> = {
   previsa: 'Simulador Previsa',
   'office-settings': 'Definições do Escritório',
   historico: 'Histórico de Simulações',
-  exportar: 'Exportar relatório',
+  exportar: 'Exportar documentos',
 };
 
 /**
@@ -970,7 +970,7 @@ function AppContent() {
           />
         )}
         {view === 'exportar' && (
-          <ExportarRelatorio onOpenPrevisa={(empId) => navigateClient(empId, 'previsa')} />
+          <ExportarRelatorio office={officeSettings} onOpenPrevisa={(empId) => navigateClient(empId, 'previsa')} />
         )}
         {view === 'legal' && (
           <LegalInfo onBack={closeLegal} onOpenUpdates={openUpdates} clientProfile={clientProfile} vehicleState={vehicleState} ticketState={ticketState} initialAnchor={legalAnchor} />

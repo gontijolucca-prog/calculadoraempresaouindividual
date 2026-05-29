@@ -1,30 +1,18 @@
 import { useMemo, useState } from 'react';
-import { FileDown, FileSpreadsheet, Search, Building2, Download, Loader2, FileText } from 'lucide-react';
+import { FileDown, FileText, Download, Loader2, Building2, ChevronDown } from 'lucide-react';
 import { listEmpresas, type EmpresaRecord } from './lib/empresas';
-import { defaultPreviSaState, type PreviSaState } from './previSaState';
-import { downloadPrevisaExcel } from './lib/previsaExcel';
+import type { OfficeSettings } from './lib/officeSettings';
+import { DOC_TYPES, downloadAsWord, type DocTypeId } from './lib/wordDocs';
 
 /**
- * Exportar relatório — escolhe a empresa e descarrega documentos já preenchidos.
- * Por agora: Previsa (IRC Modelo 22) em Excel, réplica do PrevisaV25_01.xls.
- * Os relatórios em Word entram aqui no futuro como mais um cartão.
+ * Exportar documentos — escolhe a empresa (dropdown) e o tipo de documento
+ * (radio), e descarrega em Word (.doc) já preenchido com os dados da empresa.
+ * Os documentos são os modelos da contabilista (Demonstrações Financeiras,
+ * Declaração de Responsabilidade, Acta de AG). Ver src/lib/wordDocs.ts.
  */
 
-// Reconstrói o estado do Previsa de uma empresa: parte dos valores por defeito,
-// sobrepõe o que estiver guardado em `empresa.previsa` e garante que a
-// identificação (designação, NIF, período) fica preenchida a partir do registo.
-function previsaStateFor(emp: EmpresaRecord): PreviSaState {
-  const base = defaultPreviSaState();
-  const saved = (emp.previsa ?? {}) as Partial<PreviSaState>;
-  const merged = { ...base, ...saved } as PreviSaState;
-  merged.designacao = (saved.designacao || emp.nome || emp.profile?.nomeCliente || '').trim() || base.designacao;
-  merged.nif = (saved.nif || emp.nif || emp.profile?.nif || '').trim() || base.nif;
-  if (!saved.periodo) merged.periodo = base.periodo;
-  return merged;
-}
-
-// Considera que há dados contabilísticos preenchidos se algum dos campos de
-// rendimentos/gastos do Previsa não for zero (para avisar quando vai sair vazio).
+// Há dados contabilísticos no Previsa desta empresa? (para avisar quando um
+// documento que depende deles vai sair vazio).
 function hasPrevisaData(emp: EmpresaRecord): boolean {
   const s = (emp.previsa ?? {}) as Record<string, unknown>;
   return Object.entries(s).some(([k, v]) =>
@@ -32,42 +20,49 @@ function hasPrevisaData(emp: EmpresaRecord): boolean {
   );
 }
 
-export default function ExportarRelatorio({ onOpenPrevisa }: { onOpenPrevisa?: (empresaId: string) => void }) {
+const FILL_BADGE: Record<string, { txt: string; cls: string }> = {
+  completo: { txt: 'Preenchido', cls: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+  parcial:  { txt: 'Parcial',    cls: 'text-amber-700 bg-amber-50 border-amber-200' },
+  modelo:   { txt: 'Modelo',     cls: 'text-slate-500 bg-slate-50 border-slate-200' },
+};
+
+export default function ExportarRelatorio({ office, onOpenPrevisa }: {
+  office: OfficeSettings;
+  onOpenPrevisa?: (empresaId: string) => void;
+}) {
   const empresas = useMemo(() => listEmpresas(), []);
-  const [query, setQuery] = useState('');
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [empresaId, setEmpresaId] = useState<string>(empresas[0]?.id ?? '');
+  const [docType, setDocType] = useState<DocTypeId>('dr');
+  const [busy, setBusy] = useState(false);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return empresas;
-    return empresas.filter(e =>
-      (e.nome || '').toLowerCase().includes(q) || (e.nif || '').includes(q),
-    );
-  }, [empresas, query]);
+  const emp = empresas.find(e => e.id === empresaId) ?? null;
+  const def = DOC_TYPES.find(d => d.id === docType) ?? DOC_TYPES[0];
+  const avisoPrevisa = !!emp && def.precisaPrevisa && !hasPrevisaData(emp);
 
-  const handlePrevisa = async (emp: EmpresaRecord) => {
-    setBusyId(emp.id);
+  const handleDownload = () => {
+    if (!emp) return;
+    setBusy(true);
     try {
-      await downloadPrevisaExcel(previsaStateFor(emp), emp.nome || emp.profile?.nomeCliente);
+      downloadAsWord(def.build(emp, office), def.filename(emp));
     } catch (e) {
-      console.error('Falha ao exportar o Previsa:', e);
-      alert('Não foi possível gerar o Excel do Previsa. Tenta novamente.');
+      console.error('Falha ao gerar o documento:', e);
+      alert('Não foi possível gerar o documento. Tenta novamente.');
     } finally {
-      setBusyId(null);
+      setBusy(false);
     }
   };
 
   return (
     <div className="h-full overflow-y-auto bg-[#F5F7FA]">
-      <div className="max-w-3xl mx-auto px-6 py-10">
+      <div className="max-w-2xl mx-auto px-6 py-10">
         {/* Header */}
         <div className="flex items-center gap-3 mb-1">
           <div className="w-11 h-11 rounded-[12px] bg-[#0677FF]/10 flex items-center justify-center shrink-0">
             <FileDown className="w-5 h-5 text-[#0677FF]" />
           </div>
           <div>
-            <h1 className="text-[22px] font-[800] text-[#0B1D2D] leading-tight tracking-[-0.4px]">Exportar relatório</h1>
-            <p className="text-[13px] text-slate-500 font-[500]">Escolhe a empresa e descarrega o documento já preenchido.</p>
+            <h1 className="text-[22px] font-[800] text-[#0B1D2D] leading-tight tracking-[-0.4px]">Exportar documentos</h1>
+            <p className="text-[13px] text-slate-500 font-[500]">Escolhe a empresa e o tipo de documento, depois descarrega em Word.</p>
           </div>
         </div>
 
@@ -83,85 +78,85 @@ export default function ExportarRelatorio({ onOpenPrevisa }: { onOpenPrevisa?: (
           </div>
         ) : (
           <>
-            {/* Pesquisa */}
-            <div className="mt-7 relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="Procurar empresa por nome ou NIF…"
-                className="w-full pl-10 pr-4 py-3 rounded-[12px] border border-slate-200 bg-white text-[14px] font-[500] text-[#0B1D2D] placeholder:text-slate-400 focus:outline-none focus:border-[#0677FF] focus:ring-2 focus:ring-[#0677FF]/15 transition"
-              />
+            {/* Passo 1 — empresa (dropdown) */}
+            <p className="mt-7 mb-2 text-[11px] font-[800] uppercase tracking-[0.6px] text-slate-400">1 · Empresa</p>
+            <div className="relative">
+              <select
+                value={empresaId}
+                onChange={e => setEmpresaId(e.target.value)}
+                className="w-full appearance-none pl-4 pr-10 py-3 rounded-[12px] border border-slate-200 bg-white text-[14px] font-[600] text-[#0B1D2D] focus:outline-none focus:border-[#0677FF] focus:ring-2 focus:ring-[#0677FF]/15 transition cursor-pointer"
+              >
+                {empresas.map(e => (
+                  <option key={e.id} value={e.id}>
+                    {(e.nome || e.profile?.nomeCliente || 'Empresa sem nome')}{e.nif ? ` · ${e.nif}` : ''}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
-            {/* Documento disponível — etiqueta */}
-            <p className="mt-7 mb-2.5 text-[11px] font-[800] uppercase tracking-[0.6px] text-slate-400">
-              Documentos disponíveis
-            </p>
-
-            <div className="space-y-2.5">
-              {filtered.map(emp => {
-                const busy = busyId === emp.id;
-                const empty = !hasPrevisaData(emp);
+            {/* Passo 2 — tipo de documento (radio) */}
+            <p className="mt-7 mb-2 text-[11px] font-[800] uppercase tracking-[0.6px] text-slate-400">2 · Tipo de documento</p>
+            <div className="space-y-2" role="radiogroup" aria-label="Tipo de documento">
+              {DOC_TYPES.map(d => {
+                const active = d.id === docType;
+                const badge = FILL_BADGE[d.fill];
                 return (
-                  <div
-                    key={emp.id}
-                    className="bg-white rounded-[14px] border border-slate-200/70 p-4 flex items-center gap-4"
+                  <button
+                    key={d.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => setDocType(d.id)}
+                    className={`w-full text-left flex items-start gap-3 p-3.5 rounded-[14px] border transition-all ${
+                      active
+                        ? 'border-[#0677FF] bg-[#0677FF]/[0.04] shadow-[0_2px_10px_-6px_rgba(6,119,255,0.5)]'
+                        : 'border-slate-200/80 bg-white hover:border-[#0677FF]/40'
+                    }`}
                   >
-                    <div className="w-10 h-10 rounded-[10px] bg-[#10B981]/10 flex items-center justify-center shrink-0">
-                      <FileSpreadsheet className="w-[18px] h-[18px] text-[#10B981]" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[14px] font-[800] text-[#0F172A] leading-tight truncate">
-                        {emp.nome || emp.profile?.nomeCliente || 'Empresa sem nome'}
-                      </p>
-                      <p className="text-[12px] text-slate-500 font-[500] mt-0.5 truncate">
-                        Previsa · IRC Modelo 22 (Excel)
-                        {emp.nif ? ` · NIF ${emp.nif}` : ''}
-                      </p>
-                      {empty && (
-                        <button
-                          type="button"
-                          onClick={() => onOpenPrevisa?.(emp.id)}
-                          className="mt-1.5 text-[11.5px] font-[600] text-amber-600 hover:text-amber-700 hover:underline text-left"
-                          title="Abrir o Previsa desta empresa para preencher os valores"
-                        >
-                          Sem valores preenchidos — o Excel sai com a estrutura mas a zeros. Abrir o Previsa →
-                        </button>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handlePrevisa(emp)}
-                      disabled={busy}
-                      className="flex items-center gap-2 px-3.5 py-2.5 rounded-[10px] text-[12.5px] font-[700] text-white bg-[#0677FF] hover:bg-[#0560d8] active:scale-[0.97] disabled:opacity-60 disabled:cursor-wait transition-all shrink-0"
-                    >
-                      {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                      <span className="hidden sm:inline">{busy ? 'A gerar…' : 'Descarregar Excel'}</span>
-                    </button>
-                  </div>
+                    <span className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center ${active ? 'border-[#0677FF]' : 'border-slate-300'}`}>
+                      {active && <span className="w-[9px] h-[9px] rounded-full bg-[#0677FF]" />}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[13.5px] font-[800] text-[#0F172A] leading-tight">{d.label}</span>
+                        <span className={`text-[9px] font-[800] uppercase tracking-[0.4px] px-1.5 py-0.5 rounded-[5px] border ${badge.cls}`}>{badge.txt}</span>
+                      </span>
+                      <span className="block text-[12px] text-slate-500 font-[500] mt-0.5">{d.descricao}</span>
+                    </span>
+                  </button>
                 );
               })}
-              {filtered.length === 0 && (
-                <p className="text-[13px] text-slate-500 font-[500] py-6 text-center">
-                  Nenhuma empresa corresponde a “{query}”.
-                </p>
-              )}
             </div>
 
-            {/* Word — em breve */}
-            <p className="mt-9 mb-2.5 text-[11px] font-[800] uppercase tracking-[0.6px] text-slate-400">
-              Em breve
+            {/* Aviso: documento precisa de dados do Previsa que faltam */}
+            {avisoPrevisa && (
+              <div className="mt-4 flex items-start gap-2.5 rounded-[12px] border border-amber-200 bg-amber-50 px-4 py-3">
+                <FileText className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-[12.5px] text-amber-800 font-[500] leading-relaxed">
+                  Esta empresa ainda não tem valores no Previsa — o documento sai com a estrutura mas a zeros.{' '}
+                  {onOpenPrevisa && emp && (
+                    <button type="button" onClick={() => onOpenPrevisa(emp.id)} className="font-[700] underline hover:text-amber-900">
+                      Abrir o Previsa →
+                    </button>
+                  )}
+                </p>
+              </div>
+            )}
+
+            {/* Descarregar */}
+            <button
+              type="button"
+              onClick={handleDownload}
+              disabled={!emp || busy}
+              className="mt-6 w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-[12px] text-[14px] font-[800] text-white bg-[#0677FF] hover:bg-[#0560d8] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+            >
+              {busy ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <Download className="w-4.5 h-4.5" />}
+              {busy ? 'A gerar…' : 'Descarregar em Word'}
+            </button>
+            <p className="mt-2.5 text-[11.5px] text-slate-400 font-[500] text-center">
+              Ficheiro .doc — abre no Word, Pages ou Google Docs e fica editável.
             </p>
-            <div className="rounded-[14px] border border-dashed border-slate-300 bg-white/60 p-4 flex items-center gap-4">
-              <div className="w-10 h-10 rounded-[10px] bg-slate-100 flex items-center justify-center shrink-0">
-                <FileText className="w-[18px] h-[18px] text-slate-400" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[14px] font-[700] text-slate-500 leading-tight">Relatórios em Word</p>
-                <p className="text-[12px] text-slate-400 font-[500] mt-0.5">A exportação em formato Word será adicionada em breve.</p>
-              </div>
-            </div>
           </>
         )}
       </div>
