@@ -564,7 +564,20 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
               <div style={{ background: '#F5F7FA', padding: '8px' }}>
                 <div contentEditable suppressContentEditableWarning
                   style={{ fontSize: '8.5pt', color: '#334155', outline: 'none', cursor: 'text' }}
-                >{taxState.rev <= 15000 && !taxState.b2b ? 'Com faturação ≤15.000€ e mercado B2C, é possível ativar a isenção do Art. 53º do CIVA. Preços sem IVA = mais competitivos.' : `Com este volume e mercado ${taxState.b2b ? 'B2B' : 'B2C'}, o enquadramento no Regime Normal de IVA é obrigatório e vantajoso para dedução de despesas.`}</div>
+                >{taxState.rev <= 15000 && !taxState.b2b ? 'Com faturação ≤15.000€ e mercado B2C, é possível ativar a isenção do Art. 53º do CIVA. Preços sem IVA = mais competitivos.' : taxState.rev > 650000 ? 'Com faturação acima de 650.000€, a periodicidade do IVA passa a mensal obrigatória (Art. 41.º CIVA). Regime Normal — permite deduzir o IVA das despesas.' : `Com este volume e mercado ${taxState.b2b ? 'B2B' : 'B2C'}, o enquadramento no Regime Normal de IVA (periodicidade trimestral) é vantajoso para dedução de despesas.`}</div>
+              </div>
+
+              {/* Como Calculámos — pressupostos e taxas (transparência: num PDF não há hover) */}
+              <SecHead title="Como Calculámos — Pressupostos" bg="#0f172a" />
+              <div contentEditable suppressContentEditableWarning
+                style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '8px 10px', fontSize: '7.8pt', color: '#334155', lineHeight: 1.5, outline: 'none', cursor: 'text' }}
+              >
+                <div style={{ marginBottom: 3 }}><strong>Rendimento coletável (ENI):</strong> faturação × coeficiente do art.º 31.º CIRS (serviços profissionais 0,75; outros serviços 0,35; vendas e restauração 0,15).</div>
+                <div style={{ marginBottom: 3 }}><strong>IRS:</strong> escalões progressivos OE 2026 sobre o rendimento total; IRS Jovem (art.º 12.º-B) e dedução por dependentes (art.º 78.º-A) quando aplicáveis.</div>
+                <div style={{ marginBottom: 3 }}><strong>Segurança Social (ENI):</strong> 21,4% sobre 70% da faturação (serviços) ou 20% (bens) — art.º 162.º CRCSPSS.</div>
+                <div style={{ marginBottom: 3 }}><strong>Sociedade:</strong> IRC 15% até 50.000€ de lucro e 19% no excedente (taxas PME); TSU 23,75% (empresa) + 11% (gerente) sobre a remuneração do gestor.</div>
+                <div style={{ marginBottom: 3 }}><strong>IVA:</strong> isento até 15.000€ (art.º 53.º); periodicidade trimestral até 650.000€; mensal obrigatória acima de 650.000€ (art.º 41.º).</div>
+                <div><strong>Custos:</strong> apenas os valores introduzidos no simulador para este cliente — sem pressupostos automáticos.</div>
               </div>
             </div>
             <PageFooter brand={brand} />
