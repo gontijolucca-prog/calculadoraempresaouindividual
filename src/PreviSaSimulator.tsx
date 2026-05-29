@@ -1116,16 +1116,8 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
           <h1 className="text-[20px] font-[800] text-[#0F172A]">Simulador Previsa</h1>
           <p className="text-[12px] text-slate-500 font-[500] mt-0.5">IRC — Modelo 22 · Previsão de IRC</p>
         </div>
-        <button
-          type="button"
-          onClick={handleExportExcel}
-          disabled={exporting}
-          className="shrink-0 inline-flex items-center gap-2 rounded-[8px] bg-[#0677FF] px-4 py-2 text-[13px] font-[700] text-white transition-colors hover:bg-[#0560d6] disabled:opacity-60"
-          title="Descarregar o Modelo 22 preenchido em Excel (.xlsx)"
-        >
-          <Download className="h-4 w-4" />
-          {exporting ? 'A gerar…' : 'Descarregar Excel'}
-        </button>
+        {/* Nota: o canto superior direito é ocupado pelo FloatingFlowToggle (fixed, z-60).
+            Não colocar botões aqui — ficam tapados. O botão de Excel vive no cartão de resumo. */}
       </div>
 
       {/* Tabs */}

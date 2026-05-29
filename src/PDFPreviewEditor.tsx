@@ -194,6 +194,13 @@ const pageStyle: React.CSSProperties = {
   pageBreakAfter: 'always', breakAfter: 'page',
 };
 
+// Semântica de cor consistente em todo o relatório: a MELHOR opção é sempre
+// VERDE e a PIOR sempre VERMELHA — independentemente de ser ENI ou Sociedade.
+const GREEN = { bg: '#ecfdf5', accent: '#059669', dark: '#065f46' };
+const RED = { bg: '#fef2f2', accent: '#dc2626', dark: '#991b1b' };
+/** Devolve a paleta (verde/vermelho) para um regime conforme seja ou não o vencedor. */
+const regimePalette = (isWinner: boolean) => (isWinner ? GREEN : RED);
+
 export default function PDFPreviewEditor({ profile, taxState, vehicleState, ticketState, ssState, onClose, embedded = false, office }: Props) {
   const brand = brandFromOffice(office);
 
@@ -203,14 +210,19 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
     style.textContent = `
       @media print {
         body { visibility: hidden; }
-        #pdf-editor-root { visibility: visible; position: fixed; top: 0; left: 0; width: 100%; background: white; overflow: visible; z-index: 99999; }
+        #pdf-editor-root { visibility: visible; position: absolute; top: 0; left: 0; width: 100%; background: white; overflow: visible; z-index: 99999; }
         #pdf-editor-root * { visibility: visible; }
         .no-print { display: none !important; }
-        .pdf-page { box-shadow: none !important; margin: 0 !important; page-break-after: always; break-after: page; zoom: 1 !important; }
+        /* O wrapper de scroll com padding/overflow gera páginas em branco na
+           impressão — neutralizá-lo para o conteúdo fluir como folhas A4 limpas. */
+        .pdf-pages-scroll { padding: 0 !important; margin: 0 !important; overflow: visible !important; flex: none !important; display: block !important; }
+        .pdf-page { box-shadow: none !important; margin: 0 !important; page-break-after: always; break-after: page; zoom: 1 !important; overflow: hidden; }
         .pdf-page:last-child { page-break-after: avoid; break-after: avoid; }
+        /* Não partir cartões/linhas a meio entre páginas físicas. */
+        .pdf-card, .pdf-norow { break-inside: avoid; page-break-inside: avoid; }
         * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
         [contenteditable] { outline: none !important; }
-        @page { size: A4; margin: 0; }
+        @page { size: A4 portrait; margin: 0; }
       }
       /* Em ecrãs estreitos a página A4 (210mm) é mais larga que o ecrã;
          reduz com CSS zoom para mostrar a folha completa. O utilizador
@@ -406,7 +418,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
       )}
 
       {/* ── Scrollable pages ── */}
-      <div style={embedded ? { padding: '0' } : { flex: 1, overflow: 'auto', padding: '24px' }}>
+      <div className="pdf-pages-scroll" style={embedded ? { padding: '0' } : { flex: 1, overflow: 'auto', padding: '24px' }}>
 
         {/* ════ PÁGINA 1 — CAPA + DADOS CLIENTE ════ */}
         <div className="pdf-page" style={pageStyle}>
@@ -454,18 +466,18 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
 
             {taxR && (
               <>
-                <SecHead title="Resumo Executivo — Recomendação" bg={taxR.winner === 'LDA' ? brand.color : '#059669'} />
-                <div style={{ background: taxR.winner === 'LDA' ? '#fdf2f2' : '#ecfdf5', padding: '8px', marginBottom: 8 }}>
+                <SecHead title="Resumo Executivo — Recomendação" bg={GREEN.accent} />
+                <div style={{ background: GREEN.bg, padding: '8px', marginBottom: 8, borderLeft: `3px solid ${GREEN.accent}` }}>
                   <div contentEditable suppressContentEditableWarning
-                    style={{ fontSize: '12pt', fontWeight: 800, color: taxR.winner === 'LDA' ? brand.color : '#059669', outline: 'none', cursor: 'text', marginBottom: 4 }}
+                    style={{ fontSize: '12pt', fontWeight: 800, color: GREEN.accent, outline: 'none', cursor: 'text', marginBottom: 4 }}
                   >{`Regime Ideal: ${taxR.winner === 'LDA' ? 'Sociedade (Lda / Unipessoal)' : 'Trabalhador Independente (ENI)'}`}</div>
                   <div contentEditable suppressContentEditableWarning
-                    style={{ fontSize: '8.5pt', color: taxR.winner === 'LDA' ? '#5a1313' : '#065f46', outline: 'none', cursor: 'text' }}
+                    style={{ fontSize: '8.5pt', color: GREEN.dark, outline: 'none', cursor: 'text' }}
                   >{`Vantagem face à alternativa: ${ptEur(taxR.diff)}/ano adicional`}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <MetricCard label="Net Income ENI (Rend. Líquido)" value={ptEur(taxR.eniNet)} bg="#ecfdf5" color="#059669" />
-                  <MetricCard label="Net Income Lda (Rend. Líquido)" value={ptEur(taxR.ldaNet)} bg="#fdf2f2" color={brand.color} />
+                  <MetricCard label="Rend. Líquido — ENI" value={ptEur(taxR.eniNet)} bg={regimePalette(taxR.winner === 'ENI').bg} color={regimePalette(taxR.winner === 'ENI').accent} />
+                  <MetricCard label="Rend. Líquido — Sociedade" value={ptEur(taxR.ldaNet)} bg={regimePalette(taxR.winner === 'LDA').bg} color={regimePalette(taxR.winner === 'LDA').accent} />
                 </div>
               </>
             )}
@@ -479,12 +491,12 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
             <PageHeader title="Enquadramento Fiscal — ENI vs Sociedade" pageNum={2} brand={brand} />
             <div style={{ padding: '5mm 14mm 8mm 14mm' }}>
 
-              {/* Comparison table header */}
+              {/* Comparison table header — coluna vencedora a verde, a outra a vermelho */}
               <div style={{ display: 'flex', marginBottom: 0 }}>
-                <div style={{ flex: 1, background: brand.color, color: 'white', padding: '6px 8px', fontWeight: 700, fontSize: '9pt', marginRight: 2 }}>
+                <div style={{ flex: 1, background: regimePalette(taxR.winner === 'ENI').accent, color: 'white', padding: '6px 8px', fontWeight: 700, fontSize: '9pt', marginRight: 2 }}>
                   ENI (Recibos Verdes)
                 </div>
-                <div style={{ flex: 1, background: '#334155', color: 'white', padding: '6px 8px', fontWeight: 700, fontSize: '9pt' }}>
+                <div style={{ flex: 1, background: regimePalette(taxR.winner === 'LDA').accent, color: 'white', padding: '6px 8px', fontWeight: 700, fontSize: '9pt' }}>
                   Sociedade (Lda / Unipessoal)
                 </div>
               </div>
@@ -515,28 +527,28 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
                 </div>
               ))}
 
-              {/* Net totals */}
+              {/* Net totals — vencedor a verde com selo, perdedor a vermelho */}
               <div style={{ display: 'flex', marginTop: 2, marginBottom: 8 }}>
-                <div style={{ flex: 1, background: taxR.winner === 'ENI' ? '#ecfdf5' : '#F5F7FA', padding: '8px', marginRight: 2 }}>
+                <div style={{ flex: 1, background: regimePalette(taxR.winner === 'ENI').bg, padding: '8px', marginRight: 2, borderTop: `3px solid ${regimePalette(taxR.winner === 'ENI').accent}` }}>
                   <div style={{ fontSize: '7pt', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rendimento Líquido Anual</div>
                   <div contentEditable suppressContentEditableWarning
-                    style={{ fontSize: '14pt', fontWeight: 800, color: taxR.winner === 'ENI' ? '#059669' : '#0f172a', outline: 'none', cursor: 'text' }}
+                    style={{ fontSize: '14pt', fontWeight: 800, color: regimePalette(taxR.winner === 'ENI').accent, outline: 'none', cursor: 'text' }}
                   >{ptEur(taxR.eniNet)}</div>
-                  {taxR.winner === 'ENI' && <div style={{ fontSize: '7pt', color: '#059669', fontWeight: 700, marginTop: 2 }}>✓ MELHOR OPÇÃO</div>}
+                  <div style={{ fontSize: '7pt', color: regimePalette(taxR.winner === 'ENI').accent, fontWeight: 700, marginTop: 2 }}>{taxR.winner === 'ENI' ? '✓ MELHOR OPÇÃO' : 'Opção menos vantajosa'}</div>
                 </div>
-                <div style={{ flex: 1, background: taxR.winner === 'LDA' ? '#fdf2f2' : '#F5F7FA', padding: '8px' }}>
+                <div style={{ flex: 1, background: regimePalette(taxR.winner === 'LDA').bg, padding: '8px', borderTop: `3px solid ${regimePalette(taxR.winner === 'LDA').accent}` }}>
                   <div style={{ fontSize: '7pt', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rendimento Líquido Anual</div>
                   <div contentEditable suppressContentEditableWarning
-                    style={{ fontSize: '14pt', fontWeight: 800, color: taxR.winner === 'LDA' ? brand.color : '#0f172a', outline: 'none', cursor: 'text' }}
+                    style={{ fontSize: '14pt', fontWeight: 800, color: regimePalette(taxR.winner === 'LDA').accent, outline: 'none', cursor: 'text' }}
                   >{ptEur(taxR.ldaNet)}</div>
-                  {taxR.winner === 'LDA' && <div style={{ fontSize: '7pt', color: brand.color, fontWeight: 700, marginTop: 2 }}>✓ MELHOR OPÇÃO</div>}
+                  <div style={{ fontSize: '7pt', color: regimePalette(taxR.winner === 'LDA').accent, fontWeight: 700, marginTop: 2 }}>{taxR.winner === 'LDA' ? '✓ MELHOR OPÇÃO' : 'Opção menos vantajosa'}</div>
                 </div>
               </div>
 
               {/* Cash flows */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                <MetricCard label="Cash-Flow Livre ENI (Ano 1)" value={ptEur(taxR.eniCashFlow)} bg="#ecfdf5" color="#059669" />
-                <MetricCard label="Cash-Flow Holding Lda (Ano 1)" value={ptEur(taxR.ldaCashFlow)} bg="#fdf2f2" color={brand.color} />
+                <MetricCard label="Cash-Flow Livre ENI (Ano 1)" value={ptEur(taxR.eniCashFlow)} bg={regimePalette(taxR.winner === 'ENI').bg} color={regimePalette(taxR.winner === 'ENI').accent} />
+                <MetricCard label="Cash-Flow Holding Lda (Ano 1)" value={ptEur(taxR.ldaCashFlow)} bg={regimePalette(taxR.winner === 'LDA').bg} color={regimePalette(taxR.winner === 'LDA').accent} />
               </div>
 
               {/* Break-even */}
