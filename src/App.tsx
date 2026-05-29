@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { Loader2, Save, Calculator, ArrowLeft, FileDown } from 'lucide-react';
+import { Loader2, Save, Calculator, ArrowLeft } from 'lucide-react';
 import ClientProfile, { defaultProfile } from './ClientProfile';
 import { UpdateNotification } from './components/UpdateNotification';
 import { useUnsavedEdits } from './hooks/useUnsavedEdits';
@@ -8,6 +8,7 @@ import LegalInfo from './LegalInfo';
 import LoginPage from './LoginPage';
 import LandingPage from './LandingPage';
 import EmpresasList from './EmpresasList';
+import ExportarRelatorio from './ExportarRelatorio';
 import type { AppMode } from './ModeSelector';
 import {
   getCurrentEmpresaId,
@@ -969,29 +970,7 @@ function AppContent() {
           />
         )}
         {view === 'exportar' && (
-          <div className="h-full overflow-y-auto bg-[#F5F7FA]">
-            <div className="max-w-3xl mx-auto px-6 py-10">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-11 h-11 rounded-[12px] bg-[#0677FF]/10 flex items-center justify-center shrink-0">
-                  <FileDown className="w-5 h-5 text-[#0677FF]" />
-                </div>
-                <div>
-                  <h1 className="text-[22px] font-[800] text-[#0B1D2D] leading-tight">Exportar relatório</h1>
-                  <p className="text-[13px] text-slate-500 font-[500]">Escolhe a empresa e exporta os documentos em Word.</p>
-                </div>
-              </div>
-
-              <div className="mt-8 rounded-[16px] border border-dashed border-slate-300 bg-white px-8 py-12 text-center">
-                <div className="mx-auto w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                  <FileDown className="w-6 h-6 text-slate-400" />
-                </div>
-                <p className="text-[15px] font-[700] text-[#0B1D2D]">Brevemente</p>
-                <p className="mt-1.5 text-[13px] text-slate-500 font-[500] max-w-md mx-auto text-balance">
-                  Aqui vais poder selecionar uma empresa e descarregar os relatórios em formato Word. As opções de exportação serão adicionadas em breve.
-                </p>
-              </div>
-            </div>
-          </div>
+          <ExportarRelatorio onOpenPrevisa={(empId) => navigateClient(empId, 'previsa')} />
         )}
         {view === 'legal' && (
           <LegalInfo onBack={closeLegal} onOpenUpdates={openUpdates} clientProfile={clientProfile} vehicleState={vehicleState} ticketState={ticketState} initialAnchor={legalAnchor} />

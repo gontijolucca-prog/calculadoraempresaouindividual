@@ -160,7 +160,7 @@ export default function MinutaContrato({
             <strong>SEGUNDO OUTORGANTE:</strong> <P v={profile.nomeCliente} w="(firma)" />,
             com o n.º de Identificação de Pessoa Coletiva <P v={profile.nif} w="________" />,
             com sede em <P v={moradaCliente} w="___________" />,
-            aqui representada pelo gerente/administrador <Editable id="cliente_gerente">__________</Editable> com poderes para o ato,
+            aqui representada pelo gerente/administrador <Editable id="cliente_gerente">{profile.societaria?.gerenteNome || '__________'}</Editable> com poderes para o ato,
             conforme certidão comercial permanente com o código <Editable id="certidao_codigo">_____</Editable>{' '}
             e válida até <Editable id="certidao_validade">________</Editable>,
             de ora em diante abreviadamente designada por <em>“Segundo Outorgante”</em>;

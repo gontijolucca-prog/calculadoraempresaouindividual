@@ -112,9 +112,11 @@ export interface ClientProfile {
     valor: number;
   };
   societaria: {
+    capitalSocial: number;
     numeroSocios: number;
     socios: Array<{ nome: string; percentagem: number }>;
     gerencia: 'um' | 'varios' | '';
+    gerenteNome: string;
   };
   distribuicao: { salario: boolean; dividendos: boolean; reinvestir: boolean; misto: boolean };
   fiscalAtual: {
@@ -849,6 +851,10 @@ export default function ClientProfile({
               <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Estrutura Societária</h3>
               <div className="grid grid-cols-2 gap-x-4 gap-y-4 mb-3">
                 <div>
+                  <label className={labelClass}>Capital social (€)</label>
+                  <input type="number" inputMode="decimal" min={0} value={num(st.societaria.capitalSocial ?? 0)} onChange={e => setSoc({ capitalSocial: Number(e.target.value) || 0 })} className={inputClass} placeholder="Ex.: 5 000" />
+                </div>
+                <div>
                   <label className={labelClass}>Nº de Sócios</label>
                   <input type="number" min={1} max={20} value={num(st.societaria.numeroSocios)} onChange={e => {
                     const n = Math.max(1, Math.min(20, Number(e.target.value) || 1));
@@ -866,7 +872,17 @@ export default function ClientProfile({
                     <option value="">—</option><option value="um">Sócio gerente único</option><option value="varios">Vários sócios gerentes</option>
                   </select>
                 </div>
+                <div>
+                  <label className={labelClass}>Gerente (nome)</label>
+                  <input type="text" list="gerente-socios" value={st.societaria.gerenteNome ?? ''} onChange={e => setSoc({ gerenteNome: e.target.value })} className={inputClass} placeholder="Quem fica como gerente" />
+                  <datalist id="gerente-socios">
+                    {st.societaria.socios.filter(s => s.nome.trim()).map((s, i) => (
+                      <option key={i} value={s.nome} />
+                    ))}
+                  </datalist>
+                </div>
               </div>
+              <label className={labelClass}>Quem são os sócios</label>
               <div className="space-y-2">
                 {st.societaria.socios.map((socio, i) => (
                   <div key={i} className="grid grid-cols-[1fr_120px] gap-2 items-center">
@@ -1381,7 +1397,7 @@ export const defaultProfile: ClientProfile = {
   custos: { mercadorias: 0, rendas: 0, combustiveis: 0, viaturas: 0, equipamentos: 0, servicosExternos: 0, outros: 0 },
   investimento: { equipamentos: 0, viaturas: 0, obras: 0, stock: 0, outro: 0 },
   viaturasDiag: { tem: '', tipo: { comercial: false, passageiros: false, eletrico: false, hibrido: false }, valor: 0 },
-  societaria: { numeroSocios: 1, socios: [{ nome: '', percentagem: 100 }], gerencia: '' },
+  societaria: { capitalSocial: 0, numeroSocios: 1, socios: [{ nome: '', percentagem: 100 }], gerencia: '', gerenteNome: '' },
   distribuicao: { salario: false, dividendos: false, reinvestir: false, misto: false },
   fiscalAtual: { dividasFiscais: '', dividasSS: '', execucoesFiscais: '' },
   objetivos: { menosImpostos: false, crescer: false, imobiliario: false, variasEmpresas: false, planeamentoFamiliar: false },
