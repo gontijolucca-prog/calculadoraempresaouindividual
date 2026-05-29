@@ -108,6 +108,9 @@ export default function Proposta({ profile, office, honorarios, servicosIds, onS
           #${printRootId} input { border: none !important; padding: 0 !important; background: transparent !important; -webkit-appearance: none; appearance: none; text-align: right; }
           #${printRootId} input::-webkit-outer-spin-button,
           #${printRootId} input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+          /* Quebrar a página entre blocos — nunca a meio da tabela, de uma linha,
+             de uma secção ou do bloco de assinaturas. */
+          #${printRootId} table, #${printRootId} tr, #${printRootId} .pp-keep { break-inside: avoid; page-break-inside: avoid; }
           @page { size: A4; margin: 0; }
         }
         /* Em ecrãs estreitos a folha A4 não cabe — encolhe com zoom (impressão fica intacta). */
@@ -320,7 +323,7 @@ A presente proposta é válida por 30 dias a contar da data acima e converte-se 
         </div>
 
         {/* Assinaturas */}
-        <div style={{ marginTop: 36, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        <div className="pp-keep" style={{ marginTop: 36, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
           <SignatureLine label={office.nome ? `${office.nome}\n${office.tipo === 'sociedade' ? `Rep. ${office.representanteLegal || '...'}` : `CC ${office.cedulaProfissional}`}` : 'Primeiro Outorgante'} />
           <SignatureLine label={profile.nomeCliente || 'Cliente'} />
         </div>

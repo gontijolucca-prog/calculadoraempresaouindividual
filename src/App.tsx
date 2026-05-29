@@ -58,6 +58,7 @@ const OfficeSettingsView = lazy(() => import('./OfficeSettingsView'));
 import { defaultPreviSaState } from './previSaState';
 import type { PreviSaState } from './previSaState';
 import { SIM_LABELS, isSimView, summarizeSimulacao, simHasData, detailSimulacao, type SimView } from './lib/simSummary';
+import { resultSimulacao } from './lib/simResults';
 import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
 import { SimulacaoSaveProvider, type SimSaveCtx } from './SimulacaoSave';
 const SimulacoesHistory = lazy(() => import('./SimulacoesHistory'));
@@ -448,7 +449,11 @@ function AppContent() {
         label: SIM_LABELS[view],
         resumo: summarizeSimulacao(view, state),
         state,
-        detalhes: detailSimulacao(view, state),
+        // Resultados calculados primeiro (r:true), depois os inputs-chave.
+        detalhes: [
+          ...resultSimulacao(view, state, clientProfile).map(d => ({ ...d, r: true })),
+          ...detailSimulacao(view, state),
+        ],
       });
       setEmpresasRefresh(n => n + 1);
     }, 1200);

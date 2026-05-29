@@ -27,8 +27,9 @@ export interface SimulationRecord {
   /** Guardado automaticamente (não por clique do utilizador). Há no máximo um
    *  registo automático por tipo de simulador — é atualizado em vez de duplicar. */
   auto?: boolean;
-  /** Detalhes-chave (label→valor) para comparar no histórico sem reabrir. */
-  detalhes?: { label: string; valor: string }[];
+  /** Detalhes-chave (label→valor) para comparar no histórico sem reabrir.
+   *  `r: true` marca um RESULTADO calculado (vs. um input). */
+  detalhes?: { label: string; valor: string; r?: boolean }[];
 }
 
 export interface EmpresaRecord {

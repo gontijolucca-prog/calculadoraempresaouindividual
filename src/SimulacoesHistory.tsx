@@ -118,9 +118,13 @@ export default function SimulacoesHistory({ empresaId, empresaNome, onRestore, o
                     {rec.detalhes && rec.detalhes.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {rec.detalhes.map((d, i) => (
-                          <span key={i} className="inline-flex items-baseline gap-1 text-[11px] bg-slate-50 border border-slate-200/80 rounded-[6px] px-2 py-0.5">
-                            <span className="text-slate-400 font-[600]">{d.label}:</span>
-                            <span className="text-[#0F172A] font-[700] tabular-nums">{d.valor}</span>
+                          <span key={i} className={
+                            d.r
+                              ? 'inline-flex items-baseline gap-1 text-[11px] bg-[#0677FF]/8 border border-[#0677FF]/25 rounded-[6px] px-2 py-0.5'
+                              : 'inline-flex items-baseline gap-1 text-[11px] bg-slate-50 border border-slate-200/80 rounded-[6px] px-2 py-0.5'
+                          }>
+                            <span className={d.r ? 'text-[#0677FF] font-[700]' : 'text-slate-400 font-[600]'}>{d.label}:</span>
+                            <span className={d.r ? 'text-[#0677FF] font-[800] tabular-nums' : 'text-[#0F172A] font-[700] tabular-nums'}>{d.valor}</span>
                           </span>
                         ))}
                       </div>

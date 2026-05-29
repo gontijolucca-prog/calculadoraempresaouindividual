@@ -96,6 +96,10 @@ export default function MinutaContrato({
           #${printRootId} [contenteditable] { outline: none !important; }
           /* Campos por preencher: sem destaque amarelo na impressão (só no ecrã). */
           #${printRootId} .mc-fill { background: transparent !important; color: inherit !important; padding: 0 !important; font-weight: inherit !important; }
+          /* Quebrar entre cláusulas/parágrafos — nunca a meio; títulos ficam com o
+             texto seguinte e o bloco de assinaturas não se parte. */
+          #${printRootId} p, #${printRootId} ol li, #${printRootId} .mc-keep { break-inside: avoid; page-break-inside: avoid; }
+          #${printRootId} h1, #${printRootId} h2 { break-after: avoid; page-break-after: avoid; }
           @page { size: A4; margin: 0; }
         }
         /* Em ecrãs estreitos a folha A4 não cabe — encolhe com zoom (impressão fica intacta). */
@@ -304,7 +308,7 @@ export default function MinutaContrato({
           <P v={office.localidade} w="(local)" />, {ptDate(dataInicio)}.
         </p>
 
-        <div style={{ marginTop: 36, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        <div className="mc-keep" style={{ marginTop: 36, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
           <Signature label="Primeiro Outorgante" sub={escritorioSociedade ? `${office.nome}\n(Representada por ${office.representanteLegal || '...'})` : `${office.nome}\nCédula prof. ${office.cedulaProfissional}`} />
           <Signature label="Segundo Outorgante" sub={profile.nomeCliente} />
         </div>
