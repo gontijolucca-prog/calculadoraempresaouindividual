@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { ChevronDown, ChevronRight, Plus, Trash2, Calculator, Download } from 'lucide-react';
 import { cn } from './lib/utils';
@@ -278,18 +278,32 @@ function NumInput({ label, value, onChange, help, indent = false, readOnly = fal
   );
 }
 
+// O valor guardado é uma FRAÇÃO (1,5% → 0,015); o input mostra a PERCENTAGEM.
+// Antes tinha max="1" aplicado à escala da percentagem → travava em 1,000% e
+// não deixava inserir 1,5%. Agora sem esse limite, com step 0,01 e estado de
+// texto local (só reformata ao perder o foco) para escrever sem saltos.
 function PctInput({ label, value, onChange, help }: {
   label: string; value: number; onChange: (v: number) => void; help?: string;
 }) {
+  const fmtPct = (v: number) => (v ? String(+(v * 100).toFixed(3)) : '');
+  const [txt, setTxt] = useState<string>(() => fmtPct(value));
+  const focused = useRef(false);
+  useEffect(() => { if (!focused.current) setTxt(fmtPct(value)); }, [value]);
   return (
     <div className="flex items-center gap-3 py-1.5">
       <label className="flex-1 text-[12px] font-[500] text-slate-600 leading-snug">{label}</label>
       {help && <span className="text-[10px] text-slate-400 hidden sm:block shrink-0">{help}</span>}
       <div className="relative w-36">
         <input
-          type="number" step="0.001" min="0" max="1"
-          value={value ? (value * 100).toFixed(3) : ''}
-          onChange={e => onChange((parseFloat(e.target.value) || 0) / 100)}
+          type="number" step="0.01" min="0"
+          value={txt}
+          onFocus={() => { focused.current = true; }}
+          onBlur={() => { focused.current = false; setTxt(fmtPct(value)); }}
+          onChange={e => {
+            setTxt(e.target.value);
+            const n = parseFloat(e.target.value);
+            onChange(Number.isFinite(n) && n >= 0 ? n / 100 : 0);
+          }}
           className="w-full text-right text-[13px] font-[600] text-[#0F172A] border border-slate-200 rounded-[8px] px-3 py-1.5 pr-6 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30 focus:border-[#0677FF]"
           placeholder="0,000"
         />

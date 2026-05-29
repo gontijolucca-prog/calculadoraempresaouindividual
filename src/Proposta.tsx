@@ -45,7 +45,49 @@ export default function Proposta({ profile, office, honorarios, servicosIds, onS
     [profile, honorarios, idsAtuais]
   );
 
+  // ── Linhas editáveis ──────────────────────────────────────────────────────
+  // O documento é editável: o utilizador altera valores à mão e os totais
+  // recalculam ao vivo. Linhas a 0 passam a "Serviços extra opcionais". Pode
+  // ainda acrescentar serviços extra escritos à mão.
+  const [overrides, setOverrides] = useState<Record<string, number>>({});
+  const [customLinhas, setCustomLinhas] = useState<{ id: string; descricao: string; valorMensal: number }[]>([]);
+
+  type Linha = { key: string; descricao: string; valorMensal: number; custom: boolean };
+  const linhas: Linha[] = [
+    ...proposta.itens.map(it => ({
+      key: it.descricao,
+      descricao: it.descricao,
+      valorMensal: overrides[it.descricao] ?? it.valorMensal,
+      custom: false,
+    })),
+    ...customLinhas.map(c => ({ key: c.id, descricao: c.descricao, valorMensal: c.valorMensal, custom: true })),
+  ];
+  // Linhas customizadas ficam sempre na tabela (para escrever nome+valor à mão);
+  // só os serviços PREDEFINIDOS postos a 0 passam para "opcionais".
+  const ativas = linhas.filter(l => l.custom || l.valorMensal > 0);
+  const opcionais = linhas.filter(l => !l.custom && !(l.valorMensal > 0));
+  const mensalSemIVA = ativas.reduce((s, l) => s + (l.valorMensal > 0 ? l.valorMensal : 0), 0);
+  const iva = mensalSemIVA * honorarios.taxaIVA;
+  const mensalComIVA = mensalSemIVA + iva;
+  const anualComIVA = mensalComIVA * 12;
+
+  const setValor = (linha: Linha, v: number) => {
+    const n = Number.isFinite(v) && v >= 0 ? v : 0;
+    if (linha.custom) setCustomLinhas(cs => cs.map(c => c.id === linha.key ? { ...c, valorMensal: n } : c));
+    else setOverrides(o => ({ ...o, [linha.key]: n }));
+  };
+  const setDescricaoCustom = (id: string, d: string) =>
+    setCustomLinhas(cs => cs.map(c => c.id === id ? { ...c, descricao: d } : c));
+  const addCustom = () =>
+    setCustomLinhas(cs => [...cs, { id: `c${Date.now()}${cs.length}`, descricao: 'Novo serviço', valorMensal: 0 }]);
+  const removeCustom = (id: string) => setCustomLinhas(cs => cs.filter(c => c.id !== id));
+
   const cor = office.corPrimaria || '#0677FF';
+  const valInput: React.CSSProperties = {
+    width: 96, textAlign: 'right', fontWeight: 600, fontSize: '11pt',
+    border: '1px solid #E2E8F0', borderRadius: 6, padding: '3px 6px',
+    background: '#fff', color: '#0F172A', fontFamily: 'inherit',
+  };
 
   return (
     <div id={printRootId} className="bg-white" style={{ color: '#1E293B' }}>
@@ -62,6 +104,10 @@ export default function Proposta({ profile, office, honorarios, servicosIds, onS
           #${printRootId} { position: absolute; top: 0; left: 0; width: 100%; }
           #${printRootId} .pp-page { box-shadow: none; margin: 0; zoom: 1 !important; }
           #${printRootId} [contenteditable] { outline: none !important; }
+          /* Inputs editáveis imprimem como texto limpo (sem caixa nem setas). */
+          #${printRootId} input { border: none !important; padding: 0 !important; background: transparent !important; -webkit-appearance: none; appearance: none; text-align: right; }
+          #${printRootId} input::-webkit-outer-spin-button,
+          #${printRootId} input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
           @page { size: A4; margin: 0; }
         }
         /* Em ecrãs estreitos a folha A4 não cabe — encolhe com zoom (impressão fica intacta). */
@@ -144,30 +190,87 @@ Os serviços listados abaixo cobrem as obrigações contabilísticas e fiscais c
             </tr>
           </thead>
           <tbody>
-            {proposta.itens.map((item, i) => (
-              <tr key={i}>
-                <td>{item.descricao}</td>
-                <td style={{ textAlign: 'right', fontWeight: 600 }}>{eur(item.valorMensal)}</td>
+            {ativas.map((linha) => (
+              <tr key={linha.key}>
+                <td contentEditable={false}>
+                  {linha.custom ? (
+                    <input
+                      value={linha.descricao}
+                      onChange={e => setDescricaoCustom(linha.key, e.target.value)}
+                      style={{ width: '100%', border: 'none', borderBottom: '1px dashed #CBD5E1', fontSize: '11pt', fontFamily: 'inherit', color: '#1E293B', background: 'transparent', outline: 'none' }}
+                    />
+                  ) : linha.descricao}
+                </td>
+                <td contentEditable={false} style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                  <input
+                    type="number" min={0} step={1} value={linha.valorMensal}
+                    onChange={e => setValor(linha, parseFloat(e.target.value))}
+                    style={valInput} aria-label={`Valor mensal — ${linha.descricao}`}
+                  /> €
+                  {linha.custom && (
+                    <button type="button" onClick={() => removeCustom(linha.key)} title="Remover serviço"
+                      style={{ marginLeft: 6, border: 'none', background: 'transparent', color: '#94A3B8', cursor: 'pointer', fontSize: '13pt', lineHeight: 1 }}>×</button>
+                  )}
+                </td>
               </tr>
             ))}
             <tr style={{ background: '#F5F7FA' }}>
               <td style={{ fontWeight: 700 }}>Mensalidade (sem IVA)</td>
-              <td style={{ textAlign: 'right', fontWeight: 700 }}>{eur(proposta.mensalSemIVA)}</td>
+              <td style={{ textAlign: 'right', fontWeight: 700 }}>{eur(mensalSemIVA)}</td>
             </tr>
             <tr>
               <td>IVA à taxa de {(honorarios.taxaIVA * 100).toFixed(0)}%</td>
-              <td style={{ textAlign: 'right' }}>{eur(proposta.iva)}</td>
+              <td style={{ textAlign: 'right' }}>{eur(iva)}</td>
             </tr>
             <tr style={{ background: cor + '22' }}>
               <td style={{ fontWeight: 800, fontSize: '12pt', color: '#0F172A' }}>Mensalidade total (c/ IVA)</td>
-              <td style={{ textAlign: 'right', fontWeight: 800, fontSize: '12pt', color: '#0F172A' }}>{eur(proposta.mensalComIVA)}</td>
+              <td style={{ textAlign: 'right', fontWeight: 800, fontSize: '12pt', color: '#0F172A' }}>{eur(mensalComIVA)}</td>
             </tr>
             <tr>
               <td style={{ fontStyle: 'italic', fontSize: '10pt', color: '#64748B' }}>Equivalente anual (c/ IVA)</td>
-              <td style={{ textAlign: 'right', fontStyle: 'italic', fontSize: '10pt', color: '#64748B' }}>{eur(proposta.anualComIVA)}</td>
+              <td style={{ textAlign: 'right', fontStyle: 'italic', fontSize: '10pt', color: '#64748B' }}>{eur(anualComIVA)}</td>
             </tr>
           </tbody>
         </table>
+
+        {/* Adicionar serviço à mão (ecrã apenas) */}
+        <div className="no-print" contentEditable={false} style={{ marginTop: 8 }}>
+          <button type="button" onClick={addCustom}
+            style={{ fontSize: '11pt', fontWeight: 600, color: cor, background: 'transparent', border: `1.5px dashed ${cor}`, borderRadius: 6, padding: '5px 12px', cursor: 'pointer' }}>
+            + Adicionar serviço
+          </button>
+          <span style={{ marginLeft: 10, fontSize: '9.5pt', color: '#94A3B8' }}>
+            Põe o valor a 0 para passar um serviço a “opcional”.
+          </span>
+        </div>
+
+        {/* Serviços extra opcionais — linhas a 0 (impresso, sem cobrança). */}
+        {opcionais.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: 6, fontSize: '10.5pt' }}>Serviços extra opcionais</div>
+            <div style={{ fontSize: '9pt', color: '#64748B', marginBottom: 6 }}>
+              Disponíveis sob orçamento, não incluídos na mensalidade acima.
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 18, color: '#475569', fontSize: '10.5pt', lineHeight: 1.6 }}>
+              {opcionais.map((l) => (
+                <li key={l.key}>
+                  {l.custom ? (
+                    <input contentEditable={false}
+                      value={l.descricao}
+                      onChange={e => setDescricaoCustom(l.key, e.target.value)}
+                      style={{ border: 'none', borderBottom: '1px dashed #CBD5E1', fontSize: '10.5pt', fontFamily: 'inherit', color: '#475569', background: 'transparent', outline: 'none', minWidth: 220 }}
+                    />
+                  ) : l.descricao}
+                  {' '}<span style={{ color: '#94A3B8' }}>· sob orçamento</span>
+                  <input contentEditable={false} type="number" min={0} step={1} value={l.valorMensal}
+                    onChange={e => setValor(l, parseFloat(e.target.value))}
+                    className="no-print"
+                    style={{ ...valInput, width: 70, marginLeft: 8 }} aria-label={`Ativar ${l.descricao} (definir valor)`} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Toggle de serviços extra (apenas visível em ecrã, oculto na impressão).
             contentEditable={false} para continuar interactivo dentro da página editável. */}
