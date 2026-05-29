@@ -135,6 +135,39 @@ function sumLeaves(accounts: GLAccount[], prefix: string, side: 'debit' | 'credi
     .reduce((sum, a) => sum + valueOnSide(a, side), 0);
 }
 
+/** Recolhe o movimento (débito/crédito) por conta a partir dos diários da
+ *  GeneralLedgerEntries. SAF-T-PT usa <DebitLine>/<CreditLine> dentro de <Lines>;
+ *  variantes antigas usam <Line> com DebitAmount/CreditAmount. Usado quando o
+ *  ficheiro só traz o plano de contas + lançamentos (sem saldos) — ex. SAF-T de
+ *  contabilidade — para conseguir mesmo assim apurar rendimentos/gastos. */
+function collectGLMovement(glEntriesEl: Element | null): Map<string, { d: number; c: number }> {
+  const mov = new Map<string, { d: number; c: number }>();
+  if (!glEntriesEl) return mov;
+  const add = (accId: string, d: number, c: number) => {
+    if (!accId) return;
+    const m = mov.get(accId) ?? { d: 0, c: 0 };
+    m.d += d; m.c += c; mov.set(accId, m);
+  };
+  for (const j of localDescendants(glEntriesEl, 'Journal'))
+    for (const t of localDescendants(j, 'Transaction')) {
+      for (const dl of localDescendants(t, 'DebitLine'))  add(text(dl, 'AccountID'), num(dl, 'DebitAmount'), 0);
+      for (const cl of localDescendants(t, 'CreditLine')) add(text(cl, 'AccountID'), 0, num(cl, 'CreditAmount'));
+      for (const ln of localDescendants(t, 'Line'))       add(text(ln, 'AccountID'), num(ln, 'DebitAmount'), num(ln, 'CreditAmount'));
+    }
+  return mov;
+}
+
+/** Soma o movimento BRUTO das contas cujo id começa por `prefix`, no lado pedido
+ *  (créditos para rendimentos/classe 7, débitos para gastos/classe 6). Usa-se o
+ *  lado natural — e não o líquido — de propósito: os lançamentos de apuramento de
+ *  fim de exercício (que fecham as contas de resultados, classe 6/7 → 81) postam
+ *  no lado oposto e zerariam o líquido. O lado natural dá o total do período. */
+function sumMovByPrefix(mov: Map<string, { d: number; c: number }>, prefix: string, side: 'debit' | 'credit'): number {
+  let s = 0;
+  for (const [id, m] of mov) if (id.startsWith(prefix)) s += side === 'credit' ? m.c : m.d;
+  return Math.round(s * 100) / 100;
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // Descodificação (encoding) dos bytes do ficheiro
 // ════════════════════════════════════════════════════════════════════════════
@@ -461,16 +494,32 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   const useRaiCalc = (taxBasis === 'C' || taxBasis === 'L' || taxBasis === 'I') && accounts.length > 0;
   if (useRaiCalc) {
     previsa.useRaiCalc = true;
+    // Fonte dos valores por conta: se o ficheiro traz saldos no plano de contas
+    // (caso comum), usa-os via sumLeaves; se só traz o plano + lançamentos (SAF-T
+    // de contabilidade, sem saldos — ex. alguns ficheiros), apura o movimento
+    // líquido directamente dos diários. Assim apuramos rendimentos/gastos em
+    // ambos os formatos.
+    const glMov = collectGLMovement(
+      localChild(root, 'GeneralLedgerEntries') ?? localDescendants(root, 'GeneralLedgerEntries')[0] ?? null
+    );
+    // Por prefixo: usa o saldo do plano de contas quando existe (não-zero); senão
+    // (típico das contas de resultados, classe 6/7, que fecham a 0 no fim do ano)
+    // cai para o movimento bruto dos diários. Cobre os dois formatos de SAF-T.
+    const sumBy = (prefix: string, side: 'debit' | 'credit'): number => {
+      const byBalance = sumLeaves(accounts, prefix, side);
+      if (byBalance > 0) return byBalance;
+      return sumMovByPrefix(glMov, prefix, side);
+    };
     // Class 7
-    const r711 = sumLeaves(accounts, '711', 'credit');
-    const r712 = sumLeaves(accounts, '712', 'credit');
-    const r72  = sumLeaves(accounts, '72',  'credit');
-    const r74  = sumLeaves(accounts, '74',  'credit');
-    const r75  = sumLeaves(accounts, '75',  'credit');
-    const r76  = sumLeaves(accounts, '76',  'credit');
-    const r77  = sumLeaves(accounts, '77',  'credit');
-    const r78  = sumLeaves(accounts, '78',  'credit');
-    const r79  = sumLeaves(accounts, '79',  'credit');
+    const r711 = sumBy('711', 'credit');
+    const r712 = sumBy('712', 'credit');
+    const r72  = sumBy('72',  'credit');
+    const r74  = sumBy('74',  'credit');
+    const r75  = sumBy('75',  'credit');
+    const r76  = sumBy('76',  'credit');
+    const r77  = sumBy('77',  'credit');
+    const r78  = sumBy('78',  'credit');
+    const r79  = sumBy('79',  'credit');
     if (r711) { previsa.rai_711 = Math.round(r711 * 100) / 100; filled.push('Vendas de mercadorias (711)'); }
     if (r712) { previsa.rai_712 = Math.round(r712 * 100) / 100; filled.push('Vendas de produtos (712)'); }
     if (r72)  { previsa.rai_72  = Math.round(r72 * 100) / 100;  filled.push('Prestações de serviços (72)'); }
@@ -482,28 +531,28 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     if (r79)  { previsa.rai_79  = Math.round(r79 * 100) / 100;  filled.push('Juros e dividendos (79)'); }
 
     // Class 6 — CMV vs CMC (61), FSE (62), Pessoal (63), Amort. (64), etc.
-    const cmv  = sumLeaves(accounts, '611', 'debit')
-               + sumLeaves(accounts, '612', 'debit')
-               + sumLeaves(accounts, '613', 'debit')
-               + sumLeaves(accounts, '614', 'debit')
-               + sumLeaves(accounts, '615', 'debit')
-               + sumLeaves(accounts, '616', 'debit')
-               + sumLeaves(accounts, '617', 'debit');
-    const cmc  = sumLeaves(accounts, '618', 'debit')
-               + sumLeaves(accounts, '619', 'debit');
+    const cmv  = sumBy('611', 'debit')
+               + sumBy('612', 'debit')
+               + sumBy('613', 'debit')
+               + sumBy('614', 'debit')
+               + sumBy('615', 'debit')
+               + sumBy('616', 'debit')
+               + sumBy('617', 'debit');
+    const cmc  = sumBy('618', 'debit')
+               + sumBy('619', 'debit');
     // If neither sub split, fall back to total 61
-    const c61Total = sumLeaves(accounts, '61', 'debit');
+    const c61Total = sumBy('61', 'debit');
     const cmvFinal = cmv > 0 ? cmv : c61Total;
     const cmcFinal = cmc > 0 ? cmc : 0;
 
-    const c62 = sumLeaves(accounts, '62', 'debit');
-    const c63 = sumLeaves(accounts, '63', 'debit');
-    const c64 = sumLeaves(accounts, '64', 'debit');
-    const c65 = sumLeaves(accounts, '65', 'debit');
-    const c66 = sumLeaves(accounts, '66', 'debit');
-    const c67 = sumLeaves(accounts, '67', 'debit');
-    const c68 = sumLeaves(accounts, '68', 'debit');
-    const c69 = sumLeaves(accounts, '69', 'debit');
+    const c62 = sumBy('62', 'debit');
+    const c63 = sumBy('63', 'debit');
+    const c64 = sumBy('64', 'debit');
+    const c65 = sumBy('65', 'debit');
+    const c66 = sumBy('66', 'debit');
+    const c67 = sumBy('67', 'debit');
+    const c68 = sumBy('68', 'debit');
+    const c69 = sumBy('69', 'debit');
 
     if (cmvFinal) { previsa.rai_cmv = Math.round(cmvFinal * 100) / 100; filled.push('CMV (61)'); }
     if (cmcFinal) { previsa.rai_cmc = Math.round(cmcFinal * 100) / 100; filled.push('CMC (618/619)'); }
@@ -517,11 +566,11 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     if (c69) { previsa.rai_69 = Math.round(c69 * 100) / 100; filled.push('Gastos financiamento (69)'); }
 
     // Tributações Autónomas — heurísticas a partir de contas SNC
-    const taRepresentacao = sumLeaves(accounts, '6266', 'debit')
-                          + sumLeaves(accounts, '6262', 'debit');
-    const taAjudasCusto   = sumLeaves(accounts, '6325', 'debit');
-    const taDespNaoDoc    = sumLeaves(accounts, '6888', 'debit')
-                          + sumLeaves(accounts, '6886', 'debit');
+    const taRepresentacao = sumBy('6266', 'debit')
+                          + sumBy('6262', 'debit');
+    const taAjudasCusto   = sumBy('6325', 'debit');
+    const taDespNaoDoc    = sumBy('6888', 'debit')
+                          + sumBy('6886', 'debit');
     if (taRepresentacao) { previsa.ta_representacao = Math.round(taRepresentacao * 100) / 100; filled.push('TA — Representação (6266/6262)'); }
     if (taAjudasCusto)   { previsa.ta_ajadasCusto   = Math.round(taAjudasCusto * 100) / 100;   filled.push('TA — Ajudas de Custo (6325)'); }
     if (taDespNaoDoc) {
@@ -530,7 +579,7 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     }
 
     // Class 8 — RAI/IRC
-    const r811 = sumLeaves(accounts, '811', 'credit');
+    const r811 = sumBy('811', 'credit');
     if (r811) {
       previsa.c701_rai = Math.round(r811 * 100) / 100;
       filled.push('RAI (811)');
@@ -540,8 +589,8 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
         value: fmtEur(r811),
       });
     }
-    const r8122db = sumLeaves(accounts, '8122', 'debit');
-    const r8122cr = sumLeaves(accounts, '8122', 'credit');
+    const r8122db = sumBy('8122', 'debit');
+    const r8122cr = sumBy('8122', 'credit');
     if (r8122db) { previsa.rai_8122_db = Math.round(r8122db * 100) / 100; filled.push('Imposto diferido — Débito (8122)'); }
     if (r8122cr) { previsa.rai_8122_cr = Math.round(r8122cr * 100) / 100; filled.push('Imposto diferido — Crédito (8122)'); }
 
