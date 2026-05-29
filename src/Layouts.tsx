@@ -3,7 +3,7 @@ import {
   UserCircle, Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote, Info,
   ClipboardList, Upload, LogOut, Receipt,
   ChevronDown, TrendingUp, Settings, UserPlus, Building2,
-  Menu, X, Clock, Briefcase, ListOrdered, Package,
+  Menu, X, Clock, Briefcase, ListOrdered, Package, History,
 } from 'lucide-react';
 import FloatingFlowToggle from './FloatingFlowToggle';
 import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
@@ -13,7 +13,7 @@ import type { AppMode } from './ModeSelector';
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal' | 'updates'
-  | 'previsa' | 'office-settings' | 'empresas';
+  | 'previsa' | 'office-settings' | 'empresas' | 'historico';
 
 export interface LayoutProps {
   view: ViewType;
@@ -34,7 +34,7 @@ export interface LayoutProps {
 // Which simulator views are reachable from each mode (besides legal/updates which are always open).
 const VIEWS_BY_MODE: Record<AppMode, ViewType[]> = {
   'novo-cliente': ['profile'],
-  empresa: ['empresas', 'profile', 'tax', 'vehicle', 'ticket', 'selfss', 'imoveis', 'imt', 'salario', 'irs', 'diagnostico', 'previsa'],
+  empresa: ['empresas', 'profile', 'historico', 'tax', 'vehicle', 'ticket', 'selfss', 'imoveis', 'imt', 'salario', 'irs', 'diagnostico', 'previsa'],
 };
 
 const MODE_META: Record<AppMode, { label: string; Icon: typeof Building2; color: string; soft: string }> = {
@@ -235,6 +235,15 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
                 onClick={() => fireProfileEvent('profile:openPackage')}
                 title="Gerar pacote de documentos PDF (proposta + simulação) do cliente."
               />
+              {mode === 'empresa' && (
+                <NavItem
+                  label="Histórico de simulações"
+                  Icon={History}
+                  onClick={() => go('historico')}
+                  current={active === 'historico'}
+                  title="Simulações guardadas deste cliente — reabrir ou eliminar."
+                />
+              )}
             </div>
           </>
         )}

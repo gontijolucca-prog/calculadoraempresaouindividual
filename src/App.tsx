@@ -18,7 +18,9 @@ import {
   saveEmpresasToFirestore,
   listEmpresas,
   deleteEmpresa,
+  addSimulacao,
 } from './lib/empresas';
+import type { SimulationRecord } from './lib/empresas';
 import type { DiagnosticoState } from './DiagnosticoAutonomia';
 import type { ImoveisState } from './ImoveisEmpresa';
 import type { IMTState } from './IMTSimulator';
@@ -51,11 +53,14 @@ const PreviSaSimulator = lazy(() => import('./PreviSaSimulator'));
 const OfficeSettingsView = lazy(() => import('./OfficeSettingsView'));
 import { defaultPreviSaState } from './previSaState';
 import type { PreviSaState } from './previSaState';
+import { SIM_LABELS, isSimView, summarizeSimulacao, type SimView } from './lib/simSummary';
+import { SimulacaoSaveProvider, SaveSimulacaoFab, type SimSaveCtx } from './SimulacaoSave';
+const SimulacoesHistory = lazy(() => import('./SimulacoesHistory'));
 
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal' | 'updates'
-  | 'previsa' | 'office-settings' | 'empresas';
+  | 'previsa' | 'office-settings' | 'empresas' | 'historico';
 
 // Default landing view when the user picks a mode.
 const DEFAULT_VIEW_BY_MODE: Record<AppMode, ViewType> = {
@@ -79,6 +84,7 @@ const VIEW_TITLES: Record<ViewType, string> = {
   updates: 'Checklist de Atualizações',
   previsa: 'Simulador Previsa',
   'office-settings': 'Definições do Escritório',
+  historico: 'Histórico de Simulações',
 };
 
 /**
@@ -244,6 +250,33 @@ function ViewLoading() {
   );
 }
 
+// Funcionalidade D: os simuladores são por-cliente. Sem empresa seleccionada,
+// um simulador mostra este ecrã em vez de cálculos órfãos (que não poderiam ser
+// guardados no histórico de ninguém).
+function NoEmpresaGate({ onGo }: { onGo: () => void }) {
+  return (
+    <div className="h-full flex items-center justify-center bg-[#F5F7FA] px-6">
+      <div className="text-center max-w-sm">
+        <div className="w-16 h-16 rounded-full bg-[#0677FF]/10 flex items-center justify-center mx-auto mb-4">
+          <Loader2 className="w-7 h-7 text-[#0677FF]" aria-hidden="true" style={{ animation: 'none' }} />
+        </div>
+        <h2 className="text-[18px] font-[800] text-[#0F172A]">Escolhe primeiro um cliente</h2>
+        <p className="text-[13px] text-[#64748B] font-[500] mt-2 leading-relaxed">
+          Os simuladores trabalham sempre sobre uma empresa, para que cada simulação
+          fique guardada no histórico do cliente certo.
+        </p>
+        <button
+          type="button"
+          onClick={onGo}
+          className="mt-5 inline-flex items-center gap-2 px-5 py-3 rounded-[12px] text-[14px] font-[800] text-white bg-gradient-to-r from-[#0677FF] to-[#044BB6] hover:brightness-105 active:scale-[0.98] transition-all shadow-lg shadow-[#0677FF]/30"
+        >
+          Ir para a Lista de Empresas
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function AppContent() {
   const [loggedIn, setLoggedIn] = useState(() => loadFromStorage('loggedIn', false));
   const [showLogin, setShowLogin] = useState(false);
@@ -298,6 +331,16 @@ function AppContent() {
   const [imtState, setImtState] = useState<IMTState>(() => getInitialIMTState(clientProfile));
   const [salarioState, setSalarioState] = useState<SalarioState>(() => getInitialSalarioState(clientProfile));
   const [irsState, setIrsState] = useState<IRSState>(() => loadFromStorage('irsState', defaultIRSState()));
+
+  // Funcionalidade D — guardar simulações no histórico do cliente.
+  // `justSavedSim` é o feedback transitório do botão flutuante; `lastResumoRef`
+  // guarda o último resumo-resultado publicado pelo simulador activo (se algum),
+  // que tem prioridade sobre o resumo derivado do estado. `reportResumo` tem
+  // identidade estável (useRef) para o hook useReportResumo não disparar a cada
+  // render do simulador.
+  const [justSavedSim, setJustSavedSim] = useState(false);
+  const lastResumoRef = useRef<string>('');
+  const reportResumo = useRef((r: string) => { lastResumoRef.current = r; }).current;
 
   // Definições do escritório (branding + honorários). Persistidas em localStorage —
   // não pertencem ao cliente activo, são definições de licenciado.
@@ -605,7 +648,51 @@ function AppContent() {
     setClientProfile(prev => ({ ...prev, rendimentoMensalEni: newState.income, regimeSs: 'simplified', tipoRendimentoSs: newState.tipoRendimento }));
   };
 
+  // ── Funcionalidade D: guardar / restaurar simulações por cliente ──────────
+  // Todos os simuladores são controlados a partir daqui, por isso o estado de
+  // cada um já vive no App — basta fotografá-lo. As chaves coincidem com o
+  // `tipo` do SimulationRecord (= a view do simulador).
+  const simStateByView: Record<SimView, unknown> = {
+    tax: taxState, vehicle: vehicleState, ticket: ticketState, selfss: ssState,
+    diagnostico: diagnosticoState, imoveis: imoveisState, imt: imtState,
+    salario: salarioState, irs: irsState, previsa: previSaState,
+  };
+
+  const saveSimulacao = () => {
+    if (!currentEmpresaId || !isSimView(view)) return;
+    const state = simStateByView[view];
+    const resumo = lastResumoRef.current || summarizeSimulacao(view, state);
+    const rec = addSimulacao(currentEmpresaId, { tipo: view, label: SIM_LABELS[view], resumo, state });
+    if (!rec) return;
+    setEmpresasRefresh(n => n + 1); // dispara o push debounced para Firestore
+    setJustSavedSim(true);
+    window.setTimeout(() => setJustSavedSim(false), 1800);
+  };
+
+  const restoreSimulacao = (rec: SimulationRecord) => {
+    const setters: Partial<Record<SimView, (s: any) => void>> = {
+      tax: setTaxState, vehicle: setVehicleState, ticket: setTicketState, selfss: setSSState,
+      diagnostico: setDiagnosticoState, imoveis: setImoveisState, imt: setImtState,
+      salario: setSalarioState, irs: setIrsState, previsa: setPreviSaState,
+    };
+    if (!isSimView(rec.tipo)) return;
+    const setter = setters[rec.tipo];
+    if (setter && rec.state != null) setter(rec.state);
+    lastResumoRef.current = ''; // a próxima gravação recalcula o resumo
+    setView(rec.tipo);
+  };
+
+  const simSaveCtx: SimSaveCtx = {
+    enabled: !!currentEmpresaId && isSimView(view),
+    justSaved: justSavedSim,
+    save: saveSimulacao,
+    reportResumo,
+  };
+
   // Current simulator content
+  // Funcionalidade D: simuladores são por-cliente — sem empresa activa mostram o gate.
+  const simGate = <NoEmpresaGate onGo={() => { setMode('empresa'); setView('empresas'); }} />;
+
   const content = (
     <Suspense fallback={<ViewLoading />}>
       <PageTransition pageKey={view}>
@@ -625,41 +712,50 @@ function AppContent() {
             office={officeSettings} honorarios={honorariosConfig}
             onGoToOfficeSettings={() => setView('office-settings')} />
         )}
-        {view === 'tax' && (
-          <TaxSimulator initialState={taxState} onStateChange={handleTaxStateChange} profile={clientProfile} />
-        )}
-        {view === 'vehicle' && (
-          <VehicleSimulator initialState={vehicleState} onStateChange={setVehicleState} />
-        )}
-        {view === 'ticket' && (
-          <TicketSimulator initialState={ticketState} onStateChange={handleTicketStateChange} profile={clientProfile} />
-        )}
-        {view === 'selfss' && (
-          <SelfEmployedSSSimulator initialState={ssState} onStateChange={handleSSStateChange} />
-        )}
-        {view === 'diagnostico' && (
-          <DiagnosticoAutonomia initialState={diagnosticoState} onStateChange={setDiagnosticoState} />
-        )}
-        {view === 'imoveis' && (
-          <ImoveisEmpresa initialState={imoveisState} onStateChange={setImoveisState} profile={clientProfile} />
-        )}
-        {view === 'imt' && (
-          <IMTSimulator initialState={imtState} onStateChange={setImtState} />
-        )}
-        {view === 'salario' && (
-          <SalarioLiquidoSimulator initialState={salarioState} onStateChange={setSalarioState} />
-        )}
-        {view === 'irs' && (
-          <IRSSimulator initialState={irsState} onStateChange={setIrsState} />
+        {view === 'tax' && (currentEmpresaId
+          ? <TaxSimulator initialState={taxState} onStateChange={handleTaxStateChange} profile={clientProfile} />
+          : simGate)}
+        {view === 'vehicle' && (currentEmpresaId
+          ? <VehicleSimulator initialState={vehicleState} onStateChange={setVehicleState} />
+          : simGate)}
+        {view === 'ticket' && (currentEmpresaId
+          ? <TicketSimulator initialState={ticketState} onStateChange={handleTicketStateChange} profile={clientProfile} />
+          : simGate)}
+        {view === 'selfss' && (currentEmpresaId
+          ? <SelfEmployedSSSimulator initialState={ssState} onStateChange={handleSSStateChange} />
+          : simGate)}
+        {view === 'diagnostico' && (currentEmpresaId
+          ? <DiagnosticoAutonomia initialState={diagnosticoState} onStateChange={setDiagnosticoState} />
+          : simGate)}
+        {view === 'imoveis' && (currentEmpresaId
+          ? <ImoveisEmpresa initialState={imoveisState} onStateChange={setImoveisState} profile={clientProfile} />
+          : simGate)}
+        {view === 'imt' && (currentEmpresaId
+          ? <IMTSimulator initialState={imtState} onStateChange={setImtState} />
+          : simGate)}
+        {view === 'salario' && (currentEmpresaId
+          ? <SalarioLiquidoSimulator initialState={salarioState} onStateChange={setSalarioState} />
+          : simGate)}
+        {view === 'irs' && (currentEmpresaId
+          ? <IRSSimulator initialState={irsState} onStateChange={setIrsState} />
+          : simGate)}
+        {view === 'previsa' && (currentEmpresaId
+          ? <PreviSaSimulator initialState={previSaState} onStateChange={setPreviSaState} />
+          : simGate)}
+        {view === 'historico' && (
+          <SimulacoesHistory
+            empresaId={currentEmpresaId}
+            empresaNome={clientProfile.nomeCliente || ''}
+            onRestore={restoreSimulacao}
+            onChanged={() => setEmpresasRefresh(n => n + 1)}
+            refreshKey={empresasRefresh}
+          />
         )}
         {view === 'legal' && (
           <LegalInfo onBack={closeLegal} onOpenUpdates={openUpdates} clientProfile={clientProfile} vehicleState={vehicleState} ticketState={ticketState} initialAnchor={legalAnchor} />
         )}
         {view === 'updates' && (
           <UpdatesList onBack={() => setView(prevView)} />
-        )}
-        {view === 'previsa' && (
-          <PreviSaSimulator initialState={previSaState} onStateChange={setPreviSaState} />
         )}
         {view === 'office-settings' && (
           <OfficeSettingsView
@@ -676,6 +772,7 @@ function AppContent() {
   const CurrentLayout = LAYOUTS[0].component;
 
   return (
+    <SimulacaoSaveProvider value={simSaveCtx}>
     <div className="h-screen flex flex-col overflow-hidden">
 
       {/* Skip link for keyboard users */}
@@ -983,7 +1080,12 @@ function AppContent() {
           {content}
         </CurrentLayout>
       </div>
+
+      {/* Funcionalidade D: botão flutuante para guardar a simulação activa no
+          histórico do cliente (só aparece num simulador com empresa seleccionada). */}
+      <SaveSimulacaoFab />
     </div>
+    </SimulacaoSaveProvider>
   );
 }
 
