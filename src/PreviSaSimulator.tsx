@@ -102,6 +102,8 @@ function calcDerramaEstadual(mc: number, territorio: Territorio): number {
 // ─── Calculation engine ───────────────────────────────────────────────────────
 
 interface CalcResult {
+  totalRendimentos: number; // soma 711+712+72+74..79 (Excel ' Res Q10'!C21)
+  totalGastos: number;      // CMV+CMC+62..69 (Excel ' Res Q10'!C62)
   raiCalc: number;
   effectiveRai: number;
   c708: number;
@@ -151,13 +153,15 @@ const PREJ_KEYS: (keyof PreviSaState)[] = [
 ];
 
 function calculate(s: PreviSaState): CalcResult {
-  // RAI
-  const raiCalc =
-    (s.rai_711 + s.rai_712 + s.rai_72 + s.rai_74 + s.rai_75 +
-     s.rai_76 + s.rai_77 + s.rai_78 + s.rai_79)
-    - (s.rai_cmv + s.rai_cmc + s.rai_62 + s.rai_63 + s.rai_64 +
-       s.rai_65 + s.rai_66 + s.rai_67 + s.rai_68 + s.rai_69)
-    + s.rai_8122_db - s.rai_8122_cr;
+  // RAI — mesma demonstração de resultados do Excel ' Res Q10':
+  // TOTAL DE RENDIMENTOS (C21) − total de gastos (C62) ± imposto diferido (C64).
+  const totalRendimentos =
+    s.rai_711 + s.rai_712 + s.rai_72 + s.rai_74 + s.rai_75 +
+    s.rai_76 + s.rai_77 + s.rai_78 + s.rai_79;
+  const totalGastos =
+    s.rai_cmv + s.rai_cmc + s.rai_62 + s.rai_63 + s.rai_64 +
+    s.rai_65 + s.rai_66 + s.rai_67 + s.rai_68 + s.rai_69;
+  const raiCalc = totalRendimentos - totalGastos + s.rai_8122_db - s.rai_8122_cr;
 
   const effectiveRai = s.useRaiCalc ? raiCalc : s.c701_rai;
 
@@ -243,6 +247,7 @@ function calculate(s: PreviSaState): CalcResult {
   else                      pcCalculado = 500_000 * pcRates[0] + 4_500_000 * pcRates[1] + (vn - 5_000_000) * pcRates[2];
 
   return {
+    totalRendimentos, totalGastos,
     raiCalc, effectiveRai, c708, acrescer, c753, c776,
     lucroTributavel, prejuizoFiscal, totalPrejuziosDisp, prejuziosEfetivos, materiaColetavel,
     ircColeta, derramaEstadual, derrMunicipal, c378, deducoesColeta, c358,
@@ -620,7 +625,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
             </Section>
 
             {st.useRaiCalc && (<>
-              <Section title="Rendimentos">
+              <Section title="Rendimentos Contabilísticos">
                 <NumInput label="711 — Vendas de mercadorias" value={st.rai_711} onChange={v => s('rai_711', v)} />
                 <NumInput label="712 — Vendas de produtos acabados e em curso" value={st.rai_712} onChange={v => s('rai_712', v)} />
                 <NumInput label="72 — Prestações de serviços" value={st.rai_72} onChange={v => s('rai_72', v)} />
@@ -630,9 +635,10 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 <NumInput label="77 — Ganhos por aumentos de justo valor" value={st.rai_77} onChange={v => s('rai_77', v)} />
                 <NumInput label="78 — Outros rendimentos e ganhos" value={st.rai_78} onChange={v => s('rai_78', v)} />
                 <NumInput label="79 — Juros, dividendos e outros rdtos. financeiros" value={st.rai_79} onChange={v => s('rai_79', v)} />
+                <CalcRow label="TOTAL DE RENDIMENTOS" value={stepRes.totalRendimentos} highlight />
               </Section>
 
-              <Section title="Gastos">
+              <Section title="Gastos Contabilísticos">
                 <NumInput label="CMV — Custo das mercadorias vendidas" value={st.rai_cmv} onChange={v => s('rai_cmv', v)} />
                 <NumInput label="CMC — Custo das matérias consumidas" value={st.rai_cmc} onChange={v => s('rai_cmc', v)} />
                 <NumInput label="62 — FSE — Fornecimentos e serviços externos" value={st.rai_62} onChange={v => s('rai_62', v)} />
@@ -643,6 +649,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 <NumInput label="67 — Provisões" value={st.rai_67} onChange={v => s('rai_67', v)} />
                 <NumInput label="68 — Outros gastos e perdas" value={st.rai_68} onChange={v => s('rai_68', v)} />
                 <NumInput label="69 — Gastos de financiamento" value={st.rai_69} onChange={v => s('rai_69', v)} />
+                <CalcRow label="Total de gastos contabilísticos" value={stepRes.totalGastos} highlight />
               </Section>
 
               <Section title="Imposto diferido">
@@ -1163,7 +1170,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               </Section>
 
               {state.useRaiCalc && (<>
-                <Section title="Rendimentos">
+                <Section title="Rendimentos Contabilísticos">
                   <NumInput label="711 — Vendas de mercadorias" value={state.rai_711} onChange={v => set('rai_711', v)} />
                   <NumInput label="712 — Vendas de produtos acabados e em curso" value={state.rai_712} onChange={v => set('rai_712', v)} />
                   <NumInput label="72 — Prestações de serviços" value={state.rai_72} onChange={v => set('rai_72', v)} />
@@ -1173,9 +1180,10 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                   <NumInput label="77 — Ganhos por aumentos de justo valor" value={state.rai_77} onChange={v => set('rai_77', v)} />
                   <NumInput label="78 — Outros rendimentos e ganhos" value={state.rai_78} onChange={v => set('rai_78', v)} />
                   <NumInput label="79 — Juros, dividendos e outros rdtos. financeiros" value={state.rai_79} onChange={v => set('rai_79', v)} />
+                  <CalcRow label="TOTAL DE RENDIMENTOS" value={res.totalRendimentos} highlight />
                 </Section>
 
-                <Section title="Gastos">
+                <Section title="Gastos Contabilísticos">
                   <NumInput label="CMV — Custo das mercadorias vendidas" value={state.rai_cmv} onChange={v => set('rai_cmv', v)} />
                   <NumInput label="CMC — Custo das matérias consumidas" value={state.rai_cmc} onChange={v => set('rai_cmc', v)} />
                   <NumInput label="62 — FSE — Fornecimentos e serviços externos" value={state.rai_62} onChange={v => set('rai_62', v)} />
@@ -1186,6 +1194,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                   <NumInput label="67 — Provisões" value={state.rai_67} onChange={v => set('rai_67', v)} />
                   <NumInput label="68 — Outros gastos e perdas" value={state.rai_68} onChange={v => set('rai_68', v)} />
                   <NumInput label="69 — Gastos de financiamento" value={state.rai_69} onChange={v => set('rai_69', v)} />
+                  <CalcRow label="Total de gastos contabilísticos" value={res.totalGastos} highlight />
                 </Section>
 
                 <Section title="Imposto diferido">
