@@ -31,7 +31,8 @@ const ptDate = (iso?: string) => {
 /** Texto de fallback a destacar — para placeholders não preenchidos. */
 function P({ v, w = '—' }: { v: string | number | undefined | null; w?: string }) {
   if (v === null || v === undefined || v === '' || v === 0) {
-    return <span style={{ background: '#FEF3C7', color: '#92400E', padding: '0 4px', borderRadius: 3, fontWeight: 600 }}>{w}</span>;
+    // .mc-fill — destaque amarelo SÓ no ecrã (a regra @media print remove-o).
+    return <span className="mc-fill" style={{ background: '#FEF3C7', color: '#92400E', padding: '0 4px', borderRadius: 3, fontWeight: 600 }}>{w}</span>;
   }
   return <strong>{v}</strong>;
 }
@@ -93,6 +94,8 @@ export default function MinutaContrato({
           #${printRootId} .mc-page { box-shadow: none; margin: 0; page-break-after: always; zoom: 1 !important; }
           #${printRootId} .mc-page:last-child { page-break-after: auto; }
           #${printRootId} [contenteditable] { outline: none !important; }
+          /* Campos por preencher: sem destaque amarelo na impressão (só no ecrã). */
+          #${printRootId} .mc-fill { background: transparent !important; color: inherit !important; padding: 0 !important; font-weight: inherit !important; }
           @page { size: A4; margin: 0; }
         }
         /* Em ecrãs estreitos a folha A4 não cabe — encolhe com zoom (impressão fica intacta). */

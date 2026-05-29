@@ -89,8 +89,26 @@ export default function ExportPackageModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="export-modal-title"
-      className="fixed inset-0 z-[1100] flex items-stretch"
+      className="epm-root fixed inset-0 z-[1100] flex items-stretch"
     >
+      {/* Impressão: o documento activo usa position:absolute na sua própria CSS.
+          Sem isto, o transform (framer-motion), o overflow e a altura fixa do
+          modal recortavam/deslocavam o documento → saía desformatado, fora do A4.
+          Neutralizamos a cadeia de contentores do modal só na impressão. */}
+      <style>{`
+        @media print {
+          .epm-root, .epm-sheet, .epm-content, .epm-anim {
+            position: static !important; transform: none !important;
+            will-change: auto !important; filter: none !important;
+            overflow: visible !important; height: auto !important;
+            max-height: none !important; min-height: 0 !important;
+            max-width: none !important; width: auto !important;
+            background: none !important; box-shadow: none !important;
+            padding: 0 !important; margin: 0 !important; display: block !important;
+            opacity: 1 !important; /* anula a animação de entrada (opacity 0) na impressão */
+          }
+        }
+      `}</style>
       {/* Backdrop */}
       <button
         type="button"
@@ -104,7 +122,7 @@ export default function ExportPackageModal({
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
-        className="relative ml-auto w-full max-w-[1080px] h-full bg-[#F5F7FA] shadow-2xl flex flex-col"
+        className="epm-sheet relative ml-auto w-full max-w-[1080px] h-full bg-[#F5F7FA] shadow-2xl flex flex-col"
       >
         {/* Header */}
         <header className="shrink-0 px-6 py-4 bg-white border-b border-slate-200 flex items-center gap-4 no-print">
@@ -210,10 +228,11 @@ export default function ExportPackageModal({
         </div>
 
         {/* Tab content area */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 bg-[#E2E8F0]">
+        <div className="epm-content flex-1 overflow-y-auto px-6 py-6 bg-[#E2E8F0]">
           <AnimatePresence mode="wait">
             <motion.div
               key={active}
+              className="epm-anim"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
