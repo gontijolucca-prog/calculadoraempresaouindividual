@@ -308,7 +308,12 @@ function AppContent() {
   } | null>(null);
   const [saftData, setSaftData] = useState<SAFTParseResult | null>(null);
   const [showSaftViewer, setShowSaftViewer] = useState(false);
-  const [previSaState, setPreviSaState] = useState<PreviSaState>(() => defaultPreviSaState());
+  const [previSaState, setPreviSaState] = useState<PreviSaState>(() => {
+    // Arranca com o Previsa da empresa activa (se houver) — senão, limpo.
+    const empId = getCurrentEmpresaId();
+    const emp = empId ? getEmpresa(empId) : null;
+    return { ...defaultPreviSaState(), ...(emp?.previsa ?? {}) };
+  });
   // Carrega o perfil persistido. O perfil é o único estado de longa duração — guarda
   // o trabalho do consultor entre sessões. A antiga `fichaState` foi fundida aqui
   // via migração (loadProfileWithFichaMerge).
@@ -360,6 +365,16 @@ function AppContent() {
     if (currentEmpresaId) syncProfileIntoEmpresa(currentEmpresaId, clientProfile);
   }, [clientProfile, currentEmpresaId]);
 
+  // Persiste o estado do Previsa na empresa actual (espelha o sync do perfil).
+  // DEPOIS do sync do perfil de propósito: quando ambos mudam (ex.: abrir
+  // empresa), este corre a seguir, lê a empresa já com o perfil novo e só
+  // acrescenta `previsa` — sem sobrepor a escrita do perfil.
+  useEffect(() => {
+    if (!currentEmpresaId) return;
+    const emp = getEmpresa(currentEmpresaId);
+    if (emp) upsertEmpresa({ ...emp, previsa: previSaState });
+  }, [previSaState, currentEmpresaId]);
+
   // ── Persistência permanente em Firestore ─────────────────────────────────
   // No arranque: faz merge com o que está na cloud (usa o NIF do escritório
   // como tenant-id, ou 'default' se ainda não estiver definido).
@@ -373,7 +388,10 @@ function AppContent() {
       // Se a empresa actual foi carregada da cloud, atualiza o perfil em memória.
       if (currentEmpresaId) {
         const emp = merged.find(e => e.id === currentEmpresaId);
-        if (emp) setClientProfile(emp.profile);
+        if (emp) {
+          setClientProfile(emp.profile);
+          setPreviSaState({ ...defaultPreviSaState(), ...(emp.previsa ?? {}) });
+        }
       }
     })();
     return () => { cancelled = true; };
@@ -389,7 +407,7 @@ function AppContent() {
       saveEmpresasToFirestore(officeSettings.nif, listEmpresas()).catch(() => {});
     }, 2000);
     return () => clearTimeout(t);
-  }, [loggedIn, clientProfile, currentEmpresaId, empresasRefresh, officeSettings.nif]);
+  }, [loggedIn, clientProfile, previSaState, currentEmpresaId, empresasRefresh, officeSettings.nif]);
 
   // Sync document.title with the active view (helps history & screen readers)
   useEffect(() => {
@@ -476,6 +494,9 @@ function AppContent() {
     setCurrentEmpresaId(id);
     setCurrentEmpresaIdState(id);
     updateProfileWithSimulatorSync(emp.profile);
+    // Restaura o Previsa deste cliente (ou limpa, se ainda não tiver) — tal como
+    // os outros simuladores se re-semeiam a partir do perfil ao abrir a empresa.
+    setPreviSaState({ ...defaultPreviSaState(), ...(emp.previsa ?? {}) });
     setView('profile');
   };
 
@@ -550,9 +571,11 @@ function AppContent() {
         updateProfileWithSimulatorSync(newProfile);
         setView('profile');
         setSaftData(result);
-        if (result.previsa && Object.keys(result.previsa).length > 0) {
-          setPreviSaState(prev => ({ ...prev, ...result.previsa }));
-        }
+        // Previsa parte de um estado LIMPO + o que o SAF-T preencheu — evita
+        // herdar dados de uma empresa importada antes. Guarda-se também na empresa
+        // (abaixo) para persistir e sincronizar como os outros dados do cliente.
+        const newPrevisa: PreviSaState = { ...defaultPreviSaState(), ...(result.previsa ?? {}) };
+        setPreviSaState(newPrevisa);
 
         // Guarda o SAF-T em bruto na empresa actual para poder re-exportá-lo
         // depois. Usa o id da storage (o state pode estar stale neste callback
@@ -564,7 +587,7 @@ function AppContent() {
           // Guarda já com a declaração normalizada a UTF-8: o texto é Unicode e
           // a re-exportação (Blob) escreve bytes UTF-8 — declaração e bytes têm
           // de coincidir para o ficheiro reimportar bem.
-          if (emp) upsertEmpresa({ ...emp, saftXml: normalizeXmlEncodingToUtf8(text), saftFileName: file.name, saftImportedAt: Date.now() });
+          if (emp) upsertEmpresa({ ...emp, saftXml: normalizeXmlEncodingToUtf8(text), saftFileName: file.name, saftImportedAt: Date.now(), previsa: newPrevisa });
         }
 
         setSaftModal({

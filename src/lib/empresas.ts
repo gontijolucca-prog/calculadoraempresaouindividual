@@ -8,6 +8,7 @@
  * Persistência actual: localStorage. Migração futura para Firestore mantém esta API.
  */
 import type { ClientProfile } from '../ClientProfile';
+import type { PreviSaState } from '../previSaState';
 import { loadFromStorage, saveToStorage } from './storage';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
@@ -35,6 +36,11 @@ export interface EmpresaRecord {
   saftImportedAt?: number;
   saftXml?: string;                 // SAF-T importado em bruto (para re-exportar)
   simulacoes?: SimulationRecord[];  // histórico de simulações deste cliente
+  // Estado do simulador Previsa (IRC Modelo 22) deste cliente. Ao contrário dos
+  // outros simuladores — que se re-semeiam a partir do `profile` — o Previsa tem
+  // detalhe contabilístico (rai_*, TA, etc.) que não cabe no perfil, por isso é
+  // guardado aqui para persistir entre sessões e sincronizar entre dispositivos.
+  previsa?: Partial<PreviSaState>;
 }
 
 const REGISTRY_KEY = 'empresas';

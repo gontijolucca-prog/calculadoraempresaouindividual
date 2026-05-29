@@ -250,9 +250,21 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
 
         {simItems.length > 0 && (
           <>
-            <button type="button" onClick={() => setSimOpen(o => !o)} aria-expanded={simOpen} className="w-full flex items-center justify-between px-3 pt-4 pb-1.5 text-[10px] font-[800] uppercase tracking-[1.5px] text-slate-400 hover:text-slate-600 transition-colors">
-              <span>Simuladores</span>
-              <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', simOpen ? '' : '-rotate-90')} />
+            <button
+              type="button"
+              onClick={() => setSimOpen(o => !o)}
+              aria-expanded={simOpen}
+              className="w-full flex items-center justify-between gap-2 px-3 py-2.5 mt-3 mb-1 rounded-[10px] text-[11px] font-[800] uppercase tracking-[1.2px] text-white transition-all hover:brightness-105 active:scale-[0.99]"
+              style={{
+                background: 'linear-gradient(135deg, #0677FF 0%, #044BB6 100%)',
+                boxShadow: '0 0 0 1px rgba(6,119,255,0.35), 0 6px 18px -6px rgba(6,119,255,0.65), 0 0 22px rgba(6,119,255,0.40)',
+              }}
+            >
+              <span className="flex items-center gap-2">
+                <Calculator className="w-4 h-4 shrink-0" strokeWidth={2.5} />
+                Simuladores
+              </span>
+              <ChevronDown className={cn('w-4 h-4 transition-transform', simOpen ? '' : '-rotate-90')} />
             </button>
             {simOpen && (
               <div className="space-y-0.5">
