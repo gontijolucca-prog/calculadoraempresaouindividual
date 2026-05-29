@@ -23,6 +23,11 @@ export interface SimulationRecord {
   createdAt: number;
   resumo: string;      // resultado numa linha, ex. "LDA poupa 4.200 €/ano"
   state: unknown;      // snapshot do estado do simulador
+  /** Guardado automaticamente (não por clique do utilizador). Há no máximo um
+   *  registo automático por tipo de simulador — é atualizado em vez de duplicar. */
+  auto?: boolean;
+  /** Detalhes-chave (label→valor) para comparar no histórico sem reabrir. */
+  detalhes?: { label: string; valor: string }[];
 }
 
 export interface EmpresaRecord {
@@ -178,6 +183,33 @@ export function addSimulacao(
     updatedAt: Date.now(),
   };
   upsertEmpresa(next);
+  return record;
+}
+
+/** Guarda/atualiza automaticamente a simulação do tipo indicado. Mantém UM só
+ *  registo automático por tipo (atualiza-o em vez de acumular duplicados); os
+ *  registos manuais antigos não são tocados. Devolve o registo ou null. */
+export function upsertAutoSimulacao(
+  empresaId: string,
+  sim: { tipo: string; label: string; resumo: string; state: unknown; detalhes?: { label: string; valor: string }[] },
+): SimulationRecord | null {
+  const emp = getEmpresa(empresaId);
+  if (!emp) return null;
+  const list = emp.simulacoes ?? [];
+  const existing = list.find(s => s.tipo === sim.tipo && s.auto);
+  const record: SimulationRecord = {
+    id: existing?.id ?? newSimId(),
+    tipo: sim.tipo,
+    label: sim.label,
+    resumo: sim.resumo,
+    state: sim.state,
+    detalhes: sim.detalhes,
+    createdAt: Date.now(),
+    auto: true,
+  };
+  // Substitui o registo automático existente (se houver) e coloca à cabeça.
+  const rest = list.filter(s => !(s.tipo === sim.tipo && s.auto));
+  upsertEmpresa({ ...emp, simulacoes: [record, ...rest], updatedAt: Date.now() });
   return record;
 }
 

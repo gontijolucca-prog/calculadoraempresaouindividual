@@ -22,6 +22,7 @@ import {
   listEmpresas,
   deleteEmpresa,
   addSimulacao,
+  upsertAutoSimulacao,
 } from './lib/empresas';
 import type { SimulationRecord, EmpresaRecord } from './lib/empresas';
 import type { DiagnosticoState } from './DiagnosticoAutonomia';
@@ -56,9 +57,9 @@ const PreviSaSimulator = lazy(() => import('./PreviSaSimulator'));
 const OfficeSettingsView = lazy(() => import('./OfficeSettingsView'));
 import { defaultPreviSaState } from './previSaState';
 import type { PreviSaState } from './previSaState';
-import { SIM_LABELS, isSimView, summarizeSimulacao, type SimView } from './lib/simSummary';
+import { SIM_LABELS, isSimView, summarizeSimulacao, simHasData, detailSimulacao, type SimView } from './lib/simSummary';
 import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
-import { SimulacaoSaveProvider, SaveSimulacaoFab, type SimSaveCtx } from './SimulacaoSave';
+import { SimulacaoSaveProvider, type SimSaveCtx } from './SimulacaoSave';
 const SimulacoesHistory = lazy(() => import('./SimulacoesHistory'));
 
 type ViewType =
@@ -428,6 +429,31 @@ function AppContent() {
       },
     });
   }, [taxState, vehicleState, ticketState, ssState, diagnosticoState, imoveisState, imtState, salarioState, irsState, currentEmpresaId]);
+
+  // Auto-guarda no histórico do cliente a simulação activa (quando tem dados),
+  // ~1,2s após a última edição. Mantém UM só registo automático por simulador
+  // (dedup em upsertAutoSimulacao) — por isso já não há botão "Guardar".
+  useEffect(() => {
+    if (!currentEmpresaId || !isSimView(view)) return; // narrows `view` para SimView
+    const byView: Record<SimView, unknown> = {
+      tax: taxState, vehicle: vehicleState, ticket: ticketState, selfss: ssState,
+      diagnostico: diagnosticoState, imoveis: imoveisState, imt: imtState,
+      salario: salarioState, irs: irsState, previsa: previSaState,
+    };
+    const state = byView[view];
+    if (!simHasData(view, state)) return;
+    const t = window.setTimeout(() => {
+      upsertAutoSimulacao(currentEmpresaId, {
+        tipo: view,
+        label: SIM_LABELS[view],
+        resumo: summarizeSimulacao(view, state),
+        state,
+        detalhes: detailSimulacao(view, state),
+      });
+      setEmpresasRefresh(n => n + 1);
+    }, 1200);
+    return () => window.clearTimeout(t);
+  }, [currentEmpresaId, view, taxState, vehicleState, ticketState, ssState, diagnosticoState, imoveisState, imtState, salarioState, irsState, previSaState]);
 
   // ── Persistência permanente em Firestore ─────────────────────────────────
   // No arranque: faz merge com o que está na cloud (usa o NIF do escritório
@@ -1298,9 +1324,8 @@ function AppContent() {
         </CurrentLayout>
       </div>
 
-      {/* Funcionalidade D: botão flutuante para guardar a simulação activa no
-          histórico do cliente (só aparece num simulador com empresa seleccionada). */}
-      <SaveSimulacaoFab />
+      {/* As simulações guardam-se automaticamente no histórico do cliente
+          (~1,2s após editar). Sem botão manual — ver auto-save effect acima. */}
 
       {/* Aviso de nova versão (auto-atualização) — recarrega sozinho se não houver
           edições de documento por guardar; caso contrário mostra botão manual. */}

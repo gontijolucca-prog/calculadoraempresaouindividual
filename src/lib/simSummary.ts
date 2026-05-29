@@ -91,3 +91,100 @@ export function summarizeSimulacao(tipo: string, state: unknown): string {
       return 'Simulação guardada';
   }
 }
+
+const num = (n: unknown): number => (typeof n === 'number' && Number.isFinite(n) ? n : 0);
+
+/**
+ * O simulador tem dados reais introduzidos? Evita guardar automaticamente
+ * simulações vazias (campos todos a zero) no histórico.
+ */
+export function simHasData(tipo: string, state: unknown): boolean {
+  const s = (state ?? {}) as Record<string, any>;
+  switch (tipo) {
+    case 'tax':        return num(s.rev) > 0 || num(s.currentInc) > 0 || num(s.monthlyNeed) > 0;
+    case 'vehicle':    return num(s.price) > 0;
+    case 'ticket':     return num(s.employees) > 0 && num(s.ticketValue) > 0;
+    case 'selfss':     return num(s.income) > 0;
+    case 'diagnostico':return num(s.volumeNegocios) > 0 || num(s.custoFixoMensal) > 0;
+    case 'imoveis':    return num(s.valorImovel) > 0;
+    case 'imt':        return num(s.valor) > 0;
+    case 'salario':    return num(s.salarioBruto) > 0;
+    case 'irs': {
+      const ag = Array.isArray(s.agregado) ? s.agregado : [];
+      return ag.some((p: any) => num(p?.rendTrabalho) > 0 || num(p?.rendEmpresarial) > 0);
+    }
+    case 'previsa':
+      return num(s.volumeNegocios) > 0 || !!(s.designacao || '').trim() ||
+        ['rai_711','rai_712','rai_72','rai_74','rai_75','rai_76','rai_77','rai_78','rai_79','c701_rai']
+          .some(k => num(s[k]) > 0);
+    default: return false;
+  }
+}
+
+/**
+ * Detalhes-chave (label→valor) de uma simulação, para comparar no histórico
+ * sem ter de a reabrir. Destila os inputs/pressupostos mais relevantes por tipo.
+ */
+export function detailSimulacao(tipo: string, state: unknown): { label: string; valor: string }[] {
+  const s = (state ?? {}) as Record<string, any>;
+  const out: { label: string; valor: string }[] = [];
+  const add = (label: string, valor: string | number) => out.push({ label, valor: typeof valor === 'number' ? eur(valor) : valor });
+  switch (tipo) {
+    case 'tax':
+      add('Faturação', num(s.rev));
+      add('Atividade', s.isServices ? 'Serviços' : 'Bens');
+      add('Mercado', s.b2b ? 'B2B' : 'B2C');
+      add('Necessidade mensal', num(s.monthlyNeed));
+      if (num(s.invEquip) + num(s.invLic) + num(s.invWorks) + num(s.invFundo) > 0)
+        add('Investimento', num(s.invEquip) + num(s.invLic) + num(s.invWorks) + num(s.invFundo));
+      break;
+    case 'vehicle':
+      add('Preço', num(s.price));
+      add('Categoria', pick({ passageiros: 'Passageiros', comercial: 'Comercial' }, s.category, '—'));
+      add('Motor', String(s.engineType ?? '—'));
+      add('Regime IVA', String(s.ivaRegime ?? '—'));
+      break;
+    case 'ticket':
+      add('Colaboradores', String(num(s.employees)));
+      add('Valor/dia', num(s.ticketValue));
+      add('Dias/mês', String(num(s.daysPerMonth)));
+      add('Meses', String(num(s.months)));
+      break;
+    case 'selfss':
+      add('Rendimento/mês', num(s.income));
+      add('Tipo', pick({ servicos: 'Serviços', bens: 'Bens' }, s.tipoRendimento, '—'));
+      add('Regime', pick({ general: 'Geral', simplified: 'Simplificado' }, s.regime, '—'));
+      break;
+    case 'salario':
+      add('Bruto/mês', num(s.salarioBruto));
+      add('Estado civil', String(s.estadoCivil ?? '—').replace(/_/g, ' '));
+      add('Dependentes', String(num(s.nrDependentes)));
+      add('Subs. alimentação', num(s.subsidioAlimentacaoDiario));
+      break;
+    case 'imt':
+      add('Valor', num(s.valor));
+      add('Tipo', String(s.tipo ?? '—'));
+      add('Localização', String(s.localizacao ?? '—'));
+      break;
+    case 'imoveis':
+      add('Valor imóvel', num(s.valorImovel));
+      add('Uso', String(s.tipoUso ?? '—'));
+      break;
+    case 'irs': {
+      const ag = Array.isArray(s.agregado) ? s.agregado : [];
+      const rend = ag.reduce((t: number, p: any) => t + num(p?.rendTrabalho), 0);
+      add('Cenário', s.cenario === 'conjunto' ? 'Conjunta' : 'Individual');
+      add('Titulares', String(ag.length));
+      add('Rendimento trabalho', rend);
+      break;
+    }
+    case 'previsa':
+      if ((s.designacao || '').trim()) add('Empresa', String(s.designacao).trim());
+      if (s.periodo) add('Período', String(s.periodo));
+      add('Volume de negócios', num(s.volumeNegocios));
+      add('Regime', String(s.regime ?? '—'));
+      add('Território', String(s.territorio ?? '—'));
+      break;
+  }
+  return out.filter(d => d.valor !== '' && d.valor !== '—' && d.valor !== eur(0));
+}
