@@ -10,7 +10,7 @@
 import type { ClientProfile } from '../ClientProfile';
 import type { PreviSaState } from '../previSaState';
 import { loadFromStorage, saveToStorage } from './storage';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, getDocs, collection } from 'firebase/firestore';
 import { db } from './firebase';
 
 /** Uma simulação guardada no histórico de um cliente (torna os simuladores
@@ -197,9 +197,19 @@ export function deleteSimulacao(empresaId: string, simId: string): void {
 
 const FIRESTORE_COLLECTION = 'empresas';
 
-export function getOfficeId(officeNif?: string): string {
-  const nif = (officeNif ?? '').trim();
-  return /^\d{9}$/.test(nif) ? nif : 'default';
+// Documento ÚNICO e partilhado por todos os dispositivos. Antes a chave do
+// documento era o NIF do escritório (ou 'default' quando estava vazio) — o que
+// partia os dados em baldes diferentes consoante o dispositivo tivesse, ou não,
+// o NIF preenchido, e impedia a sincronização "em qualquer computador". A app é
+// single-tenant (um escritório), por isso um documento fixo dá sync fiável.
+// [Quando houver multi-escritório → trocar por request.auth.uid + Firebase Auth.]
+const SHARED_OFFICE_ID = 'shared';
+const MIGRATED_KEY = 'empresasMigratedToShared';
+
+// Mantido por compatibilidade de assinatura, mas agora todos os dispositivos
+// apontam ao mesmo documento partilhado (o NIF deixou de definir o balde).
+export function getOfficeId(_officeNif?: string): string {
+  return SHARED_OFFICE_ID;
 }
 
 export async function saveEmpresasToFirestore(
@@ -256,6 +266,11 @@ export async function loadEmpresasFromFirestore(
  * comportamento correto e previsível.
  */
 export async function syncEmpresasFromFirestore(officeNif: string | undefined): Promise<EmpresaRecord[]> {
+  // Uma vez por dispositivo: junta no documento partilhado tudo o que estava
+  // espalhado pelos baldes antigos (NIF do escritório + 'default'), para não se
+  // perder nada na transição para a chave fixa.
+  await migrateLegacyBucketsToShared();
+
   const remote = await loadEmpresasFromFirestore(officeNif);
   const local = listEmpresas();
   const localStamp = getEmpresasStamp();
@@ -290,6 +305,55 @@ export async function syncEmpresasFromFirestore(officeNif: string | undefined): 
  * mesmo SAF-T (cada uma criava uma empresa com id diferente → "Hydra"). Empresas
  * sem NIF válido (recém-criadas, por preencher) são todas preservadas — são distintas.
  */
+/**
+ * União de várias listas de empresas: dedupe primeiro por `id` (mantém o registo
+ * de `updatedAt` mais recente) e depois colapsa NIFs duplicados. É o que garante
+ * que juntar baldes diferentes (NIF do escritório + 'default') não duplica nem
+ * perde registos.
+ */
+function mergeEmpresasUnion(lists: EmpresaRecord[][]): EmpresaRecord[] {
+  const byId = new Map<string, EmpresaRecord>();
+  for (const list of lists) {
+    if (!Array.isArray(list)) continue;
+    for (const e of list) {
+      if (!e || !e.id) continue;
+      const ex = byId.get(e.id);
+      if (!ex || (e.updatedAt ?? 0) > (ex.updatedAt ?? 0)) byId.set(e.id, e);
+    }
+  }
+  return dedupeByNif([...byId.values()]);
+}
+
+/**
+ * Migração única para o documento partilhado. Lê TODOS os documentos da coleção
+ * `empresas` (os baldes antigos por NIF + 'default'), junta-os com a lista local
+ * e grava o resultado no documento partilhado. Idempotente (a união converge) e
+ * protegida por uma flag em localStorage para não correr a cada arranque.
+ */
+async function migrateLegacyBucketsToShared(): Promise<void> {
+  if (loadFromStorage<boolean>(MIGRATED_KEY, false)) return;
+  try {
+    const snap = await getDocs(collection(db, FIRESTORE_COLLECTION));
+    const lists: EmpresaRecord[][] = [listEmpresas()];
+    snap.forEach(d => {
+      const data = d.data() as { list?: EmpresaRecord[] } | undefined;
+      if (Array.isArray(data?.list)) lists.push(data!.list);
+    });
+    const merged = mergeEmpresasUnion(lists);
+    if (merged.length > 0) {
+      saveEmpresas(merged); // grava local + avança o relógio do registry
+      await setDoc(doc(db, FIRESTORE_COLLECTION, SHARED_OFFICE_ID), {
+        list: merged,
+        updatedAt: getEmpresasStamp(),
+      });
+    }
+    saveToStorage(MIGRATED_KEY, true);
+  } catch (err) {
+    // Falha silenciosa — repete-se no próximo arranque (flag não fica marcada).
+    console.warn('[empresas] migração para documento partilhado falhou:', err);
+  }
+}
+
 function dedupeByNif(list: EmpresaRecord[]): EmpresaRecord[] {
   const byNif = new Map<string, EmpresaRecord>();
   const noNif: EmpresaRecord[] = [];
