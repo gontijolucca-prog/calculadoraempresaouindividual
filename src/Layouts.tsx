@@ -230,7 +230,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
                 title={profileFlowMode ? 'Sair do flow guiado e ver todas as secções.' : 'Entrar no flow guiado em 6 passos.'}
               />
               <NavItem
-                label="Exportar documentos"
+                label="Pacote cliente"
                 Icon={Package}
                 onClick={() => fireProfileEvent('profile:openPackage')}
                 title="Gerar pacote de documentos PDF (proposta + simulação) do cliente."

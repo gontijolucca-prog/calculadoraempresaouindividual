@@ -4,22 +4,21 @@ import { Plus, Building2, FileUp, Trash2, ChevronRight, Search, FileText, Pencil
 import {
   listEmpresas,
   setCurrentEmpresaId,
-  newId,
-  upsertEmpresa,
   type EmpresaRecord,
 } from './lib/empresas';
-import { defaultProfile } from './ClientProfile';
 
 interface Props {
   onOpenEmpresa: (empId: string) => void;
-  onNovaEmpresa: (empId: string) => void;
+  /** "Inserir à mão": abre um rascunho limpo no modo Novo Cliente (a empresa só
+   *  é criada quando o utilizador carrega em "Guardar cliente"). */
+  onNovaEmpresaManual: () => void;
   onNovaEmpresaFromSAFT: (file: File) => void;
   onSAFTUpload: (file: File, empId: string) => void;
   onDeleteEmpresa: (empId: string) => void;
   refreshKey?: number;
 }
 
-export default function EmpresasList({ onOpenEmpresa, onNovaEmpresa, onNovaEmpresaFromSAFT, onSAFTUpload, onDeleteEmpresa, refreshKey }: Props) {
+export default function EmpresasList({ onOpenEmpresa, onNovaEmpresaManual, onNovaEmpresaFromSAFT, onSAFTUpload, onDeleteEmpresa, refreshKey }: Props) {
   const [empresas, setEmpresas] = useState<EmpresaRecord[]>(() => listEmpresas());
   const [query, setQuery] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<EmpresaRecord | null>(null);
@@ -50,18 +49,10 @@ export default function EmpresasList({ onOpenEmpresa, onNovaEmpresa, onNovaEmpre
   const startNova = () => setShowNovaModal(true);
 
   const handleNovaManual = () => {
-    const id = newId();
-    upsertEmpresa({
-      id,
-      nome: '',
-      nif: '',
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      profile: { ...defaultProfile },
-    });
-    setCurrentEmpresaId(id);
+    // Não cria a empresa já — abre o rascunho no modo Novo Cliente. A empresa
+    // entra na lista só quando o utilizador carregar em "Guardar cliente".
     setShowNovaModal(false);
-    onNovaEmpresa(id);
+    onNovaEmpresaManual();
   };
 
   const handleNovaFromSAFT = (file: File) => {

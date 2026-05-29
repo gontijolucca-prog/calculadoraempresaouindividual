@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Save } from 'lucide-react';
 import ClientProfile, { defaultProfile } from './ClientProfile';
 import LegalInfo from './LegalInfo';
 import LoginPage from './LoginPage';
@@ -482,9 +482,18 @@ function AppContent() {
     setView('empresas');
   };
 
-  // Trocar de modo directamente a partir da sidebar.
+  // Trocar de modo directamente a partir da sidebar. "Novo Cliente" é sempre um
+  // rascunho LIMPO e não ligado a nenhuma empresa — só entra na lista quando se
+  // carrega em "Guardar cliente". Por isso, ao entrar nesse modo, esvaziamos o
+  // perfil/Previsa e largamos a empresa activa.
   const selectMode = (m: AppMode) => {
     setMode(m);
+    if (m === 'novo-cliente') {
+      setCurrentEmpresaId(null);
+      setCurrentEmpresaIdState(null);
+      setClientProfile({ ...defaultProfile });
+      setPreviSaState(defaultPreviSaState());
+    }
     setView(DEFAULT_VIEW_BY_MODE[m]);
   };
 
@@ -515,10 +524,35 @@ function AppContent() {
     saveEmpresasToFirestore(officeSettings.nif, listEmpresas()).catch(() => {});
   };
 
-  const handleNovaEmpresa = (id: string) => {
+  // "Inserir à mão": NÃO cria já a empresa. Abre um rascunho limpo no modo
+  // "Novo Cliente" para o utilizador preencher; só entra na lista ao "Guardar".
+  const handleNovaEmpresaManual = () => {
+    setCurrentEmpresaId(null);
+    setCurrentEmpresaIdState(null);
+    updateProfileWithSimulatorSync({ ...defaultProfile });
+    setPreviSaState(defaultPreviSaState());
+    setMode('novo-cliente');
+    setView('profile');
+  };
+
+  // "Guardar cliente": cria a empresa a partir do rascunho preenchido, adiciona-a
+  // à lista e abre-a no modo Empresa. O modo "Novo Cliente" volta a abrir limpo
+  // na próxima vez (selectMode).
+  const handleSaveNewClient = () => {
+    const id = newEmpresaId();
+    const now = Date.now();
+    upsertEmpresa({
+      id,
+      nome: clientProfile.nomeCliente?.trim() || 'Cliente sem nome',
+      nif: clientProfile.nif?.trim() || '',
+      createdAt: now,
+      updatedAt: now,
+      profile: clientProfile,
+      previsa: previSaState,
+    });
     setCurrentEmpresaId(id);
     setCurrentEmpresaIdState(id);
-    updateProfileWithSimulatorSync({ ...defaultProfile });
+    setMode('empresa');
     setView('profile');
     setEmpresasRefresh(n => n + 1);
   };
@@ -722,6 +756,10 @@ function AppContent() {
   // Funcionalidade D: simuladores são por-cliente — sem empresa activa mostram o gate.
   const simGate = <NoEmpresaGate onGo={() => { setMode('empresa'); setView('empresas'); }} />;
 
+  // Rascunho de cliente novo (modo "Novo Cliente", a preencher, ainda sem empresa).
+  // Mostra a barra "Guardar cliente" em baixo.
+  const draftNewClient = mode === 'novo-cliente' && view === 'profile' && !currentEmpresaId;
+
   const content = (
     <Suspense fallback={<ViewLoading />}>
       <PageTransition pageKey={view}>
@@ -729,7 +767,7 @@ function AppContent() {
           <EmpresasList
             refreshKey={empresasRefresh}
             onOpenEmpresa={openEmpresa}
-            onNovaEmpresa={handleNovaEmpresa}
+            onNovaEmpresaManual={handleNovaEmpresaManual}
             onNovaEmpresaFromSAFT={handleNovaEmpresaFromSAFT}
             onSAFTUpload={handleEmpresaSAFT}
             onDeleteEmpresa={handleDeleteEmpresa}
@@ -1113,6 +1151,31 @@ function AppContent() {
       {/* Funcionalidade D: botão flutuante para guardar a simulação activa no
           histórico do cliente (só aparece num simulador com empresa seleccionada). */}
       <SaveSimulacaoFab />
+
+      {/* Barra "Guardar cliente" — só no rascunho de cliente novo (modo Novo Cliente). */}
+      {draftNewClient && (
+        <div className="fixed bottom-0 right-0 left-0 md:left-64 z-[70] no-print border-t border-slate-200 bg-white/95 backdrop-blur-sm px-4 sm:px-6 py-3 flex items-center gap-3 shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.25)]">
+          <div className="min-w-0 flex-1">
+            <div className="text-[13px] font-[800] text-[#0F172A] leading-tight truncate">
+              {clientProfile.nomeCliente?.trim() || 'Novo cliente'}
+            </div>
+            <div className="text-[11px] font-[600] text-[#64748B] leading-tight">
+              Ainda não guardado · preenche e carrega em guardar para adicionar à lista.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleSaveNewClient}
+            className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-[12px] text-[14px] font-[800] text-white active:scale-[0.98] transition-all"
+            style={{
+              background: 'linear-gradient(135deg, #0677FF 0%, #044BB6 100%)',
+              boxShadow: '0 0 0 1px rgba(6,119,255,0.35), 0 8px 22px -8px rgba(6,119,255,0.6)',
+            }}
+          >
+            <Save className="w-4 h-4" strokeWidth={2.5} /> Guardar cliente
+          </button>
+        </div>
+      )}
     </div>
     </SimulacaoSaveProvider>
   );
