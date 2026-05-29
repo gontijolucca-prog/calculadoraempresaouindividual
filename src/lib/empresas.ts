@@ -12,6 +12,7 @@ import type { PreviSaState } from '../previSaState';
 import { loadFromStorage, saveToStorage } from './storage';
 import { doc, getDoc, setDoc, getDocs, collection } from 'firebase/firestore';
 import { db } from './firebase';
+import { repairMojibake } from './mojibake';
 
 /** Uma simulação guardada no histórico de um cliente (torna os simuladores
  *  "não descartáveis"). `state` é o snapshot do estado do simulador (permite
@@ -298,22 +299,9 @@ export async function loadEmpresasFromFirestore(
  * code points cabem num byte e (c) a re-descodificação é UTF-8 válido e fica
  * "mais limpa". Caso contrário devolve a string intacta.
  */
-export function repairMojibake(s: string): string {
-  if (!s || typeof s !== 'string') return s;
-  if (!/Ã.|Â.|â€/.test(s)) return s;                  // sem marcadores → nada a fazer
-  for (let i = 0; i < s.length; i++) {
-    if (s.charCodeAt(i) > 0xff) return s;             // não é reinterpretável como Latin-1
-  }
-  try {
-    const bytes = new Uint8Array(s.length);
-    for (let i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i) & 0xff;
-    const decoded = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-    const noise = (x: string) => (x.match(/[ÃÂ]|â€/g) || []).length;
-    return noise(decoded) < noise(s) ? decoded : s;   // só aceita se ficou mais limpo
-  } catch {
-    return s;                                         // bytes não formam UTF-8 válido
-  }
-}
+// repairMojibake vive agora em ./mojibake (partilhado com saft.ts). Re-exporta-se
+// aqui para não quebrar quem o importe a partir de empresas.
+export { repairMojibake };
 
 // Repara os campos de texto (shallow) de um objecto plano, devolvendo uma cópia
 // apenas se algo mudou. Não percorre objectos aninhados nem blobs.

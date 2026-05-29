@@ -1,5 +1,6 @@
 import type { ClientProfile } from '../ClientProfile';
 import type { PreviSaState } from '../previSaState';
+import { repairMojibake } from './mojibake';
 
 export interface SAFTDetail {
   label: string;
@@ -53,7 +54,9 @@ function localDescendants(root: Element | Document, name: string): Element[] {
 function text(parent: Element | null, name: string): string {
   if (!parent) return '';
   const c = localChild(parent, name);
-  return c?.textContent?.trim() ?? '';
+  // Repara mojibake (ex.: SAF-T gravado em UTF-8 mas com texto duplamente
+  // codificado → "AtlÃ¢ntico"). Idempotente: texto correcto fica intacto.
+  return repairMojibake(c?.textContent?.trim() ?? '');
 }
 
 function num(parent: Element | null, name: string): number {
@@ -578,32 +581,30 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
       filled.push('TA — Despesas não documentadas (688x)');
     }
 
-    // Class 8 — RAI/IRC
-    const r811 = sumBy('811', 'credit');
-    if (r811) {
-      previsa.c701_rai = Math.round(r811 * 100) / 100;
-      filled.push('RAI (811)');
-      details.push({
-        group: 'Resultados Apurados',
-        label: '811 — Resultado antes de impostos',
-        value: fmtEur(r811),
-      });
-    }
+    // Imposto diferido (8122) — extração directa (não é resultado).
     const r8122db = sumBy('8122', 'debit');
     const r8122cr = sumBy('8122', 'credit');
     if (r8122db) { previsa.rai_8122_db = Math.round(r8122db * 100) / 100; filled.push('Imposto diferido — Débito (8122)'); }
     if (r8122cr) { previsa.rai_8122_cr = Math.round(r8122cr * 100) / 100; filled.push('Imposto diferido — Crédito (8122)'); }
 
-    // Detalhe agregado para o utilizador
+    // RAI = total rendimentos (7) − total gastos (6). É O cálculo correcto:
+    // a conta 811 é de apuramento (débito = crédito → saldo de movimento 0), por
+    // isso somar o seu movimento bruto dava um valor sem sentido (ex.: Mykola
+    // 59.807 em vez do prejuízo real −14.404). Quando o ficheiro traz saldos de
+    // fecho (ex.: Atlântico), 811 fica = rendimentos−gastos = 112.800, igual a este.
     const totalRendimentos = r711 + r712 + r72 + r74 + r75 + r76 + r77 + r78 + r79;
     const totalGastos      = cmvFinal + cmcFinal + c62 + c63 + c64 + c65 + c66 + c67 + c68 + c69;
     if (totalRendimentos) details.push({ group: 'Resultados Apurados', label: 'Total Rendimentos (7)', value: fmtEur(totalRendimentos) });
     if (totalGastos)      details.push({ group: 'Resultados Apurados', label: 'Total Gastos (6)',      value: fmtEur(totalGastos) });
     if (totalRendimentos || totalGastos) {
-      const raiCalc = totalRendimentos - totalGastos;
+      const raiCalc = Math.round((totalRendimentos - totalGastos) * 100) / 100;
+      // Saldo de fecho da 811 (quando existe) como verificação — só informativo.
+      const r811Closing = sumLeaves(accounts, '811', 'credit') - sumLeaves(accounts, '811', 'debit');
+      previsa.c701_rai = r811Closing !== 0 ? Math.round(r811Closing * 100) / 100 : raiCalc;
+      filled.push('RAI (resultado antes de impostos)');
       details.push({
         group: 'Resultados Apurados',
-        label: 'RAI implícito (7 − 6)',
+        label: 'Resultado antes de impostos (7 − 6)',
         value: `${fmtEur(Math.abs(raiCalc))} ${raiCalc >= 0 ? 'Lucro' : 'Prejuízo'}`,
       });
     }
