@@ -185,12 +185,12 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
   const resetAll = () => {
     onStateChange({
       profSit: profile.tipoEntidade === 'eni' ? 'outro' : 'tco',
-      currentInc: 25000, age: profile.idade,
-      isMainAct: profile.tipoEntidade !== 'eni', monthlyNeed: 1500,
+      currentInc: 0, age: profile.idade,
+      isMainAct: profile.tipoEntidade !== 'eni', monthlyNeed: 0,
       isServices: profile.atividadePrincipal === 'servicos', b2b: true,
       rev: profile.faturaçaoAnualPrevista, isSeasonal: profile.isSazonal,
-      invEquip: 3000, invLic: 500, invWorks: 1000, invFundo: 2000,
-      fixedMo: 400, varYr: 5000, accMoLda: 200, accMoEni: 50,
+      invEquip: 0, invLic: 0, invWorks: 0, invFundo: 0,
+      fixedMo: 0, varYr: 0, accMoLda: 0, accMoEni: 0,
       anosAtividade: Math.max(0, new Date().getFullYear() - profile.inicioAtividade),
       transparenciaFiscal: profile.regimeContabilidade === 'transparencia_fiscal',
     });
@@ -361,21 +361,21 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
       </h4>
       <div className="space-y-3 mb-6 flex-1">
         <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-          <span className="text-[13px] font-[600] text-slate-600">IRS Agravado {results.irsJovemDeduction > 0 ? '(c/ IRS Jovem)' : ''}</span>
+          <span className="text-[13px] font-[600] text-slate-600 flex items-center gap-1">IRS Agravado {results.irsJovemDeduction > 0 ? '(c/ IRS Jovem)' : ''} <Tip>IRS extra que a atividade acrescenta: IRS do rendimento total (atual + atividade) menos o IRS só do rendimento atual, menos a dedução por dependentes. O rendimento coletável da atividade = faturação × coeficiente do art.º 31.º CIRS (0,15 a 0,75 conforme a atividade).</Tip></span>
           <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.eni.irs)}</span>
         </div>
         {results.depsDeduction > 0 && (
           <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-            <span className="text-[13px] font-[600] text-emerald-600">Ded. Dependentes ({profile.nrDependentes}×)</span>
+            <span className="text-[13px] font-[600] text-emerald-600 flex items-center gap-1">Ded. Dependentes ({profile.nrDependentes}×) <Tip>Dedução à coleta de IRS por cada dependente do agregado familiar (art.º 78.º-A CIRS). Reduz diretamente o IRS a pagar. Baseia-se no nº de dependentes do perfil do cliente.</Tip></span>
             <span className="text-[15px] font-[700] text-emerald-600 font-mono">- {ptEur(results.depsDeduction)}</span>
           </div>
         )}
         <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-          <span className="text-[13px] font-[600] text-slate-600">Seg. Social (21,4%)</span>
+          <span className="text-[13px] font-[600] text-slate-600 flex items-center gap-1">Seg. Social (21,4%) <Tip>Contribuição do trabalhador independente para a Segurança Social: 21,4% sobre a base de incidência, que é 70% da faturação (serviços) ou 20% (bens) — art.º 162.º CRCSPSS. Isento se for atividade complementar com rendimento ≤ 20.000€/ano.</Tip></span>
           <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.eni.ss)}</span>
         </div>
         <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-          <span className="text-[13px] font-[600] text-slate-600">Custos & Contabilidade</span>
+          <span className="text-[13px] font-[600] text-slate-600 flex items-center gap-1">Custos & Contabilidade <Tip>Soma dos custos que introduziste: custos fixos anuais (custos fixos/mês × 12) + custos de produção/ano + contabilidade ENI/ano. Tudo dedutível ao rendimento.</Tip></span>
           <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.eni.costs)}</span>
         </div>
       </div>
@@ -412,28 +412,28 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
               <span className="text-[15px] font-[700] text-purple-700 font-mono">0 €</span>
             </div>
             <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-              <span className="text-[13px] font-[600] text-slate-600">IRS sobre lucro imputado</span>
+              <span className="text-[13px] font-[600] text-slate-600 flex items-center gap-1">IRS sobre lucro imputado <Tip>Em transparência fiscal (art.º 6.º CIRC) a empresa não paga IRC: o lucro é imputado ao sócio e tributado no IRS dele. Aqui é o IRS extra que o lucro acrescenta ao escalão do sócio.</Tip></span>
               <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.transparenciaIRSOnProfit)}</span>
             </div>
           </>
         ) : (
           <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-            <span className="text-[13px] font-[600] text-slate-600">IRC (Lucro: {ptEur(results.lda.profit + results.lda.irc)})</span>
+            <span className="text-[13px] font-[600] text-slate-600 flex items-center gap-1">IRC (Lucro: {ptEur(results.lda.profit + results.lda.irc)}) <Tip>IRC sobre o lucro da empresa: 15% até 50.000€ de lucro e 19% no excedente (taxas PME, OE 2026). Lucro = faturação − custos − amortizações não aceites − remuneração do gerente − TSU da empresa.</Tip></span>
             <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.lda.irc)}</span>
           </div>
         )}
         <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-          <span className="text-[13px] font-[600] text-slate-600">TSU (23,75% + 11%)</span>
+          <span className="text-[13px] font-[600] text-slate-600 flex items-center gap-1">TSU (23,75% + 11%) <Tip>Taxa Social Única sobre a remuneração do gerente: 23,75% a cargo da empresa + 11% a cargo do gerente (art.º 53.º CRCSPSS). A remuneração bruta é calculada a partir do que precisas de receber por mês.</Tip></span>
           <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.lda.ssComp + results.lda.ssEmp)}</span>
         </div>
         <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-          <span className="text-[13px] font-[600] text-slate-600">Custos & Contabilidade</span>
+          <span className="text-[13px] font-[600] text-slate-600 flex items-center gap-1">Custos & Contabilidade <Tip>Soma dos custos da empresa: custos fixos anuais + custos de produção/ano + contabilidade Lda/ano. Numa Lda a contabilidade organizada é obrigatória.</Tip></span>
           <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.lda.costs)}</span>
         </div>
       </div>
       <div className="bg-slate-50 p-4 rounded-[12px] space-y-2">
         <div className="flex justify-between items-center">
-          <span className="text-[11px] font-[700] text-slate-500 uppercase tracking-widest">Lucro + Remuneração</span>
+          <span className="text-[11px] font-[700] text-slate-500 uppercase tracking-widest flex items-center gap-1">Lucro + Remuneração <Tip>Lucro da empresa depois de IRC mais a remuneração anual do gerente. É o valor total que fica para o sócio-gerente, ANTES de distribuir dividendos (que teriam retenção de 28%).</Tip></span>
           <span className="text-[20px] font-[800] text-[#0F172A]">{ptEur(results.lda.net)}</span>
         </div>
         <div className="flex justify-between items-center">
@@ -458,7 +458,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {results.ppc > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-[16px] p-5">
-              <div className="text-amber-800 font-[800] flex items-center gap-2 mb-2 text-[13px]"><Calculator size={15}/> Pagamentos por Conta (PPC)</div>
+              <div className="text-amber-800 font-[800] flex items-center gap-2 mb-2 text-[13px]"><Calculator size={15}/> Pagamentos por Conta (PPC) <Tip>Adiantamento do IRS do ano seguinte, estimado em 25% do IRS deste ano e pago em 3 prestações (julho, setembro e dezembro). É um adiantamento — acerta-se na declaração anual.</Tip></div>
               <p className="text-[12px] text-amber-900 font-[500] mb-3">Pagamentos antecipados em julho, setembro e dezembro.</p>
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-white p-2 rounded-[8px] border border-amber-100 text-center">
@@ -474,7 +474,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           )}
           {results.retencaoFonte > 0 && (
             <div className="bg-blue-50 border border-blue-200 rounded-[16px] p-5">
-              <div className="text-blue-800 font-[800] flex items-center gap-2 mb-2 text-[13px]"><Info size={15}/> Retenção na Fonte ENI (11,5%)</div>
+              <div className="text-blue-800 font-[800] flex items-center gap-2 mb-2 text-[13px]"><Info size={15}/> Retenção na Fonte ENI (11,5%) <Tip>Sobre serviços, o cliente retém 11,5% da fatura (art.º 101.º CIRS) e entrega-o ao Estado por conta do teu IRS. Não é imposto extra — é adiantamento que se acerta na declaração anual.</Tip></div>
               <div className="grid grid-cols-2 gap-2 mt-3">
                 <div className="bg-white p-2 rounded-[8px] border border-blue-100 text-center">
                   <div className="text-[10px] text-slate-500 font-[600] uppercase">Taxa</div>

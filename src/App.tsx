@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, Calculator, ArrowLeft } from 'lucide-react';
 import ClientProfile, { defaultProfile } from './ClientProfile';
+import { UpdateNotification } from './components/UpdateNotification';
+import { useUnsavedEdits } from './hooks/useUnsavedEdits';
+import { initVersionChecker, stopVersionChecker } from './lib/version-checker';
 import LegalInfo from './LegalInfo';
 import LoginPage from './LoginPage';
 import LandingPage from './LandingPage';
@@ -20,7 +23,7 @@ import {
   deleteEmpresa,
   addSimulacao,
 } from './lib/empresas';
-import type { SimulationRecord } from './lib/empresas';
+import type { SimulationRecord, EmpresaRecord } from './lib/empresas';
 import type { DiagnosticoState } from './DiagnosticoAutonomia';
 import type { ImoveisState } from './ImoveisEmpresa';
 import type { IMTState } from './IMTSimulator';
@@ -152,21 +155,24 @@ interface SSState {
   tipoRendimento: 'servicos' | 'bens'; primeiroAno: boolean;
 }
 
+// Estado inicial do simulador fiscal. Sem dados fantasma: os campos numéricos
+// começam a ZERO e só os valores derivados do perfil/SAF-T (faturação, idade,
+// tipo de atividade…) vêm preenchidos. O utilizador insere o resto.
 const getInitialTaxState = (p: ClientProfileType): TaxSimulatorState => ({
   profSit: p.tipoEntidade === 'eni' ? 'outro' : 'tco',
-  currentInc: 25000, age: p.idade || 30, isMainAct: p.tipoEntidade !== 'eni',
-  monthlyNeed: 1500, isServices: p.atividadePrincipal === 'servicos',
+  currentInc: 0, age: p.idade || 0, isMainAct: p.tipoEntidade !== 'eni',
+  monthlyNeed: 0, isServices: p.atividadePrincipal === 'servicos',
   b2b: true, rev: p.faturaçaoAnualPrevista || 0, isSeasonal: p.isSazonal,
-  invEquip: 3000, invLic: 500, invWorks: 1000, invFundo: 2000,
-  fixedMo: 400, varYr: 5000, accMoLda: 200, accMoEni: 50,
+  invEquip: 0, invLic: 0, invWorks: 0, invFundo: 0,
+  fixedMo: 0, varYr: 0, accMoLda: 0, accMoEni: 0,
   anosAtividade: p.inicioAtividade > 0 ? Math.max(0, new Date().getFullYear() - p.inicioAtividade) : 0,
   transparenciaFiscal: p.regimeContabilidade === 'transparencia_fiscal',
 });
 
 const getInitialVehicleState = (): VehicleSimulatorState => ({
-  category: 'passageiros', engineType: 'diesel', price: 35000,
-  ivaRegime: 'normal', activity: 'other', maintenanceCost: 1000,
-  insuranceCost: 800, fuelCost: 2500, exemptTA: false, phevCompliant: true,
+  category: 'passageiros', engineType: 'diesel', price: 0,
+  ivaRegime: 'normal', activity: 'other', maintenanceCost: 0,
+  insuranceCost: 0, fuelCost: 0, exemptTA: false, phevCompliant: true,
 });
 
 const getInitialTicketState = (p: ClientProfileType): TicketSimulatorState => ({
@@ -188,7 +194,7 @@ const getInitialSSState = (p: ClientProfileType): SSState => ({
 const getInitialDiagnosticoState = (p: ClientProfileType, tax: TaxSimulatorState): DiagnosticoState => ({
   capitaisProprios: 0, ativoTotal: 0, passivoTotal: 0,
   ativoCorrente: 0, passivoCorrente: 0, disponibilidades: 0,
-  custoFixoMensal: tax.fixedMo || 400, resultadoLiquido: 0,
+  custoFixoMensal: tax.fixedMo || 0, resultadoLiquido: 0,
   volumeNegocios: p.faturaçaoAnualPrevista || 0, ebitda: 'positivo',
   faturacaoMaiorCliente: 0, financiamentoExterno: 0, totalFinanciamento: 0,
   processosDefinidos: false, softwareGestao: false, equipaAutonoma: false,
@@ -207,10 +213,10 @@ const getInitialIMTState = (p: ClientProfileType): IMTState => ({
 });
 
 const getInitialSalarioState = (p: ClientProfileType): SalarioState => ({
-  salarioBruto: 2000,
+  salarioBruto: 0,
   estadoCivil: p.estadoCivil === 'casado' ? 'casado_1titular' : 'solteiro',
   nrDependentes: p.nrDependentes || 0, localizacao: 'continente',
-  duodecimos: false, subsidioAlimentacaoDiario: 6.15,
+  duodecimos: false, subsidioAlimentacaoDiario: 0,
   tipoSubsidio: 'dinheiro', diasSubsidio: 22,
   irsJovem: p.beneficioJovem && (p.idade || 0) <= 35,
   anosAtividade: p.inicioAtividade > 0 ? Math.max(0, new Date().getFullYear() - p.inicioAtividade) : 0,
@@ -288,6 +294,9 @@ function AppContent() {
     const m = loadFromStorage<AppMode | null>('mode', null);
     return m === 'novo-cliente' || m === 'empresa' ? m : 'empresa';
   });
+  // Auto-atualização: aviso "nova versão disponível" + detecção de edições por guardar.
+  const [versionUpdate, setVersionUpdate] = useState(false);
+  const getHasUnsavedEdits = useUnsavedEdits();
   const [showUpdateNotification, setShowUpdateNotification] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [lastDismissedCount, setLastDismissedCount] = useState(() => loadFromStorage('lastDismissedPendingCount', 0));
@@ -328,15 +337,28 @@ function AppContent() {
     }
     return legacy;
   });
-  const [taxState, setTaxState] = useState<TaxSimulatorState>(() => getInitialTaxState(clientProfile));
-  const [vehicleState, setVehicleState] = useState<VehicleSimulatorState>(getInitialVehicleState);
-  const [ticketState, setTicketState] = useState<TicketSimulatorState>(() => getInitialTicketState(clientProfile));
-  const [ssState, setSSState] = useState<SSState>(() => getInitialSSState(clientProfile));
-  const [diagnosticoState, setDiagnosticoState] = useState<DiagnosticoState>(() => getInitialDiagnosticoState(clientProfile, getInitialTaxState(clientProfile)));
-  const [imoveisState, setImoveisState] = useState<ImoveisState>(() => getInitialImoveisState(clientProfile));
-  const [imtState, setImtState] = useState<IMTState>(() => getInitialIMTState(clientProfile));
-  const [salarioState, setSalarioState] = useState<SalarioState>(() => getInitialSalarioState(clientProfile));
-  const [irsState, setIrsState] = useState<IRSState>(() => loadFromStorage('irsState', defaultIRSState()));
+  // Estado inicial dos simuladores: arranca com o que está GUARDADO na empresa
+  // activa (emp.sims) — tal como o previSaState/clientProfile acima. Sem isto, o
+  // efeito de persistência no mount sobreporia os dados guardados com defaults
+  // vazios (perda de dados ao recarregar). Senão houver dados guardados, semeia
+  // do perfil (getInitial*).
+  const initSims = (() => {
+    const id = getCurrentEmpresaId();
+    const emp = id ? getEmpresa(id) : null;
+    return (emp?.sims ?? {}) as Record<string, unknown>;
+  })();
+  const [taxState, setTaxState] = useState<TaxSimulatorState>(() => (initSims.tax as TaxSimulatorState) ?? getInitialTaxState(clientProfile));
+  const [vehicleState, setVehicleState] = useState<VehicleSimulatorState>(() => (initSims.vehicle as VehicleSimulatorState) ?? getInitialVehicleState());
+  const [ticketState, setTicketState] = useState<TicketSimulatorState>(() => (initSims.ticket as TicketSimulatorState) ?? getInitialTicketState(clientProfile));
+  const [ssState, setSSState] = useState<SSState>(() => (initSims.selfss as SSState) ?? getInitialSSState(clientProfile));
+  const [diagnosticoState, setDiagnosticoState] = useState<DiagnosticoState>(() => (initSims.diagnostico as DiagnosticoState) ?? getInitialDiagnosticoState(clientProfile, (initSims.tax as TaxSimulatorState) ?? getInitialTaxState(clientProfile)));
+  const [imoveisState, setImoveisState] = useState<ImoveisState>(() => (initSims.imoveis as ImoveisState) ?? getInitialImoveisState(clientProfile));
+  const [imtState, setImtState] = useState<IMTState>(() => (initSims.imt as IMTState) ?? getInitialIMTState(clientProfile));
+  const [salarioState, setSalarioState] = useState<SalarioState>(() => (initSims.salario as SalarioState) ?? getInitialSalarioState(clientProfile));
+  // IRS é por-cliente (carregado de emp.sims.irs ao seleccionar a empresa) —
+  // já NÃO usa uma chave global em localStorage, que fazia os dados de IRS
+  // "vazarem" entre empresas.
+  const [irsState, setIrsState] = useState<IRSState>(() => (initSims.irs as IRSState) ?? defaultIRSState());
 
   // Funcionalidade D — guardar simulações no histórico do cliente.
   // `justSavedSim` é o feedback transitório do botão flutuante; `lastResumoRef`
@@ -355,12 +377,24 @@ function AppContent() {
 
   // Auto-save em localStorage — debounce implícito via React batching.
   useEffect(() => { saveToStorage('clientProfile', clientProfile); }, [clientProfile]);
-  useEffect(() => { saveToStorage('irsState', irsState); }, [irsState]);
   useEffect(() => { saveToStorage('loggedIn', loggedIn); }, [loggedIn]);
   useEffect(() => { saveToStorage('mode', mode); }, [mode]);
   useEffect(() => { saveToStorage('lastDismissedPendingCount', lastDismissedCount); }, [lastDismissedCount]);
   useEffect(() => { saveOfficeSettings(officeSettings); }, [officeSettings]);
   useEffect(() => { saveHonorariosConfig(honorariosConfig); }, [honorariosConfig]);
+
+  // Auto-atualização: arranca o version-checker uma vez. Quando uma nova versão
+  // é publicada, mostra o aviso e — se não houver edição de documento por guardar
+  // — recarrega sozinho (senão fica o botão "Recarregar agora"). Assim ninguém
+  // fica preso numa versão antiga. getHasUnsavedEdits tem identidade estável.
+  useEffect(() => {
+    initVersionChecker({
+      pollIntervalMs: 30000,
+      onUpdateAvailable: () => setVersionUpdate(true),
+      checkUnsavedEdits: () => getHasUnsavedEdits(),
+    });
+    return () => stopVersionChecker();
+  }, [getHasUnsavedEdits]);
   // Sincroniza alterações do perfil para a empresa actual no registry.
   useEffect(() => {
     if (currentEmpresaId) syncProfileIntoEmpresa(currentEmpresaId, clientProfile);
@@ -376,6 +410,24 @@ function AppContent() {
     if (emp) upsertEmpresa({ ...emp, previsa: previSaState });
   }, [previSaState, currentEmpresaId]);
 
+  // Persiste o estado de TODOS os simuladores na empresa actual. É isto que dá
+  // independência por cliente: cada empresa guarda os seus próprios dados de
+  // simulador; ao reabri-la (selectEmpresa) carrega-se exactamente este snapshot.
+  // Corre depois dos syncs de perfil/previsa para ler a empresa já actualizada.
+  useEffect(() => {
+    if (!currentEmpresaId) return;
+    const emp = getEmpresa(currentEmpresaId);
+    if (!emp) return;
+    upsertEmpresa({
+      ...emp,
+      sims: {
+        tax: taxState, vehicle: vehicleState, ticket: ticketState, selfss: ssState,
+        diagnostico: diagnosticoState, imoveis: imoveisState, imt: imtState,
+        salario: salarioState, irs: irsState,
+      },
+    });
+  }, [taxState, vehicleState, ticketState, ssState, diagnosticoState, imoveisState, imtState, salarioState, irsState, currentEmpresaId]);
+
   // ── Persistência permanente em Firestore ─────────────────────────────────
   // No arranque: faz merge com o que está na cloud (usa o NIF do escritório
   // como tenant-id, ou 'default' se ainda não estiver definido).
@@ -389,10 +441,7 @@ function AppContent() {
       // Se a empresa actual foi carregada da cloud, atualiza o perfil em memória.
       if (currentEmpresaId) {
         const emp = merged.find(e => e.id === currentEmpresaId);
-        if (emp) {
-          setClientProfile(emp.profile);
-          setPreviSaState({ ...defaultPreviSaState(), ...(emp.previsa ?? {}) });
-        }
+        if (emp) loadEmpresaIntoState(emp);
       }
     })();
     return () => { cancelled = true; };
@@ -504,10 +553,9 @@ function AppContent() {
     if (!emp) return false;
     setCurrentEmpresaId(id);
     setCurrentEmpresaIdState(id);
-    updateProfileWithSimulatorSync(emp.profile);
-    // Restaura o Previsa deste cliente (ou limpa, se ainda não tiver) — tal como
-    // os outros simuladores se re-semeiam a partir do perfil ao abrir a empresa.
-    setPreviSaState({ ...defaultPreviSaState(), ...(emp.previsa ?? {}) });
+    // Carrega o estado COMPLETO desta empresa (perfil + simuladores + Previsa).
+    // Cada cliente tem o seu — não há herança do cliente anterior.
+    loadEmpresaIntoState(emp);
     return true;
   };
 
@@ -547,8 +595,8 @@ function AppContent() {
   const handleNovaEmpresaManual = () => {
     setCurrentEmpresaId(null);
     setCurrentEmpresaIdState(null);
-    updateProfileWithSimulatorSync({ ...defaultProfile });
-    setPreviSaState(defaultPreviSaState());
+    // Rascunho limpo: perfil e simuladores do zero, sem herdar o cliente anterior.
+    seedFreshFromProfile({ ...defaultProfile });
     setMode('novo-cliente');
     setView('profile');
   };
@@ -618,9 +666,11 @@ function AppContent() {
           return;
         }
 
-        // Reset all fields to default (empty) before applying SAFT data
+        // Reset all fields to default (empty) before applying SAFT data.
+        // Semeia o estado do zero a partir do perfil do SAF-T — os simuladores
+        // deste cliente não herdam dados de nenhuma importação anterior.
         const newProfile = { ...defaultProfile, ...result.profile };
-        updateProfileWithSimulatorSync(newProfile);
+        seedFreshFromProfile(newProfile);
         setView('profile');
         setSaftData(result);
         // Previsa parte de um estado LIMPO + o que o SAF-T preencheu — evita
@@ -642,12 +692,10 @@ function AppContent() {
           if (emp) upsertEmpresa({ ...emp, saftXml: normalizeXmlEncodingToUtf8(text), saftFileName: file.name, saftImportedAt: Date.now(), previsa: newPrevisa });
         }
 
-        setSaftModal({
-          open: true,
-          filled: result.filled,
-          empty: result.empty ?? [],
-          warnings: result.warnings,
-        });
+        // Em vez do resumo modal, abre logo o visualizador "Dados extraídos do
+        // SAF-T" (mostra campos preenchidos, vazios e avisos). saftData já está
+        // definido acima, por isso o visualizador tem o que mostrar.
+        setShowSaftViewer(true);
       } catch (err) {
         setSaftModal({
           open: true,
@@ -702,6 +750,56 @@ function AppContent() {
       anosAtividade: Math.max(0, new Date().getFullYear() - newProfile.inicioAtividade),
     }));
     setImtState(prev => ({ ...prev, idadeComprador: newProfile.idade }));
+  };
+
+  // Carrega o estado COMPLETO de uma empresa (perfil + todos os simuladores +
+  // Previsa) a partir do seu registo. Cada cliente tem o SEU estado: ao trocar
+  // de empresa carrega-se o que ficou guardado nessa empresa, ou — se ainda não
+  // tiver dados de um simulador — semeia-se a partir do perfil DESSA empresa.
+  // Nunca se herda o estado do cliente anterior (dados não-transversais entre
+  // empresas). Dentro da mesma empresa mantêm-se transversais (derivam do perfil).
+  const loadEmpresaIntoState = (emp: EmpresaRecord) => {
+    const sims = (emp.sims ?? {}) as Record<string, unknown>;
+    const tax = (sims.tax as TaxSimulatorState) ?? getInitialTaxState(emp.profile);
+    setClientProfile(emp.profile);
+    setTaxState(tax);
+    setVehicleState((sims.vehicle as VehicleSimulatorState) ?? getInitialVehicleState());
+    setTicketState((sims.ticket as TicketSimulatorState) ?? getInitialTicketState(emp.profile));
+    setSSState((sims.selfss as SSState) ?? getInitialSSState(emp.profile));
+    setDiagnosticoState((sims.diagnostico as DiagnosticoState) ?? getInitialDiagnosticoState(emp.profile, tax));
+    setImoveisState((sims.imoveis as ImoveisState) ?? getInitialImoveisState(emp.profile));
+    setImtState((sims.imt as IMTState) ?? getInitialIMTState(emp.profile));
+    setSalarioState((sims.salario as SalarioState) ?? getInitialSalarioState(emp.profile));
+    setIrsState((sims.irs as IRSState) ?? defaultIRSState());
+    setPreviSaState({ ...defaultPreviSaState(), ...(emp.previsa ?? {}) });
+    // Reconstrói os dados do SAF-T deste cliente a partir do XML guardado, para
+    // que o botão "Ver dados do SAF-T" esteja SEMPRE disponível em clientes que
+    // já têm SAF-T associado (não só na sessão em que foi importado).
+    if (emp.saftXml) {
+      try { setSaftData(parseSAFT(emp.saftXml)); }
+      catch { setSaftData(null); }
+    } else {
+      setSaftData(null);
+    }
+  };
+
+  // Semeia o estado a partir de um perfil "do zero" (cliente novo manual ou
+  // import de SAF-T): perfil + todos os simuladores re-semeados a partir do
+  // perfil, sem herdar nada do cliente anterior. Como os getInitial* já não têm
+  // dados fantasma, os simuladores partem vazios e só ganham o que vem do perfil.
+  const seedFreshFromProfile = (profile: ClientProfileType) => {
+    setClientProfile(profile);
+    setTaxState(getInitialTaxState(profile));
+    setVehicleState(getInitialVehicleState());
+    setTicketState(getInitialTicketState(profile));
+    setSSState(getInitialSSState(profile));
+    setDiagnosticoState(getInitialDiagnosticoState(profile, getInitialTaxState(profile)));
+    setImoveisState(getInitialImoveisState(profile));
+    setImtState(getInitialIMTState(profile));
+    setSalarioState(getInitialSalarioState(profile));
+    setIrsState(defaultIRSState());
+    setPreviSaState(defaultPreviSaState());
+    setSaftData(null); // cliente novo / sem SAF-T ainda (o import define-o a seguir)
   };
 
   const handleTaxStateChange = (newState: TaxSimulatorState) => {
@@ -775,8 +873,9 @@ function AppContent() {
   const simGate = <NoEmpresaGate onGo={() => { setMode('empresa'); setView('empresas'); }} />;
 
   // Rascunho de cliente novo (modo "Novo Cliente", a preencher, ainda sem empresa).
-  // Mostra a barra "Guardar cliente" em baixo.
-  const draftNewClient = mode === 'novo-cliente' && view === 'profile' && !currentEmpresaId;
+  // Mostra a barra "Guardar cliente" em baixo — tanto no perfil como na pré-visualização
+  // do enquadramento fiscal (para o utilizador poder ver o simulador e voltar/guardar).
+  const draftNewClient = mode === 'novo-cliente' && !currentEmpresaId && (view === 'profile' || view === 'tax');
 
   const content = (
     <Suspense fallback={<ViewLoading />}>
@@ -798,7 +897,7 @@ function AppContent() {
             office={officeSettings} honorarios={honorariosConfig}
             onGoToOfficeSettings={() => setView('office-settings')} />
         )}
-        {view === 'tax' && (currentEmpresaId
+        {view === 'tax' && ((currentEmpresaId || mode === 'novo-cliente')
           ? <TaxSimulator initialState={taxState} onStateChange={handleTaxStateChange} profile={clientProfile} />
           : simGate)}
         {view === 'vehicle' && (currentEmpresaId
@@ -1166,6 +1265,8 @@ function AppContent() {
           onBackToModeSelection={backToModeSelection}
           onSelectMode={selectMode}
           activeClientName={currentEmpresaId ? (clientProfile.nomeCliente?.trim() || 'Cliente sem nome') : ''}
+          currentEmpresaId={currentEmpresaId}
+          onNavigateClient={navigateClient}
         >
           {content}
         </CurrentLayout>
@@ -1175,6 +1276,14 @@ function AppContent() {
           histórico do cliente (só aparece num simulador com empresa seleccionada). */}
       <SaveSimulacaoFab />
 
+      {/* Aviso de nova versão (auto-atualização) — recarrega sozinho se não houver
+          edições de documento por guardar; caso contrário mostra botão manual. */}
+      <UpdateNotification
+        show={versionUpdate}
+        hasUnsavedEdits={getHasUnsavedEdits()}
+        onDismiss={() => setVersionUpdate(false)}
+      />
+
       {/* Barra "Guardar cliente" — só no rascunho de cliente novo (modo Novo Cliente). */}
       {draftNewClient && (
         <div className="fixed bottom-0 right-0 left-0 md:left-64 z-[70] no-print border-t border-slate-200 bg-white/95 backdrop-blur-sm px-4 sm:px-6 py-3 flex items-center gap-3 shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.25)]">
@@ -1183,9 +1292,22 @@ function AppContent() {
               {clientProfile.nomeCliente?.trim() || 'Novo cliente'}
             </div>
             <div className="text-[11px] font-[600] text-[#64748B] leading-tight">
-              Ainda não guardado · preenche e carrega em guardar para adicionar à lista.
+              {view === 'tax'
+                ? 'Pré-visualização do enquadramento fiscal deste cliente · guarda para manter.'
+                : 'Ainda não guardado · preenche e carrega em guardar para adicionar à lista.'}
             </div>
           </div>
+          {/* Ver o simulador fiscal já preenchido com os dados deste cliente novo
+              (sem ter de o guardar primeiro). Alterna com o regresso ao perfil. */}
+          <button
+            type="button"
+            onClick={() => setView(view === 'tax' ? 'profile' : 'tax')}
+            className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-[12px] text-[14px] font-[700] text-[#0677FF] bg-[#0677FF]/10 hover:bg-[#0677FF]/15 active:scale-[0.98] transition-all"
+          >
+            {view === 'tax'
+              ? <><ArrowLeft className="w-4 h-4" strokeWidth={2.5} /> Voltar ao perfil</>
+              : <><Calculator className="w-4 h-4" strokeWidth={2.5} /> Ver enquadramento fiscal</>}
+          </button>
           <button
             type="button"
             onClick={handleSaveNewClient}

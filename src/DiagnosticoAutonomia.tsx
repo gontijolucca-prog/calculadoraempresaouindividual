@@ -201,15 +201,15 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
         <div className="grid grid-cols-2 gap-[10px]">
           <div>
             <label className={labelCls}>Capitais Próprios (€) <Tip>O valor do capital investido pelos sócios mais os lucros acumulados. É o dinheiro 'da empresa' sem considerar dívidas.</Tip></label>
-            <input type="number" min="0" value={st.capitaisProprios === 0 ? '' : st.capitaisProprios} onChange={e => setSt({ capitaisProprios: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+            <input type="number" min="0" value={st.capitaisProprios === 0 ? '' : st.capitaisProprios} onChange={e => setSt({ capitaisProprios: parseFloat(e.target.value) || 0 })} className={inputCls} />
           </div>
           <div>
             <label className={labelCls}>Ativo Total (€) <Tip>Tudo o que a empresa possui: dinheiro, equipamentos, imóveis, créditos de clientes. O total do lado esquerdo do balanço.</Tip></label>
-            <input type="number" min="0" value={st.ativoTotal === 0 ? '' : st.ativoTotal} onChange={e => setSt({ ativoTotal: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+            <input type="number" min="0" value={st.ativoTotal === 0 ? '' : st.ativoTotal} onChange={e => setSt({ ativoTotal: parseFloat(e.target.value) || 0 })} className={inputCls} />
           </div>
           <div className="col-span-2">
             <label className={labelCls}>Passivo Total (€) <Tip>Tudo o que a empresa deve: empréstimos, dívidas a fornecedores, impostos em atraso. O total das dívidas.</Tip></label>
-            <input type="number" min="0" value={st.passivoTotal === 0 ? '' : st.passivoTotal} onChange={e => setSt({ passivoTotal: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+            <input type="number" min="0" value={st.passivoTotal === 0 ? '' : st.passivoTotal} onChange={e => setSt({ passivoTotal: parseFloat(e.target.value) || 0 })} className={inputCls} />
           </div>
         </div>
       ),
@@ -222,19 +222,19 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
         <div className="grid grid-cols-2 gap-[10px]">
           <div>
             <label className={labelCls}>Ativo Corrente (€) <Tip>Os bens e direitos que se convertem em dinheiro em menos de 1 ano: stock, créditos de clientes, dinheiro em caixa.</Tip></label>
-            <input type="number" min="0" value={st.ativoCorrente === 0 ? '' : st.ativoCorrente} onChange={e => setSt({ ativoCorrente: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+            <input type="number" min="0" value={st.ativoCorrente === 0 ? '' : st.ativoCorrente} onChange={e => setSt({ ativoCorrente: parseFloat(e.target.value) || 0 })} className={inputCls} />
           </div>
           <div>
             <label className={labelCls}>Passivo Corrente (€) <Tip>As dívidas a pagar em menos de 1 ano: faturas de fornecedores, impostos correntes, prestações de empréstimos de curto prazo.</Tip></label>
-            <input type="number" min="0" value={st.passivoCorrente === 0 ? '' : st.passivoCorrente} onChange={e => setSt({ passivoCorrente: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+            <input type="number" min="0" value={st.passivoCorrente === 0 ? '' : st.passivoCorrente} onChange={e => setSt({ passivoCorrente: parseFloat(e.target.value) || 0 })} className={inputCls} />
           </div>
           <div>
             <label className={labelCls}>Disponibilidades (€) <Tip>O dinheiro em caixa e nas contas bancárias da empresa, disponível imediatamente.</Tip></label>
-            <input type="number" min="0" value={st.disponibilidades === 0 ? '' : st.disponibilidades} onChange={e => setSt({ disponibilidades: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+            <input type="number" min="0" value={st.disponibilidades === 0 ? '' : st.disponibilidades} onChange={e => setSt({ disponibilidades: parseFloat(e.target.value) || 0 })} className={inputCls} />
           </div>
           <div>
             <label className={labelCls}>Custo Fixo Mensal (€) <Tip>O total de despesas mensais que a empresa tem independentemente de faturar (rendas, salários, seguros, internet).</Tip></label>
-            <input type="number" min="0" value={st.custoFixoMensal === 0 ? '' : st.custoFixoMensal} onChange={e => setSt({ custoFixoMensal: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+            <input type="number" min="0" value={st.custoFixoMensal === 0 ? '' : st.custoFixoMensal} onChange={e => setSt({ custoFixoMensal: parseFloat(e.target.value) || 0 })} className={inputCls} />
           </div>
         </div>
       ),
@@ -248,11 +248,11 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
           <div className="grid grid-cols-2 gap-[10px]">
             <div>
               <label className={labelCls}>Resultado Líquido (€/ano) <Tip>O lucro ou prejuízo da empresa depois de todos os impostos e gastos. Um número positivo é lucro; negativo é prejuízo.</Tip></label>
-              <input type="number" value={st.resultadoLiquido === 0 ? '' : st.resultadoLiquido} onChange={e => setSt({ resultadoLiquido: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+              <input type="number" value={st.resultadoLiquido === 0 ? '' : st.resultadoLiquido} onChange={e => setSt({ resultadoLiquido: parseFloat(e.target.value) || 0 })} className={inputCls} />
             </div>
             <div>
               <label className={labelCls}>Volume de Negócios (€/ano) <Tip>O total de vendas e serviços faturados durante o ano. É a 'receita total' antes de qualquer desconto ou imposto.</Tip></label>
-              <input type="number" min="0" value={st.volumeNegocios === 0 ? '' : st.volumeNegocios} onChange={e => setSt({ volumeNegocios: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+              <input type="number" min="0" value={st.volumeNegocios === 0 ? '' : st.volumeNegocios} onChange={e => setSt({ volumeNegocios: parseFloat(e.target.value) || 0 })} className={inputCls} />
             </div>
           </div>
           <div>
@@ -274,15 +274,15 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
         <div className="grid grid-cols-2 gap-[10px]">
           <div>
             <label className={labelCls}>Faturação maior cliente (€/ano) <Tip>Quanto representa o cliente mais importante da empresa, em euros anuais. Dependência excessiva de um cliente é um risco.</Tip></label>
-            <input type="number" min="0" value={st.faturacaoMaiorCliente === 0 ? '' : st.faturacaoMaiorCliente} onChange={e => setSt({ faturacaoMaiorCliente: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+            <input type="number" min="0" value={st.faturacaoMaiorCliente === 0 ? '' : st.faturacaoMaiorCliente} onChange={e => setSt({ faturacaoMaiorCliente: parseFloat(e.target.value) || 0 })} className={inputCls} />
           </div>
           <div>
             <label className={labelCls}>Financiamento externo (€) <Tip>O valor de empréstimos bancários ou outros financiamentos externos que a empresa tem neste momento.</Tip></label>
-            <input type="number" min="0" value={st.financiamentoExterno === 0 ? '' : st.financiamentoExterno} onChange={e => setSt({ financiamentoExterno: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+            <input type="number" min="0" value={st.financiamentoExterno === 0 ? '' : st.financiamentoExterno} onChange={e => setSt({ financiamentoExterno: parseFloat(e.target.value) || 0 })} className={inputCls} />
           </div>
           <div className="col-span-2">
             <label className={labelCls}>Total de fontes de financiamento (€) <Tip>O valor total de todos os financiamentos, incluindo externos e dos sócios (capital social).</Tip></label>
-            <input type="number" min="0" value={st.totalFinanciamento === 0 ? '' : st.totalFinanciamento} onChange={e => setSt({ totalFinanciamento: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+            <input type="number" min="0" value={st.totalFinanciamento === 0 ? '' : st.totalFinanciamento} onChange={e => setSt({ totalFinanciamento: parseFloat(e.target.value) || 0 })} className={inputCls} />
           </div>
         </div>
       ),
@@ -452,15 +452,15 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
           <div className="grid grid-cols-2 gap-[10px]">
             <div>
               <label className={labelCls}>Capitais Próprios (€) <Tip>O valor do capital investido pelos sócios mais os lucros acumulados. É o dinheiro 'da empresa' sem considerar dívidas.</Tip></label>
-              <input type="number" min="0" value={d.capitaisProprios === 0 ? '' : d.capitaisProprios} onChange={e => setState({ capitaisProprios: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+              <input type="number" min="0" value={d.capitaisProprios === 0 ? '' : d.capitaisProprios} onChange={e => setState({ capitaisProprios: parseFloat(e.target.value) || 0 })} className={inputCls} />
             </div>
             <div>
               <label className={labelCls}>Ativo Total (€) <Tip>Tudo o que a empresa possui: dinheiro, equipamentos, imóveis, créditos de clientes. O total do lado esquerdo do balanço.</Tip></label>
-              <input type="number" min="0" value={d.ativoTotal === 0 ? '' : d.ativoTotal} onChange={e => setState({ ativoTotal: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+              <input type="number" min="0" value={d.ativoTotal === 0 ? '' : d.ativoTotal} onChange={e => setState({ ativoTotal: parseFloat(e.target.value) || 0 })} className={inputCls} />
             </div>
             <div className="col-span-2">
               <label className={labelCls}>Passivo Total (€) <Tip>Tudo o que a empresa deve: empréstimos, dívidas a fornecedores, impostos em atraso. O total das dívidas.</Tip></label>
-              <input type="number" min="0" value={d.passivoTotal === 0 ? '' : d.passivoTotal} onChange={e => setState({ passivoTotal: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+              <input type="number" min="0" value={d.passivoTotal === 0 ? '' : d.passivoTotal} onChange={e => setState({ passivoTotal: parseFloat(e.target.value) || 0 })} className={inputCls} />
             </div>
           </div>
         </section>
@@ -474,19 +474,19 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
           <div className="grid grid-cols-2 gap-[10px]">
             <div>
               <label className={labelCls}>Ativo Corrente (€) <Tip>Os bens e direitos que se convertem em dinheiro em menos de 1 ano: stock, créditos de clientes, dinheiro em caixa.</Tip></label>
-              <input type="number" min="0" value={d.ativoCorrente === 0 ? '' : d.ativoCorrente} onChange={e => setState({ ativoCorrente: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+              <input type="number" min="0" value={d.ativoCorrente === 0 ? '' : d.ativoCorrente} onChange={e => setState({ ativoCorrente: parseFloat(e.target.value) || 0 })} className={inputCls} />
             </div>
             <div>
               <label className={labelCls}>Passivo Corrente (€) <Tip>As dívidas a pagar em menos de 1 ano: faturas de fornecedores, impostos correntes, prestações de empréstimos de curto prazo.</Tip></label>
-              <input type="number" min="0" value={d.passivoCorrente === 0 ? '' : d.passivoCorrente} onChange={e => setState({ passivoCorrente: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+              <input type="number" min="0" value={d.passivoCorrente === 0 ? '' : d.passivoCorrente} onChange={e => setState({ passivoCorrente: parseFloat(e.target.value) || 0 })} className={inputCls} />
             </div>
             <div>
               <label className={labelCls}>Disponibilidades (€) <Tip>O dinheiro em caixa e nas contas bancárias da empresa, disponível imediatamente.</Tip></label>
-              <input type="number" min="0" value={d.disponibilidades === 0 ? '' : d.disponibilidades} onChange={e => setState({ disponibilidades: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+              <input type="number" min="0" value={d.disponibilidades === 0 ? '' : d.disponibilidades} onChange={e => setState({ disponibilidades: parseFloat(e.target.value) || 0 })} className={inputCls} />
             </div>
             <div>
               <label className={labelCls}>Custo Fixo Mensal (€) <Tip>O total de despesas mensais que a empresa tem independentemente de faturar (rendas, salários, seguros, internet).</Tip></label>
-              <input type="number" min="0" value={d.custoFixoMensal === 0 ? '' : d.custoFixoMensal} onChange={e => setState({ custoFixoMensal: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+              <input type="number" min="0" value={d.custoFixoMensal === 0 ? '' : d.custoFixoMensal} onChange={e => setState({ custoFixoMensal: parseFloat(e.target.value) || 0 })} className={inputCls} />
             </div>
           </div>
         </section>
@@ -500,11 +500,11 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
           <div className="grid grid-cols-2 gap-[10px]">
             <div>
               <label className={labelCls}>Resultado Líquido (€/ano) <Tip>O lucro ou prejuízo da empresa depois de todos os impostos e gastos. Um número positivo é lucro; negativo é prejuízo.</Tip></label>
-              <input type="number" value={d.resultadoLiquido === 0 ? '' : d.resultadoLiquido} onChange={e => setState({ resultadoLiquido: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+              <input type="number" value={d.resultadoLiquido === 0 ? '' : d.resultadoLiquido} onChange={e => setState({ resultadoLiquido: parseFloat(e.target.value) || 0 })} className={inputCls} />
             </div>
             <div>
               <label className={labelCls}>Volume de Negócios (€/ano) <Tip>O total de vendas e serviços faturados durante o ano. É a 'receita total' antes de qualquer desconto ou imposto.</Tip></label>
-              <input type="number" min="0" value={d.volumeNegocios === 0 ? '' : d.volumeNegocios} onChange={e => setState({ volumeNegocios: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+              <input type="number" min="0" value={d.volumeNegocios === 0 ? '' : d.volumeNegocios} onChange={e => setState({ volumeNegocios: parseFloat(e.target.value) || 0 })} className={inputCls} />
             </div>
           </div>
           <div>
@@ -526,15 +526,15 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
           <div className="grid grid-cols-2 gap-[10px]">
             <div>
               <label className={labelCls}>Faturação maior cliente (€/ano) <Tip>Quanto representa o cliente mais importante da empresa, em euros anuais. Dependência excessiva de um cliente é um risco.</Tip></label>
-              <input type="number" min="0" value={d.faturacaoMaiorCliente === 0 ? '' : d.faturacaoMaiorCliente} onChange={e => setState({ faturacaoMaiorCliente: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+              <input type="number" min="0" value={d.faturacaoMaiorCliente === 0 ? '' : d.faturacaoMaiorCliente} onChange={e => setState({ faturacaoMaiorCliente: parseFloat(e.target.value) || 0 })} className={inputCls} />
             </div>
             <div>
               <label className={labelCls}>Financiamento externo (€) <Tip>O valor de empréstimos bancários ou outros financiamentos externos que a empresa tem neste momento.</Tip></label>
-              <input type="number" min="0" value={d.financiamentoExterno === 0 ? '' : d.financiamentoExterno} onChange={e => setState({ financiamentoExterno: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+              <input type="number" min="0" value={d.financiamentoExterno === 0 ? '' : d.financiamentoExterno} onChange={e => setState({ financiamentoExterno: parseFloat(e.target.value) || 0 })} className={inputCls} />
             </div>
             <div className="col-span-2">
               <label className={labelCls}>Total de fontes de financiamento (€) <Tip>O valor total de todos os financiamentos, incluindo externos e dos sócios (capital social).</Tip></label>
-              <input type="number" min="0" value={d.totalFinanciamento === 0 ? '' : d.totalFinanciamento} onChange={e => setState({ totalFinanciamento: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="0" />
+              <input type="number" min="0" value={d.totalFinanciamento === 0 ? '' : d.totalFinanciamento} onChange={e => setState({ totalFinanciamento: parseFloat(e.target.value) || 0 })} className={inputCls} />
             </div>
           </div>
         </section>

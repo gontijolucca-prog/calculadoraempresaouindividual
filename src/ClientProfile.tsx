@@ -216,12 +216,18 @@ export default function ClientProfile({
     onChange({ ...profile, [field]: value });
   };
 
-  // Regra Art. 53.º CIVA: faturação anual ≤ 15.000€ → assume isenção de IVA
-  // automaticamente. Acima disso, se ainda estava "Isento", repõe Normal
-  // trimestral (não mexe se o utilizador escolheu deliberadamente mensal/retalhistas).
+  // Regime de IVA automático pela faturação anual:
+  //  • ≤ 15.000€  → Isento (Art. 53.º CIVA);
+  //  • > 650.000€ → Normal MENSAL obrigatório (Art. 41.º n.º 1 al. a) CIVA);
+  //  • entre os dois → Normal trimestral.
+  // Só corrige automaticamente quem está num regime "errado" para o escalão
+  // (isento acima de 15k, ou mensal/isento na faixa trimestral); não mexe numa
+  // escolha deliberada de trimestral nem no regime de pequenos retalhistas.
   const ivaForFat = (regimeIva: ClientProfile['regimeIva'], fat: number): Partial<ClientProfile> => {
-    if (fat > 0 && fat <= 15000) return regimeIva === 'isento' ? {} : { regimeIva: 'isento' };
-    if (fat > 15000 && regimeIva === 'isento') return { regimeIva: 'normal_trimestral' };
+    if (fat <= 0) return {};
+    if (fat <= 15000) return regimeIva === 'isento' ? {} : { regimeIva: 'isento' };
+    if (fat > 650000) return regimeIva === 'normal_mensal' ? {} : { regimeIva: 'normal_mensal' };
+    if (regimeIva === 'isento' || regimeIva === 'normal_mensal') return { regimeIva: 'normal_trimestral' };
     return {};
   };
 
@@ -647,11 +653,11 @@ export default function ClientProfile({
           </div>
           <div>
             <label className={labelClass}>Faturação Anual Prevista <Tip>O total de vendas/serviços que espera faturar num ano. Base para escolher o regime de IVA e calcular impostos.</Tip></label>
-            <input type="number" value={st.faturaçaoAnualPrevista === 0 ? '' : st.faturaçaoAnualPrevista} onChange={e => { const fat = Number(e.target.value) || 0; setSt({ faturaçaoAnualPrevista: fat, ...ivaForFat(st.regimeIva, fat) }); }} className={inputClass} placeholder="60000" />
+            <input type="number" value={st.faturaçaoAnualPrevista === 0 ? '' : st.faturaçaoAnualPrevista} onChange={e => { const fat = Number(e.target.value) || 0; setSt({ faturaçaoAnualPrevista: fat, ...ivaForFat(st.regimeIva, fat) }); }} className={inputClass} />
           </div>
           <div>
             <label className={labelClass}>Nr. Funcionários <Tip>Quantas pessoas trabalham na empresa com contrato de trabalho. Afeta os custos de Segurança Social patronal.</Tip></label>
-            <input type="number" value={st.nrFuncionarios === 0 ? '' : st.nrFuncionarios} onChange={e => setSt({ nrFuncionarios: Number(e.target.value) || 0 })} className={inputClass} placeholder="5" />
+            <input type="number" value={st.nrFuncionarios === 0 ? '' : st.nrFuncionarios} onChange={e => setSt({ nrFuncionarios: Number(e.target.value) || 0 })} className={inputClass} />
           </div>
           <div>
             <label className={labelClass}>Regime IVA <Tip>IVA é o Imposto sobre o Valor Acrescentado. O regime trimestral entrega declarações de 3 em 3 meses; o mensal, todos os meses. Isentos não cobram IVA.</Tip></label>
@@ -777,23 +783,23 @@ export default function ClientProfile({
             <div>
               <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Custos Anuais (€)</h3>
               <div className="grid grid-cols-2 gap-x-4 gap-y-4">
-                <div><label className={labelClass}>Mercadorias / Matérias-primas</label><input type="number" inputMode="decimal" value={num(st.custos.mercadorias)} onChange={e => setCustos({ mercadorias: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
-                <div><label className={labelClass}>Rendas e Espaço</label><input type="number" inputMode="decimal" value={num(st.custos.rendas)} onChange={e => setCustos({ rendas: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
-                <div><label className={labelClass}>Combustíveis</label><input type="number" inputMode="decimal" value={num(st.custos.combustiveis)} onChange={e => setCustos({ combustiveis: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
-                <div><label className={labelClass}>Manutenção de Viaturas</label><input type="number" inputMode="decimal" value={num(st.custos.viaturas)} onChange={e => setCustos({ viaturas: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
-                <div><label className={labelClass}>Equipamentos / Material</label><input type="number" inputMode="decimal" value={num(st.custos.equipamentos)} onChange={e => setCustos({ equipamentos: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
-                <div><label className={labelClass}>Serviços Externos (contabilista, advocacia…)</label><input type="number" inputMode="decimal" value={num(st.custos.servicosExternos)} onChange={e => setCustos({ servicosExternos: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
-                <div className="col-span-2"><label className={labelClass}>Outros Custos</label><input type="number" inputMode="decimal" value={num(st.custos.outros)} onChange={e => setCustos({ outros: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
+                <div><label className={labelClass}>Mercadorias / Matérias-primas</label><input type="number" inputMode="decimal" value={num(st.custos.mercadorias)} onChange={e => setCustos({ mercadorias: Number(e.target.value) || 0 })} className={inputClass} /></div>
+                <div><label className={labelClass}>Rendas e Espaço</label><input type="number" inputMode="decimal" value={num(st.custos.rendas)} onChange={e => setCustos({ rendas: Number(e.target.value) || 0 })} className={inputClass} /></div>
+                <div><label className={labelClass}>Combustíveis</label><input type="number" inputMode="decimal" value={num(st.custos.combustiveis)} onChange={e => setCustos({ combustiveis: Number(e.target.value) || 0 })} className={inputClass} /></div>
+                <div><label className={labelClass}>Manutenção de Viaturas</label><input type="number" inputMode="decimal" value={num(st.custos.viaturas)} onChange={e => setCustos({ viaturas: Number(e.target.value) || 0 })} className={inputClass} /></div>
+                <div><label className={labelClass}>Equipamentos / Material</label><input type="number" inputMode="decimal" value={num(st.custos.equipamentos)} onChange={e => setCustos({ equipamentos: Number(e.target.value) || 0 })} className={inputClass} /></div>
+                <div><label className={labelClass}>Serviços Externos (contabilista, advocacia…)</label><input type="number" inputMode="decimal" value={num(st.custos.servicosExternos)} onChange={e => setCustos({ servicosExternos: Number(e.target.value) || 0 })} className={inputClass} /></div>
+                <div className="col-span-2"><label className={labelClass}>Outros Custos</label><input type="number" inputMode="decimal" value={num(st.custos.outros)} onChange={e => setCustos({ outros: Number(e.target.value) || 0 })} className={inputClass} /></div>
               </div>
             </div>
             <div>
               <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Investimento Inicial (€)</h3>
               <div className="grid grid-cols-2 gap-x-4 gap-y-4">
-                <div><label className={labelClass}>Equipamentos</label><input type="number" inputMode="decimal" value={num(st.investimento.equipamentos)} onChange={e => setInvest({ equipamentos: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
-                <div><label className={labelClass}>Viaturas</label><input type="number" inputMode="decimal" value={num(st.investimento.viaturas)} onChange={e => setInvest({ viaturas: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
-                <div><label className={labelClass}>Obras / Adaptações</label><input type="number" inputMode="decimal" value={num(st.investimento.obras)} onChange={e => setInvest({ obras: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
-                <div><label className={labelClass}>Stock Inicial</label><input type="number" inputMode="decimal" value={num(st.investimento.stock)} onChange={e => setInvest({ stock: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
-                <div className="col-span-2"><label className={labelClass}>Outro Investimento</label><input type="number" inputMode="decimal" value={num(st.investimento.outro)} onChange={e => setInvest({ outro: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" /></div>
+                <div><label className={labelClass}>Equipamentos</label><input type="number" inputMode="decimal" value={num(st.investimento.equipamentos)} onChange={e => setInvest({ equipamentos: Number(e.target.value) || 0 })} className={inputClass} /></div>
+                <div><label className={labelClass}>Viaturas</label><input type="number" inputMode="decimal" value={num(st.investimento.viaturas)} onChange={e => setInvest({ viaturas: Number(e.target.value) || 0 })} className={inputClass} /></div>
+                <div><label className={labelClass}>Obras / Adaptações</label><input type="number" inputMode="decimal" value={num(st.investimento.obras)} onChange={e => setInvest({ obras: Number(e.target.value) || 0 })} className={inputClass} /></div>
+                <div><label className={labelClass}>Stock Inicial</label><input type="number" inputMode="decimal" value={num(st.investimento.stock)} onChange={e => setInvest({ stock: Number(e.target.value) || 0 })} className={inputClass} /></div>
+                <div className="col-span-2"><label className={labelClass}>Outro Investimento</label><input type="number" inputMode="decimal" value={num(st.investimento.outro)} onChange={e => setInvest({ outro: Number(e.target.value) || 0 })} className={inputClass} /></div>
               </div>
             </div>
           </div>
@@ -825,7 +831,7 @@ export default function ClientProfile({
                 </div>
                 <div>
                   <label className={labelClass}>Valor total (€)</label>
-                  <input type="number" inputMode="decimal" value={num(st.viaturasDiag.valor)} onChange={e => setVD({ valor: Number(e.target.value) || 0 })} className={inputClass} placeholder="0" />
+                  <input type="number" inputMode="decimal" value={num(st.viaturasDiag.valor)} onChange={e => setVD({ valor: Number(e.target.value) || 0 })} className={inputClass} />
                 </div>
                 <div className="col-span-2">
                   <label className={labelClass}>Tipo de viaturas</label>
@@ -1204,11 +1210,11 @@ export default function ClientProfile({
               </div>
               <div>
                 <label className={labelClass}>Faturação Anual Prevista <Tip>O total de vendas/serviços que espera faturar num ano. Base para escolher o regime de IVA e calcular impostos.</Tip></label>
-                <input type="number" value={profile.faturaçaoAnualPrevista === 0 ? '' : profile.faturaçaoAnualPrevista} onChange={e => { const fat = Number(e.target.value) || 0; onChange({ ...profile, faturaçaoAnualPrevista: fat, ...ivaForFat(profile.regimeIva, fat) }); }} className={inputClass} placeholder="60000" />
+                <input type="number" value={profile.faturaçaoAnualPrevista === 0 ? '' : profile.faturaçaoAnualPrevista} onChange={e => { const fat = Number(e.target.value) || 0; onChange({ ...profile, faturaçaoAnualPrevista: fat, ...ivaForFat(profile.regimeIva, fat) }); }} className={inputClass} />
               </div>
               <div>
                 <label className={labelClass}>Nr. Funcionários <Tip>Quantas pessoas trabalham na empresa com contrato de trabalho. Afeta os custos de Segurança Social patronal.</Tip></label>
-                <input type="number" value={profile.nrFuncionarios === 0 ? '' : profile.nrFuncionarios} onChange={e => updateProfile('nrFuncionarios', Number(e.target.value) || 0)} className={inputClass} placeholder="5" />
+                <input type="number" value={profile.nrFuncionarios === 0 ? '' : profile.nrFuncionarios} onChange={e => updateProfile('nrFuncionarios', Number(e.target.value) || 0)} className={inputClass} />
               </div>
               <div>
                 <label className={labelClass}>Regime IVA <Tip>IVA é o Imposto sobre o Valor Acrescentado. O regime trimestral entrega declarações de 3 em 3 meses; o mensal, todos os meses. Isentos não cobram IVA.</Tip></label>

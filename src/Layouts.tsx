@@ -30,6 +30,11 @@ export interface LayoutProps {
   onSelectMode: (m: AppMode) => void;
   /** Nome do cliente activo — mostrado no indicador "A trabalhar em". */
   activeClientName?: string;
+  /** Id do cliente activo + navegação por cliente (a mesma função dos cartões).
+   *  Permite mostrar o menu do cliente (Perfil, Pacote, Histórico, simuladores)
+   *  por baixo do indicador "A trabalhar em". */
+  currentEmpresaId?: string | null;
+  onNavigateClient?: (empId: string, view: ViewType, opts?: NavOpts) => void;
   children: React.ReactNode;
 }
 
@@ -62,6 +67,20 @@ const NAV_ITEMS = [
   { id: 'previsa'    as ViewType, label: 'Previsa',      Icon: TrendingUp,     group: 'sim' },
 ] as const;
 
+/** Opções de navegação por cliente — mesma semântica dos cartões da Lista. */
+type NavOpts = { openPackage?: boolean; toggleFlow?: boolean };
+
+/** Menu do cliente activo, replicado na sidebar por baixo de "A trabalhar em".
+ *  Reaproveita exactamente a navegação dos cartões (navigateClient) para não
+ *  divergir do comportamento da Lista de Empresas. */
+const CLIENT_MENU: { view: ViewType; label: string; Icon: React.ComponentType<{ className?: string }>; opts?: NavOpts }[] = [
+  { view: 'profile',   label: 'Perfil do Cliente',       Icon: UserCircle },
+  { view: 'profile',   label: 'Vista detalhada',         Icon: ListOrdered, opts: { toggleFlow: true } },
+  { view: 'profile',   label: 'Pacote cliente',          Icon: Package,     opts: { openPackage: true } },
+  { view: 'historico', label: 'Histórico de simulações', Icon: History },
+];
+const SIM_MENU_SIDEBAR = NAV_ITEMS.filter((i) => i.group === 'sim');
+
 const NAV_TIPS: Record<string, string> = {
   profile: 'Perfil do cliente em 6 passos: identificação, dados empresariais, fiscais & família, custos & investimento, viaturas/sócios/dívidas, objetivos & documentos. Alimenta todos os simuladores.',
   tax: 'Simulador fiscal: compara a carga de IRS/IRC entre ENI (recibos verdes) e Lda para a sua situação.',
@@ -88,7 +107,7 @@ function Logo({ className = 'w-7 h-7' }: { className?: string }) {
   );
 }
 
-export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates, onSAFTUpload, onLogout, hasSaftData, onOpenSaftViewer, mode, onSelectMode, activeClientName, children }: LayoutProps) {
+export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates, onSAFTUpload, onLogout, hasSaftData, onOpenSaftViewer, mode, onSelectMode, activeClientName, currentEmpresaId, onNavigateClient, children }: LayoutProps) {
   const active = view === 'legal' || view === 'updates' ? prevView : view;
   const saftInputRef = useRef<HTMLInputElement>(null);
 
@@ -110,6 +129,36 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
 
   const go = (v: ViewType) => { setView(v); setDrawerOpen(false); };
   const runAction = (fn?: () => void) => { if (fn) fn(); setDrawerOpen(false); };
+
+  // Navega dentro do cliente activo usando a MESMA função dos cartões da Lista
+  // (selecciona empresa + dispara intenções pacote/vista + muda de vista), para
+  // o menu da sidebar e o dropdown do cartão nunca divergirem.
+  const goClient = (v: ViewType, opts?: NavOpts) => {
+    if (currentEmpresaId && onNavigateClient) onNavigateClient(currentEmpresaId, v, opts);
+    else go(v);
+    setDrawerOpen(false);
+  };
+
+  // Item compacto do menu do cliente (mais denso que o NavItem principal — são
+  // até 14 entradas aninhadas sob o indicador "A trabalhar em").
+  const ClientNavItem: React.FC<{
+    label: string; Icon: React.ComponentType<{ className?: string }>;
+    onClick: () => void; current?: boolean; title?: string;
+  }> = ({ label, Icon, onClick, current, title }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      aria-current={current ? 'page' : undefined}
+      className={cn(
+        'w-full flex items-center gap-2.5 px-3 py-[7px] rounded-[8px] text-[12.5px] font-[600] transition-colors text-left',
+        current ? 'bg-[#0677FF]/12 text-[#0677FF]' : 'text-slate-500 hover:text-[#0F172A] hover:bg-slate-100'
+      )}
+    >
+      <Icon className="w-[15px] h-[15px] shrink-0" />
+      <span className="truncate">{label}</span>
+    </button>
+  );
 
   const NavItem = ({ label, Icon, onClick, current, tone = 'default', title }: {
     label: string; Icon: React.ComponentType<{ className?: string }>;
@@ -183,25 +232,49 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
           <>
             <SectionLabel>Carteira</SectionLabel>
             <NavItem label="Lista de Empresas" Icon={Briefcase} onClick={() => go('empresas')} current={active === 'empresas'} title="Carteira de clientes — cada um abre o seu menu (perfil, simuladores, histórico)." />
-            {/* "A trabalhar em": deixa sempre claro o cliente activo. Clicar abre a
-                lista com o cartão do cliente expandido (onde está o seu menu). */}
+            {/* "A trabalhar em": deixa sempre claro o cliente activo. Por baixo,
+                o menu específico desse cliente (perfil, pacote, histórico e os
+                simuladores) — atalho directo sem ter de abrir a lista. */}
             {activeClientName && (
-              <button
-                type="button"
-                onClick={() => go('empresas')}
-                title="Abrir o menu deste cliente na lista"
-                className="w-full mt-1.5 flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-left transition-all hover:brightness-[0.98]"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(6,119,255,0.12), rgba(6,119,255,0.04))',
-                  boxShadow: 'inset 0 0 0 1px rgba(6,119,255,0.28)',
-                }}
-              >
-                <span className="w-2 h-2 rounded-full bg-[#0677FF] shrink-0 animate-pulse" aria-hidden="true" />
-                <span className="min-w-0">
-                  <span className="block text-[9px] font-[800] uppercase tracking-[1px] text-[#0677FF]">A trabalhar em</span>
-                  <span className="block text-[13px] font-[700] text-[#0B1D2D] truncate">{activeClientName}</span>
-                </span>
-              </button>
+              <div className="mt-1.5">
+                <div
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-left"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(6,119,255,0.12), rgba(6,119,255,0.04))',
+                    boxShadow: 'inset 0 0 0 1px rgba(6,119,255,0.28)',
+                  }}
+                >
+                  <span className="w-2 h-2 rounded-full bg-[#0677FF] shrink-0 animate-pulse" aria-hidden="true" />
+                  <span className="min-w-0">
+                    <span className="block text-[9px] font-[800] uppercase tracking-[1px] text-[#0677FF]">A trabalhar em</span>
+                    <span className="block text-[13px] font-[700] text-[#0B1D2D] truncate">{activeClientName}</span>
+                  </span>
+                </div>
+
+                {/* Menu do cliente activo — aninhado sob o indicador. */}
+                <div className="mt-1 ml-2.5 pl-2 border-l-2 border-[#0677FF]/20 space-y-0.5">
+                  {CLIENT_MENU.map((it) => (
+                    <ClientNavItem
+                      key={it.label}
+                      label={it.label}
+                      Icon={it.Icon}
+                      onClick={() => goClient(it.view, it.opts)}
+                      current={!it.opts && active === it.view}
+                    />
+                  ))}
+                  <div className="px-3 pt-2 pb-1 text-[9px] font-[800] uppercase tracking-[1px] text-[#0677FF]/70">Simuladores</div>
+                  {SIM_MENU_SIDEBAR.map((s) => (
+                    <ClientNavItem
+                      key={s.id}
+                      label={s.label}
+                      Icon={s.Icon}
+                      onClick={() => goClient(s.id)}
+                      current={active === s.id}
+                      title={NAV_TIPS[s.id]}
+                    />
+                  ))}
+                </div>
+              </div>
             )}
           </>
         )}

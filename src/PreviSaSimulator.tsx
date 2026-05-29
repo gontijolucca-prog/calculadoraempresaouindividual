@@ -515,7 +515,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[11px] font-[600] text-slate-500 mb-1">NIF</label>
-                    <input value={st.nif} onChange={e => s('nif', e.target.value)} placeholder="500000000" className={inputClass} />
+                    <input value={st.nif} onChange={e => s('nif', e.target.value)} className={inputClass} />
                   </div>
                   <div>
                     <label className="block text-[11px] font-[600] text-slate-500 mb-1">Período</label>
@@ -1054,7 +1054,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-[600] text-slate-500 mb-1">NIF</label>
-                      <input value={state.nif} onChange={e => set('nif', e.target.value)} placeholder="500000000" className={inputClass} />
+                      <input value={state.nif} onChange={e => set('nif', e.target.value)} className={inputClass} />
                     </div>
                     <div>
                       <label className="block text-[11px] font-[600] text-slate-500 mb-1">Período</label>

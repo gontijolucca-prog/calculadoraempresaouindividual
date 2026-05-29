@@ -74,7 +74,7 @@ const PriceInput = ({
         min={0}
         step={5}
         value={value === 0 ? '' : value}
-        placeholder="0"
+       
         onChange={e => onChange(Math.max(0, parseFloat(e.target.value) || 0))}
         className="w-28 px-3 py-2 bg-[#F5F7FA] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] font-[700] text-[#0F172A] focus:border-[#0677FF] outline-none"
       />
