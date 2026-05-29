@@ -1,14 +1,34 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { Plus, Building2, FileUp, Trash2, ChevronRight, Search, FileText, Pencil, X, Download } from 'lucide-react';
+import {
+  Plus, Building2, FileUp, Trash2, ChevronDown, Search, FileText, Pencil, X, Download,
+  UserCircle, ListOrdered, Package, History,
+  Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote, Receipt, TrendingUp,
+} from 'lucide-react';
 import {
   listEmpresas,
-  setCurrentEmpresaId,
   type EmpresaRecord,
 } from './lib/empresas';
+import { cn } from './lib/utils';
+
+// Menu de cada cliente (antes vivia na sidebar; agora abre dentro do cartão).
+type NavOpts = { openPackage?: boolean; toggleFlow?: boolean };
+const SIM_MENU: { view: string; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
+  { view: 'tax', label: 'Fiscal', Icon: Calculator },
+  { view: 'vehicle', label: 'Viaturas', Icon: Car },
+  { view: 'ticket', label: 'Tickets', Icon: Ticket },
+  { view: 'selfss', label: 'SS Indep.', Icon: User },
+  { view: 'diagnostico', label: 'Diagnóstico', Icon: BarChart2 },
+  { view: 'imoveis', label: 'Imóveis', Icon: Home },
+  { view: 'imt', label: 'IMT', Icon: Building },
+  { view: 'salario', label: 'Salário', Icon: Banknote },
+  { view: 'irs', label: 'IRS', Icon: Receipt },
+  { view: 'previsa', label: 'Previsa', Icon: TrendingUp },
+];
 
 interface Props {
-  onOpenEmpresa: (empId: string) => void;
+  /** Selecciona o cliente e abre a vista pedida (Perfil, simulador, histórico…). */
+  onNavigate: (empId: string, view: string, opts?: NavOpts) => void;
   /** "Inserir à mão": abre um rascunho limpo no modo Novo Cliente (a empresa só
    *  é criada quando o utilizador carrega em "Guardar cliente"). */
   onNovaEmpresaManual: () => void;
@@ -16,18 +36,27 @@ interface Props {
   onSAFTUpload: (file: File, empId: string) => void;
   onDeleteEmpresa: (empId: string) => void;
   refreshKey?: number;
+  /** Cliente activo — cartão fica destacado e expandido por defeito. */
+  currentEmpresaId?: string | null;
 }
 
-export default function EmpresasList({ onOpenEmpresa, onNovaEmpresaManual, onNovaEmpresaFromSAFT, onSAFTUpload, onDeleteEmpresa, refreshKey }: Props) {
+export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEmpresaFromSAFT, onSAFTUpload, onDeleteEmpresa, refreshKey, currentEmpresaId }: Props) {
   const [empresas, setEmpresas] = useState<EmpresaRecord[]>(() => listEmpresas());
   const [query, setQuery] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<EmpresaRecord | null>(null);
   const [showNovaModal, setShowNovaModal] = useState(false);
+  // Acordeão: um cartão expandido de cada vez. Por defeito, o cliente activo.
+  const [expandedId, setExpandedId] = useState<string | null>(currentEmpresaId ?? null);
   const novaSaftInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setEmpresas(listEmpresas());
   }, [refreshKey]);
+
+  // Ao chegar com um cliente activo, abre o seu cartão.
+  useEffect(() => {
+    if (currentEmpresaId) setExpandedId(currentEmpresaId);
+  }, [currentEmpresaId]);
 
   // Close modal with Escape
   useEffect(() => {
@@ -58,11 +87,6 @@ export default function EmpresasList({ onOpenEmpresa, onNovaEmpresaManual, onNov
   const handleNovaFromSAFT = (file: File) => {
     setShowNovaModal(false);
     onNovaEmpresaFromSAFT(file);
-  };
-
-  const handleOpen = (id: string) => {
-    setCurrentEmpresaId(id);
-    onOpenEmpresa(id);
   };
 
   const handleDelete = (emp: EmpresaRecord) => {
@@ -97,8 +121,8 @@ export default function EmpresasList({ onOpenEmpresa, onNovaEmpresaManual, onNov
             </button>
           </div>
           <p className="text-[13px] text-[#6B7280] font-[500] mt-1 max-w-xl">
-            A tua carteira de clientes. Cada empresa tem perfil próprio, SAFT associado
-            e o histórico de simulações fica guardado no equipamento.
+            A tua carteira de clientes. Cada empresa tem perfil próprio, SAF-T associado
+            e histórico de simulações — tudo sincronizado na nuvem, acessível em qualquer computador.
           </p>
         </header>
 
@@ -123,7 +147,10 @@ export default function EmpresasList({ onOpenEmpresa, onNovaEmpresaManual, onNov
               <EmpresaCard
                 key={emp.id}
                 emp={emp}
-                onOpen={() => handleOpen(emp.id)}
+                active={emp.id === currentEmpresaId}
+                expanded={emp.id === expandedId}
+                onToggle={() => setExpandedId(id => id === emp.id ? null : emp.id)}
+                onNavigate={onNavigate}
                 onUploadSaft={(file) => onSAFTUpload(file, emp.id)}
                 onAskDelete={() => { setConfirmDelete(emp); }}
               />
@@ -132,7 +159,7 @@ export default function EmpresasList({ onOpenEmpresa, onNovaEmpresaManual, onNov
         )}
 
         <p className="mt-8 text-[11px] text-[#94A3B8] font-[500]">
-          {empresas.length} empresa{empresas.length === 1 ? '' : 's'} guardada{empresas.length === 1 ? '' : 's'} · armazenamento local
+          {empresas.length} empresa{empresas.length === 1 ? '' : 's'} guardada{empresas.length === 1 ? '' : 's'} · sincronizado na nuvem
         </p>
       </div>
 
@@ -261,43 +288,65 @@ export default function EmpresasList({ onOpenEmpresa, onNovaEmpresaManual, onNov
 
 interface EmpresaCardProps {
   emp: EmpresaRecord;
-  onOpen: () => void;
+  active: boolean;
+  expanded: boolean;
+  onToggle: () => void;
+  onNavigate: (empId: string, view: string, opts?: NavOpts) => void;
   onUploadSaft: (file: File) => void;
   onAskDelete: () => void;
 }
 
-const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, onOpen, onUploadSaft, onAskDelete }) => {
+// Item do menu do cliente (dentro do dropdown do cartão).
+const MenuItem: React.FC<{ Icon: React.ComponentType<{ className?: string }>; label: string; onClick: () => void }> = ({ Icon, label, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[13px] font-[600] text-[#334155] hover:bg-[#0677FF]/8 hover:text-[#0677FF] active:scale-[0.99] transition-colors text-left"
+  >
+    <Icon className="w-4 h-4 shrink-0" />
+    <span className="truncate">{label}</span>
+  </button>
+);
+
+const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onToggle, onNavigate, onUploadSaft, onAskDelete }) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const updated = formatRelative(emp.updatedAt);
   const displayNome = emp.nome.trim() || 'Empresa sem nome';
   const initials = (displayNome.match(/\b\w/g) || []).slice(0, 2).join('').toUpperCase() || 'E';
 
   return (
-    <li className="bg-white border border-[#E5E9F0] rounded-[14px] hover:border-[#0677FF]/40 hover:shadow-md transition-all group">
+    <li className={cn(
+      'bg-white border rounded-[14px] transition-all',
+      active ? 'border-[#0677FF] ring-1 ring-[#0677FF]/30 shadow-md' : 'border-[#E5E9F0] hover:border-[#0677FF]/40 hover:shadow-md',
+    )}>
       <div className="flex items-stretch">
         <button
           type="button"
-          onClick={onOpen}
-          className="flex-1 flex items-center gap-4 text-left px-5 py-4"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          className="flex-1 flex items-center gap-4 text-left px-5 py-4 min-w-0"
         >
           <div className="w-11 h-11 rounded-[10px] bg-[#0677FF]/10 text-[#0677FF] font-[800] text-[14px] flex items-center justify-center shrink-0">
             {initials}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[15px] font-[700] text-[#0B1D2D] truncate">{displayNome}</div>
-            <div className="text-[12px] text-[#6B7280] font-[500] mt-0.5 flex items-center gap-2">
+            <div className="text-[15px] font-[700] text-[#0B1D2D] truncate">
+              {displayNome}
+              {active && <span className="ml-2 align-middle text-[10px] font-[800] uppercase tracking-[0.5px] text-[#0677FF] bg-[#0677FF]/10 px-1.5 py-0.5 rounded-full">a trabalhar</span>}
+            </div>
+            <div className="text-[12px] text-[#6B7280] font-[500] mt-0.5 flex items-center gap-2 flex-wrap">
               <span>{emp.nif ? `NIF ${emp.nif}` : 'Sem NIF'}</span>
               <span aria-hidden="true">·</span>
               <span>Atualizado {updated}</span>
               {emp.saftFileName && (
                 <>
                   <span aria-hidden="true">·</span>
-                  <span className="text-emerald-600">SAFT associado</span>
+                  <span className="text-emerald-600">SAF-T associado</span>
                 </>
               )}
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-[#94A3B8] group-hover:text-[#0677FF] transition-colors shrink-0" />
+          <ChevronDown className={cn('w-4 h-4 text-[#94A3B8] transition-transform shrink-0', expanded ? 'text-[#0677FF]' : '-rotate-90')} />
         </button>
         <div className="flex items-center gap-1 pr-3">
           <input
@@ -352,6 +401,24 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, onOpen, onUploadSaft, on
           </button>
         </div>
       </div>
+
+      {/* Dropdown do cliente: os menus que antes viviam na sidebar. */}
+      {expanded && (
+        <div className="border-t border-[#EEF2F7] px-3 py-2">
+          <div className="grid gap-0.5">
+            <MenuItem Icon={UserCircle} label="Perfil do Cliente" onClick={() => onNavigate(emp.id, 'profile')} />
+            <MenuItem Icon={ListOrdered} label="Vista detalhada" onClick={() => onNavigate(emp.id, 'profile', { toggleFlow: true })} />
+            <MenuItem Icon={Package} label="Pacote cliente" onClick={() => onNavigate(emp.id, 'profile', { openPackage: true })} />
+            <MenuItem Icon={History} label="Histórico de simulações" onClick={() => onNavigate(emp.id, 'historico')} />
+          </div>
+          <div className="mt-2 mb-1 px-3 text-[10px] font-[800] uppercase tracking-[1px] text-[#0677FF]">Simuladores</div>
+          <div className="grid grid-cols-2 gap-0.5">
+            {SIM_MENU.map(s => (
+              <MenuItem key={s.view} Icon={s.Icon} label={s.label} onClick={() => onNavigate(emp.id, s.view)} />
+            ))}
+          </div>
+        </div>
+      )}
     </li>
   );
 };

@@ -245,7 +245,9 @@ export function AnimatedCard({
 // num bus de eventos global para que um toggle flutuante (fora da árvore)
 // possa exibir o label correcto e disparar a inversão sem props.
 export function useFlowMode() {
-  const [flowMode, setFlowMode] = React.useState(true);
+  // Default = vista DETALHADA (flowMode false). O flow guiado passo-a-passo
+  // (flowMode true) é opt-in pelo toggle.
+  const [flowMode, setFlowMode] = React.useState(false);
   const [currentStep, setCurrentStep] = React.useState(0);
 
   const enterFlow = React.useCallback(() => {

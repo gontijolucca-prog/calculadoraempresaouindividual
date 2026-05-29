@@ -15,7 +15,8 @@ interface Props {
  * (`flowmode:change` / `flowmode:toggle`) — não precisa de prop-drilling.
  */
 export default function FloatingFlowToggle({ visibleViews, currentView }: Props) {
-  const [flowMode, setFlowMode] = useState(true);
+  // Default alinhado com useFlowMode: vista detalhada (false).
+  const [flowMode, setFlowMode] = useState(false);
 
   useEffect(() => {
     const onChange = (e: Event) => {

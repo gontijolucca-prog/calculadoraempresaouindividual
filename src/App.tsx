@@ -54,6 +54,7 @@ const OfficeSettingsView = lazy(() => import('./OfficeSettingsView'));
 import { defaultPreviSaState } from './previSaState';
 import type { PreviSaState } from './previSaState';
 import { SIM_LABELS, isSimView, summarizeSimulacao, type SimView } from './lib/simSummary';
+import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
 import { SimulacaoSaveProvider, SaveSimulacaoFab, type SimSaveCtx } from './SimulacaoSave';
 const SimulacoesHistory = lazy(() => import('./SimulacoesHistory'));
 
@@ -497,16 +498,33 @@ function AppContent() {
     setView(DEFAULT_VIEW_BY_MODE[m]);
   };
 
-  const openEmpresa = (id: string) => {
+  // Selecciona o cliente activo (perfil + Previsa) sem mudar de vista.
+  const selectEmpresa = (id: string): boolean => {
     const emp = getEmpresa(id);
-    if (!emp) return;
+    if (!emp) return false;
     setCurrentEmpresaId(id);
     setCurrentEmpresaIdState(id);
     updateProfileWithSimulatorSync(emp.profile);
     // Restaura o Previsa deste cliente (ou limpa, se ainda não tiver) — tal como
     // os outros simuladores se re-semeiam a partir do perfil ao abrir a empresa.
     setPreviSaState({ ...defaultPreviSaState(), ...(emp.previsa ?? {}) });
-    setView('profile');
+    return true;
+  };
+
+  const openEmpresa = (id: string) => {
+    if (selectEmpresa(id)) setView('profile');
+  };
+
+  // Navegação por cliente: usada pelos dropdowns dos cartões na Lista de Empresas.
+  // Selecciona o cliente e abre directamente a vista pedida (perfil, simulador,
+  // histórico…). Para "Pacote cliente" e "Vista detalhada", regista a intenção
+  // que o ClientProfile consome ao montar.
+  const navigateClient = (empId: string, view: string, opts?: { openPackage?: boolean; toggleFlow?: boolean }) => {
+    if (!selectEmpresa(empId)) return;
+    setMode('empresa');
+    if (opts?.openPackage) requestOpenPackage();
+    if (opts?.toggleFlow) requestFlowToggle();
+    setView(view as ViewType);
   };
 
   /** Eliminação AUTORITATIVA: remove do localStorage E propaga já ao Firestore.
@@ -766,7 +784,8 @@ function AppContent() {
         {view === 'empresas' && (
           <EmpresasList
             refreshKey={empresasRefresh}
-            onOpenEmpresa={openEmpresa}
+            currentEmpresaId={currentEmpresaId}
+            onNavigate={navigateClient}
             onNovaEmpresaManual={handleNovaEmpresaManual}
             onNovaEmpresaFromSAFT={handleNovaEmpresaFromSAFT}
             onSAFTUpload={handleEmpresaSAFT}
@@ -833,6 +852,9 @@ function AppContent() {
           />
         )}
       </PageTransition>
+      {/* Folga no fim do scroll para a barra fixa "Guardar cliente" não tapar
+          os últimos campos do formulário. */}
+      {draftNewClient && <div aria-hidden style={{ height: 96 }} />}
     </Suspense>
   );
 
@@ -1143,6 +1165,7 @@ function AppContent() {
           mode={mode}
           onBackToModeSelection={backToModeSelection}
           onSelectMode={selectMode}
+          activeClientName={currentEmpresaId ? (clientProfile.nomeCliente?.trim() || 'Cliente sem nome') : ''}
         >
           {content}
         </CurrentLayout>

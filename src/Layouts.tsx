@@ -28,6 +28,8 @@ export interface LayoutProps {
   mode: AppMode;
   onBackToModeSelection: () => void;
   onSelectMode: (m: AppMode) => void;
+  /** Nome do cliente activo — mostrado no indicador "A trabalhar em". */
+  activeClientName?: string;
   children: React.ReactNode;
 }
 
@@ -86,47 +88,13 @@ function Logo({ className = 'w-7 h-7' }: { className?: string }) {
   );
 }
 
-export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates, onSAFTUpload, onLogout, hasSaftData, onOpenSaftViewer, mode, onSelectMode, children }: LayoutProps) {
+export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates, onSAFTUpload, onLogout, hasSaftData, onOpenSaftViewer, mode, onSelectMode, activeClientName, children }: LayoutProps) {
   const active = view === 'legal' || view === 'updates' ? prevView : view;
   const saftInputRef = useRef<HTMLInputElement>(null);
-  const allowedViews = VIEWS_BY_MODE[mode];
-  const simItems = NAV_ITEMS.filter(n => n.group === 'sim' && allowedViews.includes(n.id)) as unknown as typeof NAV_ITEMS[number][];
-  const profileVisible = allowedViews.includes('profile');
-  const isSimActive = simItems.some(s => s.id === active);
 
-  // Gaveta no telemóvel + secção "Simuladores" colapsável (auto-abre no sim activo).
+  // Gaveta no telemóvel. (Os menus do Cliente/Simuladores migraram para os
+  // dropdowns dos cartões na Lista de Empresas.)
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [simOpen, setSimOpen] = useState<boolean>(isSimActive);
-  useEffect(() => { if (isSimActive) setSimOpen(true); }, [isSimActive]);
-
-  // Acções do Perfil migradas para a sidebar: a sidebar dispara custom events e
-  // o ClientProfile responde. O flowMode actual chega aqui via bus global
-  // "flowmode:change" para alternar o label "Vista simplificada" ↔ "Vista detalhada".
-  const [profileFlowMode, setProfileFlowMode] = useState(true);
-  useEffect(() => {
-    const onChange = (e: Event) => {
-      const detail = (e as CustomEvent<{ active: boolean }>).detail;
-      setProfileFlowMode(!!detail?.active);
-    };
-    window.addEventListener('flowmode:change', onChange);
-    return () => window.removeEventListener('flowmode:change', onChange);
-  }, []);
-  // Se a sidebar disparar a acção fora do Perfil, navegamos primeiro e damos
-  // tempo ao ClientProfile montar antes do dispatch — senão o listener ainda
-  // não existe e o evento perde-se.
-  const fireProfileEvent = (name: string) => {
-    if (active !== 'profile') {
-      // Regista a intenção e muda de vista; o ClientProfile consome-a no seu
-      // mount — sem depender de um setTimeout (que perdia o evento se a
-      // montagem demorasse > 80 ms, obrigando a refresh).
-      if (name === 'profile:openPackage') requestOpenPackage();
-      else if (name === 'flowmode:toggle') requestFlowToggle();
-      setView('profile');
-    } else {
-      window.dispatchEvent(new CustomEvent(name));
-    }
-    setDrawerOpen(false);
-  };
   useEffect(() => {
     if (!drawerOpen) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setDrawerOpen(false); };
@@ -214,66 +182,26 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
         {mode === 'empresa' && (
           <>
             <SectionLabel>Carteira</SectionLabel>
-            <NavItem label="Lista de Empresas" Icon={Briefcase} onClick={() => go('empresas')} current={active === 'empresas'} title="Carteira de empresas guardadas." />
-          </>
-        )}
-
-        {profileVisible && (
-          <>
-            <SectionLabel>Cliente</SectionLabel>
-            <NavItem label="Perfil do Cliente" Icon={UserCircle} onClick={() => go('profile')} current={active === 'profile'} title={NAV_TIPS.profile} />
-            <div className="pl-3 mt-1 mb-2 space-y-0.5 border-l-2 border-slate-100">
-              <NavItem
-                label={profileFlowMode ? 'Vista detalhada' : 'Vista simplificada'}
-                Icon={ListOrdered}
-                onClick={() => fireProfileEvent('flowmode:toggle')}
-                title={profileFlowMode ? 'Sair do flow guiado e ver todas as secções.' : 'Entrar no flow guiado em 6 passos.'}
-              />
-              <NavItem
-                label="Pacote cliente"
-                Icon={Package}
-                onClick={() => fireProfileEvent('profile:openPackage')}
-                title="Gerar pacote de documentos PDF (proposta + simulação) do cliente."
-              />
-              {mode === 'empresa' && (
-                <NavItem
-                  label="Histórico de simulações"
-                  Icon={History}
-                  onClick={() => go('historico')}
-                  current={active === 'historico'}
-                  title="Simulações guardadas deste cliente — reabrir ou eliminar."
-                />
-              )}
-            </div>
-          </>
-        )}
-
-        {simItems.length > 0 && (
-          <>
-            <button
-              type="button"
-              onClick={() => setSimOpen(o => !o)}
-              aria-expanded={simOpen}
-              className="w-full flex items-center justify-between gap-2 px-3 py-2.5 mt-3 mb-1 rounded-[10px] text-[11px] font-[800] uppercase tracking-[1.2px] text-white transition-all hover:brightness-105 active:scale-[0.99]"
-              style={{
-                background: 'linear-gradient(135deg, #0677FF 0%, #044BB6 100%)',
-                boxShadow: '0 0 0 1px rgba(6,119,255,0.35), 0 6px 18px -6px rgba(6,119,255,0.65), 0 0 22px rgba(6,119,255,0.40)',
-              }}
-            >
-              <span className="flex items-center gap-2">
-                <Calculator className="w-4 h-4 shrink-0" strokeWidth={2.5} />
-                Simuladores
-              </span>
-              <ChevronDown className={cn('w-4 h-4 transition-transform', simOpen ? '' : '-rotate-90')} />
-            </button>
-            {simOpen && (
-              <div className="space-y-0.5">
-                {simItems.map(({ id, label, Icon }) => (
-                  <React.Fragment key={id}>
-                    <NavItem label={label} Icon={Icon} onClick={() => go(id)} current={active === id} title={NAV_TIPS[id]} />
-                  </React.Fragment>
-                ))}
-              </div>
+            <NavItem label="Lista de Empresas" Icon={Briefcase} onClick={() => go('empresas')} current={active === 'empresas'} title="Carteira de clientes — cada um abre o seu menu (perfil, simuladores, histórico)." />
+            {/* "A trabalhar em": deixa sempre claro o cliente activo. Clicar abre a
+                lista com o cartão do cliente expandido (onde está o seu menu). */}
+            {activeClientName && (
+              <button
+                type="button"
+                onClick={() => go('empresas')}
+                title="Abrir o menu deste cliente na lista"
+                className="w-full mt-1.5 flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-left transition-all hover:brightness-[0.98]"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(6,119,255,0.12), rgba(6,119,255,0.04))',
+                  boxShadow: 'inset 0 0 0 1px rgba(6,119,255,0.28)',
+                }}
+              >
+                <span className="w-2 h-2 rounded-full bg-[#0677FF] shrink-0 animate-pulse" aria-hidden="true" />
+                <span className="min-w-0">
+                  <span className="block text-[9px] font-[800] uppercase tracking-[1px] text-[#0677FF]">A trabalhar em</span>
+                  <span className="block text-[13px] font-[700] text-[#0B1D2D] truncate">{activeClientName}</span>
+                </span>
+              </button>
             )}
           </>
         )}
