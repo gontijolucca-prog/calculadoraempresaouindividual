@@ -202,36 +202,11 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
             <X className="w-5 h-5" />
           </button>
         </div>
-        {/* Selector de modo — directamente na sidebar */}
-        <div className="mt-3 grid grid-cols-2 gap-1 p-1 rounded-[10px] bg-slate-100" role="group" aria-label="Modo de trabalho">
-          {MODE_ORDER.map((m) => {
-            const meta = MODE_META[m];
-            const MIcon = meta.Icon;
-            const on = m === mode;
-            return (
-              <button
-                key={m}
-                type="button"
-                onClick={() => onSelectMode(m)}
-                aria-pressed={on}
-                className={cn(
-                  'flex items-center justify-center gap-1.5 px-2 py-2 rounded-[8px] text-[11px] font-[700] whitespace-nowrap transition-colors',
-                  on ? 'bg-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                )}
-                style={on ? { color: meta.color } : undefined}
-              >
-                <MIcon className="w-3.5 h-3.5 shrink-0" strokeWidth={2.5} /> {meta.label}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       <nav aria-label="Navegação principal" className="flex-1 overflow-y-auto px-2 py-1">
-        {mode === 'empresa' && (
-          <>
-            <SectionLabel>Carteira</SectionLabel>
-            <NavItem label="Lista de Empresas" Icon={Briefcase} onClick={() => go('empresas')} current={active === 'empresas'} title="Carteira de clientes — cada um abre o seu menu (perfil, simuladores, histórico)." />
+        <SectionLabel>Carteira</SectionLabel>
+            <NavItem label="Lista de Empresas" Icon={Briefcase} onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }} current={active === 'empresas'} title="Carteira de clientes — cada um abre o seu menu (perfil, simuladores, histórico). Aqui também adicionas novas empresas." />
             {/* "A trabalhar em": deixa sempre claro o cliente activo. Por baixo,
                 o menu específico desse cliente (perfil, pacote, histórico e os
                 simuladores) — atalho directo sem ter de abrir a lista. */}
@@ -276,8 +251,6 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
                 </div>
               </div>
             )}
-          </>
-        )}
 
         <SectionLabel>Ferramentas</SectionLabel>
         <NavItem label="Atualizações" Icon={ClipboardList} onClick={() => runAction(openUpdates)} current={view === 'updates'} />
