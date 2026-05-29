@@ -250,6 +250,93 @@ export async function loadEmpresasFromFirestore(
 }
 
 /**
+ * Repara "mojibake" — texto UTF-8 que foi lido como Latin-1/Windows-1252 (ex.
+ * "AtlÃ¢ntico" → "Atlântico"). Os nomes importados de SAF-T ANTES da correcção
+ * de detecção de codificação ficaram corrompidos e já estão gravados na cloud;
+ * esta função recupera-os de forma idempotente e sem rede.
+ *
+ * Reinterpreta os caracteres da string como bytes Latin-1 e volta a descodificar
+ * como UTF-8. Só actua quando (a) há marcadores típicos de mojibake, (b) todos os
+ * code points cabem num byte e (c) a re-descodificação é UTF-8 válido e fica
+ * "mais limpa". Caso contrário devolve a string intacta.
+ */
+export function repairMojibake(s: string): string {
+  if (!s || typeof s !== 'string') return s;
+  if (!/Ã.|Â.|â€/.test(s)) return s;                  // sem marcadores → nada a fazer
+  for (let i = 0; i < s.length; i++) {
+    if (s.charCodeAt(i) > 0xff) return s;             // não é reinterpretável como Latin-1
+  }
+  try {
+    const bytes = new Uint8Array(s.length);
+    for (let i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i) & 0xff;
+    const decoded = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    const noise = (x: string) => (x.match(/[ÃÂ]|â€/g) || []).length;
+    return noise(decoded) < noise(s) ? decoded : s;   // só aceita se ficou mais limpo
+  } catch {
+    return s;                                         // bytes não formam UTF-8 válido
+  }
+}
+
+// Repara os campos de texto (shallow) de um objecto plano, devolvendo uma cópia
+// apenas se algo mudou. Não percorre objectos aninhados nem blobs.
+function repairStringFields<T extends Record<string, unknown>>(obj: T): { value: T; changed: boolean } {
+  let changed = false;
+  const out: Record<string, unknown> = { ...obj };
+  for (const k of Object.keys(out)) {
+    const v = out[k];
+    if (typeof v === 'string') {
+      const r = repairMojibake(v);
+      if (r !== v) { out[k] = r; changed = true; }
+    }
+  }
+  return { value: out as T, changed };
+}
+
+// Repara o nome + campos de texto do perfil/previsa de uma empresa. Exclui de
+// propósito `saftXml` (fonte para re-exportar) e `simulacoes` (snapshots opacos).
+function repairEmpresaText(e: EmpresaRecord): { value: EmpresaRecord; changed: boolean } {
+  let changed = false;
+  const rec: EmpresaRecord = { ...e };
+  const nome = repairMojibake(rec.nome);
+  if (nome !== rec.nome) { rec.nome = nome; changed = true; }
+  if (rec.saftFileName) {
+    const f = repairMojibake(rec.saftFileName);
+    if (f !== rec.saftFileName) { rec.saftFileName = f; changed = true; }
+  }
+  if (rec.profile && typeof rec.profile === 'object') {
+    const { value, changed: c } = repairStringFields(rec.profile as unknown as Record<string, unknown>);
+    if (c) { rec.profile = value as unknown as ClientProfile; changed = true; }
+  }
+  if (rec.previsa && typeof rec.previsa === 'object') {
+    const { value, changed: c } = repairStringFields(rec.previsa as unknown as Record<string, unknown>);
+    if (c) { rec.previsa = value as unknown as Partial<PreviSaState>; changed = true; }
+  }
+  return { value: rec, changed };
+}
+
+function repairEmpresasList(list: EmpresaRecord[]): { list: EmpresaRecord[]; changed: boolean } {
+  let changed = false;
+  const out = list.map(e => {
+    const { value, changed: c } = repairEmpresaText(e);
+    if (c) changed = true;
+    return value;
+  });
+  return { list: out, changed };
+}
+
+// Repara mojibake na lista sincronizada e, se algo mudou, persiste a versão
+// limpa (local + cloud) UMA vez. Idempotente: numa segunda passagem `changed` é
+// falso e não há escrita → não há loop de sincronização. É isto que cura os
+// nomes já corrompidos na cloud sem o utilizador ter de reimportar o SAF-T.
+async function finalizeEmpresas(officeNif: string | undefined, list: EmpresaRecord[]): Promise<EmpresaRecord[]> {
+  const { list: repaired, changed } = repairEmpresasList(list);
+  if (!changed) return list;
+  saveEmpresas(repaired);                                   // grava local + avança o relógio
+  await saveEmpresasToFirestore(officeNif, repaired, getEmpresasStamp());
+  return repaired;
+}
+
+/**
  * Sincroniza Firestore ↔ localStorage. Last-write-wins ao nível do DOCUMENTO,
  * usando o relógio do registry (`empresasUpdatedAt`):
  *
@@ -278,14 +365,14 @@ export async function syncEmpresasFromFirestore(officeNif: string | undefined): 
   if (!remote) {
     // Primeira vez nesta firestore — promove o localStorage para a cloud.
     if (local.length > 0) await saveEmpresasToFirestore(officeNif, local, localStamp || Date.now());
-    return local;
+    return finalizeEmpresas(officeNif, local);
   }
 
   if (remote.updatedAt > localStamp) {
     // Remoto vence → adopta a lista remota por inteiro.
     const deduped = dedupeByNif(remote.list);
     adoptRemoteEmpresas(deduped, remote.updatedAt);
-    return deduped;
+    return finalizeEmpresas(officeNif, deduped);
   }
 
   // Local mais recente (ou igual). Se for estritamente mais recente, propaga
@@ -296,7 +383,7 @@ export async function syncEmpresasFromFirestore(officeNif: string | undefined): 
   if (localStamp > remote.updatedAt) {
     await saveEmpresasToFirestore(officeNif, deduped, getEmpresasStamp() || Date.now());
   }
-  return deduped;
+  return finalizeEmpresas(officeNif, deduped);
 }
 
 /**
