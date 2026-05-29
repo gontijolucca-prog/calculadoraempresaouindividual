@@ -216,6 +216,15 @@ export default function ClientProfile({
     onChange({ ...profile, [field]: value });
   };
 
+  // Regra Art. 53.º CIVA: faturação anual ≤ 15.000€ → assume isenção de IVA
+  // automaticamente. Acima disso, se ainda estava "Isento", repõe Normal
+  // trimestral (não mexe se o utilizador escolheu deliberadamente mensal/retalhistas).
+  const ivaForFat = (regimeIva: ClientProfile['regimeIva'], fat: number): Partial<ClientProfile> => {
+    if (fat > 0 && fat <= 15000) return regimeIva === 'isento' ? {} : { regimeIva: 'isento' };
+    if (fat > 15000 && regimeIva === 'isento') return { regimeIva: 'normal_trimestral' };
+    return {};
+  };
+
   const currentYear = new Date().getFullYear();
   const { flowMode, exitFlow } = useFlowMode();
 
@@ -638,7 +647,7 @@ export default function ClientProfile({
           </div>
           <div>
             <label className={labelClass}>Faturação Anual Prevista <Tip>O total de vendas/serviços que espera faturar num ano. Base para escolher o regime de IVA e calcular impostos.</Tip></label>
-            <input type="number" value={st.faturaçaoAnualPrevista === 0 ? '' : st.faturaçaoAnualPrevista} onChange={e => setSt({ faturaçaoAnualPrevista: Number(e.target.value) || 0 })} className={inputClass} placeholder="60000" />
+            <input type="number" value={st.faturaçaoAnualPrevista === 0 ? '' : st.faturaçaoAnualPrevista} onChange={e => { const fat = Number(e.target.value) || 0; setSt({ faturaçaoAnualPrevista: fat, ...ivaForFat(st.regimeIva, fat) }); }} className={inputClass} placeholder="60000" />
           </div>
           <div>
             <label className={labelClass}>Nr. Funcionários <Tip>Quantas pessoas trabalham na empresa com contrato de trabalho. Afeta os custos de Segurança Social patronal.</Tip></label>
@@ -1195,7 +1204,7 @@ export default function ClientProfile({
               </div>
               <div>
                 <label className={labelClass}>Faturação Anual Prevista <Tip>O total de vendas/serviços que espera faturar num ano. Base para escolher o regime de IVA e calcular impostos.</Tip></label>
-                <input type="number" value={profile.faturaçaoAnualPrevista === 0 ? '' : profile.faturaçaoAnualPrevista} onChange={e => updateProfile('faturaçaoAnualPrevista', Number(e.target.value) || 0)} className={inputClass} placeholder="60000" />
+                <input type="number" value={profile.faturaçaoAnualPrevista === 0 ? '' : profile.faturaçaoAnualPrevista} onChange={e => { const fat = Number(e.target.value) || 0; onChange({ ...profile, faturaçaoAnualPrevista: fat, ...ivaForFat(profile.regimeIva, fat) }); }} className={inputClass} placeholder="60000" />
               </div>
               <div>
                 <label className={labelClass}>Nr. Funcionários <Tip>Quantas pessoas trabalham na empresa com contrato de trabalho. Afeta os custos de Segurança Social patronal.</Tip></label>
