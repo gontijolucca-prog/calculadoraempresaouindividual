@@ -30,7 +30,7 @@ import type { TicketSimulatorState } from './TicketSimulator';
 import type { ClientProfile as ClientProfileType } from './ClientProfile';
 import { ThemeProvider } from './ThemeContext';
 import { MotionProvider, PageTransition } from './AnimatedPage';
-import { parseSAFT, type SAFTParseResult } from './lib/saft';
+import { parseSAFT, decodeSaftText, normalizeXmlEncodingToUtf8, type SAFTParseResult } from './lib/saft';
 import { LAYOUTS } from './Layouts';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from './lib/firebase';
@@ -534,7 +534,10 @@ function AppContent() {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const text = reader.result as string;
+        // Descodifica respeitando o encoding declarado no XML (UTF-8 nos SAF-T
+        // recentes, Windows-1252 nos antigos) — evita acentos corrompidos como
+        // "Atlântico" → "AtlÃ¢ntico".
+        const text = decodeSaftText(reader.result as ArrayBuffer);
         const result = parseSAFT(text);
 
         if (Object.keys(result.profile).length === 0) {
@@ -558,7 +561,10 @@ function AppContent() {
         const empId = getCurrentEmpresaId();
         if (empId) {
           const emp = getEmpresa(empId);
-          if (emp) upsertEmpresa({ ...emp, saftXml: text, saftFileName: file.name, saftImportedAt: Date.now() });
+          // Guarda já com a declaração normalizada a UTF-8: o texto é Unicode e
+          // a re-exportação (Blob) escreve bytes UTF-8 — declaração e bytes têm
+          // de coincidir para o ficheiro reimportar bem.
+          if (emp) upsertEmpresa({ ...emp, saftXml: normalizeXmlEncodingToUtf8(text), saftFileName: file.name, saftImportedAt: Date.now() });
         }
 
         setSaftModal({
@@ -577,8 +583,8 @@ function AppContent() {
       }
     };
     reader.onerror = () => setSaftModal({ open: true, filled: [], empty: [], warnings: ['Não foi possível ler o ficheiro.'] });
-    // Windows-1252 is common for Portuguese SAF-T files
-    reader.readAsText(file, 'windows-1252');
+    // Lê os bytes em bruto; decodeSaftText() escolhe o charset pelo declarado no XML.
+    reader.readAsArrayBuffer(file);
   };
   const openUpdates = () => { setPrevView(view); setView('updates'); };
   const handleLogout = () => {

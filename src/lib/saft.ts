@@ -136,6 +136,68 @@ function sumLeaves(accounts: GLAccount[], prefix: string, side: 'debit' | 'credi
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// Descodificação (encoding) dos bytes do ficheiro
+// ════════════════════════════════════════════════════════════════════════════
+
+function countReplacement(s: string): number {
+  let n = 0;
+  for (let i = 0; i < s.length; i++) if (s.charCodeAt(i) === 0xfffd) n++;
+  return n;
+}
+
+/**
+ * Descodifica os bytes de um ficheiro SAF-T respeitando o encoding declarado no
+ * prólogo XML, em vez de assumir um charset fixo.
+ *
+ * Porquê: os SAF-T-PT antigos (exportações da AT) vinham em Windows-1252; os
+ * recentes vêm em UTF-8. Ler UTF-8 como Windows-1252 — ou o contrário — corrompe
+ * os acentos (ex.: "Atlântico" vira "AtlÃ¢ntico"). Aqui detectamos o encoding,
+ * descodificamos com o `TextDecoder` certo, e removemos o BOM se existir. Quando
+ * não há declaração fiável, tentamos UTF-8 e caímos para Windows-1252 se a
+ * descodificação UTF-8 produzir caracteres de substituição (sinal de mismatch).
+ */
+export function decodeSaftText(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+
+  // BOM UTF-8 → é seguramente UTF-8; salta os 3 bytes do BOM.
+  if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
+    return new TextDecoder('utf-8').decode(bytes.subarray(3));
+  }
+
+  // Lê só o prólogo em latin1 (não corrompe ASCII) para encontrar a declaração:
+  // <?xml version="1.0" encoding="..."?>
+  const prologue = new TextDecoder('latin1').decode(bytes.subarray(0, 256));
+  const declared = (prologue.match(/encoding\s*=\s*["']([^"']+)["']/i)?.[1] || '')
+    .toLowerCase()
+    .replace(/[\s_]/g, '-');
+  const isLatin = ['windows-1252', 'cp1252', 'iso-8859-1', 'iso8859-1', 'latin1', 'latin-1'].includes(declared);
+  const label = isLatin ? 'windows-1252' : 'utf-8';
+
+  const primary = new TextDecoder(label).decode(bytes);
+  // Se descodificámos como UTF-8 e apareceram caracteres de substituição, o
+  // ficheiro é provavelmente Windows-1252 mal declarado — tenta esse decode.
+  if (label === 'utf-8' && countReplacement(primary) > 0) {
+    const fallback = new TextDecoder('windows-1252').decode(bytes);
+    if (countReplacement(fallback) < countReplacement(primary)) return fallback;
+  }
+  return primary;
+}
+
+/**
+ * Normaliza a declaração de encoding do prólogo XML para UTF-8. Usa-se ao
+ * guardar o SAF-T descodificado: como o texto passa a ser Unicode e será
+ * re-exportado como bytes UTF-8 (Blob), a declaração tem de dizer UTF-8 —
+ * senão um ficheiro de origem Windows-1252 seria mal lido ao ser reimportado.
+ */
+export function normalizeXmlEncodingToUtf8(text: string): string {
+  const head = text.slice(0, 256);
+  if (/<\?xml[^>]*encoding\s*=\s*["'][^"']+["']/i.test(head)) {
+    return text.replace(/(<\?xml[^>]*encoding\s*=\s*["'])[^"']+(["'])/i, `$1UTF-8$2`);
+  }
+  return text;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // Main parser
 // ════════════════════════════════════════════════════════════════════════════
 
