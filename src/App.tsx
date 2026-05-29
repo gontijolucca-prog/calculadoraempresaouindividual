@@ -703,6 +703,11 @@ function AppContent() {
         // Semeia o estado do zero a partir do perfil do SAF-T — os simuladores
         // deste cliente não herdam dados de nenhuma importação anterior.
         const newProfile = { ...defaultProfile, ...result.profile };
+        // Dados do Balanço/contabilidade extraídos do SAF-T (classes 1–5/8) —
+        // preenchem o que faltava nos documentos (Balanço, imposto, caixa).
+        if (result.contabilidade && Object.keys(result.contabilidade).length > 0) {
+          newProfile.contabilidade = { ...defaultProfile.contabilidade, ...result.contabilidade };
+        }
         seedFreshFromProfile(newProfile);
         setView('profile');
         setSaftData(result);

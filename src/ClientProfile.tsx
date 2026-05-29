@@ -140,6 +140,40 @@ export interface ClientProfile {
     eniVsLda: string; simplifVsOrganizada: string; art53VsNormal: string;
     salarioVsDividendos: string; planeamento: string; observacoes: string; recomendacoes: string;
   };
+  // ─── 3. Contabilidade / Demonstrações Financeiras ────────────────────────
+  // Valores do Balanço, imposto e tesouraria usados para preencher os documentos
+  // (Balanço, Demonstração de Resultados, Fluxos de Caixa, Alterações no Capital
+  // Próprio). Preenchidos automaticamente a partir do SAF-T (classes 1–5/8) ou
+  // inseridos à mão. Saldos de FECHO do período (em euros).
+  contabilidade: ContabilidadeData;
+}
+
+export interface ContabilidadeData {
+  // Balanço — Ativo
+  ativoFixoTangivel: number;          // 43
+  ativoIntangivel: number;            // 44
+  investimentosFinanceiros: number;   // 41/42
+  inventarios: number;                // classe 3
+  clientes: number;                   // 21 (saldo devedor)
+  estadoOutrosAtivo: number;          // 24 a recuperar (devedor)
+  outrosAtivosCorrentes: number;      // 27/28 etc.
+  caixaDepositos: number;             // 11/12/13 — caixa no FIM do período
+  // Balanço — Capital próprio
+  capitalRealizado: number;           // 51
+  reservasResultadosTransitados: number; // 55/56
+  resultadoLiquido: number;           // 818 — também usado na DR e na Acta
+  outrasVariacoesCapital: number;     // prémios, excedentes, ajustamentos
+  // Balanço — Passivo
+  financiamentosObtidos: number;      // 25
+  fornecedores: number;               // 22 (saldo credor)
+  estadoOutrosPassivo: number;        // 24 a pagar (credor)
+  outrosPassivos: number;             // 27/28 credor
+  // Demonstração de Resultados — completar
+  impostoRendimento: number;          // 812 — imposto sobre o rendimento do período
+  // Fluxos de Caixa
+  caixaInicio: number;                // 11/12/13 no INÍCIO do período
+  // meta
+  saftImportado: boolean;             // último preenchimento veio do SAF-T
 }
 
 interface TaxSimulatorState {
@@ -818,8 +852,18 @@ export default function ClientProfile({
         const setSoc = (patch: Partial<ClientProfile['societaria']>) => setSt({ societaria: { ...st.societaria, ...patch } });
         const setFA = (patch: Partial<ClientProfile['fiscalAtual']>) => setSt({ fiscalAtual: { ...st.fiscalAtual, ...patch } });
         const setDist = (patch: Partial<ClientProfile['distribuicao']>) => setSt({ distribuicao: { ...st.distribuicao, ...patch } });
+        const setCont = (patch: Partial<ContabilidadeData>) => setSt({ contabilidade: { ...defaultProfile.contabilidade, ...(st.contabilidade ?? {}), ...patch } });
+        const cont = st.contabilidade ?? defaultProfile.contabilidade;
         const num = (v: number) => v === 0 ? '' : v;
         const cbCls = "flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-[8px] cursor-pointer";
+        const contRow = (label: string, key: keyof ContabilidadeData) => (
+          <div>
+            <label className={labelClass}>{label}</label>
+            <input type="number" inputMode="decimal" value={num((cont[key] as number) ?? 0)}
+              onChange={e => setCont({ [key]: Number(e.target.value) || 0 } as Partial<ContabilidadeData>)}
+              className={inputClass} placeholder="0,00" />
+          </div>
+        );
         return (
           <div className="space-y-7">
             <div>
@@ -928,6 +972,52 @@ export default function ClientProfile({
                     <option value="">—</option><option value="nao">Não</option><option value="sim">Sim</option>
                   </select>
                 </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A]">Demonstrações Financeiras (Balanço)</h3>
+                {cont.saftImportado && (
+                  <span className="text-[10px] font-[800] uppercase tracking-[0.5px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-[6px]">Importado do SAF-T</span>
+                )}
+              </div>
+              <p className="text-[12px] text-slate-500 font-[500] mb-3 -mt-1 leading-relaxed">
+                Saldos de fecho do período (em euros). Preenchidos automaticamente ao importar o SAF-T de contabilidade; editáveis à mão. Usados nos documentos (Balanço, Demonstração de Resultados, Fluxos de Caixa, Alterações no Capital Próprio).
+              </p>
+
+              <p className="text-[11px] font-[800] uppercase tracking-[0.5px] text-slate-400 mb-2">Ativo</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-4 mb-5">
+                {contRow('Ativos fixos tangíveis', 'ativoFixoTangivel')}
+                {contRow('Ativos intangíveis', 'ativoIntangivel')}
+                {contRow('Investimentos financeiros', 'investimentosFinanceiros')}
+                {contRow('Inventários', 'inventarios')}
+                {contRow('Clientes', 'clientes')}
+                {contRow('Estado e outros (a receber)', 'estadoOutrosAtivo')}
+                {contRow('Outros ativos correntes', 'outrosAtivosCorrentes')}
+                {contRow('Caixa e depósitos (fim)', 'caixaDepositos')}
+              </div>
+
+              <p className="text-[11px] font-[800] uppercase tracking-[0.5px] text-slate-400 mb-2">Capital Próprio</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-4 mb-5">
+                {contRow('Capital realizado', 'capitalRealizado')}
+                {contRow('Reservas e result. transitados', 'reservasResultadosTransitados')}
+                {contRow('Resultado líquido do período', 'resultadoLiquido')}
+                {contRow('Outras variações de capital', 'outrasVariacoesCapital')}
+              </div>
+
+              <p className="text-[11px] font-[800] uppercase tracking-[0.5px] text-slate-400 mb-2">Passivo</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-4 mb-5">
+                {contRow('Financiamentos obtidos', 'financiamentosObtidos')}
+                {contRow('Fornecedores', 'fornecedores')}
+                {contRow('Estado e outros (a pagar)', 'estadoOutrosPassivo')}
+                {contRow('Outros passivos', 'outrosPassivos')}
+              </div>
+
+              <p className="text-[11px] font-[800] uppercase tracking-[0.5px] text-slate-400 mb-2">Resultados e Tesouraria</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+                {contRow('Imposto sobre o rendimento', 'impostoRendimento')}
+                {contRow('Caixa e depósitos (início)', 'caixaInicio')}
               </div>
             </div>
           </div>
@@ -1398,6 +1488,13 @@ export const defaultProfile: ClientProfile = {
   investimento: { equipamentos: 0, viaturas: 0, obras: 0, stock: 0, outro: 0 },
   viaturasDiag: { tem: '', tipo: { comercial: false, passageiros: false, eletrico: false, hibrido: false }, valor: 0 },
   societaria: { capitalSocial: 0, numeroSocios: 1, socios: [{ nome: '', percentagem: 100 }], gerencia: '', gerenteNome: '' },
+  contabilidade: {
+    ativoFixoTangivel: 0, ativoIntangivel: 0, investimentosFinanceiros: 0, inventarios: 0,
+    clientes: 0, estadoOutrosAtivo: 0, outrosAtivosCorrentes: 0, caixaDepositos: 0,
+    capitalRealizado: 0, reservasResultadosTransitados: 0, resultadoLiquido: 0, outrasVariacoesCapital: 0,
+    financiamentosObtidos: 0, fornecedores: 0, estadoOutrosPassivo: 0, outrosPassivos: 0,
+    impostoRendimento: 0, caixaInicio: 0, saftImportado: false,
+  },
   distribuicao: { salario: false, dividendos: false, reinvestir: false, misto: false },
   fiscalAtual: { dividasFiscais: '', dividasSS: '', execucoesFiscais: '' },
   objetivos: { menosImpostos: false, crescer: false, imobiliario: false, variasEmpresas: false, planeamentoFamiliar: false },

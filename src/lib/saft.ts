@@ -1,4 +1,4 @@
-import type { ClientProfile } from '../ClientProfile';
+import type { ClientProfile, ContabilidadeData } from '../ClientProfile';
 import type { PreviSaState } from '../previSaState';
 import { repairMojibake } from './mojibake';
 
@@ -11,6 +11,9 @@ export interface SAFTDetail {
 export interface SAFTParseResult {
   profile: Partial<ClientProfile>;
   previsa: Partial<PreviSaState>;
+  /** Dados do Balanço/contabilidade extraídos das contas (classes 1–5/8), para
+   *  preencher os documentos. Vazio quando o SAF-T não traz saldos do plano. */
+  contabilidade?: Partial<ContabilidadeData>;
   warnings: string[];
   filled: string[];
   empty: string[];
@@ -252,6 +255,7 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   const details: SAFTDetail[] = [];
   const profile: Partial<ClientProfile> = {};
   const previsa: Partial<PreviSaState> = {};
+  let contabilidade: Partial<ContabilidadeData> | undefined;
 
   const headerEl = localChild(root, 'Header');
   if (!headerEl) throw new Error('Elemento <Header> não encontrado — não é um ficheiro SAF-T PT válido');
@@ -607,6 +611,68 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
         label: 'Resultado antes de impostos (7 − 6)',
         value: `${fmtEur(Math.abs(raiCalc))} ${raiCalc >= 0 ? 'Lucro' : 'Prejuízo'}`,
       });
+    }
+  }
+
+  // ═════════════════════════════════════════════════════════════════
+  // CONTABILIDADE — Balanço / tesouraria / imposto (classes 1–5/8)
+  // a partir dos SALDOS de fecho (e abertura para a caixa) do plano de contas.
+  // Só quando o ficheiro traz saldos (SAF-T de contabilidade); senão fica para
+  // preenchimento manual no perfil.
+  // ═════════════════════════════════════════════════════════════════
+  const temSaldos = accounts.some(a => a.closeDebit || a.closeCredit || a.openDebit || a.openCredit);
+  if (temSaldos) {
+    const round2 = (n: number) => Math.round(n * 100) / 100;
+    const close = (prefix: string, side: 'debit' | 'credit') => round2(sumLeaves(accounts, prefix, side));
+    // Saldo de ABERTURA no lado pedido (para a caixa no início do período).
+    const open = (prefix: string, side: 'debit' | 'credit'): number => {
+      const matching = accounts.filter(a => a.id.startsWith(prefix));
+      if (!matching.length) return 0;
+      const pick = (a: GLAccount) => side === 'debit'
+        ? Math.max(0, a.openDebit - a.openCredit)
+        : Math.max(0, a.openCredit - a.openDebit);
+      const exact = matching.find(a => a.id === prefix);
+      if (exact) return round2(pick(exact));
+      let minLen = Infinity;
+      for (const a of matching) if (a.id.length < minLen) minLen = a.id.length;
+      return round2(matching.filter(a => a.id.length === minLen).reduce((s, a) => s + pick(a), 0));
+    };
+    const caixaFim    = close('11', 'debit') + close('12', 'debit') + close('13', 'debit');
+    const caixaInicio = open('11', 'debit') + open('12', 'debit') + open('13', 'debit');
+    const rl818 = close('818', 'credit') - close('818', 'debit');
+    contabilidade = {
+      ativoFixoTangivel:        close('43', 'debit'),
+      ativoIntangivel:          close('44', 'debit'),
+      investimentosFinanceiros: close('41', 'debit') + close('42', 'debit'),
+      inventarios:              close('3', 'debit'),
+      clientes:                 close('21', 'debit'),
+      estadoOutrosAtivo:        close('24', 'debit'),
+      outrosAtivosCorrentes:    close('27', 'debit') + close('28', 'debit'),
+      caixaDepositos:           round2(caixaFim),
+      capitalRealizado:             close('51', 'credit'),
+      reservasResultadosTransitados: close('55', 'credit') + close('56', 'credit'),
+      resultadoLiquido:         round2(rl818),
+      outrasVariacoesCapital:   close('54', 'credit') + close('58', 'credit'),
+      financiamentosObtidos:    close('25', 'credit'),
+      fornecedores:             close('22', 'credit'),
+      estadoOutrosPassivo:      close('24', 'credit'),
+      outrosPassivos:           close('27', 'credit') + close('28', 'credit'),
+      impostoRendimento:        close('812', 'debit'),
+      caixaInicio:              round2(caixaInicio),
+      saftImportado: true,
+    };
+    const nz = Object.entries(contabilidade).filter(([, v]) => typeof v === 'number' && v !== 0).length;
+    if (nz > 0) {
+      filled.push(`Balanço / contabilidade (${nz} rubricas)`);
+      const ativoTotal = (contabilidade.ativoFixoTangivel ?? 0) + (contabilidade.ativoIntangivel ?? 0)
+        + (contabilidade.investimentosFinanceiros ?? 0) + (contabilidade.inventarios ?? 0)
+        + (contabilidade.clientes ?? 0) + (contabilidade.estadoOutrosAtivo ?? 0)
+        + (contabilidade.outrosAtivosCorrentes ?? 0) + (contabilidade.caixaDepositos ?? 0);
+      if (ativoTotal) details.push({ group: 'Balanço', label: 'Total do ativo (estimado)', value: fmtEur(round2(ativoTotal)) });
+      if (contabilidade.caixaDepositos) details.push({ group: 'Balanço', label: 'Caixa e depósitos (fim)', value: fmtEur(contabilidade.caixaDepositos) });
+      if (contabilidade.capitalRealizado) details.push({ group: 'Balanço', label: 'Capital realizado', value: fmtEur(contabilidade.capitalRealizado) });
+    } else {
+      contabilidade = undefined; // tudo a zero → não vale a pena
     }
   }
 
@@ -1147,5 +1213,5 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     ((profile as Record<string, unknown>)[f] as unknown[])?.length === 0
   );
 
-  return { profile, previsa, warnings, filled, empty, details };
+  return { profile, previsa, contabilidade, warnings, filled, empty, details };
 }
