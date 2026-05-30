@@ -276,14 +276,15 @@ function splitCode(label: string): { code: string; desc: string } {
   return { code: '', desc: label };
 }
 
-// Cabeçalho de colunas da grelha (a barra de cabeçalho de uma folha do Excel).
+// Cabeçalho de colunas da grelha — réplica da linha de cabeçalho cinzenta (#E3E3E3)
+// do Previsa em Excel: «Descrição · C · Valor · Observações e comentários».
 function GridHead() {
   return (
-    <div className={cn('grid', GRID_COLS, 'bg-slate-100 border border-slate-300 text-[9px] font-[800] uppercase tracking-[0.5px] text-slate-500')}>
-      <div className="px-3 py-1 border-r border-slate-300">Descrição</div>
-      <div className="text-center py-1 border-r border-slate-300">C</div>
-      <div className="text-right px-3 py-1 border-r border-slate-300 xl:border-r">Valor (€)</div>
-      <div className="px-3 py-1 overflow-hidden">Observações</div>
+    <div className={cn('grid', GRID_COLS, 'bg-[#E3E3E3] border-b border-slate-400 text-[10px] font-[700] text-slate-700')}>
+      <div className="px-2 py-1 border-r border-slate-400">Descrição</div>
+      <div className="text-center py-1 border-r border-slate-400">C</div>
+      <div className="text-right px-2 py-1 border-r border-slate-400">Valor</div>
+      <div className="px-2 py-1 overflow-hidden">Observações e comentários</div>
     </div>
   );
 }
@@ -294,23 +295,23 @@ function NumInput({ label, value, onChange, help, indent = false, readOnly = fal
 }) {
   const { code, desc } = splitCode(label);
   return (
-    <div className={cn('grid', GRID_COLS, 'items-stretch border border-slate-200 -mt-px', readOnly ? 'bg-slate-50' : 'bg-white')}>
-      <label className={cn('flex items-center px-3 py-1.5 border-r border-slate-200 min-w-0', indent && 'pl-5')}>
+    <div className={cn('grid', GRID_COLS, 'items-stretch border-b border-slate-300', readOnly ? 'bg-slate-50' : 'bg-white')}>
+      <label className={cn('flex items-center px-2 py-1 border-r border-slate-300 min-w-0', indent && 'pl-4')}>
         <span className="text-[12px] font-[500] text-slate-700 leading-snug text-balance">{desc}</span>
       </label>
-      <div className="flex items-center justify-center text-[10px] font-[700] text-slate-400 bg-slate-50/70 border-r border-slate-200 tabular-nums">{code}</div>
+      <div className="flex items-center justify-center text-[10px] font-[700] text-slate-400 bg-slate-50 border-r border-slate-300 tabular-nums">{code}</div>
       <input
         type="number" step="0.01"
         value={value || ''}
         readOnly={readOnly}
         onChange={e => onChange?.(parseFloat(e.target.value) || 0)}
         className={cn(
-          'w-full text-right text-[13px] font-[600] text-[#0F172A] tabular-nums px-3 border-r border-slate-200 bg-transparent focus:outline-none focus:bg-[#0677FF]/5 focus:ring-1 focus:ring-inset focus:ring-[#0677FF]',
+          'w-full text-right text-[13px] font-[600] text-[#0F172A] tabular-nums px-2 py-1 border-r border-slate-300 bg-transparent focus:outline-none focus:bg-[#0677FF]/10 focus:ring-1 focus:ring-inset focus:ring-[#0677FF]',
           readOnly && 'text-slate-400 cursor-default',
         )}
         placeholder="0,00"
       />
-      <div className="flex items-center px-3 overflow-hidden text-[10px] text-slate-400 italic leading-tight">{help}</div>
+      <div className="flex items-center px-2 overflow-hidden text-[10px] text-slate-400 italic leading-tight">{help}</div>
     </div>
   );
 }
@@ -326,12 +327,12 @@ function PctInput({ label, value, onChange, help }: {
   useEffect(() => { if (!focused.current) setTxt(fmtPct(value)); }, [value]);
   const { code, desc } = splitCode(label);
   return (
-    <div className={cn('grid', GRID_COLS, 'items-stretch border border-slate-200 -mt-px bg-white')}>
-      <label className="flex items-center px-3 py-1.5 border-r border-slate-200 min-w-0">
+    <div className={cn('grid', GRID_COLS, 'items-stretch border-b border-slate-300 bg-white')}>
+      <label className="flex items-center px-2 py-1 border-r border-slate-300 min-w-0">
         <span className="text-[12px] font-[500] text-slate-700 leading-snug text-balance">{desc}</span>
       </label>
-      <div className="flex items-center justify-center text-[10px] font-[700] text-slate-400 bg-slate-50/70 border-r border-slate-200 tabular-nums">{code}</div>
-      <div className="relative border-r border-slate-200">
+      <div className="flex items-center justify-center text-[10px] font-[700] text-slate-400 bg-slate-50 border-r border-slate-300 tabular-nums">{code}</div>
+      <div className="relative border-r border-slate-300">
         <input
           type="number" step="0.01" min="0"
           value={txt}
@@ -370,18 +371,21 @@ function ResultRow({ label, value, highlight = false, sub = false, positive = fa
   );
 }
 
+// Bloco de uma folha de cálculo. Sem cantos redondos, sem afastamentos: a barra
+// de título é uma faixa fundida (como uma linha de cabeçalho do Excel) e a grelha
+// encosta às margens. Para quem usa o Previsa em Excel, é a mesma folha.
 function Section({ title, defaultOpen = true, cols = false, children }: { title: string; defaultOpen?: boolean; cols?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border border-slate-200 rounded-[12px] overflow-hidden">
+    <div className="border border-slate-400 bg-white">
       <button type="button"
-        className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors text-left"
+        className="w-full flex items-center justify-between px-2 py-1.5 bg-slate-200 hover:bg-slate-300/70 transition-colors text-left border-b border-slate-400"
         onClick={() => setOpen(o => !o)}>
-        <span className="text-[12px] font-[700] text-[#0F172A] uppercase tracking-[0.5px]">{title}</span>
-        {open ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+        <span className="text-[11px] font-[800] text-[#0B1D2D] uppercase tracking-[0.4px]">{title}</span>
+        {open ? <ChevronDown className="w-3.5 h-3.5 text-slate-500" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-500" />}
       </button>
       {open && (
-        <div className={cn(cols ? 'p-3' : 'px-4 py-3')}>
+        <div className={cn(cols ? '' : 'px-3 py-2.5')}>
           {cols && <GridHead />}
           {children}
         </div>
@@ -395,17 +399,16 @@ function CalcRow({ label, value, highlight = false, indent = false }: {
   label: string; value: number; highlight?: boolean; indent?: boolean;
 }) {
   const { code, desc } = splitCode(label);
-  const bd = highlight ? 'border-[#0677FF]/30' : 'border-slate-300';
-  const tc = highlight ? 'text-[#0677FF]' : 'text-[#0F172A]';
+  const bd = highlight ? 'border-[#0677FF]/40' : 'border-slate-400';
+  const tc = highlight ? 'text-[#0677FF]' : 'text-[#0B1D2D]';
   return (
     <div className={cn(
-      'grid', GRID_COLS, 'items-stretch border -mt-px',
-      highlight ? 'bg-[#0677FF]/10 border-[#0677FF]/30' : 'bg-slate-100 border-slate-300',
-      indent && 'pl-0',
+      'grid', GRID_COLS, 'items-stretch border-b',
+      highlight ? 'bg-[#0677FF]/10 border-[#0677FF]/40' : 'bg-[#E3E3E3] border-slate-400',
     )}>
-      <div className={cn('flex items-center px-3 py-2 border-r text-[12px] font-[700]', tc, bd)}>{desc}</div>
+      <div className={cn('flex items-center px-2 py-1.5 border-r text-[12px] font-[800]', tc, bd)}>{desc}</div>
       <div className={cn('flex items-center justify-center text-[10px] font-[800] tabular-nums border-r', highlight ? 'text-[#0677FF]' : 'text-slate-500', bd)}>{code}</div>
-      <div className={cn('flex items-center justify-end px-3 text-[13px] font-[800] tabular-nums border-r', tc, bd)}>{fmt(value)} €</div>
+      <div className={cn('flex items-center justify-end px-2 text-[13px] font-[800] tabular-nums border-r', tc, bd)}>{fmt(value)} €</div>
       <div className="overflow-hidden" />
     </div>
   );
