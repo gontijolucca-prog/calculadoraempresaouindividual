@@ -41,9 +41,15 @@ export function initVersionChecker(config: VersionCheckConfig = {}) {
     fetchAndCheckVersion();
   }, pollIntervalMs);
 
-  // Also check when user returns to tab (focus event)
+  // Also check when user returns to the tab. `focus` não dispara sempre (trocar
+  // de separador, voltar de outra app no telemóvel), por isso ouvimos também
+  // `visibilitychange` — garante que ninguém fica preso numa versão antiga só
+  // porque o evento de foco não chegou a disparar.
   window.addEventListener('focus', () => {
     fetchAndCheckVersion();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') fetchAndCheckVersion();
   });
 
   // Cleanup on unload

@@ -262,9 +262,12 @@ const fmt = (n: number) => n.toLocaleString('pt-PT', { minimumFractionDigits: 2,
 const pct = (n: number) => (n * 100).toFixed(2) + '%';
 
 // ── Layout em folha de cálculo ────────────────────────────────────────────────
-// O Previsa "de fábrica" (Excel) é uma grelha: Campo (código) · Descrição · Valor.
-// Recriamos essa estrutura para quem já usa o Excel não ter de reaprender nada.
-const GRID_COLS = 'grid-cols-[3.25rem_minmax(0,1fr)_9rem]';
+// Réplica fiel do Previsa em Excel. No Excel a ordem das colunas é, da esquerda
+// para a direita: Descrição · C (código do campo M22) · Valor · Observações.
+// Mantemos exactamente essa ordem para quem usa o Excel não reaprender nada.
+// A 4.ª coluna (Observações) colapsa a 0 em ecrãs estreitos.
+const GRID_COLS =
+  'grid-cols-[minmax(0,1fr)_2.75rem_7.75rem_0] xl:grid-cols-[minmax(0,1fr)_2.75rem_7.75rem_minmax(0,9rem)]';
 
 // Separa o código do campo (ex.: "709", "CMV", "8122") da descrição.
 function splitCode(label: string): { code: string; desc: string } {
@@ -273,13 +276,14 @@ function splitCode(label: string): { code: string; desc: string } {
   return { code: '', desc: label };
 }
 
-// Cabeçalho de colunas da grelha (como a barra de cabeçalho do Excel).
+// Cabeçalho de colunas da grelha (a barra de cabeçalho de uma folha do Excel).
 function GridHead() {
   return (
     <div className={cn('grid', GRID_COLS, 'bg-slate-100 border border-slate-300 text-[9px] font-[800] uppercase tracking-[0.5px] text-slate-500')}>
-      <div className="text-center py-1 border-r border-slate-300">C</div>
       <div className="px-3 py-1 border-r border-slate-300">Descrição</div>
-      <div className="text-right px-3 py-1">Valor (€)</div>
+      <div className="text-center py-1 border-r border-slate-300">C</div>
+      <div className="text-right px-3 py-1 border-r border-slate-300 xl:border-r">Valor (€)</div>
+      <div className="px-3 py-1 overflow-hidden">Observações</div>
     </div>
   );
 }
@@ -291,22 +295,22 @@ function NumInput({ label, value, onChange, help, indent = false, readOnly = fal
   const { code, desc } = splitCode(label);
   return (
     <div className={cn('grid', GRID_COLS, 'items-stretch border border-slate-200 -mt-px', readOnly ? 'bg-slate-50' : 'bg-white')}>
-      <div className="flex items-center justify-center text-[10px] font-[700] text-slate-400 bg-slate-50/70 border-r border-slate-200 tabular-nums">{code}</div>
-      <label className={cn('flex flex-col justify-center px-3 py-1.5 border-r border-slate-200 min-w-0', indent && 'pl-5')}>
+      <label className={cn('flex items-center px-3 py-1.5 border-r border-slate-200 min-w-0', indent && 'pl-5')}>
         <span className="text-[12px] font-[500] text-slate-700 leading-snug text-balance">{desc}</span>
-        {help && <span className="text-[10px] text-slate-400 italic mt-0.5">{help}</span>}
       </label>
+      <div className="flex items-center justify-center text-[10px] font-[700] text-slate-400 bg-slate-50/70 border-r border-slate-200 tabular-nums">{code}</div>
       <input
         type="number" step="0.01"
         value={value || ''}
         readOnly={readOnly}
         onChange={e => onChange?.(parseFloat(e.target.value) || 0)}
         className={cn(
-          'w-full text-right text-[13px] font-[600] text-[#0F172A] tabular-nums px-3 bg-transparent focus:outline-none focus:bg-[#0677FF]/5 focus:ring-1 focus:ring-inset focus:ring-[#0677FF]',
+          'w-full text-right text-[13px] font-[600] text-[#0F172A] tabular-nums px-3 border-r border-slate-200 bg-transparent focus:outline-none focus:bg-[#0677FF]/5 focus:ring-1 focus:ring-inset focus:ring-[#0677FF]',
           readOnly && 'text-slate-400 cursor-default',
         )}
         placeholder="0,00"
       />
+      <div className="flex items-center px-3 overflow-hidden text-[10px] text-slate-400 italic leading-tight">{help}</div>
     </div>
   );
 }
@@ -323,12 +327,11 @@ function PctInput({ label, value, onChange, help }: {
   const { code, desc } = splitCode(label);
   return (
     <div className={cn('grid', GRID_COLS, 'items-stretch border border-slate-200 -mt-px bg-white')}>
-      <div className="flex items-center justify-center text-[10px] font-[700] text-slate-400 bg-slate-50/70 border-r border-slate-200 tabular-nums">{code}</div>
-      <label className="flex flex-col justify-center px-3 py-1.5 border-r border-slate-200 min-w-0">
+      <label className="flex items-center px-3 py-1.5 border-r border-slate-200 min-w-0">
         <span className="text-[12px] font-[500] text-slate-700 leading-snug text-balance">{desc}</span>
-        {help && <span className="text-[10px] text-slate-400 italic mt-0.5">{help}</span>}
       </label>
-      <div className="relative">
+      <div className="flex items-center justify-center text-[10px] font-[700] text-slate-400 bg-slate-50/70 border-r border-slate-200 tabular-nums">{code}</div>
+      <div className="relative border-r border-slate-200">
         <input
           type="number" step="0.01" min="0"
           value={txt}
@@ -344,6 +347,7 @@ function PctInput({ label, value, onChange, help }: {
         />
         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">%</span>
       </div>
+      <div className="flex items-center px-3 overflow-hidden text-[10px] text-slate-400 italic leading-tight">{help}</div>
     </div>
   );
 }
@@ -391,18 +395,18 @@ function CalcRow({ label, value, highlight = false, indent = false }: {
   label: string; value: number; highlight?: boolean; indent?: boolean;
 }) {
   const { code, desc } = splitCode(label);
+  const bd = highlight ? 'border-[#0677FF]/30' : 'border-slate-300';
+  const tc = highlight ? 'text-[#0677FF]' : 'text-[#0F172A]';
   return (
     <div className={cn(
       'grid', GRID_COLS, 'items-stretch border -mt-px',
       highlight ? 'bg-[#0677FF]/10 border-[#0677FF]/30' : 'bg-slate-100 border-slate-300',
       indent && 'pl-0',
     )}>
-      <div className={cn('flex items-center justify-center text-[10px] font-[800] tabular-nums border-r',
-        highlight ? 'text-[#0677FF] border-[#0677FF]/30' : 'text-slate-500 border-slate-300')}>{code}</div>
-      <div className={cn('flex items-center px-3 py-2 border-r text-[12px] font-[700]',
-        highlight ? 'text-[#0677FF] border-[#0677FF]/30' : 'text-[#0F172A] border-slate-300')}>{desc}</div>
-      <div className={cn('flex items-center justify-end px-3 text-[13px] font-[800] tabular-nums',
-        highlight ? 'text-[#0677FF]' : 'text-[#0F172A]')}>{fmt(value)} €</div>
+      <div className={cn('flex items-center px-3 py-2 border-r text-[12px] font-[700]', tc, bd)}>{desc}</div>
+      <div className={cn('flex items-center justify-center text-[10px] font-[800] tabular-nums border-r', highlight ? 'text-[#0677FF]' : 'text-slate-500', bd)}>{code}</div>
+      <div className={cn('flex items-center justify-end px-3 text-[13px] font-[800] tabular-nums border-r', tc, bd)}>{fmt(value)} €</div>
+      <div className="overflow-hidden" />
     </div>
   );
 }
@@ -511,6 +515,30 @@ const DEDUZIR_LABELS: [string, string][] = [
 
 const TABS = ['Identificação', 'Rendimentos', 'Q07 Apuramento', 'Q09 Mat. Coletável', 'TA', 'Q10 Cálculo'] as const;
 type Tab = typeof TABS[number];
+
+// Cada separador corresponde a uma folha do Previsa em Excel. Reproduzimos a barra
+// de título azul-escura (faixa de cabeçalho da folha) com o nome oficial do quadro.
+const SHEET_INFO: Record<Tab, { code: string; title: string }> = {
+  'Identificação':       { code: '',     title: 'Identificação da Empresa e Regime' },
+  'Rendimentos':         { code: 'DR',   title: 'Rendimentos e Gastos Contabilísticos' },
+  'Q07 Apuramento':      { code: 'Q 07', title: 'Apuramento do Lucro Tributável' },
+  'Q09 Mat. Coletável':  { code: 'Q 09', title: 'Apuramento da Matéria Coletável' },
+  'TA':                  { code: 'Q 11', title: 'Tributações Autónomas' },
+  'Q10 Cálculo':         { code: 'Q 10', title: 'Cálculo do Imposto (IRC a pagar / a recuperar)' },
+};
+
+// Faixa de título da folha — réplica da barra azul-escura do Excel.
+function SheetBar({ tab }: { tab: Tab }) {
+  const info = SHEET_INFO[tab];
+  return (
+    <div className="flex items-stretch rounded-[8px] overflow-hidden border border-[#0B1D2D] shadow-sm">
+      {info.code && (
+        <div className="flex items-center justify-center px-3 bg-[#0677FF] text-white text-[14px] font-[800] tracking-[0.5px] tabular-nums">{info.code}</div>
+      )}
+      <div className="flex-1 flex items-center px-4 py-2.5 bg-[#0B1D2D] text-white text-[14px] font-[700] uppercase tracking-[0.6px]">{info.title}</div>
+    </div>
+  );
+}
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -936,26 +964,8 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
             <Section title="Coleta IRC" cols>
               <CalcRow label="Matéria coletável" value={stepRes.materiaColetavel} />
               <CalcRow label="IRC sobre mat. coletável (c347)" value={stepRes.ircColeta - st.c349 * st.c349_taxa} indent />
-              <div className={cn('grid', GRID_COLS, 'items-stretch border border-slate-200 -mt-px bg-white')}>
-                <div className="flex items-center justify-center text-[10px] font-[700] text-slate-400 bg-slate-50/70 border-r border-slate-200 tabular-nums">349</div>
-                <label className="flex items-center px-3 py-1.5 border-r border-slate-200 text-[12px] font-[500] text-slate-700">IRC a outras taxas — base</label>
-                <input type="number" step="0.01" value={st.c349 || ''}
-                  onChange={e => s('c349', parseFloat(e.target.value) || 0)}
-                  className="w-full text-right text-[13px] font-[600] text-[#0F172A] tabular-nums px-3 bg-transparent focus:outline-none focus:bg-[#0677FF]/5 focus:ring-1 focus:ring-inset focus:ring-[#0677FF]"
-                  placeholder="0,00" />
-              </div>
-              <div className={cn('grid', GRID_COLS, 'items-stretch border border-slate-200 -mt-px bg-white')}>
-                <div className="flex items-center justify-center text-[10px] font-[700] text-slate-400 bg-slate-50/70 border-r border-slate-200 tabular-nums">349</div>
-                <label className="flex items-center px-3 py-1.5 border-r border-slate-200 text-[12px] font-[500] text-slate-700">taxa (%)</label>
-                <div className="relative">
-                  <input type="number" step="0.1" min="0" max="100"
-                    value={st.c349_taxa ? (st.c349_taxa * 100).toFixed(1) : ''}
-                    onChange={e => s('c349_taxa', (parseFloat(e.target.value) || 0) / 100)}
-                    className="w-full h-full text-right text-[13px] font-[600] text-[#0F172A] tabular-nums px-3 pr-6 bg-transparent focus:outline-none focus:bg-[#0677FF]/5 focus:ring-1 focus:ring-inset focus:ring-[#0677FF]"
-                    placeholder="0,0" />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">%</span>
-                </div>
-              </div>
+              <NumInput label="349 — IRC a outras taxas (base)" value={st.c349} onChange={v => s('c349', v)} />
+              <PctInput label="349 — Taxa aplicável" value={st.c349_taxa} onChange={v => s('c349_taxa', v)} />
               <CalcRow label="351 — Coleta IRC total" value={stepRes.ircColeta} highlight />
             </Section>
 
@@ -1142,6 +1152,8 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
 
           {/* ── Left: inputs ── */}
           <div className="lg:col-span-2 flex flex-col gap-4">
+
+            <SheetBar tab={tab} />
 
             {/* ── IDENTIFICAÇÃO ── */}
             {tab === 'Identificação' && (<>
@@ -1433,26 +1445,8 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <Section title="Coleta IRC" cols>
                 <CalcRow label="Matéria coletável" value={res.materiaColetavel} />
                 <CalcRow label="IRC sobre mat. coletável (c347)" value={res.ircColeta - state.c349 * state.c349_taxa} indent />
-                <div className={cn('grid', GRID_COLS, 'items-stretch border border-slate-200 -mt-px bg-white')}>
-                  <div className="flex items-center justify-center text-[10px] font-[700] text-slate-400 bg-slate-50/70 border-r border-slate-200 tabular-nums">349</div>
-                  <label className="flex items-center px-3 py-1.5 border-r border-slate-200 text-[12px] font-[500] text-slate-700">IRC a outras taxas — base</label>
-                  <input type="number" step="0.01" value={state.c349 || ''}
-                    onChange={e => set('c349', parseFloat(e.target.value) || 0)}
-                    className="w-full text-right text-[13px] font-[600] text-[#0F172A] tabular-nums px-3 bg-transparent focus:outline-none focus:bg-[#0677FF]/5 focus:ring-1 focus:ring-inset focus:ring-[#0677FF]"
-                    placeholder="0,00" />
-                </div>
-                <div className={cn('grid', GRID_COLS, 'items-stretch border border-slate-200 -mt-px bg-white')}>
-                  <div className="flex items-center justify-center text-[10px] font-[700] text-slate-400 bg-slate-50/70 border-r border-slate-200 tabular-nums">349</div>
-                  <label className="flex items-center px-3 py-1.5 border-r border-slate-200 text-[12px] font-[500] text-slate-700">taxa (%)</label>
-                  <div className="relative">
-                    <input type="number" step="0.1" min="0" max="100"
-                      value={state.c349_taxa ? (state.c349_taxa * 100).toFixed(1) : ''}
-                      onChange={e => set('c349_taxa', (parseFloat(e.target.value) || 0) / 100)}
-                      className="w-full h-full text-right text-[13px] font-[600] text-[#0F172A] tabular-nums px-3 pr-6 bg-transparent focus:outline-none focus:bg-[#0677FF]/5 focus:ring-1 focus:ring-inset focus:ring-[#0677FF]"
-                      placeholder="0,0" />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">%</span>
-                  </div>
-                </div>
+                <NumInput label="349 — IRC a outras taxas (base)" value={state.c349} onChange={v => set('c349', v)} />
+                <PctInput label="349 — Taxa aplicável" value={state.c349_taxa} onChange={v => set('c349_taxa', v)} />
                 <CalcRow label="351 — Coleta IRC total" value={res.ircColeta} highlight />
               </Section>
 

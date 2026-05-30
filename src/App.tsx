@@ -393,7 +393,7 @@ function AppContent() {
   // fica preso numa versão antiga. getHasUnsavedEdits tem identidade estável.
   useEffect(() => {
     initVersionChecker({
-      pollIntervalMs: 30000,
+      pollIntervalMs: 20000,
       onUpdateAvailable: () => setVersionUpdate(true),
       checkUnsavedEdits: () => getHasUnsavedEdits(),
     });
