@@ -261,22 +261,49 @@ function calculate(s: PreviSaState): CalcResult {
 const fmt = (n: number) => n.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const pct = (n: number) => (n * 100).toFixed(2) + '%';
 
+// ── Layout em folha de cálculo ────────────────────────────────────────────────
+// O Previsa "de fábrica" (Excel) é uma grelha: Campo (código) · Descrição · Valor.
+// Recriamos essa estrutura para quem já usa o Excel não ter de reaprender nada.
+const GRID_COLS = 'grid-cols-[3.25rem_minmax(0,1fr)_9rem]';
+
+// Separa o código do campo (ex.: "709", "CMV", "8122") da descrição.
+function splitCode(label: string): { code: string; desc: string } {
+  const m = label.match(/^(\d{2,4}|CMV|CMC)\s+—\s+([\s\S]*)$/);
+  if (m) return { code: m[1], desc: m[2] };
+  return { code: '', desc: label };
+}
+
+// Cabeçalho de colunas da grelha (como a barra de cabeçalho do Excel).
+function GridHead() {
+  return (
+    <div className={cn('grid', GRID_COLS, 'bg-slate-100 border border-slate-300 text-[9px] font-[800] uppercase tracking-[0.5px] text-slate-500')}>
+      <div className="text-center py-1 border-r border-slate-300">C</div>
+      <div className="px-3 py-1 border-r border-slate-300">Descrição</div>
+      <div className="text-right px-3 py-1">Valor (€)</div>
+    </div>
+  );
+}
+
 function NumInput({ label, value, onChange, help, indent = false, readOnly = false }: {
   label: string; value: number; onChange?: (v: number) => void;
   help?: string; indent?: boolean; readOnly?: boolean;
 }) {
+  const { code, desc } = splitCode(label);
   return (
-    <div className={cn('flex items-center gap-3 py-1.5', indent && 'pl-4')}>
-      <label className="flex-1 text-[12px] font-[500] text-slate-600 leading-snug">{label}</label>
-      {help && <span className="text-[10px] text-slate-400 hidden sm:block shrink-0">{help}</span>}
+    <div className={cn('grid', GRID_COLS, 'items-stretch border border-slate-200 -mt-px', readOnly ? 'bg-slate-50' : 'bg-white')}>
+      <div className="flex items-center justify-center text-[10px] font-[700] text-slate-400 bg-slate-50/70 border-r border-slate-200 tabular-nums">{code}</div>
+      <label className={cn('flex flex-col justify-center px-3 py-1.5 border-r border-slate-200 min-w-0', indent && 'pl-5')}>
+        <span className="text-[12px] font-[500] text-slate-700 leading-snug text-balance">{desc}</span>
+        {help && <span className="text-[10px] text-slate-400 italic mt-0.5">{help}</span>}
+      </label>
       <input
         type="number" step="0.01"
         value={value || ''}
         readOnly={readOnly}
         onChange={e => onChange?.(parseFloat(e.target.value) || 0)}
         className={cn(
-          'w-36 text-right text-[13px] font-[600] text-[#0F172A] border border-slate-200 rounded-[8px] px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30 focus:border-[#0677FF]',
-          readOnly && 'bg-slate-50 text-slate-400 cursor-default',
+          'w-full text-right text-[13px] font-[600] text-[#0F172A] tabular-nums px-3 bg-transparent focus:outline-none focus:bg-[#0677FF]/5 focus:ring-1 focus:ring-inset focus:ring-[#0677FF]',
+          readOnly && 'text-slate-400 cursor-default',
         )}
         placeholder="0,00"
       />
@@ -285,9 +312,7 @@ function NumInput({ label, value, onChange, help, indent = false, readOnly = fal
 }
 
 // O valor guardado é uma FRAÇÃO (1,5% → 0,015); o input mostra a PERCENTAGEM.
-// Antes tinha max="1" aplicado à escala da percentagem → travava em 1,000% e
-// não deixava inserir 1,5%. Agora sem esse limite, com step 0,01 e estado de
-// texto local (só reformata ao perder o foco) para escrever sem saltos.
+// Estado de texto local (só reformata ao perder o foco) para escrever sem saltos.
 function PctInput({ label, value, onChange, help }: {
   label: string; value: number; onChange: (v: number) => void; help?: string;
 }) {
@@ -295,11 +320,15 @@ function PctInput({ label, value, onChange, help }: {
   const [txt, setTxt] = useState<string>(() => fmtPct(value));
   const focused = useRef(false);
   useEffect(() => { if (!focused.current) setTxt(fmtPct(value)); }, [value]);
+  const { code, desc } = splitCode(label);
   return (
-    <div className="flex items-center gap-3 py-1.5">
-      <label className="flex-1 text-[12px] font-[500] text-slate-600 leading-snug">{label}</label>
-      {help && <span className="text-[10px] text-slate-400 hidden sm:block shrink-0">{help}</span>}
-      <div className="relative w-36">
+    <div className={cn('grid', GRID_COLS, 'items-stretch border border-slate-200 -mt-px bg-white')}>
+      <div className="flex items-center justify-center text-[10px] font-[700] text-slate-400 bg-slate-50/70 border-r border-slate-200 tabular-nums">{code}</div>
+      <label className="flex flex-col justify-center px-3 py-1.5 border-r border-slate-200 min-w-0">
+        <span className="text-[12px] font-[500] text-slate-700 leading-snug text-balance">{desc}</span>
+        {help && <span className="text-[10px] text-slate-400 italic mt-0.5">{help}</span>}
+      </label>
+      <div className="relative">
         <input
           type="number" step="0.01" min="0"
           value={txt}
@@ -310,7 +339,7 @@ function PctInput({ label, value, onChange, help }: {
             const n = parseFloat(e.target.value);
             onChange(Number.isFinite(n) && n >= 0 ? n / 100 : 0);
           }}
-          className="w-full text-right text-[13px] font-[600] text-[#0F172A] border border-slate-200 rounded-[8px] px-3 py-1.5 pr-6 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30 focus:border-[#0677FF]"
+          className="w-full h-full text-right text-[13px] font-[600] text-[#0F172A] tabular-nums px-3 pr-6 bg-transparent focus:outline-none focus:bg-[#0677FF]/5 focus:ring-1 focus:ring-inset focus:ring-[#0677FF]"
           placeholder="0,000"
         />
         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">%</span>
@@ -324,8 +353,9 @@ function ResultRow({ label, value, highlight = false, sub = false, positive = fa
 }) {
   return (
     <div className={cn(
-      'flex items-center justify-between py-2 px-3 rounded-[8px]',
-      highlight ? 'bg-[#0677FF]/8 border border-[#0677FF]/20' : sub ? 'pl-6' : '',
+      'flex items-center justify-between py-1.5 px-3 border-b border-slate-100 last:border-b-0',
+      highlight && 'bg-[#0677FF]/8 border border-[#0677FF]/20 rounded-[8px]',
+      sub && !highlight && 'pl-6',
     )}>
       <span className={cn('text-[12px] font-[500] text-slate-600', highlight && 'font-[700] text-[#0677FF]')}>{label}</span>
       <span className={cn('text-[13px] font-[700] tabular-nums',
@@ -336,7 +366,7 @@ function ResultRow({ label, value, highlight = false, sub = false, positive = fa
   );
 }
 
-function Section({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
+function Section({ title, defaultOpen = true, cols = false, children }: { title: string; defaultOpen?: boolean; cols?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="border border-slate-200 rounded-[12px] overflow-hidden">
@@ -346,22 +376,33 @@ function Section({ title, defaultOpen = true, children }: { title: string; defau
         <span className="text-[12px] font-[700] text-[#0F172A] uppercase tracking-[0.5px]">{title}</span>
         {open ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
       </button>
-      {open && <div className="px-4 py-3 divide-y divide-slate-50">{children}</div>}
+      {open && (
+        <div className={cn(cols ? 'p-3' : 'px-4 py-3')}>
+          {cols && <GridHead />}
+          {children}
+        </div>
+      )}
     </div>
   );
 }
 
+// Linha de total/cálculo — equivalente às linhas a negrito "SOMA / TOTAL" do Excel.
 function CalcRow({ label, value, highlight = false, indent = false }: {
   label: string; value: number; highlight?: boolean; indent?: boolean;
 }) {
+  const { code, desc } = splitCode(label);
   return (
     <div className={cn(
-      'flex items-center justify-between py-2 px-3 rounded-[8px]',
-      highlight ? 'bg-[#0677FF]/8 border border-[#0677FF]/20' : 'bg-slate-50',
-      indent && 'ml-4',
+      'grid', GRID_COLS, 'items-stretch border -mt-px',
+      highlight ? 'bg-[#0677FF]/10 border-[#0677FF]/30' : 'bg-slate-100 border-slate-300',
+      indent && 'pl-0',
     )}>
-      <span className={cn('text-[12px] font-[700]', highlight ? 'text-[#0677FF]' : 'text-[#0F172A]')}>{label}</span>
-      <span className={cn('text-[13px] font-[800] tabular-nums', highlight ? 'text-[#0677FF]' : 'text-[#0F172A]')}>{fmt(value)} €</span>
+      <div className={cn('flex items-center justify-center text-[10px] font-[800] tabular-nums border-r',
+        highlight ? 'text-[#0677FF] border-[#0677FF]/30' : 'text-slate-500 border-slate-300')}>{code}</div>
+      <div className={cn('flex items-center px-3 py-2 border-r text-[12px] font-[700]',
+        highlight ? 'text-[#0677FF] border-[#0677FF]/30' : 'text-[#0F172A] border-slate-300')}>{desc}</div>
+      <div className={cn('flex items-center justify-end px-3 text-[13px] font-[800] tabular-nums',
+        highlight ? 'text-[#0677FF]' : 'text-[#0F172A]')}>{fmt(value)} €</div>
     </div>
   );
 }
@@ -625,7 +666,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
             </Section>
 
             {st.useRaiCalc && (<>
-              <Section title="Rendimentos Contabilísticos">
+              <Section title="Rendimentos Contabilísticos" cols>
                 <NumInput label="711 — Vendas de mercadorias" value={st.rai_711} onChange={v => s('rai_711', v)} />
                 <NumInput label="712 — Vendas de produtos acabados e em curso" value={st.rai_712} onChange={v => s('rai_712', v)} />
                 <NumInput label="72 — Prestações de serviços" value={st.rai_72} onChange={v => s('rai_72', v)} />
@@ -638,7 +679,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 <CalcRow label="TOTAL DE RENDIMENTOS" value={stepRes.totalRendimentos} highlight />
               </Section>
 
-              <Section title="Gastos Contabilísticos">
+              <Section title="Gastos Contabilísticos" cols>
                 <NumInput label="CMV — Custo das mercadorias vendidas" value={st.rai_cmv} onChange={v => s('rai_cmv', v)} />
                 <NumInput label="CMC — Custo das matérias consumidas" value={st.rai_cmc} onChange={v => s('rai_cmc', v)} />
                 <NumInput label="62 — FSE — Fornecimentos e serviços externos" value={st.rai_62} onChange={v => s('rai_62', v)} />
@@ -652,7 +693,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 <CalcRow label="Total de gastos contabilísticos" value={stepRes.totalGastos} highlight />
               </Section>
 
-              <Section title="Imposto diferido">
+              <Section title="Imposto diferido" cols>
                 <NumInput label="8122 — Imposto diferido — Débito (+)" value={st.rai_8122_db} onChange={v => s('rai_8122_db', v)} />
                 <NumInput label="8122 — Imposto diferido — Crédito (−)" value={st.rai_8122_cr} onChange={v => s('rai_8122_cr', v)} />
               </Section>
@@ -672,7 +713,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
         const stepRes = calculate(st);
         return (
           <div className="flex flex-col gap-4">
-            <Section title="Ponto de Partida — Campo 708">
+            <Section title="Ponto de Partida — Campo 708" cols>
               {st.useRaiCalc
                 ? <NumInput label="701 — RAI (calculado na aba Rendimentos)" value={stepRes.raiCalc} readOnly />
                 : <NumInput label="701 — Resultado antes de impostos (RAI)" value={st.c701_rai} onChange={v => s('c701_rai', v)} />
@@ -692,7 +733,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <CalcRow label="708 — Base de apuramento" value={stepRes.c708} highlight />
             </Section>
 
-            <Section title="A Acrescer (campos 709–804)" defaultOpen={false}>
+            <Section title="A Acrescer (campos 709–804)" defaultOpen={false} cols>
               {ACRESCER_LABELS.map(([key, lbl]) => (
                 <div key={key}>
                   <NumInput label={lbl} value={st[key as keyof PreviSaState] as number}
@@ -703,7 +744,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <CalcRow label="753 — Soma (708 + acréscimos)" value={stepRes.c753} highlight />
             </Section>
 
-            <Section title="A Deduzir (campos 754–775)" defaultOpen={false}>
+            <Section title="A Deduzir (campos 754–775)" defaultOpen={false} cols>
               {DEDUZIR_LABELS.map(([key, lbl]) => (
                 <div key={key}>
                   <NumInput label={lbl} value={st[key as keyof PreviSaState] as number}
@@ -736,11 +777,11 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
         const stepRes = calculate(st);
         return (
           <div className="flex flex-col gap-4">
-            <Section title="Lucro Tributável (de Q07)">
+            <Section title="Lucro Tributável (de Q07)" cols>
               <CalcRow label="778 — Lucro tributável" value={stepRes.lucroTributavel} highlight />
             </Section>
 
-            <Section title="Prejuízos Fiscais Dedutíveis">
+            <Section title="Prejuízos Fiscais Dedutíveis" cols>
               <NumInput label="Prejuízos 2014–2017 (agrupados)" value={st.prej_ate2017} onChange={v => s('prej_ate2017', v)} />
               <NumInput label="Prejuízos 2018" value={st.prej_2018} onChange={v => s('prej_2018', v)} indent />
               <NumInput label="Prejuízos 2019" value={st.prej_2019} onChange={v => s('prej_2019', v)} indent />
@@ -765,7 +806,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <CalcRow label="Prejuízos efetivamente deduzidos" value={stepRes.prejuziosEfetivos} />
             </Section>
 
-            <Section title="Benefícios Fiscais">
+            <Section title="Benefícios Fiscais" cols>
               <NumInput label="Benefícios fiscais — dedução na matéria coletável" value={st.beneficiosFiscais}
                 onChange={v => s('beneficiosFiscais', v)} help="c774+c775 (Q09)" />
             </Section>
@@ -858,7 +899,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               </button>
             </Section>
 
-            <Section title="Outras Tributações Autónomas">
+            <Section title="Outras Tributações Autónomas" cols>
               <NumInput label="Despesas não documentadas — atividade principal" value={st.ta_despNaoDocPrincipal} onChange={v => s('ta_despNaoDocPrincipal', v)} help="50%" />
               <NumInput label="Despesas não documentadas — não atividade principal" value={st.ta_despNaoDocNaoPrincipal} onChange={v => s('ta_despNaoDocNaoPrincipal', v)} help="70%" />
               <NumInput label="Encargos de representação" value={st.ta_representacao} onChange={v => s('ta_representacao', v)} help="10%" />
@@ -892,23 +933,25 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
         const stepRes = calculate(st);
         return (
           <div className="flex flex-col gap-4">
-            <Section title="Coleta IRC">
+            <Section title="Coleta IRC" cols>
               <CalcRow label="Matéria coletável" value={stepRes.materiaColetavel} />
               <CalcRow label="IRC sobre mat. coletável (c347)" value={stepRes.ircColeta - st.c349 * st.c349_taxa} indent />
-              <div className="flex items-center gap-3 py-1.5 pl-4">
-                <label className="flex-1 text-[12px] font-[500] text-slate-600">349 — IRC a outras taxas — base</label>
+              <div className={cn('grid', GRID_COLS, 'items-stretch border border-slate-200 -mt-px bg-white')}>
+                <div className="flex items-center justify-center text-[10px] font-[700] text-slate-400 bg-slate-50/70 border-r border-slate-200 tabular-nums">349</div>
+                <label className="flex items-center px-3 py-1.5 border-r border-slate-200 text-[12px] font-[500] text-slate-700">IRC a outras taxas — base</label>
                 <input type="number" step="0.01" value={st.c349 || ''}
                   onChange={e => s('c349', parseFloat(e.target.value) || 0)}
-                  className="w-36 text-right text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30"
+                  className="w-full text-right text-[13px] font-[600] text-[#0F172A] tabular-nums px-3 bg-transparent focus:outline-none focus:bg-[#0677FF]/5 focus:ring-1 focus:ring-inset focus:ring-[#0677FF]"
                   placeholder="0,00" />
               </div>
-              <div className="flex items-center gap-3 py-1.5 pl-4">
-                <label className="flex-1 text-[12px] font-[500] text-slate-600">349 — taxa (%)</label>
-                <div className="relative w-36">
+              <div className={cn('grid', GRID_COLS, 'items-stretch border border-slate-200 -mt-px bg-white')}>
+                <div className="flex items-center justify-center text-[10px] font-[700] text-slate-400 bg-slate-50/70 border-r border-slate-200 tabular-nums">349</div>
+                <label className="flex items-center px-3 py-1.5 border-r border-slate-200 text-[12px] font-[500] text-slate-700">taxa (%)</label>
+                <div className="relative">
                   <input type="number" step="0.1" min="0" max="100"
                     value={st.c349_taxa ? (st.c349_taxa * 100).toFixed(1) : ''}
                     onChange={e => s('c349_taxa', (parseFloat(e.target.value) || 0) / 100)}
-                    className="w-full text-right text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-1.5 pr-6 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30"
+                    className="w-full h-full text-right text-[13px] font-[600] text-[#0F172A] tabular-nums px-3 pr-6 bg-transparent focus:outline-none focus:bg-[#0677FF]/5 focus:ring-1 focus:ring-inset focus:ring-[#0677FF]"
                     placeholder="0,0" />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">%</span>
                 </div>
@@ -916,7 +959,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <CalcRow label="351 — Coleta IRC total" value={stepRes.ircColeta} highlight />
             </Section>
 
-            <Section title="Derramas">
+            <Section title="Derramas" cols>
               <CalcRow label="Derrama estadual (art.87-A)" value={stepRes.derramaEstadual} />
               <CalcRow label="Derrama municipal" value={stepRes.derrMunicipal} />
               <div className="text-[11px] text-slate-400 px-1 py-1">
@@ -925,7 +968,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <CalcRow label="378 — Total coleta + derramas" value={stepRes.c378} highlight />
             </Section>
 
-            <Section title="Deduções à Coleta (c357)">
+            <Section title="Deduções à Coleta (c357)" cols>
               <NumInput label="353 — DTJI — dupla tributação jurídica int. (art.91)" value={st.c353} onChange={v => s('c353', v)} />
               <NumInput label="375 — DTEI — dupla tributação económica int. (art.91-A)" value={st.c375} onChange={v => s('c375', v)} />
               <NumInput label="355 — Benefícios fiscais (exceto CFEI II e IFR)" value={st.c355_bf} onChange={v => s('c355_bf', v)} />
@@ -937,7 +980,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
 
             <CalcRow label="358 — IRC liquidado (c378 − c357)" value={stepRes.c358} highlight />
 
-            <Section title="Pagamentos e Deduções">
+            <Section title="Pagamentos e Deduções" cols>
               <NumInput label="356 — PEC efectuado" value={st.pecPagamentos} onChange={v => s('pecPagamentos', v)}
                 help={`Estimado: ${fmt(stepRes.pecCalculado)} €`} />
               <NumInput label="359 — Retenções na fonte" value={st.retencoesFonte} onChange={v => s('retencoesFonte', v)} />
@@ -947,7 +990,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <NumInput label="379 — DTJI CDT (países com CDT — art.91 n.2)" value={st.c379} onChange={v => s('c379', v)} />
             </Section>
 
-            <Section title="Outras Correções" defaultOpen={false}>
+            <Section title="Outras Correções" defaultOpen={false} cols>
               <NumInput label="363 — IRC de períodos anteriores" value={st.c363} onChange={v => s('c363', v)} />
               <NumInput label="372 — Reposição de benefícios fiscais" value={st.c372} onChange={v => s('c372', v)} />
               <NumInput label="366 — Juros compensatórios" value={st.c366} onChange={v => s('c366', v)} />
@@ -1170,7 +1213,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               </Section>
 
               {state.useRaiCalc && (<>
-                <Section title="Rendimentos Contabilísticos">
+                <Section title="Rendimentos Contabilísticos" cols>
                   <NumInput label="711 — Vendas de mercadorias" value={state.rai_711} onChange={v => set('rai_711', v)} />
                   <NumInput label="712 — Vendas de produtos acabados e em curso" value={state.rai_712} onChange={v => set('rai_712', v)} />
                   <NumInput label="72 — Prestações de serviços" value={state.rai_72} onChange={v => set('rai_72', v)} />
@@ -1183,7 +1226,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                   <CalcRow label="TOTAL DE RENDIMENTOS" value={res.totalRendimentos} highlight />
                 </Section>
 
-                <Section title="Gastos Contabilísticos">
+                <Section title="Gastos Contabilísticos" cols>
                   <NumInput label="CMV — Custo das mercadorias vendidas" value={state.rai_cmv} onChange={v => set('rai_cmv', v)} />
                   <NumInput label="CMC — Custo das matérias consumidas" value={state.rai_cmc} onChange={v => set('rai_cmc', v)} />
                   <NumInput label="62 — FSE — Fornecimentos e serviços externos" value={state.rai_62} onChange={v => set('rai_62', v)} />
@@ -1197,7 +1240,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                   <CalcRow label="Total de gastos contabilísticos" value={res.totalGastos} highlight />
                 </Section>
 
-                <Section title="Imposto diferido">
+                <Section title="Imposto diferido" cols>
                   <NumInput label="8122 — Imposto diferido — Débito (+)" value={state.rai_8122_db} onChange={v => set('rai_8122_db', v)} />
                   <NumInput label="8122 — Imposto diferido — Crédito (−)" value={state.rai_8122_cr} onChange={v => set('rai_8122_cr', v)} />
                 </Section>
@@ -1208,7 +1251,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
 
             {/* ── Q07 ── */}
             {tab === 'Q07 Apuramento' && (<>
-              <Section title="Ponto de Partida — Campo 708">
+              <Section title="Ponto de Partida — Campo 708" cols>
                 {state.useRaiCalc
                   ? <NumInput label="701 — RAI (calculado na aba Rendimentos)" value={res.raiCalc} readOnly />
                   : <NumInput label="701 — Resultado antes de impostos (RAI)" value={state.c701_rai} onChange={v => set('c701_rai', v)} />
@@ -1228,7 +1271,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 <CalcRow label="708 — Base de apuramento" value={res.c708} highlight />
               </Section>
 
-              <Section title="A Acrescer (campos 709–804)" defaultOpen={false}>
+              <Section title="A Acrescer (campos 709–804)" defaultOpen={false} cols>
                 {ACRESCER_LABELS.map(([key, lbl]) => (
                   <div key={key}>
                     <NumInput label={lbl} value={state[key as keyof PreviSaState] as number}
@@ -1239,7 +1282,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 <CalcRow label="753 — Soma (708 + acréscimos)" value={res.c753} highlight />
               </Section>
 
-              <Section title="A Deduzir (campos 754–775)" defaultOpen={false}>
+              <Section title="A Deduzir (campos 754–775)" defaultOpen={false} cols>
                 {DEDUZIR_LABELS.map(([key, lbl]) => (
                   <div key={key}>
                     <NumInput label={lbl} value={state[key as keyof PreviSaState] as number}
@@ -1263,11 +1306,11 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
 
             {/* ── Q09 ── */}
             {tab === 'Q09 Mat. Coletável' && (<>
-              <Section title="Lucro Tributável (de Q07)">
+              <Section title="Lucro Tributável (de Q07)" cols>
                 <CalcRow label="778 — Lucro tributável" value={res.lucroTributavel} highlight />
               </Section>
 
-              <Section title="Prejuízos Fiscais Dedutíveis">
+              <Section title="Prejuízos Fiscais Dedutíveis" cols>
                 <NumInput label="Prejuízos 2014–2017 (agrupados)" value={state.prej_ate2017} onChange={v => set('prej_ate2017', v)} />
                 <NumInput label="Prejuízos 2018" value={state.prej_2018} onChange={v => set('prej_2018', v)} indent />
                 <NumInput label="Prejuízos 2019" value={state.prej_2019} onChange={v => set('prej_2019', v)} indent />
@@ -1292,7 +1335,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 <CalcRow label="Prejuízos efetivamente deduzidos" value={res.prejuziosEfetivos} />
               </Section>
 
-              <Section title="Benefícios Fiscais">
+              <Section title="Benefícios Fiscais" cols>
                 <NumInput label="Benefícios fiscais — dedução na matéria coletável" value={state.beneficiosFiscais}
                   onChange={v => set('beneficiosFiscais', v)} help="c774+c775 (Q09)" />
               </Section>
@@ -1362,7 +1405,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 </button>
               </Section>
 
-              <Section title="Outras Tributações Autónomas">
+              <Section title="Outras Tributações Autónomas" cols>
                 <NumInput label="Despesas não documentadas — atividade principal" value={state.ta_despNaoDocPrincipal} onChange={v => set('ta_despNaoDocPrincipal', v)} help="50%" />
                 <NumInput label="Despesas não documentadas — não atividade principal" value={state.ta_despNaoDocNaoPrincipal} onChange={v => set('ta_despNaoDocNaoPrincipal', v)} help="70%" />
                 <NumInput label="Encargos de representação" value={state.ta_representacao} onChange={v => set('ta_representacao', v)} help="10%" />
@@ -1387,23 +1430,25 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
 
             {/* ── Q10 ── */}
             {tab === 'Q10 Cálculo' && (<>
-              <Section title="Coleta IRC">
+              <Section title="Coleta IRC" cols>
                 <CalcRow label="Matéria coletável" value={res.materiaColetavel} />
                 <CalcRow label="IRC sobre mat. coletável (c347)" value={res.ircColeta - state.c349 * state.c349_taxa} indent />
-                <div className="flex items-center gap-3 py-1.5 pl-4">
-                  <label className="flex-1 text-[12px] font-[500] text-slate-600">349 — IRC a outras taxas — base</label>
+                <div className={cn('grid', GRID_COLS, 'items-stretch border border-slate-200 -mt-px bg-white')}>
+                  <div className="flex items-center justify-center text-[10px] font-[700] text-slate-400 bg-slate-50/70 border-r border-slate-200 tabular-nums">349</div>
+                  <label className="flex items-center px-3 py-1.5 border-r border-slate-200 text-[12px] font-[500] text-slate-700">IRC a outras taxas — base</label>
                   <input type="number" step="0.01" value={state.c349 || ''}
                     onChange={e => set('c349', parseFloat(e.target.value) || 0)}
-                    className="w-36 text-right text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30"
+                    className="w-full text-right text-[13px] font-[600] text-[#0F172A] tabular-nums px-3 bg-transparent focus:outline-none focus:bg-[#0677FF]/5 focus:ring-1 focus:ring-inset focus:ring-[#0677FF]"
                     placeholder="0,00" />
                 </div>
-                <div className="flex items-center gap-3 py-1.5 pl-4">
-                  <label className="flex-1 text-[12px] font-[500] text-slate-600">349 — taxa (%)</label>
-                  <div className="relative w-36">
+                <div className={cn('grid', GRID_COLS, 'items-stretch border border-slate-200 -mt-px bg-white')}>
+                  <div className="flex items-center justify-center text-[10px] font-[700] text-slate-400 bg-slate-50/70 border-r border-slate-200 tabular-nums">349</div>
+                  <label className="flex items-center px-3 py-1.5 border-r border-slate-200 text-[12px] font-[500] text-slate-700">taxa (%)</label>
+                  <div className="relative">
                     <input type="number" step="0.1" min="0" max="100"
                       value={state.c349_taxa ? (state.c349_taxa * 100).toFixed(1) : ''}
                       onChange={e => set('c349_taxa', (parseFloat(e.target.value) || 0) / 100)}
-                      className="w-full text-right text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-1.5 pr-6 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30"
+                      className="w-full h-full text-right text-[13px] font-[600] text-[#0F172A] tabular-nums px-3 pr-6 bg-transparent focus:outline-none focus:bg-[#0677FF]/5 focus:ring-1 focus:ring-inset focus:ring-[#0677FF]"
                       placeholder="0,0" />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">%</span>
                   </div>
@@ -1411,7 +1456,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 <CalcRow label="351 — Coleta IRC total" value={res.ircColeta} highlight />
               </Section>
 
-              <Section title="Derramas">
+              <Section title="Derramas" cols>
                 <CalcRow label="Derrama estadual (art.87-A)" value={res.derramaEstadual} />
                 <CalcRow label="Derrama municipal" value={res.derrMunicipal} />
                 <div className="text-[11px] text-slate-400 px-1 py-1">
@@ -1420,7 +1465,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 <CalcRow label="378 — Total coleta + derramas" value={res.c378} highlight />
               </Section>
 
-              <Section title="Deduções à Coleta (c357)">
+              <Section title="Deduções à Coleta (c357)" cols>
                 <NumInput label="353 — DTJI — dupla tributação jurídica int. (art.91)" value={state.c353} onChange={v => set('c353', v)} />
                 <NumInput label="375 — DTEI — dupla tributação económica int. (art.91-A)" value={state.c375} onChange={v => set('c375', v)} />
                 <NumInput label="355 — Benefícios fiscais (exceto CFEI II e IFR)" value={state.c355_bf} onChange={v => set('c355_bf', v)} />
@@ -1432,7 +1477,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
 
               <CalcRow label="358 — IRC liquidado (c378 − c357)" value={res.c358} highlight />
 
-              <Section title="Pagamentos e Deduções">
+              <Section title="Pagamentos e Deduções" cols>
                 <NumInput label="356 — PEC efectuado" value={state.pecPagamentos} onChange={v => set('pecPagamentos', v)}
                   help={`Estimado: ${fmt(res.pecCalculado)} €`} />
                 <NumInput label="359 — Retenções na fonte" value={state.retencoesFonte} onChange={v => set('retencoesFonte', v)} />
@@ -1442,7 +1487,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 <NumInput label="379 — DTJI CDT (países com CDT — art.91 n.2)" value={state.c379} onChange={v => set('c379', v)} />
               </Section>
 
-              <Section title="Outras Correções" defaultOpen={false}>
+              <Section title="Outras Correções" defaultOpen={false} cols>
                 <NumInput label="363 — IRC de períodos anteriores" value={state.c363} onChange={v => set('c363', v)} />
                 <NumInput label="372 — Reposição de benefícios fiscais" value={state.c372} onChange={v => set('c372', v)} />
                 <NumInput label="366 — Juros compensatórios" value={state.c366} onChange={v => set('c366', v)} />
