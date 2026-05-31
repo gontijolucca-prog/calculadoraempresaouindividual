@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FileDown, FileText, Download, Printer, Building2, ChevronDown, Pencil,
-  Calculator, FileSignature, Package,
+  Calculator, FileSignature, Package, Search, Check,
 } from 'lucide-react';
 import { listEmpresas, type EmpresaRecord } from './lib/empresas';
 import type { OfficeSettings } from './lib/officeSettings';
@@ -16,6 +16,7 @@ import {
 import PDFPreviewEditor from './PDFPreviewEditor';
 import Proposta from './Proposta';
 import MinutaContrato from './MinutaContrato';
+import { printViaPaged } from './lib/printPaged';
 
 /**
  * Exportar documentos — escolhe a empresa (dropdown) e o documento, pré-visualiza
@@ -38,6 +39,12 @@ const PACKAGE_DOCS: { id: PkgId; label: string; descricao: string; Icon: typeof 
 ];
 const PKG_IDS: PkgId[] = ['simulacao', 'proposta', 'minuta'];
 const isPkg = (id: string): id is PkgId => (PKG_IDS as string[]).includes(id);
+// id do elemento printRoot de cada documento do pacote (para o paged.js).
+const PKG_ROOT_ID: Record<PkgId, string> = {
+  simulacao: 'pdf-editor-root',
+  proposta: 'proposta-print-root',
+  minuta: 'minuta-print-root',
+};
 
 // Há dados contabilísticos no Previsa desta empresa? (para avisar quando um
 // documento que depende deles vai sair vazio).
@@ -65,8 +72,39 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa }:
   // Selecção pode ser um doc do pacote (PkgId) ou um doc Word (DocTypeId).
   const [docId, setDocId] = useState<string>('simulacao');
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  // Os documentos do pacote são folhas A4 fixas (210mm ≈ 794px). Escalamos para
+  // caber na largura da coluna de pré-visualização (senão saem cortados).
+  const pkgWrapRef = useRef<HTMLDivElement>(null);
+  const [pkgScale, setPkgScale] = useState(1);
+  // Combobox pesquisável da empresa (útil quando a carteira tem muitos clientes).
+  const [empresaOpen, setEmpresaOpen] = useState(false);
+  const [empresaQuery, setEmpresaQuery] = useState('');
+  const empresaBoxRef = useRef<HTMLDivElement>(null);
 
   const emp = empresas.find(e => e.id === empresaId) ?? null;
+  const empresaLabel = emp
+    ? `${emp.nome || emp.profile?.nomeCliente || 'Empresa sem nome'}${emp.nif ? ` · ${emp.nif}` : ''}`
+    : 'Escolher empresa';
+  const empresasFiltradas = useMemo(() => {
+    const q = empresaQuery.trim().toLowerCase();
+    if (!q) return empresas;
+    return empresas.filter(e =>
+      `${e.nome ?? ''} ${e.profile?.nomeCliente ?? ''} ${e.nif ?? ''}`.toLowerCase().includes(q),
+    );
+  }, [empresas, empresaQuery]);
+
+  // Fecha o combobox ao clicar fora.
+  useEffect(() => {
+    if (!empresaOpen) return;
+    const onDown = (ev: MouseEvent) => {
+      if (empresaBoxRef.current && !empresaBoxRef.current.contains(ev.target as Node)) {
+        setEmpresaOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [empresaOpen]);
+
   const pkg = isPkg(docId);
   const def = DOC_TYPES.find(d => d.id === docId) ?? DOC_TYPES[0];
   const avisoPrevisa = !pkg && !!emp && def.precisaPrevisa && !hasPrevisaData(emp);
@@ -93,6 +131,22 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa }:
     f.srcdoc = docHtml ? makeEditableHtml(docHtml) : '';
   }, [docHtml]);
 
+  // Escala o documento do pacote para caber na largura disponível.
+  useEffect(() => {
+    if (!pkg) return;
+    const el = pkgWrapRef.current;
+    if (!el) return;
+    const A4_PX = 794; // 210mm @ 96dpi
+    const compute = () => {
+      const avail = el.clientWidth - 24; // padding interno
+      setPkgScale(Math.min(1, Math.max(0.3, avail / A4_PX)));
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [pkg, docId]);
+
   const handleDownloadWord = () => {
     if (!emp || pkg) return;
     const doc = iframeRef.current?.contentDocument;
@@ -110,9 +164,19 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa }:
     iframeRef.current?.contentWindow?.print();
   };
 
-  // Documentos do pacote isolam-se na impressão (body * { visibility:hidden }),
-  // por isso basta imprimir a janela — sai só o documento activo.
-  const handlePrintPkg = () => window.print();
+  // Imprime o documento do pacote via paged.js: margens em todas as páginas,
+  // rodapé repetido e numeração "Página X de Y". Cai para window.print() se o
+  // root ainda não estiver montado.
+  const handlePrintPkg = () => {
+    if (!isPkg(docId)) return;
+    const root = pkgWrapRef.current?.querySelector(`#${PKG_ROOT_ID[docId]}`) as HTMLElement | null;
+    if (!root) { window.print(); return; }
+    printViaPaged(root, {
+      title: docLabel,
+      footerLeft: office.nome || office.contabilistaResponsavel || '',
+      footerRight: 'estudo360.pt',
+    });
+  };
 
   const docLabel = pkg
     ? (PACKAGE_DOCS.find(d => d.id === docId)?.label ?? '')
@@ -148,19 +212,60 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa }:
             <div className="lg:sticky lg:top-6 no-print">
               {/* Passo 1 — empresa (dropdown) */}
               <p className="mb-2 text-[11px] font-[800] uppercase tracking-[0.6px] text-slate-400">1 · Empresa</p>
-              <div className="relative">
-                <select
-                  value={empresaId}
-                  onChange={e => setEmpresaId(e.target.value)}
-                  className="w-full appearance-none pl-4 pr-10 py-3 rounded-[12px] border border-slate-200 bg-white text-[14px] font-[600] text-[#0B1D2D] focus:outline-none focus:border-[#0677FF] focus:ring-2 focus:ring-[#0677FF]/15 transition cursor-pointer"
+              <div className="relative" ref={empresaBoxRef}>
+                <button
+                  type="button"
+                  onClick={() => { setEmpresaOpen(o => !o); setEmpresaQuery(''); }}
+                  aria-haspopup="listbox"
+                  aria-expanded={empresaOpen}
+                  className="w-full flex items-center gap-2 pl-4 pr-10 py-3 rounded-[12px] border border-slate-200 bg-white text-[14px] font-[600] text-[#0B1D2D] text-left focus:outline-none focus:border-[#0677FF] focus:ring-2 focus:ring-[#0677FF]/15 transition cursor-pointer"
                 >
-                  {empresas.map(e => (
-                    <option key={e.id} value={e.id}>
-                      {(e.nome || e.profile?.nomeCliente || 'Empresa sem nome')}{e.nif ? ` · ${e.nif}` : ''}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span className="truncate">{empresaLabel}</span>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-transform ${empresaOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {empresaOpen && (
+                  <div className="absolute z-20 mt-1.5 w-full rounded-[12px] border border-slate-200 bg-white shadow-[0_12px_32px_-12px_rgba(15,23,42,0.35)] overflow-hidden">
+                    <div className="flex items-center gap-2 px-3 py-2.5 border-b border-slate-100">
+                      <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                      <input
+                        autoFocus
+                        value={empresaQuery}
+                        onChange={e => setEmpresaQuery(e.target.value)}
+                        placeholder="Procurar por nome ou NIF…"
+                        className="w-full bg-transparent text-[13.5px] font-[500] text-[#0B1D2D] placeholder:text-slate-400 focus:outline-none"
+                      />
+                    </div>
+                    <div className="max-h-[280px] overflow-y-auto py-1">
+                      {empresasFiltradas.length === 0 ? (
+                        <p className="px-4 py-6 text-center text-[12.5px] text-slate-400 font-[500]">Sem resultados para “{empresaQuery}”.</p>
+                      ) : (
+                        empresasFiltradas.map(e => {
+                          const active = e.id === empresaId;
+                          return (
+                            <button
+                              key={e.id}
+                              type="button"
+                              role="option"
+                              aria-selected={active}
+                              onClick={() => { setEmpresaId(e.id); setEmpresaOpen(false); }}
+                              className={`w-full text-left flex items-center gap-2.5 px-3 py-2.5 transition-colors ${active ? 'bg-[#0677FF]/[0.06]' : 'hover:bg-slate-50'}`}
+                            >
+                              <span className={`w-4 h-4 shrink-0 flex items-center justify-center ${active ? 'text-[#0677FF]' : 'text-transparent'}`}>
+                                <Check className="w-4 h-4" />
+                              </span>
+                              <span className="min-w-0 flex-1">
+                                <span className="block text-[13.5px] font-[700] text-[#0F172A] truncate">{e.nome || e.profile?.nomeCliente || 'Empresa sem nome'}</span>
+                                {e.nif && <span className="block text-[11.5px] text-slate-400 font-[500]">NIF {e.nif}</span>}
+                              </span>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Passo 2 — documento */}
@@ -300,9 +405,9 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa }:
               {pkg ? (
                 // Documentos do pacote (React): renderiza o componente, que já é
                 // editável inline e isola-se na impressão.
-                <div className="rounded-[14px] border border-slate-200 bg-[#E2E8F0] p-3 overflow-x-auto shadow-[0_2px_14px_-8px_rgba(15,23,42,0.25)]">
+                <div ref={pkgWrapRef} className="rounded-[14px] border border-slate-200 bg-[#E2E8F0] p-3 shadow-[0_2px_14px_-8px_rgba(15,23,42,0.25)]">
                   {emp && profile && (
-                    <>
+                    <div style={{ zoom: pkgScale }}>
                       {docId === 'simulacao' && (
                         <PDFPreviewEditor
                           profile={profile}
@@ -321,7 +426,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa }:
                       {docId === 'minuta' && (
                         <MinutaContrato profile={profile} office={office} honorarios={honorarios} />
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
               ) : (
