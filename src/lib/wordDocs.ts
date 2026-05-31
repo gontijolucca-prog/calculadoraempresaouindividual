@@ -113,30 +113,44 @@ function drLinhas(p: PreviSaState) {
 const STYLE = `
   @page { size: 21cm 29.7cm; margin: 1.8cm 1.4cm; }
   * { box-sizing: border-box; }
-  body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a1a; margin: 0; }
+  html { background: #ffffff; }
+  body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a1a; margin: 0; background: #ffffff; }
   .hdr { display: table; width: 100%; margin-bottom: 4pt; }
   .hdr .l { display: table-cell; text-align: left; font-weight: bold; color: #0B1D2D; font-size: 11pt; }
   .hdr .r { display: table-cell; text-align: right; font-weight: bold; color: #1f4e79; font-size: 11pt; }
-  h1.title { color: #1f4e79; font-size: 14pt; margin: 2pt 0 2pt; padding-bottom: 4pt; border-bottom: 1.5pt solid #1f4e79; }
+  h1.title { color: #1f4e79; font-size: 14pt; margin: 2pt 0 2pt; padding-bottom: 4pt; border-bottom: 1.5pt solid #1f4e79; page-break-after: avoid; }
   .em-euros { text-align: right; color: #1f4e79; font-size: 8pt; font-weight: bold; margin: 2pt 0 8pt; }
-  table { border-collapse: collapse; width: 100%; }
-  table.dr td, table.dr th { padding: 3pt 4pt; font-size: 9.5pt; border-bottom: 0.5pt solid #e2e2e2; }
+  table { border-collapse: collapse; width: 100%; max-width: 100%; page-break-inside: auto; }
+  table.dr { table-layout: fixed; }
+  table.dr td, table.dr th { padding: 3pt 4pt; font-size: 9.5pt; border-bottom: 0.5pt solid #e2e2e2; overflow-wrap: break-word; word-break: break-word; }
   table.dr th { color: #0B1D2D; border-bottom: 1pt solid #999; }
+  thead { display: table-header-group; }
+  tr { page-break-inside: avoid; }
   .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .tot td { font-weight: bold; border-top: 0.75pt solid #999; }
   .sec { font-weight: bold; text-align: center; color: #0B1D2D; }
   .ind { padding-left: 10pt !important; }
   .dash { color: #b0b0b0; letter-spacing: 1px; }
   .fill { color: #555; letter-spacing: 1px; }
-  p { line-height: 1.5; margin: 6pt 0; text-align: justify; }
-  ul { margin: 4pt 0; }
+  p { line-height: 1.5; margin: 6pt 0; text-align: justify; orphans: 2; widows: 2; }
+  ul { margin: 4pt 0; page-break-inside: avoid; }
   li { margin: 3pt 0; line-height: 1.45; }
-  .sigs { display: table; width: 100%; margin-top: 36pt; }
+  .sigs { display: table; width: 100%; margin-top: 36pt; page-break-inside: avoid; }
   .sigs .c { display: table-cell; width: 50%; text-align: center; font-size: 9.5pt; padding-top: 24pt; }
   .sigs .line { border-top: 0.75pt solid #333; margin: 0 18pt; padding-top: 3pt; }
   .ftr { margin-top: 18pt; padding-top: 4pt; border-top: 0.5pt solid #ccc; color: #1f4e79; font-size: 8pt; text-align: right; }
   .meta { color: #555; font-size: 9pt; }
   .pgbreak { page-break-before: always; }
+  /* Tabela larga (Alterações no Capital Próprio): compacta para caber em A4. */
+  table.compact td, table.compact th { padding: 2pt 2.5pt; font-size: 6.5pt; }
+  table.compact .num { white-space: normal; }
+  table.compact .dash { letter-spacing: 0; }
+  /* Ecrã: pré-visualização fluida à largura do painel (nunca corta na horizontal).
+     A paginação/medidas A4 reais vêm do @page na impressão e no Word. */
+  @media screen {
+    body.editing { padding: 1.4cm 1.2cm; max-width: 21cm; margin: 0 auto; }
+    body.editing [contenteditable]:focus { outline: 2px solid rgba(6,119,255,0.35); outline-offset: 2px; border-radius: 2px; }
+  }
 `;
 
 function wordShell(title: string, body: string): string {
@@ -261,21 +275,24 @@ export function buildAlteracoesCapitalProprio(emp: EmpresaRecord, office: Office
     'Excedentes de Revaloriza&ccedil;&atilde;o', 'Ajustamentos / Outras Varia&ccedil;&otilde;es', 'Resultado L&iacute;quido', 'Total'];
   const head = `<tr><th style="text-align:left">DESCRI&Ccedil;&Atilde;O</th>${cols.map(x => `<th class="num">${x}</th>`).join('')}</tr>`;
   // overrides: mapa coluna→valor; células sem valor ficam tracejadas (vazio = traço).
+  // Tabela larga (12 colunas) — traço curto para não forçar a largura das células.
+  const SHORTDASH = '<span class="dash">&#8212;</span>';
   const sumRow = (vals: Record<number, number | null>) =>
     Object.values(vals).reduce((s: number, v) => s + (v ?? 0), 0);
   const row = (label: string, vals: Record<number, number | null>, withTotal = false) => {
     const tot = withTotal ? sumRow(vals) : null;
     return `<tr><td>${label}</td>${cols.map((_, i) => {
-      if (i === 10) return `<td class="num">${tot != null ? val(tot) : DASH}</td>`;
+      if (i === 10) return `<td class="num">${tot != null ? val(tot) : SHORTDASH}</td>`;
       const v = vals[i];
-      return `<td class="num">${v != null ? val(v) : DASH}</td>`;
+      return `<td class="num">${v != null ? val(v) : SHORTDASH}</td>`;
     }).join('')}</tr>`;
   };
   const inicio = { 0: capital, 6: reservasRT, 8: outras } as Record<number, number | null>;
   const fim    = { 0: capital, 6: reservasRT, 8: outras, 9: rl } as Record<number, number | null>;
   const anyData = capital != null || reservasRT != null || outras != null || rl != null;
   const body = `${cabecalho(c, `Demonstra&ccedil;&atilde;o das Altera&ccedil;&otilde;es no Capital Pr&oacute;prio &mdash; ${c.ano}`)}
-<table class="dr" style="font-size:8pt">
+<table class="dr compact" style="table-layout:fixed">
+<colgroup><col style="width:16%">${cols.slice(0, -1).map(() => '<col>').join('')}<col></colgroup>
 ${head}
 ${row(`Posi&ccedil;&atilde;o no in&iacute;cio do per&iacute;odo ${c.ano}`, inicio, anyData)}
 ${row('Altera&ccedil;&otilde;es no per&iacute;odo', {})}
@@ -493,6 +510,32 @@ export const DOC_TYPES: DocTypeDef[] = [
 ];
 
 // ─── Download (.doc) ──────────────────────────────────────────────────────────
+
+/**
+ * Versão do documento para pré-visualização editável dentro de um iframe: o
+ * `<body>` fica `contenteditable` para o utilizador corrigir qualquer texto
+ * antes de descarregar. A classe `editing` adiciona a margem A4 só no ecrã.
+ */
+export function makeEditableHtml(html: string): string {
+  return html.replace(
+    '<body>',
+    '<body class="editing" contenteditable="true" spellcheck="false">',
+  );
+}
+
+/**
+ * Reconstrói o HTML final (para download/Word) a partir do documento já editado
+ * dentro do iframe, removendo os atributos de edição e a classe de ecrã.
+ */
+export function serializeEditedDoc(doc: Document): string {
+  const root = doc.documentElement.cloneNode(true) as HTMLElement;
+  root.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+  root.querySelectorAll('[spellcheck]').forEach(el => el.removeAttribute('spellcheck'));
+  const body = root.querySelector('body');
+  if (body) body.classList.remove('editing');
+  return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">'
+    + root.innerHTML + '</html>';
+}
 
 /** Embrulha o HTML como .doc e dispara o download. BOM + charset garantem acentos. */
 export function downloadAsWord(html: string, filename: string): void {
