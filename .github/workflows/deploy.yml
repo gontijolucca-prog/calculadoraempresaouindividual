@@ -40,4 +40,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=estudo360 --branch=main
+          # --commit-message explícito (ASCII): senão o wrangler envia a mensagem
+          # do último commit, e o Cloudflare rejeita acentos/traços longos PT com
+          # "Invalid commit message, it must be a valid UTF-8 string [8000111]".
+          command: pages deploy dist --project-name=estudo360 --branch=main --commit-hash=${{ github.sha }} --commit-message="CI deploy ${{ github.sha }}"
