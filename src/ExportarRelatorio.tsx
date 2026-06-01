@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   FileDown, FileText, Download, Printer, Building2, ChevronDown, Pencil,
-  Calculator, FileSignature, Package, Search, Check,
+  Calculator, FileSignature, Package, Search, Check, Loader2,
 } from 'lucide-react';
 import { listEmpresas, type EmpresaRecord } from './lib/empresas';
 import type { OfficeSettings } from './lib/officeSettings';
@@ -16,6 +16,7 @@ import {
 import PDFPreviewEditor from './PDFPreviewEditor';
 import Proposta from './Proposta';
 import MinutaContrato from './MinutaContrato';
+import { defaultProfile, type ClientProfile } from './ClientProfile';
 import { printViaPaged } from './lib/printPaged';
 
 /**
@@ -45,6 +46,27 @@ const PKG_ROOT_ID: Record<PkgId, string> = {
   proposta: 'proposta-print-root',
   minuta: 'minuta-print-root',
 };
+
+// Junta `over` em cima de `base`, recursivamente para objetos simples (arrays e
+// primitivos substituem). Usado para completar perfis legados/parciais com os
+// valores por defeito — os documentos do pacote (PDFPreviewEditor, Proposta,
+// Minuta) assumem um perfil completo e rebentam com campos em falta.
+function deepMerge<T>(base: T, over: Partial<T> | undefined): T {
+  if (!over) return base;
+  const isObj = (v: unknown): v is Record<string, unknown> =>
+    typeof v === 'object' && v !== null && !Array.isArray(v);
+  if (!isObj(base) || !isObj(over)) return (over as T) ?? base;
+  const out: Record<string, unknown> = { ...base };
+  for (const [k, v] of Object.entries(over)) {
+    if (v === undefined) continue;
+    out[k] = isObj(out[k]) && isObj(v) ? deepMerge(out[k], v as Record<string, unknown>) : v;
+  }
+  return out as T;
+}
+
+function normalizeProfile(p: ClientProfile | undefined): ClientProfile | undefined {
+  return p ? deepMerge(defaultProfile, p) : undefined;
+}
 
 // Há dados contabilísticos no Previsa desta empresa? (para avisar quando um
 // documento que depende deles vai sair vazio).
@@ -76,10 +98,13 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa }:
   // caber na largura da coluna de pré-visualização (senão saem cortados).
   const pkgWrapRef = useRef<HTMLDivElement>(null);
   const [pkgScale, setPkgScale] = useState(1);
+  const [printingPkg, setPrintingPkg] = useState(false);
   // Combobox pesquisável da empresa (útil quando a carteira tem muitos clientes).
   const [empresaOpen, setEmpresaOpen] = useState(false);
   const [empresaQuery, setEmpresaQuery] = useState('');
+  const [highlight, setHighlight] = useState(0);
   const empresaBoxRef = useRef<HTMLDivElement>(null);
+  const empresaListRef = useRef<HTMLDivElement>(null);
 
   const emp = empresas.find(e => e.id === empresaId) ?? null;
   const empresaLabel = emp
@@ -105,14 +130,42 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa }:
     return () => document.removeEventListener('mousedown', onDown);
   }, [empresaOpen]);
 
+  // Ao abrir, destaca a empresa atual; a cada pesquisa, volta ao topo.
+  useEffect(() => {
+    if (!empresaOpen) return;
+    const idx = empresasFiltradas.findIndex(e => e.id === empresaId);
+    setHighlight(idx >= 0 ? idx : 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [empresaOpen]);
+  useEffect(() => { setHighlight(0); }, [empresaQuery]);
+  // Mantém a opção destacada visível.
+  useEffect(() => {
+    if (!empresaOpen) return;
+    empresaListRef.current?.querySelector(`#empresa-opt-${highlight}`)
+      ?.scrollIntoView({ block: 'nearest' });
+  }, [highlight, empresaOpen]);
+
+  const selectEmpresaAt = (i: number) => {
+    const e = empresasFiltradas[i];
+    if (e) { setEmpresaId(e.id); setEmpresaOpen(false); }
+  };
+  const onComboKey = (ev: ReactKeyboardEvent) => {
+    if (ev.key === 'ArrowDown') { ev.preventDefault(); setHighlight(h => Math.min(empresasFiltradas.length - 1, h + 1)); }
+    else if (ev.key === 'ArrowUp') { ev.preventDefault(); setHighlight(h => Math.max(0, h - 1)); }
+    else if (ev.key === 'Enter') { ev.preventDefault(); selectEmpresaAt(highlight); }
+    else if (ev.key === 'Escape') { ev.preventDefault(); setEmpresaOpen(false); }
+  };
+
   const pkg = isPkg(docId);
   const def = DOC_TYPES.find(d => d.id === docId) ?? DOC_TYPES[0];
   const avisoPrevisa = !pkg && !!emp && def.precisaPrevisa && !hasPrevisaData(emp);
 
   // Estados dos simuladores para a empresa SELECCIONADA (não a activa no App):
   // lê o que está guardado na empresa, com fallback aos valores iniciais do perfil.
+  // O perfil é normalizado (completado com os defaults) para os documentos do
+  // pacote não rebentarem com empresas de perfil parcial/legado.
   const sims = useMemo(() => (emp?.sims ?? {}) as Record<string, unknown>, [emp]);
-  const profile = emp?.profile;
+  const profile = useMemo(() => normalizeProfile(emp?.profile), [emp]);
   const taxState = (sims.tax as TaxSimulatorState) ?? (profile ? getInitialTaxState(profile) : undefined);
   const vehicleState = (sims.vehicle as VehicleSimulatorState) ?? getInitialVehicleState();
   const ticketState = (sims.ticket as TicketSimulatorState) ?? (profile ? getInitialTicketState(profile) : undefined);
@@ -151,6 +204,11 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa }:
     if (!emp || pkg) return;
     const doc = iframeRef.current?.contentDocument;
     const html = doc ? serializeEditedDoc(doc) : docHtml;
+    // Evita descarregar um .doc vazio se a folha ainda não renderizou.
+    if (!html || !html.trim()) {
+      alert('O documento ainda está a carregar — tenta de novo dentro de instantes.');
+      return;
+    }
     try {
       downloadAsWord(html, def.filename(emp));
     } catch (e) {
@@ -164,23 +222,25 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa }:
     iframeRef.current?.contentWindow?.print();
   };
 
+  const docLabel = pkg
+    ? (PACKAGE_DOCS.find(d => d.id === docId)?.label ?? '')
+    : def.label;
+
   // Imprime o documento do pacote via paged.js: margens em todas as páginas,
   // rodapé repetido e numeração "Página X de Y". Cai para window.print() se o
-  // root ainda não estiver montado.
+  // root ainda não estiver montado. Mostra "a preparar" enquanto pagina (~1-2s).
   const handlePrintPkg = () => {
-    if (!isPkg(docId)) return;
+    if (!isPkg(docId) || printingPkg) return;
     const root = pkgWrapRef.current?.querySelector(`#${PKG_ROOT_ID[docId]}`) as HTMLElement | null;
     if (!root) { window.print(); return; }
+    setPrintingPkg(true);
     printViaPaged(root, {
       title: docLabel,
       footerLeft: office.nome || office.contabilistaResponsavel || '',
       footerRight: 'estudo360.pt',
+      onSettled: () => setPrintingPkg(false),
     });
   };
-
-  const docLabel = pkg
-    ? (PACKAGE_DOCS.find(d => d.id === docId)?.label ?? '')
-    : def.label;
 
   return (
     <div className="h-full overflow-y-auto bg-[#F5F7FA]">
@@ -216,8 +276,10 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa }:
                 <button
                   type="button"
                   onClick={() => { setEmpresaOpen(o => !o); setEmpresaQuery(''); }}
+                  onKeyDown={ev => { if (!empresaOpen && (ev.key === 'ArrowDown' || ev.key === 'Enter')) { ev.preventDefault(); setEmpresaQuery(''); setEmpresaOpen(true); } }}
                   aria-haspopup="listbox"
                   aria-expanded={empresaOpen}
+                  aria-controls="empresa-listbox"
                   className="w-full flex items-center gap-2 pl-4 pr-10 py-3 rounded-[12px] border border-slate-200 bg-white text-[14px] font-[600] text-[#0B1D2D] text-left focus:outline-none focus:border-[#0677FF] focus:ring-2 focus:ring-[#0677FF]/15 transition cursor-pointer"
                 >
                   <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
@@ -233,24 +295,32 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa }:
                         autoFocus
                         value={empresaQuery}
                         onChange={e => setEmpresaQuery(e.target.value)}
+                        onKeyDown={onComboKey}
+                        role="combobox"
+                        aria-expanded
+                        aria-controls="empresa-listbox"
+                        aria-activedescendant={empresasFiltradas[highlight] ? `empresa-opt-${highlight}` : undefined}
                         placeholder="Procurar por nome ou NIF…"
                         className="w-full bg-transparent text-[13.5px] font-[500] text-[#0B1D2D] placeholder:text-slate-400 focus:outline-none"
                       />
                     </div>
-                    <div className="max-h-[280px] overflow-y-auto py-1">
+                    <div ref={empresaListRef} id="empresa-listbox" role="listbox" aria-label="Empresas" className="max-h-[280px] overflow-y-auto py-1">
                       {empresasFiltradas.length === 0 ? (
                         <p className="px-4 py-6 text-center text-[12.5px] text-slate-400 font-[500]">Sem resultados para “{empresaQuery}”.</p>
                       ) : (
-                        empresasFiltradas.map(e => {
+                        empresasFiltradas.map((e, i) => {
                           const active = e.id === empresaId;
+                          const hl = i === highlight;
                           return (
                             <button
                               key={e.id}
+                              id={`empresa-opt-${i}`}
                               type="button"
                               role="option"
                               aria-selected={active}
                               onClick={() => { setEmpresaId(e.id); setEmpresaOpen(false); }}
-                              className={`w-full text-left flex items-center gap-2.5 px-3 py-2.5 transition-colors ${active ? 'bg-[#0677FF]/[0.06]' : 'hover:bg-slate-50'}`}
+                              onMouseEnter={() => setHighlight(i)}
+                              className={`w-full text-left flex items-center gap-2.5 px-3 py-2.5 transition-colors ${hl ? 'bg-[#0677FF]/[0.08]' : active ? 'bg-[#0677FF]/[0.04]' : ''}`}
                             >
                               <span className={`w-4 h-4 shrink-0 flex items-center justify-center ${active ? 'text-[#0677FF]' : 'text-transparent'}`}>
                                 <Check className="w-4 h-4" />
@@ -377,15 +447,15 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa }:
                 <button
                   type="button"
                   onClick={pkg ? handlePrintPkg : handlePrintWord}
-                  disabled={!emp}
+                  disabled={!emp || printingPkg}
                   className={`w-full flex items-center justify-center gap-2 px-4 rounded-[12px] font-[800] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all ${
                     pkg
                       ? 'py-3.5 text-[14px] text-white bg-[#0677FF] hover:bg-[#0560d8]'
                       : 'py-3 text-[13.5px] text-[#0677FF] bg-white border border-[#0677FF]/30 hover:bg-[#0677FF]/[0.04]'
                   }`}
                 >
-                  <Printer className="w-4.5 h-4.5" />
-                  Imprimir / Guardar PDF
+                  {printingPkg ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <Printer className="w-4.5 h-4.5" />}
+                  {printingPkg ? 'A preparar páginas…' : 'Imprimir / Guardar PDF'}
                 </button>
               </div>
               <p className="mt-2.5 text-[11.5px] text-slate-400 font-[500] text-center text-balance">

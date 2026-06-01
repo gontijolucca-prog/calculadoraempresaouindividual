@@ -11,7 +11,9 @@
  */
 // Polyfill paged.js auto-hospedado em public/ (o package bloqueia deep-imports
 // via "exports"; servir como asset estático mantém a impressão offline-safe).
-const pagedPolyfillUrl = '/paged.polyfill.js';
+// A query de versão evita que o browser sirva uma cópia antiga do cache quando
+// o polyfill for atualizado — bump ao trocar a versão do ficheiro em public/.
+const pagedPolyfillUrl = '/paged.polyfill.js?v=0.4.3';
 
 const esc = (s: string) => (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 // content das margin-boxes do paged.js é uma string CSS — escapar aspas/barras.
@@ -46,6 +48,7 @@ interface PagedOpts {
   title: string;
   footerLeft?: string;   // ex.: nome do escritório
   footerRight?: string;  // ex.: estudo360.pt
+  onSettled?: () => void; // chamado quando o diálogo de impressão é disparado (ou em erro/timeout)
 }
 
 export function printViaPaged(printRoot: HTMLElement, opts: PagedOpts): void {
@@ -111,9 +114,13 @@ export function printViaPaged(printRoot: HTMLElement, opts: PagedOpts): void {
   const tryPrint = () => {
     if (done) return;
     done = true;
-    win.focus();
-    win.print();
-    cleanup();
+    try {
+      win.focus();
+      win.print();
+    } finally {
+      opts.onSettled?.();
+      cleanup();
+    }
   };
   // paged.js dispara este evento no document quando termina.
   doc.addEventListener('pagedjs:rendered', tryPrint as EventListener);

@@ -32,6 +32,9 @@ import type { IMTState } from './IMTSimulator';
 import type { SalarioState } from './SalarioLiquidoSimulator';
 import { defaultIRSState, type IRSState } from './lib/irs';
 import type { TicketSimulatorState } from './TicketSimulator';
+import {
+  getInitialTaxState, getInitialVehicleState, getInitialTicketState, getInitialSSState,
+} from './lib/simDefaults';
 import type { ClientProfile as ClientProfileType } from './ClientProfile';
 import { ThemeProvider } from './ThemeContext';
 import { MotionProvider, PageTransition } from './AnimatedPage';
@@ -159,41 +162,9 @@ interface SSState {
   tipoRendimento: 'servicos' | 'bens'; primeiroAno: boolean;
 }
 
-// Estado inicial do simulador fiscal. Sem dados fantasma: os campos numéricos
-// começam a ZERO e só os valores derivados do perfil/SAF-T (faturação, idade,
-// tipo de atividade…) vêm preenchidos. O utilizador insere o resto.
-const getInitialTaxState = (p: ClientProfileType): TaxSimulatorState => ({
-  profSit: p.tipoEntidade === 'eni' ? 'outro' : 'tco',
-  currentInc: 0, age: p.idade || 0, isMainAct: p.tipoEntidade !== 'eni',
-  monthlyNeed: 0, isServices: p.atividadePrincipal === 'servicos',
-  b2b: true, rev: p.faturaçaoAnualPrevista || 0, isSeasonal: p.isSazonal,
-  invEquip: 0, invLic: 0, invWorks: 0, invFundo: 0,
-  fixedMo: 0, varYr: 0, accMoLda: 0, accMoEni: 0,
-  anosAtividade: p.inicioAtividade > 0 ? Math.max(0, new Date().getFullYear() - p.inicioAtividade) : 0,
-  transparenciaFiscal: p.regimeContabilidade === 'transparencia_fiscal',
-});
-
-const getInitialVehicleState = (): VehicleSimulatorState => ({
-  category: 'passageiros', engineType: 'diesel', price: 0,
-  ivaRegime: 'normal', activity: 'other', maintenanceCost: 0,
-  insuranceCost: 0, fuelCost: 0, exemptTA: false, phevCompliant: true,
-});
-
-const getInitialTicketState = (p: ClientProfileType): TicketSimulatorState => ({
-  tipoTicket: 'restaurante',
-  employees: p.nrFuncionarios || 0,
-  ticketValue: p.valorTicket || 0,
-  tipoSubsidio: 'cartao',
-  daysPerMonth: 22,
-  months: 12,
-  valorAnualPorPessoa: 0,
-  tipoVeiculo: 'passageiros',
-});
-
-const getInitialSSState = (p: ClientProfileType): SSState => ({
-  income: p.rendimentoMensalEni || 0, regime: 'simplified',
-  tipoRendimento: p.tipoRendimentoSs, primeiroAno: false,
-});
+// Estados iniciais dos simuladores (Tax/Vehicle/Ticket/SS) vivem em
+// src/lib/simDefaults.ts — partilhados com a vista "Exportar documentos" para
+// não divergirem. Os restantes (Diagnóstico/Imóveis/IMT/Salário) ficam aqui.
 
 const getInitialDiagnosticoState = (p: ClientProfileType, tax: TaxSimulatorState): DiagnosticoState => ({
   capitaisProprios: 0, ativoTotal: 0, passivoTotal: 0,
