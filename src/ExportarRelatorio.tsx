@@ -17,7 +17,7 @@ import PDFPreviewEditor from './PDFPreviewEditor';
 import Proposta from './Proposta';
 import MinutaContrato from './MinutaContrato';
 import { defaultProfile, type ClientProfile } from './ClientProfile';
-import { printViaPaged } from './lib/printPaged';
+import { printViaPaged, printHtmlViaPaged } from './lib/printPaged';
 
 /**
  * Exportar documentos — escolhe a empresa (dropdown) e o documento, pré-visualiza
@@ -217,9 +217,26 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa }:
     }
   };
 
+  // Imprime os documentos da contabilista (HTML "Word") via paged.js: margens em
+  // TODAS as páginas, rodapé repetido e numeração "Página X de Y" — coisas que o
+  // window.print() do Chrome não faz (não suporta margin-boxes do @page).
   const handlePrintWord = () => {
-    iframeRef.current?.contentWindow?.focus();
-    iframeRef.current?.contentWindow?.print();
+    if (!emp || pkg || printingPkg) return;
+    const doc = iframeRef.current?.contentDocument;
+    const html = doc ? serializeEditedDoc(doc) : docHtml;
+    if (!html || !html.trim()) {
+      // Folha ainda a renderizar — cai para o print nativo do iframe.
+      iframeRef.current?.contentWindow?.focus();
+      iframeRef.current?.contentWindow?.print();
+      return;
+    }
+    setPrintingPkg(true);
+    printHtmlViaPaged(html, {
+      title: docLabel,
+      footerLeft: office.nome || office.contabilistaResponsavel || '',
+      footerRight: 'estudo360.pt',
+      onSettled: () => setPrintingPkg(false),
+    });
   };
 
   const docLabel = pkg

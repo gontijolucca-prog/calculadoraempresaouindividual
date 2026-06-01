@@ -44,6 +44,56 @@ function stripAtMedia(css: string, condFragment: string): string {
   }
 }
 
+/** Remove a regra `@page { ... }` (sem condição) equilibrando chavetas. O paged.js
+ *  precisa de ser o dono do @page para aplicar margens + margin-boxes; um @page do
+ *  próprio documento entraria em conflito (ex.: o `margin: 1.8cm 1.4cm` do Word-HTML). */
+function stripAtPage(css: string): string {
+  let out = css;
+  for (let guard = 0; guard < 20; guard++) {
+    const m = /@page[^{]*\{/.exec(out);
+    if (!m) return out;
+    let i = m.index + m[0].length, depth = 1;
+    while (i < out.length && depth > 0) {
+      if (out[i] === '{') depth++;
+      else if (out[i] === '}') depth--;
+      i++;
+    }
+    out = out.slice(0, m.index) + out.slice(i);
+  }
+  return out;
+}
+
+/**
+ * CSS de paginação partilhado: regras de quebra (orphans/widows, break-inside,
+ * cabeçalho de tabela repetido) + bloco @page com margens A4 e margin-boxes
+ * (rodapé esquerdo/direito + "Página X de Y"). Estas margin-boxes são o que o
+ * Chrome NÃO suporta nativamente — daí o paged.js.
+ */
+function buildPageBreakCss(footerLeft: string, footerRight: string): string {
+  return `
+    /* Regras de paginação (CSS Paged Media). */
+    p, blockquote { orphans: 3; widows: 3; }
+    tr, img, figure, .pp-keep, .mc-keep, .sigs, ul, li { break-inside: avoid; page-break-inside: avoid; }
+    /* Não deixar um título/secção/total órfão no fundo da página. */
+    h1, h2, h3, h4, .sec, .title { break-after: avoid; page-break-after: avoid; }
+    .tot { break-before: avoid; page-break-before: avoid; }
+    /* Cabeçalho/rodapé de tabela repetem em cada página. */
+    thead { display: table-header-group; }
+    tfoot { display: table-footer-group; }
+    table { break-inside: auto; }
+    @page {
+      size: A4; margin: 18mm 16mm 20mm 16mm;
+      @bottom-center {
+        content: "Página " counter(page) " de " counter(pages);
+        font: 9pt Georgia, 'Times New Roman', serif; color: #64748B;
+      }
+      @bottom-left  { content: "${cssStr(footerLeft)}";  font: 8pt Georgia, serif; color: #94A3B8; }
+      @bottom-right { content: "${cssStr(footerRight)}"; font: 8pt Georgia, serif; color: #94A3B8; }
+    }
+    /* Primeira página sem o número repetido em cima do título (estética). */
+  `;
+}
+
 interface PagedOpts {
   title: string;
   footerLeft?: string;   // ex.: nome do escritório
@@ -79,20 +129,54 @@ export function printViaPaged(printRoot: HTMLElement, opts: PagedOpts): void {
     .pdf-page:last-child { break-after: auto; }
     .pp-band, .mc-band { margin-left: 0 !important; margin-right: 0 !important; }
     [contenteditable] { outline: none !important; }
-    /* Nunca partir a meio de blocos de texto/tabelas. */
-    p, li, tr, .pp-keep, .mc-keep { break-inside: avoid; page-break-inside: avoid; }
-    h1, h2, h3, .sec { break-after: avoid; page-break-after: avoid; }
-    @page {
-      size: A4; margin: 16mm 16mm 18mm 16mm;
-      @bottom-center {
-        content: "Página " counter(page) " de " counter(pages);
-        font: 9pt Georgia, 'Times New Roman', serif; color: #64748B;
-      }
-      @bottom-left  { content: "${footerLeft}";  font: 8pt Georgia, serif; color: #94A3B8; }
-      @bottom-right { content: "${footerRight}"; font: 8pt Georgia, serif; color: #94A3B8; }
-    }
-  `;
+  ` + buildPageBreakCss(footerLeft, footerRight);
 
+  const fullDoc = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(opts.title)}</title>
+<style>${css}\n${pageCss}</style>
+</head><body>${clone.outerHTML}
+<script src="${pagedPolyfillUrl}"></script>
+</body></html>`;
+  runPagedIframe(fullDoc, opts.onSettled);
+}
+
+/**
+ * Variante para os documentos da contabilista (Demonstrações & documentos), que
+ * são HTML "Word" (string) renderizado num iframe — não um componente React.
+ * Reaproveita o motor paged.js para dar margens em TODAS as páginas, rodapé
+ * repetido e numeração "Página X de Y", que o `window.print()` do Chrome não faz.
+ *
+ * `fullHtml` é o documento já editado/serializado (sem `contenteditable`). Tiramos
+ * o @page e o @media screen do próprio documento para o paged.js controlar a página.
+ */
+export function printHtmlViaPaged(fullHtml: string, opts: PagedOpts): void {
+  const footerLeft = opts.footerLeft || '';
+  const footerRight = opts.footerRight || 'estudo360.pt';
+
+  let styleCss = '';
+  let bodyHtml = fullHtml;
+  try {
+    const parsed = new DOMParser().parseFromString(fullHtml, 'text/html');
+    parsed.querySelectorAll('style').forEach(s => { styleCss += (s.textContent || '') + '\n'; });
+    bodyHtml = parsed.body ? parsed.body.innerHTML : fullHtml;
+  } catch {
+    /* fallback: usa o html cru */
+  }
+
+  styleCss = stripAtPage(styleCss);
+  styleCss = stripAtMedia(styleCss, 'screen');
+
+  const pageCss = styleCss + '\n' + buildPageBreakCss(footerLeft, footerRight);
+
+  const fullDoc = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(opts.title)}</title>
+<style>${pageCss}</style>
+</head><body>${bodyHtml}
+<script src="${pagedPolyfillUrl}"></script>
+</body></html>`;
+  runPagedIframe(fullDoc, opts.onSettled);
+}
+
+/** Cria um iframe isolado, escreve o documento, espera o paged.js paginar e imprime. */
+function runPagedIframe(fullDoc: string, onSettled?: () => void): void {
   const iframe = document.createElement('iframe');
   iframe.setAttribute('aria-hidden', 'true');
   iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:210mm;height:297mm;border:0;opacity:0;pointer-events:none;z-index:-1;';
@@ -100,11 +184,7 @@ export function printViaPaged(printRoot: HTMLElement, opts: PagedOpts): void {
 
   const doc = iframe.contentDocument!;
   doc.open();
-  doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(opts.title)}</title>
-<style>${css}\n${pageCss}</style>
-</head><body>${clone.outerHTML}
-<script src="${pagedPolyfillUrl}"></script>
-</body></html>`);
+  doc.write(fullDoc);
   doc.close();
 
   // Espera o paged.js terminar a paginação (aparecem .pagedjs_page) e imprime.
@@ -118,7 +198,7 @@ export function printViaPaged(printRoot: HTMLElement, opts: PagedOpts): void {
       win.focus();
       win.print();
     } finally {
-      opts.onSettled?.();
+      onSettled?.();
       cleanup();
     }
   };
