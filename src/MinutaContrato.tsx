@@ -80,9 +80,12 @@ export default function MinutaContrato({
       <style>{`
         #${printRootId} { font-family: Georgia, 'Times New Roman', Times, serif; }
         #${printRootId} .mc-page { width: 210mm; min-height: 297mm; box-sizing: border-box; padding: 22mm 24mm; margin: 0 auto; background: white; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
-        #${printRootId} h1 { font-size: 18pt; text-align: center; letter-spacing: 1px; margin: 0 0 16px 0; color: ${cor}; }
-        #${printRootId} h2 { font-size: 11pt; text-align: center; margin: 22px 0 6px 0; letter-spacing: 1.5px; text-transform: uppercase; color: #0F172A; }
+        #${printRootId} .mc-kicker { text-align: center; font-family: Arial, Helvetica, sans-serif; font-size: 8pt; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; color: ${cor}; margin: 4px 0 6px 0; }
+        #${printRootId} h1 { font-size: 19pt; text-align: center; letter-spacing: 0.3px; margin: 0 auto 8px auto; color: #0B1D2D; font-weight: 700; line-height: 1.2; }
+        #${printRootId} .mc-rule { width: 52px; height: 2.5px; background: ${cor}; border-radius: 2px; margin: 0 auto 12px auto; }
+        #${printRootId} h2 { font-size: 10.5pt; text-align: center; margin: 24px 0 2px 0; letter-spacing: 1.2px; text-transform: uppercase; color: ${cor}; font-family: Arial, Helvetica, sans-serif; font-weight: 800; }
         #${printRootId} .mc-sub { font-size: 9pt; text-align: center; color: #64748B; margin: 0 0 12px 0; font-style: italic; }
+        #${printRootId} h2 + .mc-sub { margin-top: 1px; }
         #${printRootId} p { font-size: 11pt; line-height: 1.55; text-align: justify; margin: 6px 0; }
         #${printRootId} ol { padding-left: 22px; }
         #${printRootId} ol li { font-size: 11pt; line-height: 1.55; text-align: justify; margin: 5px 0; }
@@ -123,7 +126,9 @@ export default function MinutaContrato({
       <div className="mc-page" contentEditable suppressContentEditableWarning>
         <div className="mc-band" />
 
+        <div className="mc-kicker">{office.nome || 'Contabilidade Certificada'}</div>
         <h1>Minuta de Contrato de Prestação de Serviços</h1>
+        <div className="mc-rule" />
         <p className="mc-sub">Adaptada da minuta-modelo publicada pela Ordem dos Contabilistas Certificados</p>
 
         <p style={{ marginTop: 16 }}><strong>ENTRE:</strong></p>

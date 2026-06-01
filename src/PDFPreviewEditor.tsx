@@ -140,9 +140,16 @@ const DR2 = ({ l1, v1, l2, v2 }: { l1: string; v1: string; l2: string; v2: strin
   </div>
 );
 
+// Cabeçalho de secção: tab de acento curto + rótulo escuro sobre branco, com
+// hairline em baixo. Antes era uma barra cheia saturada por secção (vermelho,
+// castanho, laranja, navy, preto) — um arco-íris que datava o relatório. Agora
+// a cor entra só como um tabzinho de acento; o estilo é uniforme em todo o doc.
 const SecHead = ({ title, bg }: { title: string; bg: string }) => (
-  <div style={{ background: bg, color: 'white', padding: '4px 8px', fontSize: '8pt', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: 10 }}>
-    <span contentEditable suppressContentEditableWarning style={{ outline: 'none', cursor: 'text' }}>{title}</span>
+  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 11, marginBottom: 4, paddingBottom: 3, borderBottom: '1px solid #E2E8F0' }}>
+    <span style={{ width: 16, height: 3, borderRadius: 2, background: bg, flexShrink: 0 }} />
+    <span contentEditable suppressContentEditableWarning
+      style={{ outline: 'none', cursor: 'text', fontSize: '8.5pt', fontWeight: 800, letterSpacing: '0.9px', textTransform: 'uppercase', color: '#0F172A' }}
+    >{title}</span>
   </div>
 );
 
@@ -197,9 +204,11 @@ const pageStyle: React.CSSProperties = {
 // Semântica de cor consistente em todo o relatório: a MELHOR opção é sempre
 // VERDE e a PIOR sempre VERMELHA — independentemente de ser ENI ou Sociedade.
 const GREEN = { bg: '#ecfdf5', accent: '#059669', dark: '#065f46' };
-const RED = { bg: '#fef2f2', accent: '#dc2626', dark: '#991b1b' };
-/** Devolve a paleta (verde/vermelho) para um regime conforme seja ou não o vencedor. */
-const regimePalette = (isWinner: boolean) => (isWinner ? GREEN : RED);
+// Perdedor em slate neutro (não vermelho saturado): a recomendação destaca-se a
+// verde, a alternativa fica calma — menos alarmista, mais profissional.
+const SLATE = { bg: '#F1F5F9', accent: '#475569', dark: '#334155' };
+/** Devolve a paleta (verde vencedor / slate alternativa) para um regime. */
+const regimePalette = (isWinner: boolean) => (isWinner ? GREEN : SLATE);
 
 export default function PDFPreviewEditor({ profile, taxState, vehicleState, ticketState, ssState, onClose, embedded = false, office }: Props) {
   const brand = brandFromOffice(office);
@@ -357,6 +366,12 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
   // ─── SS computations ──────────────────────────────────────────────────────
   const ssR = ssState && ssState.income > 0 ? calcSelfSSContribution(ssState.income, ssState.tipoRendimento, ssState.primeiroAno) : null;
 
+  // A página de Benefícios/SS só faz sentido se houver RESULTADOS calculados —
+  // gatear pelo `ticketState`/`ssState` cru (que têm sempre um valor inicial)
+  // imprimia uma página com só cabeçalho+rodapé = página em branco. Gatear pelo
+  // resultado (`tickR`/`ssR`) evita a folha vazia.
+  const hasBenef = !!(tickR || ssR);
+
   const legalItems = [
     ['IRS — Escalões 2026', 'CIRS Art. 68º — Taxas de 13% a 48% (OE 2026)'],
     ['IRS Jovem', 'CIRS Art. 12º-B — Isenção progressiva ≤35 anos nos primeiros 5 anos'],
@@ -491,13 +506,16 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
             <PageHeader title="Enquadramento Fiscal — ENI vs Sociedade" pageNum={2} brand={brand} />
             <div style={{ padding: '5mm 14mm 8mm 14mm' }}>
 
-              {/* Comparison table header — coluna vencedora a verde, a outra a vermelho */}
-              <div style={{ display: 'flex', marginBottom: 0 }}>
-                <div style={{ flex: 1, background: regimePalette(taxR.winner === 'ENI').accent, color: 'white', padding: '6px 8px', fontWeight: 700, fontSize: '9pt', marginRight: 2 }}>
-                  ENI (Recibos Verdes)
+              {/* Comparison table header — vencedora a verde, a outra em slate neutro
+                  (em vez de vermelho saturado, que dava um ar alarmista). */}
+              <div style={{ display: 'flex', marginBottom: 0, gap: 2 }}>
+                <div style={{ flex: 1, background: taxR.winner === 'ENI' ? GREEN.accent : '#64748B', color: 'white', padding: '7px 10px', fontWeight: 700, fontSize: '9pt', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>ENI (Recibos Verdes)</span>
+                  {taxR.winner === 'ENI' && <span style={{ fontSize: '7pt', fontWeight: 800, letterSpacing: '0.5px' }}>RECOMENDADO</span>}
                 </div>
-                <div style={{ flex: 1, background: regimePalette(taxR.winner === 'LDA').accent, color: 'white', padding: '6px 8px', fontWeight: 700, fontSize: '9pt' }}>
-                  Sociedade (Lda / Unipessoal)
+                <div style={{ flex: 1, background: taxR.winner === 'LDA' ? GREEN.accent : '#64748B', color: 'white', padding: '7px 10px', fontWeight: 700, fontSize: '9pt', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>Sociedade (Lda / Unipessoal)</span>
+                  {taxR.winner === 'LDA' && <span style={{ fontSize: '7pt', fontWeight: 800, letterSpacing: '0.5px' }}>RECOMENDADO</span>}
                 </div>
               </div>
 
@@ -637,7 +655,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
         )}
 
         {/* ════ PÁGINA 4 — BENEFÍCIOS E SS ════ */}
-        {(ticketState || ssState) && (
+        {hasBenef && (
           <div className="pdf-page" style={pageStyle}>
             <PageHeader title="Benefícios Laborais e Segurança Social" pageNum={vehicleState ? 4 : 3} brand={brand} />
             <div style={{ padding: '5mm 14mm 8mm 14mm' }}>
@@ -686,7 +704,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
 
         {/* ════ ÚLTIMA PÁGINA — NOTAS LEGAIS ════ */}
         <div className="pdf-page" style={{ ...pageStyle, pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
-          <PageHeader title="Base Legal e Notas" pageNum={[taxState, vehicleState, ticketState || ssState].filter(Boolean).length + 2} brand={brand} />
+          <PageHeader title="Base Legal e Notas" pageNum={[taxState, vehicleState, hasBenef].filter(Boolean).length + 2} brand={brand} />
           <div style={{ padding: '5mm 14mm 8mm 14mm' }}>
             <SecHead title={`Legislação de Referência — ${brand.name} · Simuladores 2026`} bg={brand.color} />
             <div style={{ background: '#F5F7FA' }}>

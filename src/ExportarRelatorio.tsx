@@ -484,9 +484,20 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa }:
 
             {/* ── Pré-visualização editável ── */}
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5 mb-2 text-[11px] font-[800] uppercase tracking-[0.6px] text-slate-400 no-print">
-                <Pencil className="w-3.5 h-3.5" />
-                3 · {docLabel} — editável
+              <div className="flex items-center justify-between gap-3 mb-2 no-print">
+                <div className="flex items-center gap-1.5 text-[11px] font-[800] uppercase tracking-[0.6px] text-slate-400">
+                  <Pencil className="w-3.5 h-3.5" />
+                  3 · {docLabel} — editável
+                </div>
+                <button
+                  type="button"
+                  onClick={pkg ? handlePrintPkg : handlePrintWord}
+                  disabled={!emp || printingPkg}
+                  className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[12.5px] font-[800] text-white bg-[#0677FF] hover:bg-[#0560d8] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-[0_2px_10px_-4px_rgba(6,119,255,0.6)]"
+                >
+                  {printingPkg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+                  {printingPkg ? 'A preparar…' : 'Imprimir / PDF'}
+                </button>
               </div>
 
               {pkg ? (
