@@ -15,33 +15,49 @@
 // o polyfill for atualizado — bump ao trocar a versão do ficheiro em public/.
 const pagedPolyfillUrl = '/paged.polyfill.js?v=0.4.3';
 
+// Carrega a Montserrat (fonte do site) no iframe de impressão, para o PDF condizer
+// com estudo360.pt. Sem isto o iframe cai para a fonte de sistema. CSP permite.
+const fontLink = '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap">';
+
 const esc = (s: string) => (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 // content das margin-boxes do paged.js é uma string CSS — escapar aspas/barras.
 const cssStr = (s: string) => (s ?? '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
-/** Remove um bloco @media <cond> { ... } equilibrando chavetas (limpa print/zoom). */
+/**
+ * Remove TODOS os blocos `@media <…cond…> { … }` cuja condição (o texto entre
+ * `@media` e o primeiro `{`) contém `condFragment`, equilibrando chavetas — lida
+ * com regras aninhadas (ex.: um `@page` dentro do `@media print`).
+ *
+ * A versão anterior tinha um bug: quando o fragmento aparecia ANTES do primeiro
+ * `{` (o caso normal `@media print {`), a condição saltava a remoção e o bloco
+ * ficava. Isso deixava o `@media print { @page { margin:0 } body * { visibility:
+ * hidden } }` das minutas/propostas a contaminar a impressão paged.js — sem
+ * margens, sem numeração e com conteúdo escondido.
+ */
 function stripAtMedia(css: string, condFragment: string): string {
   let out = css;
-  let guard = 0;
-  for (;;) {
-    const at = out.indexOf('@media');
-    const idx = out.indexOf(condFragment, at);
-    if (at === -1 || idx === -1 || idx > out.indexOf('{', at)) {
-      // procurar a próxima ocorrência cuja condição contém o fragmento
-      const re = new RegExp('@media[^{]*' + condFragment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^{]*\\{');
-      const m = re.exec(out);
-      if (!m) return out;
-      const start = m.index;
-      let i = start + m[0].length, depth = 1;
-      while (i < out.length && depth > 0) {
-        if (out[i] === '{') depth++;
-        else if (out[i] === '}') depth--;
-        i++;
-      }
-      out = out.slice(0, start) + out.slice(i);
+  for (let guard = 0; guard < 50; guard++) {
+    // localiza um @media cuja "cabeça" (até ao primeiro `{`) contenha o fragmento
+    let found = -1, braceStart = -1, from = 0;
+    for (;;) {
+      const at = out.indexOf('@media', from);
+      if (at === -1) break;
+      const brace = out.indexOf('{', at);
+      if (brace === -1) break;
+      if (out.slice(at, brace).includes(condFragment)) { found = at; braceStart = brace; break; }
+      from = at + 6;
     }
-    if (++guard > 20) return out;
+    if (found === -1) return out;
+    // remove do `@media` até à chaveta de fecho correspondente (balanceada)
+    let i = braceStart + 1, depth = 1;
+    while (i < out.length && depth > 0) {
+      if (out[i] === '{') depth++;
+      else if (out[i] === '}') depth--;
+      i++;
+    }
+    out = out.slice(0, found) + out.slice(i);
   }
+  return out;
 }
 
 /** Remove a regra `@page { ... }` (sem condição) equilibrando chavetas. O paged.js
@@ -111,9 +127,11 @@ export function printViaPaged(printRoot: HTMLElement, opts: PagedOpts): void {
   let css = '';
   clone.querySelectorAll('style').forEach(s => { css += (s.textContent || '') + '\n'; s.remove(); });
   css = stripAtMedia(css, 'print');
-  css = stripAtMedia(css, 'max-width: 820px');
-  css = stripAtMedia(css, 'max-width: 480px');
-  css = stripAtMedia(css, 'max-width: 380px');
+  css = stripAtMedia(css, 'screen');
+  css = stripAtMedia(css, 'max-width');
+  // O paged.js tem de ser o ÚNICO dono do @page (margens + margin-boxes). Tira
+  // qualquer @page que tenha sobrado do componente (ex.: `@page{margin:0}`).
+  css = stripAtPage(css);
 
   const footerLeft = cssStr(opts.footerLeft || '');
   const footerRight = cssStr(opts.footerRight || 'estudo360.pt');
@@ -131,7 +149,7 @@ export function printViaPaged(printRoot: HTMLElement, opts: PagedOpts): void {
     [contenteditable] { outline: none !important; }
   ` + buildPageBreakCss(footerLeft, footerRight);
 
-  const fullDoc = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(opts.title)}</title>
+  const fullDoc = `<!doctype html><html><head><meta charset="utf-8">${fontLink}<title>${esc(opts.title)}</title>
 <style>${css}\n${pageCss}</style>
 </head><body>${clone.outerHTML}
 <script src="${pagedPolyfillUrl}"></script>
@@ -167,7 +185,7 @@ export function printHtmlViaPaged(fullHtml: string, opts: PagedOpts): void {
 
   const pageCss = styleCss + '\n' + buildPageBreakCss(footerLeft, footerRight);
 
-  const fullDoc = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(opts.title)}</title>
+  const fullDoc = `<!doctype html><html><head><meta charset="utf-8">${fontLink}<title>${esc(opts.title)}</title>
 <style>${pageCss}</style>
 </head><body>${bodyHtml}
 <script src="${pagedPolyfillUrl}"></script>

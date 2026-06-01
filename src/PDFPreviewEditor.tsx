@@ -154,7 +154,7 @@ const SecHead = ({ title, bg }: { title: string; bg: string }) => (
 );
 
 const PageHeader = ({ title, pageNum, brand }: { title: string; pageNum: number; brand: Brand }) => (
-  <div style={{ background: brand.color, color: 'white', padding: '4px 14mm', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '8pt' }}>
+  <div style={{ background: `linear-gradient(120deg, #0B1D2D 0%, ${brand.color} 100%)`, color: 'white', padding: '5px 14mm', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '8pt', borderBottom: '2px solid #00C2FF' }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <div style={{ background: 'white', borderRadius: 3, padding: '2px 3px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 18 }}>
         <BrandLogo brand={brand} width={18} height={14} />
@@ -171,7 +171,7 @@ const PageHeader = ({ title, pageNum, brand }: { title: string; pageNum: number;
 );
 
 const PageFooter = ({ brand }: { brand: Brand }) => (
-  <div style={{ background: brand.color, color: 'white', padding: '4px 14mm', fontSize: '6.5pt', textAlign: 'center', marginTop: 14 }}>
+  <div style={{ background: '#0B1D2D', color: 'white', padding: '5px 14mm', fontSize: '6.5pt', textAlign: 'center', marginTop: 14, borderTop: '2px solid #00C2FF' }}>
     <span contentEditable suppressContentEditableWarning
       style={{ outline: 'none', cursor: 'text' }}
     >Dados atualizados conforme OE 2026 • Este relatório é uma estimativa. Consulte o seu contabilista certificado.</span>
@@ -197,9 +197,14 @@ const pageStyle: React.CSSProperties = {
   width: '210mm', background: 'white',
   boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
   margin: '0 auto 24px auto', display: 'flex', flexDirection: 'column',
-  fontFamily: 'Arial, Helvetica, sans-serif', boxSizing: 'border-box',
+  fontFamily: "'Montserrat', 'Helvetica Neue', Helvetica, sans-serif", boxSizing: 'border-box',
+  color: '#0B1D2D',
   pageBreakAfter: 'always', breakAfter: 'page',
 };
+
+// Paleta da marca do site (estudo360.pt) — navy / azul / ciano.
+const NAVY = '#0B1D2D';
+const CYAN = '#00C2FF';
 
 // Semântica de cor consistente em todo o relatório: a MELHOR opção é sempre
 // VERDE e a PIOR sempre VERMELHA — independentemente de ser ENI ou Sociedade.
@@ -438,8 +443,8 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
         {/* ════ PÁGINA 1 — CAPA + DADOS CLIENTE ════ */}
         <div className="pdf-page" style={pageStyle}>
 
-          {/* Cover header */}
-          <div style={{ background: brand.color, color: 'white', padding: '14mm 14mm 10mm 14mm', display: 'flex', alignItems: 'center', gap: '10mm' }}>
+          {/* Cover header — gradiente navy→azul com fio ciano (linguagem do site) */}
+          <div style={{ background: `linear-gradient(120deg, ${NAVY} 0%, ${brand.color} 100%)`, color: 'white', padding: '14mm 14mm 10mm 14mm', display: 'flex', alignItems: 'center', gap: '10mm', borderBottom: `3px solid ${CYAN}` }}>
             <div style={{ background: 'white', borderRadius: 5, padding: '4px 4px 2px 4px', flexShrink: 0 }}>
               <BrandLogo brand={brand} width={44} height={36} />
             </div>
