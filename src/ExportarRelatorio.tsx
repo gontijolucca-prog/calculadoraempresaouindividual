@@ -234,7 +234,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa }:
     printHtmlViaPaged(html, {
       title: docLabel,
       footerLeft: office.nome || office.contabilistaResponsavel || '',
-      footerRight: 'estudo360.pt',
+      footerRight: '',
       onSettled: () => setPrintingPkg(false),
     });
   };
@@ -254,7 +254,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa }:
     printViaPaged(root, {
       title: docLabel,
       footerLeft: office.nome || office.contabilistaResponsavel || '',
-      footerRight: 'estudo360.pt',
+      footerRight: '',
       onSettled: () => setPrintingPkg(false),
     });
   };

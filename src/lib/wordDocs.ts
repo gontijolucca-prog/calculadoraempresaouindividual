@@ -176,7 +176,8 @@ ${emEuros ? '<div class="em-euros">(em euros)</div>' : ''}`;
 }
 
 function rodape(): string {
-  return `<div class="ftr">Gerado por Estudo 360 &middot; estudo360.pt</div>`;
+  // Documentos entregues pela contabilista ao cliente — não levam marca do site.
+  return '';
 }
 
 function assinaturas(): string {

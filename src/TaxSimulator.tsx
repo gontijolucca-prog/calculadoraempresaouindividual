@@ -316,18 +316,20 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
     { id: 'folha4', label: 'Controlo de Custos', description: 'Custos fixos, variáveis e contabilidade.', render: () => folha4 },
   ];
 
+  // Verde = regime recomendado (bom). O vencedor é SEMPRE verde, seja ENI ou
+  // Sociedade — verde significa "melhor opção", nunca depende da identidade do
+  // regime. (Antes a Sociedade vencedora saía a vermelho, o que sugeria "mau".)
   const winnerBanner = (
-    <section className={cn("p-6 rounded-[20px] border-2 flex flex-col md:flex-row items-start gap-4 shadow-sm",
-      winner === 'LDA' ? "bg-[#FDF2F2] border-[#F8B4B4]" : "bg-emerald-50 border-emerald-200")}>
-      <div className={cn("p-3 rounded-[14px]", winner === 'LDA' ? "bg-[#FDE8E8] text-[#0677FF]" : "bg-emerald-100 text-emerald-600")}>
+    <section className="p-6 rounded-[20px] border-2 flex flex-col md:flex-row items-start gap-4 shadow-sm bg-emerald-50 border-emerald-200">
+      <div className="p-3 rounded-[14px] bg-emerald-100 text-emerald-600">
         <CheckCircle2 className="w-7 h-7"/>
       </div>
       <div className="flex-1">
         <div className="text-[11px] font-[800] uppercase tracking-[1px] mb-1 opacity-70">Parecer & Conclusão</div>
-        <h3 className={cn("text-[20px] font-[800] tracking-tight mb-2", winner === 'LDA' ? "text-[#0677FF]" : "text-emerald-900")}>
+        <h3 className="text-[20px] font-[800] tracking-tight mb-2 text-emerald-900">
           Regime Ideal: {winner === 'LDA' ? 'Sociedade Unipessoal / Lda' : 'Trabalhador Independente (ENI)'}
         </h3>
-        <p className={cn("text-[14px] leading-relaxed font-[500]", winner === 'LDA' ? "text-[#5A1313]" : "text-emerald-800")}>
+        <p className="text-[14px] leading-relaxed font-[500] text-emerald-800">
           {ptEur(rev)} faturados → <strong>{winner === 'LDA' ? 'Empresa' : 'Atividade Pessoal'}</strong> maximiza {ptEur(diff)} adicionais/ano.
           {profile.beneficioJovem && profile.idade <= 35 && results.irsJovemDeduction > 0 &&
             ` IRS Jovem reduz rendimento coletável em ${ptEur(results.irsJovemDeduction)}.`
@@ -393,10 +395,10 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
   );
 
   const ldaCard = (
-    <div className={cn("bg-white border-2 rounded-[20px] p-6 shadow-sm flex flex-col", winner === 'LDA' ? "border-[#0677FF] ring-4 ring-[#0677FF]/10" : "border-[#E2E8F0]")}>
+    <div className={cn("bg-white border-2 rounded-[20px] p-6 shadow-sm flex flex-col", winner === 'LDA' ? "border-emerald-500 ring-4 ring-emerald-50" : "border-[#E2E8F0]")}>
       <h4 className="text-[18px] font-[800] text-[#0F172A] mb-2 flex items-center justify-between">
         Sociedade {results.transparenciaFiscal ? '(Transp. Fiscal)' : '(Lda / Unipessoal)'}
-        {winner === 'LDA' && <span className="bg-[#0677FF] text-white text-[10px] font-[800] uppercase px-3 py-1 rounded-full tracking-widest">Melhor Opção</span>}
+        {winner === 'LDA' && <span className="bg-emerald-500 text-white text-[10px] font-[800] uppercase px-3 py-1 rounded-full tracking-widest">Melhor Opção</span>}
       </h4>
       {results.transparenciaFiscal && (
         <div className="mb-4 flex items-center gap-2 bg-purple-50 border border-purple-200 rounded-[8px] px-3 py-2">
@@ -585,8 +587,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
       <div className="h-full overflow-y-auto bg-[#F0F4F8]">
         {/* Sticky summary bar */}
         <div className="sticky top-0 z-20 bg-[#111827] text-white px-6 py-3 flex items-center gap-6 shadow-lg">
-          <span className={cn("text-[11px] font-[900] uppercase tracking-[2px] px-3 py-1 rounded-full",
-            winner === 'LDA' ? "bg-[#0677FF]" : "bg-emerald-600")}>{winner}</span>
+          <span className="text-[11px] font-[900] uppercase tracking-[2px] px-3 py-1 rounded-full bg-emerald-600">{winner}</span>
           <div className="flex gap-6 text-[12px]">
             <span className="text-slate-400">ENI: <strong className="text-white">{ptEur(results.eni.net)}</strong></span>
             <span className="text-slate-400">LDA: <strong className="text-white">{ptEur(results.lda.net)}</strong></span>
@@ -624,8 +625,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           {/* Header row */}
           <div className="flex items-center gap-4 mb-5">
             <h1 className="text-[22px] font-[800] text-[#064E3B] tracking-tight">Enquadramento Fiscal 2026</h1>
-            <div className={cn("ml-auto px-4 py-1.5 rounded-full text-[12px] font-[800] uppercase tracking-wider",
-              winner === 'LDA' ? "bg-[#0677FF] text-white" : "bg-emerald-600 text-white")}>
+            <div className="ml-auto px-4 py-1.5 rounded-full text-[12px] font-[800] uppercase tracking-wider bg-emerald-600 text-white">
               {winner === 'LDA' ? 'Sociedade vence' : 'ENI vence'} por {ptEur(diff)}
             </div>
             <button onClick={resetAll} className="p-2 rounded-[8px] text-slate-500 hover:text-slate-900 hover:bg-white transition-colors"><RefreshCw size={16}/></button>
@@ -638,7 +638,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
             <div className="bg-white rounded-[20px] border border-emerald-100 p-5 shadow-sm">{folha2}</div>
 
             {/* Winner summary card */}
-            <div className={cn("rounded-[20px] p-5 shadow-sm", winner === 'LDA' ? "bg-[#0677FF] text-white" : "bg-emerald-600 text-white")}>
+            <div className="rounded-[20px] p-5 shadow-sm bg-emerald-600 text-white">
               <div className="text-[11px] font-[800] uppercase tracking-[2px] opacity-80 mb-2">Regime Ideal</div>
               <div className="text-[28px] font-[900] leading-none mb-3">{winner === 'LDA' ? 'Sociedade' : 'ENI'}</div>
               <div className="space-y-2 opacity-90">
@@ -707,7 +707,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           <div className="bg-[#0F172A] rounded-[16px] p-4 grid grid-cols-3 gap-3 text-white">
             <div className="text-center">
               <div className="text-[10px] uppercase font-[700] opacity-60 mb-1">Regime</div>
-              <div className={cn("text-[14px] font-[900] px-2 py-0.5 rounded-full inline-block", winner === 'LDA' ? "bg-[#0677FF]" : "bg-emerald-500")}>{winner}</div>
+              <div className="text-[14px] font-[900] px-2 py-0.5 rounded-full inline-block bg-emerald-500">{winner}</div>
             </div>
             <div className="text-center">
               <div className="text-[10px] uppercase font-[700] opacity-60 mb-1">ENI Net</div>

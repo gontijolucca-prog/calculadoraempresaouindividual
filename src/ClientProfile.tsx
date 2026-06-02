@@ -267,6 +267,15 @@ export default function ClientProfile({
     return {};
   };
 
+  // Acima de €200.000 de faturação o ENI deixa de poder usar o regime
+  // simplificado (recibos verdes) — passa obrigatoriamente a contabilidade
+  // organizada (Art. 28.º/31.º CIRS). NÃO obriga a constituir sociedade: o ENI
+  // continua legal a qualquer nível de faturação, só muda de regime contabilístico.
+  const regimeForFat = (tipoEntidade: string, regime: string, fat: number): Partial<ClientProfile> =>
+    tipoEntidade === 'eni' && regime === 'simplificado' && fat > 200000
+      ? { regimeContabilidade: 'organizada' }
+      : {};
+
   const currentYear = new Date().getFullYear();
   const { flowMode, exitFlow } = useFlowMode();
 
@@ -675,7 +684,7 @@ export default function ClientProfile({
         <div className="grid grid-cols-2 gap-x-4 gap-y-4">
           <div>
             <label className={labelClass}>Tipo de Entidade <Tip>A forma jurídica do negócio: ENI é Empresário em Nome Individual (sem empresa criada), Lda. é uma sociedade de responsabilidade limitada, SA é uma sociedade anónima.</Tip></label>
-            <select value={st.tipoEntidade} onChange={e => setSt({ tipoEntidade: e.target.value })} className={inputClass}>
+            <select value={st.tipoEntidade} onChange={e => setSt({ tipoEntidade: e.target.value, ...regimeForFat(e.target.value, st.regimeContabilidade, st.faturaçaoAnualPrevista) })} className={inputClass}>
               <option value="eni">ENI (Recibos Verdes)</option>
               <option value="lda">Lda (Sociedade)</option>
               <option value="unipessoal">Unipessoal Lda</option>
@@ -689,7 +698,7 @@ export default function ClientProfile({
           </div>
           <div>
             <label className={labelClass}>Faturação Anual Prevista <Tip>O total de vendas/serviços que espera faturar num ano. Base para escolher o regime de IVA e calcular impostos.</Tip></label>
-            <input type="number" value={st.faturaçaoAnualPrevista === 0 ? '' : st.faturaçaoAnualPrevista} onChange={e => { const fat = Number(e.target.value) || 0; setSt({ faturaçaoAnualPrevista: fat, ...ivaForFat(st.regimeIva, fat) }); }} className={inputClass} />
+            <input type="number" value={st.faturaçaoAnualPrevista === 0 ? '' : st.faturaçaoAnualPrevista} onChange={e => { const fat = Number(e.target.value) || 0; setSt({ faturaçaoAnualPrevista: fat, ...ivaForFat(st.regimeIva, fat), ...regimeForFat(st.tipoEntidade, st.regimeContabilidade, fat) }); }} className={inputClass} />
           </div>
           <div>
             <label className={labelClass}>Nr. Funcionários <Tip>Quantas pessoas trabalham na empresa com contrato de trabalho. Afeta os custos de Segurança Social patronal.</Tip></label>
@@ -738,10 +747,10 @@ export default function ClientProfile({
             <span className="text-[13px] font-[600] text-slate-700">Atividade Sazonal <Tip>Se o negócio só funciona em certas épocas (ex: turismo de praia, agricultura). Afeta os cálculos de SS.</Tip></span>
           </label>
           {/* Regime warnings */}
-          {st.tipoEntidade === 'eni' && st.regimeContabilidade === 'simplificado' && st.faturaçaoAnualPrevista > 200000 && (
+          {st.tipoEntidade === 'eni' && st.faturaçaoAnualPrevista > 200000 && (
             <div className="col-span-2 flex gap-2 p-3 bg-amber-50 border border-amber-200 rounded-[8px]">
               <span className="text-amber-600 shrink-0 mt-0.5">⚠</span>
-              <p className="text-[12px] text-amber-900 font-[600]">Faturação prevista excede €200.000 — <strong>Regime Simplificado não é permitido</strong>. Altere para Contabilidade Organizada (obrigatório acima deste limite — Art. 28.º CIRS).</p>
+              <p className="text-[12px] text-amber-900 font-[600]">Faturação acima de €200.000: o <strong>regime simplificado (recibos verdes) deixa de ser permitido</strong> — é obrigatória contabilidade organizada (Art. 28.º/31.º CIRS). O ENI continua legal a qualquer faturação, mas a esta escala constituir sociedade (Unipessoal/Lda) costuma ser fiscalmente mais eficiente — compare no Simulador Fiscal.</p>
             </div>
           )}
           {st.tipoEntidade === 'eni' && st.regimeContabilidade === 'transparencia_fiscal' && (
@@ -1120,8 +1129,8 @@ export default function ClientProfile({
           </h4>
           <div className="space-y-3 text-[14px]">
             <div className="flex justify-between"><span className="text-slate-500">Idade:</span><span className="font-[600] text-slate-800">{profile.idade} anos</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Estado Civil:</span><span className="font-[600] text-slate-800 capitalize">{profile.estadoCivil.replace('_', ' ')}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Dependentes:</span><span className="font-[600] text-slate-800">{profile.nrDependentes} {profile.nrDependentes > 0 && <span className="text-emerald-600 text-[12px]">(ded. €{profile.nrDependentes <= 3 ? profile.nrDependentes * 600 : 3 * 600 + (profile.nrDependentes - 3) * 900})</span>}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Estado Civil:</span><span className="font-[600] text-slate-800 capitalize">{(profile.estadoCivil || '—').replace('_', ' ')}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Dependentes:</span><span className="font-[600] text-slate-800">{profile.nrDependentes} {profile.nrDependentes > 0 && <span className="text-emerald-600 text-[12px]">(ded. base €{profile.nrDependentes * 600})</span>}</span></div>
             <div className="flex justify-between"><span className="text-slate-500">Benefício Jovem:</span><span className={cn("font-[600]", profile.beneficioJovem ? "text-blue-600" : "text-slate-800")}>{profile.beneficioJovem ? 'Sim — IRS Jovem ativo' : 'Não'}</span></div>
           </div>
         </div>
@@ -1302,7 +1311,7 @@ export default function ClientProfile({
             <div className="grid grid-cols-2 gap-x-4 gap-y-4">
               <div>
                 <label className={labelClass}>Tipo de Entidade <Tip>A forma jurídica do negócio: ENI é Empresário em Nome Individual (sem empresa criada), Lda. é uma sociedade de responsabilidade limitada, SA é uma sociedade anónima.</Tip></label>
-                <select value={profile.tipoEntidade} onChange={e => updateProfile('tipoEntidade', e.target.value)} className={inputClass}>
+                <select value={profile.tipoEntidade} onChange={e => onChange({ ...profile, tipoEntidade: e.target.value as ClientProfile['tipoEntidade'], ...regimeForFat(e.target.value, profile.regimeContabilidade, profile.faturaçaoAnualPrevista) })} className={inputClass}>
                   <option value="eni">ENI (Recibos Verdes)</option>
                   <option value="lda">Lda (Sociedade)</option>
                   <option value="unipessoal">Unipessoal Lda</option>
@@ -1316,7 +1325,7 @@ export default function ClientProfile({
               </div>
               <div>
                 <label className={labelClass}>Faturação Anual Prevista <Tip>O total de vendas/serviços que espera faturar num ano. Base para escolher o regime de IVA e calcular impostos.</Tip></label>
-                <input type="number" value={profile.faturaçaoAnualPrevista === 0 ? '' : profile.faturaçaoAnualPrevista} onChange={e => { const fat = Number(e.target.value) || 0; onChange({ ...profile, faturaçaoAnualPrevista: fat, ...ivaForFat(profile.regimeIva, fat) }); }} className={inputClass} />
+                <input type="number" value={profile.faturaçaoAnualPrevista === 0 ? '' : profile.faturaçaoAnualPrevista} onChange={e => { const fat = Number(e.target.value) || 0; onChange({ ...profile, faturaçaoAnualPrevista: fat, ...ivaForFat(profile.regimeIva, fat), ...regimeForFat(profile.tipoEntidade, profile.regimeContabilidade, fat) }); }} className={inputClass} />
               </div>
               <div>
                 <label className={labelClass}>Nr. Funcionários <Tip>Quantas pessoas trabalham na empresa com contrato de trabalho. Afeta os custos de Segurança Social patronal.</Tip></label>
@@ -1361,10 +1370,10 @@ export default function ClientProfile({
                 <span className="text-[13px] font-[600] text-slate-700">Atividade Sazonal <Tip>Se o negócio só funciona em certas épocas (ex: turismo de praia, agricultura). Afeta os cálculos de SS.</Tip></span>
               </label>
               {/* Regime warnings */}
-              {profile.tipoEntidade === 'eni' && profile.regimeContabilidade === 'simplificado' && profile.faturaçaoAnualPrevista > 200000 && (
+              {profile.tipoEntidade === 'eni' && profile.faturaçaoAnualPrevista > 200000 && (
                 <div className="col-span-2 flex gap-2 p-3 bg-amber-50 border border-amber-200 rounded-[8px]">
                   <span className="text-amber-600 shrink-0 mt-0.5">⚠</span>
-                  <p className="text-[12px] text-amber-900 font-[600]">Faturação prevista excede €200.000 — <strong>Regime Simplificado não é permitido</strong>. Altere para Contabilidade Organizada (obrigatório acima deste limite — Art. 28.º CIRS).</p>
+                  <p className="text-[12px] text-amber-900 font-[600]">Faturação acima de €200.000: o <strong>regime simplificado (recibos verdes) deixa de ser permitido</strong> — é obrigatória contabilidade organizada (Art. 28.º/31.º CIRS). O ENI continua legal a qualquer faturação, mas a esta escala constituir sociedade (Unipessoal/Lda) costuma ser fiscalmente mais eficiente — compare no Simulador Fiscal.</p>
                 </div>
               )}
               {profile.tipoEntidade === 'eni' && profile.regimeContabilidade === 'transparencia_fiscal' && (

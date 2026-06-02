@@ -104,8 +104,35 @@ const VIEW_TITLES: Record<ViewType, string> = {
  * de diagnóstico para o `clientProfile`, persiste e remove a chave legada.
  * Idempotente — se já não houver ficha antiga, devolve o perfil intacto.
  */
+/**
+ * Garante que um perfil (vindo do localStorage, de uma empresa guardada ou da
+ * cloud) tem TODOS os objetos aninhados que a aplicação assume existirem. Perfis
+ * legados podiam não trazer `custos`, `contabilidade`, `societaria`, etc., e a
+ * vista de Perfil rebentava com "Cannot read properties of undefined" ao ler, p.
+ * ex., `profile.custos.mercadorias`. Preenche o que faltar a partir do default.
+ */
+export function normalizeProfile(p?: Partial<ClientProfileType> | null): ClientProfileType {
+  const b = (p ?? {}) as ClientProfileType;
+  const vd = (b.viaturasDiag ?? {}) as ClientProfileType['viaturasDiag'];
+  return {
+    ...defaultProfile,
+    ...b,
+    custos:         { ...defaultProfile.custos,         ...(b.custos ?? {}) },
+    investimento:   { ...defaultProfile.investimento,   ...(b.investimento ?? {}) },
+    viaturasDiag:   { ...defaultProfile.viaturasDiag,   ...vd, tipo: { ...defaultProfile.viaturasDiag.tipo, ...(vd?.tipo ?? {}) } },
+    societaria:     { ...defaultProfile.societaria,     ...(b.societaria ?? {}) },
+    contabilidade:  { ...defaultProfile.contabilidade,  ...(b.contabilidade ?? {}) },
+    distribuicao:   { ...defaultProfile.distribuicao,   ...(b.distribuicao ?? {}) },
+    fiscalAtual:    { ...defaultProfile.fiscalAtual,    ...(b.fiscalAtual ?? {}) },
+    objetivos:      { ...defaultProfile.objetivos,      ...(b.objetivos ?? {}) },
+    intencoes:      { ...defaultProfile.intencoes,      ...(b.intencoes ?? {}) },
+    documentos:     { ...defaultProfile.documentos,     ...(b.documentos ?? {}) },
+    analiseInterna: { ...defaultProfile.analiseInterna, ...(b.analiseInterna ?? {}) },
+  };
+}
+
 function loadProfileWithFichaMerge(): ClientProfileType {
-  const loaded = loadFromStorage('clientProfile', defaultProfile);
+  const loaded = normalizeProfile(loadFromStorage('clientProfile', defaultProfile));
   if (typeof window === 'undefined' || !window.localStorage) return loaded;
   try {
     // Lê a ficha; se a chave nova estiver vazia, recupera da antiga (pré-rebrand)
@@ -308,7 +335,7 @@ function AppContent() {
     const empId = getCurrentEmpresaId();
     if (empId) {
       const emp = getEmpresa(empId);
-      if (emp) return emp.profile;
+      if (emp) return normalizeProfile(emp.profile);
     }
     return legacy;
   });
@@ -769,16 +796,19 @@ function AppContent() {
   // empresas). Dentro da mesma empresa mantêm-se transversais (derivam do perfil).
   const loadEmpresaIntoState = (emp: EmpresaRecord) => {
     const sims = (emp.sims ?? {}) as Record<string, unknown>;
-    const tax = (sims.tax as TaxSimulatorState) ?? getInitialTaxState(emp.profile);
-    setClientProfile(emp.profile);
+    // Normaliza o perfil da empresa: perfis legados/cloud podem não trazer todos
+    // os objetos aninhados (custos, contabilidade, …) e a vista de Perfil rebenta.
+    const profile = normalizeProfile(emp.profile);
+    const tax = (sims.tax as TaxSimulatorState) ?? getInitialTaxState(profile);
+    setClientProfile(profile);
     setTaxState(tax);
     setVehicleState((sims.vehicle as VehicleSimulatorState) ?? getInitialVehicleState());
-    setTicketState((sims.ticket as TicketSimulatorState) ?? getInitialTicketState(emp.profile));
-    setSSState((sims.selfss as SSState) ?? getInitialSSState(emp.profile));
-    setDiagnosticoState((sims.diagnostico as DiagnosticoState) ?? getInitialDiagnosticoState(emp.profile, tax));
-    setImoveisState((sims.imoveis as ImoveisState) ?? getInitialImoveisState(emp.profile));
-    setImtState((sims.imt as IMTState) ?? getInitialIMTState(emp.profile));
-    setSalarioState((sims.salario as SalarioState) ?? getInitialSalarioState(emp.profile));
+    setTicketState((sims.ticket as TicketSimulatorState) ?? getInitialTicketState(profile));
+    setSSState((sims.selfss as SSState) ?? getInitialSSState(profile));
+    setDiagnosticoState((sims.diagnostico as DiagnosticoState) ?? getInitialDiagnosticoState(profile, tax));
+    setImoveisState((sims.imoveis as ImoveisState) ?? getInitialImoveisState(profile));
+    setImtState((sims.imt as IMTState) ?? getInitialIMTState(profile));
+    setSalarioState((sims.salario as SalarioState) ?? getInitialSalarioState(profile));
     setIrsState((sims.irs as IRSState) ?? defaultIRSState());
     setPreviSaState({ ...defaultPreviSaState(), ...(emp.previsa ?? {}) });
     // Reconstrói os dados do SAF-T deste cliente a partir do XML guardado, para

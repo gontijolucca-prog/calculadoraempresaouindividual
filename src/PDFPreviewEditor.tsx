@@ -170,13 +170,6 @@ const PageHeader = ({ title, pageNum, brand }: { title: string; pageNum: number;
   </div>
 );
 
-const PageFooter = ({ brand }: { brand: Brand }) => (
-  <div style={{ background: '#0B1D2D', color: 'white', padding: '5px 14mm', fontSize: '6.5pt', textAlign: 'center', marginTop: 14, borderTop: '2px solid #00C2FF' }}>
-    <span contentEditable suppressContentEditableWarning
-      style={{ outline: 'none', cursor: 'text' }}
-    >Dados atualizados conforme OE 2026 • Este relatório é uma estimativa. Consulte o seu contabilista certificado.</span>
-  </div>
-);
 
 const MetricCard = ({ label, value, bg, color }: { label: string; value: string; bg: string; color: string }) => (
   <div style={{ flex: 1, background: bg, borderRadius: 4, padding: '6px 8px' }}>
@@ -379,9 +372,9 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
 
   const legalItems = [
     ['IRS — Escalões 2026', 'CIRS Art. 68º — Taxas de 13% a 48% (OE 2026)'],
-    ['IRS Jovem', 'CIRS Art. 12º-B — Isenção progressiva ≤35 anos nos primeiros 5 anos'],
-    ['Ded. Dependentes', 'CIRS Art. 78º-A — €600/dependente (€900 a partir do 4.º)'],
-    ['Regime Simplificado ENI', 'CIRS Art. 31º — Coeficientes: 75% serviços / 15% bens'],
+    ['IRS Jovem', 'CIRS Art. 12º-B — Isenção 10 anos (100% 1º · 75% 2º-4º · 50% 5º-7º · 25% 8º-10º), ≤35 anos, até 55×IAS (€29.542)'],
+    ['Ded. Dependentes', 'CIRS Art. 78º-A — €600/dependente; €726 se ≤3 anos; €900 do 2.º filho ≤6 anos'],
+    ['Regime Simplificado ENI', 'CIRS Art. 31º — Coeficientes: 75% prof. listadas / 35% outros serviços / 15% bens'],
     ['IRC — PME', 'CIRC Art. 87º — Taxa 15% (primeiros €50k) / 19% restante'],
     ['TSU Patronal', 'Lei 110/2009 — 23,75% (empresa) + 11% (trabalhador)'],
     ['SS Independente', 'CRCSPSS Art. 162º — Taxa 21,4% sobre 70% (serviços) / 20% (bens)'],
@@ -391,7 +384,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
     ['IVA Viaturas', 'CIVA Art. 21º, n.º 1 — Dedução 100%/50%/0% conforme motor'],
     ['Tributação Autónoma', 'CIRC Art. 88º, n.º 3 — TA escalonada p/ viaturas passageiros'],
     ['TA Viaturas Elétricas', 'Lei n.º 82/2023 — TA 10% p/ elétricos com custo >€62.500'],
-    ['Tickets de Refeição', 'DL 133/2024 — Limite €5/dia (geral) ou €7/dia (hotelaria/construção)'],
+    ['Subsídio de Refeição', 'Isento até €6,15/dia (numerário) ou €10,46/dia (cartão/vale) — Despacho 233-A/2026'],
     ['Tickets — Dedutibilidade', 'CIRC Art. 43º — 60% do custo total dedutível para a empresa'],
     ['Tickets — SS e IRS', 'EBF Art. 18º-A — Isenção SS e IRS para o trabalhador (até ao limite)'],
   ];
@@ -502,7 +495,6 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
               </>
             )}
           </div>
-          <PageFooter brand={brand} />
         </div>
 
         {/* ════ PÁGINA 2 — ENQUADRAMENTO FISCAL ════ */}
@@ -615,7 +607,6 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
                 <div><strong>Custos:</strong> apenas os valores introduzidos no simulador para este cliente — sem pressupostos automáticos.</div>
               </div>
             </div>
-            <PageFooter brand={brand} />
           </div>
         )}
 
@@ -655,7 +646,6 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
                 </div>
               </div>
             </div>
-            <PageFooter brand={brand} />
           </div>
         )}
 
@@ -703,7 +693,6 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
                 </>
               )}
             </div>
-            <PageFooter brand={brand} />
           </div>
         )}
 
@@ -750,7 +739,6 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
               </div>
             </div>
           </div>
-          <PageFooter brand={brand} />
         </div>
 
       </div>

@@ -134,7 +134,7 @@ export function printViaPaged(printRoot: HTMLElement, opts: PagedOpts): void {
   css = stripAtPage(css);
 
   const footerLeft = cssStr(opts.footerLeft || '');
-  const footerRight = cssStr(opts.footerRight || 'estudo360.pt');
+  const footerRight = cssStr(opts.footerRight || '');
 
   // Achata a caixa A4 fixa para o conteúdo fluir; o paged.js + @page tratam das
   // margens/quebras. Margin-boxes dão o rodapé repetido e a numeração.
@@ -168,7 +168,7 @@ export function printViaPaged(printRoot: HTMLElement, opts: PagedOpts): void {
  */
 export function printHtmlViaPaged(fullHtml: string, opts: PagedOpts): void {
   const footerLeft = opts.footerLeft || '';
-  const footerRight = opts.footerRight || 'estudo360.pt';
+  const footerRight = opts.footerRight || '';
 
   let styleCss = '';
   let bodyHtml = fullHtml;

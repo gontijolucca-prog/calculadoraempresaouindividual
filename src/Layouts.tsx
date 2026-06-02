@@ -75,8 +75,6 @@ type NavOpts = { openPackage?: boolean; toggleFlow?: boolean };
  *  divergir do comportamento da Lista de Empresas. */
 const CLIENT_MENU: { view: ViewType; label: string; Icon: React.ComponentType<{ className?: string }>; opts?: NavOpts }[] = [
   { view: 'profile',   label: 'Perfil do Cliente',       Icon: UserCircle },
-  { view: 'profile',   label: 'Vista detalhada',         Icon: ListOrdered, opts: { toggleFlow: true } },
-  { view: 'profile',   label: 'Pacote cliente',          Icon: Package,     opts: { openPackage: true } },
   { view: 'historico', label: 'Histórico de simulações', Icon: History },
 ];
 const SIM_MENU_SIDEBAR = NAV_ITEMS.filter((i) => i.group === 'sim');

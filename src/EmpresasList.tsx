@@ -416,8 +416,6 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
         <div className="border-t border-[#EEF2F7] px-3 py-2">
           <div className="grid gap-0.5">
             <MenuItem Icon={UserCircle} label="Perfil do Cliente" onClick={() => onNavigate(emp.id, 'profile')} />
-            <MenuItem Icon={ListOrdered} label="Vista detalhada" onClick={() => onNavigate(emp.id, 'profile', { toggleFlow: true })} />
-            <MenuItem Icon={Package} label="Pacote cliente" onClick={() => onNavigate(emp.id, 'profile', { openPackage: true })} />
             <MenuItem Icon={History} label="Histórico de simulações" onClick={() => onNavigate(emp.id, 'historico')} />
           </div>
           <div className="mt-2 mb-1 px-3 text-[10px] font-[800] uppercase tracking-[1px] text-[#0677FF]">Simuladores</div>
