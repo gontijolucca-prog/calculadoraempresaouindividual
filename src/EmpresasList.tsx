@@ -322,8 +322,8 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
       <div className="flex items-stretch">
         <button
           type="button"
-          onClick={onToggle}
-          aria-expanded={expanded}
+          onClick={() => onNavigate(emp.id, 'profile')}
+          title="Abrir perfil do cliente"
           className="flex-1 flex items-center gap-4 text-left px-5 py-4 min-w-0"
         >
           <div className="w-11 h-11 rounded-[10px] bg-[#0677FF]/10 text-[#0677FF] font-[800] text-[14px] flex items-center justify-center shrink-0">
@@ -346,9 +346,18 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
               )}
             </div>
           </div>
-          <ChevronDown className={cn('w-4 h-4 text-[#94A3B8] transition-transform shrink-0', expanded ? 'text-[#0677FF]' : '-rotate-90')} />
         </button>
         <div className="flex items-center gap-1 pr-3">
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={expanded}
+            title="Mostrar menu rápido (simuladores, histórico…)"
+            aria-label={`Menu rápido de ${displayNome}`}
+            className="p-2 rounded-[8px] text-[#6B7280] hover:text-[#0677FF] hover:bg-[#0677FF]/8 transition-colors"
+          >
+            <ChevronDown className={cn('w-4 h-4 transition-transform', expanded ? 'text-[#0677FF]' : '-rotate-90')} />
+          </button>
           <input
             ref={inputRef}
             type="file"
