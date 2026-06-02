@@ -465,14 +465,14 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
               <DR2 l1="Nome / Empresa:" v1={profile.nomeCliente || '—'} l2="NIF:" v2={profile.nif || '—'} />
               <DR2 l1="Email:" v1={profile.email || '—'} l2="Telefone:" v2={profile.telefone || '—'} />
               {profile.morada && <DR label="Morada:" value={`${profile.morada}${profile.codigoPostal ? ', ' + profile.codigoPostal : ''}${profile.localidade ? ' ' + profile.localidade : ''}`} />}
-              <DR2 l1="Tipo Entidade:" v1={profile.tipoEntidade.toUpperCase()} l2="CAE:" v2={profile.cae || '—'} />
+              <DR2 l1="Tipo Entidade:" v1={(profile.tipoEntidade || '—').toUpperCase()} l2="CAE:" v2={profile.cae || '—'} />
               <DR2 l1="Início Atividade:" v1={profile.inicioAtividade.toString()} l2="Regime IVA:" v2={profile.regimeIva === 'isento' ? 'Isento (Art. 53º)' : profile.regimeIva === 'normal_mensal' ? 'Normal Mensal' : 'Normal Trimestral'} />
               <DR2 l1="Tipo Atividade:" v1={profile.atividadePrincipal === 'servicos' ? 'Prestação de Serviços' : 'Venda de Bens'} l2="Faturação Anual:" v2={ptEur(profile.faturaçaoAnualPrevista)} />
             </div>
 
             <SecHead title="Dados Pessoais e Familiares" bg="#334155" />
             <div style={{ background: '#F5F7FA' }}>
-              <DR2 l1="Idade:" v1={`${profile.idade} anos`} l2="Estado Civil:" v2={profile.estadoCivil.replace('_', ' ')} />
+              <DR2 l1="Idade:" v1={`${profile.idade} anos`} l2="Estado Civil:" v2={(profile.estadoCivil || '—').replace('_', ' ')} />
               <DR2 l1="Dependentes:" v1={`${profile.nrDependentes}`} l2="Cônjuge c/ Rendimentos:" v2={profile.cônjugeRendimentos ? 'Sim' : 'Não'} />
               <DR2 l1="Benefício Jovem IRS:" v1={profile.beneficioJovem ? 'Sim (≤35 anos)' : 'Não aplicável'} l2="Atividade Sazonal:" v2={profile.isSazonal ? 'Sim' : 'Não'} />
             </div>

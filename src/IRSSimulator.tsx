@@ -64,9 +64,9 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
   const whatIf = useMemo(() => {
     if (!s.wifRend && !s.wifDep && !s.wifPpr) return null;
     const clone: IRSState = JSON.parse(JSON.stringify(s));
-    if (clone.agregado[0]) clone.agregado[0].rendTrabalho = (+clone.agregado[0].rendTrabalho || 0) + s.wifRend;
+    if (clone.agregado?.[0]) clone.agregado[0].rendTrabalho = (+clone.agregado[0].rendTrabalho || 0) + s.wifRend;
     clone.dependentes = (+clone.dependentes || 0) + s.wifDep;
-    clone.despesas.pensoes = (+clone.despesas.pensoes || 0) + s.wifPpr;
+    if (clone.despesas) clone.despesas.pensoes = (+clone.despesas.pensoes || 0) + s.wifPpr;
     const r2 = simular(toSim(clone), { tabela: s.tabela });
     return { apurado: r2.apurado, dif: r2.apurado - result.apurado };
   }, [s, result.apurado]);

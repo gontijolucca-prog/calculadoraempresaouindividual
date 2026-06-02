@@ -51,8 +51,6 @@ export interface SalarioResult {
 // Dedução específica categoria A — CIRS Art. 25º (OE 2026).
 // Fórmula: max(8,54 × IAS, contribuições obrigatórias). Para 2026: €4.587,09.
 const DEDUCAO_ESPECIFICA_MIN = Math.round(8.54 * IAS_2026 * 100) / 100; // 4587.09
-// Rate 72% mantido apenas como cap superior heurístico (não consta do CIRS).
-const DEDUCAO_ESPECIFICA_RATE = 0.72;
 
 export function calcSalarioLiquido(p: SalarioParams): SalarioResult {
   const nrPagamentos = p.duodecimos ? 14 : 12;
@@ -73,8 +71,12 @@ export function calcSalarioLiquido(p: SalarioParams): SalarioResult {
   const subsidioTributavelAnual = subsidioTributavel * 11;
   const rendimentoAnualBruto = p.salarioBruto * nrPagamentos + subsidioTributavelAnual;
 
-  // 4. Dedução específica Cat. A (mínimo €4.104 ou 72% do rendimento)
-  const deducaoEspecifica = Math.max(DEDUCAO_ESPECIFICA_MIN, rendimentoAnualBruto * DEDUCAO_ESPECIFICA_RATE);
+  // 4. Dedução específica Cat. A — CIRS Art. 25º: max(8,54×IAS, contribuições
+  //    obrigatórias do trabalhador). As contribuições = SS anual (11% do bruto ×
+  //    nº de pagamentos), NÃO uma percentagem do rendimento. (Antes usava 0,72 do
+  //    rendimento, o que inflacionava a dedução e subavaliava o IRS de quase todos.)
+  const contribuicoesAnuais = ssTrabalhador * nrPagamentos;
+  const deducaoEspecifica = Math.max(DEDUCAO_ESPECIFICA_MIN, contribuicoesAnuais);
   const baseIRSAnual = Math.max(0, rendimentoAnualBruto - deducaoEspecifica);
 
   // 5. Coleta IRS (tabela escalões 2026)

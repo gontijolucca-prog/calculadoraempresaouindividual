@@ -190,7 +190,7 @@ export function buildDemonstracaoResultados(emp: EmpresaRecord, office: OfficeSe
   const c = ctx(emp, office);
   const d = drLinhas(c.prev);
   const imposto = cv(c.cont, 'impostoRendimento');
-  const liquido = cv(c.cont, 'resultadoLiquido') ?? (imposto != null ? d.rai - imposto : null);
+  const liquido = cv(c.cont, 'resultadoLiquido') ?? (imposto != null && Number.isFinite(d.rai) ? d.rai - imposto : null);
   const r = (label: string, v: number | null, opts: { tot?: boolean; ind?: boolean } = {}) =>
     `<tr class="${opts.tot ? 'tot' : ''}"><td class="${opts.ind ? 'ind' : ''}">${label}</td><td class="num"></td><td class="num">${val(v)}</td><td class="num"></td></tr>`;
   const body = `${cabecalho(c, `Demonstra&ccedil;&atilde;o dos resultados por naturezas em 31 de dezembro de ${c.ano}`)}

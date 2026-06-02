@@ -181,7 +181,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
           ))}
           <div className="bg-[#F5F7FA] border border-[#E2E8F0] rounded-[12px] p-[12px]">
             <div className="text-[11px] font-[600] text-[#64748B]">
-              Entidade: <span className="font-[700] text-[#0F172A]">{profile.tipoEntidade.toUpperCase()}</span>
+              Entidade: <span className="font-[700] text-[#0F172A]">{(profile.tipoEntidade || '—').toUpperCase()}</span>
               {profile.tipoEntidade === 'eni' && <span className="text-orange-600 ml-2">— ENI: regras específicas</span>}
             </div>
           </div>
@@ -374,7 +374,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
 
           <div className="bg-[#F5F7FA] border border-[#E2E8F0] rounded-[12px] p-[12px]">
             <div className="text-[11px] font-[600] text-[#64748B]">
-              Entidade: <span className="font-[700] text-[#0F172A]">{profile.tipoEntidade.toUpperCase()}</span>
+              Entidade: <span className="font-[700] text-[#0F172A]">{(profile.tipoEntidade || '—').toUpperCase()}</span>
               {isEni && <span className="text-orange-600 ml-2">— ENI: regras específicas</span>}
             </div>
           </div>

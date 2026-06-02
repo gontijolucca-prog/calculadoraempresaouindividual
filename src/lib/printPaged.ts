@@ -20,8 +20,10 @@ const pagedPolyfillUrl = '/paged.polyfill.js?v=0.4.3';
 const fontLink = '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap">';
 
 const esc = (s: string) => (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-// content das margin-boxes do paged.js é uma string CSS — escapar aspas/barras.
-const cssStr = (s: string) => (s ?? '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+// content das margin-boxes do paged.js é uma string CSS — escapar aspas/barras
+// e também quebras de linha/tabs: um \n cru no nome do escritório invalidaria a
+// string CSS e fazia o @page perder rodapé e numeração silenciosamente.
+const cssStr = (s: string) => (s ?? '').replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\A ').replace(/\r/g, '').replace(/\t/g, ' ');
 
 /**
  * Remove TODOS os blocos `@media <…cond…> { … }` cuja condição (o texto entre

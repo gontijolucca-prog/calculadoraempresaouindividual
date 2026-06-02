@@ -69,6 +69,14 @@ function num(parent: Element | null, name: string): number {
   return Number.isFinite(v) ? v : 0;
 }
 
+// Parse de um montante SAF-T já extraído como string. SAF-T PT é dot-decimal por
+// norma, mas alguns exportadores escrevem vírgula — espelha o num() acima para os
+// totais que vêm como string (antes usavam parseFloat cru e truncavam decimais).
+const numStr = (s: string | null | undefined): number => {
+  const v = parseFloat(String(s ?? '').replace(',', '.'));
+  return Number.isFinite(v) ? v : 0;
+};
+
 function fmtEur(n: number): string {
   return n.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 }
@@ -771,7 +779,7 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
       details.push({
         group: 'Tabela de Impostos',
         label: `${taxType} ${taxCode} (${taxCountryReg})`,
-        value: desc + (taxPct ? ` — ${taxPct}%` : '') + (taxAmt ? ` — ${fmtEur(parseFloat(taxAmt) || 0)}` : ''),
+        value: desc + (taxPct ? ` — ${taxPct}%` : '') + (taxAmt ? ` — ${fmtEur(numStr(taxAmt))}` : ''),
       });
     }
   }
@@ -797,10 +805,10 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     const nEntries   = text(salesEl, 'NumberOfEntries');
     const totalDebit = text(salesEl, 'TotalDebit');
     const totalCrStr = text(salesEl, 'TotalCredit');
-    totalCredit = parseFloat(totalCrStr) || 0;
+    totalCredit = numStr(totalCrStr);
 
     if (nEntries)   details.push({ group: 'Documentos de Venda', label: 'Nº de Documentos',  value: nEntries });
-    if (totalDebit) details.push({ group: 'Documentos de Venda', label: 'Total Débito (NC)',  value: fmtEur(parseFloat(totalDebit) || 0) });
+    if (totalDebit) details.push({ group: 'Documentos de Venda', label: 'Total Débito (NC)',  value: fmtEur(numStr(totalDebit)) });
     if (totalCrStr) details.push({ group: 'Documentos de Venda', label: 'Total Crédito (FT)', value: fmtEur(totalCredit) });
 
     const invoiceEls = localChildren(salesEl, 'Invoice');
@@ -914,8 +922,8 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     const totalDebit = text(purchasesEl, 'TotalDebit');
     const totalCr    = text(purchasesEl, 'TotalCredit');
     if (nEntries)   details.push({ group: 'Documentos de Compra', label: 'Nº de Documentos', value: nEntries });
-    if (totalDebit) details.push({ group: 'Documentos de Compra', label: 'Total Débito',      value: fmtEur(parseFloat(totalDebit) || 0) });
-    if (totalCr)    details.push({ group: 'Documentos de Compra', label: 'Total Crédito',     value: fmtEur(parseFloat(totalCr)   || 0) });
+    if (totalDebit) details.push({ group: 'Documentos de Compra', label: 'Total Débito',      value: fmtEur(numStr(totalDebit)) });
+    if (totalCr)    details.push({ group: 'Documentos de Compra', label: 'Total Crédito',     value: fmtEur(numStr(totalCr)) });
   }
 
   // ─── MovementOfGoods ─────────────────────────────────────────────
@@ -934,8 +942,8 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     const totalDr  = text(workDocsEl, 'TotalDebit');
     const totalCr  = text(workDocsEl, 'TotalCredit');
     if (nEntries) details.push({ group: 'Documentos de Trabalho', label: 'Nº de Documentos', value: nEntries });
-    if (totalDr)  details.push({ group: 'Documentos de Trabalho', label: 'Total Débito',      value: fmtEur(parseFloat(totalDr) || 0) });
-    if (totalCr)  details.push({ group: 'Documentos de Trabalho', label: 'Total Crédito',     value: fmtEur(parseFloat(totalCr) || 0) });
+    if (totalDr)  details.push({ group: 'Documentos de Trabalho', label: 'Total Débito',      value: fmtEur(numStr(totalDr)) });
+    if (totalCr)  details.push({ group: 'Documentos de Trabalho', label: 'Total Crédito',     value: fmtEur(numStr(totalCr)) });
   }
 
   // ─── Payments ────────────────────────────────────────────────────
@@ -945,8 +953,8 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     const totalDr  = text(paymentsEl, 'TotalDebit');
     const totalCr  = text(paymentsEl, 'TotalCredit');
     if (nEntries) details.push({ group: 'Pagamentos / Recibos', label: 'Nº de Documentos', value: nEntries });
-    if (totalDr)  details.push({ group: 'Pagamentos / Recibos', label: 'Total Débito',      value: fmtEur(parseFloat(totalDr) || 0) });
-    if (totalCr)  details.push({ group: 'Pagamentos / Recibos', label: 'Total Crédito',     value: fmtEur(parseFloat(totalCr) || 0) });
+    if (totalDr)  details.push({ group: 'Pagamentos / Recibos', label: 'Total Débito',      value: fmtEur(numStr(totalDr)) });
+    if (totalCr)  details.push({ group: 'Pagamentos / Recibos', label: 'Total Crédito',     value: fmtEur(numStr(totalCr)) });
 
     // Detect employees from RG/RV payments
     const paymentDocEls = localChildren(paymentsEl, 'Payment');
@@ -1007,8 +1015,8 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     const totalCr   = text(glEntriesEl, 'TotalCredit');
     if (nJournals) details.push({ group: 'Diário Contabilístico', label: 'Nº de Diários',     value: nJournals });
     if (nEntries)  details.push({ group: 'Diário Contabilístico', label: 'Nº de Lançamentos', value: nEntries });
-    if (totalDr)   details.push({ group: 'Diário Contabilístico', label: 'Total Débito',      value: fmtEur(parseFloat(totalDr) || 0) });
-    if (totalCr)   details.push({ group: 'Diário Contabilístico', label: 'Total Crédito',     value: fmtEur(parseFloat(totalCr) || 0) });
+    if (totalDr)   details.push({ group: 'Diário Contabilístico', label: 'Total Débito',      value: fmtEur(numStr(totalDr)) });
+    if (totalCr)   details.push({ group: 'Diário Contabilístico', label: 'Total Crédito',     value: fmtEur(numStr(totalCr)) });
   }
 
   // ═════════════════════════════════════════════════════════════════
