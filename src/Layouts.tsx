@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   UserCircle, Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote, Info,
   ClipboardList, Upload, LogOut, Receipt,
-  ChevronDown, TrendingUp, Settings, UserPlus, Building2,
+  ChevronDown, ChevronRight, TrendingUp, Settings, UserPlus, Building2,
   Menu, X, Clock, Briefcase, ListOrdered, Package, History, FileDown,
 } from 'lucide-react';
 import FloatingFlowToggle from './FloatingFlowToggle';
@@ -213,19 +213,23 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
                 simuladores) — atalho directo sem ter de abrir a lista. */}
             {activeClientName && (
               <div className="mt-1.5">
-                <div
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-left"
+                <button
+                  type="button"
+                  onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }}
+                  title="Voltar à Lista de Empresas"
+                  className="group w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-left transition-all hover:brightness-[0.98] focus-visible:outline-none"
                   style={{
                     background: 'linear-gradient(135deg, rgba(6,119,255,0.12), rgba(6,119,255,0.04))',
                     boxShadow: 'inset 0 0 0 1px rgba(6,119,255,0.28)',
                   }}
                 >
                   <span className="w-2 h-2 rounded-full bg-[#0677FF] shrink-0 animate-pulse" aria-hidden="true" />
-                  <span className="min-w-0">
+                  <span className="min-w-0 flex-1">
                     <span className="block text-[9px] font-[800] uppercase tracking-[1px] text-[#0677FF]">A trabalhar em</span>
                     <span className="block text-[13px] font-[700] text-[#0B1D2D] truncate">{activeClientName}</span>
                   </span>
-                </div>
+                  <ChevronRight className="w-4 h-4 text-[#0677FF]/50 shrink-0 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                </button>
 
                 {/* Menu do cliente activo — aninhado sob o indicador. */}
                 <div className="mt-1 ml-2.5 pl-2 border-l-2 border-[#0677FF]/20 space-y-0.5">
