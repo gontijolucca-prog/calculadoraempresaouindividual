@@ -4,10 +4,10 @@ import {
   Calculator, FileSignature, Package, Search, Check, Loader2,
 } from 'lucide-react';
 import { listEmpresas, type EmpresaRecord } from './lib/empresas';
-import type { OfficeSettings } from './lib/officeSettings';
+import { officeSettingsAreComplete, type OfficeSettings } from './lib/officeSettings';
 import type { HonorariosConfig } from './lib/honorarios';
 import {
-  DOC_TYPES, downloadAsWord, makeEditableHtml, serializeEditedDoc, type DocTypeId,
+  DOC_TYPES, downloadAsWord, makeEditableHtml, serializeEditedDoc, fillStatusFor, hasPrevisaData,
 } from './lib/wordDocs';
 import {
   getInitialTaxState, getInitialVehicleState, getInitialTicketState, getInitialSSState,
@@ -68,15 +68,6 @@ function normalizeProfile(p: ClientProfile | undefined): ClientProfile | undefin
   return p ? deepMerge(defaultProfile, p) : undefined;
 }
 
-// Há dados contabilísticos no Previsa desta empresa? (para avisar quando um
-// documento que depende deles vai sair vazio).
-function hasPrevisaData(emp: EmpresaRecord): boolean {
-  const s = (emp.previsa ?? {}) as Record<string, unknown>;
-  return Object.entries(s).some(([k, v]) =>
-    (k.startsWith('rai_') || k === 'volumeNegocios') && typeof v === 'number' && v !== 0,
-  );
-}
-
 const FILL_BADGE: Record<string, { txt: string; cls: string }> = {
   completo: { txt: 'Preenchido', cls: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
   parcial:  { txt: 'Parcial',    cls: 'text-amber-700 bg-amber-50 border-amber-200' },
@@ -84,10 +75,11 @@ const FILL_BADGE: Record<string, { txt: string; cls: string }> = {
   pacote:   { txt: 'Pacote',     cls: 'text-[#0677FF] bg-[#0677FF]/10 border-[#0677FF]/20' },
 };
 
-export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa }: {
+export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, onGoToOfficeSettings }: {
   office: OfficeSettings;
   honorarios: HonorariosConfig;
   onOpenPrevisa?: (empresaId: string) => void;
+  onGoToOfficeSettings?: () => void;
 }) {
   const empresas = useMemo(() => listEmpresas(), []);
   const [empresaId, setEmpresaId] = useState<string>(empresas[0]?.id ?? '');
@@ -273,6 +265,22 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa }:
           </div>
         </div>
 
+        {/* Aviso: sem as Definições do Escritório, os documentos saem com o
+            branding genérico "Estudo 360" em vez do nome/logo do escritório. */}
+        {!officeSettingsAreComplete(office) && (
+          <div className="mt-4 flex items-start gap-2.5 rounded-[12px] border border-amber-200 bg-amber-50 px-4 py-3 no-print">
+            <Building2 className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <p className="text-[12.5px] text-amber-800 font-[500] leading-relaxed">
+              Os dados do escritório estão incompletos — os documentos saem com o branding genérico em vez do teu nome e logo.{' '}
+              {onGoToOfficeSettings && (
+                <button type="button" onClick={onGoToOfficeSettings} className="font-[700] underline hover:text-amber-900">
+                  Preencher Definições do Escritório →
+                </button>
+              )}
+            </p>
+          </div>
+        )}
+
         {empresas.length === 0 ? (
           <div className="mt-8 rounded-[16px] border border-dashed border-slate-300 bg-white px-8 py-12 text-center">
             <div className="mx-auto w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-4">
@@ -404,7 +412,9 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa }:
               <div className="space-y-2" role="radiogroup" aria-label="Documentos da contabilista">
                 {DOC_TYPES.map(d => {
                   const active = d.id === docId;
-                  const badge = FILL_BADGE[d.fill];
+                  // Badge dinâmico: reflete os dados REAIS da empresa selecionada,
+                  // não o melhor caso do modelo (que dizia "Preenchido" com tudo vazio).
+                  const badge = FILL_BADGE[emp ? fillStatusFor(d.id, emp, office) : d.fill];
                   return (
                     <button
                       key={d.id}

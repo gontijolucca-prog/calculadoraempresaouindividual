@@ -148,7 +148,19 @@ export function printViaPaged(printRoot: HTMLElement, opts: PagedOpts): void {
     .pdf-page { break-after: page; }
     .pdf-page:last-child { break-after: auto; }
     .pp-band, .mc-band { margin-left: 0 !important; margin-right: 0 !important; }
+    /* O rodapé interno do documento duplica o rodapé das margin-boxes do paged.js
+       (nome do escritório + numeração) e empurrava as assinaturas para uma página
+       quase vazia no fim — escondido na impressão paginada. */
+    .pp-foot { display: none !important; }
     [contenteditable] { outline: none !important; }
+    /* O CSS @media print dos componentes é removido acima (stripAtMedia) — as
+       normalizações de impressão que lá viviam têm de ser repostas AQUI:
+       1) campos por preencher da Minuta sem o destaque amarelo de ecrã; */
+    .mc-fill { background: transparent !important; color: inherit !important; padding: 0 !important; font-weight: inherit !important; border-radius: 0 !important; }
+    /* 2) inputs editáveis (Proposta) imprimem como texto limpo, sem caixa nem setas. */
+    input { border: none !important; padding: 0 !important; background: transparent !important; -webkit-appearance: none; appearance: none; }
+    input[type="number"] { text-align: right; }
+    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   ` + buildPageBreakCss(footerLeft, footerRight);
 
   const fullDoc = `<!doctype html><html><head><meta charset="utf-8">${fontLink}<title>${esc(opts.title)}</title>

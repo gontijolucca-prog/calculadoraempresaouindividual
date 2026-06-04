@@ -510,6 +510,47 @@ export const DOC_TYPES: DocTypeDef[] = [
   },
 ];
 
+// ─── Estado de preenchimento real (badge dinâmico) ────────────────────────────
+
+/** Há dados contabilísticos no Previsa desta empresa? */
+export function hasPrevisaData(emp: EmpresaRecord): boolean {
+  const s = (emp.previsa ?? {}) as Record<string, unknown>;
+  return Object.entries(s).some(([k, v]) =>
+    (k.startsWith('rai_') || k === 'volumeNegocios') && typeof v === 'number' && v !== 0,
+  );
+}
+
+/**
+ * Estado de preenchimento REAL de um documento para uma empresa concreta —
+ * o `fill` estático do DOC_TYPES descreve o melhor caso (com todos os dados);
+ * aqui verificamos os dados que o builder de facto usa e devolvemos o estado
+ * honesto. Sem isto, o badge dizia "Preenchido" mesmo com o documento a sair
+ * em branco (Previsa vazio, ficha societária por preencher, etc.).
+ */
+export function fillStatusFor(id: DocTypeId, emp: EmpresaRecord, office: OfficeSettings): 'completo' | 'parcial' | 'modelo' {
+  const soc = emp.profile?.societaria;
+  const temSocios = !!(soc?.socios ?? []).filter(s => s.nome?.trim() || s.percentagem).length;
+  const temCapital = (soc?.capitalSocial ?? 0) > 0;
+  const temGerente = !!soc?.gerenteNome?.trim();
+  const temIdent = !!((emp.nome || emp.profile?.nomeCliente) && (emp.nif || emp.profile?.nif));
+  const temCC = !!(office.tipo === 'sociedade' ? (office.contabilistaResponsavel || office.nome) : office.nome);
+  const previsa = hasPrevisaData(emp);
+  switch (id) {
+    case 'dr':
+      return previsa ? 'completo' : 'modelo';
+    case 'declaracao':
+      return temCC && !!office.cedulaProfissional && temIdent ? 'completo' : (temIdent || temCC) ? 'parcial' : 'modelo';
+    case 'acta':
+      return temSocios && temCapital && temGerente ? 'completo' : (temSocios || temCapital) ? 'parcial' : 'modelo';
+    case 'alteracoes':
+      return temCapital ? 'parcial' : 'modelo';
+    case 'fluxos':
+      return 'modelo';
+    case 'df':
+      return previsa ? 'parcial' : 'modelo';
+  }
+}
+
 // ─── Download (.doc) ──────────────────────────────────────────────────────────
 
 /**

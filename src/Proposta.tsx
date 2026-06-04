@@ -99,10 +99,13 @@ export default function Proposta({ profile, office, honorarios, servicosIds, onS
         #${printRootId} th, #${printRootId} td { padding: 8px 10px; border-bottom: 1px solid #E2E8F0; text-align: left; font-size: 11pt; }
         #${printRootId} th { font-size: 9pt; text-transform: uppercase; letter-spacing: 1px; color: #64748B; background: #F5F7FA; border-bottom: 2px solid ${cor}; }
         @media print {
+          /* height:auto evita a página em branco extra: com o body escondido por
+             visibility, a altura original do ecrã continuava a contar para a paginação. */
+          html, body { height: auto !important; overflow: visible !important; }
           body * { visibility: hidden; }
           #${printRootId}, #${printRootId} * { visibility: visible; }
           #${printRootId} { position: absolute; top: 0; left: 0; width: 100%; }
-          #${printRootId} .pp-page { box-shadow: none; margin: 0; zoom: 1 !important; }
+          #${printRootId} .pp-page { box-shadow: none; margin: 0; zoom: 1 !important; min-height: 0; }
           #${printRootId} [contenteditable] { outline: none !important; }
           /* Inputs editáveis imprimem como texto limpo (sem caixa nem setas). */
           #${printRootId} input { border: none !important; padding: 0 !important; background: transparent !important; -webkit-appearance: none; appearance: none; text-align: right; }
@@ -323,13 +326,14 @@ A presente proposta é válida por 30 dias a contar da data acima e converte-se 
         </div>
 
         {/* Assinaturas */}
-        <div className="pp-keep" style={{ marginTop: 36, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        <div className="pp-keep" style={{ marginTop: 24, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
           <SignatureLine label={office.nome ? `${office.nome}\n${office.tipo === 'sociedade' ? `Rep. ${office.representanteLegal || '...'}` : `CC ${office.cedulaProfissional}`}` : 'Primeiro Outorgante'} />
           <SignatureLine label={profile.nomeCliente || 'Cliente'} />
         </div>
 
-        {/* Rodapé */}
-        <div style={{ position: 'relative', marginTop: 30, paddingTop: 8, borderTop: '1px solid #E2E8F0', fontSize: '8pt', color: '#94A3B8', display: 'flex', justifyContent: 'space-between' }}>
+        {/* Rodapé — escondido na impressão paged.js (.pp-foot), onde as margin-boxes
+            do @page já dão o nome do escritório + "Página X de Y". */}
+        <div className="pp-foot" style={{ position: 'relative', marginTop: 18, paddingTop: 8, borderTop: '1px solid #E2E8F0', fontSize: '8pt', color: '#94A3B8', display: 'flex', justifyContent: 'space-between' }}>
           <span>{office.nome || 'Escritório'}</span>
           <span>Proposta gerada em {today()} via Estudo 360</span>
         </div>

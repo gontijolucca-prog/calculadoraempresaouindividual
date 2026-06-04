@@ -91,6 +91,9 @@ export default function MinutaContrato({
         #${printRootId} ol li { font-size: 11pt; line-height: 1.55; text-align: justify; margin: 5px 0; }
         #${printRootId} .mc-band { height: 4px; background: ${cor}; margin: -22mm -24mm 12mm -24mm; }
         @media print {
+          /* height:auto evita a página em branco extra: com o body escondido por
+             visibility, a altura original do ecrã continuava a contar para a paginação. */
+          html, body { height: auto !important; overflow: visible !important; }
           body * { visibility: hidden; }
           #${printRootId}, #${printRootId} * { visibility: visible; }
           #${printRootId} { position: absolute; top: 0; left: 0; width: 100%; }
