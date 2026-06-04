@@ -529,8 +529,12 @@ export function hasPrevisaData(emp: EmpresaRecord): boolean {
  */
 export function fillStatusFor(id: DocTypeId, emp: EmpresaRecord, office: OfficeSettings): 'completo' | 'parcial' | 'modelo' {
   const soc = emp.profile?.societaria;
+  const cont = (emp.profile?.contabilidade ?? {}) as Partial<ContabilidadeData>;
   const temSocios = !!(soc?.socios ?? []).filter(s => s.nome?.trim() || s.percentagem).length;
   const temCapital = (soc?.capitalSocial ?? 0) > 0;
+  // O builder das Alterações no CP usa capital da contabilidade (capitalRealizado,
+  // ex. importado do SAF-T) com fallback à ficha societária — o badge espelha isso.
+  const temCapitalCP = cv(cont, 'capitalRealizado') !== null || temCapital;
   const temGerente = !!soc?.gerenteNome?.trim();
   const temIdent = !!((emp.nome || emp.profile?.nomeCliente) && (emp.nif || emp.profile?.nif));
   const temCC = !!(office.tipo === 'sociedade' ? (office.contabilistaResponsavel || office.nome) : office.nome);
@@ -543,11 +547,15 @@ export function fillStatusFor(id: DocTypeId, emp: EmpresaRecord, office: OfficeS
     case 'acta':
       return temSocios && temCapital && temGerente ? 'completo' : (temSocios || temCapital) ? 'parcial' : 'modelo';
     case 'alteracoes':
-      return temCapital ? 'parcial' : 'modelo';
+      return temCapitalCP ? 'parcial' : 'modelo';
     case 'fluxos':
       return 'modelo';
     case 'df':
       return previsa ? 'parcial' : 'modelo';
+    default:
+      // Inalcançável com o union atual; protege contra um DocTypeId novo
+      // adicionado sem atualizar este switch.
+      return 'modelo';
   }
 }
 
