@@ -461,7 +461,7 @@ function Compliance() {
           <p className="mt-5 text-[15px] text-[#0B1D2D]/65 leading-[1.6] max-w-xl">
             Escalões de IRS, taxas de IRC, IRS Jovem, IMT, tributação autónoma de viaturas,
             limites de tickets de refeição — todos validados contra a legislação publicada e
-            cruzados com fontes profissionais. Quando algo muda, vê-o no Checklist de Atualizações.
+            cruzados com fontes profissionais. Quando algo muda, a aplicação é atualizada.
           </p>
         </div>
         <div className="grid grid-cols-2 gap-3">

@@ -41,8 +41,6 @@ import { ThemeProvider } from './ThemeContext';
 import { MotionProvider, PageTransition } from './AnimatedPage';
 import { parseSAFT, decodeSaftText, normalizeXmlEncodingToUtf8, type SAFTParseResult } from './lib/saft';
 import { LAYOUTS } from './Layouts';
-import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from './lib/firebase';
 import { loadFromStorage, saveToStorage, clearStorage } from './lib/storage';
 import { loadOfficeSettings, saveOfficeSettings, type OfficeSettings } from './lib/officeSettings';
 import { loadHonorariosConfig, saveHonorariosConfig, type HonorariosConfig } from './lib/honorarios';
@@ -57,7 +55,6 @@ const ImoveisEmpresa = lazy(() => import('./ImoveisEmpresa'));
 const IMTSimulator = lazy(() => import('./IMTSimulator'));
 const SalarioLiquidoSimulator = lazy(() => import('./SalarioLiquidoSimulator'));
 const IRSSimulator = lazy(() => import('./IRSSimulator'));
-const UpdatesList = lazy(() => import('./UpdatesList'));
 const PreviSaSimulator = lazy(() => import('./PreviSaSimulator'));
 const OfficeSettingsView = lazy(() => import('./OfficeSettingsView'));
 import { defaultPreviSaState } from './previSaState';
@@ -70,7 +67,7 @@ const SimulacoesHistory = lazy(() => import('./SimulacoesHistory'));
 
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
-  | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal' | 'updates'
+  | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal'
   | 'previsa' | 'office-settings' | 'empresas' | 'historico' | 'exportar';
 
 // Default landing view when the user picks a mode.
@@ -92,7 +89,6 @@ const VIEW_TITLES: Record<ViewType, string> = {
   salario: 'Salário Líquido',
   irs: 'Simulador de IRS',
   legal: 'Base Legal & Referências',
-  updates: 'Checklist de Atualizações',
   previsa: 'Simulador Previsa',
   'office-settings': 'Definições do Escritório',
   historico: 'Histórico de Simulações',
@@ -316,9 +312,6 @@ function AppContent() {
   // Auto-atualização: aviso "nova versão disponível" + detecção de edições por guardar.
   const [versionUpdate, setVersionUpdate] = useState(false);
   const getHasUnsavedEdits = useUnsavedEdits();
-  const [showUpdateNotification, setShowUpdateNotification] = useState(false);
-  const [pendingCount, setPendingCount] = useState(0);
-  const [lastDismissedCount, setLastDismissedCount] = useState(() => loadFromStorage('lastDismissedPendingCount', 0));
   const [view, setView] = useState<ViewType>(() => {
     // Restaura a vista onde o utilizador estava (refresh / auto-update não o
     // devem mandar de volta à Lista de Empresas). Valida contra a lista de
@@ -404,7 +397,6 @@ function AppContent() {
   useEffect(() => { saveToStorage('loggedIn', loggedIn); }, [loggedIn]);
   useEffect(() => { saveToStorage('mode', mode); }, [mode]);
   useEffect(() => { saveToStorage('lastView', view); }, [view]);
-  useEffect(() => { saveToStorage('lastDismissedPendingCount', lastDismissedCount); }, [lastDismissedCount]);
   useEffect(() => { saveOfficeSettings(officeSettings); }, [officeSettings]);
   useEffect(() => { saveHonorariosConfig(honorariosConfig); }, [honorariosConfig]);
 
@@ -522,39 +514,6 @@ function AppContent() {
     const main = document.getElementById('main-content');
     if (main) main.scrollTop = 0;
   }, [view]);
-
-  useEffect(() => {
-    if (!loggedIn) return;
-    const unsub = onSnapshot(collection(db, 'updates'), snap => {
-      const count = snap.docs.filter(d => {
-        const data = d.data();
-        return data.atualizado && !data.aprovado;
-      }).length;
-      setPendingCount(count);
-      if (count === 0) {
-        setLastDismissedCount(0);
-      }
-      if (count > 0 && count > lastDismissedCount) {
-        setShowUpdateNotification(true);
-      }
-    });
-    return unsub;
-  }, [loggedIn, lastDismissedCount]);
-
-  const dismissUpdateNotification = () => {
-    setShowUpdateNotification(false);
-    setLastDismissedCount(pendingCount);
-  };
-
-  // Close the update-notification modal with Escape
-  useEffect(() => {
-    if (!showUpdateNotification) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') dismissUpdateNotification();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [showUpdateNotification, pendingCount]);
 
   // Close the SAFT modal with Escape
   useEffect(() => {
@@ -777,7 +736,6 @@ function AppContent() {
     // Lê os bytes em bruto; decodeSaftText() escolhe o charset pelo declarado no XML.
     reader.readAsArrayBuffer(file);
   };
-  const openUpdates = () => { setPrevView(view); setView('updates'); };
   const handleLogout = () => {
     setLoggedIn(false);
     setMode('empresa');
@@ -1011,10 +969,7 @@ function AppContent() {
           <ExportarRelatorio office={officeSettings} honorarios={honorariosConfig} onOpenPrevisa={(empId) => navigateClient(empId, 'previsa')} onGoToOfficeSettings={() => setView('office-settings')} />
         )}
         {view === 'legal' && (
-          <LegalInfo onBack={closeLegal} onOpenUpdates={openUpdates} clientProfile={clientProfile} vehicleState={vehicleState} ticketState={ticketState} initialAnchor={legalAnchor} />
-        )}
-        {view === 'updates' && (
-          <UpdatesList onBack={() => setView(prevView)} />
+          <LegalInfo onBack={closeLegal} clientProfile={clientProfile} vehicleState={vehicleState} ticketState={ticketState} initialAnchor={legalAnchor} />
         )}
         {view === 'office-settings' && (
           <OfficeSettingsView
@@ -1039,83 +994,6 @@ function AppContent() {
 
       {/* Skip link for keyboard users */}
       <a href="#main-content" className="skip-link">Saltar para conteúdo principal</a>
-
-      {/* ── Pending updates notification modal ── */}
-      {showUpdateNotification && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="update-modal-title"
-          className="fixed inset-0 z-[1000] flex items-center justify-center p-6"
-        >
-          <button
-            type="button"
-            aria-label="Fechar diálogo"
-            onClick={() => setShowUpdateNotification(false)}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-default"
-          />
-          <div className="relative bg-white rounded-[28px] shadow-2xl max-w-md w-full overflow-hidden">
-            {/* Accent bar */}
-            <div className="h-1.5 bg-gradient-to-r from-amber-400 to-amber-500 w-full" />
-            <div className="p-10 flex flex-col items-center text-center gap-5">
-              {/* Icon */}
-              <div className="w-20 h-20 rounded-full bg-amber-50 border-4 border-amber-100 flex items-center justify-center">
-                <svg viewBox="0 0 40 40" className="w-10 h-10" fill="none" aria-hidden="true" focusable="false">
-                  <path d="M20 8L20 22" stroke="#D97706" strokeWidth="3" strokeLinecap="round"/>
-                  <circle cx="20" cy="30" r="2" fill="#D97706"/>
-                  <path d="M6 34L20 8L34 34H6Z" stroke="#D97706" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              {/* Text */}
-              <div>
-                <h2 id="update-modal-title" className="text-[22px] font-[800] text-[#0F172A] leading-tight">
-                  Atualização pendente
-                </h2>
-                <p className="text-[14px] text-[#64748B] mt-3 font-[500] leading-relaxed">
-                  Foi efetuada uma atualização no site que aguarda aprovação.
-                  <br />
-                  Aceda à <strong className="text-[#0F172A]">Checklist de Atualizações</strong> para rever e aprovar.
-                </p>
-              </div>
-              {/* Actions */}
-              <div className="flex gap-3 w-full mt-2">
-                <button
-                  type="button"
-                  onClick={dismissUpdateNotification}
-                  className="flex-1 py-3.5 rounded-[12px] text-[14px] font-[700] bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0] transition-all"
-                >
-                  Fechar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { dismissUpdateNotification(); openUpdates(); }}
-                  className="flex-1 py-3.5 rounded-[12px] text-[14px] font-[700] bg-amber-500 text-white hover:bg-amber-600 active:scale-[0.98] transition-all shadow-lg shadow-amber-500/30"
-                >
-                  Ver checklist
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Persistent pending-updates banner ── */}
-      {pendingCount > 0 && (
-        <button
-          type="button"
-          onClick={openUpdates}
-          aria-live="polite"
-          className="shrink-0 w-full bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-colors flex items-center justify-center gap-2.5 py-[5px] z-[150]"
-        >
-          <span className="w-2 h-2 rounded-full bg-white animate-pulse" aria-hidden="true" />
-          <span className="text-[11px] font-[800] text-white uppercase tracking-[1.5px]">
-            {pendingCount} atualização{pendingCount !== 1 ? 'ões' : ''} por aprovar
-          </span>
-          <span className="text-[10px] font-[700] bg-white/25 text-white px-2 py-0.5 rounded-full">
-            Ver →
-          </span>
-        </button>
-      )}
 
       {/* ── SAF-T import result modal ── */}
       {saftModal?.open && (
@@ -1330,7 +1208,6 @@ function AppContent() {
           setView={setView as (v: ViewType) => void}
           prevView={prevView}
           openLegal={openLegal}
-          openUpdates={openUpdates}
           onSAFTUpload={handleSAFTUpload}
           onLogout={handleLogout}
           hasSaftData={saftData !== null}

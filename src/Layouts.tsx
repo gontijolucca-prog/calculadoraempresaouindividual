@@ -12,7 +12,7 @@ import type { AppMode } from './ModeSelector';
 
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
-  | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal' | 'updates'
+  | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal'
   | 'previsa' | 'office-settings' | 'empresas' | 'historico' | 'exportar';
 
 export interface LayoutProps {
@@ -20,7 +20,6 @@ export interface LayoutProps {
   setView: (v: ViewType) => void;
   prevView: ViewType;
   openLegal: () => void;
-  openUpdates: () => void;
   onSAFTUpload?: (file: File) => void;
   onLogout?: () => void;
   hasSaftData?: boolean;
@@ -38,7 +37,7 @@ export interface LayoutProps {
   children: React.ReactNode;
 }
 
-// Which simulator views are reachable from each mode (besides legal/updates which are always open).
+// Which simulator views are reachable from each mode (besides legal which is always open).
 const VIEWS_BY_MODE: Record<AppMode, ViewType[]> = {
   'novo-cliente': ['profile'],
   empresa: ['empresas', 'profile', 'historico', 'tax', 'vehicle', 'ticket', 'selfss', 'imoveis', 'imt', 'salario', 'irs', 'diagnostico', 'previsa'],
@@ -105,8 +104,8 @@ function Logo({ className = 'w-7 h-7' }: { className?: string }) {
   );
 }
 
-export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates, onSAFTUpload, onLogout, hasSaftData, onOpenSaftViewer, mode, onSelectMode, activeClientName, currentEmpresaId, onNavigateClient, children }: LayoutProps) {
-  const active = view === 'legal' || view === 'updates' ? prevView : view;
+export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload, onLogout, hasSaftData, onOpenSaftViewer, mode, onSelectMode, activeClientName, currentEmpresaId, onNavigateClient, children }: LayoutProps) {
+  const active = view === 'legal' ? prevView : view;
   const saftInputRef = useRef<HTMLInputElement>(null);
 
   // Gaveta no telemóvel. (Os menus do Cliente/Simuladores migraram para os
@@ -256,7 +255,6 @@ export function SidebarLayout({ view, setView, prevView, openLegal, openUpdates,
             )}
 
         <SectionLabel>Ferramentas</SectionLabel>
-        <NavItem label="Atualizações" Icon={ClipboardList} onClick={() => runAction(openUpdates)} current={view === 'updates'} />
         {onSAFTUpload && (
           <NavItem label="Ler SAF-T" Icon={Upload} onClick={() => { saftInputRef.current?.click(); }} title="Importar ficheiro SAF-T" />
         )}

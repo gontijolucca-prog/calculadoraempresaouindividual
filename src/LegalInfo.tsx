@@ -14,7 +14,6 @@ import type { ClientProfile } from './ClientProfile';
 
 interface Props {
   onBack: () => void;
-  onOpenUpdates?: () => void;
   clientProfile?: ClientProfile;
   vehicleState?: { price: number };
   ticketState?: { ticketValue: number };
@@ -178,7 +177,7 @@ function LegalSidebar() {
   );
 }
 
-export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicleState, ticketState, initialAnchor }: Props) {
+export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketState, initialAnchor }: Props) {
   const [pricing, setPricing] = useState<PricingConfig>(loadPricing);
   const [saved, setSaved] = useState(false);
 
@@ -245,15 +244,6 @@ export default function LegalInfo({ onBack, onOpenUpdates, clientProfile, vehicl
           <span className="text-[11px] font-[700] bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full">
             ✓ Atualizado Maio 2026
           </span>
-          {onOpenUpdates && (
-            <button
-              onClick={onOpenUpdates}
-              className="flex items-center gap-2 text-[13px] font-[700] text-white bg-[#0677FF] hover:bg-[#0556CC] px-4 py-2 rounded-[10px] transition-all active:scale-[0.98] shadow-sm shadow-[#0677FF]/20"
-            >
-              <ClipboardList size={15} />
-              Checklist
-            </button>
-          )}
         </div>
       </div>
 
