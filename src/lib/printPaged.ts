@@ -147,7 +147,13 @@ export function printViaPaged(printRoot: HTMLElement, opts: PagedOpts): void {
     }
     .pdf-page { break-after: page; }
     .pdf-page:last-child { break-after: auto; }
-    .pp-band, .mc-band { margin-left: 0 !important; margin-right: 0 !important; }
+    /* Bands decorativas do topo de cada folha: com as folhas achatadas, a margem
+       negativa (-16/-22mm, que no ecrã cola a band à borda da folha) puxava a band
+       E o texto seguinte por cima do conteúdo anterior — texto atropelado + barra
+       azul a tapar cláusulas. A 1ª band fica (margens zeradas) como topo de marca;
+       as das folhas seguintes saem do fluxo contínuo. */
+    .pp-band, .mc-band { margin: 0 0 12mm 0 !important; }
+    .pp-page ~ .pp-page .pp-band, .mc-page ~ .mc-page .mc-band { display: none !important; }
     /* O rodapé interno do documento duplica o rodapé das margin-boxes do paged.js
        (nome do escritório + numeração) e empurrava as assinaturas para uma página
        quase vazia no fim — escondido na impressão paginada. */
