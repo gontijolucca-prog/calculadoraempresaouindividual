@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   FileDown, FileText, Download, Printer, Building2, ChevronDown, Pencil,
-  Calculator, FileSignature, Package, Search, Check, Loader2,
+  Calculator, FileSignature, Package, Search, Check, Loader2, FileSpreadsheet,
 } from 'lucide-react';
 import { listEmpresas, upsertEmpresa, type EmpresaRecord } from './lib/empresas';
 import { parseSAFT } from './lib/saft';
@@ -20,6 +20,9 @@ import Proposta from './Proposta';
 import MinutaContrato from './MinutaContrato';
 import { defaultProfile, type ClientProfile } from './ClientProfile';
 import { printViaPaged, printHtmlViaPaged } from './lib/printPaged';
+import { downloadPrevisaExcel } from './lib/previsaExcel';
+import { defaultPreviSaState, type PreviSaState } from './previSaState';
+import { calculate } from './lib/previsaCalc';
 
 /**
  * Exportar documentos — escolhe a empresa (dropdown) e o documento, pré-visualiza
@@ -94,7 +97,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
   // Selecção pode ser um doc do pacote (PkgId) ou um doc Word (DocTypeId).
   const [docId, setDocId] = useState<string>(() => {
     const saved = loadFromStorage<string | null>('exportarDocId', null);
-    return (saved && (isPkg(saved) || DOC_TYPES.some(d => d.id === saved))) ? saved : 'simulacao';
+    return (saved && (isPkg(saved) || saved === 'previsa' || DOC_TYPES.some(d => d.id === saved))) ? saved : 'simulacao';
   });
   useEffect(() => { saveToStorage('exportarEmpresaId', empresaId); }, [empresaId]);
   useEffect(() => { saveToStorage('exportarDocId', docId); }, [docId]);
@@ -201,8 +204,30 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
   };
 
   const pkg = isPkg(docId);
+  // Previsa (Excel Modelo 22) — documento especial: não é Word-HTML nem React,
+  // é o ficheiro original .xlsx preenchido e descarregado.
+  const isPrevisa = docId === 'previsa';
   const def = DOC_TYPES.find(d => d.id === docId) ?? DOC_TYPES[0];
-  const avisoPrevisa = !pkg && !!emp && def.precisaPrevisa && !hasPrevisaData(emp);
+  const avisoPrevisa = !pkg && !!emp && !hasPrevisaData(emp) && (isPrevisa || def.precisaPrevisa);
+
+  const previsaState = useMemo<PreviSaState>(
+    () => ({ ...defaultPreviSaState(), ...((emp?.previsa ?? {}) as Partial<PreviSaState>) }),
+    [emp],
+  );
+  const previsaRes = useMemo(() => (isPrevisa ? calculate(previsaState) : null), [isPrevisa, previsaState]);
+  const [downloadingPrevisa, setDownloadingPrevisa] = useState(false);
+  const handleDownloadPrevisa = async () => {
+    if (!emp || downloadingPrevisa) return;
+    setDownloadingPrevisa(true);
+    try {
+      await downloadPrevisaExcel(previsaState, emp.nome || emp.profile?.nomeCliente || '');
+    } catch (e) {
+      console.error('Falha ao gerar o Excel do Previsa:', e);
+      alert('Não foi possível gerar o Excel do Previsa. Tenta novamente.');
+    } finally {
+      setDownloadingPrevisa(false);
+    }
+  };
 
   // Estados dos simuladores para a empresa SELECCIONADA (não a activa no App):
   // lê o que está guardado na empresa, com fallback aos valores iniciais do perfil.
@@ -217,8 +242,8 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
 
   // HTML base do documento Word (só para docs da contabilista).
   const docHtml = useMemo(
-    () => (!pkg && emp ? def.build(emp, office) : ''),
-    [pkg, emp, def, office],
+    () => (!pkg && !isPrevisa && emp ? def.build(emp, office) : ''),
+    [pkg, isPrevisa, emp, def, office],
   );
 
   // Carrega o documento Word editável no iframe quando muda a selecção, e
@@ -309,7 +334,9 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
 
   const docLabel = pkg
     ? (PACKAGE_DOCS.find(d => d.id === docId)?.label ?? '')
-    : def.label;
+    : isPrevisa
+      ? 'Previsa — Modelo 22 (Excel)'
+      : def.label;
 
   // Imprime o documento do pacote via paged.js: margens em todas as páginas,
   // rodapé repetido e numeração "Página X de Y". Cai para window.print() se o
@@ -517,6 +544,37 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                     </button>
                   );
                 })}
+
+                {/* Previsa — Modelo 22 em Excel (o ficheiro original preenchido) */}
+                {(() => {
+                  const active = isPrevisa;
+                  const badge = FILL_BADGE[emp && hasPrevisaData(emp) ? 'completo' : 'modelo'];
+                  return (
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => setDocId('previsa')}
+                      className={`w-full text-left flex items-start gap-3 p-3.5 rounded-[14px] border transition-all ${
+                        active
+                          ? 'border-[#0677FF] bg-[#0677FF]/[0.04] shadow-[0_2px_10px_-6px_rgba(6,119,255,0.5)]'
+                          : 'border-slate-200/80 bg-white hover:border-[#0677FF]/40'
+                      }`}
+                    >
+                      <span className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center ${active ? 'border-[#0677FF]' : 'border-slate-300'}`}>
+                        {active && <span className="w-[9px] h-[9px] rounded-full bg-[#0677FF]" />}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2 flex-wrap">
+                          <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span className="text-[13.5px] font-[800] text-[#0F172A] leading-tight">Previsa — Modelo 22 (Excel)</span>
+                          <span className={`text-[9px] font-[800] uppercase tracking-[0.4px] px-1.5 py-0.5 rounded-[5px] border ${badge.cls}`}>{badge.txt}</span>
+                        </span>
+                        <span className="block text-[12px] text-slate-500 font-[500] mt-0.5">O ficheiro original do Previsa preenchido com os dados da empresa; recalcula ao abrir.</span>
+                      </span>
+                    </button>
+                  );
+                })()}
               </div>
 
               {/* Aviso: documento precisa de dados do Previsa que faltam */}
@@ -536,35 +594,51 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
 
               {/* Ações */}
               <div className="mt-6 flex flex-col gap-2.5">
-                {!pkg && (
+                {isPrevisa ? (
                   <button
                     type="button"
-                    onClick={handleDownloadWord}
-                    disabled={!emp}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-[12px] text-[14px] font-[800] text-white bg-[#0677FF] hover:bg-[#0560d8] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                    onClick={handleDownloadPrevisa}
+                    disabled={!emp || downloadingPrevisa}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-[12px] text-[14px] font-[800] text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                   >
-                    <Download className="w-4.5 h-4.5" />
-                    Descarregar em Word
+                    {downloadingPrevisa ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <FileSpreadsheet className="w-4.5 h-4.5" />}
+                    {downloadingPrevisa ? 'A gerar Excel…' : 'Descarregar Excel (.xlsx)'}
                   </button>
+                ) : (
+                  <>
+                    {!pkg && (
+                      <button
+                        type="button"
+                        onClick={handleDownloadWord}
+                        disabled={!emp}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-[12px] text-[14px] font-[800] text-white bg-[#0677FF] hover:bg-[#0560d8] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                      >
+                        <Download className="w-4.5 h-4.5" />
+                        Descarregar em Word
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={pkg ? handlePrintPkg : handlePrintWord}
+                      disabled={!emp || printingPkg}
+                      className={`w-full flex items-center justify-center gap-2 px-4 rounded-[12px] font-[800] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all ${
+                        pkg
+                          ? 'py-3.5 text-[14px] text-white bg-[#0677FF] hover:bg-[#0560d8]'
+                          : 'py-3 text-[13.5px] text-[#0677FF] bg-white border border-[#0677FF]/30 hover:bg-[#0677FF]/[0.04]'
+                      }`}
+                    >
+                      {printingPkg ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <Printer className="w-4.5 h-4.5" />}
+                      {printingPkg ? 'A preparar páginas…' : 'Imprimir / Guardar PDF'}
+                    </button>
+                  </>
                 )}
-                <button
-                  type="button"
-                  onClick={pkg ? handlePrintPkg : handlePrintWord}
-                  disabled={!emp || printingPkg}
-                  className={`w-full flex items-center justify-center gap-2 px-4 rounded-[12px] font-[800] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all ${
-                    pkg
-                      ? 'py-3.5 text-[14px] text-white bg-[#0677FF] hover:bg-[#0560d8]'
-                      : 'py-3 text-[13.5px] text-[#0677FF] bg-white border border-[#0677FF]/30 hover:bg-[#0677FF]/[0.04]'
-                  }`}
-                >
-                  {printingPkg ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <Printer className="w-4.5 h-4.5" />}
-                  {printingPkg ? 'A preparar páginas…' : 'Imprimir / Guardar PDF'}
-                </button>
               </div>
               <p className="mt-2.5 text-[11.5px] text-slate-400 font-[500] text-center text-balance">
-                {pkg
-                  ? 'Edita o documento na folha e imprime ou guarda como PDF.'
-                  : 'Descarrega o que vês na folha — com as tuas edições. O Word abre o .doc editável.'}
+                {isPrevisa
+                  ? 'Sai o Excel original do Previsa (13 folhas) com os dados desta empresa; as fórmulas recalculam ao abrir.'
+                  : pkg
+                    ? 'Edita o documento na folha e imprime ou guarda como PDF.'
+                    : 'Descarrega o que vês na folha — com as tuas edições. O Word abre o .doc editável.'}
               </p>
             </div>
 
@@ -572,18 +646,30 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
             <div className="min-w-0">
               <div className="flex items-center justify-between gap-3 mb-2 no-print">
                 <div className="flex items-center gap-1.5 text-[11px] font-[800] uppercase tracking-[0.6px] text-slate-400">
-                  <Pencil className="w-3.5 h-3.5" />
-                  3 · {docLabel} — editável
+                  {isPrevisa ? <FileSpreadsheet className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
+                  3 · {docLabel}{isPrevisa ? '' : ' — editável'}
                 </div>
-                <button
-                  type="button"
-                  onClick={pkg ? handlePrintPkg : handlePrintWord}
-                  disabled={!emp || printingPkg}
-                  className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[12.5px] font-[800] text-white bg-[#0677FF] hover:bg-[#0560d8] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-[0_2px_10px_-4px_rgba(6,119,255,0.6)]"
-                >
-                  {printingPkg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
-                  {printingPkg ? 'A preparar…' : 'Imprimir / PDF'}
-                </button>
+                {isPrevisa ? (
+                  <button
+                    type="button"
+                    onClick={handleDownloadPrevisa}
+                    disabled={!emp || downloadingPrevisa}
+                    className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[12.5px] font-[800] text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-[0_2px_10px_-4px_rgba(5,150,105,0.5)]"
+                  >
+                    {downloadingPrevisa ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
+                    {downloadingPrevisa ? 'A gerar…' : 'Descarregar Excel'}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={pkg ? handlePrintPkg : handlePrintWord}
+                    disabled={!emp || printingPkg}
+                    className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[12.5px] font-[800] text-white bg-[#0677FF] hover:bg-[#0560d8] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-[0_2px_10px_-4px_rgba(6,119,255,0.6)]"
+                  >
+                    {printingPkg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+                    {printingPkg ? 'A preparar…' : 'Imprimir / PDF'}
+                  </button>
+                )}
               </div>
 
               {pkg ? (
@@ -612,6 +698,57 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                       )}
                     </div>
                   )}
+                </div>
+              ) : isPrevisa ? (
+                // Previsa: não há pré-visualização do .xlsx — mostra o resumo
+                // do Modelo 22 calculado com os dados desta empresa e explica
+                // o que sai no ficheiro.
+                <div className="rounded-[14px] border border-slate-200 bg-white p-6 shadow-[0_2px_14px_-8px_rgba(15,23,42,0.25)] no-print">
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="w-11 h-11 rounded-[12px] bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
+                      <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[15px] font-[800] text-[#0B1D2D] leading-tight truncate">{previsaState.designacao || emp?.nome || 'Empresa'}</p>
+                      <p className="text-[12.5px] text-slate-500 font-[500]">Período {previsaState.periodo || '—'} · modelo PrevisaV25 (13 folhas)</p>
+                    </div>
+                  </div>
+                  {previsaRes && (previsaRes.totalRendimentos !== 0 || previsaRes.totalGastos !== 0 || previsaState.c701_rai !== 0) ? (
+                    <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {([
+                        ['Total de rendimentos', previsaRes.totalRendimentos],
+                        ['Total de gastos', previsaRes.totalGastos],
+                        [previsaRes.effectiveRai >= 0 ? 'Resultado antes de impostos' : 'Prejuízo antes de impostos', Math.abs(previsaRes.effectiveRai)],
+                        ['Matéria coletável', previsaRes.materiaColetavel],
+                        ['IRC liquidado + TA', previsaRes.c358 + previsaRes.taTotal],
+                        [previsaRes.c367 >= 0 ? 'Total a pagar' : 'Total a recuperar', Math.abs(previsaRes.c367)],
+                      ] as [string, number][]).map(([label, v]) => (
+                        <div key={label} className="rounded-[12px] border border-slate-200 bg-slate-50/60 px-3.5 py-3">
+                          <p className="text-[10.5px] font-[800] uppercase tracking-[0.5px] text-slate-400">{label}</p>
+                          <p className="mt-0.5 text-[15px] font-[800] text-[#0B1D2D] tabular-nums">
+                            {v.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-5 text-[13px] text-slate-500 font-[500] leading-relaxed">
+                      Esta empresa ainda não tem valores no Previsa — o Excel sai com a estrutura completa do modelo, a zeros.
+                      {onOpenPrevisa && emp && (
+                        <> {' '}
+                          <button type="button" onClick={() => onOpenPrevisa(emp.id)} className="font-[700] text-[#0677FF] underline hover:text-[#0560d8]">
+                            Abrir o Previsa →
+                          </button>
+                        </>
+                      )}
+                    </p>
+                  )}
+                  <p className="mt-5 text-[12px] text-slate-400 font-[500] leading-relaxed">
+                    O ficheiro descarregado é o modelo original do Previsa com as células de input preenchidas
+                    (rendimentos e gastos por conta, regime, dimensão e identificação) — formatação, fórmulas e as
+                    13 folhas ficam intactas, e o Excel recalcula tudo ao abrir. Os restantes quadros (Q07, Q10,
+                    prejuízos, tributações autónomas) preenchem-se no próprio ficheiro ou aqui no simulador.
+                  </p>
                 </div>
               ) : (
                 // Documentos da contabilista (Word HTML) num iframe editável,
