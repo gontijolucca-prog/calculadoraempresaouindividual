@@ -1,7 +1,7 @@
 /**
  * Estados iniciais dos simuladores derivados do perfil do cliente. Extraídos
  * para um lib partilhado para que tanto o App como a vista "Exportar documentos"
- * (que gera o Pacote do Cliente para a empresa seleccionada) cheguem aos mesmos
+ * (que gera o Pacote do Cliente para a empresa selecionada) cheguem aos mesmos
  * valores por defeito quando uma empresa ainda não tem o simulador preenchido.
  *
  * Sem dados fantasma: os campos numéricos começam a ZERO; só o que vem do perfil

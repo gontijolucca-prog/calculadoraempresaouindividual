@@ -20,7 +20,7 @@ const pct = (n: number) => (n * 100).toFixed(2) + '%';
 // ── Layout em folha de cálculo ────────────────────────────────────────────────
 // Réplica fiel do Previsa em Excel. No Excel a ordem das colunas é, da esquerda
 // para a direita: Descrição · C (código do campo M22) · Valor · Observações.
-// Mantemos exactamente essa ordem para quem usa o Excel não reaprender nada.
+// Mantemos exatamente essa ordem para quem usa o Excel não reaprender nada.
 // A 4.ª coluna (Observações) colapsa a 0 em ecrãs estreitos.
 const GRID_COLS =
   'grid-cols-[minmax(0,1fr)_2.75rem_7.75rem_0] xl:grid-cols-[minmax(0,1fr)_2.75rem_7.75rem_minmax(0,9rem)]';
@@ -750,7 +750,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
             <CalcRow label="358 — IRC liquidado (c378 − c357)" value={stepRes.c358} highlight />
 
             <Section title="Pagamentos e Deduções" cols>
-              <NumInput label="356 — PEC efectuado" value={st.pecPagamentos} onChange={v => s('pecPagamentos', v)}
+              <NumInput label="356 — PEC efetuado" value={st.pecPagamentos} onChange={v => s('pecPagamentos', v)}
                 help={`Estimado: ${fmt(stepRes.pecCalculado)} €`} />
               <NumInput label="359 — Retenções na fonte" value={st.retencoesFonte} onChange={v => s('retencoesFonte', v)} />
               <NumInput label="360 — PC — pagamentos por conta" value={st.pcPagamentos} onChange={v => s('pcPagamentos', v)}
@@ -828,7 +828,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <span className="font-[700] text-slate-600">{fmt(res.pcCalculado)} €</span>
             </div>
             <div className="flex justify-between text-[11px]">
-              <span className="text-slate-400 font-[500]">Taxa efectiva s/ RAI</span>
+              <span className="text-slate-400 font-[500]">Taxa efetiva s/ RAI</span>
               <span className="font-[700] text-slate-600">
                 {res.effectiveRai !== 0 ? pct((res.c358 + res.taTotal) / Math.abs(res.effectiveRai)) : '—'}
               </span>
@@ -1231,7 +1231,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <CalcRow label="358 — IRC liquidado (c378 − c357)" value={res.c358} highlight />
 
               <Section title="Pagamentos e Deduções" cols>
-                <NumInput label="356 — PEC efectuado" value={state.pecPagamentos} onChange={v => set('pecPagamentos', v)}
+                <NumInput label="356 — PEC efetuado" value={state.pecPagamentos} onChange={v => set('pecPagamentos', v)}
                   help={`Estimado: ${fmt(res.pecCalculado)} €`} />
                 <NumInput label="359 — Retenções na fonte" value={state.retencoesFonte} onChange={v => set('retencoesFonte', v)} />
                 <NumInput label="360 — PC — pagamentos por conta" value={state.pcPagamentos} onChange={v => set('pcPagamentos', v)}

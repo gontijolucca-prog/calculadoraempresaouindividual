@@ -5,7 +5,7 @@ import { ListOrdered, LayoutGrid } from 'lucide-react';
 interface Props {
   /** Views onde o toggle deve aparecer. Outras views: invisível. */
   visibleViews: readonly string[];
-  /** View actual da app. */
+  /** View atual da app. */
   currentView: string;
 }
 
@@ -20,8 +20,8 @@ export default function FloatingFlowToggle({ visibleViews, currentView }: Props)
 
   useEffect(() => {
     const onChange = (e: Event) => {
-      const detail = (e as CustomEvent<{ active: boolean }>).detail;
-      setFlowMode(!!detail?.active);
+      const detail = (e as CustomEvent<{ ative: boolean }>).detail;
+      setFlowMode(!!detail?.ative);
     };
     window.addEventListener('flowmode:change', onChange);
     return () => window.removeEventListener('flowmode:change', onChange);

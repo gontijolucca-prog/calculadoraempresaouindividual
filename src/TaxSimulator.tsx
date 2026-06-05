@@ -647,7 +647,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
                 <div className="h-px bg-white/30 my-1" />
                 <div className="flex justify-between text-[13px]"><span>Vantagem</span><strong>{ptEur(diff)}</strong></div>
               </div>
-              {irsChips && <div className="mt-4 text-[11px] opacity-80">✓ Benefícios fiscais activos</div>}
+              {irsChips && <div className="mt-4 text-[11px] opacity-80">✓ Benefícios fiscais ativos</div>}
             </div>
 
             <div className="bg-white rounded-[20px] border border-emerald-100 p-5 shadow-sm">{folha3}</div>

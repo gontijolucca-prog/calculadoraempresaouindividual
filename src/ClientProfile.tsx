@@ -165,7 +165,7 @@ export interface ContabilidadeData {
   // Balanço — Capital próprio
   capitalRealizado: number;           // 51
   reservasResultadosTransitados: number; // 55/56
-  resultadoLiquido: number;           // 818 — também usado na DR e na Acta
+  resultadoLiquido: number;           // 818 — também usado na DR e na Ata
   outrasVariacoesCapital: number;     // prémios, excedentes, ajustamentos
   // Balanço — Passivo
   financiamentosObtidos: number;      // 25
@@ -298,7 +298,7 @@ export default function ClientProfile({
   const currentYear = new Date().getFullYear();
   const { flowMode, exitFlow } = useFlowMode();
 
-  // Acção "Exportar documentos" disparada pela sidebar. O toggle de Vista
+  // Ação "Exportar documentos" disparada pela sidebar. O toggle de Vista
   // simplificada/detalhada é tratado pelo bus global em useFlowMode.
   useEffect(() => {
     const onPackage = () => setShowPackage(true);
@@ -980,7 +980,7 @@ export default function ClientProfile({
             </div>
 
             <div>
-              <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Situação Fiscal Actual</h3>
+              <h3 className="text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3">Situação Fiscal Atual</h3>
               <div className="grid grid-cols-3 gap-x-4 gap-y-4">
                 <div>
                   <label className={labelClass}>Dívidas fiscais (AT)</label>
@@ -1072,7 +1072,7 @@ export default function ClientProfile({
     {
       id: 'objetivos',
       label: 'Objetivos, Intenções & Documentos',
-      description: 'Objectivos do cliente, planeamento futuro e documentação disponível.',
+      description: 'Objetivos do cliente, planeamento futuro e documentação disponível.',
       render: (st, setSt) => {
         const setObj = (patch: Partial<ClientProfile['objetivos']>) => setSt({ objetivos: { ...st.objetivos, ...patch } });
         const setInt = (patch: Partial<ClientProfile['intencoes']>) => setSt({ intencoes: { ...st.intencoes, ...patch } });
@@ -1225,7 +1225,7 @@ export default function ClientProfile({
 
   // Modal de exportação: definido uma vez e renderizado em AMBOS os ramos
   // (flow + detalhada) para que "Exportar documentos" da sidebar funcione
-  // independentemente da vista activa.
+  // independentemente da vista ativa.
   const packageModal = showPackage && office && honorarios && (
     <ExportPackageModal
       profile={profile}

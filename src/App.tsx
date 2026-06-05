@@ -272,7 +272,7 @@ function ViewLoading() {
   );
 }
 
-// Funcionalidade D: os simuladores são por-cliente. Sem empresa seleccionada,
+// Funcionalidade D: os simuladores são por-cliente. Sem empresa selecionada,
 // um simulador mostra este ecrã em vez de cálculos órfãos (que não poderiam ser
 // guardados no histórico de ninguém).
 function NoEmpresaGate({ onGo }: { onGo: () => void }) {
@@ -290,7 +290,7 @@ function NoEmpresaGate({ onGo }: { onGo: () => void }) {
         <button
           type="button"
           onClick={onGo}
-          className="mt-5 inline-flex items-center gap-2 px-5 py-3 rounded-[12px] text-[14px] font-[800] text-white bg-gradient-to-r from-[#0677FF] to-[#044BB6] hover:brightness-105 active:scale-[0.98] transition-all shadow-lg shadow-[#0677FF]/30"
+          className="mt-5 inline-flex items-center gap-2 px-5 py-3 rounded-[12px] text-[14px] font-[800] text-white bg-gradient-to-r from-[#0677FF] to-[#044BB6] hover:brightness-105 ative:scale-[0.98] transition-all shadow-lg shadow-[#0677FF]/30"
         >
           Ir para a Lista de Empresas
         </button>
@@ -302,14 +302,14 @@ function NoEmpresaGate({ onGo }: { onGo: () => void }) {
 function AppContent() {
   const [loggedIn, setLoggedIn] = useState(() => loadFromStorage('loggedIn', false));
   const [showLogin, setShowLogin] = useState(false);
-  // Mode is persisted: ao actualizar a página o utilizador continua no mesmo contexto.
+  // Mode is persisted: ao atualizar a página o utilizador continua no mesmo contexto.
   // Default = 'empresa' (CRM): após login vai directo para a Lista de Empresas. O
   // selector "Como queres trabalhar hoje?" foi removido do fluxo.
   const [mode, setMode] = useState<AppMode>(() => {
     const m = loadFromStorage<AppMode | null>('mode', null);
     return m === 'novo-cliente' || m === 'empresa' ? m : 'empresa';
   });
-  // Auto-atualização: aviso "nova versão disponível" + detecção de edições por guardar.
+  // Auto-atualização: aviso "nova versão disponível" + deteção de edições por guardar.
   const [versionUpdate, setVersionUpdate] = useState(false);
   const getHasUnsavedEdits = useUnsavedEdits();
   const [view, setView] = useState<ViewType>(() => {
@@ -336,7 +336,7 @@ function AppContent() {
   const [saftData, setSaftData] = useState<SAFTParseResult | null>(null);
   const [showSaftViewer, setShowSaftViewer] = useState(false);
   const [previSaState, setPreviSaState] = useState<PreviSaState>(() => {
-    // Arranca com o Previsa da empresa activa (se houver) — senão, limpo.
+    // Arranca com o Previsa da empresa ativa (se houver) — senão, limpo.
     const empId = getCurrentEmpresaId();
     const emp = empId ? getEmpresa(empId) : null;
     return { ...defaultPreviSaState(), ...(emp?.previsa ?? {}) };
@@ -355,7 +355,7 @@ function AppContent() {
     return legacy;
   });
   // Estado inicial dos simuladores: arranca com o que está GUARDADO na empresa
-  // activa (emp.sims) — tal como o previSaState/clientProfile acima. Sem isto, o
+  // ativa (emp.sims) — tal como o previSaState/clientProfile acima. Sem isto, o
   // efeito de persistência no mount sobreporia os dados guardados com defaults
   // vazios (perda de dados ao recarregar). Senão houver dados guardados, semeia
   // do perfil (getInitial*).
@@ -372,14 +372,14 @@ function AppContent() {
   const [imoveisState, setImoveisState] = useState<ImoveisState>(() => (initSims.imoveis as ImoveisState) ?? getInitialImoveisState(clientProfile));
   const [imtState, setImtState] = useState<IMTState>(() => (initSims.imt as IMTState) ?? getInitialIMTState(clientProfile));
   const [salarioState, setSalarioState] = useState<SalarioState>(() => (initSims.salario as SalarioState) ?? getInitialSalarioState(clientProfile));
-  // IRS é por-cliente (carregado de emp.sims.irs ao seleccionar a empresa) —
+  // IRS é por-cliente (carregado de emp.sims.irs ao selecionar a empresa) —
   // já NÃO usa uma chave global em localStorage, que fazia os dados de IRS
   // "vazarem" entre empresas.
   const [irsState, setIrsState] = useState<IRSState>(() => (initSims.irs as IRSState) ?? defaultIRSState());
 
   // Funcionalidade D — guardar simulações no histórico do cliente.
   // `justSavedSim` é o feedback transitório do botão flutuante; `lastResumoRef`
-  // guarda o último resumo-resultado publicado pelo simulador activo (se algum),
+  // guarda o último resumo-resultado publicado pelo simulador ativo (se algum),
   // que tem prioridade sobre o resumo derivado do estado. `reportResumo` tem
   // identidade estável (useRef) para o hook useReportResumo não disparar a cada
   // render do simulador.
@@ -388,7 +388,7 @@ function AppContent() {
   const reportResumo = useRef((r: string) => { lastResumoRef.current = r; }).current;
 
   // Definições do escritório (branding + honorários). Persistidas em localStorage —
-  // não pertencem ao cliente activo, são definições de licenciado.
+  // não pertencem ao cliente ativo, são definições de licenciado.
   const [officeSettings, setOfficeSettings] = useState<OfficeSettings>(() => loadOfficeSettings());
   const [honorariosConfig, setHonorariosConfig] = useState<HonorariosConfig>(() => loadHonorariosConfig());
 
@@ -412,12 +412,12 @@ function AppContent() {
     });
     return () => stopVersionChecker();
   }, [getHasUnsavedEdits]);
-  // Sincroniza alterações do perfil para a empresa actual no registry.
+  // Sincroniza alterações do perfil para a empresa atual no registry.
   useEffect(() => {
     if (currentEmpresaId) syncProfileIntoEmpresa(currentEmpresaId, clientProfile);
   }, [clientProfile, currentEmpresaId]);
 
-  // Persiste o estado do Previsa na empresa actual (espelha o sync do perfil).
+  // Persiste o estado do Previsa na empresa atual (espelha o sync do perfil).
   // DEPOIS do sync do perfil de propósito: quando ambos mudam (ex.: abrir
   // empresa), este corre a seguir, lê a empresa já com o perfil novo e só
   // acrescenta `previsa` — sem sobrepor a escrita do perfil.
@@ -427,10 +427,10 @@ function AppContent() {
     if (emp) upsertEmpresa({ ...emp, previsa: previSaState });
   }, [previSaState, currentEmpresaId]);
 
-  // Persiste o estado de TODOS os simuladores na empresa actual. É isto que dá
+  // Persiste o estado de TODOS os simuladores na empresa atual. É isto que dá
   // independência por cliente: cada empresa guarda os seus próprios dados de
-  // simulador; ao reabri-la (selectEmpresa) carrega-se exactamente este snapshot.
-  // Corre depois dos syncs de perfil/previsa para ler a empresa já actualizada.
+  // simulador; ao reabri-la (selectEmpresa) carrega-se exatamente este snapshot.
+  // Corre depois dos syncs de perfil/previsa para ler a empresa já atualizada.
   useEffect(() => {
     if (!currentEmpresaId) return;
     const emp = getEmpresa(currentEmpresaId);
@@ -445,7 +445,7 @@ function AppContent() {
     });
   }, [taxState, vehicleState, ticketState, ssState, diagnosticoState, imoveisState, imtState, salarioState, irsState, currentEmpresaId]);
 
-  // Auto-guarda no histórico do cliente a simulação activa (quando tem dados),
+  // Auto-guarda no histórico do cliente a simulação ativa (quando tem dados),
   // ~1,2s após a última edição. Mantém UM só registo automático por simulador
   // (dedup em upsertAutoSimulacao) — por isso já não há botão "Guardar".
   useEffect(() => {
@@ -484,7 +484,7 @@ function AppContent() {
       const merged = await syncEmpresasFromFirestore(officeSettings.nif);
       if (cancelled) return;
       setEmpresasRefresh(n => n + 1);
-      // Se a empresa actual foi carregada da cloud, atualiza o perfil em memória.
+      // Se a empresa atual foi carregada da cloud, atualiza o perfil em memória.
       if (currentEmpresaId) {
         const emp = merged.find(e => e.id === currentEmpresaId);
         if (emp) loadEmpresaIntoState(emp);
@@ -505,7 +505,7 @@ function AppContent() {
     return () => clearTimeout(t);
   }, [loggedIn, clientProfile, previSaState, currentEmpresaId, empresasRefresh, officeSettings.nif]);
 
-  // Sync document.title with the active view (helps history & screen readers)
+  // Sync document.title with the ative view (helps history & screen readers)
   useEffect(() => {
     document.title = `${VIEW_TITLES[view]} · Estudo 360`;
   }, [view]);
@@ -548,7 +548,7 @@ function AppContent() {
   // Trocar de modo directamente a partir da sidebar. "Novo Cliente" é sempre um
   // rascunho LIMPO e não ligado a nenhuma empresa — só entra na lista quando se
   // carrega em "Guardar cliente". Por isso, ao entrar nesse modo, esvaziamos o
-  // perfil/Previsa e largamos a empresa activa.
+  // perfil/Previsa e largamos a empresa ativa.
   const selectMode = (m: AppMode) => {
     setMode(m);
     if (m === 'novo-cliente') {
@@ -560,7 +560,7 @@ function AppContent() {
     setView(DEFAULT_VIEW_BY_MODE[m]);
   };
 
-  // Selecciona o cliente activo (perfil + Previsa) sem mudar de vista.
+  // Seleciona o cliente ativo (perfil + Previsa) sem mudar de vista.
   const selectEmpresa = (id: string): boolean => {
     const emp = getEmpresa(id);
     if (!emp) return false;
@@ -577,7 +577,7 @@ function AppContent() {
   };
 
   // Navegação por cliente: usada pelos dropdowns dos cartões na Lista de Empresas.
-  // Selecciona o cliente e abre directamente a vista pedida (perfil, simulador,
+  // Seleciona o cliente e abre directamente a vista pedida (perfil, simulador,
   // histórico…). Para "Pacote cliente" e "Vista detalhada", regista a intenção
   // que o ClientProfile consome ao montar.
   const navigateClient = (empId: string, view: string, opts?: { openPackage?: boolean; toggleFlow?: boolean }) => {
@@ -642,7 +642,7 @@ function AppContent() {
     handleSAFTUpload(file);
   };
 
-  /** Fluxo: cria empresa nova vazia, define como activa, importa SAFT (preenche o perfil
+  /** Fluxo: cria empresa nova vazia, define como ativa, importa SAFT (preenche o perfil
    *  e leva à vista Perfil via handleSAFTUpload). O useEffect de sync grava os dados
    *  do SAFT na empresa recém-criada. */
   const handleNovaEmpresaFromSAFT = (file: File) => {
@@ -702,7 +702,7 @@ function AppContent() {
         const newPrevisa: PreviSaState = { ...defaultPreviSaState(), ...(result.previsa ?? {}) };
         setPreviSaState(newPrevisa);
 
-        // Guarda o SAF-T em bruto na empresa actual para poder re-exportá-lo
+        // Guarda o SAF-T em bruto na empresa atual para poder re-exportá-lo
         // depois. Usa o id da storage (o state pode estar stale neste callback
         // assíncrono do FileReader). syncProfileIntoEmpresa espalha ...emp, por
         // isso o saftXml sobrevive às escritas seguintes do perfil.
@@ -898,7 +898,7 @@ function AppContent() {
   };
 
   // Current simulator content
-  // Funcionalidade D: simuladores são por-cliente — sem empresa activa mostram o gate.
+  // Funcionalidade D: simuladores são por-cliente — sem empresa ativa mostram o gate.
   const simGate = <NoEmpresaGate onGo={() => { setMode('empresa'); setView('empresas'); }} />;
 
   // Rascunho de cliente novo (modo "Novo Cliente", a preencher, ainda sem empresa).
@@ -1085,7 +1085,7 @@ function AppContent() {
                 <button
                   type="button"
                   onClick={() => { setSaftModal(null); setView('profile'); }}
-                  className="flex-1 py-3 rounded-[12px] text-[14px] font-[700] bg-emerald-600 text-white hover:bg-emerald-700 active:scale-[0.98] transition-all shadow-lg shadow-emerald-600/30"
+                  className="flex-1 py-3 rounded-[12px] text-[14px] font-[700] bg-emerald-600 text-white hover:bg-emerald-700 ative:scale-[0.98] transition-all shadow-lg shadow-emerald-600/30"
                 >
                   Ver Perfil
                 </button>
@@ -1252,7 +1252,7 @@ function AppContent() {
           <button
             type="button"
             onClick={() => setView(view === 'tax' ? 'profile' : 'tax')}
-            className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-[12px] text-[14px] font-[700] text-[#0677FF] bg-[#0677FF]/10 hover:bg-[#0677FF]/15 active:scale-[0.98] transition-all"
+            className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-[12px] text-[14px] font-[700] text-[#0677FF] bg-[#0677FF]/10 hover:bg-[#0677FF]/15 ative:scale-[0.98] transition-all"
           >
             {view === 'tax'
               ? <><ArrowLeft className="w-4 h-4" strokeWidth={2.5} /> Voltar ao perfil</>
@@ -1261,7 +1261,7 @@ function AppContent() {
           <button
             type="button"
             onClick={handleSaveNewClient}
-            className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-[12px] text-[14px] font-[800] text-white active:scale-[0.98] transition-all"
+            className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-[12px] text-[14px] font-[800] text-white ative:scale-[0.98] transition-all"
             style={{
               background: 'linear-gradient(135deg, #0677FF 0%, #044BB6 100%)',
               boxShadow: '0 0 0 1px rgba(6,119,255,0.35), 0 8px 22px -8px rgba(6,119,255,0.6)',

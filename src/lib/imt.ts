@@ -1,6 +1,6 @@
 /**
  * IMT — Imposto Municipal sobre Transmissões Onerosas de Imóveis
- * CIMT (Código do IMT) — valores actualizados OE 2026
+ * CIMT (Código do IMT) — valores atualizados OE 2026
  * Imposto de Selo: TGIS verba 1.1 — 0.8% sobre o valor
  */
 

@@ -9,7 +9,7 @@ interface Props {
   honorarios: HonorariosConfig;
   /** IDs dos serviços extra incluídos na proposta — para alinhar valor com a Proposta. */
   servicosIds?: string[];
-  /** Override do tipo de outorgante do cliente (singular/colectivo). Por defeito infere do tipoEntidade. */
+  /** Override do tipo de outorgante do cliente (singular/coletivo). Por defeito infere do tipoEntidade. */
   clienteEhPessoaColetiva?: boolean;
   /** Data de início do contrato (ISO ou formato livre). Por defeito = hoje. */
   dataInicio?: string;
@@ -52,7 +52,7 @@ export default function MinutaContrato({
 }: Props) {
   const proposta: PropostaResultado = calcularProposta(profile, honorarios, servicosIds);
 
-  // Inferência: se cliente é uma sociedade (não ENI), assume pessoa colectiva.
+  // Inferência: se cliente é uma sociedade (não ENI), assume pessoa coletiva.
   const pessoaColetiva = clienteEhPessoaColetiva ?? ['lda', 'unipessoal', 'sa', 'socio_unico'].includes(profile.tipoEntidade);
   const escritorioSociedade = office.tipo === 'sociedade';
 

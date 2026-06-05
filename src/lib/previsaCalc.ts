@@ -1,7 +1,7 @@
 /**
  * Motor de cálculo do Previsa (IRC Modelo 22) — extraído do PreviSaSimulator
  * para poder ser reutilizado fora do componente (ex.: wordDocs estima o imposto
- * sobre o rendimento do período na Demonstração de Resultados e na Acta).
+ * sobre o rendimento do período na Demonstração de Resultados e na Ata).
  * Função pura: PreviSaState → CalcResult, sem dependências de React.
  */
 import type { Regime, Territorio, ViaturaRow, PreviSaState } from '../previSaState';
@@ -254,7 +254,7 @@ export function calculate(s: PreviSaState): CalcResult {
 /**
  * Imposto sobre o rendimento do período ESTIMADO (gasto contabilístico) a partir
  * do estado Previsa: IRC liquidado (coleta + derramas − deduções) + tributações
- * autónomas. Usado para preencher a DR e a Acta quando o SAF-T não traz a conta
+ * autónomas. Usado para preencher a DR e a Ata quando o SAF-T não traz a conta
  * 812. Devolve null sem dados de rendimentos/gastos (estado vazio).
  */
 export function impostoEstimado(s: PreviSaState): number | null {

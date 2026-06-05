@@ -2,10 +2,10 @@
  * Registry de empresas (multi-cliente).
  *
  * Estrutura: Estudo 360 é um mini-CRM para escritórios de contabilidade. Cada
- * empresa tem o seu perfil próprio + dados de SAFT. O perfil "actual" (currentEmpresaId)
- * é o que está activo na sidebar — todos os simuladores e a vista Perfil leem dele.
+ * empresa tem o seu perfil próprio + dados de SAFT. O perfil "atual" (currentEmpresaId)
+ * é o que está ativo na sidebar — todos os simuladores e a vista Perfil leem dele.
  *
- * Persistência actual: localStorage. Migração futura para Firestore mantém esta API.
+ * Persistência atual: localStorage. Migração futura para Firestore mantém esta API.
  */
 import type { ClientProfile } from '../ClientProfile';
 import type { PreviSaState } from '../previSaState';
@@ -95,9 +95,9 @@ export function listEmpresas(): EmpresaRecord[] {
 
 // Mutação local: grava a lista E avança o relógio do registry. O stamp é
 // MONOTÓNICO — `max(agora, último+1)` — para que qualquer edição local fique
-// estritamente acima de qualquer stamp já visto (incluindo um adoptado do
+// estritamente acima de qualquer stamp já visto (incluindo um adotado do
 // Firestore). Isto fecha dois buracos: (a) editar no mesmo milissegundo em que
-// se adoptou o remoto, e (b) relógios dessincronizados entre dispositivos.
+// se adotou o remoto, e (b) relógios dessincronizados entre dispositivos.
 export function saveEmpresas(list: EmpresaRecord[]): void {
   saveToStorage(REGISTRY_KEY, list);
   setEmpresasStamp(Math.max(Date.now(), getEmpresasStamp() + 1));
@@ -301,8 +301,8 @@ export async function loadEmpresasFromFirestore(
 
 /**
  * Repara "mojibake" — texto UTF-8 que foi lido como Latin-1/Windows-1252 (ex.
- * "AtlÃ¢ntico" → "Atlântico"). Os nomes importados de SAF-T ANTES da correcção
- * de detecção de codificação ficaram corrompidos e já estão gravados na cloud;
+ * "AtlÃ¢ntico" → "Atlântico"). Os nomes importados de SAF-T ANTES da correção
+ * de deteção de codificação ficaram corrompidos e já estão gravados na cloud;
  * esta função recupera-os de forma idempotente e sem rede.
  *
  * Reinterpreta os caracteres da string como bytes Latin-1 e volta a descodificar
@@ -314,8 +314,8 @@ export async function loadEmpresasFromFirestore(
 // aqui para não quebrar quem o importe a partir de empresas.
 export { repairMojibake };
 
-// Repara os campos de texto (shallow) de um objecto plano, devolvendo uma cópia
-// apenas se algo mudou. Não percorre objectos aninhados nem blobs.
+// Repara os campos de texto (shallow) de um objeto plano, devolvendo uma cópia
+// apenas se algo mudou. Não percorre objetos aninhados nem blobs.
 function repairStringFields<T extends Record<string, unknown>>(obj: T): { value: T; changed: boolean } {
   let changed = false;
   const out: Record<string, unknown> = { ...obj };
@@ -377,7 +377,7 @@ async function finalizeEmpresas(officeNif: string | undefined, list: EmpresaReco
  * Sincroniza Firestore ↔ localStorage. Last-write-wins ao nível do DOCUMENTO,
  * usando o relógio do registry (`empresasUpdatedAt`):
  *
- *   • remoto mais recente  → adopta a lista remota (suporta edições/eliminações
+ *   • remoto mais recente  → adota a lista remota (suporta edições/eliminações
  *                            feitas noutro dispositivo);
  *   • local mais recente   → empurra a lista local para a cloud (faz a
  *                            ELIMINAÇÃO local vencer — mata o bug "Hydra", em
@@ -406,7 +406,7 @@ export async function syncEmpresasFromFirestore(officeNif: string | undefined): 
   }
 
   if (remote.updatedAt > localStamp) {
-    // Remoto vence → adopta a lista remota por inteiro.
+    // Remoto vence → adota a lista remota por inteiro.
     const deduped = dedupeByNif(remote.list);
     adoptRemoteEmpresas(deduped, remote.updatedAt);
     return finalizeEmpresas(officeNif, deduped);

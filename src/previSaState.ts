@@ -110,7 +110,7 @@ export interface PreviSaState {
   c349_taxa: number;      // taxa para c349
   // ── Q10 — Pagamentos e outros ────────────────────────────────────
   retencoesFonte: number; // c359
-  pecPagamentos: number;  // c356 — PEC efectuado
+  pecPagamentos: number;  // c356 — PEC efetuado
   pcPagamentos: number;   // c360 — Pagamentos por conta
   pacPagamentos: number;  // c374 — Pagamentos adicionais por conta
   c363: number;           // IRC de períodos anteriores

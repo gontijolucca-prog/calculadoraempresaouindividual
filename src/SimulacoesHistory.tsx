@@ -135,7 +135,7 @@ export default function SimulacoesHistory({ empresaId, empresaNome, onRestore, o
                     <button
                       type="button"
                       onClick={() => onRestore(rec)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-[12px] font-[700] text-[#0677FF] bg-[#0677FF]/10 hover:bg-[#0677FF]/15 active:scale-[0.97] transition-all"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-[12px] font-[700] text-[#0677FF] bg-[#0677FF]/10 hover:bg-[#0677FF]/15 ative:scale-[0.97] transition-all"
                       title="Reabrir esta simulação no simulador"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
@@ -147,7 +147,7 @@ export default function SimulacoesHistory({ empresaId, empresaNome, onRestore, o
                         onClick={() => handleDelete(rec.id)}
                         onBlur={() => setConfirmId(null)}
                         autoFocus
-                        className="px-3 py-2 rounded-[10px] text-[12px] font-[700] text-white bg-red-600 hover:bg-red-700 active:scale-[0.97] transition-all"
+                        className="px-3 py-2 rounded-[10px] text-[12px] font-[700] text-white bg-red-600 hover:bg-red-700 ative:scale-[0.97] transition-all"
                         title="Confirmar eliminação"
                       >
                         Confirmar?

@@ -30,7 +30,7 @@ export default function Proposta({ profile, office, honorarios, servicosIds, onS
     observacoes: '',
   });
 
-  // Permite seleccionar/desseleccionar serviços extra inline.
+  // Permite selecionar/desselecionar serviços extra inline.
   const [localIds, setLocalIds] = useState<string[]>(
     () => servicosIds ?? honorarios.servicosExtra.filter(s => s.ativoPorDefeito).map(s => s.id)
   );
@@ -286,22 +286,22 @@ Os serviços listados abaixo cobrem as obrigações contabilísticas e fiscais c
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {honorarios.servicosExtra.map(s => {
-              const active = idsAtuais.includes(s.id);
+              const ative = idsAtuais.includes(s.id);
               return (
                 <button
                   key={s.id}
-                  onClick={() => setIds(active ? idsAtuais.filter(x => x !== s.id) : [...idsAtuais, s.id])}
+                  onClick={() => setIds(ative ? idsAtuais.filter(x => x !== s.id) : [...idsAtuais, s.id])}
                   className="no-print"
                   style={{
                     padding: '6px 10px', borderRadius: 6, fontSize: '11pt',
-                    border: `1.5px solid ${active ? cor : '#CBD5E1'}`,
-                    background: active ? cor : 'white',
-                    color: active ? 'white' : '#475569',
+                    border: `1.5px solid ${ative ? cor : '#CBD5E1'}`,
+                    background: ative ? cor : 'white',
+                    color: ative ? 'white' : '#475569',
                     fontWeight: 600, cursor: 'pointer',
                   }}
                   title={s.descricao}
                 >
-                  {active ? '✓ ' : '+ '}{s.nome} · {eur(s.precoMensal)}
+                  {ative ? '✓ ' : '+ '}{s.nome} · {eur(s.precoMensal)}
                 </button>
               );
             })}
@@ -319,7 +319,7 @@ Os serviços listados abaixo cobrem as obrigações contabilísticas e fiscais c
           >
             {editaveis.observacoes || `Os honorários acima são pagos mensalmente, até ao último dia útil do mês a que respeitam, por transferência bancária para o IBAN ${office.iban || '(IBAN do escritório)'}.
 
-A faturação será emitida no início de cada mês. Material de expediente, deslocações e serviços extraordinários não incluídos na presente proposta serão objecto de orçamento prévio.
+A faturação será emitida no início de cada mês. Material de expediente, deslocações e serviços extraordinários não incluídos na presente proposta serão objeto de orçamento prévio.
 
 A presente proposta é válida por 30 dias a contar da data acima e converte-se em contrato de prestação de serviços formal mediante assinatura da minuta anexa.`}
           </div>

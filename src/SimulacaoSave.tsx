@@ -5,18 +5,18 @@ import { Save, Check } from 'lucide-react';
 /**
  * Guardar simulação (Funcionalidade D) — torna os simuladores "não descartáveis".
  *
- * O App fornece este contexto: sabe qual o simulador activo (view), o seu estado
- * e a empresa seleccionada, por isso `save()` consegue fotografar a simulação
- * actual e gravá-la no histórico do cliente sem que cada simulador precise de
+ * O App fornece este contexto: sabe qual o simulador ativo (view), o seu estado
+ * e a empresa selecionada, por isso `save()` consegue fotografar a simulação
+ * atual e gravá-la no histórico do cliente sem que cada simulador precise de
  * conhecer o registry. Um simulador pode, opcionalmente, publicar um resumo mais
  * preciso (o resultado calculado) via useReportResumo().
  */
 export interface SimSaveCtx {
-  /** Há empresa seleccionada E estamos numa view de simulador. */
+  /** Há empresa selecionada E estamos numa view de simulador. */
   enabled: boolean;
   /** Feedback transitório após guardar. */
   justSaved: boolean;
-  /** Fotografa e grava a simulação actual no histórico do cliente. */
+  /** Fotografa e grava a simulação atual no histórico do cliente. */
   save: () => void;
   /** Um simulador publica aqui o seu resumo-resultado (identidade estável). */
   reportResumo: (resumo: string) => void;
@@ -43,9 +43,9 @@ export function useReportResumo(resumo: string): void {
 }
 
 /**
- * Botão flutuante (canto inferior direito) que guarda a simulação actual no
- * histórico do cliente activo. Só aparece num simulador com empresa
- * seleccionada — fica fora do caminho do FloatingFlowToggle (canto superior).
+ * Botão flutuante (canto inferior direito) que guarda a simulação atual no
+ * histórico do cliente ativo. Só aparece num simulador com empresa
+ * selecionada — fica fora do caminho do FloatingFlowToggle (canto superior).
  */
 export function SaveSimulacaoFab() {
   const ctx = useContext(Ctx);

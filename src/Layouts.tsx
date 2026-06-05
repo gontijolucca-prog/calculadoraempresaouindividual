@@ -27,9 +27,9 @@ export interface LayoutProps {
   mode: AppMode;
   onBackToModeSelection: () => void;
   onSelectMode: (m: AppMode) => void;
-  /** Nome do cliente activo — mostrado no indicador "A trabalhar em". */
+  /** Nome do cliente ativo — mostrado no indicador "A trabalhar em". */
   activeClientName?: string;
-  /** Id do cliente activo + navegação por cliente (a mesma função dos cartões).
+  /** Id do cliente ativo + navegação por cliente (a mesma função dos cartões).
    *  Permite mostrar o menu do cliente (Perfil, Pacote, Histórico, simuladores)
    *  por baixo do indicador "A trabalhar em". */
   currentEmpresaId?: string | null;
@@ -69,8 +69,8 @@ const NAV_ITEMS = [
 /** Opções de navegação por cliente — mesma semântica dos cartões da Lista. */
 type NavOpts = { openPackage?: boolean; toggleFlow?: boolean };
 
-/** Menu do cliente activo, replicado na sidebar por baixo de "A trabalhar em".
- *  Reaproveita exactamente a navegação dos cartões (navigateClient) para não
+/** Menu do cliente ativo, replicado na sidebar por baixo de "A trabalhar em".
+ *  Reaproveita exatamente a navegação dos cartões (navigateClient) para não
  *  divergir do comportamento da Lista de Empresas. */
 const CLIENT_MENU: { view: ViewType; label: string; Icon: React.ComponentType<{ className?: string }>; opts?: NavOpts }[] = [
   { view: 'profile',   label: 'Perfil do Cliente',       Icon: UserCircle },
@@ -105,7 +105,7 @@ function Logo({ className = 'w-7 h-7' }: { className?: string }) {
 }
 
 export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload, onLogout, hasSaftData, onOpenSaftViewer, mode, onSelectMode, activeClientName, currentEmpresaId, onNavigateClient, children }: LayoutProps) {
-  const active = view === 'legal' ? prevView : view;
+  const ative = view === 'legal' ? prevView : view;
   const saftInputRef = useRef<HTMLInputElement>(null);
 
   // Gaveta no telemóvel. (Os menus do Cliente/Simuladores migraram para os
@@ -127,8 +127,8 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
   const go = (v: ViewType) => { setView(v); setDrawerOpen(false); };
   const runAction = (fn?: () => void) => { if (fn) fn(); setDrawerOpen(false); };
 
-  // Navega dentro do cliente activo usando a MESMA função dos cartões da Lista
-  // (selecciona empresa + dispara intenções pacote/vista + muda de vista), para
+  // Navega dentro do cliente ativo usando a MESMA função dos cartões da Lista
+  // (seleciona empresa + dispara intenções pacote/vista + muda de vista), para
   // o menu da sidebar e o dropdown do cartão nunca divergirem.
   const goClient = (v: ViewType, opts?: NavOpts) => {
     if (currentEmpresaId && onNavigateClient) onNavigateClient(currentEmpresaId, v, opts);
@@ -203,9 +203,9 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
 
       <nav aria-label="Navegação principal" className="flex-1 overflow-y-auto px-2 py-1">
         <SectionLabel>Carteira</SectionLabel>
-            <NavItem label="Lista de Empresas" Icon={Briefcase} onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }} current={active === 'empresas'} title="Carteira de clientes — cada um abre o seu menu (perfil, simuladores, histórico). Aqui também adicionas novas empresas." />
-            <NavItem label="Exportar documentos" Icon={FileDown} onClick={() => { setView('exportar'); setDrawerOpen(false); }} current={active === 'exportar'} title="Escolhe a empresa e o tipo de documento e descarrega em Word." />
-            {/* "A trabalhar em": deixa sempre claro o cliente activo. Por baixo,
+            <NavItem label="Lista de Empresas" Icon={Briefcase} onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }} current={ative === 'empresas'} title="Carteira de clientes — cada um abre o seu menu (perfil, simuladores, histórico). Aqui também adicionas novas empresas." />
+            <NavItem label="Exportar documentos" Icon={FileDown} onClick={() => { setView('exportar'); setDrawerOpen(false); }} current={ative === 'exportar'} title="Escolhe a empresa e o tipo de documento e descarrega em Word." />
+            {/* "A trabalhar em": deixa sempre claro o cliente ativo. Por baixo,
                 o menu específico desse cliente (perfil, pacote, histórico e os
                 simuladores) — atalho directo sem ter de abrir a lista. */}
             {activeClientName && (
@@ -228,7 +228,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                   <ChevronRight className="w-4 h-4 text-[#0677FF]/50 shrink-0 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
                 </button>
 
-                {/* Menu do cliente activo — aninhado sob o indicador. */}
+                {/* Menu do cliente ativo — aninhado sob o indicador. */}
                 <div className="mt-1 ml-2.5 pl-2 border-l-2 border-[#0677FF]/20 space-y-0.5">
                   {CLIENT_MENU.map((it) => (
                     <ClientNavItem
@@ -236,7 +236,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                       label={it.label}
                       Icon={it.Icon}
                       onClick={() => goClient(it.view, it.opts)}
-                      current={!it.opts && active === it.view}
+                      current={!it.opts && ative === it.view}
                     />
                   ))}
                   <div className="px-3 pt-2 pb-1 text-[9px] font-[800] uppercase tracking-[1px] text-[#0677FF]/70">Simuladores</div>
@@ -246,7 +246,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                       label={s.label}
                       Icon={s.Icon}
                       onClick={() => goClient(s.id)}
-                      current={active === s.id}
+                      current={ative === s.id}
                       title={NAV_TIPS[s.id]}
                     />
                   ))}
@@ -303,7 +303,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
         </main>
       </div>
 
-      <FloatingFlowToggle currentView={active} visibleViews={FLOW_VIEWS} />
+      <FloatingFlowToggle currentView={ative} visibleViews={FLOW_VIEWS} />
     </div>
   );
 }

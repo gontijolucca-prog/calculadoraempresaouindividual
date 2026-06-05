@@ -3,7 +3,7 @@
  * LibreOffice abrem como documento editável. Sem bibliotecas externas: cada
  * documento é um HTML A4 que reproduz os modelos enviados pela contabilista
  * (Demonstrações Financeiras do TOConline, Declaração de Responsabilidade e
- * Acta de AG), preenchido com os dados que a app já tem.
+ * Ata de AG), preenchido com os dados que a app já tem.
  *
  * Regra: NUNCA inventar números. O que a app não sabe (balanço, tesouraria,
  * imposto oficial) fica como traço para a contabilista completar.
@@ -515,7 +515,7 @@ export function buildActaAG(emp: EmpresaRecord, office: OfficeSettings): string 
   const linhasSocios = socios.length
     ? socios.map(s => `<li>${s.nome?.trim() ? esc(s.nome) : FILL}; titular de quota social com valor nominal de ${quota(s.percentagem)}${s.percentagem ? ` (${fmt(s.percentagem)}% do capital)` : ''}.</li>`).join('')
     : `<li>${FILL}; titular de quota social com valor nominal de ${DASH}.</li>`;
-  const body = `<h1 class="title" style="text-align:center;border:0;color:#0B1D2D">ACTA N.&ordm; ${FILL}</h1>
+  const body = `<h1 class="title" style="text-align:center;border:0;color:#0B1D2D">ATA N.&ordm; ${FILL}</h1>
 <p>Reuni&atilde;o da Assembleia Geral de S&oacute;cios de <strong>${esc(c.nome)}</strong>${c.nif ? `, NIF ${esc(c.nif)}` : ''}, nos termos previstos no artigo 54.&ordm; do C&oacute;digo das Sociedades Comerciais (CSC).</p>
 <p>Data e hora da realiza&ccedil;&atilde;o da AG de s&oacute;cios: ${dataAG}, pelas ${FILL}.<br>
 Local da realiza&ccedil;&atilde;o da AG de s&oacute;cios: ${c.localEscritorio ? esc(c.localEscritorio) + ' &mdash; ' : ''}Sede Social da Entidade.</p>
@@ -533,12 +533,12 @@ Nome do S&oacute;cio que presidiu &agrave; AG de S&oacute;cios: ${presidente ? e
 <li>Aprovar o Relat&oacute;rio de Gest&atilde;o, as Contas e as Demonstra&ccedil;&otilde;es Financeiras do per&iacute;odo econ&oacute;mico ${c.ano} apresentadas pelo Conselho de Ger&ecirc;ncia.</li>
 <li>Aprovar a proposta do Conselho de Ger&ecirc;ncia sobre a aplica&ccedil;&atilde;o a dar ao Resultado L&iacute;quido apurado no per&iacute;odo econ&oacute;mico ${c.ano}, nos termos seguintes: transferir o montante total de Resultado L&iacute;quido do Exerc&iacute;cio, no valor de ${rlTxt}, para a r&uacute;brica de Resultados Transitados (RT).</li>
 </ul>
-<p>E nada mais havendo a tratar, o Presidente da AG de S&oacute;cios deu por finda a presente reuni&atilde;o. Foi redigida esta acta, a qual traduz na &iacute;ntegra as incid&ecirc;ncias ocorridas na AG de S&oacute;cios. Em sinal de plena concord&acirc;ncia, vai a presente acta ser assinada por todos os S&oacute;cios que nela estiveram presentes.</p>
+<p>E nada mais havendo a tratar, o Presidente da AG de S&oacute;cios deu por finda a presente reuni&atilde;o. Foi redigida esta ata, a qual traduz na &iacute;ntegra as incid&ecirc;ncias ocorridas na AG de S&oacute;cios. Em sinal de plena concord&acirc;ncia, vai a presente ata ser assinada por todos os S&oacute;cios que nela estiveram presentes.</p>
 <p style="margin-top:18pt">${c.localEscritorio ? esc(c.localEscritorio) + ', ' : ''}${dataAG}.</p>
 <p style="margin-top:18pt"><strong>Os S&oacute;cios presentes,</strong></p>
 ${(socios.length ? socios : [{ nome: '' }, { nome: '' }]).map(s => `<p style="margin-top:22pt">_______________________________<br>${s.nome?.trim() ? esc(s.nome) : ''}</p>`).join('')}
 ${rodape()}`;
-  return wordShell(`Acta Assembleia Geral ${c.ano}`, body);
+  return wordShell(`Ata Assembleia Geral ${c.ano}`, body);
 }
 
 // ─── Registo de tipos de documento (alimenta o radio + o handler) ─────────────
@@ -573,11 +573,11 @@ export const DOC_TYPES: DocTypeDef[] = [
     filename: (e) => `Declaracao_Responsabilidade_${slug(e.nome || '')}`,
   },
   {
-    id: 'acta', label: 'Acta de Assembleia Geral de Sócios',
+    id: 'acta', label: 'Ata de Assembleia Geral de Sócios',
     descricao: 'Sócios, capital social e gerente preenchidos a partir da ficha do cliente.',
     fill: 'completo', precisaPrevisa: false,
     build: buildActaAG,
-    filename: (e) => `Acta_Assembleia_Geral_${slug(e.nome || '')}`,
+    filename: (e) => `Ata_Assembleia_Geral_${slug(e.nome || '')}`,
   },
   {
     id: 'alteracoes', label: 'Demonstração das Alterações no Capital Próprio',

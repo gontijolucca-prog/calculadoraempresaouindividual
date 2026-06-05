@@ -207,7 +207,7 @@ function deducoesColeta(d: {
   //
   // Limitação prática deste motor: `dep0a3` distingue só ≤3a; a regra "2.º+ ≤6a"
   // (OE 2026, alargou de ≤3 para ≤6) não pode ser totalmente aplicada sem campo
-  // adicional para 4-6 anos. Aplicamos a regra exacta para os filhos ≤3a (que é
+  // adicional para 4-6 anos. Aplicamos a regra exata para os filhos ≤3a (que é
   // o caso mais comum) e mantemos €600 para >3a.
   let dDependentes = 0;
   const totalDeps = d.dependentes || 0;

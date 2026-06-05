@@ -5,7 +5,7 @@
  *   1. Mensalidade base depende do tipo de entidade do cliente (ENI, Lda, SA…).
  *   2. Acrescenta-se um valor por cada funcionário acima do incluído.
  *   3. Aplica-se majoração por escalão de faturação prevista.
- *   4. Somam-se serviços extra activados (vales refeição, SAFT, PMP, etc.).
+ *   4. Somam-se serviços extra ativados (vales refeição, SAFT, PMP, etc.).
  *
  * A função `calcularProposta` é pura — não toca em DOM nem storage.
  */
@@ -26,7 +26,7 @@ export interface ServicoExtra {
   nome: string;
   descricao: string;
   precoMensal: number;
-  /** Se está activo por defeito quando se gera proposta nova. */
+  /** Se está ativo por defeito quando se gera proposta nova. */
   ativoPorDefeito: boolean;
 }
 
@@ -46,7 +46,7 @@ export interface HonorariosConfig {
   /** Catálogo de serviços extra que podem ser adicionados às propostas. */
   servicosExtra: ServicoExtra[];
 
-  /** Taxa IVA aplicada à factura final (normalmente 23%). */
+  /** Taxa IVA aplicada à fatura final (normalmente 23%). */
   taxaIVA: number;
 
   /** Valor mínimo aceite de mensalidade (nunca cobrar abaixo disto). */
@@ -76,7 +76,7 @@ export const defaultHonorariosConfig: HonorariosConfig = {
     { id: 'iva',            nome: 'Apuramento e Entrega de IVA',        descricao: 'Declarações periódicas de IVA.',  precoMensal: 25, ativoPorDefeito: true  },
     { id: 'modelo22',       nome: 'Modelo 22 + IES anual',              descricao: 'Encerramento de contas anual.',   precoMensal: 30, ativoPorDefeito: true  },
     { id: 'consultoria',    nome: 'Consultoria Fiscal Avançada',        descricao: 'Reuniões trimestrais e planeamento fiscal.', precoMensal: 80, ativoPorDefeito: false },
-    { id: 'representacao',  nome: 'Representação Fiscal junto da AT',   descricao: 'Inspecções, justificações, reclamações.',    precoMensal: 50, ativoPorDefeito: false },
+    { id: 'representacao',  nome: 'Representação Fiscal junto da AT',   descricao: 'Inspeções, justificações, reclamações.',    precoMensal: 50, ativoPorDefeito: false },
   ],
   taxaIVA: 0.23,
   minimoMensal: 75,
