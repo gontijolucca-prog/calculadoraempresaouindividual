@@ -4,6 +4,7 @@ import {
   Calculator, FileSignature, Package, Search, Check, Loader2,
 } from 'lucide-react';
 import { listEmpresas, type EmpresaRecord } from './lib/empresas';
+import { loadFromStorage, saveToStorage } from './lib/storage';
 import { officeSettingsAreComplete, type OfficeSettings } from './lib/officeSettings';
 import type { HonorariosConfig } from './lib/honorarios';
 import {
@@ -82,9 +83,20 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
   onGoToOfficeSettings?: () => void;
 }) {
   const empresas = useMemo(() => listEmpresas(), []);
-  const [empresaId, setEmpresaId] = useState<string>(empresas[0]?.id ?? '');
+  // Empresa e documento selecionados sobrevivem a refresh/auto-update — o
+  // utilizador volta exatamente onde estava. Ids guardados são validados
+  // contra as listas atuais (empresa apagada → cai na primeira).
+  const [empresaId, setEmpresaId] = useState<string>(() => {
+    const saved = loadFromStorage<string | null>('exportarEmpresaId', null);
+    return (saved && empresas.some(e => e.id === saved)) ? saved : (empresas[0]?.id ?? '');
+  });
   // Selecção pode ser um doc do pacote (PkgId) ou um doc Word (DocTypeId).
-  const [docId, setDocId] = useState<string>('simulacao');
+  const [docId, setDocId] = useState<string>(() => {
+    const saved = loadFromStorage<string | null>('exportarDocId', null);
+    return (saved && (isPkg(saved) || DOC_TYPES.some(d => d.id === saved))) ? saved : 'simulacao';
+  });
+  useEffect(() => { saveToStorage('exportarEmpresaId', empresaId); }, [empresaId]);
+  useEffect(() => { saveToStorage('exportarDocId', docId); }, [docId]);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   // Os documentos do pacote são folhas A4 fixas (210mm ≈ 794px). Escalamos para
   // caber na largura da coluna de pré-visualização (senão saem cortados).

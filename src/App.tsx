@@ -303,6 +303,11 @@ function AppContent() {
   const [pendingCount, setPendingCount] = useState(0);
   const [lastDismissedCount, setLastDismissedCount] = useState(() => loadFromStorage('lastDismissedPendingCount', 0));
   const [view, setView] = useState<ViewType>(() => {
+    // Restaura a vista onde o utilizador estava (refresh / auto-update não o
+    // devem mandar de volta à Lista de Empresas). Valida contra a lista de
+    // vistas conhecidas — um id estranho no storage cai no default do modo.
+    const saved = loadFromStorage<ViewType | null>('lastView', null);
+    if (saved && saved in VIEW_TITLES) return saved;
     const m = loadFromStorage<AppMode | null>('mode', null);
     const initialMode: AppMode = m === 'novo-cliente' || m === 'empresa' ? m : 'empresa';
     return DEFAULT_VIEW_BY_MODE[initialMode];
@@ -381,6 +386,7 @@ function AppContent() {
   useEffect(() => { saveToStorage('clientProfile', clientProfile); }, [clientProfile]);
   useEffect(() => { saveToStorage('loggedIn', loggedIn); }, [loggedIn]);
   useEffect(() => { saveToStorage('mode', mode); }, [mode]);
+  useEffect(() => { saveToStorage('lastView', view); }, [view]);
   useEffect(() => { saveToStorage('lastDismissedPendingCount', lastDismissedCount); }, [lastDismissedCount]);
   useEffect(() => { saveOfficeSettings(officeSettings); }, [officeSettings]);
   useEffect(() => { saveHonorariosConfig(honorariosConfig); }, [honorariosConfig]);
