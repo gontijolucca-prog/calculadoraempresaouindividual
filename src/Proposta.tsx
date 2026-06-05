@@ -286,22 +286,22 @@ Os serviços listados abaixo cobrem as obrigações contabilísticas e fiscais c
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {honorarios.servicosExtra.map(s => {
-              const ative = idsAtuais.includes(s.id);
+              const active = idsAtuais.includes(s.id);
               return (
                 <button
                   key={s.id}
-                  onClick={() => setIds(ative ? idsAtuais.filter(x => x !== s.id) : [...idsAtuais, s.id])}
+                  onClick={() => setIds(active ? idsAtuais.filter(x => x !== s.id) : [...idsAtuais, s.id])}
                   className="no-print"
                   style={{
                     padding: '6px 10px', borderRadius: 6, fontSize: '11pt',
-                    border: `1.5px solid ${ative ? cor : '#CBD5E1'}`,
-                    background: ative ? cor : 'white',
-                    color: ative ? 'white' : '#475569',
+                    border: `1.5px solid ${active ? cor : '#CBD5E1'}`,
+                    background: active ? cor : 'white',
+                    color: active ? 'white' : '#475569',
                     fontWeight: 600, cursor: 'pointer',
                   }}
                   title={s.descricao}
                 >
-                  {ative ? '✓ ' : '+ '}{s.nome} · {eur(s.precoMensal)}
+                  {active ? '✓ ' : '+ '}{s.nome} · {eur(s.precoMensal)}
                 </button>
               );
             })}

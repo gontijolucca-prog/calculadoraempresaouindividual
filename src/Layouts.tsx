@@ -105,7 +105,7 @@ function Logo({ className = 'w-7 h-7' }: { className?: string }) {
 }
 
 export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload, onLogout, hasSaftData, onOpenSaftViewer, mode, onSelectMode, activeClientName, currentEmpresaId, onNavigateClient, children }: LayoutProps) {
-  const ative = view === 'legal' ? prevView : view;
+  const active = view === 'legal' ? prevView : view;
   const saftInputRef = useRef<HTMLInputElement>(null);
 
   // Gaveta no telemóvel. (Os menus do Cliente/Simuladores migraram para os
@@ -203,8 +203,8 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
 
       <nav aria-label="Navegação principal" className="flex-1 overflow-y-auto px-2 py-1">
         <SectionLabel>Carteira</SectionLabel>
-            <NavItem label="Lista de Empresas" Icon={Briefcase} onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }} current={ative === 'empresas'} title="Carteira de clientes — cada um abre o seu menu (perfil, simuladores, histórico). Aqui também adicionas novas empresas." />
-            <NavItem label="Exportar documentos" Icon={FileDown} onClick={() => { setView('exportar'); setDrawerOpen(false); }} current={ative === 'exportar'} title="Escolhe a empresa e o tipo de documento e descarrega em Word." />
+            <NavItem label="Lista de Empresas" Icon={Briefcase} onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }} current={active === 'empresas'} title="Carteira de clientes — cada um abre o seu menu (perfil, simuladores, histórico). Aqui também adicionas novas empresas." />
+            <NavItem label="Exportar documentos" Icon={FileDown} onClick={() => { setView('exportar'); setDrawerOpen(false); }} current={active === 'exportar'} title="Escolhe a empresa e o tipo de documento e descarrega em Word." />
             {/* "A trabalhar em": deixa sempre claro o cliente ativo. Por baixo,
                 o menu específico desse cliente (perfil, pacote, histórico e os
                 simuladores) — atalho directo sem ter de abrir a lista. */}
@@ -236,7 +236,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                       label={it.label}
                       Icon={it.Icon}
                       onClick={() => goClient(it.view, it.opts)}
-                      current={!it.opts && ative === it.view}
+                      current={!it.opts && active === it.view}
                     />
                   ))}
                   <div className="px-3 pt-2 pb-1 text-[9px] font-[800] uppercase tracking-[1px] text-[#0677FF]/70">Simuladores</div>
@@ -246,7 +246,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                       label={s.label}
                       Icon={s.Icon}
                       onClick={() => goClient(s.id)}
-                      current={ative === s.id}
+                      current={active === s.id}
                       title={NAV_TIPS[s.id]}
                     />
                   ))}
@@ -303,7 +303,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
         </main>
       </div>
 
-      <FloatingFlowToggle currentView={ative} visibleViews={FLOW_VIEWS} />
+      <FloatingFlowToggle currentView={active} visibleViews={FLOW_VIEWS} />
     </div>
   );
 }

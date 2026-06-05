@@ -442,7 +442,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                         <p className="px-4 py-6 text-center text-[12.5px] text-slate-400 font-[500]">Sem resultados para “{empresaQuery}”.</p>
                       ) : (
                         empresasFiltradas.map((e, i) => {
-                          const ative = e.id === empresaId;
+                          const active = e.id === empresaId;
                           const hl = i === highlight;
                           return (
                             <button
@@ -450,12 +450,12 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                               id={`empresa-opt-${i}`}
                               type="button"
                               role="option"
-                              aria-selected={ative}
+                              aria-selected={active}
                               onClick={() => { setEmpresaId(e.id); setEmpresaOpen(false); }}
                               onMouseEnter={() => setHighlight(i)}
-                              className={`w-full text-left flex items-center gap-2.5 px-3 py-2.5 transition-colors ${hl ? 'bg-[#0677FF]/[0.08]' : ative ? 'bg-[#0677FF]/[0.04]' : ''}`}
+                              className={`w-full text-left flex items-center gap-2.5 px-3 py-2.5 transition-colors ${hl ? 'bg-[#0677FF]/[0.08]' : active ? 'bg-[#0677FF]/[0.04]' : ''}`}
                             >
-                              <span className={`w-4 h-4 shrink-0 flex items-center justify-center ${ative ? 'text-[#0677FF]' : 'text-transparent'}`}>
+                              <span className={`w-4 h-4 shrink-0 flex items-center justify-center ${active ? 'text-[#0677FF]' : 'text-transparent'}`}>
                                 <Check className="w-4 h-4" />
                               </span>
                               <span className="min-w-0 flex-1">
@@ -481,23 +481,23 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
               </div>
               <div className="space-y-2" role="radiogroup" aria-label="Documentos do pacote do cliente">
                 {PACKAGE_DOCS.map(d => {
-                  const ative = d.id === docId;
+                  const active = d.id === docId;
                   const Icon = d.Icon;
                   return (
                     <button
                       key={d.id}
                       type="button"
                       role="radio"
-                      aria-checked={ative}
+                      aria-checked={active}
                       onClick={() => setDocId(d.id)}
                       className={`w-full text-left flex items-start gap-3 p-3.5 rounded-[14px] border transition-all ${
-                        ative
+                        active
                           ? 'border-[#0677FF] bg-[#0677FF]/[0.04] shadow-[0_2px_10px_-6px_rgba(6,119,255,0.5)]'
                           : 'border-slate-200/80 bg-white hover:border-[#0677FF]/40'
                       }`}
                     >
-                      <span className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center ${ative ? 'border-[#0677FF]' : 'border-slate-300'}`}>
-                        {ative && <span className="w-[9px] h-[9px] rounded-full bg-[#0677FF]" />}
+                      <span className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center ${active ? 'border-[#0677FF]' : 'border-slate-300'}`}>
+                        {active && <span className="w-[9px] h-[9px] rounded-full bg-[#0677FF]" />}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2 flex-wrap">
@@ -519,7 +519,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
               </div>
               <div className="space-y-2" role="radiogroup" aria-label="Documentos da contabilista">
                 {DOC_TYPES.map(d => {
-                  const ative = d.id === docId;
+                  const active = d.id === docId;
                   // Badge dinâmico: reflete os dados REAIS da empresa selecionada,
                   // não o melhor caso do modelo (que dizia "Preenchido" com tudo vazio).
                   const badge = FILL_BADGE[emp ? fillStatusFor(d.id, emp, office) : d.fill];
@@ -528,16 +528,16 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                       key={d.id}
                       type="button"
                       role="radio"
-                      aria-checked={ative}
+                      aria-checked={active}
                       onClick={() => setDocId(d.id)}
                       className={`w-full text-left flex items-start gap-3 p-3.5 rounded-[14px] border transition-all ${
-                        ative
+                        active
                           ? 'border-[#0677FF] bg-[#0677FF]/[0.04] shadow-[0_2px_10px_-6px_rgba(6,119,255,0.5)]'
                           : 'border-slate-200/80 bg-white hover:border-[#0677FF]/40'
                       }`}
                     >
-                      <span className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center ${ative ? 'border-[#0677FF]' : 'border-slate-300'}`}>
-                        {ative && <span className="w-[9px] h-[9px] rounded-full bg-[#0677FF]" />}
+                      <span className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center ${active ? 'border-[#0677FF]' : 'border-slate-300'}`}>
+                        {active && <span className="w-[9px] h-[9px] rounded-full bg-[#0677FF]" />}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2 flex-wrap">
@@ -552,22 +552,22 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
 
                 {/* Previsa — Modelo 22 em Excel (o ficheiro original preenchido) */}
                 {(() => {
-                  const ative = isPrevisa;
+                  const active = isPrevisa;
                   const badge = FILL_BADGE[emp && hasPrevisaData(emp) ? 'completo' : 'modelo'];
                   return (
                     <button
                       type="button"
                       role="radio"
-                      aria-checked={ative}
+                      aria-checked={active}
                       onClick={() => setDocId('previsa')}
                       className={`w-full text-left flex items-start gap-3 p-3.5 rounded-[14px] border transition-all ${
-                        ative
+                        active
                           ? 'border-[#0677FF] bg-[#0677FF]/[0.04] shadow-[0_2px_10px_-6px_rgba(6,119,255,0.5)]'
                           : 'border-slate-200/80 bg-white hover:border-[#0677FF]/40'
                       }`}
                     >
-                      <span className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center ${ative ? 'border-[#0677FF]' : 'border-slate-300'}`}>
-                        {ative && <span className="w-[9px] h-[9px] rounded-full bg-[#0677FF]" />}
+                      <span className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center ${active ? 'border-[#0677FF]' : 'border-slate-300'}`}>
+                        {active && <span className="w-[9px] h-[9px] rounded-full bg-[#0677FF]" />}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2 flex-wrap">
@@ -604,7 +604,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                     type="button"
                     onClick={handleDownloadPrevisa}
                     disabled={!emp || downloadingPrevisa}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-[12px] text-[14px] font-[800] text-white bg-emerald-600 hover:bg-emerald-700 ative:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-[12px] text-[14px] font-[800] text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                   >
                     {downloadingPrevisa ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <FileSpreadsheet className="w-4.5 h-4.5" />}
                     {downloadingPrevisa ? 'A gerar Excel…' : 'Descarregar Excel (.xlsx)'}
@@ -616,7 +616,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                         type="button"
                         onClick={handleDownloadWord}
                         disabled={!emp}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-[12px] text-[14px] font-[800] text-white bg-[#0677FF] hover:bg-[#0560d8] ative:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-[12px] text-[14px] font-[800] text-white bg-[#0677FF] hover:bg-[#0560d8] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                       >
                         <Download className="w-4.5 h-4.5" />
                         Descarregar em Word
@@ -626,7 +626,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                       type="button"
                       onClick={pkg ? handlePrintPkg : handlePrintWord}
                       disabled={!emp || printingPkg}
-                      className={`w-full flex items-center justify-center gap-2 px-4 rounded-[12px] font-[800] ative:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all ${
+                      className={`w-full flex items-center justify-center gap-2 px-4 rounded-[12px] font-[800] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all ${
                         pkg
                           ? 'py-3.5 text-[14px] text-white bg-[#0677FF] hover:bg-[#0560d8]'
                           : 'py-3 text-[13.5px] text-[#0677FF] bg-white border border-[#0677FF]/30 hover:bg-[#0677FF]/[0.04]'
@@ -659,7 +659,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                     type="button"
                     onClick={handleDownloadPrevisa}
                     disabled={!emp || downloadingPrevisa}
-                    className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[12.5px] font-[800] text-white bg-emerald-600 hover:bg-emerald-700 ative:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-[0_2px_10px_-4px_rgba(5,150,105,0.5)]"
+                    className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[12.5px] font-[800] text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-[0_2px_10px_-4px_rgba(5,150,105,0.5)]"
                   >
                     {downloadingPrevisa ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
                     {downloadingPrevisa ? 'A gerar…' : 'Descarregar Excel'}
@@ -669,7 +669,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                     type="button"
                     onClick={pkg ? handlePrintPkg : handlePrintWord}
                     disabled={!emp || printingPkg}
-                    className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[12.5px] font-[800] text-white bg-[#0677FF] hover:bg-[#0560d8] ative:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-[0_2px_10px_-4px_rgba(6,119,255,0.6)]"
+                    className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[12.5px] font-[800] text-white bg-[#0677FF] hover:bg-[#0560d8] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-[0_2px_10px_-4px_rgba(6,119,255,0.6)]"
                   >
                     {printingPkg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
                     {printingPkg ? 'A preparar…' : 'Imprimir / PDF'}

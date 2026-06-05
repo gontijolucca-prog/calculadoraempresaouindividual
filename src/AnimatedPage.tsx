@@ -261,7 +261,7 @@ export function useFlowMode() {
   }, []);
 
   React.useEffect(() => {
-    window.dispatchEvent(new CustomEvent('flowmode:change', { detail: { ative: flowMode } }));
+    window.dispatchEvent(new CustomEvent('flowmode:change', { detail: { active: flowMode } }));
   }, [flowMode]);
 
   React.useEffect(() => {

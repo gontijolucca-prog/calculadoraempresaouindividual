@@ -20,8 +20,8 @@ export default function FloatingFlowToggle({ visibleViews, currentView }: Props)
 
   useEffect(() => {
     const onChange = (e: Event) => {
-      const detail = (e as CustomEvent<{ ative: boolean }>).detail;
-      setFlowMode(!!detail?.ative);
+      const detail = (e as CustomEvent<{ active: boolean }>).detail;
+      setFlowMode(!!detail?.active);
     };
     window.addEventListener('flowmode:change', onChange);
     return () => window.removeEventListener('flowmode:change', onChange);

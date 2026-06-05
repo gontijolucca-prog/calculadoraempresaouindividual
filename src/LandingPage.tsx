@@ -173,7 +173,7 @@ function Hero({ onEnter, parallaxY, fadeOpacity }: { onEnter: () => void; parall
             <button
               type="button"
               onClick={onEnter}
-              className="group inline-flex items-center justify-center gap-2 bg-[#0B1D2D] text-white px-6 py-4 rounded-[14px] text-[14px] font-[800] tracking-tight hover:bg-[#26323f] ative:scale-[0.98] transition-all"
+              className="group inline-flex items-center justify-center gap-2 bg-[#0B1D2D] text-white px-6 py-4 rounded-[14px] text-[14px] font-[800] tracking-tight hover:bg-[#26323f] active:scale-[0.98] transition-all"
             >
               Experimentar agora
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -585,7 +585,7 @@ function FinalCTA({ onEnter }: { onEnter: () => void }) {
         <button
           type="button"
           onClick={onEnter}
-          className="mt-10 inline-flex items-center gap-2 bg-[#0B1D2D] text-white px-7 py-4 rounded-[14px] text-[14px] font-[800] hover:bg-[#26323f] ative:scale-[0.98] transition-all"
+          className="mt-10 inline-flex items-center gap-2 bg-[#0B1D2D] text-white px-7 py-4 rounded-[14px] text-[14px] font-[800] hover:bg-[#26323f] active:scale-[0.98] transition-all"
         >
           Experimentar o Estudo 360 <ArrowRight className="w-4 h-4" />
         </button>

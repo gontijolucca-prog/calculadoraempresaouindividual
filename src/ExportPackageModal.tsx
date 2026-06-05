@@ -60,7 +60,7 @@ export default function ExportPackageModal({
   profile, office, honorarios, taxState, vehicleState, ticketState, ssState,
   onClose, onGoToOfficeSettings,
 }: Props) {
-  const [ative, setActive] = useState<DocId>('simulacao');
+  const [active, setActive] = useState<DocId>('simulacao');
   const [includeMinuta, setIncludeMinuta] = useState(true);
   const officeOk = officeSettingsAreComplete(office);
 
@@ -71,7 +71,7 @@ export default function ExportPackageModal({
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  // Print just the ative tab.
+  // Print just the active tab.
   const printActive = () => {
     // Each tab component sets up its own @media print isolation via its
     // printRootId — calling window.print() will only render the visible doc.
@@ -79,9 +79,9 @@ export default function ExportPackageModal({
   };
 
   // Hidden tabs still need to be rendered (so contenteditable state survives
-  // tab switching), but only the ative one is shown.
+  // tab switching), but only the active one is shown.
   const tabStyle = (id: DocId): React.CSSProperties => ({
-    display: ative === id ? 'block' : 'none',
+    display: active === id ? 'block' : 'none',
   });
 
   return (
@@ -172,7 +172,7 @@ export default function ExportPackageModal({
         <div className="shrink-0 px-4 md:px-6 pt-3 md:pt-4 pb-0 bg-white border-b border-slate-200 no-print">
           <div className="flex flex-wrap items-stretch gap-1">
             {TABS.map(({ id, label, short, sub, Icon }) => {
-              const isActive = ative === id;
+              const isActive = active === id;
               const isMinutaSkipped = id === 'minuta' && !includeMinuta;
               return (
                 <button
@@ -203,7 +203,7 @@ export default function ExportPackageModal({
             })}
 
             <div className="w-full md:w-auto md:ml-auto flex items-center justify-end gap-2 md:gap-3 pb-2 md:pb-2 mt-2 md:mt-0">
-              {ative === 'minuta' && (
+              {active === 'minuta' && (
                 <label className="flex items-center gap-2 px-2.5 md:px-3 py-1.5 rounded-[8px] bg-slate-50 border border-slate-200 cursor-pointer text-[11px] font-[700] text-slate-600 select-none">
                   <input
                     type="checkbox"
@@ -217,7 +217,7 @@ export default function ExportPackageModal({
               <button
                 type="button"
                 onClick={printActive}
-                className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 rounded-[10px] bg-[#0677FF] text-white text-[12px] font-[800] hover:bg-[#0556CC] ative:scale-[0.98] transition-all shadow-md shadow-[#0677FF]/30"
+                className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 rounded-[10px] bg-[#0677FF] text-white text-[12px] font-[800] hover:bg-[#0556CC] active:scale-[0.98] transition-all shadow-md shadow-[#0677FF]/30"
               >
                 <Printer className="w-4 h-4" />
                 <span className="hidden sm:inline">Imprimir / PDF</span>
@@ -231,7 +231,7 @@ export default function ExportPackageModal({
         <div className="epm-content flex-1 overflow-y-auto px-6 py-6 bg-[#E2E8F0]">
           <AnimatePresence mode="wait">
             <motion.div
-              key={ative}
+              key={active}
               className="epm-anim"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -240,7 +240,7 @@ export default function ExportPackageModal({
             >
               {/* Simulação Fiscal — re-usa o PDFPreviewEditor existente */}
               <div style={tabStyle('simulacao')}>
-                {ative === 'simulacao' && (
+                {active === 'simulacao' && (
                   <PDFPreviewEditor
                     profile={profile}
                     taxState={taxState}
@@ -256,7 +256,7 @@ export default function ExportPackageModal({
 
               {/* Proposta */}
               <div style={tabStyle('proposta')}>
-                {ative === 'proposta' && (
+                {active === 'proposta' && (
                   <Proposta
                     profile={profile}
                     office={office}
@@ -267,14 +267,14 @@ export default function ExportPackageModal({
 
               {/* Minuta */}
               <div style={tabStyle('minuta')}>
-                {ative === 'minuta' && includeMinuta && (
+                {active === 'minuta' && includeMinuta && (
                   <MinutaContrato
                     profile={profile}
                     office={office}
                     honorarios={honorarios}
                   />
                 )}
-                {ative === 'minuta' && !includeMinuta && (
+                {active === 'minuta' && !includeMinuta && (
                   <div className="max-w-xl mx-auto bg-white rounded-[16px] p-10 text-center shadow-sm">
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
                       <FileSignature className="w-7 h-7 text-slate-400" />

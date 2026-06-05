@@ -92,7 +92,7 @@ export default function LoginPage({ onLogin, onBack }: Props) {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-[#0677FF] text-white py-3.5 rounded-[10px] text-[15px] font-[700] hover:bg-[#0556CC] ative:scale-[0.98] transition-all mt-2 shadow-md shadow-[#0677FF]/20 disabled:opacity-60 disabled:cursor-not-allowed disabled:ative:scale-100"
+            className="w-full bg-[#0677FF] text-white py-3.5 rounded-[10px] text-[15px] font-[700] hover:bg-[#0556CC] active:scale-[0.98] transition-all mt-2 shadow-md shadow-[#0677FF]/20 disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100"
           >
             {submitting ? 'A entrar…' : 'Entrar'}
           </button>

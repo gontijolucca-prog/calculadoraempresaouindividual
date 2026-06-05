@@ -290,7 +290,7 @@ function NoEmpresaGate({ onGo }: { onGo: () => void }) {
         <button
           type="button"
           onClick={onGo}
-          className="mt-5 inline-flex items-center gap-2 px-5 py-3 rounded-[12px] text-[14px] font-[800] text-white bg-gradient-to-r from-[#0677FF] to-[#044BB6] hover:brightness-105 ative:scale-[0.98] transition-all shadow-lg shadow-[#0677FF]/30"
+          className="mt-5 inline-flex items-center gap-2 px-5 py-3 rounded-[12px] text-[14px] font-[800] text-white bg-gradient-to-r from-[#0677FF] to-[#044BB6] hover:brightness-105 active:scale-[0.98] transition-all shadow-lg shadow-[#0677FF]/30"
         >
           Ir para a Lista de Empresas
         </button>
@@ -505,7 +505,7 @@ function AppContent() {
     return () => clearTimeout(t);
   }, [loggedIn, clientProfile, previSaState, currentEmpresaId, empresasRefresh, officeSettings.nif]);
 
-  // Sync document.title with the ative view (helps history & screen readers)
+  // Sync document.title with the active view (helps history & screen readers)
   useEffect(() => {
     document.title = `${VIEW_TITLES[view]} · Estudo 360`;
   }, [view]);
@@ -1085,7 +1085,7 @@ function AppContent() {
                 <button
                   type="button"
                   onClick={() => { setSaftModal(null); setView('profile'); }}
-                  className="flex-1 py-3 rounded-[12px] text-[14px] font-[700] bg-emerald-600 text-white hover:bg-emerald-700 ative:scale-[0.98] transition-all shadow-lg shadow-emerald-600/30"
+                  className="flex-1 py-3 rounded-[12px] text-[14px] font-[700] bg-emerald-600 text-white hover:bg-emerald-700 active:scale-[0.98] transition-all shadow-lg shadow-emerald-600/30"
                 >
                   Ver Perfil
                 </button>
@@ -1252,7 +1252,7 @@ function AppContent() {
           <button
             type="button"
             onClick={() => setView(view === 'tax' ? 'profile' : 'tax')}
-            className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-[12px] text-[14px] font-[700] text-[#0677FF] bg-[#0677FF]/10 hover:bg-[#0677FF]/15 ative:scale-[0.98] transition-all"
+            className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-[12px] text-[14px] font-[700] text-[#0677FF] bg-[#0677FF]/10 hover:bg-[#0677FF]/15 active:scale-[0.98] transition-all"
           >
             {view === 'tax'
               ? <><ArrowLeft className="w-4 h-4" strokeWidth={2.5} /> Voltar ao perfil</>
@@ -1261,7 +1261,7 @@ function AppContent() {
           <button
             type="button"
             onClick={handleSaveNewClient}
-            className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-[12px] text-[14px] font-[800] text-white ative:scale-[0.98] transition-all"
+            className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-[12px] text-[14px] font-[800] text-white active:scale-[0.98] transition-all"
             style={{
               background: 'linear-gradient(135deg, #0677FF 0%, #044BB6 100%)',
               boxShadow: '0 0 0 1px rgba(6,119,255,0.35), 0 8px 22px -8px rgba(6,119,255,0.6)',

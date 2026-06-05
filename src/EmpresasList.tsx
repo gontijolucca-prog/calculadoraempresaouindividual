@@ -115,7 +115,7 @@ export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEm
             <button
               type="button"
               onClick={startNova}
-              className="inline-flex items-center gap-2 bg-[#0677FF] text-white px-4 py-2.5 rounded-[10px] text-[13px] font-[700] hover:bg-[#0556CC] ative:scale-[0.98] transition-all shadow-md shadow-[#0677FF]/25"
+              className="inline-flex items-center gap-2 bg-[#0677FF] text-white px-4 py-2.5 rounded-[10px] text-[13px] font-[700] hover:bg-[#0556CC] active:scale-[0.98] transition-all shadow-md shadow-[#0677FF]/25"
             >
               <Plus className="w-4 h-4" /> Nova Empresa
             </button>
@@ -147,7 +147,7 @@ export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEm
               <EmpresaCard
                 key={emp.id}
                 emp={emp}
-                ative={emp.id === currentEmpresaId}
+                active={emp.id === currentEmpresaId}
                 expanded={emp.id === expandedId}
                 onToggle={() => setExpandedId(id => id === emp.id ? null : emp.id)}
                 onNavigate={onNavigate}
@@ -288,7 +288,7 @@ export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEm
 
 interface EmpresaCardProps {
   emp: EmpresaRecord;
-  ative: boolean;
+  active: boolean;
   expanded: boolean;
   onToggle: () => void;
   onNavigate: (empId: string, view: string, opts?: NavOpts) => void;
@@ -301,14 +301,14 @@ const MenuItem: React.FC<{ Icon: React.ComponentType<{ className?: string }>; la
   <button
     type="button"
     onClick={onClick}
-    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[13px] font-[600] text-[#334155] hover:bg-[#0677FF]/8 hover:text-[#0677FF] ative:scale-[0.99] transition-colors text-left"
+    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[13px] font-[600] text-[#334155] hover:bg-[#0677FF]/8 hover:text-[#0677FF] active:scale-[0.99] transition-colors text-left"
   >
     <Icon className="w-4 h-4 shrink-0" />
     <span className="truncate">{label}</span>
   </button>
 );
 
-const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, ative, expanded, onToggle, onNavigate, onUploadSaft, onAskDelete }) => {
+const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onToggle, onNavigate, onUploadSaft, onAskDelete }) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const updated = formatRelative(emp.updatedAt);
   const displayNome = emp.nome.trim() || 'Empresa sem nome';
@@ -317,7 +317,7 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, ative, expanded, onToggl
   return (
     <li className={cn(
       'bg-white border rounded-[14px] transition-all',
-      ative ? 'border-[#0677FF] ring-1 ring-[#0677FF]/30 shadow-md' : 'border-[#E5E9F0] hover:border-[#0677FF]/40 hover:shadow-md',
+      active ? 'border-[#0677FF] ring-1 ring-[#0677FF]/30 shadow-md' : 'border-[#E5E9F0] hover:border-[#0677FF]/40 hover:shadow-md',
     )}>
       <div className="flex items-stretch">
         <button
@@ -332,7 +332,7 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, ative, expanded, onToggl
           <div className="min-w-0 flex-1">
             <div className="text-[15px] font-[700] text-[#0B1D2D] truncate">
               {displayNome}
-              {ative && <span className="ml-2 align-middle text-[10px] font-[800] uppercase tracking-[0.5px] text-[#0677FF] bg-[#0677FF]/10 px-1.5 py-0.5 rounded-full">a trabalhar</span>}
+              {active && <span className="ml-2 align-middle text-[10px] font-[800] uppercase tracking-[0.5px] text-[#0677FF] bg-[#0677FF]/10 px-1.5 py-0.5 rounded-full">a trabalhar</span>}
             </div>
             <div className="text-[12px] text-[#6B7280] font-[500] mt-0.5 flex items-center gap-2 flex-wrap">
               <span>{emp.nif ? `NIF ${emp.nif}` : 'Sem NIF'}</span>
@@ -450,7 +450,7 @@ function EmptyState({ onNova, hasQuery }: { onNova: () => void; hasQuery: boolea
       <button
         type="button"
         onClick={onNova}
-        className="inline-flex items-center gap-2 bg-[#0677FF] text-white px-5 py-3 rounded-[10px] text-[13px] font-[700] hover:bg-[#0556CC] ative:scale-[0.98] transition-all shadow-md shadow-[#0677FF]/25"
+        className="inline-flex items-center gap-2 bg-[#0677FF] text-white px-5 py-3 rounded-[10px] text-[13px] font-[700] hover:bg-[#0556CC] active:scale-[0.98] transition-all shadow-md shadow-[#0677FF]/25"
       >
         <Plus className="w-4 h-4" /> Criar primeira empresa
       </button>

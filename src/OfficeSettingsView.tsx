@@ -55,8 +55,8 @@ export default function OfficeSettingsView({ office, onOfficeChange, honorarios,
 
         {/* Tabs */}
         <div className="flex gap-1 mb-6 border-b border-[#E2E8F0]" role="tablist">
-          <TabButton ative={tab === 'escritorio'} onClick={() => setTab('escritorio')} icon={Building2}>Dados do Escritório</TabButton>
-          <TabButton ative={tab === 'honorarios'} onClick={() => setTab('honorarios')} icon={Calculator}>Tabela de Honorários</TabButton>
+          <TabButton active={tab === 'escritorio'} onClick={() => setTab('escritorio')} icon={Building2}>Dados do Escritório</TabButton>
+          <TabButton active={tab === 'honorarios'} onClick={() => setTab('honorarios')} icon={Calculator}>Tabela de Honorários</TabButton>
         </div>
 
         {tab === 'escritorio' && (
@@ -70,14 +70,14 @@ export default function OfficeSettingsView({ office, onOfficeChange, honorarios,
   );
 }
 
-function TabButton({ ative, onClick, icon: Icon, children }: { ative: boolean; onClick: () => void; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
+function TabButton({ active, onClick, icon: Icon, children }: { active: boolean; onClick: () => void; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
   return (
     <button
       role="tab"
-      aria-selected={ative}
+      aria-selected={active}
       onClick={onClick}
       className={`flex items-center gap-2 px-4 py-2.5 text-[13px] font-[700] border-b-2 -mb-px transition-colors ${
-        ative
+        active
           ? 'text-[#0F172A] border-[#0677FF]'
           : 'text-[#64748B] border-transparent hover:text-[#0F172A]'
       }`}
