@@ -45,6 +45,9 @@ export interface EmpresaRecord {
   // Marca do re-processamento do saftXml guardado (deriva campos novos — fluxos
   // de caixa, saldos de abertura — em empresas importadas antes da feature).
   saftReprocessadoEm?: number;
+  // Revisão do re-parse aplicada (ver SAFT_REPARSE_REV): quando o parser ganha
+  // campos novos, subir a revisão faz as empresas existentes re-derivarem.
+  saftReparseRev?: number;
   simulacoes?: SimulationRecord[];  // histórico de simulações deste cliente
   // Estado do simulador Previsa (IRC Modelo 22) deste cliente. Ao contrário dos
   // outros simuladores — que se re-semeiam a partir do `profile` — o Previsa tem
@@ -58,6 +61,10 @@ export interface EmpresaRecord {
   // todos derivam do mesmo `profile`. (O Previsa fica em `previsa`, à parte.)
   sims?: Record<string, unknown>;
 }
+
+// Revisão atual do re-parse do SAF-T guardado. Subir quando o parser passa a
+// derivar campos novos (rev 1 = fluxos+aberturas; rev 2 = vendas por cliente).
+export const SAFT_REPARSE_REV = 2;
 
 const REGISTRY_KEY = 'empresas';
 const CURRENT_KEY = 'currentEmpresaId';

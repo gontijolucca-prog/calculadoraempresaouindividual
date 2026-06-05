@@ -189,6 +189,8 @@ export interface ContabilidadeData {
   fcFinanciamentosObtidos?: number;   // contrapartida 25 (entradas)
   fcPagamentosFinanciamento?: number; // contrapartida 25/26/69 (saídas)
   fcRealizacoesCapital?: number;      // contrapartida 26/51/53/54 (entradas)
+  // Vendas — derivado das SalesInvoices do SAF-T
+  vendasMaiorCliente?: number;        // faturação líquida anual do maior cliente
   // meta
   saftImportado: boolean;             // último preenchimento veio do SAF-T
 }

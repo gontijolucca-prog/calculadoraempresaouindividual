@@ -344,6 +344,10 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   const previsa: Partial<PreviSaState> = {};
   let contabilidade: Partial<ContabilidadeData> | undefined;
   let contabilidadeAbertura: Partial<ContabilidadeData> | undefined;
+  // Agregações das faturas (preenchidas no bloco SalesInvoices, emitidas depois
+  // do parse dos clientes para podermos mostrar nomes) + mapa id/NIF → nome.
+  let salesAgg: { porCliente: Map<string, number>; porMes: number[]; ivaPorTaxa: Map<string, { base: number; iva: number }>; ivaLiquidado: number } | null = null;
+  const customerNames = new Map<string, string>();
 
   const headerEl = localChild(root, 'Header');
   if (!headerEl) throw new Error('Elemento <Header> não encontrado — não é um ficheiro SAF-T PT válido');
@@ -820,6 +824,16 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   const customerEls = localDescendants(root, 'Customer');
   if (customerEls.length > 0) {
     details.push({ group: 'Clientes', label: 'Total de Clientes', value: String(customerEls.length) });
+    // Mapa CustomerID/NIF → nome (TODOS os clientes), para a faturação por
+    // cliente das SalesInvoices sair com nomes legíveis.
+    for (let i = 0; i < customerEls.length; i++) {
+      const nm = text(customerEls[i], 'CompanyName') || text(customerEls[i], 'Name');
+      if (!nm) continue;
+      const cid = text(customerEls[i], 'CustomerID');
+      const nif = text(customerEls[i], 'CustomerTaxID');
+      if (cid) customerNames.set(cid, nm);
+      if (nif) customerNames.set(nif, nm);
+    }
     const limit = Math.min(customerEls.length, 50);
     for (let i = 0; i < limit; i++) {
       const cName  = text(customerEls[i], 'CompanyName') || text(customerEls[i], 'Name');
@@ -943,6 +957,12 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
 
     const invoiceEls = localChildren(salesEl, 'Invoice');
     const byType: Record<string, { count: number; gross: number; net: number }> = {};
+    // Agregações de negócio derivadas das faturas (concentração de clientes,
+    // IVA liquidado por taxa, sazonalidade mensal) — NC subtrai, anuladas fora.
+    const porCliente = new Map<string, number>();           // CustomerID → net
+    const porMes = new Array<number>(12).fill(0);            // mês 0-11 → net
+    const ivaPorTaxa = new Map<string, { base: number; iva: number }>(); // "23%" → {base, iva}
+    let ivaLiquidado = 0;
 
     for (let i = 0; i < invoiceEls.length; i++) {
       const inv = invoiceEls[i];
@@ -967,6 +987,18 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
       byType[invType].net   += effective;
       if (!isCancelled) salesNetTotal += effective;
 
+      if (!isCancelled) {
+        // Faturação por cliente (CustomerID, com fallback ao NIF se presente)
+        const custId = text(inv, 'CustomerID') || text(inv, 'CustomerTaxID');
+        if (custId) porCliente.set(custId, (porCliente.get(custId) ?? 0) + effective);
+        // Sazonalidade mensal
+        const invDate = text(inv, 'InvoiceDate');
+        const mes = invDate ? new Date(invDate).getMonth() : NaN;
+        if (Number.isInteger(mes) && mes >= 0 && mes <= 11) porMes[mes] += effective;
+        // IVA liquidado (total da fatura)
+        ivaLiquidado += num(totals, 'TaxPayable') * sign;
+      }
+
       // EAC code
       const eac = text(inv, 'EACCode');
       if (eac && /^\d{5}$/.test(eac)) {
@@ -985,8 +1017,24 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
         if (taxCountry === 'PT-MA') salesNetIVA.madeira += num(lineEls[j], 'CreditAmount');
         else if (taxCountry === 'PT-AC') salesNetIVA.acores += num(lineEls[j], 'CreditAmount');
         else if (taxCountry === 'PT') salesNetIVA.continental += num(lineEls[j], 'CreditAmount');
+        // IVA por taxa: base líquida da linha (crédito − débito p/ NC) × taxa
+        if (!isCancelled) {
+          const taxa = num(taxEl, 'TaxPercentage');
+          const base = num(lineEls[j], 'CreditAmount') - num(lineEls[j], 'DebitAmount');
+          if (base !== 0) {
+            const k = `${taxa}%`;
+            const cur = ivaPorTaxa.get(k) ?? { base: 0, iva: 0 };
+            cur.base += base;
+            cur.iva += base * taxa / 100;
+            ivaPorTaxa.set(k, cur);
+          }
+        }
       }
     }
+
+    // Guarda agregações para emitir depois do parse dos clientes (nomes) e
+    // para preencher o Diagnóstico (faturação do maior cliente).
+    salesAgg = { porCliente, porMes, ivaPorTaxa, ivaLiquidado };
 
     const typeLabels: Record<string, string> = {
       FT: 'Fatura',
@@ -1054,6 +1102,43 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     if (nEntries)   details.push({ group: 'Documentos de Compra', label: 'Nº de Documentos', value: nEntries });
     if (totalDebit) details.push({ group: 'Documentos de Compra', label: 'Total Débito',      value: fmtEur(numStr(totalDebit)) });
     if (totalCr)    details.push({ group: 'Documentos de Compra', label: 'Total Crédito',     value: fmtEur(numStr(totalCr)) });
+  }
+
+  // ─── Agregações das faturas: clientes, IVA por taxa, sazonalidade ──
+  if (salesAgg) {
+    const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+    const r2 = (n: number) => Math.round(n * 100) / 100;
+    // Top clientes por faturação líquida + concentração do maior
+    const top = [...salesAgg.porCliente.entries()].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+    const totalVendas = top.reduce((s, [, v]) => s + v, 0);
+    if (top.length > 0 && totalVendas > 0) {
+      const [topId, topVal] = top[0];
+      contabilidade = { ...(contabilidade ?? {}), vendasMaiorCliente: r2(topVal) };
+      filled.push('Faturação do maior cliente');
+      const pct = (v: number) => `${(v / totalVendas * 100).toFixed(1)}%`;
+      details.push({
+        group: 'Vendas por Cliente',
+        label: 'Concentração no maior cliente',
+        value: `${customerNames.get(topId) ?? topId} — ${fmtEur(topVal)} (${pct(topVal)})`,
+      });
+      for (const [cid, v] of top.slice(0, 10)) {
+        details.push({ group: 'Vendas por Cliente', label: customerNames.get(cid) ?? cid, value: `${fmtEur(v)} · ${pct(v)}` });
+      }
+    }
+    // IVA liquidado (total + por taxa)
+    if (salesAgg.ivaLiquidado > 0) {
+      details.push({ group: 'IVA Liquidado', label: 'Total IVA liquidado (faturas)', value: fmtEur(r2(salesAgg.ivaLiquidado)) });
+    }
+    for (const [taxa, { base, iva }] of [...salesAgg.ivaPorTaxa.entries()].sort()) {
+      if (base !== 0) details.push({ group: 'IVA Liquidado', label: `Taxa ${taxa}`, value: `base ${fmtEur(r2(base))} → IVA ${fmtEur(r2(iva))}` });
+    }
+    // Sazonalidade mensal (só meses com vendas)
+    const mesesAtivos = salesAgg.porMes.map((v, i) => [i, v] as const).filter(([, v]) => v !== 0);
+    if (mesesAtivos.length > 1) {
+      for (const [i, v] of mesesAtivos) {
+        details.push({ group: 'Vendas por Mês', label: MESES[i], value: fmtEur(r2(v)) });
+      }
+    }
   }
 
   // ─── MovementOfGoods ─────────────────────────────────────────────

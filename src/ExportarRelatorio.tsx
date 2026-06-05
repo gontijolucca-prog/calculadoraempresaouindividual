@@ -3,7 +3,7 @@ import {
   FileDown, FileText, Download, Printer, Building2, ChevronDown, Pencil,
   Calculator, FileSignature, Package, Search, Check, Loader2, FileSpreadsheet,
 } from 'lucide-react';
-import { listEmpresas, upsertEmpresa, type EmpresaRecord } from './lib/empresas';
+import { listEmpresas, upsertEmpresa, SAFT_REPARSE_REV, type EmpresaRecord } from './lib/empresas';
 import { parseSAFT } from './lib/saft';
 import { loadFromStorage, saveToStorage } from './lib/storage';
 import { officeSettingsAreComplete, type OfficeSettings } from './lib/officeSettings';
@@ -125,26 +125,31 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
   // funcionalidade existir — uma única vez por empresa (saftReprocessadoEm).
   // Só acrescenta campos ausentes; valores já editados à mão ficam intactos.
   useEffect(() => {
-    if (!emp?.saftXml || emp.saftReprocessadoEm) return;
+    // rev aplicada: empresas pré-versionamento com saftReprocessadoEm contam
+    // como rev 1; subir SAFT_REPARSE_REV faz todas re-derivarem campos novos.
+    const revAplicada = emp?.saftReparseRev ?? (emp?.saftReprocessadoEm ? 1 : 0);
+    if (!emp?.saftXml || revAplicada >= SAFT_REPARSE_REV) return;
     try {
       const r = parseSAFT(emp.saftXml);
       const prof = emp.profile ?? defaultProfile;
       const cont = { ...defaultProfile.contabilidade, ...(prof.contabilidade ?? {}) } as ClientProfile['contabilidade'];
       const contRec = cont as unknown as Record<string, number | boolean | undefined>;
+      // só campos DERIVADOS novos (fc*, vendas*) e só quando ausentes — valores
+      // editados à mão ficam intactos.
       for (const [k, v] of Object.entries(r.contabilidade ?? {})) {
-        if (k.startsWith('fc') && contRec[k] === undefined) contRec[k] = v as number;
+        if ((k.startsWith('fc') || k.startsWith('vendas')) && contRec[k] === undefined) contRec[k] = v as number;
       }
       const novoProfile: ClientProfile = {
         ...prof,
         contabilidade: cont,
         ...(prof.contabilidadeAbertura || !r.contabilidadeAbertura ? {} : { contabilidadeAbertura: r.contabilidadeAbertura }),
       };
-      upsertEmpresa({ ...emp, profile: novoProfile, saftReprocessadoEm: Date.now() });
+      upsertEmpresa({ ...emp, profile: novoProfile, saftReprocessadoEm: Date.now(), saftReparseRev: SAFT_REPARSE_REV });
       setEmpresas(listEmpresas());
     } catch {
       // SAF-T guardado ilegível — marca como processado para não repetir o
       // parse a cada visita; o import manual continua disponível.
-      upsertEmpresa({ ...emp, saftReprocessadoEm: Date.now() });
+      upsertEmpresa({ ...emp, saftReprocessadoEm: Date.now(), saftReparseRev: SAFT_REPARSE_REV });
       setEmpresas(listEmpresas());
     }
     // Deps deliberadamente só [emp?.id]: o efeito é one-shot por empresa (o

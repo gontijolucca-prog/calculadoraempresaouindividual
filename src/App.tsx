@@ -24,6 +24,7 @@ import {
   deleteEmpresa,
   addSimulacao,
   upsertAutoSimulacao,
+  SAFT_REPARSE_REV,
 } from './lib/empresas';
 import type { SimulationRecord, EmpresaRecord } from './lib/empresas';
 import type { DiagnosticoState } from './DiagnosticoAutonomia';
@@ -210,7 +211,7 @@ const getInitialDiagnosticoState = (p: ClientProfileType, tax: TaxSimulatorState
     custoFixoMensal: tax.fixedMo || 0, resultadoLiquido: rl,
     volumeNegocios: p.faturaçaoAnualPrevista || 0,
     ebitda: rl < 0 ? 'negativo' : 'positivo',
-    faturacaoMaiorCliente: 0,
+    faturacaoMaiorCliente: n(k.vendasMaiorCliente),
     financiamentoExterno: n(k.financiamentosObtidos),
     // "Total de fontes de financiamento" inclui externos + capital dos sócios.
     totalFinanciamento: n(k.financiamentosObtidos) + n(k.capitalRealizado),
@@ -752,10 +753,11 @@ function AppContent() {
           // Guarda já com a declaração normalizada a UTF-8: o texto é Unicode e
           // a re-exportação (Blob) escreve bytes UTF-8 — declaração e bytes têm
           // de coincidir para o ficheiro reimportar bem.
-          // saftReprocessadoEm: este import já derivou tudo (fluxos, abertura) —
-          // marca como processado para o re-parse silencioso do Exportar não
-          // correr (e para um REimport não ficar bloqueado por uma marca antiga).
-          if (emp) upsertEmpresa({ ...emp, saftXml: normalizeXmlEncodingToUtf8(text), saftFileName: file.name, saftImportedAt: Date.now(), saftReprocessadoEm: Date.now(), previsa: newPrevisa });
+          // saftReprocessadoEm/Rev: este import já derivou tudo (fluxos, abertura,
+          // vendas) — marca como processado na revisão atual para o re-parse
+          // silencioso do Exportar não correr (e para um REimport não ficar
+          // bloqueado por uma marca antiga).
+          if (emp) upsertEmpresa({ ...emp, saftXml: normalizeXmlEncodingToUtf8(text), saftFileName: file.name, saftImportedAt: Date.now(), saftReprocessadoEm: Date.now(), saftReparseRev: SAFT_REPARSE_REV, previsa: newPrevisa });
         }
 
         // Em vez do resumo modal, abre logo o visualizador "Dados extraídos do
