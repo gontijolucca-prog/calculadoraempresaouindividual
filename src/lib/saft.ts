@@ -14,6 +14,10 @@ export interface SAFTParseResult {
   /** Dados do Balanço/contabilidade extraídos das contas (classes 1–5/8), para
    *  preencher os documentos. Vazio quando o SAF-T não traz saldos do plano. */
   contabilidade?: Partial<ContabilidadeData>;
+  /** Saldos de ABERTURA das mesmas rubricas (= posição de fecho do ano anterior),
+   *  para preencher a coluna do ano anterior do Balanço e a posição inicial da
+   *  Demonstração das Alterações no Capital Próprio. */
+  contabilidadeAbertura?: Partial<ContabilidadeData>;
   warnings: string[];
   filled: string[];
   empty: string[];
@@ -182,6 +186,81 @@ function sumMovByPrefix(mov: Map<string, { d: number; c: number }>, prefix: stri
   return Math.round(s * 100) / 100;
 }
 
+/** Fluxos de caixa pelo MÉTODO DIRECTO, derivados dos diários: cada transação
+ *  que mexe na caixa (contas 11/12/13) é classificada pela contrapartida
+ *  dominante (a conta não-caixa com maior montante no lançamento). Cobre os
+ *  formatos com DebitLine/CreditLine e com Line. Transferências caixa↔caixa
+ *  anulam-se (delta ≈ 0) e são ignoradas. Devolve undefined sem movimentos. */
+function extractFluxosDirectos(glEntriesEl: Element | null): (Partial<ContabilidadeData> & { movimentos: number }) | undefined {
+  if (!glEntriesEl) return undefined;
+  const isCaixa = (id: string) => /^1[123]/.test(id);
+  const f = {
+    recebClientes: 0, pagFornecedores: 0, pagPessoal: 0, imposto: 0, outrosOp: 0,
+    pagInvest: 0, recebInvest: 0, finObtidos: 0, pagFin: 0, realizCapital: 0,
+  };
+  let movimentos = 0;
+  for (const j of localDescendants(glEntriesEl, 'Journal')) {
+    for (const t of localDescendants(j, 'Transaction')) {
+      const lines: { acc: string; d: number; c: number }[] = [];
+      for (const dl of localDescendants(t, 'DebitLine'))  lines.push({ acc: text(dl, 'AccountID'), d: num(dl, 'DebitAmount'), c: 0 });
+      for (const cl of localDescendants(t, 'CreditLine')) lines.push({ acc: text(cl, 'AccountID'), d: 0, c: num(cl, 'CreditAmount') });
+      for (const ln of localDescendants(t, 'Line'))       lines.push({ acc: text(ln, 'AccountID'), d: num(ln, 'DebitAmount'), c: num(ln, 'CreditAmount') });
+      let delta = 0;
+      const contras: { acc: string; amt: number }[] = [];
+      for (const l of lines) {
+        if (!l.acc) continue;
+        if (isCaixa(l.acc)) delta += l.d - l.c;
+        else contras.push({ acc: l.acc, amt: l.d + l.c });
+      }
+      if (Math.abs(delta) < 0.005 || contras.length === 0) continue;
+      // Contrapartida dominante decide a rubrica do fluxo.
+      contras.sort((a, b) => b.amt - a.amt);
+      const acc = contras[0].acc;
+      const entrada = delta > 0;
+      const amt = Math.abs(delta);
+      movimentos++;
+      if (entrada) {
+        if (acc.startsWith('21') || (acc.startsWith('7') && !acc.startsWith('79'))) f.recebClientes += amt;
+        else if (acc.startsWith('79'))                              f.recebInvest += amt;   // juros obtidos
+        else if (acc.startsWith('241'))                             f.imposto -= amt;        // reembolso IRC
+        else if (acc.startsWith('24'))                              f.outrosOp += amt;       // IVA/SS a recuperar
+        else if (acc.startsWith('25'))                              f.finObtidos += amt;
+        else if (acc.startsWith('26') || acc.startsWith('51') || acc.startsWith('53') || acc.startsWith('54')) f.realizCapital += amt;
+        else if (/^4[1-6]/.test(acc))                               f.recebInvest += amt;
+        else                                                        f.outrosOp += amt;
+      } else {
+        if (acc.startsWith('23') || acc.startsWith('63'))           f.pagPessoal += amt;
+        // Fornecedores: só 22/compras/FSE. As contas 65 (imparidades) e 68
+        // (outros gastos — multas, impostos indiretos) NÃO são pagamentos a
+        // fornecedores → caem em "outros operacionais" (default).
+        else if (acc.startsWith('22') || /^3[123]/.test(acc) || acc.startsWith('61') || acc.startsWith('62')) f.pagFornecedores += amt;
+        else if (acc.startsWith('241'))                             f.imposto += amt;        // IRC pago
+        else if (acc.startsWith('24'))                              f.outrosOp -= amt;       // IVA/SS pagos
+        else if (acc.startsWith('25') || acc.startsWith('26') || acc.startsWith('69')) f.pagFin += amt;
+        else if (/^4[1-6]/.test(acc))                               f.pagInvest += amt;
+        else                                                        f.outrosOp -= amt;
+      }
+    }
+  }
+  if (movimentos === 0) return undefined;
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  const all = [f.recebClientes, f.pagFornecedores, f.pagPessoal, f.imposto, f.outrosOp, f.pagInvest, f.recebInvest, f.finObtidos, f.pagFin, f.realizCapital];
+  if (all.every(v => Math.abs(v) < 0.005)) return undefined;
+  return {
+    movimentos,
+    fcRecebimentosClientes:    r2(f.recebClientes),
+    fcPagamentosFornecedores:  r2(f.pagFornecedores),
+    fcPagamentosPessoal:       r2(f.pagPessoal),
+    fcImpostoRendimento:       r2(f.imposto),
+    fcOutrosOperacionais:      r2(f.outrosOp),
+    fcPagamentosInvestimento:  r2(f.pagInvest),
+    fcRecebimentosInvestimento: r2(f.recebInvest),
+    fcFinanciamentosObtidos:   r2(f.finObtidos),
+    fcPagamentosFinanciamento: r2(f.pagFin),
+    fcRealizacoesCapital:      r2(f.realizCapital),
+  };
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // Descodificação (encoding) dos bytes do ficheiro
 // ════════════════════════════════════════════════════════════════════════════
@@ -264,6 +343,7 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   const profile: Partial<ClientProfile> = {};
   const previsa: Partial<PreviSaState> = {};
   let contabilidade: Partial<ContabilidadeData> | undefined;
+  let contabilidadeAbertura: Partial<ContabilidadeData> | undefined;
 
   const headerEl = localChild(root, 'Header');
   if (!headerEl) throw new Error('Elemento <Header> não encontrado — não é um ficheiro SAF-T PT válido');
@@ -681,6 +761,56 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
       if (contabilidade.capitalRealizado) details.push({ group: 'Balanço', label: 'Capital realizado', value: fmtEur(contabilidade.capitalRealizado) });
     } else {
       contabilidade = undefined; // tudo a zero → não vale a pena
+    }
+
+    // Saldos de ABERTURA (= fecho do ano anterior) — coluna do ano anterior do
+    // Balanço e posição inicial das Alterações no Capital Próprio.
+    const ab: Partial<ContabilidadeData> = {
+      ativoFixoTangivel:        open('43', 'debit'),
+      ativoIntangivel:          open('44', 'debit'),
+      investimentosFinanceiros: open('41', 'debit') + open('42', 'debit'),
+      inventarios:              open('3', 'debit'),
+      clientes:                 open('21', 'debit'),
+      estadoOutrosAtivo:        open('24', 'debit'),
+      outrosAtivosCorrentes:    open('27', 'debit') + open('28', 'debit'),
+      caixaDepositos:           round2(caixaInicio),
+      capitalRealizado:             open('51', 'credit'),
+      reservasResultadosTransitados: open('55', 'credit') + open('56', 'credit'),
+      resultadoLiquido:         round2(open('818', 'credit') - open('818', 'debit')),
+      outrasVariacoesCapital:   open('54', 'credit') + open('58', 'credit'),
+      financiamentosObtidos:    open('25', 'credit'),
+      fornecedores:             open('22', 'credit'),
+      estadoOutrosPassivo:      open('24', 'credit'),
+      outrosPassivos:           open('27', 'credit') + open('28', 'credit'),
+    };
+    const nzAb = Object.values(ab).filter(v => typeof v === 'number' && v !== 0).length;
+    if (nzAb > 0) {
+      contabilidadeAbertura = ab;
+      filled.push(`Balanço do ano anterior (${nzAb} rubricas, saldos de abertura)`);
+    }
+  }
+
+  // ═════════════════════════════════════════════════════════════════
+  // FLUXOS DE CAIXA — método directo a partir dos diários (independente
+  // de o ficheiro trazer saldos: basta haver lançamentos).
+  // ═════════════════════════════════════════════════════════════════
+  {
+    const glEl = localChild(root, 'GeneralLedgerEntries') ?? localDescendants(root, 'GeneralLedgerEntries')[0] ?? null;
+    const fluxos = extractFluxosDirectos(glEl);
+    if (fluxos) {
+      const { movimentos, ...fc } = fluxos;
+      contabilidade = { ...(contabilidade ?? {}), ...fc };
+      filled.push(`Fluxos de caixa (método directo, ${movimentos} movimentos de caixa)`);
+      const fcPairs: [string, number | undefined][] = [
+        ['Recebimentos de clientes', fc.fcRecebimentosClientes],
+        ['Pagamentos a fornecedores', fc.fcPagamentosFornecedores],
+        ['Pagamentos ao pessoal', fc.fcPagamentosPessoal],
+        ['Imposto s/ rendimento (líq. pago)', fc.fcImpostoRendimento],
+        ['Financiamentos obtidos', fc.fcFinanciamentosObtidos],
+      ];
+      for (const [label, v] of fcPairs) {
+        if (v) details.push({ group: 'Fluxos de Caixa', label, value: fmtEur(Math.abs(v)) });
+      }
     }
   }
 
@@ -1221,5 +1351,5 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
     ((profile as Record<string, unknown>)[f] as unknown[])?.length === 0
   );
 
-  return { profile, previsa, contabilidade, warnings, filled, empty, details };
+  return { profile, previsa, contabilidade, contabilidadeAbertura, warnings, filled, empty, details };
 }

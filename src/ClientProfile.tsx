@@ -146,6 +146,10 @@ export interface ClientProfile {
   // Próprio). Preenchidos automaticamente a partir do SAF-T (classes 1–5/8) ou
   // inseridos à mão. Saldos de FECHO do período (em euros).
   contabilidade: ContabilidadeData;
+  // Saldos de ABERTURA do período (= fecho do ano anterior), importados do
+  // SAF-T. Preenchem a coluna do ano anterior do Balanço e a posição inicial
+  // das Alterações no Capital Próprio. Opcional: perfis antigos não o têm.
+  contabilidadeAbertura?: Partial<ContabilidadeData>;
 }
 
 export interface ContabilidadeData {
@@ -172,6 +176,19 @@ export interface ContabilidadeData {
   impostoRendimento: number;          // 812 — imposto sobre o rendimento do período
   // Fluxos de Caixa
   caixaInicio: number;                // 11/12/13 no INÍCIO do período
+  // Fluxos de Caixa — método directo, derivados dos diários do SAF-T (cada
+  // movimento de caixa classificado pela contrapartida). Opcionais: perfis
+  // antigos não os têm; o re-parse do SAF-T guardado preenche-os.
+  fcRecebimentosClientes?: number;    // contrapartida 21/7x
+  fcPagamentosFornecedores?: number;  // contrapartida 22/3x/61/62/65/68
+  fcPagamentosPessoal?: number;       // contrapartida 23/63
+  fcImpostoRendimento?: number;       // contrapartida 241 (líquido: pago + / reembolso −)
+  fcOutrosOperacionais?: number;      // líquido dos restantes (IVA/SS incluídos)
+  fcPagamentosInvestimento?: number;  // contrapartida 41–46 (saídas)
+  fcRecebimentosInvestimento?: number; // contrapartida 41–46/79 (entradas)
+  fcFinanciamentosObtidos?: number;   // contrapartida 25 (entradas)
+  fcPagamentosFinanciamento?: number; // contrapartida 25/26/69 (saídas)
+  fcRealizacoesCapital?: number;      // contrapartida 26/51/53/54 (entradas)
   // meta
   saftImportado: boolean;             // último preenchimento veio do SAF-T
 }
@@ -1024,9 +1041,26 @@ export default function ClientProfile({
               </div>
 
               <p className="text-[11px] font-[800] uppercase tracking-[0.5px] text-slate-400 mb-2">Resultados e Tesouraria</p>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-4 mb-5">
                 {contRow('Imposto sobre o rendimento', 'impostoRendimento')}
                 {contRow('Caixa e depósitos (início)', 'caixaInicio')}
+              </div>
+
+              <p className="text-[11px] font-[800] uppercase tracking-[0.5px] text-slate-400 mb-2">Fluxos de Caixa (método directo)</p>
+              <p className="text-[12px] text-slate-500 font-[500] mb-3 leading-relaxed">
+                Derivados automaticamente dos diários do SAF-T (cada movimento de caixa classificado pela contrapartida); editáveis à mão. Usados na Demonstração de Fluxos de Caixa.
+              </p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+                {contRow('Recebimentos de clientes', 'fcRecebimentosClientes')}
+                {contRow('Pagamentos a fornecedores', 'fcPagamentosFornecedores')}
+                {contRow('Pagamentos ao pessoal', 'fcPagamentosPessoal')}
+                {contRow('Imposto s/ rendimento (pago)', 'fcImpostoRendimento')}
+                {contRow('Outros operacionais (líquido)', 'fcOutrosOperacionais')}
+                {contRow('Pagamentos de investimento', 'fcPagamentosInvestimento')}
+                {contRow('Recebimentos de investimento', 'fcRecebimentosInvestimento')}
+                {contRow('Financiamentos obtidos', 'fcFinanciamentosObtidos')}
+                {contRow('Pagamentos de financiamento', 'fcPagamentosFinanciamento')}
+                {contRow('Realizações de capital', 'fcRealizacoesCapital')}
               </div>
             </div>
           </div>

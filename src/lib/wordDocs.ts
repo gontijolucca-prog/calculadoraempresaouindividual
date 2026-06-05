@@ -13,6 +13,7 @@ import type { OfficeSettings } from './officeSettings';
 import type { ContabilidadeData } from '../ClientProfile';
 import type { PreviSaState } from '../previSaState';
 import { defaultPreviSaState } from '../previSaState';
+import { impostoEstimado } from './previsaCalc';
 
 // ─── Helpers de formatação ──────────────────────────────────────────────────
 
@@ -53,6 +54,8 @@ interface Ctx {
   office: OfficeSettings;
   prev: PreviSaState;
   cont: Partial<ContabilidadeData>;
+  /** Saldos de abertura (= fecho do ano anterior), quando o SAF-T os trouxe. */
+  contAb: Partial<ContabilidadeData>;
   nome: string;
   nif: string;
   ano: number;
@@ -65,13 +68,14 @@ interface Ctx {
 function ctx(emp: EmpresaRecord, office: OfficeSettings): Ctx {
   const prev = { ...defaultPreviSaState(), ...(emp.previsa ?? {}) } as PreviSaState;
   const cont = (emp.profile?.contabilidade ?? {}) as Partial<ContabilidadeData>;
+  const contAb = (emp.profile?.contabilidadeAbertura ?? {}) as Partial<ContabilidadeData>;
   const nome = (emp.nome || emp.profile?.nomeCliente || 'Empresa').trim();
   const nif = (emp.nif || emp.profile?.nif || '').trim();
   const ano = prev.periodo || new Date().getFullYear() - 1;
   const sociedade = office.tipo === 'sociedade';
   const contabilista = (sociedade ? (office.contabilistaResponsavel || office.nome) : office.nome) || '';
   return {
-    emp, office, prev, cont, nome, nif, ano, anoAnt: ano - 1,
+    emp, office, prev, cont, contAb, nome, nif, ano, anoAnt: ano - 1,
     contabilista,
     cedula: office.cedulaProfissional || '',
     localEscritorio: office.localidade || '',
@@ -82,6 +86,38 @@ function ctx(emp: EmpresaRecord, office: OfficeSettings): Ctx {
 function cv(cont: Partial<ContabilidadeData>, key: keyof ContabilidadeData): number | null {
   const v = cont[key];
   return typeof v === 'number' && Number.isFinite(v) && v !== 0 ? v : null;
+}
+
+const MESES_PT = ['janeiro', 'fevereiro', 'mar&ccedil;o', 'abril', 'maio', 'junho',
+  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+/** Data de hoje por extenso ("5 de junho de 2026") — data de emissão dos documentos. */
+function hojePorExtenso(): string {
+  const d = new Date();
+  return `${d.getDate()} de ${MESES_PT[d.getMonth()]} de ${d.getFullYear()}`;
+}
+
+/**
+ * Imposto sobre o rendimento do período: o valor REAL da contabilidade (conta
+ * 812 do SAF-T / perfil) quando existe; senão a ESTIMATIVA do motor Previsa
+ * (IRC liquidado + tributações autónomas) calculada dos dados desta empresa.
+ * Devolve também a origem, para o documento assinalar estimativas.
+ */
+function impostoPeriodo(c: Ctx): { valor: number | null; estimado: boolean } {
+  const real = cv(c.cont, 'impostoRendimento');
+  if (real != null) return { valor: real, estimado: false };
+  const est = impostoEstimado(c.prev);
+  return { valor: est != null && est !== 0 ? est : null, estimado: est != null && est !== 0 };
+}
+
+/** Resultado líquido do período: contabilidade (818) ou RAI − imposto (estimado). */
+function resultadoLiquido(c: Ctx): { valor: number | null; estimado: boolean } {
+  const real = cv(c.cont, 'resultadoLiquido');
+  if (real != null) return { valor: real, estimado: false };
+  const { valor: imposto } = impostoPeriodo(c);
+  const rai = drLinhas(c.prev).rai;
+  if (imposto != null && Number.isFinite(rai)) return { valor: rai - imposto, estimado: true };
+  return { valor: null, estimado: false };
 }
 
 // ─── Demonstração de Resultados por Naturezas (a partir do Previsa) ───────────
@@ -189,7 +225,7 @@ function assinaturas(): string {
 export function buildDemonstracaoResultados(emp: EmpresaRecord, office: OfficeSettings): string {
   const c = ctx(emp, office);
   const d = drLinhas(c.prev);
-  const imposto = cv(c.cont, 'impostoRendimento');
+  const { valor: imposto, estimado: impostoEst } = impostoPeriodo(c);
   const liquido = cv(c.cont, 'resultadoLiquido') ?? (imposto != null && Number.isFinite(d.rai) ? d.rai - imposto : null);
   const r = (label: string, v: number | null, opts: { tot?: boolean; ind?: boolean } = {}) =>
     `<tr class="${opts.tot ? 'tot' : ''}"><td class="${opts.ind ? 'ind' : ''}">${label}</td><td class="num"></td><td class="num">${val(v)}</td><td class="num"></td></tr>`;
@@ -216,6 +252,7 @@ ${r('Total resultado antes de impostos', d.rai, { tot: true })}
 ${r('Imposto sobre o rendimento do per&iacute;odo', imposto != null ? -imposto : null)}
 ${r('Total resultado l&iacute;quido do per&iacute;odo', liquido, { tot: true })}
 </table>
+${impostoEst && imposto != null ? '<p class="meta">Nota: o imposto sobre o rendimento &eacute; uma estimativa do Previsa (IRC liquidado + tributa&ccedil;&otilde;es aut&oacute;nomas) &mdash; substitua pelo valor da conta 812 ao fechar as contas.</p>' : ''}
 ${assinaturas()}
 ${rodape()}`;
   return wordShell(`Demonstracao de Resultados ${c.ano}`, body);
@@ -223,41 +260,64 @@ ${rodape()}`;
 
 export function buildFluxosCaixa(emp: EmpresaRecord, office: OfficeSettings): string {
   const c = ctx(emp, office);
-  const r = (label: string, ind = true) =>
-    `<tr><td class="${ind ? 'ind' : ''}">${label}</td><td class="num"></td><td class="num">${DASH}</td></tr>`;
-  // Linha com valor (ou traço se desconhecido) — usada na caixa início/fim/variação.
+  const k = c.cont;
+  // Fluxos pelo método directo, derivados dos diários do SAF-T (classificação
+  // por contrapartida dos movimentos de caixa). Convenção: saídas em negativo.
+  const receb    = cv(k, 'fcRecebimentosClientes');
+  const pagForn  = cv(k, 'fcPagamentosFornecedores');
+  const pagPess  = cv(k, 'fcPagamentosPessoal');
+  const imposto  = cv(k, 'fcImpostoRendimento');     // positivo = pago
+  const outrosOp = cv(k, 'fcOutrosOperacionais');    // líquido (positivo = recebido)
+  const pagInv   = cv(k, 'fcPagamentosInvestimento');
+  const recInv   = cv(k, 'fcRecebimentosInvestimento');
+  const finObt   = cv(k, 'fcFinanciamentosObtidos');
+  const pagFin   = cv(k, 'fcPagamentosFinanciamento');
+  const realCap  = cv(k, 'fcRealizacoesCapital');
+  const temFluxos = [receb, pagForn, pagPess, imposto, outrosOp, pagInv, recInv, finObt, pagFin, realCap].some(v => v != null);
+  const z = (v: number | null) => v ?? 0;
+  const caixaOper = temFluxos ? z(receb) - z(pagForn) - z(pagPess) : null;
+  const totalOp   = caixaOper != null ? caixaOper - z(imposto) + z(outrosOp) : null;
+  const totalInv  = temFluxos ? z(recInv) - z(pagInv) : null;
+  const totalFin  = temFluxos ? z(finObt) + z(realCap) - z(pagFin) : null;
+  // Linha de atividade: valor quando existe, traço quando não (mantém a linha).
+  const r = (label: string, v: number | null = null, ind = true) =>
+    `<tr><td class="${ind ? 'ind' : ''}">${label}</td><td class="num"></td><td class="num">${v != null ? val(v) : (temFluxos ? '' : DASH)}</td></tr>`;
+  // Linha com valor (ou traço se desconhecido) — totais e caixa início/fim/variação.
   const rv = (label: string, v: number | null, tot = false) =>
     `<tr class="${tot ? 'tot' : ''}"><td>${label}</td><td class="num"></td><td class="num">${v != null ? val(v) : DASH}</td></tr>`;
   const sec = (label: string) => `<tr class="tot"><td colspan="3" class="sec">${label}</td></tr>`;
   const caixaFim = cv(c.cont, 'caixaDepositos');
   const caixaIni = cv(c.cont, 'caixaInicio');
-  const variacao = caixaFim != null && caixaIni != null ? caixaFim - caixaIni : null;
+  const variacao = caixaFim != null && caixaIni != null ? caixaFim - caixaIni
+                 : (totalOp != null ? totalOp + z(totalInv) + z(totalFin) : null);
   const body = `${cabecalho(c, `Fluxos de Caixa de 1 de janeiro de ${c.ano} a 31 de dezembro de ${c.ano}`)}
 <table class="dr">
 <tr><th style="text-align:left">Rubrica</th><th class="num">Notas</th><th class="num">${c.ano}</th></tr>
 ${sec('Fluxos de caixa das atividades operacionais')}
-${r('Recebimentos de clientes')}
-${r('Pagamentos a fornecedores')}
-${r('Pagamentos ao pessoal')}
-${r('Caixa gerada pelas opera&ccedil;&otilde;es')}
-${r('Pagamento/recebimento do imposto sobre o rendimento')}
-${r('Outros recebimentos/pagamentos')}
-${r('Total fluxos de caixa das atividades operacionais', false)}
+${r('Recebimentos de clientes', receb)}
+${r('Pagamentos a fornecedores', pagForn != null ? -pagForn : null)}
+${r('Pagamentos ao pessoal', pagPess != null ? -pagPess : null)}
+${r('Caixa gerada pelas opera&ccedil;&otilde;es', caixaOper)}
+${r('Pagamento/recebimento do imposto sobre o rendimento', imposto != null ? -imposto : null)}
+${r('Outros recebimentos/pagamentos', outrosOp)}
+${rv('Total fluxos de caixa das atividades operacionais', totalOp, true)}
 ${sec('Fluxos de caixa das atividades de investimento')}
-${r('Pagamentos respeitantes a ativos fixos tang&iacute;veis / intang&iacute;veis')}
-${r('Recebimentos provenientes de investimentos')}
+${r('Pagamentos respeitantes a ativos fixos tang&iacute;veis / intang&iacute;veis', pagInv != null ? -pagInv : null)}
+${r('Recebimentos provenientes de investimentos', recInv)}
 ${r('Subs&iacute;dios ao investimento / juros e rendimentos')}
-${r('Total fluxos de caixa das atividades de investimento', false)}
+${rv('Total fluxos de caixa das atividades de investimento', totalInv, true)}
 ${sec('Fluxos de caixa das atividades de financiamento')}
-${r('Financiamentos obtidos')}
-${r('Realiza&ccedil;&otilde;es de capital e cobertura de preju&iacute;zos')}
-${r('Pagamentos: financiamentos, juros, dividendos')}
-${r('Total fluxos de caixa das atividades de financiamento', false)}
+${r('Financiamentos obtidos', finObt)}
+${r('Realiza&ccedil;&otilde;es de capital e cobertura de preju&iacute;zos', realCap)}
+${r('Pagamentos: financiamentos, juros, dividendos', pagFin != null ? -pagFin : null)}
+${rv('Total fluxos de caixa das atividades de financiamento', totalFin, true)}
 ${rv('Varia&ccedil;&atilde;o de caixa e seus equivalentes', variacao, true)}
 ${rv('Caixa e seus equivalentes no in&iacute;cio do per&iacute;odo', caixaIni)}
 ${rv('Caixa e seus equivalentes no fim do per&iacute;odo', caixaFim)}
 </table>
-<p class="meta">Nota: a caixa no in&iacute;cio/fim vem da contabilidade (perfil do cliente); os fluxos por atividade s&atilde;o detalhados a partir do balancete.</p>
+<p class="meta">${temFluxos
+    ? 'Nota: fluxos derivados automaticamente dos di&aacute;rios do SAF-T pelo m&eacute;todo directo (cada movimento de caixa classificado pela contrapartida) &mdash; reveja a classifica&ccedil;&atilde;o antes de entregar.'
+    : 'Nota: a caixa no in&iacute;cio/fim vem da contabilidade (perfil do cliente); os fluxos por atividade s&atilde;o detalhados a partir do balancete.'}</p>
 ${assinaturas()}
 ${rodape()}`;
   return wordShell(`Fluxos de Caixa ${c.ano}`, body);
@@ -269,7 +329,18 @@ export function buildAlteracoesCapitalProprio(emp: EmpresaRecord, office: Office
   const capital = cv(c.cont, 'capitalRealizado') ?? c.emp.profile?.societaria?.capitalSocial ?? null;
   const reservasRT = cv(c.cont, 'reservasResultadosTransitados');
   const outras = cv(c.cont, 'outrasVariacoesCapital');
-  const rl = cv(c.cont, 'resultadoLiquido');
+  const rl = resultadoLiquido(c).valor;
+  // Posição no INÍCIO do período: APENAS saldos de abertura do SAF-T (= fecho
+  // do ano anterior). Sem abertura fica traço — copiar o fecho para o início
+  // implicaria "zero movimentos no período", o que seria contabilisticamente
+  // falso. Exceção: o capital subscrito raramente muda; mantém-se o fallback
+  // SÓ para o capital quando não há abertura nenhuma mas há capital na ficha.
+  const temAbertura   = cv(c.contAb, 'capitalRealizado') != null
+    || cv(c.contAb, 'reservasResultadosTransitados') != null
+    || cv(c.contAb, 'outrasVariacoesCapital') != null;
+  const capitalIni    = temAbertura ? cv(c.contAb, 'capitalRealizado') : capital;
+  const reservasIni   = cv(c.contAb, 'reservasResultadosTransitados');
+  const outrasIni     = cv(c.contAb, 'outrasVariacoesCapital');
   // Colunas: 0=Capital, 3=Prémios, ... 6=Result.Transitados, 8=Ajust/Outras, 9=Result.Líquido, 10=Total.
   const cols = ['Capital Subscrito', 'A&ccedil;&otilde;es (quotas) pr&oacute;prias', 'Outros instrum. de Cap. Pr&oacute;prio',
     'Pr&eacute;mios de emiss&atilde;o', 'Reservas Legais', 'Outras Reservas', 'Resultados Transitados',
@@ -288,7 +359,7 @@ export function buildAlteracoesCapitalProprio(emp: EmpresaRecord, office: Office
       return `<td class="num">${v != null ? val(v) : SHORTDASH}</td>`;
     }).join('')}</tr>`;
   };
-  const inicio = { 0: capital, 6: reservasRT, 8: outras } as Record<number, number | null>;
+  const inicio = { 0: capitalIni, 6: reservasIni, 8: outrasIni } as Record<number, number | null>;
   const fim    = { 0: capital, 6: reservasRT, 8: outras, 9: rl } as Record<number, number | null>;
   const anyData = capital != null || reservasRT != null || outras != null || rl != null;
   const body = `${cabecalho(c, `Demonstra&ccedil;&atilde;o das Altera&ccedil;&otilde;es no Capital Pr&oacute;prio &mdash; ${c.ano}`)}
@@ -323,8 +394,7 @@ export function buildDemonstracoesFinanceiras(emp: EmpresaRecord, office: Office
   const inv = cv(k, 'inventarios'), cli = cv(k, 'clientes'), eoepA = cv(k, 'estadoOutrosAtivo'),
         outrosA = cv(k, 'outrosAtivosCorrentes'), caixa = cv(k, 'caixaDepositos');
   const cap = cv(k, 'capitalRealizado'), resRT = cv(k, 'reservasResultadosTransitados'), outrasV = cv(k, 'outrasVariacoesCapital');
-  const impostoB = cv(k, 'impostoRendimento');
-  const rl = cv(k, 'resultadoLiquido') ?? (impostoB != null ? drLinhas(c.prev).rai - impostoB : null);
+  const rl = resultadoLiquido(c).valor;
   const fin = cv(k, 'financiamentosObtidos'), forn = cv(k, 'fornecedores'), eoepP = cv(k, 'estadoOutrosPassivo'), outrosP = cv(k, 'outrosPassivos');
   const anyAsset = [aft, intang, invFin, inv, cli, eoepA, outrosA, caixa].some(x => x != null);
   const anyCP = [cap, resRT, rl, outrasV].some(x => x != null);
@@ -333,40 +403,55 @@ export function buildDemonstracoesFinanceiras(emp: EmpresaRecord, office: Office
   const totalCP = anyCP ? [cap, resRT, rl, outrasV].reduce((s, x) => s + z(x), 0) : null;
   const totalPass = anyPass ? [fin, forn, eoepP, outrosP].reduce((s, x) => s + z(x), 0) : null;
   const totalCPPass = (totalCP != null || totalPass != null) ? z(totalCP) + z(totalPass) : null;
-  const brow = (label: string, v: number | null, tot = false) =>
-    `<tr class="${tot ? 'tot' : ''}"><td class="${tot ? '' : 'ind'}">${label}</td><td class="num"></td><td class="num">${v != null ? val(v) : (tot ? '' : DASH)}</td><td class="num"></td></tr>`;
+  // Coluna do ano anterior: saldos de ABERTURA do SAF-T (= fecho do ano anterior).
+  const a = c.contAb;
+  const aftA = cv(a, 'ativoFixoTangivel'), intangA = cv(a, 'ativoIntangivel'), invFinA = cv(a, 'investimentosFinanceiros');
+  const invA = cv(a, 'inventarios'), cliA = cv(a, 'clientes'), eoepAA = cv(a, 'estadoOutrosAtivo'),
+        outrosAA = cv(a, 'outrosAtivosCorrentes'), caixaA = cv(a, 'caixaDepositos');
+  const capA = cv(a, 'capitalRealizado'), resRTA = cv(a, 'reservasResultadosTransitados'),
+        outrasVA = cv(a, 'outrasVariacoesCapital'), rlA = cv(a, 'resultadoLiquido');
+  const finA = cv(a, 'financiamentosObtidos'), fornA = cv(a, 'fornecedores'), eoepPA = cv(a, 'estadoOutrosPassivo'), outrosPA = cv(a, 'outrosPassivos');
+  const anyAssetA = [aftA, intangA, invFinA, invA, cliA, eoepAA, outrosAA, caixaA].some(x => x != null);
+  const anyCPA = [capA, resRTA, rlA, outrasVA].some(x => x != null);
+  const anyPassA = [finA, fornA, eoepPA, outrosPA].some(x => x != null);
+  const totalAtivoA = anyAssetA ? [aftA, intangA, invFinA, invA, cliA, eoepAA, outrosAA, caixaA].reduce((s, x) => s + z(x), 0) : null;
+  const totalCPA = anyCPA ? [capA, resRTA, rlA, outrasVA].reduce((s, x) => s + z(x), 0) : null;
+  const totalPassA = anyPassA ? [finA, fornA, eoepPA, outrosPA].reduce((s, x) => s + z(x), 0) : null;
+  const totalCPPassA = (totalCPA != null || totalPassA != null) ? z(totalCPA) + z(totalPassA) : null;
+  const brow = (label: string, v: number | null, tot = false, vAnt: number | null = null) =>
+    `<tr class="${tot ? 'tot' : ''}"><td class="${tot ? '' : 'ind'}">${label}</td><td class="num"></td><td class="num">${v != null ? val(v) : (tot ? '' : DASH)}</td><td class="num">${vAnt != null ? val(vAnt) : ''}</td></tr>`;
   const bsec = (label: string) => `<tr class="tot"><td colspan="4" class="sec">${label}</td></tr>`;
   const balanco = `<div class="pgbreak">${cabecalho(c, `Balan&ccedil;o em 31 de dezembro de ${c.ano}`)}
 <table class="dr">
 <tr><th style="text-align:left">Rubricas</th><th class="num">Notas</th><th class="num">${c.ano}</th><th class="num">${c.anoAnt}</th></tr>
 ${bsec('ATIVO')}
 ${bsec('Ativo n&atilde;o corrente')}
-${brow('Ativos fixos tang&iacute;veis', aft)}
-${brow('Ativos intang&iacute;veis', intang)}
-${brow('Investimentos financeiros', invFin)}
+${brow('Ativos fixos tang&iacute;veis', aft, false, aftA)}
+${brow('Ativos intang&iacute;veis', intang, false, intangA)}
+${brow('Investimentos financeiros', invFin, false, invFinA)}
 ${bsec('Ativo corrente')}
-${brow('Invent&aacute;rios', inv)}
-${brow('Clientes', cli)}
-${brow('Estado e outros entes p&uacute;blicos', eoepA)}
-${brow('Outros ativos correntes', outrosA)}
-${brow('Caixa e dep&oacute;sitos banc&aacute;rios', caixa)}
-${brow('Total do ativo', totalAtivo, true)}
+${brow('Invent&aacute;rios', inv, false, invA)}
+${brow('Clientes', cli, false, cliA)}
+${brow('Estado e outros entes p&uacute;blicos', eoepA, false, eoepAA)}
+${brow('Outros ativos correntes', outrosA, false, outrosAA)}
+${brow('Caixa e dep&oacute;sitos banc&aacute;rios', caixa, false, caixaA)}
+${brow('Total do ativo', totalAtivo, true, totalAtivoA)}
 ${bsec('CAPITAL PR&Oacute;PRIO E PASSIVO')}
 ${bsec('Capital pr&oacute;prio')}
-${brow('Capital realizado', cap)}
-${brow('Reservas e resultados transitados', resRT)}
-${brow('Outras varia&ccedil;&otilde;es no capital pr&oacute;prio', outrasV)}
-${brow('Resultado l&iacute;quido do per&iacute;odo', rl)}
-${brow('Total do capital pr&oacute;prio', totalCP, true)}
+${brow('Capital realizado', cap, false, capA)}
+${brow('Reservas e resultados transitados', resRT, false, resRTA)}
+${brow('Outras varia&ccedil;&otilde;es no capital pr&oacute;prio', outrasV, false, outrasVA)}
+${brow('Resultado l&iacute;quido do per&iacute;odo', rl, false, rlA)}
+${brow('Total do capital pr&oacute;prio', totalCP, true, totalCPA)}
 ${bsec('Passivo')}
-${brow('Financiamentos obtidos', fin)}
-${brow('Fornecedores', forn)}
-${brow('Estado e outros entes p&uacute;blicos', eoepP)}
-${brow('Outros passivos', outrosP)}
-${brow('Total do passivo', totalPass, true)}
-${brow('Total do capital pr&oacute;prio e do passivo', totalCPPass, true)}
+${brow('Financiamentos obtidos', fin, false, finA)}
+${brow('Fornecedores', forn, false, fornA)}
+${brow('Estado e outros entes p&uacute;blicos', eoepP, false, eoepPA)}
+${brow('Outros passivos', outrosP, false, outrosPA)}
+${brow('Total do passivo', totalPass, true, totalPassA)}
+${brow('Total do capital pr&oacute;prio e do passivo', totalCPPass, true, totalCPPassA)}
 </table>
-<p class="meta">Nota: Balan&ccedil;o preenchido a partir da contabilidade (perfil do cliente / SAF-T); rubricas sem dados ficam por preencher.</p>
+<p class="meta">Nota: Balan&ccedil;o preenchido a partir da contabilidade (perfil do cliente / SAF-T)${anyAssetA || anyCPA || anyPassA ? `; a coluna de ${c.anoAnt} vem dos saldos de abertura do SAF-T` : ''}; rubricas sem dados ficam por preencher.</p>
 ${rodape()}</div>`;
   // DR + Alterações CP + Fluxos como páginas seguintes (reutiliza os builders, sem <html>)
   const inner = (html: string) => {
@@ -402,7 +487,7 @@ export function buildDeclaracaoResponsabilidade(emp: EmpresaRecord, office: Offi
 <li>Todas as situa&ccedil;&otilde;es que possam afetar as demonstra&ccedil;&otilde;es financeiras e fiscais foram comunicadas em devido tempo;</li>
 <li>Foram prestados todos os esclarecimentos solicitados pelo contabilista certificado.</li>
 </ul>
-<p style="margin-top:20pt">${local}, ${FILL} de ${FILL} de ${c.ano}</p>
+<p style="margin-top:20pt">${local}, ${hojePorExtenso()}</p>
 <p style="margin-top:24pt"><strong>A Ger&ecirc;ncia/Administra&ccedil;&atilde;o</strong><br>${gerenciaNomes(emp)}</p>
 ${rodape()}`;
   return wordShell(`Declaracao de Responsabilidade ${c.ano}`, body);
@@ -421,12 +506,18 @@ export function buildActaAG(emp: EmpresaRecord, office: OfficeSettings): string 
   const socios = (soc?.socios ?? []).filter(s => s.nome?.trim() || s.percentagem);
   const presidente = soc?.gerenteNome?.trim() || (socios[0]?.nome?.trim() ?? '');
   const quota = (pct: number) => capital > 0 && pct ? `&euro; ${fmt(capital * pct / 100)}` : DASH;
+  // Data da AG de aprovação de contas: por defeito o prazo legal (até 3 meses
+  // após o fecho — art. 65.º-A CSC), i.e. 31 de março do ano seguinte. Editável.
+  const dataAG = `31 de mar&ccedil;o de ${c.ano + 1}`;
+  // Resultado líquido a aplicar: contabilidade (818) ou estimativa do Previsa.
+  const { valor: rlValor, estimado: rlEstimado } = resultadoLiquido(c);
+  const rlTxt = rlValor != null ? `&euro; ${fmt(rlValor)}${rlEstimado ? ' <span class="meta">(estimativa Previsa &mdash; confirmar no fecho)</span>' : ''}` : DASH;
   const linhasSocios = socios.length
     ? socios.map(s => `<li>${s.nome?.trim() ? esc(s.nome) : FILL}; titular de quota social com valor nominal de ${quota(s.percentagem)}${s.percentagem ? ` (${fmt(s.percentagem)}% do capital)` : ''}.</li>`).join('')
     : `<li>${FILL}; titular de quota social com valor nominal de ${DASH}.</li>`;
   const body = `<h1 class="title" style="text-align:center;border:0;color:#0B1D2D">ACTA N.&ordm; ${FILL}</h1>
 <p>Reuni&atilde;o da Assembleia Geral de S&oacute;cios de <strong>${esc(c.nome)}</strong>${c.nif ? `, NIF ${esc(c.nif)}` : ''}, nos termos previstos no artigo 54.&ordm; do C&oacute;digo das Sociedades Comerciais (CSC).</p>
-<p>Data e hora da realiza&ccedil;&atilde;o da AG de s&oacute;cios: ${FILL}, pelas ${FILL}.<br>
+<p>Data e hora da realiza&ccedil;&atilde;o da AG de s&oacute;cios: ${dataAG}, pelas ${FILL}.<br>
 Local da realiza&ccedil;&atilde;o da AG de s&oacute;cios: ${c.localEscritorio ? esc(c.localEscritorio) + ' &mdash; ' : ''}Sede Social da Entidade.</p>
 <p>Todos os S&oacute;cios estiveram presentes, representando as seguintes quotas de Capital Social:</p>
 <ul>${linhasSocios}</ul>
@@ -440,10 +531,10 @@ Nome do S&oacute;cio que presidiu &agrave; AG de S&oacute;cios: ${presidente ? e
 <p><strong>Decis&otilde;es tomadas por unanimidade, por todos os S&oacute;cios presentes:</strong></p>
 <ul>
 <li>Aprovar o Relat&oacute;rio de Gest&atilde;o, as Contas e as Demonstra&ccedil;&otilde;es Financeiras do per&iacute;odo econ&oacute;mico ${c.ano} apresentadas pelo Conselho de Ger&ecirc;ncia.</li>
-<li>Aprovar a proposta do Conselho de Ger&ecirc;ncia sobre a aplica&ccedil;&atilde;o a dar ao Resultado L&iacute;quido apurado no per&iacute;odo econ&oacute;mico ${c.ano}, nos termos seguintes: transferir o montante total de Resultado L&iacute;quido do Exerc&iacute;cio, no valor de ${DASH} (&euro;), para a r&uacute;brica de Resultados Transitados (RT).</li>
+<li>Aprovar a proposta do Conselho de Ger&ecirc;ncia sobre a aplica&ccedil;&atilde;o a dar ao Resultado L&iacute;quido apurado no per&iacute;odo econ&oacute;mico ${c.ano}, nos termos seguintes: transferir o montante total de Resultado L&iacute;quido do Exerc&iacute;cio, no valor de ${rlTxt}, para a r&uacute;brica de Resultados Transitados (RT).</li>
 </ul>
 <p>E nada mais havendo a tratar, o Presidente da AG de S&oacute;cios deu por finda a presente reuni&atilde;o. Foi redigida esta acta, a qual traduz na &iacute;ntegra as incid&ecirc;ncias ocorridas na AG de S&oacute;cios. Em sinal de plena concord&acirc;ncia, vai a presente acta ser assinada por todos os S&oacute;cios que nela estiveram presentes.</p>
-<p style="margin-top:18pt">${c.localEscritorio ? esc(c.localEscritorio) + ', ' : ''}${FILL} de ${FILL} de ${c.ano}.</p>
+<p style="margin-top:18pt">${c.localEscritorio ? esc(c.localEscritorio) + ', ' : ''}${dataAG}.</p>
 <p style="margin-top:18pt"><strong>Os S&oacute;cios presentes,</strong></p>
 ${(socios.length ? socios : [{ nome: '' }, { nome: '' }]).map(s => `<p style="margin-top:22pt">_______________________________<br>${s.nome?.trim() ? esc(s.nome) : ''}</p>`).join('')}
 ${rodape()}`;
@@ -490,15 +581,15 @@ export const DOC_TYPES: DocTypeDef[] = [
   },
   {
     id: 'alteracoes', label: 'Demonstração das Alterações no Capital Próprio',
-    descricao: 'Capital social no início; restantes movimentos para completar.',
+    descricao: 'Capital, reservas e resultado preenchidos; movimentos do período para completar.',
     fill: 'parcial', precisaPrevisa: false,
     build: buildAlteracoesCapitalProprio,
     filename: (e) => `Alteracoes_Capital_Proprio_${slug(e.nome || '')}`,
   },
   {
     id: 'fluxos', label: 'Demonstração de Fluxos de Caixa',
-    descricao: 'Estrutura e identificação; valores de tesouraria para completar.',
-    fill: 'modelo', precisaPrevisa: false,
+    descricao: 'Preenchida com os movimentos de caixa do SAF-T (método directo).',
+    fill: 'completo', precisaPrevisa: false,
     build: buildFluxosCaixa,
     filename: (e) => `Fluxos_Caixa_${slug(e.nome || '')}`,
   },
@@ -528,6 +619,14 @@ export function hasPrevisaData(emp: EmpresaRecord): boolean {
  * honesto. Sem isto, o badge dizia "Preenchido" mesmo com o documento a sair
  * em branco (Previsa vazio, ficha societária por preencher, etc.).
  */
+/** Campos dos fluxos de caixa (método directo) derivados dos diários do SAF-T. */
+const FC_KEYS: (keyof ContabilidadeData)[] = [
+  'fcRecebimentosClientes', 'fcPagamentosFornecedores', 'fcPagamentosPessoal',
+  'fcImpostoRendimento', 'fcOutrosOperacionais', 'fcPagamentosInvestimento',
+  'fcRecebimentosInvestimento', 'fcFinanciamentosObtidos', 'fcPagamentosFinanciamento',
+  'fcRealizacoesCapital',
+];
+
 export function fillStatusFor(id: DocTypeId, emp: EmpresaRecord, office: OfficeSettings): 'completo' | 'parcial' | 'modelo' {
   const soc = emp.profile?.societaria;
   const cont = (emp.profile?.contabilidade ?? {}) as Partial<ContabilidadeData>;
@@ -540,6 +639,10 @@ export function fillStatusFor(id: DocTypeId, emp: EmpresaRecord, office: OfficeS
   const temIdent = !!((emp.nome || emp.profile?.nomeCliente) && (emp.nif || emp.profile?.nif));
   const temCC = !!(office.tipo === 'sociedade' ? (office.contabilistaResponsavel || office.nome) : office.nome);
   const previsa = hasPrevisaData(emp);
+  const nFc = FC_KEYS.filter(kk => cv(cont, kk) !== null).length;
+  const temCaixa = cv(cont, 'caixaDepositos') !== null || cv(cont, 'caixaInicio') !== null;
+  const temBalanco = (['ativoFixoTangivel', 'clientes', 'caixaDepositos', 'capitalRealizado', 'fornecedores', 'resultadoLiquido'] as (keyof ContabilidadeData)[])
+    .some(kk => cv(cont, kk) !== null);
   switch (id) {
     case 'dr':
       return previsa ? 'completo' : 'modelo';
@@ -550,9 +653,11 @@ export function fillStatusFor(id: DocTypeId, emp: EmpresaRecord, office: OfficeS
     case 'alteracoes':
       return temCapitalCP ? 'parcial' : 'modelo';
     case 'fluxos':
-      return 'modelo';
+      // Derivados dos diários do SAF-T: com 3+ rubricas de fluxos o documento
+      // sai utilizável; só caixa início/fim ou poucas rubricas → parcial.
+      return nFc >= 3 ? 'completo' : (nFc > 0 || temCaixa) ? 'parcial' : 'modelo';
     case 'df':
-      return previsa ? 'parcial' : 'modelo';
+      return previsa && temBalanco && nFc >= 3 ? 'completo' : (previsa || temBalanco) ? 'parcial' : 'modelo';
     default:
       // Inalcançável com o union atual; protege contra um DocTypeId novo
       // adicionado sem atualizar este switch.

@@ -42,6 +42,9 @@ export interface EmpresaRecord {
   saftFileName?: string;
   saftImportedAt?: number;
   saftXml?: string;                 // SAF-T importado em bruto (para re-exportar)
+  // Marca do re-processamento do saftXml guardado (deriva campos novos — fluxos
+  // de caixa, saldos de abertura — em empresas importadas antes da feature).
+  saftReprocessadoEm?: number;
   simulacoes?: SimulationRecord[];  // histórico de simulações deste cliente
   // Estado do simulador Previsa (IRC Modelo 22) deste cliente. Ao contrário dos
   // outros simuladores — que se re-semeiam a partir do `profile` — o Previsa tem

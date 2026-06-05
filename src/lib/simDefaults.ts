@@ -36,14 +36,25 @@ export const getInitialTaxState = (p: ClientProfile): TaxSimulatorState => ({
   currentInc: 0, age: p.idade || 0, isMainAct: p.tipoEntidade !== 'eni',
   monthlyNeed: 0, isServices: p.atividadePrincipal === 'servicos',
   b2b: true, rev: p.faturaçaoAnualPrevista || 0, isSeasonal: p.isSazonal,
-  invEquip: 0, invLic: 0, invWorks: 0, invFundo: 0,
-  fixedMo: 0, varYr: 0, accMoLda: 0, accMoEni: 0,
+  // Investimento previsto — vem do diagnóstico da ficha (não voltar a pedir).
+  invEquip: p.investimento?.equipamentos || 0,
+  invLic: 0,
+  invWorks: p.investimento?.obras || 0,
+  invFundo: p.investimento?.stock || 0,
+  // Custos da ficha são ANUAIS: fixos (rendas, serviços externos, viaturas,
+  // equipamentos) → mensal; variáveis (mercadorias, combustíveis, outros) → ano.
+  fixedMo: Math.round(((p.custos?.rendas || 0) + (p.custos?.servicosExternos || 0) + (p.custos?.viaturas || 0) + (p.custos?.equipamentos || 0)) / 12),
+  varYr: (p.custos?.mercadorias || 0) + (p.custos?.combustiveis || 0) + (p.custos?.outros || 0),
+  accMoLda: 0, accMoEni: 0,
   anosAtividade: p.inicioAtividade > 0 ? Math.max(0, new Date().getFullYear() - p.inicioAtividade) : 0,
   transparenciaFiscal: p.regimeContabilidade === 'transparencia_fiscal',
 });
 
-export const getInitialVehicleState = (): VehicleSimulatorState => ({
-  category: 'passageiros', engineType: 'diesel', price: 0,
+export const getInitialVehicleState = (p?: ClientProfile): VehicleSimulatorState => ({
+  // Categoria/motor derivados do diagnóstico de viaturas da ficha, quando existe.
+  category: p?.viaturasDiag?.tipo?.comercial && !p?.viaturasDiag?.tipo?.passageiros ? 'comercial' : 'passageiros',
+  engineType: p?.viaturasDiag?.tipo?.eletrico ? 'electric' : p?.viaturasDiag?.tipo?.hibrido ? 'hybrid' : 'diesel',
+  price: 0,
   ivaRegime: 'normal', activity: 'other', maintenanceCost: 0,
   insuranceCost: 0, fuelCost: 0, exemptTA: false, phevCompliant: true,
 });
@@ -60,6 +71,9 @@ export const getInitialTicketState = (p: ClientProfile): TicketSimulatorState =>
 });
 
 export const getInitialSSState = (p: ClientProfile): SSState => ({
-  income: p.rendimentoMensalEni || 0, regime: 'simplified',
-  tipoRendimento: p.tipoRendimentoSs, primeiroAno: false,
+  income: p.rendimentoMensalEni || 0,
+  // Regime e 1.º ano vêm da ficha (regimeSs + ano de início de atividade).
+  regime: p.regimeSs === 'general' ? 'general' : 'simplified',
+  tipoRendimento: p.tipoRendimentoSs,
+  primeiroAno: p.inicioAtividade > 0 && p.inicioAtividade >= new Date().getFullYear(),
 });

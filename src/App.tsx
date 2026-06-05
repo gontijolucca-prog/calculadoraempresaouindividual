@@ -193,15 +193,31 @@ interface SSState {
 // src/lib/simDefaults.ts — partilhados com a vista "Exportar documentos" para
 // não divergirem. Os restantes (Diagnóstico/Imóveis/IMT/Salário) ficam aqui.
 
-const getInitialDiagnosticoState = (p: ClientProfileType, tax: TaxSimulatorState): DiagnosticoState => ({
-  capitaisProprios: 0, ativoTotal: 0, passivoTotal: 0,
-  ativoCorrente: 0, passivoCorrente: 0, disponibilidades: 0,
-  custoFixoMensal: tax.fixedMo || 0, resultadoLiquido: 0,
-  volumeNegocios: p.faturaçaoAnualPrevista || 0, ebitda: 'positivo',
-  faturacaoMaiorCliente: 0, financiamentoExterno: 0, totalFinanciamento: 0,
-  processosDefinidos: false, softwareGestao: false, equipaAutonoma: false,
-  baixaDependenciaGerente: false, controlFinanceiro: false,
-});
+const getInitialDiagnosticoState = (p: ClientProfileType, tax: TaxSimulatorState): DiagnosticoState => {
+  // Balanço da contabilidade (SAF-T/perfil) preenche os pilares financeiros —
+  // não voltar a pedir o que a app já sabe. Pilar 5 (operacional) fica manual.
+  const k = (p.contabilidade ?? {}) as Partial<ClientProfileType['contabilidade']>;
+  const n = (v: number | undefined) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+  const ativoCorrente = n(k.inventarios) + n(k.clientes) + n(k.estadoOutrosAtivo) + n(k.outrosAtivosCorrentes) + n(k.caixaDepositos);
+  const ativoTotal = ativoCorrente + n(k.ativoFixoTangivel) + n(k.ativoIntangivel) + n(k.investimentosFinanceiros);
+  const passivoCorrente = n(k.fornecedores) + n(k.estadoOutrosPassivo) + n(k.outrosPassivos);
+  const passivoTotal = passivoCorrente + n(k.financiamentosObtidos);
+  const capitaisProprios = n(k.capitalRealizado) + n(k.reservasResultadosTransitados) + n(k.resultadoLiquido) + n(k.outrasVariacoesCapital);
+  const rl = n(k.resultadoLiquido);
+  return {
+    capitaisProprios, ativoTotal, passivoTotal,
+    ativoCorrente, passivoCorrente, disponibilidades: n(k.caixaDepositos),
+    custoFixoMensal: tax.fixedMo || 0, resultadoLiquido: rl,
+    volumeNegocios: p.faturaçaoAnualPrevista || 0,
+    ebitda: rl < 0 ? 'negativo' : 'positivo',
+    faturacaoMaiorCliente: 0,
+    financiamentoExterno: n(k.financiamentosObtidos),
+    // "Total de fontes de financiamento" inclui externos + capital dos sócios.
+    totalFinanciamento: n(k.financiamentosObtidos) + n(k.capitalRealizado),
+    processosDefinidos: false, softwareGestao: false, equipaAutonoma: false,
+    baixaDependenciaGerente: false, controlFinanceiro: false,
+  };
+};
 
 const getInitialImoveisState = (_p: ClientProfileType): ImoveisState => ({
   valorImovel: 0, tipoUso: 'comercial', temApoiosPT2030: false,
@@ -355,7 +371,7 @@ function AppContent() {
     return (emp?.sims ?? {}) as Record<string, unknown>;
   })();
   const [taxState, setTaxState] = useState<TaxSimulatorState>(() => (initSims.tax as TaxSimulatorState) ?? getInitialTaxState(clientProfile));
-  const [vehicleState, setVehicleState] = useState<VehicleSimulatorState>(() => (initSims.vehicle as VehicleSimulatorState) ?? getInitialVehicleState());
+  const [vehicleState, setVehicleState] = useState<VehicleSimulatorState>(() => (initSims.vehicle as VehicleSimulatorState) ?? getInitialVehicleState(clientProfile));
   const [ticketState, setTicketState] = useState<TicketSimulatorState>(() => (initSims.ticket as TicketSimulatorState) ?? getInitialTicketState(clientProfile));
   const [ssState, setSSState] = useState<SSState>(() => (initSims.selfss as SSState) ?? getInitialSSState(clientProfile));
   const [diagnosticoState, setDiagnosticoState] = useState<DiagnosticoState>(() => (initSims.diagnostico as DiagnosticoState) ?? getInitialDiagnosticoState(clientProfile, (initSims.tax as TaxSimulatorState) ?? getInitialTaxState(clientProfile)));
@@ -712,6 +728,11 @@ function AppContent() {
         if (result.contabilidade && Object.keys(result.contabilidade).length > 0) {
           newProfile.contabilidade = { ...defaultProfile.contabilidade, ...result.contabilidade };
         }
+        // Saldos de abertura (= fecho do ano anterior) — coluna do ano anterior
+        // do Balanço e posição inicial das Alterações no Capital Próprio.
+        if (result.contabilidadeAbertura && Object.keys(result.contabilidadeAbertura).length > 0) {
+          newProfile.contabilidadeAbertura = result.contabilidadeAbertura;
+        }
         seedFreshFromProfile(newProfile);
         setView('profile');
         setSaftData(result);
@@ -731,7 +752,10 @@ function AppContent() {
           // Guarda já com a declaração normalizada a UTF-8: o texto é Unicode e
           // a re-exportação (Blob) escreve bytes UTF-8 — declaração e bytes têm
           // de coincidir para o ficheiro reimportar bem.
-          if (emp) upsertEmpresa({ ...emp, saftXml: normalizeXmlEncodingToUtf8(text), saftFileName: file.name, saftImportedAt: Date.now(), previsa: newPrevisa });
+          // saftReprocessadoEm: este import já derivou tudo (fluxos, abertura) —
+          // marca como processado para o re-parse silencioso do Exportar não
+          // correr (e para um REimport não ficar bloqueado por uma marca antiga).
+          if (emp) upsertEmpresa({ ...emp, saftXml: normalizeXmlEncodingToUtf8(text), saftFileName: file.name, saftImportedAt: Date.now(), saftReprocessadoEm: Date.now(), previsa: newPrevisa });
         }
 
         // Em vez do resumo modal, abre logo o visualizador "Dados extraídos do
@@ -808,7 +832,7 @@ function AppContent() {
     const tax = (sims.tax as TaxSimulatorState) ?? getInitialTaxState(profile);
     setClientProfile(profile);
     setTaxState(tax);
-    setVehicleState((sims.vehicle as VehicleSimulatorState) ?? getInitialVehicleState());
+    setVehicleState((sims.vehicle as VehicleSimulatorState) ?? getInitialVehicleState(profile));
     setTicketState((sims.ticket as TicketSimulatorState) ?? getInitialTicketState(profile));
     setSSState((sims.selfss as SSState) ?? getInitialSSState(profile));
     setDiagnosticoState((sims.diagnostico as DiagnosticoState) ?? getInitialDiagnosticoState(profile, tax));
@@ -835,7 +859,7 @@ function AppContent() {
   const seedFreshFromProfile = (profile: ClientProfileType) => {
     setClientProfile(profile);
     setTaxState(getInitialTaxState(profile));
-    setVehicleState(getInitialVehicleState());
+    setVehicleState(getInitialVehicleState(profile));
     setTicketState(getInitialTicketState(profile));
     setSSState(getInitialSSState(profile));
     setDiagnosticoState(getInitialDiagnosticoState(profile, getInitialTaxState(profile)));

@@ -3,7 +3,8 @@ import {
   FileDown, FileText, Download, Printer, Building2, ChevronDown, Pencil,
   Calculator, FileSignature, Package, Search, Check, Loader2,
 } from 'lucide-react';
-import { listEmpresas, type EmpresaRecord } from './lib/empresas';
+import { listEmpresas, upsertEmpresa, type EmpresaRecord } from './lib/empresas';
+import { parseSAFT } from './lib/saft';
 import { loadFromStorage, saveToStorage } from './lib/storage';
 import { officeSettingsAreComplete, type OfficeSettings } from './lib/officeSettings';
 import type { HonorariosConfig } from './lib/honorarios';
@@ -82,7 +83,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
   onOpenPrevisa?: (empresaId: string) => void;
   onGoToOfficeSettings?: () => void;
 }) {
-  const empresas = useMemo(() => listEmpresas(), []);
+  const [empresas, setEmpresas] = useState<EmpresaRecord[]>(() => listEmpresas());
   // Empresa e documento selecionados sobrevivem a refresh/auto-update — o
   // utilizador volta exatamente onde estava. Ids guardados são validados
   // contra as listas atuais (empresa apagada → cai na primeira).
@@ -115,6 +116,41 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
   const empresaListRef = useRef<HTMLDivElement>(null);
 
   const emp = empresas.find(e => e.id === empresaId) ?? null;
+
+  // Re-deriva dados NOVOS do SAF-T guardado (fluxos de caixa pelo método
+  // directo + saldos de abertura) em empresas importadas antes desta
+  // funcionalidade existir — uma única vez por empresa (saftReprocessadoEm).
+  // Só acrescenta campos ausentes; valores já editados à mão ficam intactos.
+  useEffect(() => {
+    if (!emp?.saftXml || emp.saftReprocessadoEm) return;
+    try {
+      const r = parseSAFT(emp.saftXml);
+      const prof = emp.profile ?? defaultProfile;
+      const cont = { ...defaultProfile.contabilidade, ...(prof.contabilidade ?? {}) } as ClientProfile['contabilidade'];
+      const contRec = cont as unknown as Record<string, number | boolean | undefined>;
+      for (const [k, v] of Object.entries(r.contabilidade ?? {})) {
+        if (k.startsWith('fc') && contRec[k] === undefined) contRec[k] = v as number;
+      }
+      const novoProfile: ClientProfile = {
+        ...prof,
+        contabilidade: cont,
+        ...(prof.contabilidadeAbertura || !r.contabilidadeAbertura ? {} : { contabilidadeAbertura: r.contabilidadeAbertura }),
+      };
+      upsertEmpresa({ ...emp, profile: novoProfile, saftReprocessadoEm: Date.now() });
+      setEmpresas(listEmpresas());
+    } catch {
+      // SAF-T guardado ilegível — marca como processado para não repetir o
+      // parse a cada visita; o import manual continua disponível.
+      upsertEmpresa({ ...emp, saftReprocessadoEm: Date.now() });
+      setEmpresas(listEmpresas());
+    }
+    // Deps deliberadamente só [emp?.id]: o efeito é one-shot por empresa (o
+    // guard saftReprocessadoEm impede repetição) e emp?.id é o proxy correto
+    // para "empresa selecionada mudou". Reimports são tratados no próprio
+    // import (App.tsx), que já deriva fluxos/abertura e re-marca a empresa.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emp?.id]);
+
   const empresaLabel = emp
     ? `${emp.nome || emp.profile?.nomeCliente || 'Empresa sem nome'}${emp.nif ? ` · ${emp.nif}` : ''}`
     : 'Escolher empresa';
@@ -175,7 +211,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
   const sims = useMemo(() => (emp?.sims ?? {}) as Record<string, unknown>, [emp]);
   const profile = useMemo(() => normalizeProfile(emp?.profile), [emp]);
   const taxState = (sims.tax as TaxSimulatorState) ?? (profile ? getInitialTaxState(profile) : undefined);
-  const vehicleState = (sims.vehicle as VehicleSimulatorState) ?? getInitialVehicleState();
+  const vehicleState = (sims.vehicle as VehicleSimulatorState) ?? getInitialVehicleState(profile);
   const ticketState = (sims.ticket as TicketSimulatorState) ?? (profile ? getInitialTicketState(profile) : undefined);
   const ssState = (sims.selfss as SSState) ?? (profile ? getInitialSSState(profile) : undefined);
 
