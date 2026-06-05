@@ -310,11 +310,12 @@ ${rodape()}`;
 export function buildDemonstracoesFinanceiras(emp: EmpresaRecord, office: OfficeSettings): string {
   const c = ctx(emp, office);
   // Capa
-  const capa = `<div style="height:9cm"></div>
-<div class="meta" style="font-size:13pt;color:#555">${esc(c.nome.toUpperCase())}</div>
-<div style="font-size:30pt;font-weight:bold;color:#111;margin:6pt 0">Demonstra&ccedil;&otilde;es Financeiras</div>
-<div class="meta" style="font-size:14pt">Exerc&iacute;cio de ${c.ano}</div>
-<div style="margin-top:30pt;width:7cm;border-top:0.75pt solid #ccc"></div>`;
+  // Cabeçalho curto no topo da página (antes era uma capa com 9cm de espaço em
+  // branco antes do título — o documento parecia começar a meio da folha).
+  const capa = `<div class="meta" style="font-size:12pt;color:#555">${esc(c.nome.toUpperCase())}</div>
+<div style="font-size:22pt;font-weight:bold;color:#111;margin:4pt 0">Demonstra&ccedil;&otilde;es Financeiras</div>
+<div class="meta" style="font-size:12pt">Exerc&iacute;cio de ${c.ano}</div>
+<div style="margin:12pt 0 18pt 0;width:7cm;border-top:0.75pt solid #ccc"></div>`;
   // Balanço — preenchido a partir da contabilidade (perfil); totais calculados.
   const k = c.cont;
   const z = (v: number | null) => v ?? 0;
