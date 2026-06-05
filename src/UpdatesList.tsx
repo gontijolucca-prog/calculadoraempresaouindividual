@@ -1,10 +1,11 @@
 import { motion } from 'motion/react';
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Trash2, ClipboardList, CheckCheck, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, Plus, Trash2, ClipboardList, CheckCheck, Loader2, UserRound } from 'lucide-react';
 import {
-  collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy,
+  collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy, deleteField,
 } from 'firebase/firestore';
 import { db } from './lib/firebase';
+import { loadFromStorage, saveToStorage } from './lib/storage';
 
 export interface UpdateItem {
   id: string;
@@ -12,6 +13,22 @@ export interface UpdateItem {
   atualizado: boolean;
   aprovado: boolean;
   createdAt: number;
+  /** Quem adicionou o item (itens antigos não têm). */
+  autor?: string;
+  /** Assinaturas dos toggles. */
+  atualizadoPor?: string;
+  atualizadoEm?: number;
+  aprovadoPor?: string;
+  aprovadoEm?: number;
+}
+
+const AUTOR_KEY = 'updatesAutor';
+
+function fmtData(ts?: number): string {
+  if (!ts) return '';
+  const d = new Date(ts);
+  return d.toLocaleDateString('pt-PT', { day: 'numeric', month: 'short', year: 'numeric' })
+    + ', ' + d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
 }
 
 interface Props {
@@ -27,6 +44,23 @@ export default function UpdatesList({ onBack }: Props) {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  // Identidade por dispositivo — nome pedido uma vez, fica neste browser.
+  const [autor, setAutor] = useState(() => loadFromStorage<string>(AUTOR_KEY, ''));
+  const [nameDraft, setNameDraft] = useState('');
+  const [editingName, setEditingName] = useState(false);
+  const [nameNeeded, setNameNeeded] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  const saveAutor = () => {
+    const n = nameDraft.trim();
+    if (!n) return;
+    setAutor(n);
+    saveToStorage(AUTOR_KEY, n);
+    setEditingName(false);
+    setNameNeeded(false);
+    setNameDraft('');
+  };
 
   useEffect(() => {
     const q = query(collection(db, 'updates'), orderBy('createdAt', 'asc'));
@@ -62,10 +96,16 @@ export default function UpdatesList({ onBack }: Props) {
     if (adding) return;
     const text = newText.trim();
     if (!text) return;
+    if (!autor) {
+      // Sem identidade neste dispositivo — pedir o nome antes de gravar.
+      setNameNeeded(true);
+      setTimeout(() => nameInputRef.current?.focus(), 50);
+      return;
+    }
     setAdding(true);
     try {
       await addDoc(collection(db, 'updates'), {
-        text, atualizado: false, aprovado: false, createdAt: Date.now(),
+        text, atualizado: false, aprovado: false, createdAt: Date.now(), autor,
       });
       setNewText('');
     } catch (err) {
@@ -77,9 +117,21 @@ export default function UpdatesList({ onBack }: Props) {
 
   const toggle = async (item: UpdateItem, field: 'atualizado' | 'aprovado') => {
     if (togglingId === item.id) return;
+    if (!autor) {
+      // Marcar também assina — exigir nome primeiro.
+      setNameNeeded(true);
+      setTimeout(() => nameInputRef.current?.focus(), 50);
+      return;
+    }
     setTogglingId(item.id);
     try {
-      await updateDoc(doc(db, 'updates', item.id), { [field]: !item[field] });
+      const next = !item[field];
+      // Assinatura do toggle: quem marcou + quando; desmarcar limpa a assinatura.
+      await updateDoc(doc(db, 'updates', item.id), {
+        [field]: next,
+        [`${field}Por`]: next && autor ? autor : deleteField(),
+        [`${field}Em`]: next ? Date.now() : deleteField(),
+      });
     } finally {
       setTogglingId(null);
     }
@@ -99,7 +151,9 @@ export default function UpdatesList({ onBack }: Props) {
   const sorted = [
     ...items.filter(i => i.atualizado && !i.aprovado),
     ...items.filter(i => !i.atualizado && !i.aprovado),
-    ...items.filter(i => i.atualizado && i.aprovado),
+    // Aprovados no fim — com OU sem `atualizado` (a versão antiga exigia ambos
+    // e um item aprovado-mas-não-atualizado desaparecia da lista).
+    ...items.filter(i => i.aprovado),
   ];
 
   const pendingCount = items.filter(i => i.atualizado && !i.aprovado).length;
@@ -145,6 +199,52 @@ export default function UpdatesList({ onBack }: Props) {
       </div>
 
       <div className="max-w-3xl mx-auto px-6 md:px-10 py-10 space-y-6">
+
+        {/* Identidade do dispositivo */}
+        {(!autor || editingName || nameNeeded) && (
+          <div className={`bg-white rounded-[20px] p-6 shadow-sm border transition-all ${
+            nameNeeded ? 'border-[#0677FF] shadow-[#0677FF]/10' : 'border-[#E2E8F0]'
+          }`}>
+            <div className="flex items-center gap-2 mb-3">
+              <UserRound size={14} className="text-[#0677FF]" aria-hidden="true" />
+              <label htmlFor="autor-input" className="block text-[12px] font-[700] uppercase tracking-[1px] text-[#64748B]">
+                Quem está a usar este dispositivo?
+              </label>
+            </div>
+            <p className="text-[12px] text-[#94A3B8] font-[500] mb-3">
+              O nome fica guardado neste browser e assina cada item que adicionar ou marcar — para se saber quem escreveu o quê.
+            </p>
+            <div className="flex gap-3">
+              <input
+                id="autor-input"
+                ref={nameInputRef}
+                type="text"
+                value={nameDraft}
+                onChange={e => setNameDraft(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); saveAutor(); } }}
+                placeholder="O seu nome (ex.: Lucca, Sandrine)…"
+                className="flex-1 px-4 py-3 bg-[#F5F7FA] border-2 border-[#E2E8F0] rounded-[10px] text-[14px] font-[600] text-[#0F172A] focus:border-[#0677FF] outline-none transition-all placeholder:text-[#94A3B8]"
+              />
+              <button
+                type="button"
+                onClick={saveAutor}
+                disabled={!nameDraft.trim()}
+                className="bg-[#0677FF] text-white px-5 py-3 rounded-[10px] text-[14px] font-[700] hover:bg-[#0556CC] active:scale-[0.98] transition-all shadow-md shadow-[#0677FF]/20 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Guardar
+              </button>
+              {editingName && (
+                <button
+                  type="button"
+                  onClick={() => { setEditingName(false); setNameDraft(''); }}
+                  className="px-4 py-3 rounded-[10px] text-[14px] font-[700] bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0] transition-all"
+                >
+                  Cancelar
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Add new item */}
         <div className="bg-white rounded-[20px] p-6 shadow-sm border border-[#E2E8F0]">
@@ -282,11 +382,27 @@ export default function UpdatesList({ onBack }: Props) {
                     }`} />
 
                     {/* Text */}
-                    <p className={`flex-1 text-[14px] leading-relaxed font-[600] min-w-0 ${
-                      done ? 'line-through text-[#94A3B8]' : 'text-[#0F172A]'
-                    }`}>
-                      {item.text}
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-[14px] leading-relaxed font-[600] ${
+                        done ? 'line-through text-[#94A3B8]' : 'text-[#0F172A]'
+                      }`}>
+                        {item.text}
+                      </p>
+                      <p className="text-[11px] font-[500] text-[#94A3B8] mt-1 flex flex-wrap items-center gap-x-2">
+                        <span>
+                          {item.autor
+                            ? <>Adicionado por <span className="font-[700] text-[#64748B]">{item.autor}</span></>
+                            : 'Adicionado'}
+                          {item.createdAt ? ` · ${fmtData(item.createdAt)}` : ''}
+                        </span>
+                        {item.aprovadoPor && (
+                          <span className="text-blue-500">
+                            · Aprovado por <span className="font-[700]">{item.aprovadoPor}</span>
+                            {item.aprovadoEm ? ` (${fmtData(item.aprovadoEm)})` : ''}
+                          </span>
+                        )}
+                      </p>
+                    </div>
 
                     {/* Status badge */}
                     <div className="hidden sm:flex flex-col gap-1 shrink-0 items-end">
@@ -314,6 +430,18 @@ export default function UpdatesList({ onBack }: Props) {
         {items.length > 0 && (
           <p className="text-center text-[11px] text-[#CBD5E1] font-[500] pb-4">
             ☁ Guardado na cloud — sincronizado em todos os dispositivos.
+            {autor && !editingName && (
+              <>
+                {' '}· A assinar como <span className="font-[700] text-[#94A3B8]">{autor}</span>{' '}
+                <button
+                  type="button"
+                  onClick={() => { setNameDraft(autor); setEditingName(true); setTimeout(() => nameInputRef.current?.focus(), 50); }}
+                  className="underline hover:text-[#0677FF] transition-colors"
+                >
+                  alterar
+                </button>
+              </>
+            )}
           </p>
         )}
       </div>

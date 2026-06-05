@@ -46,20 +46,29 @@ service cloud.firestore {
 }
 
 function isValidUpdateCreate(data) {
-  return data.keys().hasOnly(['text', 'atualizado', 'aprovado', 'createdAt'])
+  // `autor` é opcional (compatibilidade com versões antigas da app que ainda
+  // criam sem assinatura), mas quando vem tem de ser um nome curto.
+  return data.keys().hasOnly(['text', 'atualizado', 'aprovado', 'createdAt', 'autor'])
       && data.text is string
       && data.text.size() > 0
       && data.text.size() < 1000
       && data.atualizado is bool
-      && data.aprovado is bool;
+      && data.aprovado is bool
+      && (!('autor' in data) || (data.autor is string && data.autor.size() > 0 && data.autor.size() < 100));
 }
 
 function isToggleOnly(before, after) {
-  // Permite alterar só `atualizado` e `aprovado`. Texto e createdAt imutáveis.
-  return after.text == before.text
-      && after.createdAt == before.createdAt
+  // Permite alterar só os flags e as respectivas assinaturas (quem marcou +
+  // quando). Tudo o resto — text, createdAt, autor — fica imutável por exclusão:
+  // qualquer chave fora desta lista no diff chumba a regra.
+  return after.diff(before).affectedKeys().hasOnly(
+        ['atualizado', 'aprovado', 'atualizadoPor', 'atualizadoEm', 'aprovadoPor', 'aprovadoEm'])
       && after.atualizado is bool
-      && after.aprovado is bool;
+      && after.aprovado is bool
+      && (!('atualizadoPor' in after) || (after.atualizadoPor is string && after.atualizadoPor.size() < 100))
+      && (!('aprovadoPor' in after) || (after.aprovadoPor is string && after.aprovadoPor.size() < 100))
+      && (!('atualizadoEm' in after) || after.atualizadoEm is number)
+      && (!('aprovadoEm' in after) || after.aprovadoEm is number);
 }
 
 function isValidEmpresasPayload(data) {
