@@ -75,16 +75,16 @@ function brandFromOffice(office?: OfficeSettings): Brand {
   };
 }
 
-/** Logo: usa imagem do escritório se disponível, senão o SVG fallback do produto. */
+/** Logo: usa imagem do escritório se disponível, senão o logo oficial Estudo 360
+ *  (orbe, /logo.svg — o mesmo do site). O caminho relativo resolve no iframe de
+ *  impressão paged.js porque o iframe partilha a origem da app. */
 function BrandLogo({ brand, width, height }: { brand: Brand; width: number; height: number }) {
-  if (brand.logoDataUrl) {
-    return <img src={brand.logoDataUrl} alt="" style={{ width, height, objectFit: 'contain', display: 'block' }} />;
-  }
   return (
-    <svg viewBox="0 0 100 100" style={{ width, height, display: 'block' }} fill="none" aria-hidden="true" focusable="false">
-      <path d="M 70 20 A 35 35 0 1 1 35 22" stroke={brand.color} strokeWidth="10" strokeLinecap="round" />
-      <path d="M 60 10 L 70 20 L 60 30" stroke="#0B1D2D" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <img
+      src={brand.logoDataUrl || '/logo.svg'}
+      alt=""
+      style={{ width, height, objectFit: 'contain', display: 'block' }}
+    />
   );
 }
 
