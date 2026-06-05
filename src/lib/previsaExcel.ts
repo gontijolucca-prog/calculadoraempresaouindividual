@@ -147,7 +147,93 @@ export function buildPrevisaXlsx(template: Uint8Array, state: PreviSaState): Uin
     ['Folha1', 'C16', state.isPME ? 2 : 4],
     ['Identificação', 'L4', state.designacao || 'Empresa'],
     ['Identificação', 'L6', state.periodo || new Date().getFullYear() - 1],
+    // Startup (Lei 21/2023) — pergunta SIM/NÃO na folha de identificação.
+    ['Identificação', 'S14', state.isStartup ? 'SIM' : 'NÃO'],
   ];
+
+  const sv = state as unknown as Record<string, unknown>;
+  const nf = (k: string) => n(sv[k]);
+  const anoFiscal = state.periodo || new Date().getFullYear() - 1;
+
+  // ── Quadro 07 (folha "Q7 e Q9"): campos a acrescer (D4-D72) e a deduzir
+  // (D74-D105), alinhados pelo código oficial do Modelo 22 na coluna C.
+  // Mapa célula→campo verificado contra o template (células de input apenas).
+  const Q7Q9 = 'Q7 e Q9';
+  const q7Map: [string, string][] = [
+    ['D4', 'c702'], ['D5', 'c703'], ['D6', 'c805'], ['D7', 'c704'], ['D8', 'c705'],
+    ['D9', 'c806'], ['D10', 'c706'], ['D11', 'c707'], ['D13', 'c709'], ['D15', 'c711'],
+    ['D16', 'c782'], ['D17', 'c712'], ['D18', 'c713'], ['D19', 'c714'], ['D24', 'c725'],
+    ['D26', 'c731'], ['D27', 'c726'], ['D28', 'c783'], ['D29', 'c728'], ['D30', 'c727'],
+    ['D31', 'c729'], ['D32', 'c730'], ['D33', 'c732'], ['D35', 'c784'], ['D36', 'c734'],
+    ['D38', 'c780'], ['D39', 'c785'], ['D40', 'c802'], ['D41', 'c746'], ['D42', 'c737'],
+    ['D43', 'c786'], ['D44', 'c718'], ['D46', 'c720'], ['D47', 'c722'], ['D48', 'c723'],
+    ['D49', 'c736'], ['D50', 'c738'], ['D51', 'c739'], ['D53', 'c741'], ['D54', 'c742'],
+    ['D55', 'c743'], ['D56', 'c787'], ['D57', 'c744'], ['D58', 'c745'], ['D59', 'c747'],
+    ['D60', 'c748'], ['D61', 'c749'], ['D62', 'c788'], ['D63', 'c750'], ['D64', 'c789'],
+    ['D65', 'c790'], ['D66', 'c751'], ['D67', 'c803'], ['D68', 'c779'], ['D69', 'c797'],
+    ['D70', 'c799'], ['D71', 'c804'], ['D72', 'c752'],
+    ['D74', 'c754'], ['D75', 'c755'], ['D76', 'c756'], ['D77', 'c757'], ['D78', 'c791'],
+    ['D79', 'c758'], ['D80', 'c759'], ['D81', 'c760'], ['D82', 'c761'], ['D83', 'c762'],
+    ['D85', 'c781'], ['D86', 'c764'], ['D87', 'c765'], ['D88', 'c766'], ['D89', 'c792'],
+    ['D90', 'c767'], ['D91', 'c768'], ['D92', 'c769'], ['D93', 'c770'], ['D94', 'c793'],
+    ['D95', 'c771'], ['D98', 'c795'], ['D99', 'c773'], ['D100', 'c796'], ['D101', 'c774'],
+    ['D102', 'c800'], ['D103', 'c801'], ['D104', 'c798'], ['D105', 'c775'],
+    ['D126', 'c397'],
+  ];
+  for (const [cell, field] of q7Map) {
+    const v = nf(field);
+    if (v !== 0) edits.push([Q7Q9, cell, v]);
+  }
+  // Despesas não documentadas (campo 716 → D25): se o Q07 não foi preenchido
+  // mas o SAF-T trouxe os montantes da TA, usa-os — o Excel deriva daqui tanto
+  // o acréscimo ao Q07 como a tributação autónoma (C107 = D25 − C117).
+  const despNaoDoc = nf('c716') > 0 ? nf('c716') : nf('ta_despNaoDocPrincipal') + nf('ta_despNaoDocNaoPrincipal');
+  if (despNaoDoc !== 0) edits.push([Q7Q9, 'D25', despNaoDoc]);
+
+  // ── Quadro 09 (prejuízos fiscais): as linhas do template são RELATIVAS ao
+  // período (D121 = Ano-1 … D115 = Ano-7; D114 = anos até 2017) — alinhar os
+  // campos por ano do estado com o período exportado.
+  let prejAntigos = nf('prej_ate2017');
+  for (let back = 1; back <= 7; back++) {
+    const y = anoFiscal - back;
+    const v = y >= 2018 && y <= 2024 ? nf(`prej_${y}`) : 0;
+    if (v !== 0) edits.push([Q7Q9, `D${122 - back}`, v]);
+  }
+  for (let y = 2018; y <= 2024; y++) {
+    if (y < anoFiscal - 7) prejAntigos += nf(`prej_${y}`);
+  }
+  if (prejAntigos !== 0) edits.push([Q7Q9, 'D114', prejAntigos]);
+
+  // ── ' Res Q10': deduções à coleta, TA (outras), pagamentos e derrama ──────
+  const rq10Map: [string, string][] = [
+    ['C81', 'c375'],            // dupla tributação económica internacional
+    ['C82', 'c355_bf'],         // benefícios fiscais (exceto CFEI II e IFR)
+    ['C84', 'c355_cfei'],       // CFEI II
+    ['C85', 'c355_ifr'],        // IFR
+    ['C87', 'c470'],            // adicional ao IMI
+    ['C93', 'retencoesFonte'],
+    ['C94', 'pcPagamentos'],
+    ['C95', 'pacPagamentos'],
+    ['C98', 'c363'],            // IRC de períodos anteriores
+    ['C99', 'c372'],            // reposição de benefícios fiscais
+    ['C108', 'ta_representacao'],
+    ['C109', 'ta_ajadasCusto'],
+    ['C113', 'ta_lucrosDistribuidos'],
+    ['C114', 'ta_offshores'],
+    ['C115', 'ta_indemCessacao'],
+    ['C116', 'ta_bonus'],
+    ['C117', 'ta_despNaoDocNaoPrincipal'],
+    ['C120', 'ta_retFonteArt88n12'],
+    ['C121', 'c369'],
+    ['C122', 'c366'],
+  ];
+  for (const [cell, field] of rq10Map) {
+    const v = nf(field);
+    if (v !== 0) edits.push([RQ, cell, v]);
+  }
+  // Taxa de derrama municipal (fração, ex. 0.015) — escreve sempre o valor do
+  // estado para a estimativa do Excel bater com a do simulador.
+  edits.push([RQ, 'C101', n(state.taxaDerramaMunicipal)]);
 
   const edited = new Map<string, string>();
   for (const [sheet, ref, value] of edits) {
