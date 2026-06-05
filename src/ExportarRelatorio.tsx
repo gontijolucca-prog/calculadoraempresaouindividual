@@ -90,6 +90,10 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
   // caber na largura da coluna de pré-visualização (senão saem cortados).
   const pkgWrapRef = useRef<HTMLDivElement>(null);
   const [pkgScale, setPkgScale] = useState(1);
+  // Altura natural do documento Word no iframe (px) — o iframe cresce com o
+  // conteúdo e a página externa faz o scroll, como nos documentos do pacote
+  // (sem caixa de 72vh com scroll interno a "cortar" a folha).
+  const [wordH, setWordH] = useState(1123);
   const [printingPkg, setPrintingPkg] = useState(false);
   // Combobox pesquisável da empresa (útil quando a carteira tem muitos clientes).
   const [empresaOpen, setEmpresaOpen] = useState(false);
@@ -169,16 +173,40 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
     [pkg, emp, def, office],
   );
 
-  // Carrega o documento Word editável no iframe quando muda a selecção.
+  // Carrega o documento Word editável no iframe quando muda a selecção, e
+  // sincroniza a altura do iframe com o conteúdo (folha contínua, sem scroll
+  // interno) — recalcula quando o documento carrega, quando o utilizador edita
+  // e quando as fontes/layout assentam.
   useEffect(() => {
     const f = iframeRef.current;
     if (!f) return;
     f.srcdoc = docHtml ? makeEditableHtml(docHtml) : '';
+    if (!docHtml) return;
+    let ro: ResizeObserver | null = null;
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const onLoad = () => {
+      const d = f.contentDocument;
+      if (!d) return;
+      const resize = () => setWordH(Math.max(400, d.documentElement.scrollHeight));
+      resize();
+      // Fontes/imagens podem assentar depois do load.
+      t = setTimeout(resize, 350);
+      d.addEventListener('input', resize);
+      if (d.body) {
+        ro = new ResizeObserver(resize);
+        ro.observe(d.body);
+      }
+    };
+    f.addEventListener('load', onLoad);
+    return () => {
+      f.removeEventListener('load', onLoad);
+      ro?.disconnect();
+      if (t) clearTimeout(t);
+    };
   }, [docHtml]);
 
-  // Escala o documento do pacote para caber na largura disponível.
+  // Escala a folha A4 (pacote E documentos Word) para caber na largura disponível.
   useEffect(() => {
-    if (!pkg) return;
     const el = pkgWrapRef.current;
     if (!el) return;
     const A4_PX = 794; // 210mm @ 96dpi
@@ -190,7 +218,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
     const ro = new ResizeObserver(compute);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [pkg, docId]);
+  }, [docId]);
 
   const handleDownloadWord = () => {
     if (!emp || pkg) return;
@@ -538,16 +566,32 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                   )}
                 </div>
               ) : (
-                // Documentos da contabilista (Word HTML) num iframe editável.
-                <div className="rounded-[14px] border border-slate-200 bg-slate-100 p-3 shadow-[0_2px_14px_-8px_rgba(15,23,42,0.25)] no-print">
+                // Documentos da contabilista (Word HTML) num iframe editável,
+                // apresentado como folha A4 contínua e escalada — igual aos
+                // documentos do pacote. O iframe cresce com o conteúdo (wordH)
+                // e é a página externa que faz o scroll; sem caixa de altura
+                // fixa com scroll interno a cortar o documento.
+                <div ref={pkgWrapRef} className="rounded-[14px] border border-slate-200 bg-[#E2E8F0] p-3 shadow-[0_2px_14px_-8px_rgba(15,23,42,0.25)] no-print">
                   <p className="px-1 pb-2 text-[12px] text-slate-500 font-[500]">
                     Clica em qualquer texto da folha e edita diretamente antes de descarregar.
                   </p>
-                  <iframe
-                    ref={iframeRef}
-                    title="Pré-visualização do documento"
-                    className="w-full h-[72vh] rounded-[8px] border border-slate-300 bg-white"
-                  />
+                  {/* Espaçador com a altura visual da folha escalada; o iframe
+                      mantém 794px de largura lógica (A4) e é reduzido com
+                      transform para caber na coluna. */}
+                  <div style={{ height: wordH * pkgScale, width: 794 * pkgScale, margin: '0 auto', position: 'relative' }}>
+                    <iframe
+                      ref={iframeRef}
+                      title="Pré-visualização do documento"
+                      scrolling="no"
+                      className="bg-white shadow-[0_4px_24px_rgba(0,0,0,0.12)] border-0 block"
+                      style={{
+                        width: 794,
+                        height: wordH,
+                        transform: `scale(${pkgScale})`,
+                        transformOrigin: 'top left',
+                      }}
+                    />
+                  </div>
                 </div>
               )}
             </div>
