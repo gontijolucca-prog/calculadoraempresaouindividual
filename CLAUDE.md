@@ -4,44 +4,44 @@
 
 <!-- claude-evolve:managed-start -->
 
-<!-- claude-evolve:rule id=r_mpbnscy5_hemn score=5.3 created=2026-05-18 source=observation complexity=simple -->
-- When uncommitted work exists only on an external drive, immediately rsync to local repo and commit before doing any other work — treat SSD-only state as a data-loss risk
+<!-- claude-evolve:rule id=r_mpnf8ykk_w7fz score=5.3 created=2026-05-27 source=observation complexity=simple -->
+- Always Read a file before editing it — even when the edit target seems obvious from context
 <!-- /claude-evolve:rule -->
 
-<!-- claude-evolve:rule id=r_mpdh466o_r31c score=5.4 created=2026-05-20 source=observation complexity=simple -->
-- Before writing a workflow file, Read the existing file first to understand its current structure — even when replacing it wholesale
+<!-- claude-evolve:rule id=r_mpnf8yn1_cmkr score=5.9 created=2026-05-27 source=anti_pattern complexity=simple -->
+- Before committing any code change, run tsc --noEmit AND verify the production build succeeds — grep counts or partial checks are not sufficient.
 <!-- /claude-evolve:rule -->
 
-<!-- claude-evolve:rule id=r_mpdh4676_jyhd score=5.9 created=2026-05-20 source=observation complexity=simple -->
-- After pushing CI workflow changes, poll GitHub Actions runs via API (with sleep intervals) to confirm the triggered run reaches a terminal state before claiming success
+<!-- claude-evolve:rule id=r_mppi6d8y_3ecl score=5.1 created=2026-05-28 source=observation complexity=simple -->
+- Before navigating to an external console (Firebase, GCP, etc.), read local config files first to confirm the correct project ID — use Bash to cat .firebaserc, firebase.json, and grep the SDK config in parallel
 <!-- /claude-evolve:rule -->
 
-<!-- claude-evolve:rule id=r_mpdh467g_rz9t score=5.6 created=2026-05-20 source=observation complexity=simple -->
-- After a Cloudflare Pages deployment completes, verify the live URL responds with the correct server header (cf-ray present) using curl -sI before marking the task complete
+<!-- claude-evolve:rule id=r_mpubmvep_yp25 score=7.7 created=2026-05-31 source=observation complexity=simple -->
+- After rebuilding for a new preview server port, always kill the old vite preview process first (pkill -f 'vite preview') before spawning a new one to avoid port conflicts
 <!-- /claude-evolve:rule -->
 
-<!-- claude-evolve:rule id=r_mpdh467o_4r9e score=5.1 created=2026-05-20 source=observation complexity=simple -->
-- When migrating multiple repos to the same CI pattern, apply the workflow change to all repos in the same session and commit/push each one before checking deployment status
+<!-- claude-evolve:rule id=r_mpubmvge_helb score=5.1 created=2026-05-31 source=anti_pattern complexity=simple -->
+- Search for screenshot files with scoped find paths (project dir, then home dir) — never start from / root
 <!-- /claude-evolve:rule -->
 
-<!-- claude-evolve:rule id=r_mpdh467v_2oqt score=5.1 created=2026-05-20 source=observation complexity=simple -->
-- After completing infrastructure migrations, write a dedicated reference memory file (not inline in MEMORY.md) and then add an index entry pointing to it
+<!-- claude-evolve:rule id=r_mq0oghsw_coqk score=5 created=2026-06-05 source=observation complexity=simple -->
+- After taking a browser screenshot, immediately Read the saved file to visually verify its contents before proceeding to the next action
 <!-- /claude-evolve:rule -->
 
-<!-- claude-evolve:rule id=r_mpdh4683_ymxx score=6 created=2026-05-20 source=anti_pattern complexity=simple -->
-- Do not run git push without an explicit cd to the target repo directory — a bare 'git push' without a cd prefix was issued and may have targeted the wrong working directory
+<!-- claude-evolve:rule id=r_mq0oghtq_ze4c score=5 created=2026-06-05 source=observation complexity=simple -->
+- When verifying production UI across multiple document templates, test each template in sequence within the same browser session — navigate, screenshot, Read, then switch template and repeat
 <!-- /claude-evolve:rule -->
 
-<!-- claude-evolve:rule id=r_mpdh468a_5k5a score=5.3 created=2026-05-20 source=anti_pattern complexity=simple -->
-- When polling CI status with sleep, prefer a single loop over multiple sequential Bash calls with repeated sleep — three separate polling calls were issued instead of one loop
+<!-- claude-evolve:rule id=r_mq0oocbw_tvsn score=5.4 created=2026-06-05 source=observation complexity=simple -->
+- When testing a fallback/default UI state (e.g. logo fallback), clear the relevant localStorage key programmatically via browser_evaluate before navigating to the target page — do not rely on manual state or assume the app starts clean
 <!-- /claude-evolve:rule -->
 
-<!-- claude-evolve:rule id=r_mpff5ewj_mw7q score=5.9 created=2026-05-21 source=observation complexity=simple -->
-- When fixing a parser bug, write a temporary test script (e.g., test-*.mts) to reproduce the issue with a real fixture file before editing source code — then delete the script after committing
+<!-- claude-evolve:rule id=r_mq0ooccn_1qje score=7.6 created=2026-06-05 source=observation complexity=simple -->
+- After committing, monitor the CI/CD deployment pipeline via Monitor (not just assuming push = deploy) — use a polling loop against the GitHub API deploy status until the deployment reaches 'success' or times out
 <!-- /claude-evolve:rule -->
 
-<!-- claude-evolve:rule id=r_mpff5ex5_sngi score=5 created=2026-05-21 source=observation complexity=simple -->
-- After editing a parser/transformer function, run the test script against multiple fixture types (e.g., type A and type C SAF-T) to confirm the fix does not regress other variants
+<!-- claude-evolve:rule id=r_mq0oocdb_el5e score=5.1 created=2026-06-05 source=anti_pattern complexity=simple -->
+- Do not Edit a file without first using Read or a targeted grep to confirm the exact current state of the function/block being replaced — cat+grep reconnaissance at the Bash level is not a substitute for a Read before Edit
 <!-- /claude-evolve:rule -->
 
 <!-- claude-evolve:managed-end -->
