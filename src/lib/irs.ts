@@ -38,7 +38,9 @@ export const ESCALOES_DEMO = ESCALOES_OFICIAL_2026;
 //   Madeira — diferencial máximo de 30% (DL Regional 8/2025/M, alargado a todos os 9 escalões).
 //   Açores — redução de 20% (Despacho 1179/2026; mesma proporção em capitais 22,4% vs 28%).
 // O multiplicador é (1 − redução): mais baixo = mais favorável ao residente.
-const REGIOES: Record<string, number> = { continente: 1.0, acores: 0.80, madeira: 0.70 };
+// Exportado para o simulador de Salário Líquido reutilizar exatamente o mesmo
+// fator (coerência entre ferramentas). ⚠ Percentagens a confirmar pela Sandrine.
+export const REGIOES: Record<string, number> = { continente: 1.0, acores: 0.80, madeira: 0.70 };
 
 // Mínimo de existência 2026 — 14 × SMN (art. 70.º CIRS, OE 2026).
 export const MINIMO_EXISTENCIA = 14 * SMN_2026; // 12.880,00 €

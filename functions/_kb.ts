@@ -169,6 +169,7 @@ Operacional:
 - anosAtividade (number)
 - idade (number)
 - taxaSeguroTrabalho (number, %)
+NOTA (método): o líquido mensal é uma ESTIMATIVA — a retenção de IRS é calculada pela liquidação anual dos escalões 2026 a dividir pelo nº de pagamentos, NÃO pelas tabelas mensais oficiais de retenção na fonte. A localização JÁ reduz a retenção nas regiões autónomas (Açores e Madeira), com o mesmo fator do simulador de IRS. O estado civil ainda NÃO altera o líquido (a tabela oficial por estado civil/titulares fica para a Fase 2). O IRS final acerta-se sempre na declaração anual. Se o utilizador perguntar porque é que mudar o estado civil não muda o valor, explicar isto com honestidade.
 
 ### irs (Simulador de IRS — Modelo 3)
 Campos de topo (preenchíveis pelo bot):

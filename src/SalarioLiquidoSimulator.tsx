@@ -66,7 +66,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
     {
       id: 'salarioBruto',
       label: 'Salário Bruto e Estado Civil',
-      description: 'Indique o salário bruto mensal e o estado civil para determinar a tabela de retenção de IRS.',
+      description: 'Indique o salário bruto mensal e o estado civil. O líquido apresentado é uma estimativa anualizada da retenção de IRS — o valor mensal exato segue a tabela oficial e acerta-se no IRS anual.',
       render: (state, setSt) => (
         <div className="space-y-[18px]">
           <div>
@@ -87,7 +87,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
           </div>
 
           <div>
-            <label className={labelCls}>Estado Civil (para tabela de retenção) <Tip>O estado civil afeta as tabelas de retenção de IRS. Casado com um titular ou dois titulares de rendimento têm taxas diferentes.</Tip></label>
+            <label className={labelCls}>Estado Civil <Tip>O estado civil influencia a tabela de retenção mensal oficial. Esta simulação mostra uma estimativa anualizada do líquido — o valor exato consta do recibo e acerta-se no IRS anual.</Tip></label>
             <select value={state.estadoCivil} onChange={e => setSt({ estadoCivil: e.target.value as EstadoCivil })} className={inputCls}>
               <option value="solteiro">Solteiro / Não casado</option>
               <option value="casado_1titular">Casado — 1 titular</option>
@@ -116,7 +116,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
           </div>
 
           <div>
-            <label className={labelCls}>Localização <Tip>Continente, Açores ou Madeira. Nas regiões autónomas as tabelas de IRS são reduzidas.</Tip></label>
+            <label className={labelCls}>Localização <Tip>Continente, Açores ou Madeira. Nas regiões autónomas a retenção de IRS é mais baixa — já refletida no líquido mensal apresentado.</Tip></label>
             <select value={state.localizacao} onChange={e => setSt({ localizacao: e.target.value as SalarioState['localizacao'] })} className={inputCls}>
               <option value="continente">Continente</option>
               <option value="madeira">Madeira</option>
@@ -304,6 +304,9 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
               <div className="text-[11px] text-[#94A3B8]">
                 Taxa efetiva de desconto: {pctOf(result.ssTrabalhador + result.retencaoIRS, result.salarioBruto)}
               </div>
+              <div className="text-[11px] text-[#94A3B8] leading-snug">
+                Retenção estimada pelo método anualizado dos escalões 2026 — não substitui o recibo de vencimento; o IRS final acerta-se na declaração anual.
+              </div>
             </div>
           </div>
 
@@ -467,7 +470,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
 
           {/* Estado civil */}
           <div>
-            <label className={labelCls}>Estado Civil (para tabela de retenção) <Tip>O estado civil afeta as tabelas de retenção de IRS. Casado com um titular ou dois titulares de rendimento têm taxas diferentes.</Tip></label>
+            <label className={labelCls}>Estado Civil <Tip>O estado civil influencia a tabela de retenção mensal oficial. Esta simulação mostra uma estimativa anualizada do líquido — o valor exato consta do recibo e acerta-se no IRS anual.</Tip></label>
             <select value={s.estadoCivil} onChange={e => setState({ estadoCivil: e.target.value as EstadoCivil })} className={inputCls}>
               <option value="solteiro">Solteiro / Não casado</option>
               <option value="casado_1titular">Casado — 1 titular</option>
@@ -490,7 +493,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
 
           {/* Localização */}
           <div>
-            <label className={labelCls}>Localização <Tip>Continente, Açores ou Madeira. Nas regiões autónomas as tabelas de IRS são reduzidas.</Tip></label>
+            <label className={labelCls}>Localização <Tip>Continente, Açores ou Madeira. Nas regiões autónomas a retenção de IRS é mais baixa — já refletida no líquido mensal apresentado.</Tip></label>
             <select value={s.localizacao} onChange={e => setState({ localizacao: e.target.value as SalarioState['localizacao'] })} className={inputCls}>
               <option value="continente">Continente</option>
               <option value="madeira">Madeira</option>

@@ -10,6 +10,9 @@ import {
   TICKET_LIMITS_2026, SS_RATE_EMPLOYER, SS_RATE_EMPLOYEE, IAS_2026,
   type TipoSubsidioRefeicao,
 } from './pt2026';
+// Mesmo fator de redução regional do simulador de IRS (Açores 0,80 / Madeira 0,70),
+// para a retenção em Açores/Madeira ser coerente entre ferramentas. ⚠ % a confirmar.
+import { REGIOES } from './irs';
 
 export type EstadoCivil = 'solteiro' | 'casado_1titular' | 'casado_2titulares';
 
@@ -79,8 +82,11 @@ export function calcSalarioLiquido(p: SalarioParams): SalarioResult {
   const deducaoEspecifica = Math.max(DEDUCAO_ESPECIFICA_MIN, contribuicoesAnuais);
   const baseIRSAnual = Math.max(0, rendimentoAnualBruto - deducaoEspecifica);
 
-  // 5. Coleta IRS (tabela escalões 2026)
-  let coletaIRS = calculateIRS(baseIRSAnual);
+  // 5. Coleta IRS (tabela escalões 2026), com redução regional aplicada à coleta
+  //    bruta — espelha o motor de IRS (`aplicaEscaloes`: imposto *= REGIOES[regiao]).
+  //    Continente → fator 1 (sem alteração). Açores 0,80 / Madeira 0,70.
+  const fatorRegiao = REGIOES[p.localizacao] ?? 1;
+  let coletaIRS = calculateIRS(baseIRSAnual) * fatorRegiao;
 
   // 6. Dedução dependentes — CIRS Art. 78º-A
   coletaIRS = Math.max(0, coletaIRS - calcDependentsDeduction(p.nrDependentes));
@@ -89,7 +95,7 @@ export function calcSalarioLiquido(p: SalarioParams): SalarioResult {
   let irsJovemIsencao = 0;
   if (p.irsJovem && p.idade <= 35) {
     const isencao = calcIRSJovem(p.anosAtividade, baseIRSAnual, p.idade);
-    const irsComIsencao = Math.max(0, calculateIRS(Math.max(0, baseIRSAnual - isencao)));
+    const irsComIsencao = Math.max(0, calculateIRS(Math.max(0, baseIRSAnual - isencao)) * fatorRegiao);
     irsJovemIsencao = Math.max(0, coletaIRS - irsComIsencao);
     coletaIRS = irsComIsencao;
   }

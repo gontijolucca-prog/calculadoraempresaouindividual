@@ -14,8 +14,15 @@ Lista de valores e regras que o simulador usa e que **precisam de confirmação 
 - [ ] **Taxa adicional de solidariedade**: 2,5% entre 80 000 € e 250 000 €; 5% acima.
 - [ ] **Benefício municipal por concelho** (`MUNICIPIOS_BM`): confirmar a tabela de devolução de IRS por câmara para o ano em causa (Portal das Finanças).
 
+## Salário Líquido (2026) — `src/lib/salario.ts` + `src/lib/pt2026.ts`
+- [ ] **Tabelas oficiais de retenção na fonte 2026** (Despacho) — por estado civil (solteiro / casado 1 titular / casado 2 titulares), nº de titulares, nº de dependentes e região (Continente / Madeira / Açores). **É o que falta para a retenção mensal ser fiel ao recibo.** Hoje o motor usa a liquidação anual dos escalões ÷ nº de pagamentos (estimativa).
+- [ ] **Região JÁ ligada** (08-jun) com o fator do simulador de IRS — Açores ×0,80, Madeira ×0,70 sobre a coleta. **Confirmar estas percentagens** (são as mesmas já sinalizadas no bloco IRS). **Estado civil** continua sem efeito — fica para a Fase 2 com as tabelas oficiais.
+- [ ] **Subsídios de férias e de Natal** — regra de tributação própria (taxa da remuneração mensal, em separado). Hoje só há o interruptor "duodécimos".
+- [ ] **SS trabalhador 11% / SS patronal 23,75%** — confirmar (e 22,3% para entidades sem fins lucrativos).
+- [ ] **Limites do subsídio de alimentação 2026**: cartão **10,46 €**/dia, dinheiro **6,15 €**/dia ("Despacho 233-A/2026"). Confirmar (2025: 10,20 / 6,00).
+- [ ] **Seguro de acidentes de trabalho** — taxa default 1% (varia por atividade); confirmar se deve ser editável/obrigatório.
+
 ## (a preencher à medida que auditamos as outras ferramentas)
-- [ ] Salário Líquido — taxas SS, retenção na fonte, subsídio de refeição.
 - [ ] SS Independente — base de incidência, percentagem, isenções.
 - [ ] IMT / Imposto do Selo — escalões e isenções.
 - [ ] IRC / Previsa — taxas, derrama, tributações autónomas.
