@@ -212,8 +212,11 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
                 <span className="font-[700] font-mono text-[#0F172A]">{tipoRendimento === 'servicos' ? 'Serviços (70%)' : 'Bens (20%)'}</span>
               </div>
               <div className="flex justify-between py-[14px] border-b border-[#F1F5F9] text-[14px] items-center">
-                <span className="text-[#64748B] font-[600]">Base de Cálculo (€) <Tip>O valor sobre o qual é aplicada a taxa de SS. Para prestação de serviços é 70% do rendimento; para venda de bens é 20%.</Tip></span>
-                <span className="font-[700] font-mono text-[#0F172A]">{ptEur(result.baseCalculo)}</span>
+                <span className="text-[#64748B] font-[600]">Base de Cálculo (€) <Tip>O valor sobre o qual é aplicada a taxa de SS. Para prestação de serviços é 70% do rendimento; para venda de bens é 20%. A base tem um teto mensal de 12 × IAS.</Tip></span>
+                <span className="font-[700] font-mono text-[#0F172A]">
+                  {ptEur(result.baseCalculo)}
+                  {result.baseLimitada && <span className="ml-2 text-[11px] font-[700] text-amber-600">teto 12×IAS</span>}
+                </span>
               </div>
               <div className="flex justify-between py-[14px] border-b border-[#F1F5F9] text-[14px] items-center">
                 <span className="text-[#64748B] font-[600]">Taxa SS 2026 <Tip>A taxa que os trabalhadores independentes pagam à Segurança Social em 2026 é 21,4% da base de cálculo.</Tip></span>
@@ -332,6 +335,7 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
               <li>• <strong>Serviços:</strong> 70% do rendimento × 21,4%</li>
               <li>• <strong>Bens:</strong> 20% do rendimento × 21,4%</li>
               <li>• <strong>Mínimo:</strong> €20/mês (se rendimento &gt; IAS)</li>
+              <li>• <strong>Teto da base:</strong> 12 × IAS por mês (€6.445,56 em 2026)</li>
               <li>• <strong>Pagamento:</strong> Trimestral (jan, abr, jul, out)</li>
               <li>• <strong>1.º ano:</strong> Isenção total — Art. 164.º CRCSPSS</li>
             </ul>

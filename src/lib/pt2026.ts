@@ -233,12 +233,16 @@ export function calcSelfSSContribution(
   primeiroAno: boolean = false
 ) {
   if (primeiroAno) {
-    return { mensal: 0, trimestral: 0, anual: 0, baseCalculo: 0, isento: true };
+    return { mensal: 0, trimestral: 0, anual: 0, baseCalculo: 0, baseLimitada: false, isento: true };
   }
 
   const taxRate = SS_RATE_SELF_EMPLOYED;
   const baseRate = tipo === 'servicos' ? 0.70 : 0.20;
-  const baseCalculo = income * baseRate;
+  // Base de incidência mensal com teto máximo = 12 × IAS (CRCSPSS). ⚠ IAS a confirmar.
+  const TETO_BASE = 12 * IAS_2026; // 2026: 12 × 537,13 = 6 445,56 €
+  const baseSemTeto = income * baseRate;
+  const baseCalculo = Math.min(baseSemTeto, TETO_BASE);
+  const baseLimitada = baseSemTeto > TETO_BASE;
   const mensal = Math.max(20, baseCalculo * taxRate);
 
   return {
@@ -246,6 +250,7 @@ export function calcSelfSSContribution(
     trimestral: mensal * 3,
     anual: mensal * 12,
     baseCalculo,
+    baseLimitada,
     isento: false
   };
 }

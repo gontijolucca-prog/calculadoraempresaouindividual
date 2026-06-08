@@ -22,6 +22,14 @@ Lista de valores e regras que o simulador usa e que **precisam de confirmação 
 - [ ] **Limites do subsídio de alimentação 2026**: cartão **10,46 €**/dia, dinheiro **6,15 €**/dia ("Despacho 233-A/2026"). Confirmar (2025: 10,20 / 6,00).
 - [ ] **Seguro de acidentes de trabalho** — taxa default 1% (varia por atividade); confirmar se deve ser editável/obrigatório.
 
+## SS Independente (2026) — `calcSelfSSContribution` em `src/lib/pt2026.ts`
+- [ ] **Taxa 21,4%** (`SS_RATE_SELF_EMPLOYED`) — confirmar.
+- [ ] **Base de incidência**: 70% prestação de serviços / 20% venda de bens — confirmar coeficientes.
+- [ ] **Teto da base = 12 × IAS/mês** (6 445,56 € em 2026) — **implementado agora** (08-jun); confirmar a regra e o valor (depende do IAS, já sinalizado).
+- [ ] **Mínimo de 20 €/mês** — confirmar o valor exato 2026 e a condição (o código aplica sempre; a dica diz "se rendimento > IAS"). Esclarecer a regra para rendimentos muito baixos.
+- [ ] **Isenção 1.º ano** (Art. 164.º CRCSPSS) — confirmar âmbito/duração (12 meses).
+- [ ] **Não modelado** (a decidir se entra): opção de ajuste da base ±25%; acumulação com trabalho dependente (isenção se salário ≥ 4×IAS); contribuição da entidade contratante (>50% do rendimento de um só cliente).
+
 ## (a preencher à medida que auditamos as outras ferramentas)
 - [ ] SS Independente — base de incidência, percentagem, isenções.
 - [ ] IMT / Imposto do Selo — escalões e isenções.

@@ -124,9 +124,10 @@ Chaves para preenchimento automático. Estrutura aninhada onde aplicável (ex.: 
 - tipoVeiculo (select: passageiros/misto/comercial, se Ticket Car)
 
 ### selfss (SS de Independente)
-- rendimento (currency, receita anual)
-- tipo (select: servicos/bens — afeta percentagem base cálculo)
-- primeiroAno (boolean — isenção automática)
+- income (currency, rendimento MENSAL — NÃO anual; o motor faz mensal×12 = anual)
+- tipoRendimento (select: servicos/bens — base de cálculo 70% serviços / 20% bens)
+- primeiroAno (boolean — isenção total no 1.º ano, Art. 164.º CRCSPSS)
+Método: base = rendimento × (0,70 serviços | 0,20 bens), com TETO mensal de 12 × IAS (6 445,56 € em 2026); contribuição = 21,4% da base, com mínimo de 20 €/mês. Pagamento trimestral. Estimativa — a SS calcula a base trimestralmente pela média dos 3 meses anteriores.
 
 ### diagnostico (Diagnóstico de Autonomia)
 Financeiro:
