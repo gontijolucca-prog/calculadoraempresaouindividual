@@ -939,11 +939,15 @@ function AppContent() {
     diagnostico: setDiagnosticoState, imoveis: setImoveisState, imt: setImtState,
     salario: setSalarioState, irs: setIrsState, previsa: setPreviSaState,
   };
+  // Input escondido que o AI Contabilista aciona para importar o SAF-T de um cliente novo
+  // diretamente (sem mandar a pessoa procurar o botão na Lista de Empresas).
+  const botSaftInputRef = useRef<HTMLInputElement>(null);
   const botBridge: BotBridge = {
     currentUser: officeSettings.nome?.trim() || undefined,
     currentView: VIEW_TITLES[view],
     navigate: (v) => setView(v as ViewType),
     setMode: (m) => { if (m === 'novo-cliente') handleNovaEmpresaManual(); else selectMode('empresa'); },
+    openSaftUpload: () => botSaftInputRef.current?.click(),
     applyFill: (target, fields) => {
       if (target === 'profile') {
         let np = clientProfile;
@@ -1345,6 +1349,18 @@ function AppContent() {
           </button>
         </div>
       )}
+      {/* Input escondido acionado pelo AI Contabilista para importar SAF-T de cliente novo */}
+      <input
+        ref={botSaftInputRef}
+        type="file"
+        accept=".xml,text/xml,application/xml"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) handleNovaEmpresaFromSAFT(f);
+          e.target.value = '';
+        }}
+      />
       {/* AI Contabilista — assistente flutuante (grátis, OpenRouter free models) */}
       <Suspense fallback={null}>
         <AIContabilista bridge={botBridge} liftBottom={draftNewClient} />

@@ -17,6 +17,7 @@ export type BotAction =
   | { type: 'setMode'; mode: 'empresa' | 'novo-cliente' }
   | { type: 'fill'; target: string; fields: FillField[] }
   | { type: 'suggestion'; title: string; detail: string; area?: string }
+  | { type: 'openSaftUpload' }
   | { type: 'replies'; options: string[] };
 
 const VIEW_IDS = new Set<string>([
@@ -59,6 +60,8 @@ function sanitizeActions(parsed: unknown): BotAction[] {
         detail: String((a as any).detail ?? '').slice(0, 1500),
         area: typeof (a as any).area === 'string' ? (a as any).area.slice(0, 120) : undefined,
       });
+    } else if (t === 'openSaftUpload') {
+      out.push({ type: 'openSaftUpload' });
     } else if (t === 'replies' && Array.isArray((a as any).options)) {
       const options = ((a as any).options as unknown[])
         .filter((o): o is string => typeof o === 'string' && o.trim().length > 0)

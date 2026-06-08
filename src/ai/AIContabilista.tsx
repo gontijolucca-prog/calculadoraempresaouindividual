@@ -10,6 +10,8 @@ export interface BotBridge {
   navigate: (view: ViewId) => void;
   setMode: (mode: 'empresa' | 'novo-cliente') => void;
   applyFill: (target: string, fields: FillField[]) => void;
+  /** Abre diretamente o seletor de ficheiro para importar um SAF-T de cliente novo. */
+  openSaftUpload?: () => void;
   currentUser?: string;
   currentView?: string;
 }
@@ -59,16 +61,12 @@ const VIEW_LABEL: Record<string, string> = {
   legal: 'Base Legal',
 };
 
+// Sem memória nenhuma entre carregamentos: cada refresh ou nova tab começa do zero.
+// O bot é só um helper da sessão atual — limpamos restos de versões antigas que
+// guardavam histórico (localStorage e sessionStorage) e arrancamos sempre limpos.
 function loadChat(): ChatMsg[] {
-  try {
-    // Limpa qualquer histórico persistente antigo (localStorage) — já não usamos memória permanente.
-    try { localStorage.removeItem(LEGACY_STORE_KEY); } catch { /* */ }
-    const raw = sessionStorage.getItem(STORE_KEY);
-    if (raw) {
-      const arr = JSON.parse(raw) as ChatMsg[];
-      if (Array.isArray(arr) && arr.length) return arr;
-    }
-  } catch { /* ignora */ }
+  try { localStorage.removeItem(LEGACY_STORE_KEY); } catch { /* */ }
+  try { sessionStorage.removeItem(STORE_KEY); } catch { /* */ }
   return [GREETING];
 }
 
@@ -92,9 +90,7 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    try { sessionStorage.setItem(STORE_KEY, JSON.stringify(msgs.slice(-40))); } catch { /* */ }
-  }, [msgs]);
+  // Sem persistência: o chat vive só em memória e desaparece no refresh/nova tab.
 
   useEffect(() => {
     if (open) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -137,11 +133,14 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
         bridge.setMode(a.mode);
         notes.push(a.mode === 'empresa' ? 'Mudei para o modo Empresa' : 'Mudei para o modo Novo Cliente');
       } else if (a.type === 'suggestion') {
-        const { cloud } = await registerSuggestion({
+        // Feedback interno: regista em silêncio, sem mostrar nada ao utilizador.
+        await registerSuggestion({
           title: a.title, detail: a.detail, area: a.area,
           autor: bridge.currentUser, vista: bridge.currentView,
         });
-        notes.push(cloud ? 'Sugestão registada para a equipa ✓' : 'Sugestão guardada (será sincronizada) ✓');
+      } else if (a.type === 'openSaftUpload') {
+        bridge.openSaftUpload?.();
+        notes.push('Abri o seletor de ficheiro para importar o SAF-T do novo cliente');
       }
     }
     return notes;
