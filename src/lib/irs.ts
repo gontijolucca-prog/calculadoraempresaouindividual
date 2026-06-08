@@ -48,6 +48,13 @@ export const MINIMO_EXISTENCIA = 14 * SMN_2026; // 12.880,00 €
 export const DED_ESPECIFICA_CAT_A = Math.round(8.54 * IAS_2026 * 100) / 100; // 4 587,09 €
 // Limite de isenção IRS Jovem — 55 × IAS_2026 (art. 12.º-B CIRS).
 const LIMITE_ISENCAO_IRS_JOVEM = 55 * IAS_2026; // 29 542,15 €
+// Limiar da regra de justificação dos 15% (art. 31.º n.13/14 CIRS) — Cat. B regime
+// simplificado. Acima deste rendimento bruto, 15% têm de ser justificados por
+// despesas/encargos; a parte não justificada acresce ao rendimento coletável.
+// Espelha src/lib/fiscal.ts (MESMO valor e MESMA interpretação — manter alinhados).
+// ⚠ Valor 2025 (27.360 €) mantido — a Portaria de atualização 2026 ainda não saiu;
+// confirmar com a Sandrine. Ver docs/AUDITORIA-FISCAL-PENDENTE.md.
+export const LIMIAR_JUSTIFICACAO_15PCT = 27360;
 
 // Fração da coleta devolvida pelo município (0 a 5%) — Art.º 26.º Lei das
 // Finanças Locais. Cada câmara decide anualmente; valores abaixo são os
@@ -98,6 +105,10 @@ export interface SujeitoPassivo {
   coefAtividade: number;
   irsJovemAno: number;
   pagamentosConta?: number;
+  // ── Categoria B / Anexo B (regime simplificado) e Anexo C (contab. organizada) ──
+  regimeCatB?: 'simplificado' | 'organizado'; // por omissão: 'simplificado'
+  despesasCatB?: number;                       // despesas/encargos documentados (regra dos 15% e base do organizado)
+  lucroCatBOrganizado?: number;                // lucro tributável apurado pela contabilidade (Anexo C)
 }
 
 export interface Despesas {
@@ -295,19 +306,38 @@ export function simular(sim: IRSSim, opts: { tabela?: Tabela } = {}): IRSResulta
 
   for (const p of ag) {
     const trab = +p.rendTrabalho || 0;
-    const atv = +p.atividade || 0;
     const contrib = +p.contribuicoes || 0;
     const retencao = +p.retencao || 0;
     const ppc = +(p.pagamentosConta || 0);
 
+    // ── Categoria B (Anexo B simplificado / Anexo C contabilidade organizada) ──
+    let atvColetavel = 0;
+    if (p.regimeCatB === 'organizado') {
+      // Anexo C — usa o lucro tributável já apurado pela contabilidade (pode ser
+      // prejuízo, que reduz o rendimento global). Sem coeficiente nem regra dos 15%.
+      atvColetavel = +p.lucroCatBOrganizado || 0;
+    } else {
+      const rb = +p.atividade || 0;            // rendimento bruto da atividade (simplificado)
+      const coefB = +p.coefAtividade || 0.75;
+      atvColetavel = rb * coefB;
+      // Regra dos 15% (art. 31.º n.13/14) — só nos coeficientes 0,75 e 0,35.
+      // Espelha src/lib/fiscal.ts: justificação exigida = 15% do rendimento bruto;
+      // justificado = despesas documentadas + dedução específica automática (4 587,09 €);
+      // a parte não justificada acresce ao coletável. ⚠ Limiar/mecânica por validar (Sandrine).
+      if ((coefB === 0.75 || coefB === 0.35) && rb > LIMIAR_JUSTIFICACAO_15PCT) {
+        const exigido = rb * 0.15;
+        const justificado = (+p.despesasCatB || 0) + DED_ESPECIFICA_CAT_A;
+        if (justificado < exigido) atvColetavel += exigido - justificado;
+      }
+    }
+
+    // IRS Jovem (art. 12.º-B) — abrange a Cat. A (trabalho) E a Cat. B (atividade).
     const fracao = isencaoIRSJovem(+p.irsJovemAno || 0);
-    const isento = Math.min(trab * fracao, LIMITE_ISENCAO_IRS_JOVEM * fracao);
+    const baseJovem = trab + Math.max(0, atvColetavel);
+    const isento = Math.min(baseJovem * fracao, LIMITE_ISENCAO_IRS_JOVEM * fracao);
     totalIsencaoJovem += isento;
 
-    const coefB = +p.coefAtividade || 0.75;
-    const atvColetavel = atv * coefB;
-
-    rendGlobalBruto += trab - isento + atvColetavel;
+    rendGlobalBruto += trab + atvColetavel - isento;
 
     if (trab > 0) {
       dedEspecifica += deducaoEspecificaCatA(trab, contrib);
@@ -508,7 +538,7 @@ export function defaultIRSState(): IRSState {
     perdas: 0,
     tabela: 'oficial2026',
     agregado: [
-      { relacao: 'Sujeito Passivo A', nome: '', rendTrabalho: 0, contribuicoes: 0, retencao: 0, atividade: 0, coefAtividade: 0.75, irsJovemAno: 0, pagamentosConta: 0 },
+      { relacao: 'Sujeito Passivo A', nome: '', rendTrabalho: 0, contribuicoes: 0, retencao: 0, atividade: 0, coefAtividade: 0.75, irsJovemAno: 0, pagamentosConta: 0, regimeCatB: 'simplificado', despesasCatB: 0, lucroCatBOrganizado: 0 },
     ],
     despesas: { saude: 0, educacao: 0, habitacao: 0, lares: 0, gerais: 0, pensoes: 0 },
     rendimentosAutonomos: { capitais: 0, prediais: 0, maisValiasMobiliarias: 0, maisValiasImobiliarias: 0, englobarCapitais: false, englobarPrediais: false },

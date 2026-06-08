@@ -114,5 +114,59 @@ function simFrom(state: IRSState): IRSSim {
   approx('I: mais-valias imobiliárias (50% englobado)', r.coletaLiquida, 3442.98);
 }
 
+// ── Categoria B / Anexo B (regime simplificado + organizado) ──
+// Valores validados pelo probe_catb.ts (arit. independente). Protegem a regra dos 15%
+// (art.31 n.13/14), o IRS Jovem na Cat. B e a contabilidade organizada (Anexo C).
+
+// ── J: Cat B simplificado, 20 000 € × 0,75, ABAIXO do limiar 27 360 (sem acréscimo) ──
+// coletável 15 000 → mínimo de existência baixa o imposto a 15 000 − 12 880 = 2 120
+{
+  const st = defaultIRSState();
+  st.agregado[0].atividade = 20000;
+  st.agregado[0].coefAtividade = 0.75;
+  const r = simular(simFrom(st));
+  approx('J: Cat B simplificado 20k (sem regra 15%)', r.coletaLiquida, 2120.00);
+}
+
+// ── K: Cat B 40 000 € × 0,75 ACIMA do limiar, SEM despesas → acréscimo 15% ──
+// acréscimo = 0,15×40 000 − 4 587,09 = 1 412,91 ; coletável 31 412,91
+{
+  const st = defaultIRSState();
+  st.agregado[0].atividade = 40000;
+  st.agregado[0].coefAtividade = 0.75;
+  const r = simular(simFrom(st));
+  approx('K: Cat B regra dos 15% sem despesas', r.coletaLiquida, 6753.27);
+}
+
+// ── L: igual ao K mas com 6 000 € de despesas documentadas → acréscimo anulado ──
+// 0,15×40 000 = 6 000 ≤ 6 000 + 4 587,09 → acréscimo 0 ; coletável 30 000 (imposto menor que K)
+{
+  const st = defaultIRSState();
+  st.agregado[0].atividade = 40000;
+  st.agregado[0].coefAtividade = 0.75;
+  st.agregado[0].despesasCatB = 6000;
+  const r = simular(simFrom(st));
+  approx('L: Cat B com despesas (acréscimo anulado)', r.coletaLiquida, 6260.16);
+}
+
+// ── M: IRS Jovem ano 1 aplicado à Cat B (20 000 × 0,75 = 15 000, isento 100%) → 0 ──
+{
+  const st = defaultIRSState();
+  st.agregado[0].atividade = 20000;
+  st.agregado[0].coefAtividade = 0.75;
+  st.agregado[0].irsJovemAno = 1;
+  const r = simular(simFrom(st));
+  approx('M: IRS Jovem ano 1 sobre Cat B', r.coletaLiquida, 0);
+}
+
+// ── N: contabilidade organizada (Anexo C), lucro 25 000 € → coletável 25 000 ──
+{
+  const st = defaultIRSState();
+  st.agregado[0].regimeCatB = 'organizado';
+  st.agregado[0].lucroCatBOrganizado = 25000;
+  const r = simular(simFrom(st));
+  approx('N: contabilidade organizada (lucro real)', r.coletaLiquida, 4682.24);
+}
+
 if (fails) { console.error(`\n${fails} caso(s) FALHARAM`); process.exit(1); }
 else console.log('\nTodos os casos golden de IRS passaram.');

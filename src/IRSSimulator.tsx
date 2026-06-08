@@ -56,7 +56,7 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
   const addPessoa = () => onStateChange({
     ...s,
     cenario: 'conjunto',
-    agregado: [...s.agregado, { relacao: 'Sujeito Passivo B', nome: '', rendTrabalho: 0, contribuicoes: 0, retencao: 0, atividade: 0, coefAtividade: 0.75, irsJovemAno: 0, pagamentosConta: 0 }],
+    agregado: [...s.agregado, { relacao: 'Sujeito Passivo B', nome: '', rendTrabalho: 0, contribuicoes: 0, retencao: 0, atividade: 0, coefAtividade: 0.75, irsJovemAno: 0, pagamentosConta: 0, regimeCatB: 'simplificado', despesasCatB: 0, lucroCatBOrganizado: 0 }],
   });
   const rmPessoa = (i: number) => onStateChange({ ...s, agregado: s.agregado.filter((_, idx) => idx !== i) });
 
@@ -171,19 +171,42 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
                   <label className={labelCls}>IRS Jovem — ano <Tip>Ano de aplicação do IRS Jovem (1 a 10). 1.º=100%, 2-4=75%, 5-7=50%, 8-10=25% de isenção. 0 = não aplicável.</Tip></label>
                   <input type="number" min={0} max={10} className={inputCls} value={p.irsJovemAno || ''} onChange={(e) => setPessoa(i, { irsJovemAno: parseInt(e.target.value) || 0 })} />
                 </div>
-                <div>
-                  <label className={labelCls}>Rend. Cat. B / atividade (€)</label>
-                  <input type="number" step="0.01" className={inputCls} value={p.atividade || ''} onChange={(e) => setPessoa(i, { atividade: parseFloat(e.target.value) || 0 })} />
-                </div>
-                <div>
-                  <label className={labelCls}>Coeficiente Cat. B</label>
-                  <select className={inputCls} value={p.coefAtividade} onChange={(e) => setPessoa(i, { coefAtividade: parseFloat(e.target.value) })}>
-                    <option value="0.75">0,75 — serviços profissionais</option>
-                    <option value="0.35">0,35 — outras prestações</option>
-                    <option value="0.15">0,15 — vendas / hotelaria</option>
-                    <option value="1">1,00 — pré-coletável</option>
+                <div className="col-span-2">
+                  <label className={labelCls}>Categoria B — regime <Tip>Simplificado: o imposto incide sobre rendimento × coeficiente. Contabilidade organizada (Anexo C): incide sobre o lucro real apurado pela contabilidade.</Tip></label>
+                  <select className={inputCls} value={p.regimeCatB || 'simplificado'} onChange={(e) => setPessoa(i, { regimeCatB: e.target.value as 'simplificado' | 'organizado' })}>
+                    <option value="simplificado">Regime simplificado (coeficientes)</option>
+                    <option value="organizado">Contabilidade organizada (Anexo C)</option>
                   </select>
                 </div>
+                {(p.regimeCatB || 'simplificado') === 'simplificado' ? (
+                  <>
+                    <div>
+                      <label className={labelCls}>Rend. Cat. B / atividade (€)</label>
+                      <input type="number" step="0.01" className={inputCls} value={p.atividade || ''} onChange={(e) => setPessoa(i, { atividade: parseFloat(e.target.value) || 0 })} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Coeficiente Cat. B</label>
+                      <select className={inputCls} value={p.coefAtividade} onChange={(e) => setPessoa(i, { coefAtividade: parseFloat(e.target.value) })}>
+                        <option value="0.75">0,75 — serviços profissionais (art. 151.º)</option>
+                        <option value="0.35">0,35 — outras prestações de serviços</option>
+                        <option value="0.15">0,15 — vendas e hotelaria/restauração</option>
+                        <option value="0.95">0,95 — propriedade intelectual / outros</option>
+                        <option value="0.10">0,10 — subsídios à exploração</option>
+                        <option value="1">1,00 — pré-coletável (já retido)</option>
+                      </select>
+                    </div>
+                    <div className="col-span-2">
+                      <label className={labelCls}>Despesas documentadas Cat. B (€) <Tip>Acima de 27 360 € de rendimento e nos coeficientes 0,75/0,35, a lei exige justificar 15% do rendimento com despesas. A parte não justificada acresce ao imposto (art. 31.º n.13). Regra/limiar a confirmar.</Tip></label>
+                      <input type="number" step="0.01" className={inputCls} value={p.despesasCatB || ''} onChange={(e) => setPessoa(i, { despesasCatB: parseFloat(e.target.value) || 0 })} />
+                      <p className="text-[10px] font-[500] text-amber-600 mt-1">Só conta para a regra dos 15% acima de 27 360 €. A validar com a contabilista.</p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="col-span-2">
+                    <label className={labelCls}>Lucro tributável — contabilidade (€) <Tip>Resultado fiscal já apurado pela contabilidade organizada (Anexo C). Pode ser prejuízo (valor negativo).</Tip></label>
+                    <input type="number" step="0.01" className={inputCls} value={p.lucroCatBOrganizado || ''} onChange={(e) => setPessoa(i, { lucroCatBOrganizado: parseFloat(e.target.value) || 0 })} />
+                  </div>
+                )}
               </div>
             </fieldset>
           ))}

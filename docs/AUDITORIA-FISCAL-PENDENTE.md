@@ -72,6 +72,41 @@ Lista de valores e regras que o simulador usa e que **precisam de confirmação 
 - [x] **Capitais (E)** 28% liberatória ou englobamento; **Prediais (F)** 28% ou englobamento; **Mais-valias mobiliárias (G)** 28%; **Mais-valias imobiliárias (G)** 50% do ganho englobado. Taxas-base estabelecidas.
 - [ ] **Nuances a validar/implementar**: taxas reduzidas dos prediais por duração do contrato (25%/15%/10%); exclusão de mais-valias por reinvestimento na HPP; 50% dos dividendos no englobamento (art.40-A); anexos **C** (contabilidade organizada), **H** (PPR/donativos) e restantes. Confirmar com a Sandrine.
 
+## IRS Anexo B / Categoria B (2026) — IMPLEMENTADO 08-jun (valores-base; a Sandrine valida)
+Confirmação ferramenta-a-ferramenta do Anexo B (rendimentos empresariais e profissionais). Antes, o simulador só fazia `rendimento × coeficiente`. **Agora o motor (`src/lib/irs.ts`) modela o Anexo B a sério** — com os pontos abaixo implementados com **valores-base estabelecidos** e **casos-teste golden** (irs.test.ts J–N). **As taxas/limiares mudam resultados e continuam a precisar do aval da Sandrine.**
+
+**Perguntas urgentes (valores-base já no motor — confirmar/afinar):**
+- [x] **Regra dos 15% (art. 31.º n.13/14 CIRS):** IMPLEMENTADA igual ao motor Fiscal (`fiscal.ts`): para os coeficientes 0,75/0,35 e rendimento bruto > 27 360 €, exige-se justificar 15% do rendimento; justificado = despesas documentadas (`despesasCatB`) + dedução específica automática (4 587,09 €); a parte não justificada **acresce** ao coletável. **Confirmar:** (a) a fórmula exata 2026; (b) o **limiar** (2025 = **27 360 €** — mantém-se?); (c) que despesas contam como justificação.
+- [~] **Dedução das contribuições para a SS na Cat. B:** NÃO modelada como dedução separada (em regime simplificado, o coeficiente já presume os custos e a SS só conta para a justificação dos 15%, coerente com `fiscal.ts`). **Confirmar** se em 2026 deve haver dedução autónoma das contribuições e com que limite.
+- [x] **IRS Jovem (art. 12.º-B) na Cat. B:** IMPLEMENTADO — a isenção passa a abranger Cat. A **e** Cat. B (limite 55×IAS = 29 542,15 € sobre a soma A+B do sujeito passivo). **Confirmar** que o IRS Jovem se aplica mesmo aos rendimentos da Cat. B.
+- [ ] **Caso raro — prejuízo na Cat. B organizada + IRS Jovem em simultâneo:** quando há prejuízo (lucro organizado negativo) e IRS Jovem ao mesmo tempo, o prejuízo reduz o rendimento global E a isenção (calculada sobre a Cat. A) também reduz — podem somar-se e sub-tributar. A isenção é calculada sobre a parte positiva (`max(0, Cat. B)`), o que ignora o prejuízo no cálculo da isenção mas deixa-o reduzir o global. **Confirmar** o tratamento correto da interação prejuízo × IRS Jovem (não modelado de forma especial; só afeta este caso raro).
+- [ ] **Mínimo de existência (art. 70.º) no ENI puro:** o motor aplica os 14×SMN = 12 880 € ao rendimento global (inclui Cat. B coletável). **Confirmar** a regra própria do ENI puro (não diferenciada no motor).
+- [ ] **Interação mínimo de existência × IRS Jovem (pré-existente, não introduzida pelo Anexo B):** o teste do mínimo usa o rendimento global JÁ líquido da parcela isenta do IRS Jovem. Para rendimentos altos com grande isenção, o global líquido cai abaixo de 12 880 € e o imposto é zerado, mesmo havendo coletável residual. Comporta-se igual na Cat. A e na Cat. B (consistente). **Confirmar** se o mínimo deve usar o rendimento antes ou depois da isenção do IRS Jovem — não alterado por ser regra já validada.
+
+**Perguntas importantes:**
+- [x] **Contabilidade organizada (Anexo C):** IMPLEMENTADO — seletor de regime por sujeito passivo (simplificado/organizado); no organizado usa o **lucro tributável** (`lucroCatBOrganizado`) em vez de coeficiente. **Confirmar** o limiar de obrigatoriedade (volume de negócios) e o tratamento de despesas/depreciações/provisões (hoje o utilizador insere o lucro já apurado).
+- [x] **Coeficientes:** dropdown alargado para 0,75 / 0,35 / 0,15 / **0,95** / **0,10** / 1,00. **Confirmar** os valores e descrições 2026 (sobretudo 0,95 e 0,10).
+- [ ] **Anexo F (prediais) — taxas por duração do contrato:** 25% (2–8 anos) / 15% (8–30) / 10% (>30), em vez dos 28% lineares atuais. AINDA NÃO implementado. **Confirmar** que se mantêm em 2026.
+
+Legenda: [x] implementado com valor-base (a validar) · [~] decisão tomada (não modelar já) · [ ] por fazer.
+
+**Sem fonte confirmada para 2026:** todos os coeficientes e regras acima foram dados pela auditoria como **INCERTOS** (só o Anexo A — trabalho dependente — ficou com fonte confirmada). Não afirmar nenhum como final sem o aval da Sandrine.
+
+## Cobertura por anexo do Modelo 3 (08-jun) — para referência
+| Anexo | Estado | Falta (resumo) |
+|-------|--------|----------------|
+| A (trabalho/pensões) | ✅ | — |
+| B (Cat. B simplificado) | ⚠ parcial | regra 15%, SS Cat. B, IRS Jovem Cat. B, mín. existência ENI, coeficientes extra |
+| C (contab. organizada) | ❌ | lucro real, toggle de regime |
+| D (transparência/heranças) | ❌ | nicho |
+| E (capitais) | ⚠ | base 28%/englob. ok; isenções especiais por fazer |
+| F (prediais) | ⚠ | falta taxas por duração + despesas dedutíveis |
+| G (mais-valias) | ⚠ | base ok; falta isenção >365d mob., reinvestimento HPP, G1 |
+| H (deduções/benefícios) | ⚠ | deduções à coleta ok; falta PPR, donativos, juros HPP, limite global |
+| I (herança indivisa) | ❌ | nicho |
+| J (estrangeiro) | ❌ | crédito de dupla tributação |
+| L (RNH/IFICI) | ❌ | nicho |
+
 ## (a preencher à medida que auditamos as outras ferramentas)
 - [ ] SS Independente — base de incidência, percentagem, isenções.
 - [ ] IMT / Imposto do Selo — escalões e isenções.
