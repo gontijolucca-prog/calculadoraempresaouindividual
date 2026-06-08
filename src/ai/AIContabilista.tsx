@@ -24,9 +24,20 @@ interface ChatMsg {
 }
 
 const STORE_KEY = 'estudo360:ai_chat_v1';
+const AUTO_OPEN_KEY = 'estudo360:ai_autoopen_v1'; // 1x por sessão do browser
 const GREETING: ChatMsg = {
   role: 'assistant',
   content: 'Olá! Sou o **AI Contabilista**, o teu assistente aqui no Estudo 360. Posso explicar qualquer função, abrir os simuladores por ti, ajudar a preencher um cliente e registar sugestões de melhoria. Em que te ajudo?',
+};
+// Saudação proativa quando abro sozinho ao entrar no site.
+const PROACTIVE_GREETING: ChatMsg = {
+  role: 'assistant',
+  content: 'Olá! 👋 Sou o **AI Contabilista**. Posso ajudar-te com alguma coisa? Explico funções, abro simuladores por ti ou ajudo a criar um cliente.',
+  replies: [
+    'Como funciona o Simulador de IRS?',
+    'Ajuda-me a criar um cliente novo',
+    'Mostra-me o que sabes fazer',
+  ],
 };
 
 const QUICK = [
@@ -83,6 +94,24 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
   useEffect(() => {
     if (open) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [msgs, busy, open]);
+
+  // Abre sozinho ao entrar no site (1x por sessão do browser) e cumprimenta
+  // proativamente se ainda não houve conversa.
+  useEffect(() => {
+    let done = false;
+    try { done = sessionStorage.getItem(AUTO_OPEN_KEY) === '1'; } catch { /* */ }
+    if (done) return;
+    const t = setTimeout(() => {
+      try { sessionStorage.setItem(AUTO_OPEN_KEY, '1'); } catch { /* */ }
+      setMsgs((prev) => {
+        // Só injeta saudação proativa se o histórico for apenas o greeting base.
+        if (prev.length <= 1) return [PROACTIVE_GREETING];
+        return prev;
+      });
+      setOpen(true);
+    }, 1400);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -300,7 +329,7 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
               ))}
 
               {/* Chips de arranque */}
-              {msgs.length <= 1 && !busy && (
+              {msgs.length <= 1 && !busy && !msgs[msgs.length - 1]?.replies?.length && (
                 <div className="flex flex-wrap gap-1.5 pt-1">
                   {QUICK.map((q) => (
                     <button key={q} type="button" onClick={() => send(q)}
