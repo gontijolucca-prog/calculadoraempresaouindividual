@@ -142,7 +142,7 @@ export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEm
         {filtered.length === 0 ? (
           <EmptyState onNova={startNova} hasQuery={query.length > 0} />
         ) : (
-          <ul className="grid gap-3" role="list">
+          <ul className="grid grid-cols-1 gap-3" role="list">
             {filtered.map(emp => (
               <EmpresaCard
                 key={emp.id}
@@ -301,7 +301,7 @@ const MenuItem: React.FC<{ Icon: React.ComponentType<{ className?: string }>; la
   <button
     type="button"
     onClick={onClick}
-    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[13px] font-[600] text-[#334155] hover:bg-[#0677FF]/8 hover:text-[#0677FF] active:scale-[0.99] transition-colors text-left"
+    className="w-full min-w-0 flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[13px] font-[600] text-[#334155] hover:bg-[#0677FF]/8 hover:text-[#0677FF] active:scale-[0.99] transition-colors text-left"
   >
     <Icon className="w-4 h-4 shrink-0" />
     <span className="truncate">{label}</span>
