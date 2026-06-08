@@ -16,6 +16,7 @@ export interface TaxSimulatorState {
   isSeasonal: boolean; invEquip: number; invLic: number; invWorks: number;
   invFundo: number; fixedMo: number; varYr: number; accMoLda: number;
   accMoEni: number; anosAtividade: number; transparenciaFiscal: boolean;
+  taxaDerramaMunicipal?: number;
 }
 
 export interface VehicleSimulatorState {
@@ -48,6 +49,7 @@ export const getInitialTaxState = (p: ClientProfile): TaxSimulatorState => ({
   accMoLda: 0, accMoEni: 0,
   anosAtividade: p.inicioAtividade > 0 ? Math.max(0, new Date().getFullYear() - p.inicioAtividade) : 0,
   transparenciaFiscal: p.regimeContabilidade === 'transparencia_fiscal',
+  taxaDerramaMunicipal: 0,
 });
 
 export const getInitialVehicleState = (p?: ClientProfile): VehicleSimulatorState => ({

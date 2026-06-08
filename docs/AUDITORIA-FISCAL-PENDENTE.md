@@ -31,9 +31,9 @@ Lista de valores e regras que o simulador usa e que **precisam de confirmação 
 - [ ] **Não modelado** (a decidir se entra): opção de ajuste da base ±25%; acumulação com trabalho dependente (isenção se salário ≥ 4×IAS); contribuição da entidade contratante (>50% do rendimento de um só cliente).
 
 ## Fiscal ENI vs Lda (2026) — `src/TaxSimulator.tsx`
-- [ ] **Derrama municipal ausente** no lado da Lda (até 1,5% sobre o lucro tributável, varia por município). O Previsa já a modela; o comparador não. Decidir: somar (com taxa do perfil/concelho) ou manter simplificado + nota.
+- [x] **Derrama municipal** — IMPLEMENTADA (08-jun): campo `taxaDerramaMunicipal` (default 0) sobre o lucro. **Confirmar a taxa de cada concelho** (até 1,5%).
 - [ ] **Retenção na fonte ENI serviços = 11,5%** (só informativa, não entra no líquido). Confirmar — muitas profissões do art.151.º retêm 25%.
-- [ ] **Comparação Lda não subtrai os 28% de dividendos** no líquido do vencedor (assume lucro retido na empresa; divulgado em nota). Avaliar mostrar as duas hipóteses (retido vs distribuído).
+- [x] **Dividendos −28%** — IMPLEMENTADO (08-jun): mostra líquido com lucro retido E distribuído. Confirmar a taxa (28% liberatória art.71).
 - [ ] **PPC = 25% do IRS** — aproximação; confirmar regra dos pagamentos por conta Cat. B.
 - [ ] **Limiar justificação 15% (art.31 n.13) = 27 360 €** (valor 2025 mantido) — confirmar valor 2026.
 - [ ] **IRC PME 15%/19%** e **dedução específica Cat A 8,54×IAS** — confirmar (já no bloco IRS).

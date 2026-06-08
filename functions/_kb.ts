@@ -103,7 +103,8 @@ Campos reais do estado (preenchíveis pelo bot — usar EXATAMENTE estas chaves)
 - transparenciaFiscal (boolean — Lda em transparência fiscal, art. 6.º CIRC: sem IRC, lucro tributado no IRS do sócio)
 - fixedMo (currency/mês — custos fixos) ; varYr (currency/ano — custos variáveis) ; accMoLda, accMoEni (currency/mês — contabilidade)
 - invEquip, invLic, invWorks, invFundo (currency — investimento inicial)
-Método: ENI = regime simplificado (coeficiente art.31 × faturação, com regra de justificação 15% n.º13) + SS independente + IRS marginal. Lda = remuneração do gerente (gross-up de monthlyNeed) + IRC 15%/19% PME OU transparência fiscal. NÃO inclui derrama municipal nem subtrai os 28% de dividendos no líquido do vencedor (divulgado em nota). O coeficiente vem do perfil (atividadePrincipal) quando disponível.
+- taxaDerramaMunicipal (fração, ex. 0.015 — derrama municipal sobre o lucro; default 0)
+Método: ENI = regime simplificado (coeficiente art.31 × faturação, com regra de justificação 15% n.º13) + SS independente + IRS marginal. Lda = remuneração do gerente (gross-up de monthlyNeed) + IRC 15%/19% PME (+ derrama municipal, taxa do concelho) OU transparência fiscal. Mostra o líquido com lucro RETIDO e a hipótese com lucro DISTRIBUÍDO (dividendos −28%, CIRS art.71). O coeficiente vem do perfil (atividadePrincipal) quando disponível. Motor em src/lib/fiscal.ts (testável).
 
 ### vehicle (Simulador de Viaturas)
 - category (select: passageiros/comercial)

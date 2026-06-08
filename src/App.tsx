@@ -176,6 +176,7 @@ interface TaxSimulatorState {
   isSeasonal: boolean; invEquip: number; invLic: number; invWorks: number;
   invFundo: number; fixedMo: number; varYr: number; accMoLda: number;
   accMoEni: number; anosAtividade: number; transparenciaFiscal: boolean;
+  taxaDerramaMunicipal?: number;
 }
 
 interface VehicleSimulatorState {

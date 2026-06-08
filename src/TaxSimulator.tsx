@@ -9,19 +9,8 @@ import { cn } from './lib/utils';
 import { useTheme } from './ThemeContext';
 import { Tip } from './Tip';
 import type { ClientProfile } from './ClientProfile';
-import {
-  calculateIRS, calcIRSJovem, calcDependentsDeduction,
-  calcSelfSSContribution, SS_RATE_EMPLOYER, SS_RATE_EMPLOYEE, IAS_2026,
-  coefFromProfile,
-} from './lib/pt2026';
-
-// Dedução específica Cat A 2026 — 8,54 × IAS (art. 25.º CIRS).
-const DED_ESPECIFICA_CAT_A_2026 = Math.round(8.54 * IAS_2026 * 100) / 100; // 4587.09
-// Limiar para a regra de justificação de 15% das despesas no regime simplificado
-// (art. 31.º n.º 13 CIRS, OE 2026). Indexado a 4 × IAS × 12 / 14 ≈ €27.360 (valor de 2025);
-// para 2026 mantemos o mesmo valor (a Portaria de atualização ainda não foi publicada).
-// NOTA(fiscal): rever este valor anualmente — fonte: Portaria de atualização art. 31.º.
-const LIMIAR_JUSTIFICACAO_15PCT = 27360;
+import { coefFromProfile } from './lib/pt2026';
+import { compararEniLda } from './lib/fiscal';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 
@@ -45,6 +34,8 @@ interface TaxSimulatorState {
   accMoEni: number;
   anosAtividade: number;
   transparenciaFiscal: boolean;
+  /** Taxa de derrama municipal (fração, ex. 0.015). Default 0. ⚠ por município. */
+  taxaDerramaMunicipal?: number;
 }
 
 interface Props {
@@ -61,6 +52,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
     invEquip, invLic, invWorks, invFundo,
     fixedMo, varYr, accMoLda, accMoEni, anosAtividade,
     transparenciaFiscal = false,
+    taxaDerramaMunicipal = 0,
   } = initialState;
 
   const setState = (updates: Partial<TaxSimulatorState>) => {
@@ -83,100 +75,18 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
   const lblCls   = "text-[11px] font-[700] uppercase tracking-[0.5px] text-[#475569] leading-tight";
   const hdrIcon  = "w-5 h-5 opacity-80 mr-2 inline-block -mt-0.5";
 
-  /* ── Results calculation (unchanged) ── */
-  const results = useMemo(() => {
-    const totalInv = invEquip + invLic + invWorks + invFundo;
-    const invCapex = invEquip + invLic + invWorks;
-    const fixedYr  = fixedMo * 12;
-    const accYrLda = accMoLda * 12;
-    const accYrEni = accMoEni * 12;
-    const dpNaoAceite = invCapex * 0.25;
-    const costsLdaOutPocket = fixedYr + varYr + accYrLda;
-    const costsEniOutPocket = fixedYr + varYr + accYrEni;
-
-    let eniSS = 0;
-    if (profSit === 'tco' && !isMainAct && rev <= 20000) {
-      // Isenção: ENI complementar com rendimento ≤€20.000/ano (art. 168.º-A CRCSPSS).
-      eniSS = 0;
-    } else {
-      // SS independente — usa o motor central (pt2026): 21,4% × (70% serviços / 20% bens).
-      // rev é a receita anual; calcSelfSSContribution espera mensal, logo /12 × *12 = mesmo total.
-      const monthly = calcSelfSSContribution(rev / 12, isServices ? 'servicos' : 'bens', false);
-      eniSS = monthly.anual;
-    }
-
-    // Coeficiente art.º 31.º CIRS — usa o tipo de atividade do perfil quando disponível
-    // (vendas/restauração/hotelaria 0,15; serviços profissionais 0,75; outros serviços 0,35;
-    // mining cripto 0,95). Cai para o binário (isServices) por retro-compatibilidade.
-    const coefArt31 = profile?.atividadePrincipal
-      ? coefFromProfile(profile.atividadePrincipal)
-      : (isServices ? 0.75 : 0.15);
-    let eniRendColetavel = rev * coefArt31;
-    // A regra do art.º 31.º n.º 13 (justificação de 15%) só se aplica aos coef. 0,75 e 0,35.
-    const aplicaJustificacao = coefArt31 === 0.75 || coefArt31 === 0.35;
-    if (aplicaJustificacao && rev > LIMIAR_JUSTIFICACAO_15PCT) {
-      // Regra do art. 31.º n.º 13 CIRS: para coef. 0,75 e rendimento bruto > limiar,
-      // o sujeito passivo tem de justificar despesas equivalentes a 15% da receita bruta;
-      // a parte não justificada é adicionada ao rendimento coletável.
-      const requiredJustDocs = rev * 0.15;
-      const justDocsPresented = costsEniOutPocket + DED_ESPECIFICA_CAT_A_2026;
-      if (justDocsPresented < requiredJustDocs) {
-        eniRendColetavel += (requiredJustDocs - justDocsPresented);
-      }
-    }
-
-    let irsJovemDeduction = 0;
-    if (profile.beneficioJovem && profile.idade <= 35) {
-      irsJovemDeduction = calcIRSJovem(anosAtividade, eniRendColetavel, profile.idade);
-      eniRendColetavel = Math.max(0, eniRendColetavel - irsJovemDeduction);
-    }
-
-    const eniIRS_Total   = calculateIRS(currentInc + eniRendColetavel);
-    const eniIRS_Current = calculateIRS(currentInc);
-    const depsDeduction  = calcDependentsDeduction(profile.nrDependentes);
-    let eniIRS = Math.max(0, eniIRS_Total - eniIRS_Current - depsDeduction);
-
-    const ppc          = eniIRS * 0.25;
-    const retencaoFonte = isServices ? rev * 0.115 : 0;
-    const eniNet       = rev - costsEniOutPocket - eniSS - eniIRS;
-    const eniCashFlow  = eniNet - totalInv;
-
-    const rawGross     = monthlyNeed / 0.70;
-    const grossSalaryYr = rawGross * 14;
-    const ldaSSCompany = grossSalaryYr * SS_RATE_EMPLOYER; // 23,75% (art. 53.º CRCSPSS)
-    const ldaSSManager = grossSalaryYr * SS_RATE_EMPLOYEE; // 11% (art. 53.º CRCSPSS)
-    const ldaIRSManager = calculateIRS(grossSalaryYr);
-    const profit = rev - costsLdaOutPocket - dpNaoAceite - grossSalaryYr - ldaSSCompany;
-
-    let irc = 0;
-    let transparenciaIRSOnProfit = 0;
-    if (transparenciaFiscal) {
-      if (profit > 0) {
-        transparenciaIRSOnProfit = Math.max(0,
-          calculateIRS(grossSalaryYr + profit) - calculateIRS(grossSalaryYr)
-        );
-      }
-    } else if (profit > 0) {
-      irc = profit <= 50000 ? profit * 0.15 : (50000 * 0.15) + ((profit - 50000) * 0.19);
-    }
-
-    const companyNetEarnings = profit - irc - transparenciaIRSOnProfit;
-    const ldaBusinessNet = companyNetEarnings + (monthlyNeed * 12);
-    const ldaCashFlow = (companyNetEarnings + dpNaoAceite) - totalInv;
-
-    const varMargin = rev > 0 ? (rev - varYr) / rev : 0.01;
-    const beEni = varMargin > 0 ? (fixedYr + accYrEni) / varMargin : 0;
-    const beLda = varMargin > 0 ? (fixedYr + accYrLda + grossSalaryYr + ldaSSCompany) / varMargin : 0;
-
-    return {
-      totalInv, beEni, beLda, irsJovemDeduction, depsDeduction, ppc, retencaoFonte,
-      transparenciaFiscal, transparenciaIRSOnProfit,
-      eni: { ss: eniSS, irs: eniIRS, net: eniNet, cashFlow: eniCashFlow, costs: costsEniOutPocket, rendColetavel: eniRendColetavel },
-      lda: { ssComp: ldaSSCompany, ssEmp: ldaSSManager, irc, irs: ldaIRSManager, net: ldaBusinessNet, cashFlow: ldaCashFlow, profit: companyNetEarnings, costs: costsLdaOutPocket }
-    };
-  }, [profSit, currentInc, age, isMainAct, monthlyNeed, isServices, b2b, rev, isSeasonal,
+  /* ── Cálculo: motor puro em src/lib/fiscal.ts (testável) ── */
+  const results = useMemo(() => compararEniLda({
+    profSit, currentInc, isMainAct, monthlyNeed, isServices, rev,
+    invEquip, invLic, invWorks, invFundo, fixedMo, varYr, accMoLda, accMoEni,
+    anosAtividade, transparenciaFiscal,
+    coefArt31: profile?.atividadePrincipal ? coefFromProfile(profile.atividadePrincipal) : undefined,
+    beneficioJovem: profile.beneficioJovem, idade: profile.idade, nrDependentes: profile.nrDependentes,
+    taxaDerramaMunicipal,
+  }), [profSit, currentInc, isMainAct, monthlyNeed, isServices, rev,
       invEquip, invLic, invWorks, invFundo, fixedMo, varYr, accMoLda, accMoEni,
-      anosAtividade, transparenciaFiscal, profile.beneficioJovem, profile.idade, profile.nrDependentes]);
+      anosAtividade, transparenciaFiscal, taxaDerramaMunicipal,
+      profile?.atividadePrincipal, profile.beneficioJovem, profile.idade, profile.nrDependentes]);
 
   const ptEur  = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(Math.max(0, v));
   const winner = results.lda.net > results.eni.net ? 'LDA' : 'ENI';
@@ -304,6 +214,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
         <div><label className={lblCls}>Custos Fixos / Mês <Tip>Despesas que paga todos os meses independentemente de faturar (renda, internet, seguro). São sempre dedutíveis.</Tip></label><input type="number" value={fixedMo === 0 ? '' : fixedMo} onChange={e=>setState({fixedMo: Number(e.target.value) || 0})} className={inputCls} /></div>
         <div><label className={lblCls}>Custos Prod. / Ano <Tip>Despesas que variam com o volume de negócio (fornecedores, matérias-primas, publicidade).</Tip></label><input type="number" value={varYr === 0 ? '' : varYr} onChange={e=>setState({varYr: Number(e.target.value) || 0})} className={inputCls} /></div>
         <div><label className={lblCls}>Contabilidade Lda/Mês <Tip>Custo mensal de contratar um contabilista para uma Lda. A contabilidade organizada é obrigatória para empresas.</Tip></label><input type="number" value={accMoLda === 0 ? '' : accMoLda} onChange={e=>setState({accMoLda: Number(e.target.value) || 0})} className={inputCls} /></div>
+        <div><label className={lblCls}>Derrama Municipal (%) <Tip>Taxa de derrama municipal do concelho da empresa (até 1,5% sobre o lucro tributável). Varia por município — confirma na deliberação da câmara. Deixa a 0 se não souberes.</Tip></label><input type="number" step="0.1" value={taxaDerramaMunicipal ? +(taxaDerramaMunicipal*100).toFixed(2) : ''} onChange={e=>setState({taxaDerramaMunicipal: (Number(e.target.value) || 0)/100})} className={inputCls} /></div>
         <div><label className={lblCls}>Contabilidade ENI/Mês <Tip>Custo mensal de contratar um contabilista para um ENI (Empresário em Nome Individual).</Tip></label><input type="number" value={accMoEni === 0 ? '' : accMoEni} onChange={e=>setState({accMoEni: Number(e.target.value) || 0})} className={inputCls} /></div>
       </div>
     </div>
@@ -420,8 +331,14 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           </>
         ) : (
           <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-            <span className="text-[13px] font-[600] text-slate-600 flex items-center gap-1">IRC (Lucro: {ptEur(results.lda.profit + results.lda.irc)}) <Tip>IRC sobre o lucro da empresa: 15% até 50.000€ de lucro e 19% no excedente (taxas PME, OE 2026). Lucro = faturação − custos − amortizações não aceites − remuneração do gerente − TSU da empresa.</Tip></span>
+            <span className="text-[13px] font-[600] text-slate-600 flex items-center gap-1">IRC (Lucro: {ptEur(results.lda.profit + results.lda.irc + results.derramaMunicipal)}) <Tip>IRC sobre o lucro da empresa: 15% até 50.000€ de lucro e 19% no excedente (taxas PME, OE 2026). Lucro = faturação − custos − amortizações não aceites − remuneração do gerente − TSU da empresa.</Tip></span>
             <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.lda.irc)}</span>
+          </div>
+        )}
+        {results.derramaMunicipal > 0 && (
+          <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+            <span className="text-[13px] font-[600] text-slate-600 flex items-center gap-1">Derrama Municipal <Tip>Derrama municipal do concelho sobre o lucro tributável (taxa que indicaste). Varia por município, até 1,5%.</Tip></span>
+            <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.derramaMunicipal)}</span>
           </div>
         )}
         <div className="flex justify-between items-center border-b border-slate-100 pb-2">
@@ -442,12 +359,18 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           <span className="text-[11px] font-[700] text-slate-500 uppercase tracking-widest flex items-center gap-1">Cash-Flow Holding Y1 <Tip>Cash-Flow da sociedade (Holding) = lucro da empresa mais a remuneração do gerente, antes de distribuir dividendos. Y1 = Ano 1.</Tip></span>
           <span className="text-[18px] font-[800] text-[#0677FF]">{ptEur(results.lda.cashFlow)}</span>
         </div>
+        {!results.transparenciaFiscal && results.lda.profit > 0 && (
+          <div className="flex justify-between items-center border-t border-slate-200 pt-2">
+            <span className="text-[11px] font-[700] text-slate-500 uppercase tracking-widest flex items-center gap-1">Líquido se distribuir dividendos <Tip>O líquido se o sócio levantar todo o lucro como dividendos: lucro após IRC menos 28% de retenção liberatória (CIRS art.71.º), mais a remuneração do gerente.</Tip></span>
+            <span className="text-[16px] font-[800] text-slate-700">{ptEur(results.lda.netDistribuido)}</span>
+          </div>
+        )}
       </div>
       {!results.transparenciaFiscal && results.lda.profit > 0 && (
         <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-[8px] px-3 py-2">
           <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-600" />
           <span className="text-[11px] text-amber-800 font-[500] leading-relaxed">
-            <strong>Valor antes de distribuição.</strong> Se o sócio sacar o lucro como dividendos, incide retenção liberatória de <strong>28%</strong> (CIRS Art. 71.º). Numa comparação real ENI vs Lda, deduzir <strong>{ptEur(results.lda.profit * 0.28)}</strong> ao "Lucro + Remuneração".
+            <strong>Lucro + Remuneração = lucro retido na empresa.</strong> Se o sócio sacar o lucro como dividendos, incide retenção de <strong>28%</strong> (CIRS Art. 71.º) — menos <strong>{ptEur(results.lda.impostoDividendos)}</strong>, ficando <strong>{ptEur(results.lda.netDistribuido)}</strong>.
           </span>
         </div>
       )}
