@@ -96,12 +96,14 @@ Chaves para preenchimento automático. Estrutura aninhada onde aplicável (ex.: 
 - resultadoLiquido, volumeNegocios (currency)
 
 ### tax (Simulador Fiscal — ENI vs Lda)
-- revenueAnnual (currency)
-- estadoCivil (select)
-- nrDependentes (number)
-- custos_cogs, custos_fixos, custos_variáveis (currency)
-- atividade (text, CAE — mapeia a coeficiente deductibilidade)
-- investimento_inicial, financiamento (currency)
+Campos reais do estado (preenchíveis pelo bot — usar EXATAMENTE estas chaves):
+- rev (currency — faturação anual prevista) ; isServices (boolean — serviços vs bens) ; b2b (boolean)
+- currentInc (currency — outro rendimento já existente do sócio) ; monthlyNeed (currency — quanto o sócio precisa de levantar por mês na Lda)
+- isMainAct (boolean — atividade principal?) ; profSit (text — situação profissional) ; anosAtividade (number) ; isSeasonal (boolean)
+- transparenciaFiscal (boolean — Lda em transparência fiscal, art. 6.º CIRC: sem IRC, lucro tributado no IRS do sócio)
+- fixedMo (currency/mês — custos fixos) ; varYr (currency/ano — custos variáveis) ; accMoLda, accMoEni (currency/mês — contabilidade)
+- invEquip, invLic, invWorks, invFundo (currency — investimento inicial)
+Método: ENI = regime simplificado (coeficiente art.31 × faturação, com regra de justificação 15% n.º13) + SS independente + IRS marginal. Lda = remuneração do gerente (gross-up de monthlyNeed) + IRC 15%/19% PME OU transparência fiscal. NÃO inclui derrama municipal nem subtrai os 28% de dividendos no líquido do vencedor (divulgado em nota). O coeficiente vem do perfil (atividadePrincipal) quando disponível.
 
 ### vehicle (Simulador de Viaturas)
 - category (select: passageiros/comercial)
