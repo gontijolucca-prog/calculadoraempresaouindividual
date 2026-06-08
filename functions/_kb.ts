@@ -158,6 +158,7 @@ Operacional:
 - localizacao (select: continente/madeira/acores)
 - primeiraHabitacao (boolean)
 - idadeComprador (number)
+Método: IMT por escalões progressivos (CIMT art.17) para HPP e habitação; taxa plana 5% (rústico) / 6,5% (urbano outros). Imposto de Selo 0,8% (TGIS 1.1). IMT Jovem (≤35, HPP, 1.ª habitação): isenção total até ao limite e redução parcial até ao dobro (art.11-A); nesses casos o Selo também é isento. Madeira/Açores: escalões 25% mais altos (menos IMT).
 
 ### salario (Salário Líquido)
 - salarioBruto (currency)

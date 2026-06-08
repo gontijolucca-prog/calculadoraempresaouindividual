@@ -45,6 +45,13 @@ Lista de valores e regras que o simulador usa e que **precisam de confirmação 
 - [ ] **Pagamentos por Conta (PC)**: 2,5/4,5/8,5% (continental). Confirmar.
 - [ ] **Tributações autónomas** (art.88): escalões de viaturas (8/25/32%), elétrico 0% (10% acima de 62 500 €), e taxas de despesas (não documentadas 50/70%, representação 10%, ajudas de custo 5%, lucros distribuídos 23%, offshores/indemnizações/bónus 35%); agravamento ×1,1 com prejuízo. Confirmar.
 
+## IMT + Imposto de Selo (2026) — `src/lib/imt.ts`
+- [ ] **Escalões CIMT 2026** (HPP e habitação secundária — limites e deduções; atualizam anualmente). Confirmar a tabela completa.
+- [ ] **IMT Jovem** (art.11-A): limite de isenção (330 539 €) e de redução (660 982 €), e a **fórmula da redução parcial** (código: IMT(valor) − IMT(limite isenção)). Confirmar.
+- [ ] **Taxas planas**: rústico 5%, urbano outros fins 6,5%. Confirmar.
+- [ ] **Imposto de Selo 0,8%** (TGIS 1.1) — confirmar.
+- [ ] **Multiplicador regional 1,25** (Madeira/Açores) — confirmar.
+
 ## (a preencher à medida que auditamos as outras ferramentas)
 - [ ] SS Independente — base de incidência, percentagem, isenções.
 - [ ] IMT / Imposto do Selo — escalões e isenções.
