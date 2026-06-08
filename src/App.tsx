@@ -63,7 +63,11 @@ import { SIM_LABELS, isSimView, summarizeSimulacao, simHasData, detailSimulacao,
 import { resultSimulacao } from './lib/simResults';
 import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
 import { SimulacaoSaveProvider, type SimSaveCtx } from './SimulacaoSave';
+import { setByPath } from './ai/actions';
+import type { BotBridge } from './ai/AIContabilista';
+import SuggestionsAdmin from './ai/SuggestionsAdmin';
 const SimulacoesHistory = lazy(() => import('./SimulacoesHistory'));
+const AIContabilista = lazy(() => import('./ai/AIContabilista'));
 
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
@@ -906,6 +910,55 @@ function AppContent() {
   // do enquadramento fiscal (para o utilizador poder ver o simulador e voltar/guardar).
   const draftNewClient = mode === 'novo-cliente' && !currentEmpresaId && (view === 'profile' || view === 'tax');
 
+  // ── Bridge para o AI Contabilista ─────────────────────────────────────────
+  // Dá ao bot poderes de navegação + preenchimento de campos, e um contexto
+  // ANONIMIZADO (sem NIF/nomes/valores — RGPD) para enviar ao modelo.
+  const fillSimSetters: Record<string, React.Dispatch<React.SetStateAction<any>>> = {
+    tax: setTaxState, vehicle: setVehicleState, ticket: setTicketState, selfss: setSSState,
+    diagnostico: setDiagnosticoState, imoveis: setImoveisState, imt: setImtState,
+    salario: setSalarioState, irs: setIrsState,
+  };
+  const botBridge: BotBridge = {
+    currentUser: officeSettings.nome?.trim() || undefined,
+    currentView: VIEW_TITLES[view],
+    navigate: (v) => setView(v as ViewType),
+    setMode: (m) => { if (m === 'novo-cliente') handleNovaEmpresaManual(); else selectMode('empresa'); },
+    applyFill: (target, fields) => {
+      if (target === 'profile') {
+        let np = clientProfile;
+        for (const f of fields) np = setByPath(np, f.path, f.value);
+        updateProfileWithSimulatorSync(np);
+        setView('profile');
+      } else {
+        const setter = fillSimSetters[target];
+        if (!setter) return;
+        setter((prev: any) => { let n = prev; for (const f of fields) n = setByPath(n, f.path, f.value); return n; });
+        setView(target as ViewType);
+      }
+    },
+    getContext: () => {
+      const p = clientProfile;
+      const yn = (b: boolean) => (b ? 'preenchido' : 'vazio');
+      const lines = [
+        `Modo de trabalho: ${mode === 'empresa' ? 'Empresa (CRM, lista de clientes)' : 'Novo Cliente (rascunho)'}`,
+        `Vista aberta: ${VIEW_TITLES[view]}`,
+        `Cliente selecionado: ${currentEmpresaId ? 'sim' : 'não — os simuladores precisam de um cliente ativo'}`,
+        `Nº de clientes guardados: ${listEmpresas().length}`,
+        `Definições do escritório: ${officeSettings.nome?.trim() ? 'preenchidas' : 'por preencher (nome/NIF/IBAN)'}`,
+      ];
+      if (currentEmpresaId) {
+        lines.push(
+          'Estado do perfil do cliente (sem revelar valores):',
+          `- Faturação anual prevista: ${yn((p.faturaçaoAnualPrevista || 0) > 0)}`,
+          `- Nº de funcionários: ${yn((p.nrFuncionarios || 0) > 0)}`,
+          `- Atividade principal: ${p.atividadePrincipal || 'por definir'}`,
+          `- Tipo de entidade: ${p.tipoEntidade || 'por definir'}`,
+        );
+      }
+      return lines.join('\n');
+    },
+  };
+
   const content = (
     <Suspense fallback={<ViewLoading />}>
       <PageTransition pageKey={view}>
@@ -1271,6 +1324,10 @@ function AppContent() {
           </button>
         </div>
       )}
+      {/* AI Contabilista — assistente flutuante (grátis, OpenRouter free models) */}
+      <Suspense fallback={null}>
+        <AIContabilista bridge={botBridge} liftBottom={draftNewClient} />
+      </Suspense>
     </div>
     </SimulacaoSaveProvider>
   );
@@ -1281,6 +1338,8 @@ export default function App() {
     <ThemeProvider>
       <MotionProvider>
         <AppContent />
+        {/* Vista escondida das sugestões recolhidas pelo bot (#ai-sugestoes) */}
+        <SuggestionsAdmin />
       </MotionProvider>
     </ThemeProvider>
   );

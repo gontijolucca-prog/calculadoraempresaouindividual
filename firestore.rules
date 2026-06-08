@@ -38,11 +38,39 @@ service cloud.firestore {
       allow write: if isValidEmpresasPayload(request.resource.data);
     }
 
+    // Sugestões de melhoria recolhidas pelo AI Contabilista (bot do site).
+    // Sem auth real: validação estrutural. Qualquer um cria (o bot regista a
+    // sugestão do utilizador), todos leem (vista de administração interna),
+    // update só para alternar o estado, e sem delete (housekeeping manual).
+    match /ai_suggestions/{docId} {
+      allow read: if true;
+      allow create: if isValidSuggestion(request.resource.data);
+      allow update: if isSuggestionStatusOnly(resource.data, request.resource.data);
+      allow delete: if false;
+    }
+
     // Bloquear tudo o resto explicitamente até existir auth real.
     match /{document=**} {
       allow read, write: if false;
     }
   }
+}
+
+function isValidSuggestion(d) {
+  return d.keys().hasOnly(['title', 'detail', 'area', 'autor', 'vista', 'createdAt', 'status'])
+      && d.title is string && d.title.size() > 0 && d.title.size() < 300
+      && d.detail is string && d.detail.size() < 3000
+      && d.createdAt is number
+      && d.status is string && (d.status == 'novo' || d.status == 'visto' || d.status == 'feito')
+      && (!('area' in d) || (d.area is string && d.area.size() < 200))
+      && (!('autor' in d) || (d.autor is string && d.autor.size() < 200))
+      && (!('vista' in d) || (d.vista is string && d.vista.size() < 100));
+}
+
+function isSuggestionStatusOnly(before, after) {
+  return after.diff(before).affectedKeys().hasOnly(['status'])
+      && after.status is string
+      && (after.status == 'novo' || after.status == 'visto' || after.status == 'feito');
 }
 
 function isValidUpdateCreate(data) {

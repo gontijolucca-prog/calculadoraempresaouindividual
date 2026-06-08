@@ -35,6 +35,19 @@ jobs:
           VITE_BASE_URL: /
         run: npm run build
 
+      # Publica a chave do OpenRouter como secret de runtime do Pages, para a
+      # Function /api/chat (AI Contabilista) lhe aceder via env.OPENROUTER_API_KEY.
+      # A chave NUNCA vai para o cliente — só existe no servidor. continue-on-error
+      # para o deploy não bloquear se o token não tiver permissão de secrets
+      # (nesse caso configura-se uma vez no painel do Pages).
+      - name: Configurar secret OpenRouter no Pages
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: printf '%s' "$OPENROUTER_API_KEY" | npx wrangler@4 pages secret put OPENROUTER_API_KEY --project-name=estudo360
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:

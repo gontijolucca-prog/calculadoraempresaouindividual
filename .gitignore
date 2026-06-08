@@ -7,3 +7,7 @@ coverage/
 .env*
 !.env.example
 .DS_Store
+
+# Cloudflare Pages local secrets
+.dev.vars
+.wrangler/
