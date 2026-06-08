@@ -38,6 +38,13 @@ Lista de valores e regras que o simulador usa e que **precisam de confirmação 
 - [ ] **Limiar justificação 15% (art.31 n.13) = 27 360 €** (valor 2025 mantido) — confirmar valor 2026.
 - [ ] **IRC PME 15%/19%** e **dedução específica Cat A 8,54×IAS** — confirmar (já no bloco IRS).
 
+## Previsa / IRC Modelo 22 (2026) — `src/lib/previsaCalc.ts`
+- [ ] **PEC (Pagamento Especial por Conta)**: o art.93.º CIRC foi **revogado** (Lei 12/2022) mas mantém-se em regime transitório. **Confirmar se ainda se aplica em 2026 e qual o limite máximo** — o código usa máx. 70 000 € (fórmula antiga); fontes de 2026 indicam máx. ~1 000 €. Mínimo 850 € parece manter-se. **Não alterar sem confirmação.**
+- [ ] **Taxas IRC 2026**: geral **19%** (baixou de 20%), PME **15%** nos primeiros 50k. Regionais: Madeira 13,3%/10,5%, Açores 15,2%/8,75%, interioridade 12,5% (PME), startup 12,5%. Confirmar todas.
+- [ ] **Derrama estadual** (art.87-A): 0/3/5/9% nos escalões 1,5M/7,5M/35M; Açores ×0,80. Confirmar.
+- [ ] **Pagamentos por Conta (PC)**: 2,5/4,5/8,5% (continental). Confirmar.
+- [ ] **Tributações autónomas** (art.88): escalões de viaturas (8/25/32%), elétrico 0% (10% acima de 62 500 €), e taxas de despesas (não documentadas 50/70%, representação 10%, ajudas de custo 5%, lucros distribuídos 23%, offshores/indemnizações/bónus 35%); agravamento ×1,1 com prejuízo. Confirmar.
+
 ## (a preencher à medida que auditamos as outras ferramentas)
 - [ ] SS Independente — base de incidência, percentagem, isenções.
 - [ ] IMT / Imposto do Selo — escalões e isenções.

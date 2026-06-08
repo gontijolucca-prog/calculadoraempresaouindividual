@@ -191,9 +191,12 @@ Nota: o simulador cobre Cat. A (trabalho) e Cat. B simplificada. Os anexos de ca
 - regime (select: geral/madeira/acores/interioridade/startup)
 - territorio (select: continente/madeira/acores)
 - volumeNegocios (currency)
+- isPME (boolean — taxa reduzida 15% nos primeiros 50k) ; isStartup (boolean — 12,5% em toda a matéria)
 - useRaiCalc (boolean — toggle manual vs SAC)
 - rai_lines: 60+ linhas contabilísticas (RAI 711–69)
 - c702_c707 (posição abertura), c709_c752 (acréscimos), c754_c775 (deduções)
+- taxaDerramaMunicipal (fração, ex. 0.015) ; viaturas[] (TA por viatura) ; campos ta_* (tributações autónomas)
+Método: Modelo 22 fiel — IRC 19% geral / 15% PME (regional p/ Madeira/Açores/interioridade/startup), derrama estadual por escalões (art.87-A), derrama municipal, tributações autónomas (art.88), PEC e PC estimados. ⚠ O PEC foi formalmente revogado (Lei 12/2022) mas mantém-se em regime transitório; a fórmula/limite de 2026 está por confirmar — tratar o valor do PEC como estimativa.
 
 ## Fluxos Comuns
 
