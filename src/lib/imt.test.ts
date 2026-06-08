@@ -1,5 +1,5 @@
 // Casos-teste golden do IMT + Imposto de Selo. Correr: npx tsx src/lib/imt.test.ts
-// Anti-regressão. Valores ⚠ a confirmar pela Sandrine (escalões CIMT 2026,
+// Anti-regressão. Valores ⚠ a confirmar por um contabilista (escalões CIMT 2026,
 // limites do IMT Jovem) — ver AUDITORIA-FISCAL-PENDENTE.md. Selo TGIS 1.1 = 0,8%.
 
 import { calcIMT } from './imt';

@@ -154,7 +154,7 @@ export function calcIMT(
       if (valor <= limiteReducaoJovem) {
         // CIMT Art. 11º-A: a redução parcial isenta a parte até ao limite de
         // isenção. O IMT devido = IMT_total(valor) − IMT_total(limiteIsenção)
-        // (IMT marginal sobre o excedente). ⚠ Fórmula a confirmar pela Sandrine.
+        // (IMT marginal sobre o excedente). ⚠ Fórmula a confirmar por um contabilista.
         const imtNormal = calcIMTProgressivo(valor, tabela);
         const imtLimite = calcIMTProgressivo(limiteIsencaoJovem, tabela);
         const imtJovem = Math.max(0, imtNormal - imtLimite);

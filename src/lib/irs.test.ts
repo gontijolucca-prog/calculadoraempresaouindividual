@@ -2,7 +2,7 @@
 // Protegem contra regressões ao adicionar anexos (E/F/G/C) na Fase 2.
 // Valores ESPERADOS calculados à mão a partir das regras 2026 no código
 // (escalões art. 68.º, dedução específica art. 25.º). NÃO são a liquidação
-// oficial da AT — a validação fiscal final fica para a Sandrine.
+// oficial da AT — a validação fiscal final fica internamente.
 
 import { simular, defaultIRSState, type IRSSim, type IRSState } from './irs';
 

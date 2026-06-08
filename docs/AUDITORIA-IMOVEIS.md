@@ -29,4 +29,4 @@ Guia de decisão **arrendar vs entrada em espécie**. Reutiliza o motor IMT (bom
 
 ## Fase 2 — a validar
 1. Confirmar se a entrada em espécie de habitação usa escalões de habitação no IMT.
-2. Confirmar os pressupostos (yield/depreciação/escritura) com a Sandrine.
+2. Confirmar os pressupostos (yield/depreciação/escritura) com um contabilista.

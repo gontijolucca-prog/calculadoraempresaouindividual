@@ -27,7 +27,7 @@ Modelo **sofisticado e bem documentado** — cita artigos do CIRS/CIRC e cobre c
 
 ## Fase 1 — implementado agora
 1. KB corrigido (chaves reais + método + limitações conhecidas).
-2. Sinalizações para a Sandrine (derrama, retenção, dividendos, PPC, limiar 15%).
+2. Sinalizações internamente (derrama, retenção, dividendos, PPC, limiar 15%).
 
 ## Fase 2 — a decidir/validar
 1. **Extrair o motor para `src/lib/fiscal.ts`** + casos golden (torna testável e protege as futuras mudanças).

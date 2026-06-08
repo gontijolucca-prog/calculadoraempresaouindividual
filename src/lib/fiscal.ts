@@ -9,7 +9,7 @@
  * 15%/19% (ou transparência fiscal art.6.º CIRC) + (novo) derrama municipal e a
  * hipótese de distribuição de dividendos (retenção 28%, CIRS art.71.º).
  *
- * ⚠ Valores fiscais a confirmar pela Sandrine — ver docs/AUDITORIA-FISCAL-PENDENTE.md.
+ * ⚠ Valores fiscais a confirmar por um contabilista — ver docs/AUDITORIA-FISCAL-PENDENTE.md.
  */
 import {
   calculateIRS, calcIRSJovem, calcDependentsDeduction,

@@ -7,7 +7,7 @@ O motor (`src/lib/irs.ts`) está bem construído e cita os artigos do CIRS. Mode
 
 ## Eixo 1 — Cobertura legal
 Modelado: Cat. A (trabalho dependente), Cat. B simplificada (4 coeficientes), deduções à coleta, IRS Jovem, mínimo de existência, solidariedade, benefício municipal por concelho.
-⚠ Todos os **valores numéricos de 2026** precisam de confirmação da Sandrine — ver `AUDITORIA-FISCAL-PENDENTE.md`.
+⚠ Todos os **valores numéricos de 2026** precisam de confirmação de um contabilista — ver `AUDITORIA-FISCAL-PENDENTE.md`.
 
 ## Eixo 2 — Completude (cobertura de TODOS os anexos do Modelo 3)
 
@@ -44,7 +44,7 @@ Pesquisa às fontes oficiais e da especialidade confirma que a lista acima é **
 Fontes: Portal das Finanças (Modelo 3 / anexos), ComparaJá ("Declaração IRS 2026: todos os anexos explicados"), OCC (anexo L / IFICI), Finbooks/ECO/Doutor Finanças (cripto-ativos 2026).
 
 ## Eixo 3 — Fidelidade
-Sem casos de referência oficiais ainda. Criados 5 casos golden hand-computed (regressão). Para certificar fidedignidade total à liquidação da AT, precisamos de casos validados pela Sandrine ou pelo simulador oficial.
+Sem casos de referência oficiais ainda. Criados 5 casos golden hand-computed (regressão). Para certificar fidedignidade total à liquidação da AT, precisamos de casos validados por um contabilista ou pelo simulador oficial.
 
 ## Eixo 4 — Minimalismo de inputs
 - O IRS é rendimento pessoal; o SAF-T (contabilidade da empresa) dá pouco.
@@ -68,4 +68,4 @@ Cobrir **todos** os anexos em falta, por ondas de prioridade:
 5. **Anexos D, I, J, L, SS** (transparência, herança indivisa, estrangeiro, RNH/IFICI, SS).
 6. Campo dependentes 4–6 anos.
 7. Pré-preenchimento a partir do Perfil do Cliente.
-8. Casos golden por anexo, validados pela Sandrine.
+8. Casos golden por anexo, validados por um contabilista.

@@ -3,7 +3,7 @@
  * pura (testável). IVA dedutível por motor/atividade (CIVA art.21), limites de
  * depreciação fiscal e Tributação Autónoma de ligeiros de passageiros (CIRC art.88).
  *
- * ⚠ Valores a confirmar pela Sandrine — ver docs/AUDITORIA-FISCAL-PENDENTE.md.
+ * ⚠ Valores a confirmar por um contabilista — ver docs/AUDITORIA-FISCAL-PENDENTE.md.
  */
 
 export interface ViaturaInput {

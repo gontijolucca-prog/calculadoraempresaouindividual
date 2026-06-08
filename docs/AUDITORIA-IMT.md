@@ -27,4 +27,4 @@ Motor `src/lib/imt.ts` — bem construído, função pura, escalões progressivo
 1. 7 casos-teste golden.
 2. Comentário do IMT Jovem corrigido.
 3. KB com método.
-4. Sinalizações para a Sandrine.
+4. Sinalizações internamente.

@@ -23,7 +23,10 @@ interface ChatMsg {
   replies?: string[];               // sugestões de próximo passo (botões clicáveis)
 }
 
-const STORE_KEY = 'estudo360:ai_chat_v1';
+// Chat só por sessão (sobrevive a refresh, limpa-se ao fechar o separador/browser);
+// nunca partilhado entre computadores. Sem memória permanente — é só um helper.
+const STORE_KEY = 'estudo360:ai_chat_session_v1';
+const LEGACY_STORE_KEY = 'estudo360:ai_chat_v1'; // localStorage antigo (persistente) — a apagar
 const AUTO_OPEN_KEY = 'estudo360:ai_autoopen_v1'; // 1x por sessão do browser
 const GREETING: ChatMsg = {
   role: 'assistant',
@@ -58,7 +61,9 @@ const VIEW_LABEL: Record<string, string> = {
 
 function loadChat(): ChatMsg[] {
   try {
-    const raw = localStorage.getItem(STORE_KEY);
+    // Limpa qualquer histórico persistente antigo (localStorage) — já não usamos memória permanente.
+    try { localStorage.removeItem(LEGACY_STORE_KEY); } catch { /* */ }
+    const raw = sessionStorage.getItem(STORE_KEY);
     if (raw) {
       const arr = JSON.parse(raw) as ChatMsg[];
       if (Array.isArray(arr) && arr.length) return arr;
@@ -88,7 +93,7 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(msgs.slice(-40))); } catch { /* */ }
+    try { sessionStorage.setItem(STORE_KEY, JSON.stringify(msgs.slice(-40))); } catch { /* */ }
   }, [msgs]);
 
   useEffect(() => {

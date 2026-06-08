@@ -2,7 +2,7 @@
 // Fixam o comportamento (anti-regressão). Valores capturados da execução atual.
 // Taxa 21,4%; base 70% (serviços) / 20% (bens); mínimo 20 €/mês; teto da base
 // = 12 × IAS (6 445,56 € em 2026); isenção total no 1.º ano. ⚠ Valores fiscais a
-// confirmar pela Sandrine — ver AUDITORIA-FISCAL-PENDENTE.md.
+// confirmar por um contabilista — ver AUDITORIA-FISCAL-PENDENTE.md.
 
 import { calcSelfSSContribution } from './pt2026';
 

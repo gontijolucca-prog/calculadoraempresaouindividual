@@ -53,7 +53,7 @@ const run = (p: Partial<SalarioParams> = {}) => calcSalarioLiquido({ ...base, ..
 }
 
 // ── Caso D: região REDUZ a retenção (mesmo fator do simulador de IRS) ──
-// Açores ×0,80 e Madeira ×0,70 sobre a coleta. ⚠ % a confirmar pela Sandrine.
+// Açores ×0,80 e Madeira ×0,70 sobre a coleta. ⚠ % a confirmar por um contabilista.
 {
   const continente = run({ localizacao: 'continente' });
   const madeira = run({ localizacao: 'madeira' });

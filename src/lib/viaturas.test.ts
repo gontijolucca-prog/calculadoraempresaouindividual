@@ -1,6 +1,6 @@
 // Casos-teste golden do motor de Viaturas. Correr: npx tsx src/lib/viaturas.test.ts
 // Anti-regressão do motor extraído + agravamento de TA (+10 p.p. com prejuízo).
-// ⚠ Valores a confirmar pela Sandrine — ver docs/AUDITORIA-FISCAL-PENDENTE.md.
+// ⚠ Valores a confirmar por um contabilista — ver docs/AUDITORIA-FISCAL-PENDENTE.md.
 
 import { calcViatura, type ViaturaInput } from './viaturas';
 

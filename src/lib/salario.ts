@@ -89,7 +89,7 @@ export function calcSalarioLiquido(p: SalarioParams): SalarioResult {
   //      (imposto = IRS(base/2) × 2, mesmo mecanismo do simulador de IRS). Casado
   //      2 titulares e solteiro retêm sobre o próprio rendimento (qf = 1).
   //      ⚠ Aproximação anual — as tabelas mensais oficiais de retenção por estado
-  //      civil ficam para validação da Sandrine.
+  //      civil ficam para validação de um contabilista.
   const fatorRegiao = REGIOES[p.localizacao] ?? 1;
   const qf = p.estadoCivil === 'casado_1titular' ? 2 : 1;
   const irsAnual = (base: number) => calculateIRS(Math.max(0, base) / qf) * qf * fatorRegiao;

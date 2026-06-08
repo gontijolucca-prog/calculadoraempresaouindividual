@@ -1,6 +1,6 @@
 # Auditoria Estudo 360 — Resumo da varredura (Fase 1)
 
-Data: 2026-06-08. Varrimento ferramenta-a-ferramenta nos 6 eixos (cobertura legal, completude, fidelidade, minimalismo, funcional/mobile, sincronia do AI Contabilista). **Zero números fiscais inventados — tudo o que é incerto está sinalizado em `AUDITORIA-FISCAL-PENDENTE.md` para a Sandrine.**
+Data: 2026-06-08. Varrimento ferramenta-a-ferramenta nos 6 eixos (cobertura legal, completude, fidelidade, minimalismo, funcional/mobile, sincronia do AI Contabilista). **Zero números fiscais inventados — tudo o que é incerto está sinalizado em `AUDITORIA-FISCAL-PENDENTE.md` internamente.**
 
 ## Estado por ferramenta (Fase 1 — tudo LIVE)
 
@@ -32,7 +32,7 @@ A KB do AI Contabilista (gerada por workflow) tinha **chaves de campo inventadas
 Tudo o resto (KB, testes, docs, flags) não mexeu em números.
 
 ## Fase 2 — IMPLEMENTADA e LIVE (08-jun, luz verde do Lucca)
-Construída com as taxas estabelecidas (nunca inventadas); as nuances continuam sinalizadas para a Sandrine validar/afinar depois.
+Construída com as taxas estabelecidas (nunca inventadas); as nuances continuam sinalizadas internamente validar/afinar depois.
 1. **Pré-preenchimento do Perfil** — IRS passa a arrancar com tributação conjunta (casados) + dependentes; restantes simuladores já o faziam.
 2. **Salário — estado civil** ligado (quociente conjugal para casado 1 titular).
 3. **Fiscal — motor extraído** para `lib/fiscal.ts` (testável) + **derrama municipal** (campo) + **hipótese de dividendos** (−28%).
@@ -40,10 +40,10 @@ Construída com as taxas estabelecidas (nunca inventadas); as nuances continuam 
 5. **IRS — anexos E/F/G**: capitais/prediais 28% ou englobamento; mais-valias mobiliárias 28% / imobiliárias 50% englobado.
 Testes golden agora em 8 suites (irs, salario, selfss, previsa, imt, honorarios, fiscal, viaturas), todas verdes.
 
-### Ainda por fazer (precisa da Sandrine ou de ação do Lucca)
+### Ainda por fazer (precisa de um contabilista ou de ação do Lucca)
 - **Regras Firestore do `ai_suggestions`**: já estão corretas no repo (`firestore.rules`), mas a **publicação na base de dados live tem de ser feita pelo Lucca** (Firebase Console ou `firebase deploy --only firestore:rules`) — é alteração de controlo de acesso, não a faço sozinho.
 - **Reconciliar divergência git** local↔remoto (cosmética; o push via API cria commits paralelos com conteúdo idêntico).
-- **Nuances fiscais** dos anexos (rendas longas, reinvestimento HPP, anexos C/H-PPR/donativos) e a **discrepância TA Previsa (×1,1) vs Viaturas (+10 p.p.)** — reconciliar com a Sandrine.
+- **Nuances fiscais** dos anexos (rendas longas, reinvestimento HPP, anexos C/H-PPR/donativos) e a **discrepância TA Previsa (×1,1) vs Viaturas (+10 p.p.)** — reconciliar com um contabilista.
 
 ## Backlog original Fase 2 (mantido como referência; o essencial acima já foi feito)
 - **IRS:** anexos E/F/G/C/H (PPR/donativos), englobamento, pré-preenchimento.

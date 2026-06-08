@@ -2,7 +2,7 @@
 // Cobrem as partes ESTÁVEIS (coleta IRC PME/geral, derrama estadual por escalões,
 // tributação autónoma de viaturas, matéria coletável). NÃO cobrem o PEC, cuja
 // fórmula/limite em 2026 está por confirmar (ver AUDITORIA-FISCAL-PENDENTE.md).
-// Valores ⚠ a confirmar pela Sandrine; isto é anti-regressão, não a liquidação da AT.
+// Valores ⚠ a confirmar por um contabilista; isto é anti-regressão, não a liquidação da AT.
 
 import { calculate, calcTAVeiculo, calcDerramaEstadual } from './previsaCalc';
 import { defaultPreviSaState } from '../previSaState';

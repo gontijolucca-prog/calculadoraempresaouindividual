@@ -1,7 +1,7 @@
 // Casos-teste golden do comparador Fiscal ENI vs Lda. Correr: npx tsx src/lib/fiscal.test.ts
 // Fixam o comportamento do motor extraído (anti-regressão) + as adições da Fase 2
 // (derrama municipal e hipótese de dividendos). ⚠ Valores fiscais a confirmar pela
-// Sandrine — ver docs/AUDITORIA-FISCAL-PENDENTE.md.
+// um contabilista — ver docs/AUDITORIA-FISCAL-PENDENTE.md.
 
 import { compararEniLda, type FiscalInput } from './fiscal';
 

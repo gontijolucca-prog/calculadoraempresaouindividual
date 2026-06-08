@@ -1,4 +1,4 @@
-# Sinalizações fiscais a confirmar (Sandrine)
+# Sinalizações fiscais a confirmar (a confirmar)
 
 Lista de valores e regras que o simulador usa e que **precisam de confirmação profissional** antes de os afirmarmos como certos. Nenhum destes foi inventado pela auditoria — vêm do código existente; só não temos fonte oficial confirmada. Marcar ✅ quando validado.
 
@@ -56,7 +56,7 @@ Lista de valores e regras que o simulador usa e que **precisam de confirmação 
 - [ ] **IVA dedutível por motor/atividade** (CIVA art.21): elétrico ≤62,5k 100%; PHEV compliant ≤50k 100%; GPL/GNV ≤37,5k 50% (passageiros); comercial diesel 50%, restantes 100%; combustível gasóleo/GPL/GNV 50%, elétrico 100%, gasolina 0%. Confirmar.
 - [ ] **Limites de depreciação fiscal**: 25k / 37,5k / 50k / 62,5k. Confirmar (Portaria).
 - [ ] **TA ligeiros de passageiros** (CIRC art.88): 8/25/32% (conv), 2,5/7,5/15% (PHEV), 0% e 10%>62,5k (elétrico); escalões 37,5k/45k. Confirmar.
-- [x] **Agravamento TA com prejuízo** — IMPLEMENTADO no simulador de Viaturas como **+10 p.p.** (CIRC art.88 n.14). ⚠ **DISCREPÂNCIA**: o Previsa aplica `×1,1` (10% sobre o valor) em vez de +10 p.p. à taxa. Reconciliar com a Sandrine qual é o correto e alinhar os dois (não alterei o Previsa, que é o motor validado).
+- [x] **Agravamento TA com prejuízo** — IMPLEMENTADO no simulador de Viaturas como **+10 p.p.** (CIRC art.88 n.14). ⚠ **DISCREPÂNCIA**: o Previsa aplica `×1,1` (10% sobre o valor) em vez de +10 p.p. à taxa. Reconciliar com um contabilista qual é o correto e alinhar os dois (não alterei o Previsa, que é o motor validado).
 
 ## Tickets / Subsídio de refeição (2026) — `src/TicketSimulator.tsx` + `pt2026.ts`
 - [ ] **Limites diários** cartão 10,46 € / dinheiro 6,15 € (já no bloco Salário). Confirmar.
@@ -70,10 +70,10 @@ Lista de valores e regras que o simulador usa e que **precisam de confirmação 
 
 ## IRS anexos E/F/G (2026) — IMPLEMENTADOS na Fase 2 — `src/lib/irs.ts`
 - [x] **Capitais (E)** 28% liberatória ou englobamento; **Prediais (F)** 28% ou englobamento; **Mais-valias mobiliárias (G)** 28%; **Mais-valias imobiliárias (G)** 50% do ganho englobado. Taxas-base estabelecidas.
-- [ ] **Nuances a validar/implementar**: taxas reduzidas dos prediais por duração do contrato (25%/15%/10%); exclusão de mais-valias por reinvestimento na HPP; 50% dos dividendos no englobamento (art.40-A); anexos **C** (contabilidade organizada), **H** (PPR/donativos) e restantes. Confirmar com a Sandrine.
+- [ ] **Nuances a validar/implementar**: taxas reduzidas dos prediais por duração do contrato (25%/15%/10%); exclusão de mais-valias por reinvestimento na HPP; 50% dos dividendos no englobamento (art.40-A); anexos **C** (contabilidade organizada), **H** (PPR/donativos) e restantes. Confirmar com um contabilista.
 
-## IRS Anexo B / Categoria B (2026) — IMPLEMENTADO 08-jun (valores-base; a Sandrine valida)
-Confirmação ferramenta-a-ferramenta do Anexo B (rendimentos empresariais e profissionais). Antes, o simulador só fazia `rendimento × coeficiente`. **Agora o motor (`src/lib/irs.ts`) modela o Anexo B a sério** — com os pontos abaixo implementados com **valores-base estabelecidos** e **casos-teste golden** (irs.test.ts J–N). **As taxas/limiares mudam resultados e continuam a precisar do aval da Sandrine.**
+## IRS Anexo B / Categoria B (2026) — IMPLEMENTADO 08-jun (valores-base; a um contabilista valida)
+Confirmação ferramenta-a-ferramenta do Anexo B (rendimentos empresariais e profissionais). Antes, o simulador só fazia `rendimento × coeficiente`. **Agora o motor (`src/lib/irs.ts`) modela o Anexo B a sério** — com os pontos abaixo implementados com **valores-base estabelecidos** e **casos-teste golden** (irs.test.ts J–N). **As taxas/limiares mudam resultados e continuam a precisar do aval de um contabilista.**
 
 **Perguntas urgentes (valores-base já no motor — confirmar/afinar):**
 - [x] **Regra dos 15% (art. 31.º n.13/14 CIRS):** IMPLEMENTADA igual ao motor Fiscal (`fiscal.ts`): para os coeficientes 0,75/0,35 e rendimento bruto > 27 360 €, exige-se justificar 15% do rendimento; justificado = despesas documentadas (`despesasCatB`) + dedução específica automática (4 587,09 €); a parte não justificada **acresce** ao coletável. **Confirmar:** (a) a fórmula exata 2026; (b) o **limiar** (2025 = **27 360 €** — mantém-se?); (c) que despesas contam como justificação.
@@ -90,7 +90,7 @@ Confirmação ferramenta-a-ferramenta do Anexo B (rendimentos empresariais e pro
 
 Legenda: [x] implementado com valor-base (a validar) · [~] decisão tomada (não modelar já) · [ ] por fazer.
 
-**Sem fonte confirmada para 2026:** todos os coeficientes e regras acima foram dados pela auditoria como **INCERTOS** (só o Anexo A — trabalho dependente — ficou com fonte confirmada). Não afirmar nenhum como final sem o aval da Sandrine.
+**Sem fonte confirmada para 2026:** todos os coeficientes e regras acima foram dados pela auditoria como **INCERTOS** (só o Anexo A — trabalho dependente — ficou com fonte confirmada). Não afirmar nenhum como final sem o aval de um contabilista.
 
 ## Cobertura por anexo do Modelo 3 (08-jun) — para referência
 | Anexo | Estado | Falta (resumo) |

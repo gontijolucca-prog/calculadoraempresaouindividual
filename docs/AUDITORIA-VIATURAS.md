@@ -26,9 +26,9 @@ Modelo bom e coerente: IVA dedutível por tipo de motor/atividade (CIVA art.21),
 
 ## Fase 1 — implementado agora (sem mudar cálculo)
 1. KB com método.
-2. Sinalizações para a Sandrine.
+2. Sinalizações internamente.
 
 ## Fase 2 — a fazer/validar
 1. Extrair o motor para `src/lib/viaturas.ts` + casos golden.
 2. Modelar o agravamento +10 p.p. da TA com prejuízo (opcional, com input de prejuízo).
-3. Confirmar valores com a Sandrine.
+3. Confirmar valores com um contabilista.

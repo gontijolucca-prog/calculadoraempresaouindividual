@@ -33,10 +33,10 @@ Data: 2026-06-08 · Estado: Fase 1 implementada (teto 12×IAS + testes + KB); re
 2. Casos-teste golden (12).
 3. UI: teto nas regras + indicador quando limitado.
 4. KB corrigido (mensal, não anual) + método.
-5. Sinalizações para a Sandrine.
+5. Sinalizações internamente.
 
 ## Fase 2 — a decidir/validar
 1. Ajuste da base ±25%, acumulação TCO+TI, entidade contratante.
 2. Remover `regime` vestigial.
 3. Pré-preenchimento do Perfil.
-4. Confirmar valores com a Sandrine.
+4. Confirmar valores com um contabilista.

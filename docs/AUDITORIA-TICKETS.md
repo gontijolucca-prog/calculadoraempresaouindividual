@@ -25,7 +25,7 @@ Cobre subsídio de refeição (cartão/dinheiro), creches/infância, educação,
 
 ## Fase 1 — implementado agora (sem mudar cálculo)
 1. KB com método.
-2. Sinalizações para a Sandrine (limites, fator IRC 60%, majoração, IVA Car).
+2. Sinalizações internamente (limites, fator IRC 60%, majoração, IVA Car).
 
 ## Fase 2 — a validar
 1. Confirmar o fator de dedutibilidade IRC do subsídio de refeição.

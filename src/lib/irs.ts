@@ -39,7 +39,7 @@ export const ESCALOES_DEMO = ESCALOES_OFICIAL_2026;
 //   Açores — redução de 20% (Despacho 1179/2026; mesma proporção em capitais 22,4% vs 28%).
 // O multiplicador é (1 − redução): mais baixo = mais favorável ao residente.
 // Exportado para o simulador de Salário Líquido reutilizar exatamente o mesmo
-// fator (coerência entre ferramentas). ⚠ Percentagens a confirmar pela Sandrine.
+// fator (coerência entre ferramentas). ⚠ Percentagens a confirmar por um contabilista.
 export const REGIOES: Record<string, number> = { continente: 1.0, acores: 0.80, madeira: 0.70 };
 
 // Mínimo de existência 2026 — 14 × SMN (art. 70.º CIRS, OE 2026).
@@ -53,7 +53,7 @@ const LIMITE_ISENCAO_IRS_JOVEM = 55 * IAS_2026; // 29 542,15 €
 // despesas/encargos; a parte não justificada acresce ao rendimento coletável.
 // Espelha src/lib/fiscal.ts (MESMO valor e MESMA interpretação — manter alinhados).
 // ⚠ Valor 2025 (27.360 €) mantido — a Portaria de atualização 2026 ainda não saiu;
-// confirmar com a Sandrine. Ver docs/AUDITORIA-FISCAL-PENDENTE.md.
+// confirmar com um contabilista. Ver docs/AUDITORIA-FISCAL-PENDENTE.md.
 export const LIMIAR_JUSTIFICACAO_15PCT = 27360;
 
 // Fração da coleta devolvida pelo município (0 a 5%) — Art.º 26.º Lei das
@@ -123,7 +123,7 @@ export interface Despesas {
 /** Anexos E/F/G — rendimentos com tributação autónoma (liberatória) ou englobamento.
  *  Taxas estabelecidas: capitais 28%, prediais 28%, mais-valias mobiliárias 28%,
  *  mais-valias imobiliárias 50% do ganho englobado (residentes).
- *  ⚠ Nuances por confirmar com a Sandrine (taxas reduzidas dos prediais por duração
+ *  ⚠ Nuances por confirmar com um contabilista (taxas reduzidas dos prediais por duração
  *  do contrato; exclusão de mais-valias por reinvestimento na HPP; 50% dos dividendos
  *  no englobamento). Ver docs/AUDITORIA-FISCAL-PENDENTE.md. */
 export interface RendimentosAutonomos {
@@ -323,7 +323,7 @@ export function simular(sim: IRSSim, opts: { tabela?: Tabela } = {}): IRSResulta
       // Regra dos 15% (art. 31.º n.13/14) — só nos coeficientes 0,75 e 0,35.
       // Espelha src/lib/fiscal.ts: justificação exigida = 15% do rendimento bruto;
       // justificado = despesas documentadas + dedução específica automática (4 587,09 €);
-      // a parte não justificada acresce ao coletável. ⚠ Limiar/mecânica por validar (Sandrine).
+      // a parte não justificada acresce ao coletável. ⚠ Limiar/mecânica por validar (a confirmar).
       if ((coefB === 0.75 || coefB === 0.35) && rb > LIMIAR_JUSTIFICACAO_15PCT) {
         const exigido = rb * 0.15;
         const justificado = (+p.despesasCatB || 0) + DED_ESPECIFICA_CAT_A;
@@ -348,7 +348,7 @@ export function simular(sim: IRSSim, opts: { tabela?: Tabela } = {}): IRSResulta
   }
 
   // Anexos E/F/G — englobamento e tributação autónoma (28% / 50%).
-  // ⚠ Taxas estabelecidas; nuances por confirmar com a Sandrine.
+  // ⚠ Taxas estabelecidas; nuances por confirmar com um contabilista.
   const ra = sim.rendimentosAutonomos;
   let impostoAutonomo = 0;
   if (ra) {

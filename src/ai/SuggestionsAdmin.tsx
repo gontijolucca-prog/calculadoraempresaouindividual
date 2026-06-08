@@ -4,7 +4,7 @@ import { listSuggestions, setSuggestionStatus, type Suggestion } from './suggest
 
 // Vista de administração ESCONDIDA das sugestões do AI Contabilista.
 // Acede-se via #ai-sugestoes no URL (ex.: estudo360.pt/#ai-sugestoes). Não está
-// na navegação — é para a equipa de dev / Sandrine verem o que o bot recolheu.
+// na navegação — é para a equipa de dev / um contabilista verem o que o bot recolheu.
 
 const HASH = '#ai-sugestoes';
 
