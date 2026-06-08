@@ -12,7 +12,6 @@ import {
   type SujeitoPassivo,
   type Cenario,
   type Regiao,
-  type Tabela,
 } from './lib/irs';
 
 interface Props {
@@ -109,8 +108,8 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
               <label className={labelCls}>Região fiscal</label>
               <select className={inputCls} value={s.regiao} onChange={(e) => set({ regiao: e.target.value as Regiao })}>
                 <option value="continente">Continente</option>
-                <option value="acores">Açores (−30%)</option>
-                <option value="madeira">Madeira (−23,5%)</option>
+                <option value="acores">Açores</option>
+                <option value="madeira">Madeira</option>
               </select>
             </div>
           </div>
@@ -158,7 +157,7 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
                   <input type="number" step="0.01" className={inputCls} value={p.rendTrabalho || ''} onChange={(e) => setPessoa(i, { rendTrabalho: parseFloat(e.target.value) || 0 })} />
                 </div>
                 <div>
-                  <label className={labelCls}>Contribuições obrig. (€) <Tip>Descontos obrigatórios para a Segurança Social. Se forem superiores a 4 462,15 €, substituem a dedução automática.</Tip></label>
+                  <label className={labelCls}>Contribuições obrig. (€) <Tip>Descontos obrigatórios para a Segurança Social. Se forem superiores a 4 587,09 €, substituem a dedução automática.</Tip></label>
                   <input type="number" step="0.01" className={inputCls} value={p.contribuicoes || ''} onChange={(e) => setPessoa(i, { contribuicoes: parseFloat(e.target.value) || 0 })} />
                 </div>
                 <div>
@@ -198,9 +197,9 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
               ['gerais', 'Despesas gerais (€)', '35%'],
               ['saude', 'Saúde (€)', '15% até 1 000 €'],
               ['educacao', 'Educação (€)', '30% até 800 €'],
-              ['habitacao', 'Habitação (€)', '15% até 700 €'],
+              ['habitacao', 'Habitação — rendas HPP (€)', '15% até 900 €'],
               ['lares', 'Lares (€)', '25% até 403,75 €'],
-              ['pensoes', 'PPR / pensões (€)', '20% até 400 €'],
+              ['pensoes', 'Pensões de alimentos (€)', '20% até 419,22 €'],
             ] as const).map(([k, lbl, help]) => (
               <div key={k}>
                 <label className={labelCls}>{lbl}</label>
@@ -222,13 +221,6 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
             <div>
               <label className={labelCls}>Perdas a recuperar (€)</label>
               <input type="number" step="0.01" className={inputCls} value={s.perdas || ''} onChange={(e) => set({ perdas: parseFloat(e.target.value) || 0 })} />
-            </div>
-            <div>
-              <label className={labelCls}>Tabela de escalões <Tip>Oficial 2025 (Lei 55-A/2025, taxas reduzidas) ou Demo (compatível com simuladores profissionais de referência).</Tip></label>
-              <select className={inputCls} value={s.tabela} onChange={(e) => set({ tabela: e.target.value as Tabela })}>
-                <option value="oficial2025">Oficial 2025</option>
-                <option value="demo">Demo</option>
-              </select>
             </div>
             <div>
               <label className={labelCls}>Override benefício municipal</label>
@@ -350,7 +342,7 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
                 </div>
                 <div>
                   <label className="flex items-center justify-between text-[11px] font-[600] text-[#64748B] mb-1">
-                    <span>PPR adicional</span>
+                    <span>Pensões de alimentos adic.</span>
                     <span className="font-[700] text-[#0F172A]">+{ptEur0(s.wifPpr)}</span>
                   </label>
                   <input type="range" min={0} max={2000} step={100} value={s.wifPpr} onChange={(e) => set({ wifPpr: +e.target.value })} className="w-full accent-[#0B1D2D]" />
@@ -375,7 +367,7 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
         </div>
 
         <p className="text-[11px] font-[500] text-[#94A3B8] leading-relaxed px-1">
-          Estimativa segundo o CIRS 2025 — não substitui a liquidação oficial da Autoridade Tributária.
+          Estimativa segundo o CIRS 2026 — não substitui a liquidação oficial da Autoridade Tributária.
         </p>
       </div>
     </div>

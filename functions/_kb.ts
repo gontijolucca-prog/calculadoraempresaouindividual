@@ -170,13 +170,16 @@ Operacional:
 - idade (number)
 - taxaSeguroTrabalho (number, %)
 
-### irs (Simulador de IRS)
-- cenario (select: individual/joint — agregado familiar)
-- region (select: continente/madeira/acores)
-- municipio (select, 50+ concelhos)
-- pessoa1: salarioAnual, rendCategB, actividade, nrDependentes, irsJovem, anosAtividade, idade (all per pessoa)
-- pessoa2: idem (se joint)
-- deducoes: saude, educacao, habitacao, idosos, outras, pensoes (currency)
+### irs (Simulador de IRS — Modelo 3)
+Campos de topo (preenchíveis pelo bot):
+- cenario (select: individual/conjunto — tributação separada ou conjunta)
+- regiao (select: continente/acores/madeira)
+- concelho (text — define o benefício municipal)
+- dependentes (number) ; dep0a3 (number — dos quais com idade ate 3 anos)
+- pagamentosConta (currency) ; perdas (currency) ; beneficioMunicipal (number, fracao 0 a 0.05 — override)
+- despesas.saude, despesas.educacao, despesas.habitacao, despesas.lares, despesas.gerais, despesas.pensoes (currency)
+Sujeitos passivos (agregado — A e B): rendimento de trabalho, contribuicoes, retencao, rendimento Cat. B (atividade) + coeficiente, e ano de IRS Jovem. Estes campos por sujeito passivo preenchem-se melhor diretamente no formulario; o bot deve encaminhar para la.
+Nota: o simulador cobre Cat. A (trabalho) e Cat. B simplificada. Os anexos de capitais (E), prediais (F), mais-valias (G) e contabilidade organizada (C) estao em desenvolvimento (Fase 2) — se o utilizador precisar deles, regista uma sugestao.
 
 ### previsa (Simulador Previsa/IRC)
 - nif (text)
