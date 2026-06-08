@@ -20,6 +20,7 @@ interface ChatMsg {
   notes?: string[];                 // ações auto-aplicadas (navegação/sugestão)
   pendingFill?: { target: string; fields: FillField[] } | null;
   fillApplied?: boolean;
+  replies?: string[];               // sugestões de próximo passo (botões clicáveis)
 }
 
 const STORE_KEY = 'estudo360:ai_chat_v1';
@@ -133,7 +134,8 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
       const { text: visible, actions } = parseReply(reply);
 
       const fillAction = actions.find((a) => a.type === 'fill') as Extract<BotAction, { type: 'fill' }> | undefined;
-      const autoActions = actions.filter((a) => a.type !== 'fill');
+      const repliesAction = actions.find((a) => a.type === 'replies') as Extract<BotAction, { type: 'replies' }> | undefined;
+      const autoActions = actions.filter((a) => a.type !== 'fill' && a.type !== 'replies');
       const notes = await applyAutoActions(autoActions);
 
       setMsgs((prev) => [...prev, {
@@ -141,6 +143,7 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
         content: visible,
         notes: notes.length ? notes : undefined,
         pendingFill: fillAction ? { target: fillAction.target, fields: fillAction.fields } : null,
+        replies: repliesAction?.options,
       }]);
     } catch {
       setMsgs((prev) => [...prev, { role: 'assistant', content: 'Tive um problema de ligação. Verifica a internet e tenta de novo.' }]);
@@ -233,7 +236,7 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
             {/* Mensagens */}
             <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-[#F5F7FA]">
               {msgs.map((m, i) => (
-                <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
+                <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex flex-col items-start gap-1.5'}>
                   <div className={
                     m.role === 'user'
                       ? 'max-w-[85%] rounded-[16px] rounded-br-[5px] px-3.5 py-2.5 text-[13.5px] font-[500] leading-relaxed text-white'
@@ -281,6 +284,18 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
                       </div>
                     )}
                   </div>
+
+                  {/* Sugestões de próximo passo (só na última mensagem do bot; nunca enquanto há um preenchimento por confirmar) */}
+                  {m.role === 'assistant' && m.replies?.length && i === msgs.length - 1 && !busy && !m.pendingFill ? (
+                    <div className="flex flex-wrap gap-1.5 pl-0.5">
+                      {m.replies.map((opt, k) => (
+                        <button key={k} type="button" onClick={() => send(opt)} aria-label={`Sugestão: ${opt}`}
+                          className="text-left text-[12px] font-[700] px-3 py-1.5 rounded-full bg-white border border-[#0677FF]/30 text-[#0677FF] max-w-full whitespace-normal break-words hover:bg-[#0677FF] hover:text-white hover:border-[#0677FF] active:scale-[0.97] transition-all">
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               ))}
 

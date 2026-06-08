@@ -16,7 +16,8 @@ export type BotAction =
   | { type: 'navigate'; view: ViewId }
   | { type: 'setMode'; mode: 'empresa' | 'novo-cliente' }
   | { type: 'fill'; target: string; fields: FillField[] }
-  | { type: 'suggestion'; title: string; detail: string; area?: string };
+  | { type: 'suggestion'; title: string; detail: string; area?: string }
+  | { type: 'replies'; options: string[] };
 
 const VIEW_IDS = new Set<string>([
   'empresas', 'profile', 'tax', 'vehicle', 'ticket', 'selfss', 'diagnostico',
@@ -26,7 +27,7 @@ const VIEW_IDS = new Set<string>([
 
 const FILL_TARGETS = new Set<string>([
   'profile', 'tax', 'vehicle', 'ticket', 'selfss', 'diagnostico', 'imoveis',
-  'imt', 'salario', 'irs',
+  'imt', 'salario', 'irs', 'previsa',
 ]);
 
 const OPEN = '<<<ACTIONS';
@@ -58,6 +59,12 @@ function sanitizeActions(parsed: unknown): BotAction[] {
         detail: String((a as any).detail ?? '').slice(0, 1500),
         area: typeof (a as any).area === 'string' ? (a as any).area.slice(0, 120) : undefined,
       });
+    } else if (t === 'replies' && Array.isArray((a as any).options)) {
+      const options = ((a as any).options as unknown[])
+        .filter((o): o is string => typeof o === 'string' && o.trim().length > 0)
+        .map((o) => o.trim().slice(0, 80))
+        .slice(0, 4);
+      if (options.length) out.push({ type: 'replies', options });
     }
   }
   return out;

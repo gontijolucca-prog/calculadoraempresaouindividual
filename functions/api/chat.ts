@@ -21,7 +21,7 @@ type Msg = { role: 'user' | 'assistant' | 'system'; content: string };
 const MAX_MESSAGES = 24;        // turnos de conversa aceites
 const MAX_CHARS_PER_MSG = 4000; // por mensagem
 const MAX_CONTEXT_CHARS = 6000; // contexto-app anonimizado
-const MAX_OUTPUT_TOKENS = 900;
+const MAX_OUTPUT_TOKENS = 1100; // texto curto + bloco de ações/replies sem cortar a meio
 
 // Origens autorizadas a usar o proxy.
 const ALLOWED_HOST_SUFFIXES = [

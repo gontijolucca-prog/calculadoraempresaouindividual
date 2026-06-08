@@ -937,7 +937,7 @@ function AppContent() {
   const fillSimSetters: Record<string, React.Dispatch<React.SetStateAction<any>>> = {
     tax: setTaxState, vehicle: setVehicleState, ticket: setTicketState, selfss: setSSState,
     diagnostico: setDiagnosticoState, imoveis: setImoveisState, imt: setImtState,
-    salario: setSalarioState, irs: setIrsState,
+    salario: setSalarioState, irs: setIrsState, previsa: setPreviSaState,
   };
   const botBridge: BotBridge = {
     currentUser: officeSettings.nome?.trim() || undefined,
