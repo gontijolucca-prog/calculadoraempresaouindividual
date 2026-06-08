@@ -52,6 +52,11 @@ Lista de valores e regras que o simulador usa e que **precisam de confirmação 
 - [ ] **Imposto de Selo 0,8%** (TGIS 1.1) — confirmar.
 - [ ] **Multiplicador regional 1,25** (Madeira/Açores) — confirmar.
 
+## Viaturas (2026) — `src/VehicleSimulator.tsx`
+- [ ] **IVA dedutível por motor/atividade** (CIVA art.21): elétrico ≤62,5k 100%; PHEV compliant ≤50k 100%; GPL/GNV ≤37,5k 50% (passageiros); comercial diesel 50%, restantes 100%; combustível gasóleo/GPL/GNV 50%, elétrico 100%, gasolina 0%. Confirmar.
+- [ ] **Limites de depreciação fiscal**: 25k / 37,5k / 50k / 62,5k. Confirmar (Portaria).
+- [ ] **TA ligeiros de passageiros** (CIRC art.88): 8/25/32% (conv), 2,5/7,5/15% (PHEV), 0% e 10%>62,5k (elétrico); escalões 37,5k/45k. Confirmar. **Não modela o agravamento +10 p.p. com prejuízo.**
+
 ## (a preencher à medida que auditamos as outras ferramentas)
 - [ ] SS Independente — base de incidência, percentagem, isenções.
 - [ ] IMT / Imposto do Selo — escalões e isenções.
