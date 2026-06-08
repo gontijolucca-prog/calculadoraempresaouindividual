@@ -63,6 +63,10 @@ Lista de valores e regras que o simulador usa e que **precisam de confirmação 
 - [ ] **Majoração IRC 40%** para creches/infância (art.43 n.9). Confirmar.
 - [ ] **IVA Ticket Car** 50% (misto) / 100% (comercial). Confirmar.
 
+## Imóveis na Empresa (2026) — `src/ImoveisEmpresa.tsx`
+- [ ] **IMT na entrada em espécie usa sempre "urbano outros" (6,5%)**, independente do `tipoUso`. Confirmar se habitação deveria usar os escalões de habitação.
+- [ ] Pressupostos (estimativas, não lei): **yield 4%/ano**, **depreciação 2%/ano**, **escritura ~0,7%**. Confirmar se servem como defaults.
+
 ## (a preencher à medida que auditamos as outras ferramentas)
 - [ ] SS Independente — base de incidência, percentagem, isenções.
 - [ ] IMT / Imposto do Selo — escalões e isenções.

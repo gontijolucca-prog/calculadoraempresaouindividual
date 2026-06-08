@@ -145,6 +145,7 @@ Financeiro:
 
 Operacional:
 - processosDefinidos, softwareGestao, equipaAutonoma, baixaDependenciaGerente, controlFinanceiro (boolean)
+Método: 5 pilares pontuados 1-5 → score global = média. Autonomia (capitais próprios/ativo ≥40%/25%; endividamento ≤50%/75%). Tesouraria (liquidez corrente ≥1,5/1; meses de disponibilidades ≥6/3). Rentabilidade (margem líquida ≥15%/5%; EBITDA). Dependência (concentração no maior cliente ≤20%/40%; financiamento externo ≤30%/60%). Operacional (nº de boas práticas). Não é cálculo fiscal — é diagnóstico de gestão.
 
 ### imoveis (Imóveis na Empresa)
 - valorImovel (currency)
@@ -153,6 +154,7 @@ Operacional:
 - horizonteInvestimento (select: curto/longo)
 - precisaLiquidezMensal, precisaReforcoCE (boolean)
 - tipoAtividade (select: geral/turismo/alojamento_local/agricola)
+Método: guia de decisão arrendar vs entrada em espécie. Calcula IMT (reutiliza o motor IMT, tipo "urbano outros" 6,5%) + Imposto de Selo 0,8% + escritura (~0,7%) na entrada em espécie; pressupõe yield de 4%/ano e depreciação de 2%/ano (estimativas, não lei). Score de recomendação por horizonte/liquidez/reforço de capitais próprios. É orientação, não cálculo fiscal definitivo.
 
 ### imt (Simulador IMT)
 - valor (currency, valor aquisição)
