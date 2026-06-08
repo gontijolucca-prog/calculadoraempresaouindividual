@@ -125,6 +125,7 @@ Método: IVA dedutível na aquisição/manutenção/combustível por tipo de mot
 - months (number)
 - valorAnualPorPessoa (currency)
 - tipoVeiculo (select: passageiros/misto/comercial, se Ticket Car)
+Método: subsídio de refeição isento de IRS/SS até ao limite diário (cartão 10,46 € / dinheiro 6,15 €); poupança vs salário equivalente (SS patronal 23,75% + trabalhador 11%); majoração IRC 40% para creches/infância; Ticket Car recupera IVA (50% misto / 100% comercial). O fator de dedutibilidade IRC do subsídio de refeição no código (60%) está por confirmar.
 
 ### selfss (SS de Independente)
 - income (currency, rendimento MENSAL — NÃO anual; o motor faz mensal×12 = anual)

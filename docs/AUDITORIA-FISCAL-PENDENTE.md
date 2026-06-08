@@ -57,6 +57,12 @@ Lista de valores e regras que o simulador usa e que **precisam de confirmação 
 - [ ] **Limites de depreciação fiscal**: 25k / 37,5k / 50k / 62,5k. Confirmar (Portaria).
 - [ ] **TA ligeiros de passageiros** (CIRC art.88): 8/25/32% (conv), 2,5/7,5/15% (PHEV), 0% e 10%>62,5k (elétrico); escalões 37,5k/45k. Confirmar. **Não modela o agravamento +10 p.p. com prejuízo.**
 
+## Tickets / Subsídio de refeição (2026) — `src/TicketSimulator.tsx` + `pt2026.ts`
+- [ ] **Limites diários** cartão 10,46 € / dinheiro 6,15 € (já no bloco Salário). Confirmar.
+- [ ] **Fator de dedutibilidade IRC do subsídio de refeição = 60%** (`TICKET_IRC_FACTOR.restaurante`) — parece subavaliar (é gasto com pessoal, ~100% dedutível). Confirmar.
+- [ ] **Majoração IRC 40%** para creches/infância (art.43 n.9). Confirmar.
+- [ ] **IVA Ticket Car** 50% (misto) / 100% (comercial). Confirmar.
+
 ## (a preencher à medida que auditamos as outras ferramentas)
 - [ ] SS Independente — base de incidência, percentagem, isenções.
 - [ ] IMT / Imposto do Selo — escalões e isenções.
