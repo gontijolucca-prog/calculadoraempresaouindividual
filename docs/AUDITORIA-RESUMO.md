@@ -31,7 +31,21 @@ A KB do AI Contabilista (gerada por workflow) tinha **chaves de campo inventadas
 2. **Salário — região (Açores 0,80 / Madeira 0,70)** passa a reduzir a retenção.
 Tudo o resto (KB, testes, docs, flags) não mexeu em números.
 
-## Backlog Fase 2 (precisa de validação da Sandrine ou refactor)
+## Fase 2 — IMPLEMENTADA e LIVE (08-jun, luz verde do Lucca)
+Construída com as taxas estabelecidas (nunca inventadas); as nuances continuam sinalizadas para a Sandrine validar/afinar depois.
+1. **Pré-preenchimento do Perfil** — IRS passa a arrancar com tributação conjunta (casados) + dependentes; restantes simuladores já o faziam.
+2. **Salário — estado civil** ligado (quociente conjugal para casado 1 titular).
+3. **Fiscal — motor extraído** para `lib/fiscal.ts` (testável) + **derrama municipal** (campo) + **hipótese de dividendos** (−28%).
+4. **Viaturas — motor extraído** para `lib/viaturas.ts` + **agravamento TA** (+10 p.p. com prejuízo).
+5. **IRS — anexos E/F/G**: capitais/prediais 28% ou englobamento; mais-valias mobiliárias 28% / imobiliárias 50% englobado.
+Testes golden agora em 8 suites (irs, salario, selfss, previsa, imt, honorarios, fiscal, viaturas), todas verdes.
+
+### Ainda por fazer (precisa da Sandrine ou de ação do Lucca)
+- **Regras Firestore do `ai_suggestions`**: já estão corretas no repo (`firestore.rules`), mas a **publicação na base de dados live tem de ser feita pelo Lucca** (Firebase Console ou `firebase deploy --only firestore:rules`) — é alteração de controlo de acesso, não a faço sozinho.
+- **Reconciliar divergência git** local↔remoto (cosmética; o push via API cria commits paralelos com conteúdo idêntico).
+- **Nuances fiscais** dos anexos (rendas longas, reinvestimento HPP, anexos C/H-PPR/donativos) e a **discrepância TA Previsa (×1,1) vs Viaturas (+10 p.p.)** — reconciliar com a Sandrine.
+
+## Backlog original Fase 2 (mantido como referência; o essencial acima já foi feito)
 - **IRS:** anexos E/F/G/C/H (PPR/donativos), englobamento, pré-preenchimento.
 - **Salário:** tabelas oficiais de retenção mensal + estado civil + subsídios férias/Natal.
 - **SS:** ajuste ±25%, acumulação TCO, entidade contratante.
