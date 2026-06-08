@@ -243,6 +243,25 @@ const getInitialSalarioState = (p: ClientProfileType): SalarioState => ({
   taxaSeguroTrabalho: 1.0,
 });
 
+// IRS (Modelo 3) — pré-preenche o que o Perfil já sabe, sem inventar rendimentos.
+// Casado / união de facto → tributação conjunta com 2 sujeitos passivos (o
+// quociente familiar só fica correto com os dois no agregado). Rendimentos a 0.
+const getInitialIRSState = (p: ClientProfileType): IRSState => {
+  const base = defaultIRSState();
+  const conjunto = p.estadoCivil === 'casado' || p.estadoCivil === 'uniao_facto';
+  return {
+    ...base,
+    cenario: conjunto ? 'conjunto' : 'individual',
+    dependentes: p.nrDependentes || 0,
+    agregado: conjunto
+      ? [
+          base.agregado[0],
+          { relacao: 'Sujeito Passivo B', nome: '', rendTrabalho: 0, contribuicoes: 0, retencao: 0, atividade: 0, coefAtividade: 0.75, irsJovemAno: 0, pagamentosConta: 0 },
+        ]
+      : base.agregado,
+  };
+};
+
 // Collapsible section for the Ver SAFT modal
 function SaftSection({ title, count, children }: { title: string; count: number; children: React.ReactNode }) {
   const [open, setOpen] = React.useState(true);
@@ -379,7 +398,7 @@ function AppContent() {
   // IRS é por-cliente (carregado de emp.sims.irs ao selecionar a empresa) —
   // já NÃO usa uma chave global em localStorage, que fazia os dados de IRS
   // "vazarem" entre empresas.
-  const [irsState, setIrsState] = useState<IRSState>(() => (initSims.irs as IRSState) ?? defaultIRSState());
+  const [irsState, setIrsState] = useState<IRSState>(() => (initSims.irs as IRSState) ?? getInitialIRSState(clientProfile));
 
   // Funcionalidade D — guardar simulações no histórico do cliente.
   // `justSavedSim` é o feedback transitório do botão flutuante; `lastResumoRef`
@@ -803,7 +822,7 @@ function AppContent() {
     setImoveisState((sims.imoveis as ImoveisState) ?? getInitialImoveisState(profile));
     setImtState((sims.imt as IMTState) ?? getInitialIMTState(profile));
     setSalarioState((sims.salario as SalarioState) ?? getInitialSalarioState(profile));
-    setIrsState((sims.irs as IRSState) ?? defaultIRSState());
+    setIrsState((sims.irs as IRSState) ?? getInitialIRSState(profile));
     setPreviSaState({ ...defaultPreviSaState(), ...(emp.previsa ?? {}) });
     // Reconstrói os dados do SAF-T deste cliente a partir do XML guardado, para
     // que o botão "Ver dados do SAF-T" esteja SEMPRE disponível em clientes que
@@ -830,7 +849,7 @@ function AppContent() {
     setImoveisState(getInitialImoveisState(profile));
     setImtState(getInitialIMTState(profile));
     setSalarioState(getInitialSalarioState(profile));
-    setIrsState(defaultIRSState());
+    setIrsState(getInitialIRSState(profile));
     setPreviSaState(defaultPreviSaState());
     setSaftData(null); // cliente novo / sem SAF-T ainda (o import define-o a seguir)
   };

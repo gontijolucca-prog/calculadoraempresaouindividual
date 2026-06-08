@@ -42,13 +42,14 @@ const run = (p: Partial<SalarioParams> = {}) => calcSalarioLiquido({ ...base, ..
   approx('B: líquido = bruto − SS + subsídio', r.salarioLiquido, 1467);
 }
 
-// ── Caso C (DOCUMENTA limitação atual): estado civil NÃO altera o líquido ──
-// Quando a Fase 2 ligar as tabelas oficiais por estado civil, este teste deve
-// FALHAR — sinal de que a alteração foi deliberada (atualizar então o golden).
+// ── Caso C: estado civil — casado 1 titular beneficia do quociente conjugal ──
+// casado_1titular retém menos (IRS(base/2)×2); casado_2titulares = solteiro (qf=1).
 {
   const solteiro = run({ estadoCivil: 'solteiro' });
   const casado1 = run({ estadoCivil: 'casado_1titular' });
-  eq('C: solteiro vs casado_1titular (hoje ignorado)', solteiro.salarioLiquido, casado1.salarioLiquido);
+  const casado2 = run({ estadoCivil: 'casado_2titulares' });
+  approx('C: casado 1 titular retém menos', casado1.retencaoIRS, 146.54);
+  eq('C: casado 2 titulares = solteiro', casado2.salarioLiquido, solteiro.salarioLiquido);
 }
 
 // ── Caso D: região REDUZ a retenção (mesmo fator do simulador de IRS) ──

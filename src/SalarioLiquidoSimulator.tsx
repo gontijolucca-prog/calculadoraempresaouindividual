@@ -87,7 +87,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
           </div>
 
           <div>
-            <label className={labelCls}>Estado Civil <Tip>O estado civil influencia a tabela de retenção mensal oficial. Esta simulação mostra uma estimativa anualizada do líquido — o valor exato consta do recibo e acerta-se no IRS anual.</Tip></label>
+            <label className={labelCls}>Estado Civil <Tip>Casado com um titular de rendimentos beneficia do quociente conjugal (retenção mais baixa); casado com dois titulares ou solteiro retêm sobre o próprio rendimento. Estimativa anualizada — o valor exato segue a tabela mensal oficial e acerta-se no IRS anual.</Tip></label>
             <select value={state.estadoCivil} onChange={e => setSt({ estadoCivil: e.target.value as EstadoCivil })} className={inputCls}>
               <option value="solteiro">Solteiro / Não casado</option>
               <option value="casado_1titular">Casado — 1 titular</option>
@@ -470,7 +470,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
 
           {/* Estado civil */}
           <div>
-            <label className={labelCls}>Estado Civil <Tip>O estado civil influencia a tabela de retenção mensal oficial. Esta simulação mostra uma estimativa anualizada do líquido — o valor exato consta do recibo e acerta-se no IRS anual.</Tip></label>
+            <label className={labelCls}>Estado Civil <Tip>Casado com um titular de rendimentos beneficia do quociente conjugal (retenção mais baixa); casado com dois titulares ou solteiro retêm sobre o próprio rendimento. Estimativa anualizada — o valor exato segue a tabela mensal oficial e acerta-se no IRS anual.</Tip></label>
             <select value={s.estadoCivil} onChange={e => setState({ estadoCivil: e.target.value as EstadoCivil })} className={inputCls}>
               <option value="solteiro">Solteiro / Não casado</option>
               <option value="casado_1titular">Casado — 1 titular</option>

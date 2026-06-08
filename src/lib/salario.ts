@@ -82,11 +82,18 @@ export function calcSalarioLiquido(p: SalarioParams): SalarioResult {
   const deducaoEspecifica = Math.max(DEDUCAO_ESPECIFICA_MIN, contribuicoesAnuais);
   const baseIRSAnual = Math.max(0, rendimentoAnualBruto - deducaoEspecifica);
 
-  // 5. Coleta IRS (tabela escalões 2026), com redução regional aplicada à coleta
-  //    bruta — espelha o motor de IRS (`aplicaEscaloes`: imposto *= REGIOES[regiao]).
-  //    Continente → fator 1 (sem alteração). Açores 0,80 / Madeira 0,70.
+  // 5. Coleta IRS (tabela escalões 2026), com redução regional e quociente conjugal.
+  //    - Redução regional: espelha o motor de IRS (imposto *= REGIOES[regiao]).
+  //      Continente → 1; Açores 0,80; Madeira 0,70.
+  //    - Quociente conjugal: casado com 1 titular beneficia da tributação conjunta
+  //      (imposto = IRS(base/2) × 2, mesmo mecanismo do simulador de IRS). Casado
+  //      2 titulares e solteiro retêm sobre o próprio rendimento (qf = 1).
+  //      ⚠ Aproximação anual — as tabelas mensais oficiais de retenção por estado
+  //      civil ficam para validação da Sandrine.
   const fatorRegiao = REGIOES[p.localizacao] ?? 1;
-  let coletaIRS = calculateIRS(baseIRSAnual) * fatorRegiao;
+  const qf = p.estadoCivil === 'casado_1titular' ? 2 : 1;
+  const irsAnual = (base: number) => calculateIRS(Math.max(0, base) / qf) * qf * fatorRegiao;
+  let coletaIRS = irsAnual(baseIRSAnual);
 
   // 6. Dedução dependentes — CIRS Art. 78º-A
   coletaIRS = Math.max(0, coletaIRS - calcDependentsDeduction(p.nrDependentes));
@@ -95,7 +102,7 @@ export function calcSalarioLiquido(p: SalarioParams): SalarioResult {
   let irsJovemIsencao = 0;
   if (p.irsJovem && p.idade <= 35) {
     const isencao = calcIRSJovem(p.anosAtividade, baseIRSAnual, p.idade);
-    const irsComIsencao = Math.max(0, calculateIRS(Math.max(0, baseIRSAnual - isencao)) * fatorRegiao);
+    const irsComIsencao = Math.max(0, irsAnual(baseIRSAnual - isencao));
     irsJovemIsencao = Math.max(0, coletaIRS - irsComIsencao);
     coletaIRS = irsComIsencao;
   }
