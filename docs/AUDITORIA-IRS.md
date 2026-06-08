@@ -35,6 +35,14 @@ Outros pontos de completude:
 
 Prioridade sugerida para a Fase 2 (do mais comum ao mais raro): **H** (PPR/donativos) e **B/C** completos → **F** (prediais) e **E** (capitais) → **G** (mais-valias) → **D/I/J/L** (nicho).
 
+### Confirmação por pesquisa (2026-06-08)
+Pesquisa às fontes oficiais e da especialidade confirma que a lista acima é **exaustiva** — o Modelo 3 tem exatamente os anexos A, B, C, D, E, F, G, G1, H, I, J, L e SS. Não existe mais nenhum anexo. Notas:
+- **Anexo L** cobre agora **RNH e IFICI** (novas instruções pela Portaria 72-B/2025).
+- **IRS Jovem 2026**: limite de isenção ≈ 29 500 € — coincide com a constante do motor (29 542,15 €). ✅
+- **Cripto-ativos** não são um anexo novo; distribuem-se pelos existentes: **G** (mais-valias <365 dias), **G1** (≥365 dias, isentas mas declaráveis), **J** (plataforma sem residência em PT), **B** (atividade económica/mineração), **E** (rendimentos de capitais, ex.: staking). Ao construir estes anexos na Fase 2, incluir campos para cripto.
+
+Fontes: Portal das Finanças (Modelo 3 / anexos), ComparaJá ("Declaração IRS 2026: todos os anexos explicados"), OCC (anexo L / IFICI), Finbooks/ECO/Doutor Finanças (cripto-ativos 2026).
+
 ## Eixo 3 — Fidelidade
 Sem casos de referência oficiais ainda. Criados 5 casos golden hand-computed (regressão). Para certificar fidedignidade total à liquidação da AT, precisamos de casos validados pela Sandrine ou pelo simulador oficial.
 
