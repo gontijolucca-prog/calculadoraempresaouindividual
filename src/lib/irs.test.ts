@@ -19,6 +19,7 @@ function simFrom(state: IRSState): IRSSim {
     dep0a3: +state.dep0a3, regiao: state.regiao, concelho: state.concelho,
     despesas: state.despesas, pagamentosConta: +state.pagamentosConta,
     beneficioMunicipal: +state.beneficioMunicipal, perdas: +state.perdas,
+    rendimentosAutonomos: state.rendimentosAutonomos,
   };
 }
 
@@ -72,6 +73,45 @@ function simFrom(state: IRSState): IRSSim {
   st.agregado[0].irsJovemAno = 1;
   const r = simular(simFrom(st));
   approx('E: IRS Jovem ano 1 (isenção total) coleta', r.coletaLiquida, 0);
+}
+
+// ── Anexos E/F/G (Fase 2): tributação autónoma 28% e englobamento ──
+// Base: solteiro, trabalho 20 000 € → coleta 2 308,32 (caso A).
+// ── F: + capitais 10 000 € a 28% (autónoma) → 2308,32 + 2800 ──
+{
+  const st = defaultIRSState();
+  st.agregado[0].rendTrabalho = 20000;
+  st.rendimentosAutonomos!.capitais = 10000;
+  const r = simular(simFrom(st));
+  approx('F: capitais 28% (coleta + 2800)', r.coletaLiquida, 5108.32);
+}
+
+// ── G: capitais 10 000 € ENGLOBADOS (escalões) — diferente de 28% ──
+{
+  const st = defaultIRSState();
+  st.agregado[0].rendTrabalho = 20000;
+  st.rendimentosAutonomos!.capitais = 10000;
+  st.rendimentosAutonomos!.englobarCapitais = true;
+  const r = simular(simFrom(st));
+  approx('G: capitais englobados', r.coletaLiquida, 4810.66);
+}
+
+// ── H: mais-valias mobiliárias 5 000 € a 28% → 2308,32 + 1400 ──
+{
+  const st = defaultIRSState();
+  st.agregado[0].rendTrabalho = 20000;
+  st.rendimentosAutonomos!.maisValiasMobiliarias = 5000;
+  const r = simular(simFrom(st));
+  approx('H: mais-valias mobiliárias 28%', r.coletaLiquida, 3708.32);
+}
+
+// ── I: mais-valias imobiliárias 10 000 € → 50% englobado ──
+{
+  const st = defaultIRSState();
+  st.agregado[0].rendTrabalho = 20000;
+  st.rendimentosAutonomos!.maisValiasImobiliarias = 10000;
+  const r = simular(simFrom(st));
+  approx('I: mais-valias imobiliárias (50% englobado)', r.coletaLiquida, 3442.98);
 }
 
 if (fails) { console.error(`\n${fails} caso(s) FALHARAM`); process.exit(1); }

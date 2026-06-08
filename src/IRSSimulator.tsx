@@ -39,6 +39,7 @@ function toSim(s: IRSState): IRSSim {
     pagamentosConta: +s.pagamentosConta,
     beneficioMunicipal: +(s.beneficioMunicipal || 0),
     perdas: +(s.perdas || 0),
+    rendimentosAutonomos: s.rendimentosAutonomos,
   };
 }
 
@@ -46,6 +47,8 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
   const s = initialState;
   const set = (u: Partial<IRSState>) => onStateChange({ ...s, ...u });
   const setDespesa = (k: keyof IRSState['despesas'], v: number) => onStateChange({ ...s, despesas: { ...s.despesas, [k]: v } });
+  const ra0 = { capitais: 0, prediais: 0, maisValiasMobiliarias: 0, maisValiasImobiliarias: 0, englobarCapitais: false, englobarPrediais: false };
+  const setRA = (k: keyof typeof ra0, v: number | boolean) => onStateChange({ ...s, rendimentosAutonomos: { ...ra0, ...s.rendimentosAutonomos, [k]: v } });
   const setPessoa = (i: number, u: Partial<SujeitoPassivo>) => {
     const ag = s.agregado.map((p, idx) => (idx === i ? { ...p, ...u } : p));
     onStateChange({ ...s, agregado: ag });
@@ -208,6 +211,38 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Rendimentos adicionais — anexos E/F/G */}
+        <section className="flex flex-col gap-3">
+          <h2 className={sectionTitleCls}><Wallet className="w-4 h-4 text-[#0677FF]" /> Rendimentos adicionais (anexos E/F/G)</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>Capitais — juros/dividendos (€)</label>
+              <input type="number" step="0.01" className={inputCls} value={s.rendimentosAutonomos?.capitais || ''} onChange={(e) => setRA('capitais', parseFloat(e.target.value) || 0)} />
+              <label className="flex items-center gap-1.5 text-[10px] font-[600] text-[#64748B] mt-1 cursor-pointer">
+                <input type="checkbox" checked={!!s.rendimentosAutonomos?.englobarCapitais} onChange={(e) => setRA('englobarCapitais', e.target.checked)} /> Englobar (em vez de 28%)
+              </label>
+            </div>
+            <div>
+              <label className={labelCls}>Prediais — rendas líquidas (€)</label>
+              <input type="number" step="0.01" className={inputCls} value={s.rendimentosAutonomos?.prediais || ''} onChange={(e) => setRA('prediais', parseFloat(e.target.value) || 0)} />
+              <label className="flex items-center gap-1.5 text-[10px] font-[600] text-[#64748B] mt-1 cursor-pointer">
+                <input type="checkbox" checked={!!s.rendimentosAutonomos?.englobarPrediais} onChange={(e) => setRA('englobarPrediais', e.target.checked)} /> Englobar (em vez de 28%)
+              </label>
+            </div>
+            <div>
+              <label className={labelCls}>Mais-valias mobiliárias (€)</label>
+              <input type="number" step="0.01" className={inputCls} value={s.rendimentosAutonomos?.maisValiasMobiliarias || ''} onChange={(e) => setRA('maisValiasMobiliarias', parseFloat(e.target.value) || 0)} />
+              <p className="text-[10px] font-[500] text-[#94A3B8] mt-1">28% (ações, cripto &lt; 365 dias)</p>
+            </div>
+            <div>
+              <label className={labelCls}>Mais-valias imobiliárias (€)</label>
+              <input type="number" step="0.01" className={inputCls} value={s.rendimentosAutonomos?.maisValiasImobiliarias || ''} onChange={(e) => setRA('maisValiasImobiliarias', parseFloat(e.target.value) || 0)} />
+              <p className="text-[10px] font-[500] text-[#94A3B8] mt-1">50% do ganho englobado (residentes)</p>
+            </div>
+          </div>
+          <p className="text-[10px] font-[500] text-amber-600">Taxas-base. Casos especiais (rendas de contratos longos, reinvestimento da habitação própria) ainda não modelados — a validar.</p>
         </section>
 
         {/* Extras */}

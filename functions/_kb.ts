@@ -188,8 +188,9 @@ Campos de topo (preenchíveis pelo bot):
 - dependentes (number) ; dep0a3 (number — dos quais com idade ate 3 anos)
 - pagamentosConta (currency) ; perdas (currency) ; beneficioMunicipal (number, fracao 0 a 0.05 — override)
 - despesas.saude, despesas.educacao, despesas.habitacao, despesas.lares, despesas.gerais, despesas.pensoes (currency)
+- rendimentosAutonomos.capitais, .prediais, .maisValiasMobiliarias, .maisValiasImobiliarias (currency) ; .englobarCapitais, .englobarPrediais (boolean)
 Sujeitos passivos (agregado — A e B): rendimento de trabalho, contribuicoes, retencao, rendimento Cat. B (atividade) + coeficiente, e ano de IRS Jovem. Estes campos por sujeito passivo preenchem-se melhor diretamente no formulario; o bot deve encaminhar para la.
-Nota: o simulador cobre Cat. A (trabalho) e Cat. B simplificada. Os anexos de capitais (E), prediais (F), mais-valias (G) e contabilidade organizada (C) estao em desenvolvimento (Fase 2) — se o utilizador precisar deles, regista uma sugestao.
+Nota: cobre Cat. A (trabalho), Cat. B simplificada, tributacao conjunta (casados), IRS Jovem, e os anexos E (capitais 28%), F (prediais 28%) e G (mais-valias mobiliarias 28% / imobiliarias 50% englobado), com opcao de englobamento para capitais/prediais. Casos especiais (taxas reduzidas de rendas por duracao do contrato, reinvestimento da HPP, anexos C/H-PPR/donativos) ainda nao modelados — Fase 2 a validar com a Sandrine.
 
 ### previsa (Simulador Previsa/IRC)
 - nif (text)

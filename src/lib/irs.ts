@@ -109,6 +109,21 @@ export interface Despesas {
   pensoes: number;
 }
 
+/** Anexos E/F/G — rendimentos com tributação autónoma (liberatória) ou englobamento.
+ *  Taxas estabelecidas: capitais 28%, prediais 28%, mais-valias mobiliárias 28%,
+ *  mais-valias imobiliárias 50% do ganho englobado (residentes).
+ *  ⚠ Nuances por confirmar com a Sandrine (taxas reduzidas dos prediais por duração
+ *  do contrato; exclusão de mais-valias por reinvestimento na HPP; 50% dos dividendos
+ *  no englobamento). Ver docs/AUDITORIA-FISCAL-PENDENTE.md. */
+export interface RendimentosAutonomos {
+  capitais: number;               // Anexo E — juros, dividendos
+  prediais: number;               // Anexo F — rendas líquidas
+  maisValiasMobiliarias: number;  // Anexo G — ações, criptoativos <365 dias
+  maisValiasImobiliarias: number; // Anexo G — ganho na venda de imóvel (50% englobado)
+  englobarCapitais?: boolean;     // englobar (escalões) em vez de 28% liberatória
+  englobarPrediais?: boolean;
+}
+
 export interface IRSSim {
   agregado: SujeitoPassivo[];
   cenario: Cenario;
@@ -120,6 +135,7 @@ export interface IRSSim {
   pagamentosConta: number;
   beneficioMunicipal: number;
   perdas: number;
+  rendimentosAutonomos?: RendimentosAutonomos;
 }
 
 export interface ModeloLinha {
@@ -301,6 +317,24 @@ export function simular(sim: IRSSim, opts: { tabela?: Tabela } = {}): IRSResulta
     pagamentosConta += ppc;
   }
 
+  // Anexos E/F/G — englobamento e tributação autónoma (28% / 50%).
+  // ⚠ Taxas estabelecidas; nuances por confirmar com a Sandrine.
+  const ra = sim.rendimentosAutonomos;
+  let impostoAutonomo = 0;
+  if (ra) {
+    const cap = +ra.capitais || 0;
+    const pred = +ra.prediais || 0;
+    const mvMob = +ra.maisValiasMobiliarias || 0;
+    const mvImob = +ra.maisValiasImobiliarias || 0;
+    // Mais-valias imobiliárias: 50% do ganho é sempre englobado (residentes).
+    rendGlobalBruto += mvImob * 0.50;
+    // Capitais e prediais: englobar (escalões) OU 28% liberatória.
+    if (ra.englobarCapitais) rendGlobalBruto += cap; else impostoAutonomo += cap * 0.28;
+    if (ra.englobarPrediais) rendGlobalBruto += pred; else impostoAutonomo += pred * 0.28;
+    // Mais-valias mobiliárias: 28% autónoma (sem opção de englobamento neste motor).
+    impostoAutonomo += mvMob * 0.28;
+  }
+
   const perdas = +sim.perdas || 0;
   const coletavel = Math.max(0, rendGlobalBruto - dedEspecifica - perdas);
 
@@ -354,6 +388,10 @@ export function simular(sim: IRSSim, opts: { tabela?: Tabela } = {}): IRSResulta
   } else if (rendGlobalBruto > MINIMO_EXISTENCIA && (rendGlobalBruto - impostoFinal) < MINIMO_EXISTENCIA) {
     impostoFinal = Math.max(0, rendGlobalBruto - MINIMO_EXISTENCIA);
   }
+
+  // Tributação autónoma (anexos E/F/G a 28%) — não está sujeita ao mínimo de
+  // existência; soma-se ao imposto final.
+  impostoFinal += impostoAutonomo;
 
   const apurado = impostoFinal - retencoes - pagamentosConta;
   const consignacao = impostoFinal > 0 ? impostoFinal * 0.01 : 0;
@@ -409,6 +447,10 @@ export function simular(sim: IRSSim, opts: { tabela?: Tabela } = {}): IRSResulta
     bold: true,
   });
 
+  if (impostoAutonomo > 0) {
+    linhas.push({ c: '—', l: 'Tributação autónoma (anexos E/F/G, 28%)', v: impostoAutonomo });
+  }
+
   if (pagamentosConta > 0) {
     linhas.push({ c: '23', l: 'Pagamentos por conta', v: pagamentosConta });
   }
@@ -447,6 +489,7 @@ export interface IRSState {
   tabela: Tabela;
   agregado: SujeitoPassivo[];
   despesas: { saude: number; educacao: number; habitacao: number; lares: number; gerais: number; pensoes: number };
+  rendimentosAutonomos?: RendimentosAutonomos;
   // What-if (simulação rápida)
   wifRend: number;
   wifDep: number;
@@ -468,6 +511,7 @@ export function defaultIRSState(): IRSState {
       { relacao: 'Sujeito Passivo A', nome: '', rendTrabalho: 0, contribuicoes: 0, retencao: 0, atividade: 0, coefAtividade: 0.75, irsJovemAno: 0, pagamentosConta: 0 },
     ],
     despesas: { saude: 0, educacao: 0, habitacao: 0, lares: 0, gerais: 0, pensoes: 0 },
+    rendimentosAutonomos: { capitais: 0, prediais: 0, maisValiasMobiliarias: 0, maisValiasImobiliarias: 0, englobarCapitais: false, englobarPrediais: false },
     wifRend: 0,
     wifDep: 0,
     wifPpr: 0,

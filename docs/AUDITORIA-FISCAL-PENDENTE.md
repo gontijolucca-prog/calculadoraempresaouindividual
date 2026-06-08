@@ -68,6 +68,10 @@ Lista de valores e regras que o simulador usa e que **precisam de confirmação 
 - [ ] **IMT na entrada em espécie usa sempre "urbano outros" (6,5%)**, independente do `tipoUso`. Confirmar se habitação deveria usar os escalões de habitação.
 - [ ] Pressupostos (estimativas, não lei): **yield 4%/ano**, **depreciação 2%/ano**, **escritura ~0,7%**. Confirmar se servem como defaults.
 
+## IRS anexos E/F/G (2026) — IMPLEMENTADOS na Fase 2 — `src/lib/irs.ts`
+- [x] **Capitais (E)** 28% liberatória ou englobamento; **Prediais (F)** 28% ou englobamento; **Mais-valias mobiliárias (G)** 28%; **Mais-valias imobiliárias (G)** 50% do ganho englobado. Taxas-base estabelecidas.
+- [ ] **Nuances a validar/implementar**: taxas reduzidas dos prediais por duração do contrato (25%/15%/10%); exclusão de mais-valias por reinvestimento na HPP; 50% dos dividendos no englobamento (art.40-A); anexos **C** (contabilidade organizada), **H** (PPR/donativos) e restantes. Confirmar com a Sandrine.
+
 ## (a preencher à medida que auditamos as outras ferramentas)
 - [ ] SS Independente — base de incidência, percentagem, isenções.
 - [ ] IMT / Imposto do Selo — escalões e isenções.
