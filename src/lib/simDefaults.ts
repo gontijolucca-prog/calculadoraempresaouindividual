@@ -23,6 +23,7 @@ export interface VehicleSimulatorState {
   category: 'comercial' | 'passageiros'; engineType: string; price: number;
   ivaRegime: string; activity: string; maintenanceCost: number;
   insuranceCost: number; fuelCost: number; exemptTA: boolean; phevCompliant: boolean;
+  agravamentoTA?: boolean;
 }
 
 export interface SSState {
@@ -59,6 +60,7 @@ export const getInitialVehicleState = (p?: ClientProfile): VehicleSimulatorState
   price: 0,
   ivaRegime: 'normal', activity: 'other', maintenanceCost: 0,
   insuranceCost: 0, fuelCost: 0, exemptTA: false, phevCompliant: true,
+  agravamentoTA: false,
 });
 
 export const getInitialTicketState = (p: ClientProfile): TicketSimulatorState => ({

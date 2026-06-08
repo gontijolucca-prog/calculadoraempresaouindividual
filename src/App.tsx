@@ -183,6 +183,7 @@ interface VehicleSimulatorState {
   category: 'comercial' | 'passageiros'; engineType: string; price: number;
   ivaRegime: string; activity: string; maintenanceCost: number;
   insuranceCost: number; fuelCost: number; exemptTA: boolean; phevCompliant: boolean;
+  agravamentoTA?: boolean;
 }
 
 

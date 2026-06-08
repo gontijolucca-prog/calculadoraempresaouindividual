@@ -55,7 +55,8 @@ Lista de valores e regras que o simulador usa e que **precisam de confirmação 
 ## Viaturas (2026) — `src/VehicleSimulator.tsx`
 - [ ] **IVA dedutível por motor/atividade** (CIVA art.21): elétrico ≤62,5k 100%; PHEV compliant ≤50k 100%; GPL/GNV ≤37,5k 50% (passageiros); comercial diesel 50%, restantes 100%; combustível gasóleo/GPL/GNV 50%, elétrico 100%, gasolina 0%. Confirmar.
 - [ ] **Limites de depreciação fiscal**: 25k / 37,5k / 50k / 62,5k. Confirmar (Portaria).
-- [ ] **TA ligeiros de passageiros** (CIRC art.88): 8/25/32% (conv), 2,5/7,5/15% (PHEV), 0% e 10%>62,5k (elétrico); escalões 37,5k/45k. Confirmar. **Não modela o agravamento +10 p.p. com prejuízo.**
+- [ ] **TA ligeiros de passageiros** (CIRC art.88): 8/25/32% (conv), 2,5/7,5/15% (PHEV), 0% e 10%>62,5k (elétrico); escalões 37,5k/45k. Confirmar.
+- [x] **Agravamento TA com prejuízo** — IMPLEMENTADO no simulador de Viaturas como **+10 p.p.** (CIRC art.88 n.14). ⚠ **DISCREPÂNCIA**: o Previsa aplica `×1,1` (10% sobre o valor) em vez de +10 p.p. à taxa. Reconciliar com a Sandrine qual é o correto e alinhar os dois (não alterei o Previsa, que é o motor validado).
 
 ## Tickets / Subsídio de refeição (2026) — `src/TicketSimulator.tsx` + `pt2026.ts`
 - [ ] **Limites diários** cartão 10,46 € / dinheiro 6,15 € (já no bloco Salário). Confirmar.

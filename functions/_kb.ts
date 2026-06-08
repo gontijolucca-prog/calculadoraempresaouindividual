@@ -115,7 +115,7 @@ Método: ENI = regime simplificado (coeficiente art.31 × faturação, com regra
 - maintenanceCost, insuranceCost, fuelCost (currency, inc. 23% IVA)
 - exemptTA (boolean)
 - phevCompliant (boolean, se PHEV)
-Método: IVA dedutível na aquisição/manutenção/combustível por tipo de motor e atividade (CIVA art.21); limites de depreciação fiscal (25k gasolina-diesel / 37,5k GPL-GNV / 50k PHEV / 62,5k elétrico); Tributação Autónoma de ligeiros de passageiros por escalões 37,5k/45k (convencional 8/25/32%, PHEV 2,5/7,5/15%, elétrico 0% e 10% acima de 62,5k) — CIRC art.88. Seguro isento de IVA. Não modela o agravamento de +10 p.p. da TA quando a empresa tem prejuízo.
+Método: IVA dedutível na aquisição/manutenção/combustível por tipo de motor e atividade (CIVA art.21); limites de depreciação fiscal (25k gasolina-diesel / 37,5k GPL-GNV / 50k PHEV / 62,5k elétrico); Tributação Autónoma de ligeiros de passageiros por escalões 37,5k/45k (convencional 8/25/32%, PHEV 2,5/7,5/15%, elétrico 0% e 10% acima de 62,5k) — CIRC art.88. Seguro isento de IVA. Modela o agravamento de +10 p.p. da TA quando a empresa tem prejuízo fiscal (CIRC art.88 n.14). Motor em src/lib/viaturas.ts (testável).
 
 ### ticket (Tickets de Refeição)
 - tipoTicket (select: restaurante/infancia/educacao/saude/oferta/car)
