@@ -990,14 +990,29 @@ function AppContent() {
         setView(target as ViewType);
       }
     },
+    listClients: () => listEmpresas().map((e) => ({ id: e.id, name: e.nome || 'Sem nome' })),
+    selectClient: (name) => {
+      const q = name.trim().toLowerCase();
+      if (!q) return { ok: false };
+      const all = listEmpresas();
+      const hit = all.find((e) => (e.nome || '').toLowerCase() === q)
+        ?? all.find((e) => (e.nome || '').toLowerCase().includes(q));
+      if (!hit) return { ok: false };
+      selectEmpresa(hit.id);
+      setMode('empresa');
+      return { ok: true, name: hit.nome || 'Sem nome' };
+    },
     getContext: () => {
       const p = clientProfile;
       const yn = (b: boolean) => (b ? 'preenchido' : 'vazio');
+      const activeName = currentEmpresaId ? (getEmpresa(currentEmpresaId)?.nome || 'Sem nome') : null;
+      const all = listEmpresas();
       const lines = [
         `Modo de trabalho: ${mode === 'empresa' ? 'Empresa (CRM, lista de clientes)' : 'Novo Cliente (rascunho)'}`,
         `Vista aberta: ${VIEW_TITLES[view]}`,
-        `Cliente selecionado: ${currentEmpresaId ? 'sim' : 'não — os simuladores precisam de um cliente ativo'}`,
-        `Nº de clientes guardados: ${listEmpresas().length}`,
+        `Cliente ativo: ${activeName ? `"${activeName}"` : 'nenhum — os simuladores e os documentos precisam de um cliente ativo'}`,
+        `Nº de clientes guardados: ${all.length}`,
+        all.length ? `Clientes guardados (nomes): ${all.map((e) => e.nome || 'Sem nome').join('; ')}` : 'Ainda não há clientes guardados.',
         `Definições do escritório: ${officeSettings.nome?.trim() ? 'preenchidas' : 'por preencher (nome/NIF/IBAN)'}`,
       ];
       if (currentEmpresaId) {

@@ -14,6 +14,10 @@ export interface BotBridge {
   openSaftUpload?: () => void;
   /** Lista de documentos que o bot pode gerar e descarregar. */
   listDownloadableDocs?: () => { id: string; label: string }[];
+  /** Lista de clientes guardados (id + nome). */
+  listClients?: () => { id: string; name: string }[];
+  /** Ativa um cliente pelo nome (igual ou parcial). */
+  selectClient?: (name: string) => { ok: boolean; name?: string };
   /** Gera e descarrega um documento do cliente ativo (Word/Excel). */
   downloadDoc?: (docId: string) => Promise<{ ok: boolean; label?: string; reason?: string }>;
   currentUser?: string;
@@ -139,6 +143,9 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
           title: a.title, detail: a.detail, area: a.area,
           autor: bridge.currentUser, vista: bridge.currentView,
         });
+      } else if (a.type === 'selectClient') {
+        const res = bridge.selectClient?.(a.name);
+        notes.push(res?.ok ? `Selecionei o cliente: ${res.name}` : `Não encontrei nenhum cliente com o nome "${a.name}".`);
       } else if (a.type === 'download') {
         const res = await bridge.downloadDoc?.(a.docId);
         if (res?.ok) notes.push(`Descarreguei: ${res.label ?? 'documento'}`);

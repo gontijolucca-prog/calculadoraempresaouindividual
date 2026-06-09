@@ -19,6 +19,7 @@ export type BotAction =
   | { type: 'suggestion'; title: string; detail: string; area?: string }
   | { type: 'openSaftUpload' }
   | { type: 'download'; docId: string }
+  | { type: 'selectClient'; name: string }
   | { type: 'replies'; options: string[] };
 
 const DOWNLOAD_DOC_IDS = new Set<string>([
@@ -69,6 +70,8 @@ function sanitizeActions(parsed: unknown): BotAction[] {
       out.push({ type: 'openSaftUpload' });
     } else if (t === 'download' && DOWNLOAD_DOC_IDS.has((a as any).docId)) {
       out.push({ type: 'download', docId: (a as any).docId });
+    } else if (t === 'selectClient' && typeof (a as any).name === 'string' && (a as any).name.trim()) {
+      out.push({ type: 'selectClient', name: String((a as any).name).trim().slice(0, 120) });
     } else if (t === 'replies' && Array.isArray((a as any).options)) {
       const options = ((a as any).options as unknown[])
         .filter((o): o is string => typeof o === 'string' && o.trim().length > 0)
