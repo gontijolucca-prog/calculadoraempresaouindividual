@@ -40,6 +40,7 @@ import type { ClientProfile as ClientProfileType } from './ClientProfile';
 import { ThemeProvider } from './ThemeContext';
 import { MotionProvider, PageTransition } from './AnimatedPage';
 import { parseSAFT, decodeSaftText, normalizeXmlEncodingToUtf8, type SAFTParseResult } from './lib/saft';
+import { enforceProfileRules } from './lib/profileRules';
 import { DOC_TYPES, downloadAsWord } from './lib/wordDocs';
 import { downloadPrevisaExcel } from './lib/previsaExcel';
 import { LAYOUTS } from './Layouts';
@@ -779,7 +780,12 @@ function AppContent() {
     setView('legal');
   };
 
-  const updateProfileWithSimulatorSync = (newProfile: ClientProfileType) => {
+  const updateProfileWithSimulatorSync = (rawProfile: ClientProfileType) => {
+    // Guarda-rede central: impõe as regras fiscais duras (regime de IVA e de
+    // contabilidade derivados da faturação) antes de qualquer escrita. Vale para
+    // o formulário, o wizard e o preenchimento feito pelo AI Contabilista —
+    // impossível guardar uma combinação ilegal (ex.: isento a faturar > 15.000€).
+    const newProfile = enforceProfileRules(rawProfile);
     setClientProfile(newProfile);
     setTaxState(prev => ({
       ...prev,

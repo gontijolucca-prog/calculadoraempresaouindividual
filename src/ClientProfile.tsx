@@ -7,6 +7,10 @@ import { Tip } from './Tip';
 import { jsPDF } from 'jspdf';
 import ExportPackageModal from './ExportPackageModal';
 import { consumeOpenPackage, consumeFlowToggle } from './lib/profileIntent';
+import {
+  ivaForFat as ivaRegimeForFat, regimeContabForFat, allowedIvaRegimes,
+  LIMIAR_ISENCAO_IVA, LIMIAR_IVA_MENSAL, LIMIAR_ENI_ORGANIZADA,
+} from './lib/profileRules';
 import type { OfficeSettings } from './lib/officeSettings';
 import type { HonorariosConfig } from './lib/honorarios';
 
@@ -278,22 +282,17 @@ export default function ClientProfile({
   // Só corrige automaticamente quem está num regime "errado" para o escalão
   // (isento acima de 15k, ou mensal/isento na faixa trimestral); não mexe numa
   // escolha deliberada de trimestral nem no regime de pequenos retalhistas.
+  // Wrappers Partial<> em cima das regras centrais (src/lib/profileRules.ts) — fonte
+  // única de verdade. As regras NÃO mudam à escolha do regime, só corrigem quando a
+  // faturação as torna ilegais (ex.: isento a faturar > 15.000€).
   const ivaForFat = (regimeIva: ClientProfile['regimeIva'], fat: number): Partial<ClientProfile> => {
-    if (fat <= 0) return {};
-    if (fat <= 15000) return regimeIva === 'isento' ? {} : { regimeIva: 'isento' };
-    if (fat > 650000) return regimeIva === 'normal_mensal' ? {} : { regimeIva: 'normal_mensal' };
-    if (regimeIva === 'isento' || regimeIva === 'normal_mensal') return { regimeIva: 'normal_trimestral' };
-    return {};
+    const next = ivaRegimeForFat(regimeIva, fat);
+    return next === regimeIva ? {} : { regimeIva: next };
   };
-
-  // Acima de €200.000 de faturação o ENI deixa de poder usar o regime
-  // simplificado (recibos verdes) — passa obrigatoriamente a contabilidade
-  // organizada (Art. 28.º/31.º CIRS). NÃO obriga a constituir sociedade: o ENI
-  // continua legal a qualquer nível de faturação, só muda de regime contabilístico.
-  const regimeForFat = (tipoEntidade: string, regime: string, fat: number): Partial<ClientProfile> =>
-    tipoEntidade === 'eni' && regime === 'simplificado' && fat > 200000
-      ? { regimeContabilidade: 'organizada' }
-      : {};
+  const regimeForFat = (tipoEntidade: string, regime: string, fat: number): Partial<ClientProfile> => {
+    const next = regimeContabForFat(tipoEntidade, regime as ClientProfile['regimeContabilidade'], fat);
+    return next === regime ? {} : { regimeContabilidade: next };
+  };
 
   const currentYear = new Date().getFullYear();
   const { flowMode, exitFlow } = useFlowMode();
@@ -724,22 +723,28 @@ export default function ClientProfile({
             <input type="number" value={st.nrFuncionarios === 0 ? '' : st.nrFuncionarios} onChange={e => setSt({ nrFuncionarios: Number(e.target.value) || 0 })} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Regime IVA <Tip>IVA é o Imposto sobre o Valor Acrescentado. O regime trimestral entrega declarações de 3 em 3 meses; o mensal, todos os meses. Isentos não cobram IVA.</Tip></label>
-            <select value={st.regimeIva} onChange={e => setSt({ regimeIva: e.target.value })} className={inputClass}>
-              <option value="isento">Isento (Art. 53.º CIVA)</option>
-              <option value="normal_trimestral">Normal Trimestral</option>
-              <option value="normal_mensal">Normal Mensal</option>
-              <option value="pequenos_retalhistas">Pequenos Retalhistas</option>
+            <label className={labelClass}>Regime IVA <Tip>IVA é o Imposto sobre o Valor Acrescentado. O regime trimestral entrega declarações de 3 em 3 meses; o mensal, todos os meses. Isentos não cobram IVA. As opções impossíveis para a faturação ficam bloqueadas.</Tip></label>
+            <select value={st.regimeIva} onChange={e => setSt({ regimeIva: ivaRegimeForFat(e.target.value as ClientProfile['regimeIva'], st.faturaçaoAnualPrevista) })} className={inputClass}>
+              {(['isento','normal_trimestral','normal_mensal','pequenos_retalhistas'] as const).map(r => (
+                <option key={r} value={r} disabled={!allowedIvaRegimes(st.faturaçaoAnualPrevista).includes(r)}>
+                  {{ isento: 'Isento (Art. 53.º CIVA)', normal_trimestral: 'Normal Trimestral', normal_mensal: 'Normal Mensal', pequenos_retalhistas: 'Pequenos Retalhistas' }[r]}
+                </option>
+              ))}
             </select>
+            {st.faturaçaoAnualPrevista > LIMIAR_IVA_MENSAL ? (
+              <p className="mt-1 text-[11px] text-slate-500">Acima de {ptEur(LIMIAR_IVA_MENSAL)} o IVA mensal é obrigatório (Art. 41.º CIVA).</p>
+            ) : st.faturaçaoAnualPrevista > LIMIAR_ISENCAO_IVA ? (
+              <p className="mt-1 text-[11px] text-slate-500">Acima de {ptEur(LIMIAR_ISENCAO_IVA)} a isenção (Art. 53.º) já não é possível.</p>
+            ) : null}
           </div>
           <div>
             <label className={labelClass}>Regime de Contabilidade <Tip>Contabilidade Organizada exige contabilista e permite deduzir mais custos. Regime Simplificado é mais fácil mas com menos deduções.</Tip></label>
             <select
               value={st.regimeContabilidade}
-              onChange={e => setSt({ regimeContabilidade: e.target.value })}
+              onChange={e => setSt({ regimeContabilidade: regimeContabForFat(st.tipoEntidade, e.target.value as ClientProfile['regimeContabilidade'], st.faturaçaoAnualPrevista) })}
               className={inputClass}
             >
-              <option value="simplificado">Regime Simplificado</option>
+              <option value="simplificado" disabled={st.tipoEntidade === 'eni' && st.faturaçaoAnualPrevista > LIMIAR_ENI_ORGANIZADA}>Regime Simplificado</option>
               <option value="organizada">Contabilidade Organizada</option>
               {st.tipoEntidade !== 'eni' && <option value="transparencia_fiscal">Transparência Fiscal</option>}
               {st.tipoEntidade !== 'eni' && <option value="retgs">RETGS (Grupo de Empresas)</option>}
@@ -1368,22 +1373,28 @@ export default function ClientProfile({
                 <input type="number" value={profile.nrFuncionarios === 0 ? '' : profile.nrFuncionarios} onChange={e => updateProfile('nrFuncionarios', Number(e.target.value) || 0)} className={inputClass} />
               </div>
               <div>
-                <label className={labelClass}>Regime IVA <Tip>IVA é o Imposto sobre o Valor Acrescentado. O regime trimestral entrega declarações de 3 em 3 meses; o mensal, todos os meses. Isentos não cobram IVA.</Tip></label>
-                <select value={profile.regimeIva} onChange={e => updateProfile('regimeIva', e.target.value)} className={inputClass}>
-                  <option value="isento">Isento (Art. 53.º CIVA)</option>
-                  <option value="normal_trimestral">Normal Trimestral</option>
-                  <option value="normal_mensal">Normal Mensal</option>
-                  <option value="pequenos_retalhistas">Pequenos Retalhistas</option>
+                <label className={labelClass}>Regime IVA <Tip>IVA é o Imposto sobre o Valor Acrescentado. O regime trimestral entrega declarações de 3 em 3 meses; o mensal, todos os meses. Isentos não cobram IVA. As opções impossíveis para a faturação ficam bloqueadas.</Tip></label>
+                <select value={profile.regimeIva} onChange={e => updateProfile('regimeIva', ivaRegimeForFat(e.target.value as ClientProfile['regimeIva'], profile.faturaçaoAnualPrevista))} className={inputClass}>
+                  {(['isento','normal_trimestral','normal_mensal','pequenos_retalhistas'] as const).map(r => (
+                    <option key={r} value={r} disabled={!allowedIvaRegimes(profile.faturaçaoAnualPrevista).includes(r)}>
+                      {{ isento: 'Isento (Art. 53.º CIVA)', normal_trimestral: 'Normal Trimestral', normal_mensal: 'Normal Mensal', pequenos_retalhistas: 'Pequenos Retalhistas' }[r]}
+                    </option>
+                  ))}
                 </select>
+                {profile.faturaçaoAnualPrevista > LIMIAR_IVA_MENSAL ? (
+                  <p className="mt-1 text-[11px] text-slate-500">Acima de {ptEur(LIMIAR_IVA_MENSAL)} o IVA mensal é obrigatório (Art. 41.º CIVA).</p>
+                ) : profile.faturaçaoAnualPrevista > LIMIAR_ISENCAO_IVA ? (
+                  <p className="mt-1 text-[11px] text-slate-500">Acima de {ptEur(LIMIAR_ISENCAO_IVA)} a isenção (Art. 53.º) já não é possível.</p>
+                ) : null}
               </div>
               <div>
                 <label className={labelClass}>Regime de Contabilidade <Tip>Contabilidade Organizada exige contabilista e permite deduzir mais custos. Regime Simplificado é mais fácil mas com menos deduções.</Tip></label>
                 <select
                   value={profile.regimeContabilidade}
-                  onChange={e => updateProfile('regimeContabilidade', e.target.value)}
+                  onChange={e => updateProfile('regimeContabilidade', regimeContabForFat(profile.tipoEntidade, e.target.value as ClientProfile['regimeContabilidade'], profile.faturaçaoAnualPrevista))}
                   className={inputClass}
                 >
-                  <option value="simplificado">Regime Simplificado</option>
+                  <option value="simplificado" disabled={profile.tipoEntidade === 'eni' && profile.faturaçaoAnualPrevista > LIMIAR_ENI_ORGANIZADA}>Regime Simplificado</option>
                   <option value="organizada">Contabilidade Organizada</option>
                   {profile.tipoEntidade !== 'eni' && <option value="transparencia_fiscal">Transparência Fiscal</option>}
                   {profile.tipoEntidade !== 'eni' && <option value="retgs">RETGS (Grupo de Empresas)</option>}
