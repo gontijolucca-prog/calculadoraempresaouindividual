@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Sparkles, X, Send, Trash2, Check, RotateCcw, Lightbulb } from 'lucide-react';
+import { Sparkles, X, Send, Trash2, Check, RotateCcw, Lightbulb, FileUp } from 'lucide-react';
 import { parseReply, type BotAction, type FillField, type ViewId } from './actions';
 import { registerSuggestion } from './suggestions';
 
@@ -12,6 +12,10 @@ export interface BotBridge {
   applyFill: (target: string, fields: FillField[]) => void;
   /** Abre diretamente o seletor de ficheiro para importar um SAF-T de cliente novo. */
   openSaftUpload?: () => void;
+  /** Lista de documentos que o bot pode gerar e descarregar. */
+  listDownloadableDocs?: () => { id: string; label: string }[];
+  /** Gera e descarrega um documento do cliente ativo (Word/Excel). */
+  downloadDoc?: (docId: string) => Promise<{ ok: boolean; label?: string; reason?: string }>;
   currentUser?: string;
   currentView?: string;
 }
@@ -23,6 +27,7 @@ interface ChatMsg {
   pendingFill?: { target: string; fields: FillField[] } | null;
   fillApplied?: boolean;
   replies?: string[];               // sugestões de próximo passo (botões clicáveis)
+  saftCta?: boolean;                // mostra botão "Carregar SAF-T" (abre o seletor de ficheiro)
 }
 
 // Chat só por sessão (sobrevive a refresh, limpa-se ao fechar o separador/browser);
@@ -134,9 +139,11 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
           title: a.title, detail: a.detail, area: a.area,
           autor: bridge.currentUser, vista: bridge.currentView,
         });
-      } else if (a.type === 'openSaftUpload') {
-        bridge.openSaftUpload?.();
-        notes.push('Abri o seletor de ficheiro para importar o SAF-T do novo cliente');
+      } else if (a.type === 'download') {
+        const res = await bridge.downloadDoc?.(a.docId);
+        if (res?.ok) notes.push(`Descarreguei: ${res.label ?? 'documento'}`);
+        else if (res?.reason === 'sem-cliente') notes.push('Para descarregar um documento, seleciona primeiro um cliente.');
+        else notes.push('Não consegui gerar esse documento.');
       }
     }
     return notes;
@@ -164,7 +171,10 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
 
       const fillAction = actions.find((a) => a.type === 'fill') as Extract<BotAction, { type: 'fill' }> | undefined;
       const repliesAction = actions.find((a) => a.type === 'replies') as Extract<BotAction, { type: 'replies' }> | undefined;
-      const autoActions = actions.filter((a) => a.type !== 'fill' && a.type !== 'replies');
+      const saftAction = actions.some((a) => a.type === 'openSaftUpload');
+      // openSaftUpload vira um botão na mensagem: abrir o seletor de ficheiro só é
+      // permitido a partir de um clique do utilizador (gesto), não de um callback async.
+      const autoActions = actions.filter((a) => a.type !== 'fill' && a.type !== 'replies' && a.type !== 'openSaftUpload');
       const notes = await applyAutoActions(autoActions);
 
       setMsgs((prev) => [...prev, {
@@ -173,6 +183,7 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
         notes: notes.length ? notes : undefined,
         pendingFill: fillAction ? { target: fillAction.target, fields: fillAction.fields } : null,
         replies: repliesAction?.options,
+        saftCta: saftAction || undefined,
       }]);
     } catch {
       setMsgs((prev) => [...prev, { role: 'assistant', content: 'Tive um problema de ligação. Verifica a internet e tenta de novo.' }]);
@@ -311,6 +322,12 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
                       <div className="mt-2 flex items-center gap-1.5 text-[11.5px] font-[700] text-emerald-600">
                         <Check className="w-3.5 h-3.5" strokeWidth={3} /> Campos preenchidos
                       </div>
+                    )}
+                    {m.saftCta && (
+                      <button type="button" onClick={() => bridge.openSaftUpload?.()}
+                        className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-[800] px-3 py-2 rounded-xl bg-[#0677FF] text-white hover:bg-[#0560d6] active:scale-[0.97] transition-all">
+                        <FileUp className="w-4 h-4" strokeWidth={2.4} /> Carregar ficheiro SAF-T
+                      </button>
                     )}
                   </div>
 

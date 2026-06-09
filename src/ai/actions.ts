@@ -18,7 +18,12 @@ export type BotAction =
   | { type: 'fill'; target: string; fields: FillField[] }
   | { type: 'suggestion'; title: string; detail: string; area?: string }
   | { type: 'openSaftUpload' }
+  | { type: 'download'; docId: string }
   | { type: 'replies'; options: string[] };
+
+const DOWNLOAD_DOC_IDS = new Set<string>([
+  'previsa', 'dr', 'declaracao', 'acta', 'alteracoes', 'fluxos', 'df',
+]);
 
 const VIEW_IDS = new Set<string>([
   'empresas', 'profile', 'tax', 'vehicle', 'ticket', 'selfss', 'diagnostico',
@@ -62,6 +67,8 @@ function sanitizeActions(parsed: unknown): BotAction[] {
       });
     } else if (t === 'openSaftUpload') {
       out.push({ type: 'openSaftUpload' });
+    } else if (t === 'download' && DOWNLOAD_DOC_IDS.has((a as any).docId)) {
+      out.push({ type: 'download', docId: (a as any).docId });
     } else if (t === 'replies' && Array.isArray((a as any).options)) {
       const options = ((a as any).options as unknown[])
         .filter((o): o is string => typeof o === 'string' && o.trim().length > 0)

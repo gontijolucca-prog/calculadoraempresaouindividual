@@ -40,6 +40,8 @@ import type { ClientProfile as ClientProfileType } from './ClientProfile';
 import { ThemeProvider } from './ThemeContext';
 import { MotionProvider, PageTransition } from './AnimatedPage';
 import { parseSAFT, decodeSaftText, normalizeXmlEncodingToUtf8, type SAFTParseResult } from './lib/saft';
+import { DOC_TYPES, downloadAsWord } from './lib/wordDocs';
+import { downloadPrevisaExcel } from './lib/previsaExcel';
 import { LAYOUTS } from './Layouts';
 import { loadFromStorage, saveToStorage, clearStorage } from './lib/storage';
 import { loadOfficeSettings, saveOfficeSettings, type OfficeSettings } from './lib/officeSettings';
@@ -948,6 +950,27 @@ function AppContent() {
     navigate: (v) => setView(v as ViewType),
     setMode: (m) => { if (m === 'novo-cliente') handleNovaEmpresaManual(); else selectMode('empresa'); },
     openSaftUpload: () => botSaftInputRef.current?.click(),
+    listDownloadableDocs: () => [
+      { id: 'previsa', label: 'Previsa (Excel Modelo 22)' },
+      ...DOC_TYPES.map((d) => ({ id: d.id, label: d.label })),
+    ],
+    downloadDoc: async (docId) => {
+      const emp = currentEmpresaId ? getEmpresa(currentEmpresaId) : null;
+      if (!emp) return { ok: false, reason: 'sem-cliente' };
+      try {
+        if (docId === 'previsa') {
+          await downloadPrevisaExcel(previSaState, emp.nome || emp.profile?.nomeCliente || '');
+          return { ok: true, label: 'Previsa (Excel Modelo 22)' };
+        }
+        const def = DOC_TYPES.find((d) => d.id === docId);
+        if (!def) return { ok: false, reason: 'desconhecido' };
+        downloadAsWord(def.build(emp, officeSettings), def.filename(emp));
+        return { ok: true, label: def.label };
+      } catch (e) {
+        console.error('Falha ao gerar documento para download:', e);
+        return { ok: false, reason: 'erro' };
+      }
+    },
     applyFill: (target, fields) => {
       if (target === 'profile') {
         let np = clientProfile;
