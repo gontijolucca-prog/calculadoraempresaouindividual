@@ -29,7 +29,6 @@ interface ChatMsg {
 // nunca partilhado entre computadores. Sem memória permanente — é só um helper.
 const STORE_KEY = 'estudo360:ai_chat_session_v1';
 const LEGACY_STORE_KEY = 'estudo360:ai_chat_v1'; // localStorage antigo (persistente) — a apagar
-const AUTO_OPEN_KEY = 'estudo360:ai_autoopen_v1'; // 1x por sessão do browser
 const GREETING: ChatMsg = {
   role: 'assistant',
   content: 'Olá! Sou o **AI Contabilista**, o teu assistente aqui no Estudo 360. Posso explicar qualquer função, abrir os simuladores por ti, ajudar a preencher um cliente e registar sugestões de melhoria. Em que te ajudo?',
@@ -96,16 +95,13 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
     if (open) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [msgs, busy, open]);
 
-  // Abre sozinho ao entrar no site (1x por sessão do browser) e cumprimenta
-  // proativamente se ainda não houve conversa.
+  // Como o contexto é efémero (limpa em cada refresh/nova tab), o bot volta SEMPRE
+  // a tentar interagir após carregar a página: abre sozinho e cumprimenta de forma
+  // proativa. Sem gate de sessão — cada load é uma interação nova.
   useEffect(() => {
-    let done = false;
-    try { done = sessionStorage.getItem(AUTO_OPEN_KEY) === '1'; } catch { /* */ }
-    if (done) return;
     const t = setTimeout(() => {
-      try { sessionStorage.setItem(AUTO_OPEN_KEY, '1'); } catch { /* */ }
       setMsgs((prev) => {
-        // Só injeta saudação proativa se o histórico for apenas o greeting base.
+        // Só injeta a saudação proativa se ainda não houve conversa nesta sessão.
         if (prev.length <= 1) return [PROACTIVE_GREETING];
         return prev;
       });
