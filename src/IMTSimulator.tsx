@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { numInput, intInput } from './lib/inputGuards';
 import React, { useMemo } from 'react';
 import { Building, Euro, CheckCircle, AlertTriangle, MapPin } from 'lucide-react';
 import { cn } from './lib/utils';
@@ -63,7 +64,7 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
             <label className={labelCls}>Valor de Aquisição (€) <Tip>O preço de compra do imóvel em euros. É a base de cálculo do IMT e do Imposto de Selo.</Tip></label>
             <div className="relative">
               <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
-              <input type="number" min="0" step="1000" value={st.valor === 0 ? '' : st.valor} onChange={e => setSt({ valor: parseFloat(e.target.value) || 0 })} className={cn(inputCls, "pl-9")} placeholder="ex: 250000" />
+              <input type="number" min="0" step="1000" value={st.valor === 0 ? '' : st.valor} onChange={e => setSt({ valor: numInput(e.target.value) })} className={cn(inputCls, "pl-9")} placeholder="ex: 250000" />
             </div>
           </div>
           <div>
@@ -113,7 +114,7 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
       render: (st, setSt) => (
         <div>
           <label className={labelCls}>Idade <Tip>Até 35 anos (inclusive) pode beneficiar do IMT Jovem se for primeira habitação.</Tip></label>
-          <input type="number" min="18" max="100" value={st.idadeComprador === 0 ? '' : st.idadeComprador} onChange={e => setSt({ idadeComprador: parseInt(e.target.value) || 0 })} className={inputCls} placeholder="ex: 32" />
+          <input type="number" min="18" max="100" value={st.idadeComprador === 0 ? '' : st.idadeComprador} onChange={e => setSt({ idadeComprador: intInput(e.target.value) })} className={inputCls} placeholder="ex: 32" />
           {st.idadeComprador <= 35 && st.primeiraHabitacao && st.tipo === 'hpp' && (
             <p className="text-[12px] text-emerald-700 font-[600] mt-[6px] bg-emerald-50 px-3 py-2 rounded-[8px] border border-emerald-200]">
               ✓ Elegível para IMT Jovem (≤35 anos, 1ª habitação HPP)
@@ -231,7 +232,7 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
                 min="0"
                 step="1000"
                 value={s.valor === 0 ? '' : s.valor}
-                onChange={e => setState({ valor: parseFloat(e.target.value) || 0 })}
+                onChange={e => setState({ valor: numInput(e.target.value) })}
                 className={cn(inputCls, "pl-9")}
                 placeholder="ex: 250000"
               />
@@ -284,7 +285,7 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
               min="18"
               max="100"
               value={s.idadeComprador === 0 ? '' : s.idadeComprador}
-              onChange={e => setState({ idadeComprador: parseInt(e.target.value) || 0 })}
+              onChange={e => setState({ idadeComprador: intInput(e.target.value) })}
               className={inputCls}
               placeholder="ex: 32"
             />

@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { numInput, intInput } from './lib/inputGuards';
 import React, { useMemo } from 'react';
 import {
   UtensilsCrossed, Baby, GraduationCap, Heart, Gift, Car,
@@ -427,7 +428,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
             <input
               type="number" min="1"
               value={s.employees === 0 ? '' : s.employees}
-              onChange={e => setState({ employees: parseInt(e.target.value) || 0 })}
+              onChange={e => setState({ employees: intInput(e.target.value) })}
               className={inputCls}
             />
           </div>
@@ -468,7 +469,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
                   <input
                     type="number" min="0" step="0.01"
                     value={s.ticketValue === 0 ? '' : s.ticketValue}
-                    onChange={e => setState({ ticketValue: parseFloat(e.target.value) || 0 })}
+                    onChange={e => setState({ ticketValue: numInput(e.target.value) })}
                     className={cn(inputCls, "pl-9", calc?.excedeNorma && "border-amber-400 bg-amber-50/30")}
                   />
                 </div>
@@ -491,7 +492,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
                   <input
                     type="number" min="1" max="31"
                     value={s.daysPerMonth === 0 ? '' : s.daysPerMonth}
-                    onChange={e => setState({ daysPerMonth: parseInt(e.target.value) || 0 })}
+                    onChange={e => setState({ daysPerMonth: intInput(e.target.value) })}
                     className={inputCls}
                   />
                 </div>
@@ -500,7 +501,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
                   <input
                     type="number" min="1" max="12"
                     value={s.months === 0 ? '' : s.months}
-                    onChange={e => setState({ months: parseInt(e.target.value) || 0 })}
+                    onChange={e => setState({ months: intInput(e.target.value) })}
                     className={inputCls}
                   />
                 </div>
@@ -534,7 +535,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
                 <input
                   type="number" min="0" step="50"
                   value={s.valorAnualPorPessoa === 0 ? '' : s.valorAnualPorPessoa}
-                  onChange={e => setState({ valorAnualPorPessoa: parseFloat(e.target.value) || 0 })}
+                  onChange={e => setState({ valorAnualPorPessoa: numInput(e.target.value) })}
                   className={cn(inputCls, "pl-9")}
                   placeholder={tipo === 'infancia' ? 'ex: 3 600' : tipo === 'saude' ? 'ex: 1 200' : tipo === 'educacao' ? 'ex: 2 400' : tipo === 'car' ? 'ex: 3 600' : 'ex: 150'}
                 />
@@ -621,7 +622,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
           <input
             type="number" min="1"
             value={s.employees === 0 ? '' : s.employees}
-            onChange={e => setState({ employees: parseInt(e.target.value) || 0 })}
+            onChange={e => setState({ employees: intInput(e.target.value) })}
             className={inputCls}
           />
         </div>
@@ -652,7 +653,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
                 <input
                   type="number" min="0" step="0.01"
                   value={s.ticketValue === 0 ? '' : s.ticketValue}
-                  onChange={e => setState({ ticketValue: parseFloat(e.target.value) || 0 })}
+                  onChange={e => setState({ ticketValue: numInput(e.target.value) })}
                   className={cn(inputCls, "pl-9", calc?.excedeNorma && "border-amber-400 bg-amber-50/30")}
                 />
               </div>
@@ -676,7 +677,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
                 <input
                   type="number" min="1" max="31"
                   value={s.daysPerMonth === 0 ? '' : s.daysPerMonth}
-                  onChange={e => setState({ daysPerMonth: parseInt(e.target.value) || 0 })}
+                  onChange={e => setState({ daysPerMonth: intInput(e.target.value) })}
                   className={inputCls}
                 />
               </div>
@@ -685,7 +686,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
                 <input
                   type="number" min="1" max="12"
                   value={s.months === 0 ? '' : s.months}
-                  onChange={e => setState({ months: parseInt(e.target.value) || 0 })}
+                  onChange={e => setState({ months: intInput(e.target.value) })}
                   className={inputCls}
                 />
               </div>
@@ -723,7 +724,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
               <input
                 type="number" min="0" step="50"
                 value={s.valorAnualPorPessoa === 0 ? '' : s.valorAnualPorPessoa}
-                onChange={e => setState({ valorAnualPorPessoa: parseFloat(e.target.value) || 0 })}
+                onChange={e => setState({ valorAnualPorPessoa: numInput(e.target.value) })}
                 className={cn(inputCls, "pl-9")}
                 placeholder={tipo === 'infancia' ? 'ex: 3 600' : tipo === 'saude' ? 'ex: 1 200' : tipo === 'educacao' ? 'ex: 2 400' : tipo === 'car' ? 'ex: 3 600' : 'ex: 150'}
               />

@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { numInput, intInput } from './lib/inputGuards';
 import { motion } from 'motion/react';
 import { Car, Euro, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { cn } from './lib/utils';
@@ -312,7 +313,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
       render: (s, setS) => (
         <div className="relative">
           <Euro className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
-          <input type="number" value={s.price === 0 ? '' : s.price} onChange={e => setS({ price: Number(e.target.value) || 0 })} className={cn(inputClass, "pl-[40px]")} />
+          <input type="number" value={s.price === 0 ? '' : s.price} onChange={e => setS({ price: numInput(e.target.value) })} className={cn(inputClass, "pl-[40px]")} />
         </div>
       ),
       skipValue: 0,
@@ -351,7 +352,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
       description: 'Total estimado gasto por ano em revisões, reparações e pneus.',
       isVisible: () => true,
       render: (s, setS) => (
-        <input type="number" value={s.maintenanceCost === 0 ? '' : s.maintenanceCost} onChange={e => setS({ maintenanceCost: Number(e.target.value) || 0 })} className={cn(inputClass, "py-[8px] px-[12px]")} />
+        <input type="number" value={s.maintenanceCost === 0 ? '' : s.maintenanceCost} onChange={e => setS({ maintenanceCost: numInput(e.target.value) })} className={cn(inputClass, "py-[8px] px-[12px]")} />
       ),
       skipValue: 0,
     },
@@ -361,7 +362,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
       description: 'Prémio anual do seguro automóvel e portagens.',
       isVisible: () => true,
       render: (s, setS) => (
-        <input type="number" value={s.insuranceCost === 0 ? '' : s.insuranceCost} onChange={e => setS({ insuranceCost: Number(e.target.value) || 0 })} className={cn(inputClass, "py-[8px] px-[12px]")} />
+        <input type="number" value={s.insuranceCost === 0 ? '' : s.insuranceCost} onChange={e => setS({ insuranceCost: numInput(e.target.value) })} className={cn(inputClass, "py-[8px] px-[12px]")} />
       ),
       skipValue: 0,
     },
@@ -371,7 +372,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
       description: 'Total estimado gasto em combustível ou energia elétrica por ano.',
       isVisible: () => true,
       render: (s, setS) => (
-        <input type="number" value={s.fuelCost === 0 ? '' : s.fuelCost} onChange={e => setS({ fuelCost: Number(e.target.value) || 0 })} className={cn(inputClass, "py-[8px] px-[12px]")} />
+        <input type="number" value={s.fuelCost === 0 ? '' : s.fuelCost} onChange={e => setS({ fuelCost: numInput(e.target.value) })} className={cn(inputClass, "py-[8px] px-[12px]")} />
       ),
       skipValue: 0,
     },
@@ -469,7 +470,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
             <label className={labelClass}>Custo Aquisição (Base s/ IVA) <Tip>O preço de compra da viatura (sem IVA). Determina os limites de dedução e amortização permitidos.</Tip></label>
             <div className="relative">
               <Euro className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
-              <input type="number" value={price === 0 ? '' : price} onChange={e=>setState({price: Number(e.target.value) || 0})} className={cn(inputClass, "pl-[40px]")} />
+              <input type="number" value={price === 0 ? '' : price} onChange={e=>setState({price: numInput(e.target.value)})} className={cn(inputClass, "pl-[40px]")} />
             </div>
           </div>
 
@@ -498,15 +499,15 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
             <div className="space-y-[16px]">
               <div>
                 <label className="text-[11px] font-[700] text-[#64748B] uppercase">Manutenção & Oficinas <Tip>O total gasto por ano em revisões, reparações, pneus e outros serviços de manutenção.</Tip></label>
-                <input type="number" value={maintenanceCost === 0 ? '' : maintenanceCost} onChange={e=>setState({maintenanceCost: Number(e.target.value) || 0})} className={cn(inputClass, "py-[8px] px-[12px] mt-1")} />
+                <input type="number" value={maintenanceCost === 0 ? '' : maintenanceCost} onChange={e=>setState({maintenanceCost: numInput(e.target.value)})} className={cn(inputClass, "py-[8px] px-[12px] mt-1")} />
               </div>
               <div>
                 <label className="text-[11px] font-[700] text-[#64748B] uppercase">Seguro & Portagens <Tip>O prémio anual do seguro automóvel. Geralmente dedutível como gasto da empresa.</Tip></label>
-                <input type="number" value={insuranceCost === 0 ? '' : insuranceCost} onChange={e=>setState({insuranceCost: Number(e.target.value) || 0})} className={cn(inputClass, "py-[8px] px-[12px] mt-1")} />
+                <input type="number" value={insuranceCost === 0 ? '' : insuranceCost} onChange={e=>setState({insuranceCost: numInput(e.target.value)})} className={cn(inputClass, "py-[8px] px-[12px] mt-1")} />
               </div>
               <div>
                 <label className="text-[11px] font-[700] text-[#64748B] uppercase">Combustível / Carga <Tip>O total gasto em combustível por ano. Parcialmente dedutível consoante o tipo de viatura.</Tip></label>
-                <input type="number" value={fuelCost === 0 ? '' : fuelCost} onChange={e=>setState({fuelCost: Number(e.target.value) || 0})} className={cn(inputClass, "py-[8px] px-[12px] mt-1")} />
+                <input type="number" value={fuelCost === 0 ? '' : fuelCost} onChange={e=>setState({fuelCost: numInput(e.target.value)})} className={cn(inputClass, "py-[8px] px-[12px] mt-1")} />
               </div>
             </div>
           </div>

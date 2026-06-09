@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
 import { Receipt, Plus, Trash2, Users, Wallet, Sliders } from 'lucide-react';
 import { cn } from './lib/utils';
+import { intInput } from './lib/inputGuards';
 import { Tip } from './Tip';
 import {
   simular,
@@ -119,11 +120,11 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelCls}>Dependentes</label>
-              <input type="number" min={0} step={1} className={inputCls} value={s.dependentes === 0 ? '' : s.dependentes} onChange={(e) => set({ dependentes: parseInt(e.target.value) || 0 })} />
+              <input type="number" min={0} step={1} className={inputCls} value={s.dependentes === 0 ? '' : s.dependentes} onChange={(e) => { const nd = intInput(e.target.value); set({ dependentes: nd, dep0a3: Math.min(s.dep0a3, nd) }); }} />
             </div>
             <div>
               <label className={labelCls}>… dos quais ≤ 3 anos</label>
-              <input type="number" min={0} step={1} className={inputCls} value={s.dep0a3 === 0 ? '' : s.dep0a3} onChange={(e) => set({ dep0a3: parseInt(e.target.value) || 0 })} />
+              <input type="number" min={0} max={s.dependentes} step={1} className={inputCls} value={s.dep0a3 === 0 ? '' : s.dep0a3} onChange={(e) => set({ dep0a3: intInput(e.target.value, 0, s.dependentes) })} />
             </div>
           </div>
           <div>

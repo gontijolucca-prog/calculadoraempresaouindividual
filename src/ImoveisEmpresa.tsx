@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { numInput, intInput } from './lib/inputGuards';
 import React, { useMemo } from 'react';
 import { Home, CheckCircle, XCircle, AlertTriangle, ArrowRight, Building } from 'lucide-react';
 import { cn } from './lib/utils';
@@ -122,7 +123,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
         <div className="space-y-[18px]">
           <div>
             <label className={labelCls}>Valor do Imóvel (€) <Tip>O valor atual do imóvel em euros. Serve para estimar o IMT, Imposto de Selo e o impacto no balanço da empresa.</Tip></label>
-            <input type="number" min="0" step="5000" value={st.valorImovel === 0 ? '' : st.valorImovel} onChange={e => setSt({ valorImovel: parseFloat(e.target.value) || 0 })} className={inputCls} placeholder="ex: 250000" />
+            <input type="number" min="0" step="5000" value={st.valorImovel === 0 ? '' : st.valorImovel} onChange={e => setSt({ valorImovel: numInput(e.target.value) })} className={inputCls} placeholder="ex: 250000" />
           </div>
           <div>
             <label className={labelCls}>Tipo de Uso <Tip>Para que vai ser usado o imóvel: habitação, comercial ou misto.</Tip></label>
@@ -321,7 +322,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
               min="0"
               step="5000"
               value={s.valorImovel === 0 ? '' : s.valorImovel}
-              onChange={e => setState({ valorImovel: parseFloat(e.target.value) || 0 })}
+              onChange={e => setState({ valorImovel: numInput(e.target.value) })}
               className={inputCls}
               placeholder="ex: 250000"
             />

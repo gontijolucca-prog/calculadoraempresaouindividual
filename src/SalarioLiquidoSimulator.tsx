@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { numInput, intInput } from './lib/inputGuards';
 import React, { useMemo } from 'react';
 import { Banknote, User, ChevronDown, ShieldCheck, Euro } from 'lucide-react';
 import { cn } from './lib/utils';
@@ -78,7 +79,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
                 min="920"
                 step="50"
                 value={state.salarioBruto === 0 ? '' : state.salarioBruto}
-                onChange={e => setSt({ salarioBruto: parseFloat(e.target.value) || 0 })}
+                onChange={e => setSt({ salarioBruto: numInput(e.target.value) })}
                 className={cn(inputCls, "pl-9")}
                 placeholder="ex: 2000"
               />
@@ -110,7 +111,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
               min="0"
               max="20"
               value={state.nrDependentes === 0 ? '' : state.nrDependentes}
-              onChange={e => setSt({ nrDependentes: parseInt(e.target.value) || 0 })}
+              onChange={e => setSt({ nrDependentes: intInput(e.target.value) })}
               className={inputCls}
             />
           </div>
@@ -158,7 +159,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
                   max="20"
                   step="0.01"
                   value={state.subsidioAlimentacaoDiario === 0 ? '' : state.subsidioAlimentacaoDiario}
-                  onChange={e => setSt({ subsidioAlimentacaoDiario: parseFloat(e.target.value) || 0 })}
+                  onChange={e => setSt({ subsidioAlimentacaoDiario: numInput(e.target.value) })}
                   className={inputCls}
                   placeholder="ex: 6.15"
                 />
@@ -175,7 +176,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
                   min="0"
                   max="31"
                   value={state.diasSubsidio === 0 ? '' : state.diasSubsidio}
-                  onChange={e => setSt({ diasSubsidio: parseInt(e.target.value) || 0 })}
+                  onChange={e => setSt({ diasSubsidio: intInput(e.target.value) })}
                   className={inputCls}
                 />
               </div>
@@ -205,7 +206,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
               max="10"
               step="0.1"
               value={state.taxaSeguroTrabalho === 0 ? '' : state.taxaSeguroTrabalho}
-              onChange={e => setSt({ taxaSeguroTrabalho: parseFloat(e.target.value) || 0 })}
+              onChange={e => setSt({ taxaSeguroTrabalho: numInput(e.target.value) })}
               className={inputCls}
               placeholder="ex: 1.0"
             />
@@ -228,11 +229,11 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
             <div className="grid grid-cols-2 gap-[10px]">
               <div>
                 <label className={labelCls}>Idade <Tip>A sua idade. Determina a elegibilidade para IRS Jovem (até 35 anos).</Tip></label>
-                <input type="number" min="18" max="35" value={state.idade === 0 ? '' : state.idade} onChange={e => setSt({ idade: parseInt(e.target.value) || 0 })} className={inputCls} />
+                <input type="number" min="18" max="35" value={state.idade === 0 ? '' : state.idade} onChange={e => setSt({ idade: intInput(e.target.value) })} className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>Anos de atividade <Tip>Há quantos anos está a trabalhar. O benefício de IRS Jovem varia conforme o número de anos de atividade.</Tip></label>
-                <input type="number" min="0" max="5" value={state.anosAtividade === 0 ? '' : state.anosAtividade} onChange={e => setSt({ anosAtividade: parseInt(e.target.value) || 0 })} className={inputCls} />
+                <input type="number" min="0" max="5" value={state.anosAtividade === 0 ? '' : state.anosAtividade} onChange={e => setSt({ anosAtividade: intInput(e.target.value) })} className={inputCls} />
               </div>
             </div>
           )}
@@ -460,7 +461,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
                 min="920"
                 step="50"
                 value={s.salarioBruto === 0 ? '' : s.salarioBruto}
-                onChange={e => setState({ salarioBruto: parseFloat(e.target.value) || 0 })}
+                onChange={e => setState({ salarioBruto: numInput(e.target.value) })}
                 className={cn(inputCls, "pl-9")}
                 placeholder="ex: 2000"
               />
@@ -486,7 +487,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
               min="0"
               max="20"
               value={s.nrDependentes === 0 ? '' : s.nrDependentes}
-              onChange={e => setState({ nrDependentes: parseInt(e.target.value) || 0 })}
+              onChange={e => setState({ nrDependentes: intInput(e.target.value) })}
               className={inputCls}
             />
           </div>
@@ -529,7 +530,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
                   max="20"
                   step="0.01"
                   value={s.subsidioAlimentacaoDiario === 0 ? '' : s.subsidioAlimentacaoDiario}
-                  onChange={e => setState({ subsidioAlimentacaoDiario: parseFloat(e.target.value) || 0 })}
+                  onChange={e => setState({ subsidioAlimentacaoDiario: numInput(e.target.value) })}
                   className={inputCls}
                   placeholder="ex: 6.15"
                 />
@@ -546,7 +547,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
                   min="0"
                   max="31"
                   value={s.diasSubsidio === 0 ? '' : s.diasSubsidio}
-                  onChange={e => setState({ diasSubsidio: parseInt(e.target.value) || 0 })}
+                  onChange={e => setState({ diasSubsidio: intInput(e.target.value) })}
                   className={inputCls}
                 />
               </div>
@@ -569,7 +570,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
               max="10"
               step="0.1"
               value={s.taxaSeguroTrabalho === 0 ? '' : s.taxaSeguroTrabalho}
-              onChange={e => setState({ taxaSeguroTrabalho: parseFloat(e.target.value) || 0 })}
+              onChange={e => setState({ taxaSeguroTrabalho: numInput(e.target.value) })}
               className={inputCls}
               placeholder="ex: 1.0"
             />
@@ -593,11 +594,11 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
             <div className="grid grid-cols-2 gap-[10px]">
               <div>
                 <label className={labelCls}>Idade <Tip>A sua idade. Determina a elegibilidade para IRS Jovem (até 35 anos).</Tip></label>
-                <input type="number" min="18" max="35" value={s.idade === 0 ? '' : s.idade} onChange={e => setState({ idade: parseInt(e.target.value) || 0 })} className={inputCls} />
+                <input type="number" min="18" max="35" value={s.idade === 0 ? '' : s.idade} onChange={e => setState({ idade: intInput(e.target.value) })} className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>Anos de atividade <Tip>Há quantos anos está a trabalhar. O benefício de IRS Jovem varia conforme o número de anos de atividade.</Tip></label>
-                <input type="number" min="0" max="5" value={s.anosAtividade === 0 ? '' : s.anosAtividade} onChange={e => setState({ anosAtividade: parseInt(e.target.value) || 0 })} className={inputCls} />
+                <input type="number" min="0" max="5" value={s.anosAtividade === 0 ? '' : s.anosAtividade} onChange={e => setState({ anosAtividade: intInput(e.target.value) })} className={inputCls} />
               </div>
             </div>
           )}

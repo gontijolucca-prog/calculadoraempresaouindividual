@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { numInput, intInput } from './lib/inputGuards';
 import React, { useMemo } from 'react';
 import { calcSelfSSContribution } from './lib/pt2026';
 import { cn } from './lib/utils';
@@ -61,7 +62,7 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
               min="0"
               step="0.01"
               value={st.income === 0 ? '' : st.income}
-              onChange={e => setSt({ income: parseFloat(e.target.value) || 0 })}
+              onChange={e => setSt({ income: numInput(e.target.value) })}
               className={cn(inputClass, "pl-[40px]")}
               required
             />
@@ -295,7 +296,7 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
                 min="0"
                 step="0.01"
                 value={income === 0 ? '' : income}
-                onChange={e => setState({ income: parseFloat(e.target.value) || 0 })}
+                onChange={e => setState({ income: numInput(e.target.value) })}
                 className={cn(inputClass, "pl-[40px]")}
                 required
               />

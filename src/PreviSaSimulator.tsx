@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { numInput, intInput } from './lib/inputGuards';
 import { motion } from 'motion/react';
 import { ChevronDown, ChevronRight, Plus, Trash2, Calculator, Download } from 'lucide-react';
 import { cn } from './lib/utils';
@@ -60,7 +61,7 @@ function NumInput({ label, value, onChange, help, indent = false, readOnly = fal
         type="number" step="0.01"
         value={value || ''}
         readOnly={readOnly}
-        onChange={e => onChange?.(parseFloat(e.target.value) || 0)}
+        onChange={e => onChange?.(numInput(e.target.value))}
         className={cn(
           'w-full text-right text-[13px] font-[600] text-[#0F172A] tabular-nums px-2 py-1 border-r border-slate-300 bg-transparent focus:outline-none focus:bg-[#0677FF]/10 focus:ring-1 focus:ring-inset focus:ring-[#0677FF]',
           readOnly && 'text-slate-400 cursor-default',
@@ -660,7 +661,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                     <div>
                       <label className="block text-[10px] font-[600] text-slate-400 mb-0.5">Custo histórico (€)</label>
                       <input type="number" value={v.custoHistorico || ''}
-                        onChange={e => updateV(v.id, { custoHistorico: parseFloat(e.target.value) || 0 })}
+                        onChange={e => updateV(v.id, { custoHistorico: numInput(e.target.value) })}
                         placeholder="0,00"
                         className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30 text-right" />
                     </div>
@@ -668,7 +669,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                   <div>
                     <label className="block text-[10px] font-[600] text-slate-400 mb-0.5">Encargos com viatura no período (€)</label>
                     <input type="number" value={v.encargos || ''}
-                      onChange={e => updateV(v.id, { encargos: parseFloat(e.target.value) || 0 })}
+                      onChange={e => updateV(v.id, { encargos: numInput(e.target.value) })}
                       placeholder="0,00"
                       className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30 text-right" />
                   </div>
@@ -1150,7 +1151,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                       <div>
                         <label className="block text-[10px] font-[600] text-slate-400 mb-0.5">Custo histórico (€)</label>
                         <input type="number" value={v.custoHistorico || ''}
-                          onChange={e => updateViatura(v.id, { custoHistorico: parseFloat(e.target.value) || 0 })}
+                          onChange={e => updateViatura(v.id, { custoHistorico: numInput(e.target.value) })}
                           placeholder="0,00"
                           className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30 text-right" />
                       </div>
@@ -1158,7 +1159,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                     <div>
                       <label className="block text-[10px] font-[600] text-slate-400 mb-0.5">Encargos com viatura no período (€)</label>
                       <input type="number" value={v.encargos || ''}
-                        onChange={e => updateViatura(v.id, { encargos: parseFloat(e.target.value) || 0 })}
+                        onChange={e => updateViatura(v.id, { encargos: numInput(e.target.value) })}
                         placeholder="0,00"
                         className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30 text-right" />
                     </div>
