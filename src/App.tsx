@@ -947,15 +947,23 @@ function AppContent() {
     diagnostico: setDiagnosticoState, imoveis: setImoveisState, imt: setImtState,
     salario: setSalarioState, irs: setIrsState, previsa: setPreviSaState,
   };
-  // Input escondido que o AI Contabilista aciona para importar o SAF-T de um cliente novo
-  // diretamente (sem mandar a pessoa procurar o botão na Lista de Empresas).
+  // Input escondido que o AI Contabilista aciona para importar um SAF-T. O alvo
+  // (criar cliente novo, ou substituir/importar no cliente ativo) é guardado num
+  // ref antes de abrir o seletor de ficheiro.
   const botSaftInputRef = useRef<HTMLInputElement>(null);
+  const botSaftTargetRef = useRef<'novo' | 'empresa'>('novo');
   const botBridge: BotBridge = {
     currentUser: officeSettings.nome?.trim() || undefined,
     currentView: VIEW_TITLES[view],
     navigate: (v) => setView(v as ViewType),
     setMode: (m) => { if (m === 'novo-cliente') handleNovaEmpresaManual(); else selectMode('empresa'); },
-    openSaftUpload: () => botSaftInputRef.current?.click(),
+    openSaftUpload: (mode = 'novo') => {
+      // Para "empresa" é preciso um cliente ativo (substituir/importar nesse cliente).
+      if (mode === 'empresa' && !currentEmpresaId) return { ok: false, reason: 'sem-cliente' };
+      botSaftTargetRef.current = mode;
+      botSaftInputRef.current?.click();
+      return { ok: true };
+    },
     listDownloadableDocs: () => [
       { id: 'previsa', label: 'Previsa (Excel Modelo 22)' },
       ...DOC_TYPES.map((d) => ({ id: d.id, label: d.label })),
@@ -1401,7 +1409,10 @@ function AppContent() {
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];
-          if (f) handleNovaEmpresaFromSAFT(f);
+          if (f) {
+            if (botSaftTargetRef.current === 'empresa' && currentEmpresaId) handleEmpresaSAFT(f, currentEmpresaId);
+            else handleNovaEmpresaFromSAFT(f);
+          }
           e.target.value = '';
         }}
       />

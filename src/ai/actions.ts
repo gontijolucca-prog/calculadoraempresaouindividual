@@ -17,7 +17,7 @@ export type BotAction =
   | { type: 'setMode'; mode: 'empresa' | 'novo-cliente' }
   | { type: 'fill'; target: string; fields: FillField[] }
   | { type: 'suggestion'; title: string; detail: string; area?: string }
-  | { type: 'openSaftUpload' }
+  | { type: 'openSaftUpload'; mode?: 'novo' | 'empresa' }
   | { type: 'download'; docId: string }
   | { type: 'selectClient'; name: string }
   | { type: 'replies'; options: string[] };
@@ -67,7 +67,8 @@ function sanitizeActions(parsed: unknown): BotAction[] {
         area: typeof (a as any).area === 'string' ? (a as any).area.slice(0, 120) : undefined,
       });
     } else if (t === 'openSaftUpload') {
-      out.push({ type: 'openSaftUpload' });
+      const mode = (a as any).mode === 'empresa' ? 'empresa' : 'novo';
+      out.push({ type: 'openSaftUpload', mode });
     } else if (t === 'download' && DOWNLOAD_DOC_IDS.has((a as any).docId)) {
       out.push({ type: 'download', docId: (a as any).docId });
     } else if (t === 'selectClient' && typeof (a as any).name === 'string' && (a as any).name.trim()) {

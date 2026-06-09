@@ -10,8 +10,9 @@ export interface BotBridge {
   navigate: (view: ViewId) => void;
   setMode: (mode: 'empresa' | 'novo-cliente') => void;
   applyFill: (target: string, fields: FillField[]) => void;
-  /** Abre diretamente o seletor de ficheiro para importar um SAF-T de cliente novo. */
-  openSaftUpload?: () => void;
+  /** Abre o seletor de ficheiro para importar um SAF-T: "novo" cria um cliente novo;
+   *  "empresa" importa/substitui no cliente ativo. */
+  openSaftUpload?: (mode?: 'novo' | 'empresa') => { ok: boolean; reason?: string };
   /** Lista de documentos que o bot pode gerar e descarregar. */
   listDownloadableDocs?: () => { id: string; label: string }[];
   /** Lista de clientes guardados (id + nome). */
@@ -31,7 +32,7 @@ interface ChatMsg {
   pendingFill?: { target: string; fields: FillField[] } | null;
   fillApplied?: boolean;
   replies?: string[];               // sugestões de próximo passo (botões clicáveis)
-  saftCta?: boolean;                // mostra botão "Carregar SAF-T" (abre o seletor de ficheiro)
+  saftCta?: 'novo' | 'empresa';     // mostra botão "Carregar SAF-T" (novo cliente / cliente ativo)
 }
 
 // Chat só por sessão (sobrevive a refresh, limpa-se ao fechar o separador/browser);
@@ -178,7 +179,7 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
 
       const fillAction = actions.find((a) => a.type === 'fill') as Extract<BotAction, { type: 'fill' }> | undefined;
       const repliesAction = actions.find((a) => a.type === 'replies') as Extract<BotAction, { type: 'replies' }> | undefined;
-      const saftAction = actions.some((a) => a.type === 'openSaftUpload');
+      const saftAction = actions.find((a) => a.type === 'openSaftUpload') as Extract<BotAction, { type: 'openSaftUpload' }> | undefined;
       // openSaftUpload vira um botão na mensagem: abrir o seletor de ficheiro só é
       // permitido a partir de um clique do utilizador (gesto), não de um callback async.
       const autoActions = actions.filter((a) => a.type !== 'fill' && a.type !== 'replies' && a.type !== 'openSaftUpload');
@@ -190,7 +191,7 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
         notes: notes.length ? notes : undefined,
         pendingFill: fillAction ? { target: fillAction.target, fields: fillAction.fields } : null,
         replies: repliesAction?.options,
-        saftCta: saftAction || undefined,
+        saftCta: saftAction ? (saftAction.mode ?? 'novo') : undefined,
       }]);
     } catch {
       setMsgs((prev) => [...prev, { role: 'assistant', content: 'Tive um problema de ligação. Verifica a internet e tenta de novo.' }]);
@@ -331,9 +332,16 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
                       </div>
                     )}
                     {m.saftCta && (
-                      <button type="button" onClick={() => bridge.openSaftUpload?.()}
+                      <button type="button"
+                        onClick={() => {
+                          const res = bridge.openSaftUpload?.(m.saftCta);
+                          if (res && !res.ok && res.reason === 'sem-cliente') {
+                            setMsgs((prev) => [...prev, { role: 'assistant', content: 'Para importar para um cliente existente, escolhe primeiro o cliente. Diz-me o nome dele.' }]);
+                          }
+                        }}
                         className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-[800] px-3 py-2 rounded-xl bg-[#0677FF] text-white hover:bg-[#0560d6] active:scale-[0.97] transition-all">
-                        <FileUp className="w-4 h-4" strokeWidth={2.4} /> Carregar ficheiro SAF-T
+                        <FileUp className="w-4 h-4" strokeWidth={2.4} />
+                        {m.saftCta === 'empresa' ? 'Carregar SAF-T no cliente ativo' : 'Carregar SAF-T (cliente novo)'}
                       </button>
                     )}
                   </div>
