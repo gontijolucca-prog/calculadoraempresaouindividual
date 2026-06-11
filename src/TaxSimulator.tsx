@@ -269,6 +269,23 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
   // Verde = regime recomendado (bom). O vencedor é SEMPRE verde, seja ENI ou
   // Sociedade — verde significa "melhor opção", nunca depende da identidade do
   // regime. (Antes a Sociedade vencedora saía a vermelho, o que sugeria "mau".)
+  // Entrada para a análise completa — PRIMEIRA coisa nos resultados, antes
+  // do Parecer & Conclusão (pedido do utilizador).
+  const analiseCompletaBanner = (
+    <button
+      type="button"
+      onClick={() => setState({ vistaCompleta: true })}
+      className="w-full text-left flex items-center gap-3 rounded-[16px] border border-[#0677FF]/30 bg-[#0677FF]/[0.05] hover:bg-[#0677FF]/[0.09] px-5 py-4 transition-colors"
+    >
+      <span className="text-[20px]" aria-hidden="true">⚖️</span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[13.5px] font-[800] text-[#0B1D2D]">Análise completa de enquadramento 2026</span>
+        <span className="block text-[12px] text-slate-600 font-[500]">Valida os regimes legalmente possíveis (IRS/IRC simplificado, IVA art. 53.º, trimestral/mensal) e compara só os cenários elegíveis — com rendimentos por natureza, dividendos e tesouraria do IVA.</span>
+      </span>
+      <span className="text-[12px] font-[800] text-[#0677FF] shrink-0">Abrir →</span>
+    </button>
+  );
+
   const winnerBanner = (
     <section className="p-6 rounded-[20px] border-2 flex flex-col md:flex-row items-start gap-4 shadow-sm bg-emerald-50 border-emerald-200">
       <div className="p-3 rounded-[14px] bg-emerald-100 text-emerald-600">
@@ -484,18 +501,6 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
 
   const extras = (
     <>
-      <button
-        type="button"
-        onClick={() => setState({ vistaCompleta: true })}
-        className="w-full text-left flex items-center gap-3 rounded-[16px] border border-[#0677FF]/30 bg-[#0677FF]/[0.05] hover:bg-[#0677FF]/[0.09] px-5 py-4 transition-colors"
-      >
-        <span className="text-[20px]" aria-hidden="true">⚖️</span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-[13.5px] font-[800] text-[#0B1D2D]">Análise completa de enquadramento 2026</span>
-          <span className="block text-[12px] text-slate-600 font-[500]">Valida os regimes legalmente possíveis (IRS/IRC simplificado, IVA art. 53.º, trimestral/mensal) e compara só os cenários elegíveis — com rendimentos por natureza, dividendos e tesouraria do IVA.</span>
-        </span>
-        <span className="text-[12px] font-[800] text-[#0677FF] shrink-0">Abrir →</span>
-      </button>
       {(results.ppc > 0 || results.retencaoFonte > 0) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {results.ppc > 0 && (
@@ -560,7 +565,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
 
   const resultsContent = (
     <div className="flex flex-col gap-6 lg:gap-8">
-      {winnerBanner}{irsChips}
+      {analiseCompletaBanner}{winnerBanner}{irsChips}
       <div className="text-[11px] font-[800] text-[#64748B] uppercase tracking-[1px]">Folha 5 &amp; 6 — Enquadramento Tático (Resultados)</div>
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">{eniCard}{ldaCard}</div>
       {extras}
@@ -644,7 +649,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
               <p className="text-[15px] font-[500] text-[#64748B] mt-1">Cálculo preditivo OE 2026.</p>
             </div>
           </div>
-          {winnerBanner}{irsChips}
+          {analiseCompletaBanner}{winnerBanner}{irsChips}
           <div className="text-[11px] font-[800] text-[#64748B] uppercase tracking-[1px]">Folha 5 & 6 — Enquadramento Tático (Resultados)</div>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">{eniCard}{ldaCard}</div>
           {extras}
@@ -681,7 +686,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           </div>
 
           <h2 className="text-[18px] font-[800] text-[#0F172A] pt-4">Resultados</h2>
-          {winnerBanner}{irsChips}{avisosBanner}
+          {analiseCompletaBanner}{winnerBanner}{irsChips}{avisosBanner}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">{eniCard}{eniOrgCard}{ldaCard}</div>
           {extras}
           {outrosPanel}
@@ -840,7 +845,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
 
           {/* Full results */}
           <div className="pt-2 space-y-3">
-            {winnerBanner}
+            {analiseCompletaBanner}{winnerBanner}
             {irsChips}
             {avisosBanner}
             <div className="grid grid-cols-1 gap-4">{eniCard}{eniOrgCard}{ldaCard}</div>
