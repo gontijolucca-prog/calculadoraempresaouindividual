@@ -25,14 +25,18 @@ export interface BotBridge {
   currentView?: string;
 }
 
+// Nota de ação aplicada — guarda a ação para o utilizador poder REPETI-LA com um clique.
+interface NoteItem { text: string; action?: BotAction }
+
 interface ChatMsg {
   role: 'user' | 'assistant';
   content: string;
-  notes?: string[];                 // ações auto-aplicadas (navegação/sugestão)
+  notes?: NoteItem[];               // ações auto-aplicadas (clicáveis para repetir)
   pendingFill?: { target: string; fields: FillField[] } | null;
   fillApplied?: boolean;
   replies?: string[];               // sugestões de próximo passo (botões clicáveis)
-  saftCta?: 'novo' | 'empresa';     // mostra botão "Carregar SAF-T" (novo cliente / cliente ativo)
+  saftCta?: 'novo' | 'empresa' | 'escolher'; // botão de SAF-T; 'escolher' mostra os clientes
+  downloadPicker?: boolean;         // assistente guiado: escolher cliente + documento
 }
 
 // Chat só por sessão (sobrevive a refresh, limpa-se ao fechar o separador/browser);
@@ -91,6 +95,66 @@ function renderText(text: string): React.ReactNode {
   });
 }
 
+// Assistente guiado de download: escolher o cliente, depois o documento, e descarrega.
+function DownloadPicker({ bridge }: { bridge: BotBridge }) {
+  const [clientName, setClientName] = useState<string | null>(null);
+  const [done, setDone] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const clients = bridge.listClients?.() ?? [];
+  const docs = bridge.listDownloadableDocs?.() ?? [];
+
+  if (!clients.length) {
+    return <p className="mt-2 text-[12px] font-[600] text-[#64748B]">Ainda não há clientes guardados — cria primeiro um cliente.</p>;
+  }
+  return (
+    <div className="mt-2.5 rounded-[12px] border border-[#0677FF]/25 bg-[#0677FF]/5 p-3">
+      <div className="text-[11px] font-[800] uppercase tracking-[0.4px] text-[#0677FF] mb-2">
+        {clientName ? <>Documento para <span className="normal-case">{clientName}</span></> : 'De que cliente é o documento?'}
+      </div>
+      {!clientName && (
+        <div className="flex flex-wrap gap-1.5">
+          {clients.map((c) => (
+            <button key={c.id} type="button"
+              onClick={() => { bridge.selectClient?.(c.name); setClientName(c.name); }}
+              className="text-[12px] font-[700] px-3 py-1.5 rounded-full bg-white border border-[#0677FF]/30 text-[#0677FF] hover:bg-[#0677FF] hover:text-white active:scale-[0.97] transition-all">
+              {c.name}
+            </button>
+          ))}
+        </div>
+      )}
+      {clientName && !done && (
+        <>
+          <div className="flex flex-wrap gap-1.5">
+            {docs.map((d) => (
+              <button key={d.id} type="button" disabled={downloading}
+                onClick={async () => {
+                  setDownloading(true);
+                  const res = await bridge.downloadDoc?.(d.id);
+                  setDownloading(false);
+                  setDone(res?.ok ? `Descarreguei: ${res.label ?? d.label}` : 'Não consegui gerar esse documento.');
+                }}
+                className="text-[12px] font-[700] px-3 py-1.5 rounded-full bg-white border border-[#0677FF]/30 text-[#0677FF] hover:bg-[#0677FF] hover:text-white active:scale-[0.97] transition-all disabled:opacity-50">
+                {d.label}
+              </button>
+            ))}
+          </div>
+          <button type="button" onClick={() => setClientName(null)}
+            className="mt-2 text-[11px] font-[700] text-[#64748B] hover:text-[#0677FF] hover:underline">
+            ← trocar de cliente
+          </button>
+        </>
+      )}
+      {done && (
+        <div className="flex items-center gap-1.5 text-[12px] font-[700] text-emerald-600">
+          <Check className="w-3.5 h-3.5" strokeWidth={3} /> {done}
+          <button type="button" onClick={() => setDone(null)}
+            className="ml-2 text-[11px] font-[700] text-[#64748B] hover:text-[#0677FF] hover:underline">outro documento</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AIContabilista({ bridge, liftBottom = false }: { bridge: BotBridge; liftBottom?: boolean }) {
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<ChatMsg[]>(loadChat);
@@ -129,15 +193,16 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
   }, [open]);
 
   // Aplica ações que não precisam de confirmação (navegação, modo, sugestões).
-  const applyAutoActions = useCallback(async (actions: BotAction[]): Promise<string[]> => {
-    const notes: string[] = [];
+  // Cada nota guarda a ação original — clicar na nota volta a executá-la.
+  const applyAutoActions = useCallback(async (actions: BotAction[]): Promise<NoteItem[]> => {
+    const notes: NoteItem[] = [];
     for (const a of actions) {
       if (a.type === 'navigate') {
         bridge.navigate(a.view);
-        notes.push(`Abri: ${VIEW_LABEL[a.view] ?? a.view}`);
+        notes.push({ text: `Abri: ${VIEW_LABEL[a.view] ?? a.view}`, action: a });
       } else if (a.type === 'setMode') {
         bridge.setMode(a.mode);
-        notes.push(a.mode === 'empresa' ? 'Mudei para o modo Empresa' : 'Mudei para o modo Novo Cliente');
+        notes.push({ text: a.mode === 'empresa' ? 'Mudei para o modo Empresa' : 'Mudei para o modo Novo Cliente', action: a });
       } else if (a.type === 'suggestion') {
         // Feedback interno: regista em silêncio, sem mostrar nada ao utilizador.
         await registerSuggestion({
@@ -146,15 +211,25 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
         });
       } else if (a.type === 'selectClient') {
         const res = bridge.selectClient?.(a.name);
-        notes.push(res?.ok ? `Selecionei o cliente: ${res.name}` : `Não encontrei nenhum cliente com o nome "${a.name}".`);
+        notes.push(res?.ok
+          ? { text: `Selecionei o cliente: ${res.name}`, action: a }
+          : { text: `Não encontrei nenhum cliente com o nome "${a.name}".` });
       } else if (a.type === 'download') {
         const res = await bridge.downloadDoc?.(a.docId);
-        if (res?.ok) notes.push(`Descarreguei: ${res.label ?? 'documento'}`);
-        else if (res?.reason === 'sem-cliente') notes.push('Para descarregar um documento, seleciona primeiro um cliente.');
-        else notes.push('Não consegui gerar esse documento.');
+        if (res?.ok) notes.push({ text: `Descarreguei: ${res.label ?? 'documento'}`, action: a });
+        else if (res?.reason === 'sem-cliente') notes.push({ text: 'Para descarregar um documento, seleciona primeiro um cliente.' });
+        else notes.push({ text: 'Não consegui gerar esse documento.' });
       }
     }
     return notes;
+  }, [bridge]);
+
+  // Repete uma ação a partir do clique na nota (navegar, mudar modo, selecionar, descarregar).
+  const repeatAction = useCallback(async (a: BotAction) => {
+    if (a.type === 'navigate') bridge.navigate(a.view);
+    else if (a.type === 'setMode') bridge.setMode(a.mode);
+    else if (a.type === 'selectClient') bridge.selectClient?.(a.name);
+    else if (a.type === 'download') await bridge.downloadDoc?.(a.docId);
   }, [bridge]);
 
   const send = useCallback(async (text: string) => {
@@ -180,9 +255,10 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
       const fillAction = actions.find((a) => a.type === 'fill') as Extract<BotAction, { type: 'fill' }> | undefined;
       const repliesAction = actions.find((a) => a.type === 'replies') as Extract<BotAction, { type: 'replies' }> | undefined;
       const saftAction = actions.find((a) => a.type === 'openSaftUpload') as Extract<BotAction, { type: 'openSaftUpload' }> | undefined;
+      const wantsDownloadPicker = actions.some((a) => a.type === 'downloadPicker');
       // openSaftUpload vira um botão na mensagem: abrir o seletor de ficheiro só é
       // permitido a partir de um clique do utilizador (gesto), não de um callback async.
-      const autoActions = actions.filter((a) => a.type !== 'fill' && a.type !== 'replies' && a.type !== 'openSaftUpload');
+      const autoActions = actions.filter((a) => a.type !== 'fill' && a.type !== 'replies' && a.type !== 'openSaftUpload' && a.type !== 'downloadPicker');
       const notes = await applyAutoActions(autoActions);
 
       setMsgs((prev) => [...prev, {
@@ -192,6 +268,7 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
         pendingFill: fillAction ? { target: fillAction.target, fields: fillAction.fields } : null,
         replies: repliesAction?.options,
         saftCta: saftAction ? (saftAction.mode ?? 'novo') : undefined,
+        downloadPicker: wantsDownloadPicker || undefined,
       }]);
     } catch {
       setMsgs((prev) => [...prev, { role: 'assistant', content: 'Tive um problema de ligação. Verifica a internet e tenta de novo.' }]);
@@ -292,10 +369,16 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
                   } style={m.role === 'user' ? { background: 'linear-gradient(135deg, #0677FF 0%, #044BB6 100%)' } : undefined}>
                     {renderText(m.content)}
 
-                    {/* Notas de ações auto-aplicadas */}
-                    {m.notes?.map((n, k) => (
-                      <div key={k} className="mt-2 flex items-center gap-1.5 text-[11.5px] font-[700] text-[#0677FF]">
-                        <RotateCcw className="w-3.5 h-3.5" strokeWidth={2.5} /> {n}
+                    {/* Notas de ações auto-aplicadas — clicáveis para repetir a ação */}
+                    {m.notes?.map((n, k) => n.action ? (
+                      <button key={k} type="button" onClick={() => repeatAction(n.action!)}
+                        title="Clica para repetir esta ação"
+                        className="mt-2 flex items-center gap-1.5 text-[11.5px] font-[700] text-[#0677FF] hover:underline active:scale-[0.98] transition-all text-left">
+                        <RotateCcw className="w-3.5 h-3.5" strokeWidth={2.5} /> {n.text}
+                      </button>
+                    ) : (
+                      <div key={k} className="mt-2 flex items-center gap-1.5 text-[11.5px] font-[700] text-[#64748B]">
+                        <RotateCcw className="w-3.5 h-3.5" strokeWidth={2.5} /> {n.text}
                       </div>
                     ))}
 
@@ -331,10 +414,10 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
                         <Check className="w-3.5 h-3.5" strokeWidth={3} /> Campos preenchidos
                       </div>
                     )}
-                    {m.saftCta && (
+                    {m.saftCta && m.saftCta !== 'escolher' && (
                       <button type="button"
                         onClick={() => {
-                          const res = bridge.openSaftUpload?.(m.saftCta);
+                          const res = bridge.openSaftUpload?.(m.saftCta as 'novo' | 'empresa');
                           if (res && !res.ok && res.reason === 'sem-cliente') {
                             setMsgs((prev) => [...prev, { role: 'assistant', content: 'Para importar para um cliente existente, escolhe primeiro o cliente. Diz-me o nome dele.' }]);
                           }
@@ -343,6 +426,31 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
                         <FileUp className="w-4 h-4" strokeWidth={2.4} />
                         {m.saftCta === 'empresa' ? 'Carregar SAF-T no cliente ativo' : 'Carregar SAF-T (cliente novo)'}
                       </button>
+                    )}
+                    {m.saftCta === 'escolher' && (
+                      <div className="mt-2.5 rounded-[12px] border border-[#0677FF]/25 bg-[#0677FF]/5 p-3">
+                        <div className="text-[11px] font-[800] uppercase tracking-[0.4px] text-[#0677FF] mb-2">Para que cliente é o SAF-T?</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(bridge.listClients?.() ?? []).map((c) => (
+                            <button key={c.id} type="button"
+                              onClick={() => {
+                                // Mesmo clique = gesto: seleciona o cliente e abre logo o seletor de ficheiro.
+                                bridge.selectClient?.(c.name);
+                                bridge.openSaftUpload?.('empresa');
+                              }}
+                              className="text-[12px] font-[700] px-3 py-1.5 rounded-full bg-white border border-[#0677FF]/30 text-[#0677FF] hover:bg-[#0677FF] hover:text-white active:scale-[0.97] transition-all">
+                              {c.name}
+                            </button>
+                          ))}
+                          <button type="button" onClick={() => bridge.openSaftUpload?.('novo')}
+                            className="inline-flex items-center gap-1 text-[12px] font-[800] px-3 py-1.5 rounded-full bg-[#0677FF] text-white hover:bg-[#0560d6] active:scale-[0.97] transition-all">
+                            <FileUp className="w-3.5 h-3.5" strokeWidth={2.4} /> Cliente novo
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {m.downloadPicker && (
+                      <DownloadPicker bridge={bridge} />
                     )}
                   </div>
 

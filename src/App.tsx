@@ -986,8 +986,10 @@ function AppContent() {
     navigate: (v) => setView(v as ViewType),
     setMode: (m) => { if (m === 'novo-cliente') handleNovaEmpresaManual(); else selectMode('empresa'); },
     openSaftUpload: (mode = 'novo') => {
-      // Para "empresa" é preciso um cliente ativo (substituir/importar nesse cliente).
-      if (mode === 'empresa' && !currentEmpresaId) return { ok: false, reason: 'sem-cliente' };
+      // Para "empresa" é preciso um cliente ativo. Lê da lib (síncrono) e não do
+      // estado React: o chip do bot seleciona o cliente e abre o seletor no MESMO
+      // clique, antes de o estado re-renderizar.
+      if (mode === 'empresa' && !getCurrentEmpresaId()) return { ok: false, reason: 'sem-cliente' };
       botSaftTargetRef.current = mode;
       botSaftInputRef.current?.click();
       return { ok: true };
@@ -997,7 +999,9 @@ function AppContent() {
       ...DOC_TYPES.map((d) => ({ id: d.id, label: d.label })),
     ],
     downloadDoc: async (docId) => {
-      const emp = currentEmpresaId ? getEmpresa(currentEmpresaId) : null;
+      // Lê o cliente ativo da lib — fresco mesmo se acabou de ser selecionado.
+      const empId = getCurrentEmpresaId();
+      const emp = empId ? getEmpresa(empId) : null;
       if (!emp) return { ok: false, reason: 'sem-cliente' };
       try {
         if (docId === 'previsa') {

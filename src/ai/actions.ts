@@ -17,13 +17,14 @@ export type BotAction =
   | { type: 'setMode'; mode: 'empresa' | 'novo-cliente' }
   | { type: 'fill'; target: string; fields: FillField[] }
   | { type: 'suggestion'; title: string; detail: string; area?: string }
-  | { type: 'openSaftUpload'; mode?: 'novo' | 'empresa' }
+  | { type: 'openSaftUpload'; mode?: 'novo' | 'empresa' | 'escolher' }
   | { type: 'download'; docId: string }
+  | { type: 'downloadPicker' }
   | { type: 'selectClient'; name: string }
   | { type: 'replies'; options: string[] };
 
 const DOWNLOAD_DOC_IDS = new Set<string>([
-  'previsa', 'dr', 'declaracao', 'acta', 'alteracoes', 'fluxos', 'df',
+  'previsa', 'dr', 'declaracao', 'acta', 'alteracoes', 'fluxos', 'balanco', 'df',
 ]);
 
 const VIEW_IDS = new Set<string>([
@@ -67,8 +68,11 @@ function sanitizeActions(parsed: unknown): BotAction[] {
         area: typeof (a as any).area === 'string' ? (a as any).area.slice(0, 120) : undefined,
       });
     } else if (t === 'openSaftUpload') {
-      const mode = (a as any).mode === 'empresa' ? 'empresa' : 'novo';
+      const m = (a as any).mode;
+      const mode = m === 'empresa' ? 'empresa' : m === 'escolher' ? 'escolher' : 'novo';
       out.push({ type: 'openSaftUpload', mode });
+    } else if (t === 'downloadPicker') {
+      out.push({ type: 'downloadPicker' });
     } else if (t === 'download' && DOWNLOAD_DOC_IDS.has((a as any).docId)) {
       out.push({ type: 'download', docId: (a as any).docId });
     } else if (t === 'selectClient' && typeof (a as any).name === 'string' && (a as any).name.trim()) {
