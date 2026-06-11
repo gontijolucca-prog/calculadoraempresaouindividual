@@ -125,3 +125,9 @@ Implementadas no simulador (substituem a estimativa anualizada). Para validaçã
 - [ ] **Deficiência:** tabelas IV–VII aplicadas; **parcelas adicionais por dependente com incapacidade ≥60% (+€84,82/+€42,41) NÃO modeladas** — confirmar valores e relevância.
 - [x] **Acerto anual estimado:** IRS anual (escalões art. 68.º + dedução específica 8,54×IAS) − retenção anual. Para deficientes a estimativa anual não modela abatimentos próprios (indicativo).
 - [x] **Correção de bug anterior:** sem duodécimos, o total anual passou a incluir os 2 subsídios (14 remunerações); subsídio de alimentação anualizado a 11 meses (antes contava 14×).
+
+## Previsa — PPC/PAC do próximo período (11-jun)
+- [x] **Correção de bug:** o "PC estimado" antigo aplicava as taxas do PAC (2,5/4,5/8,5%) ao VOLUME DE NEGÓCIOS com escalões errados (500k/5M). Substituído pelo cálculo correto.
+- [x] **PPC (art. 105.º CIRC):** próximo período = (c358 − retenções na fonte) × 80% (VN ≤ 500 k€) / 95% (VN > 500 k€), 3 prestações jul/set/15-dez; sem PPC quando a base ≤ 200 €. **Confirmar limiar dos 200 € e datas.**
+- [x] **PAC (art. 105.º-A CIRC):** sobre o lucro tributável > 1,5 M€ — escalões 1,5–7,5M / 7,5–35M / >35M às taxas 2,5/4,5/8,5% (continental; Madeira/Açores reduzidas). **Confirmar taxas regionais.**
+- [x] Prejuízos fiscais: dedução Q09 já existia (limite 65%/75% c/ limiteMaisPP) — adicionada linha visível "(−) Prejuízos deduzidos" no resumo. **Confirmar regime de reporte sem prazo (pós-OE2023) e limite 65%.**

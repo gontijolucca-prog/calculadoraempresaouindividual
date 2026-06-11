@@ -46,7 +46,11 @@ const DERRAMA_TIERS: Record<'continental' | 'acores', { limit: number; rate: num
   ],
 };
 
-const PC_RATES: Record<Territorio, number[]> = {
+// Taxas do PAGAMENTO ADICIONAL POR CONTA (art. 105.º-A CIRC) por território —
+// aplicam-se à parte do lucro tributável que excede 1,5 M€ (escalões 1,5–7,5M /
+// 7,5–35M / >35M). ⚠ Antes estavam a ser usadas (erradamente) como "PC" sobre
+// o volume de negócios.
+const PAC_RATES: Record<Territorio, number[]> = {
   continental: [0.025, 0.045, 0.085],
   madeira:     [0.018, 0.032, 0.060],
   acores:      [0.0175, 0.0315, 0.0595],
@@ -123,7 +127,14 @@ export interface CalcResult {
   totalPagamentos: number;  // retFonte + PC + PAC
   c367: number;             // total a pagar (positivo = pagar, negativo = receber)
   pecCalculado: number;
-  pcCalculado: number;
+  /** PPC do PRÓXIMO período (art. 105.º): (c358 − retenções) × 80%/95%. */
+  ppcProximoAno: number;
+  /** Cada uma das 3 prestações do PPC (jul/set/dez do próximo período). */
+  ppcPrestacao: number;
+  /** Taxa aplicada (0,80 ou 0,95 conforme volume de negócios ≤/> 500 k€). */
+  ppcTaxa: number;
+  /** PAC do próximo período (art. 105.º-A) sobre o lucro tributável > 1,5 M€. */
+  pacProximoAno: number;
 }
 
 const ACRESCER_KEYS: (keyof PreviSaState)[] = [
@@ -233,13 +244,26 @@ export function calculate(s: PreviSaState): CalcResult {
   const pecBruto = s.volumeNegocios * 0.01 - s.retencoesFonte;
   const pecCalculado = pecBruto <= 0 ? 0 : Math.max(pecMin, Math.min(pecMax, pecBruto));
 
-  // PC estimado
-  const pcRates = PC_RATES[s.territorio];
-  const vn = s.volumeNegocios;
-  let pcCalculado = 0;
-  if (vn <= 500_000)       pcCalculado = vn * pcRates[0];
-  else if (vn <= 5_000_000) pcCalculado = 500_000 * pcRates[0] + (vn - 500_000) * pcRates[1];
-  else                      pcCalculado = 500_000 * pcRates[0] + 4_500_000 * pcRates[1] + (vn - 5_000_000) * pcRates[2];
+  // Pagamentos por conta do PRÓXIMO período — art. 105.º CIRC: base = IRC
+  // liquidado (c358) deste período menos as retenções na fonte; taxa 80% se o
+  // volume de negócios ≤ 500 k€, 95% acima; 3 prestações (julho, setembro e
+  // 15 de dezembro). Não há lugar a PPC quando a base ≤ 200 € (art. 104.º).
+  // ⚠ valores/limiares a confirmar pela contabilista.
+  const ppcBase = Math.max(0, c358 - s.retencoesFonte);
+  const ppcTaxa = s.volumeNegocios <= 500_000 ? 0.80 : 0.95;
+  const ppcProximoAno = ppcBase <= 200 ? 0 : ppcBase * ppcTaxa;
+  const ppcPrestacao = ppcProximoAno / 3;
+
+  // Pagamento ADICIONAL por conta do próximo período — art. 105.º-A CIRC:
+  // sobre a parte do lucro tributável deste período que excede 1,5 M€.
+  const pacRates = PAC_RATES[s.territorio];
+  let pacProximoAno = 0;
+  if (lucroTributavel > 1_500_000) {
+    const t1 = Math.min(lucroTributavel, 7_500_000) - 1_500_000;
+    const t2 = Math.max(0, Math.min(lucroTributavel, 35_000_000) - 7_500_000);
+    const t3 = Math.max(0, lucroTributavel - 35_000_000);
+    pacProximoAno = t1 * pacRates[0] + t2 * pacRates[1] + t3 * pacRates[2];
+  }
 
   return {
     totalRendimentos, totalGastos,
@@ -247,7 +271,8 @@ export function calculate(s: PreviSaState): CalcResult {
     lucroTributavel, prejuizoFiscal, totalPrejuziosDisp, prejuziosEfetivos, materiaColetavel,
     ircColeta, derramaEstadual, derrMunicipal, c378, deducoesColeta, c358,
     taViaturas, taOutras, taBruta, taTotal,
-    totalPagamentos, c367, pecCalculado, pcCalculado,
+    totalPagamentos, c367, pecCalculado,
+    ppcProximoAno, ppcPrestacao, ppcTaxa, pacProximoAno,
   };
 }
 

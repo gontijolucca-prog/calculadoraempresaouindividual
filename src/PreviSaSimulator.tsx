@@ -755,7 +755,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 help={`Estimado: ${fmt(stepRes.pecCalculado)} €`} />
               <NumInput label="359 — Retenções na fonte" value={st.retencoesFonte} onChange={v => s('retencoesFonte', v)} />
               <NumInput label="360 — PC — pagamentos por conta" value={st.pcPagamentos} onChange={v => s('pcPagamentos', v)}
-                help={`Estimado: ${fmt(stepRes.pcCalculado)} €`} />
+                help="PC já efetuados DURANTE este período" />
               <NumInput label="374 — PAC — pagamentos adicionais por conta" value={st.pacPagamentos} onChange={v => s('pacPagamentos', v)} />
               <NumInput label="379 — DTJI CDT (países com CDT — art.91 n.2)" value={st.c379} onChange={v => s('c379', v)} />
             </Section>
@@ -776,6 +776,10 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <ResultRow label="(−) DTJI CDT" value={st.c379} sub />
               <div className="border-t border-slate-200 my-2" />
               <ResultRow label={stepRes.c367 >= 0 ? '367 — Total a pagar' : '368 — Total a recuperar'} value={Math.abs(stepRes.c367)} highlight />
+              <div className="border-t border-slate-200 my-2" />
+              <ResultRow label={`PC próximo período (${pct(stepRes.ppcTaxa)} × base)`} value={stepRes.ppcProximoAno} sub />
+              {stepRes.ppcProximoAno > 0 && <ResultRow label="→ cada prestação (jul/set/dez)" value={stepRes.ppcPrestacao} sub />}
+              {stepRes.pacProximoAno > 0 && <ResultRow label="PAC próximo período (art. 105.º-A)" value={stepRes.pacProximoAno} sub />}
             </div>
           </div>
         );
@@ -792,6 +796,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
           <div className="space-y-0.5">
             <ResultRow label="Lucro Tributável" value={res.lucroTributavel} />
             <ResultRow label="Prejuízo Fiscal" value={res.prejuizoFiscal} sub positive />
+            {res.prejuziosEfetivos > 0 && <ResultRow label="(−) Prejuízos deduzidos (Q09)" value={res.prejuziosEfetivos} sub positive />}
             <ResultRow label="Matéria Coletável" value={res.materiaColetavel} />
             <div className="border-t border-slate-100 my-1" />
             <ResultRow label="Coleta IRC" value={res.ircColeta} />
@@ -825,9 +830,21 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <span className="font-[700] text-slate-600">{fmt(res.pecCalculado)} €</span>
             </div>
             <div className="flex justify-between text-[11px]">
-              <span className="text-slate-400 font-[500]">PC estimado</span>
-              <span className="font-[700] text-slate-600">{fmt(res.pcCalculado)} €</span>
+              <span className="text-slate-400 font-[500]">PC próximo período (art. 105.º, {pct(res.ppcTaxa)})</span>
+              <span className="font-[700] text-slate-600">{fmt(res.ppcProximoAno)} €</span>
             </div>
+            {res.ppcProximoAno > 0 && (
+              <div className="flex justify-between text-[11px]">
+                <span className="text-slate-400 font-[500]">→ 3 prestações (jul/set/dez)</span>
+                <span className="font-[700] text-slate-600">{fmt(res.ppcPrestacao)} €</span>
+              </div>
+            )}
+            {res.pacProximoAno > 0 && (
+              <div className="flex justify-between text-[11px]">
+                <span className="text-slate-400 font-[500]">PAC próximo período (art. 105.º-A)</span>
+                <span className="font-[700] text-slate-600">{fmt(res.pacProximoAno)} €</span>
+              </div>
+            )}
             <div className="flex justify-between text-[11px]">
               <span className="text-slate-400 font-[500]">Taxa efetiva s/ RAI</span>
               <span className="font-[700] text-slate-600">
@@ -1236,7 +1253,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                   help={`Estimado: ${fmt(res.pecCalculado)} €`} />
                 <NumInput label="359 — Retenções na fonte" value={state.retencoesFonte} onChange={v => set('retencoesFonte', v)} />
                 <NumInput label="360 — PC — pagamentos por conta" value={state.pcPagamentos} onChange={v => set('pcPagamentos', v)}
-                  help={`Estimado: ${fmt(res.pcCalculado)} €`} />
+                  help="PC já efetuados DURANTE este período" />
                 <NumInput label="374 — PAC — pagamentos adicionais por conta" value={state.pacPagamentos} onChange={v => set('pacPagamentos', v)} />
                 <NumInput label="379 — DTJI CDT (países com CDT — art.91 n.2)" value={state.c379} onChange={v => set('c379', v)} />
               </Section>
