@@ -534,6 +534,18 @@ function AppContent() {
     return () => clearTimeout(t);
   }, [loggedIn, clientProfile, previSaState, currentEmpresaId, empresasRefresh, officeSettings.nif]);
 
+  // Aviso visível quando a sincronização cloud falha (antes falhava em silêncio
+  // e os computadores divergiam sem ninguém saber). Limpa ao primeiro sucesso.
+  const [cloudSyncError, setCloudSyncError] = useState<string | null>(null);
+  useEffect(() => {
+    const onSync = (ev: Event) => {
+      const d = (ev as CustomEvent).detail as { ok: boolean; reason?: string } | undefined;
+      setCloudSyncError(d?.ok ? null : (d?.reason || 'erro desconhecido'));
+    };
+    window.addEventListener('estudo360:cloud-sync', onSync);
+    return () => window.removeEventListener('estudo360:cloud-sync', onSync);
+  }, []);
+
   // Sync document.title with the active view (helps history & screen readers)
   useEffect(() => {
     document.title = `${VIEW_TITLES[view]} · Estudo 360`;
@@ -1377,6 +1389,16 @@ function AppContent() {
 
       {/* Aviso de nova versão (auto-atualização) — recarrega sozinho se não houver
           edições de documento por guardar; caso contrário mostra botão manual. */}
+      {cloudSyncError && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[90] max-w-lg w-[calc(100%-2rem)] bg-red-600 text-white rounded-[12px] shadow-lg px-4 py-3 flex items-start gap-3">
+          <span className="text-[16px] leading-none mt-0.5">⚠</span>
+          <div className="text-[13px] font-[600] leading-snug">
+            A sincronização com a cloud falhou — as alterações estão guardadas <u>só neste computador</u>.
+            Verifica a ligação à internet; a app volta a tentar automaticamente na próxima alteração.
+          </div>
+          <button type="button" onClick={() => setCloudSyncError(null)} className="ml-auto text-white/80 hover:text-white text-[16px] leading-none" aria-label="Fechar aviso">×</button>
+        </div>
+      )}
       <UpdateNotification
         show={versionUpdate}
         hasUnsavedEdits={getHasUnsavedEdits()}

@@ -105,8 +105,15 @@ export function saveEmpresas(list: EmpresaRecord[]): void {
 
 // Adopta uma lista vinda do Firestore SEM avançar o relógio — fica com o stamp
 // remoto, para que sincronizações seguintes não pensem que o local é mais novo.
+// O saftXml NÃO viaja na cloud (limite de 1 MiB/documento do Firestore) — se a
+// empresa local tiver o XML original, preserva-o ao adotar a versão remota.
 function adoptRemoteEmpresas(list: EmpresaRecord[], remoteStamp: number): void {
-  saveToStorage(REGISTRY_KEY, list);
+  const localById = new Map(listEmpresas().map(e => [e.id, e]));
+  const merged = list.map(e => {
+    const loc = localById.get(e.id);
+    return !e.saftXml && loc?.saftXml ? { ...e, saftXml: loc.saftXml } : e;
+  });
+  saveToStorage(REGISTRY_KEY, merged);
   setEmpresasStamp(remoteStamp);
 }
 
@@ -262,6 +269,26 @@ export function getOfficeId(_officeNif?: string): string {
   return SHARED_OFFICE_ID;
 }
 
+/** Avisa a UI do estado da sincronização cloud (App mostra/limpa o aviso). */
+function emitCloudSync(ok: boolean, reason?: string): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('estudo360:cloud-sync', { detail: { ok, reason } }));
+}
+
+// O XML original do SAF-T NÃO vai para a cloud: um único SAF-T grande rebenta o
+// limite de 1 MiB/documento do Firestore e fazia o setDoc falhar EM SILÊNCIO —
+// o computador que importava ficava com tudo local e os outros não recebiam
+// nada (nem o balanço). Os dados DERIVADOS (perfil/contabilidade/fluxos/
+// simulações) continuam todos a sincronizar; o ficheiro original fica
+// disponível para re-exportar no computador onde foi importado.
+function stripSaftXmlForCloud(list: EmpresaRecord[]): EmpresaRecord[] {
+  return list.map(e => {
+    if (!e.saftXml) return e;
+    const { saftXml: _omit, ...rest } = e;
+    return rest as EmpresaRecord;
+  });
+}
+
 export async function saveEmpresasToFirestore(
   officeNif: string | undefined,
   list: EmpresaRecord[],
@@ -269,16 +296,25 @@ export async function saveEmpresasToFirestore(
 ): Promise<void> {
   const officeId = getOfficeId(officeNif);
   try {
+    const cloudList = stripSaftXmlForCloud(list);
+    const payloadSize = JSON.stringify(cloudList).length;
+    if (payloadSize > 980_000) {
+      // Mesmo sem XML, perto do limite de 1 MiB — avisa antes de tentar.
+      console.warn(`[empresas] payload cloud grande (${payloadSize} bytes)`);
+    }
     await setDoc(doc(db, FIRESTORE_COLLECTION, officeId), {
-      list,
+      list: cloudList,
       // Propaga o relógio do registry local. Sem isto, cada escrita levava
       // updatedAt=now e a sincronização nunca distinguia uma eliminação de
       // um estado mais antigo legítimo.
       updatedAt: stamp ?? getEmpresasStamp() ?? Date.now(),
     });
+    emitCloudSync(true);
   } catch (err) {
-    // Falha silenciosa — localStorage continua a ter os dados.
+    // Os dados continuam no localStorage, mas o utilizador TEM de saber que a
+    // cloud não recebeu (antes falhava em silêncio e os computadores divergiam).
     console.warn('[empresas] firestore save falhou:', err);
+    emitCloudSync(false, err instanceof Error ? err.message : String(err));
   }
 }
 
@@ -467,7 +503,7 @@ async function migrateLegacyBucketsToShared(): Promise<void> {
     if (merged.length > 0) {
       saveEmpresas(merged); // grava local + avança o relógio do registry
       await setDoc(doc(db, FIRESTORE_COLLECTION, SHARED_OFFICE_ID), {
-        list: merged,
+        list: stripSaftXmlForCloud(merged),
         updatedAt: getEmpresasStamp(),
       });
     }
