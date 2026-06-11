@@ -5,7 +5,6 @@ import {
   ChevronDown, ChevronRight, TrendingUp, Settings, UserPlus, Building2,
   Menu, X, Clock, Briefcase, ListOrdered, Package, History, FileDown,
 } from 'lucide-react';
-import FloatingFlowToggle from './FloatingFlowToggle';
 import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
 import { cn } from './lib/utils';
 import type { AppMode } from './ModeSelector';
@@ -339,12 +338,10 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
         </main>
       </div>
 
-      <FloatingFlowToggle currentView={active} visibleViews={FLOW_VIEWS} />
     </div>
   );
 }
 
-const FLOW_VIEWS = ['profile','diagnostico','imoveis','imt','vehicle','salario','selfss','ticket','previsa','tax'] as const;
 
 export const LAYOUTS = [
   { id: 'sidebar', name: 'Top Bar Maroon', component: SidebarLayout },
