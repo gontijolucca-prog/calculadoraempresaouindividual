@@ -14,6 +14,8 @@ import { coefFromProfile } from './lib/pt2026';
 import { compararEnquadramentos } from './lib/fiscal';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
+import EnquadramentoCompleto from './EnquadramentoCompleto';
+import type { InputEnq2026 } from './lib/enquadramento2026';
 
 interface TaxSimulatorState {
   profSit: string;
@@ -41,6 +43,10 @@ interface TaxSimulatorState {
   nrSocios?: number;
   /** Atividade exclusivamente profissional do art. 151.º CIRS. */
   atividadeArt151?: boolean;
+  /** Análise completa de enquadramento 2026 (2 camadas) — inputs guardados. */
+  enq2026?: Record<string, unknown>;
+  /** True = abrir na vista "Análise completa" em vez da comparação rápida. */
+  vistaCompleta?: boolean;
 }
 
 interface Props {
@@ -60,6 +66,8 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
     taxaDerramaMunicipal = 0,
     nrSocios = 1,
     atividadeArt151 = false,
+    enq2026,
+    vistaCompleta = false,
   } = initialState;
 
   const setState = (updates: Partial<TaxSimulatorState>) => {
@@ -474,6 +482,18 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
 
   const extras = (
     <>
+      <button
+        type="button"
+        onClick={() => setState({ vistaCompleta: true })}
+        className="w-full text-left flex items-center gap-3 rounded-[16px] border border-[#0677FF]/30 bg-[#0677FF]/[0.05] hover:bg-[#0677FF]/[0.09] px-5 py-4 transition-colors"
+      >
+        <span className="text-[20px]" aria-hidden="true">⚖️</span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[13.5px] font-[800] text-[#0B1D2D]">Análise completa de enquadramento 2026</span>
+          <span className="block text-[12px] text-slate-600 font-[500]">Valida os regimes legalmente possíveis (IRS/IRC simplificado, IVA art. 53.º, trimestral/mensal) e compara só os cenários elegíveis — com rendimentos por natureza, dividendos e tesouraria do IVA.</span>
+        </span>
+        <span className="text-[12px] font-[800] text-[#0677FF] shrink-0">Abrir →</span>
+      </button>
       {(results.ppc > 0 || results.retencaoFonte > 0) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {results.ppc > 0 && (
@@ -544,6 +564,33 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
       {extras}
     </div>
   );
+
+  // ── Análise completa 2026 (desenho da contabilista): validação jurídica +
+  //    comparação económica por cenários elegíveis. Vista própria, persistida. ──
+  if (vistaCompleta) {
+    const seed: Partial<InputEnq2026> = {
+      rend: { vendas: isServices ? 0 : rev, servicosProf: isServices ? rev : 0, outrosServicos: 0, restantes: 0 },
+      faturacaoAnoAnterior: rev,
+      gastosReais: fixedMo * 12 + varYr,
+      remGerenteMensal: monthlyNeed,
+      outrosRendimentos: currentInc,
+      nrDependentes: profile?.nrDependentes ?? 0,
+      taxaDerramaMunicipal,
+      accMensalSimplificado: accMoEni,
+      accMensalOrganizada: accMoLda || 100,
+      anoAtividade: anosAtividade <= 1 ? 1 : anosAtividade === 2 ? 2 : 3,
+      ...(enq2026 as Partial<InputEnq2026> | undefined ?? {}),
+    };
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <EnquadramentoCompleto
+          value={seed}
+          onChange={(patch) => setState({ enq2026: { ...seed, ...patch } as Record<string, unknown> })}
+          onVoltar={() => setState({ vistaCompleta: false })}
+        />
+      </div>
+    );
+  }
 
   if (flowMode) {
     return (

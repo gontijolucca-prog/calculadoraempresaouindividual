@@ -3,11 +3,11 @@ import { UserCircle, ArrowRight } from 'lucide-react';
 import { SIM_INTROS } from './SimIntro';
 
 /**
- * Galeria do cliente ativo: abre no ecrã principal quando se clica em
- * "A trabalhar em" na sidebar. Cards explicativos de cada menu (Perfil +
- * simuladores) — segundo caminho de entrada, em paralelo com o dropdown.
- * Os cards já explicam o simulador, por isso entram DIRETOS (sem repetir
- * o ecrã-intro).
+ * Galeria do cliente ativo: abre no ecrã principal sempre que se clica em
+ * "A trabalhar em" na sidebar (abrir OU recolher o dropdown). Cards
+ * explicativos de cada menu (Perfil + simuladores) — segundo caminho de
+ * entrada, em paralelo com o dropdown. Escolher um card mostra o MESMO
+ * ecrã-intro do simulador que a sidebar mostra ("Simular" entra).
  */
 
 // Mesma ordem dos simuladores na sidebar (NAV_ITEMS group 'sim').
@@ -56,7 +56,7 @@ export default function ClientHub({ clientName, onNavigate }: {
               <motion.button
                 key={id}
                 type="button"
-                onClick={() => onNavigate(id, { skipIntro: true })}
+                onClick={() => onNavigate(id)}
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.08 + i * 0.03 }}
                 className="group text-left flex flex-col bg-white rounded-[16px] border border-[#E2E8F0] hover:border-[#0677FF]/50 shadow-sm hover:shadow-md transition-all"

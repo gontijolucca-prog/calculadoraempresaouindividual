@@ -17,6 +17,11 @@ export interface TaxSimulatorState {
   invFundo: number; fixedMo: number; varYr: number; accMoLda: number;
   accMoEni: number; anosAtividade: number; transparenciaFiscal: boolean;
   taxaDerramaMunicipal?: number;
+  nrSocios?: number; atividadeArt151?: boolean;
+  /** Análise completa de enquadramento 2026 (2 camadas) — inputs guardados. */
+  enq2026?: Record<string, unknown>;
+  /** True = abrir na vista "Análise completa" em vez da comparação rápida. */
+  vistaCompleta?: boolean;
 }
 
 export interface VehicleSimulatorState {

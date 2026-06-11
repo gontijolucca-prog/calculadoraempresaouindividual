@@ -142,3 +142,17 @@ O comparador passou de 2 para 3 colunas (ENI simplificado / ENI organizada / Soc
 - [ ] **EIRL:** apresentado como extinto para novas constituições. **Confirmar diploma/data da extinção.**
 - [ ] **Isenção IVA art. 53.º:** aviso quando faturação ≤ 15 000 €. **Confirmar limiar 2026.**
 - Cooperativa / Associação-IPSS / ACE-AEIE / herança indivisa: apenas descrições qualitativas, sem números.
+
+## Enquadramento v3 — análise completa em 2 camadas (11-jun, desenho da contabilista)
+Motor novo `src/lib/enquadramento2026.ts` + vista "Análise completa" no simulador Fiscal. Parâmetros centralizados em `PARAMS_2026` (com vigência). Para validação da Sandrine:
+- [ ] **Coeficientes IRS simplificado** por natureza (0,15 vendas / 0,75 art. 151.º / 0,35 outros serviços / 0,10 restantes) e **reduções de início de atividade** aplicadas aos coef. 0,75 e 0,35 (50% no 1.º ano, 25% no 2.º — art. 31.º n.º 10). **Confirmar a que coeficientes se aplicam.**
+- [ ] **Regra dos 15% (art. 31.º n.º 13):** acréscimo = 15% dos serviços − (gastos reais + dedução específica 4 587,09 €), quando positivo. **Confirmar mecânica e base.**
+- [ ] **IRC simplificado (art. 86.º-A/86.º-B):** coeficientes 0,04 vendas+restauração / 0,75 serviços 151.º / 0,10 restantes serviços / 0,30 subsídios não-exploração; reduções 50%/25% nos coef. de vendas e restantes serviços; elegibilidade (≤200k rendimentos, ≤500k balanço, sem revisão legal, microentidades, sem renúncia 3 anos). **Confirmar vigência 2026 + condição da estrutura de capital (não modelada) + matéria coletável mínima (não modelada).**
+- [ ] **Derrama no IRC simplificado:** aplicada sobre a matéria coletável por coeficientes. **Confirmar base.**
+- [ ] **MOE/gerente:** 34,75% (23,75% empresa + 11% próprio); remuneração ×14. **Confirmar base mínima (IAS?) quando a remuneração declarada é baixa.**
+- [ ] **IVA art. 53.º:** limite 15 000 € (ano anterior; no 1.º ano usa estimativa do próprio ano SEM anualização) e saída IMEDIATA acima de 18 750 €. **Confirmar valores 2026.**
+- [ ] **Periodicidade IVA:** mensal obrigatório com VN ano anterior ≥ 650 000 €; entrega até dia 20 do 2.º mês seguinte. Pico de tesouraria modelado como saldo/4 (trimestral) e saldo/12 (mensal) — **modelo simplificado, sem fluxos mês a mês ainda**.
+- [ ] **IRS simplificado — ultrapassagem:** organizada obrigatória se >200k em 2 anos consecutivos OU >25% num ano (alertas implementados). **Confirmar redação exata.**
+- [ ] **SS independente na organizada:** mesma fórmula do simplificado (70% serviços + 20% vendas × 21,4%) — **base no regime organizado tem nuances, confirmar**.
+- [ ] **Dividendos:** 28% liberatória sobre a parte distribuída; % de lucro retido é input. Sem englobamento opcional modelado.
+- [ ] **Obrigações declarativas/ano:** contagens são ordens de grandeza (ENI simpl.: Mod3+4×SS+IVA; sociedade: Mod22+IES+12×DMR+IVA) — **não exaustivo, rever**.

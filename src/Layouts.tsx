@@ -241,11 +241,10 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                 <button
                   type="button"
                   onClick={() => {
-                    const opening = !clientMenuOpen;
-                    setClientMenuOpen(opening);
-                    // Abrir o menu também abre a galeria do cliente no ecrã
-                    // principal — 2 caminhos para o mesmo destino (sidebar/cards).
-                    if (opening) goClient('hub');
+                    setClientMenuOpen((v) => !v);
+                    // Abrir OU recolher mostra sempre a galeria do cliente no
+                    // ecrã principal — 2 caminhos para o mesmo destino.
+                    goClient('hub');
                   }}
                   aria-expanded={clientMenuOpen}
                   title={clientMenuOpen ? 'Fechar o menu do cliente' : 'Abrir o menu do cliente (perfil e simuladores)'}
