@@ -59,7 +59,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
     return calcSalarioLiquido(params);
   }, [s]);
 
-  const ptEur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v || 0);
+  const ptEur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v || 0);
   const pctOf = (part: number, total: number) => total > 0 ? `${((part / total) * 100).toFixed(1)}%` : '—';
 
   const inputCls = "w-full px-[14px] py-[11px] bg-[#F5F7FA] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] font-[600] text-[#0F172A] focus:border-[#0F172A] transition-all outline-none";

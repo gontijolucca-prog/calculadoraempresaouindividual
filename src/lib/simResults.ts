@@ -10,9 +10,10 @@ import {
   calcTicketSavings, calcSelfSSContribution, calculateIRC,
 } from './pt2026';
 import { calcSalarioLiquido } from './salario';
+import { DED_ESPECIFICA_CAT_A_2026 } from './fiscal';
 
 const eur = (n: number) =>
-  new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(Number.isFinite(n) ? n : 0);
+  new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number.isFinite(n) ? n : 0);
 const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
 
 type Profileish = { beneficioJovem?: boolean; idade?: number; nrDependentes?: number };
@@ -33,7 +34,7 @@ function resultadoFiscal(s: any, profile: Profileish): { label: string; valor: s
   let eniRC = num(s.rev) * (s.isServices ? 0.75 : 0.15);
   if (s.isServices && num(s.rev) > 27360) {
     const rj = num(s.rev) * 0.15;
-    const jd = costsEni + 4104;
+    const jd = costsEni + DED_ESPECIFICA_CAT_A_2026;
     if (jd < rj) eniRC += rj - jd;
   }
   if (profile.beneficioJovem && num(profile.idade) <= 35) {

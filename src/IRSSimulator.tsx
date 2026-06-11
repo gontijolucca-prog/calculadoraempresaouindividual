@@ -21,7 +21,6 @@ interface Props {
 }
 
 const ptEur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }).format(v || 0);
-const ptEur0 = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v || 0);
 const ptPct = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'percent', minimumFractionDigits: 2 }).format(v || 0);
 
 const inputCls = 'w-full px-[14px] py-[11px] bg-[#F5F7FA] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] font-[600] text-[#0F172A] focus:border-[#0F172A] transition-all outline-none';
@@ -388,7 +387,7 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
                 <div>
                   <label className="flex items-center justify-between text-[11px] font-[600] text-[#64748B] mb-1">
                     <span>Rendimento ajustado</span>
-                    <span className="font-[700] text-[#0F172A]">{s.wifRend >= 0 ? '+' : ''}{ptEur0(s.wifRend)}</span>
+                    <span className="font-[700] text-[#0F172A]">{s.wifRend >= 0 ? '+' : ''}{ptEur(s.wifRend)}</span>
                   </label>
                   <input type="range" min={-10000} max={10000} step={500} value={s.wifRend} onChange={(e) => set({ wifRend: +e.target.value })} className="w-full accent-[#0B1D2D]" />
                 </div>
@@ -402,7 +401,7 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
                 <div>
                   <label className="flex items-center justify-between text-[11px] font-[600] text-[#64748B] mb-1">
                     <span>Pensões de alimentos adic.</span>
-                    <span className="font-[700] text-[#0F172A]">+{ptEur0(s.wifPpr)}</span>
+                    <span className="font-[700] text-[#0F172A]">+{ptEur(s.wifPpr)}</span>
                   </label>
                   <input type="range" min={0} max={2000} step={100} value={s.wifPpr} onChange={(e) => set({ wifPpr: +e.target.value })} className="w-full accent-[#0B1D2D]" />
                 </div>

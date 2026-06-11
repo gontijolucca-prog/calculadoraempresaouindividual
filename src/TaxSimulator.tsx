@@ -89,7 +89,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
       anosAtividade, transparenciaFiscal, taxaDerramaMunicipal,
       profile?.atividadePrincipal, profile.beneficioJovem, profile.idade, profile.nrDependentes]);
 
-  const ptEur  = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(Math.max(0, v));
+  const ptEur  = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.max(0, v));
   const winner = results.lda.net > results.eni.net ? 'LDA' : 'ENI';
   const diff   = Math.abs(results.lda.net - results.eni.net);
 

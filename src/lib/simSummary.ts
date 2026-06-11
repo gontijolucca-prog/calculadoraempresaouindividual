@@ -41,7 +41,7 @@ export function isSimView(v: string): v is SimView {
 const eur = (n: unknown): string => {
   const v = typeof n === 'number' && Number.isFinite(n) ? n : 0;
   return new Intl.NumberFormat('pt-PT', {
-    style: 'currency', currency: 'EUR', maximumFractionDigits: 0,
+    style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2,
   }).format(v);
 };
 
