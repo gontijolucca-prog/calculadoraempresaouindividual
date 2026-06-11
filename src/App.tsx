@@ -246,6 +246,7 @@ const getInitialSalarioState = (p: ClientProfileType): SalarioState => ({
   anosAtividade: p.inicioAtividade > 0 ? Math.max(0, new Date().getFullYear() - p.inicioAtividade) : 0,
   idade: p.idade || 0,
   taxaSeguroTrabalho: 1.0,
+  deficiente: false,
 });
 
 // IRS (Modelo 3) — pré-preenche o que o Perfil já sabe, sem inventar rendimentos.

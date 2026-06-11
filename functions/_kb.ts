@@ -170,7 +170,7 @@ Método: IMT por escalões progressivos (CIMT art.17) para HPP e habitação; ta
 - estadoCivil (select)
 - nrDependentes (number)
 - localizacao (select: continente/madeira/acores)
-- duodecimos (boolean — 14 vs 12 pagamentos)
+- duodecimos (boolean — subsidios em 12 duodecimos vs 14 recibos)
 - subsidioAlimentacaoDiario (currency)
 - tipoSubsidio (select: cartao/dinheiro)
 - diasSubsidio (number)
@@ -178,7 +178,8 @@ Método: IMT por escalões progressivos (CIMT art.17) para HPP e habitação; ta
 - anosAtividade (number)
 - idade (number)
 - taxaSeguroTrabalho (number, %)
-NOTA (método): o líquido mensal é uma ESTIMATIVA — a retenção de IRS é calculada pela liquidação anual dos escalões 2026 a dividir pelo nº de pagamentos, NÃO pelas tabelas mensais oficiais de retenção na fonte. A localização JÁ reduz a retenção nas regiões autónomas (Açores e Madeira), com o mesmo fator do simulador de IRS. O estado civil também JÁ entra: casado com 1 titular beneficia do quociente conjugal (retenção mais baixa, IRS(base/2)×2); casado com 2 titulares e solteiro retêm sobre o próprio rendimento. O IRS final acerta-se sempre na declaração anual. As tabelas mensais oficiais de retenção ficam para validação por um contabilista.
+- deficiente (boolean — titular com deficiencia fiscalmente relevante)
+NOTA (método): a retenção mensal usa as TABELAS OFICIAIS de retenção na fonte 2026 (modelo taxa marginal máxima + parcela a abater, arredondada por defeito ao euro). Continente: Despacho SEAF de 05/01/2026; Madeira: Despacho n.º 19/2026 AT-RAM (tabelas regionais próprias). Açores: tabelas 2026 ainda em validação — o simulador mostra uma ESTIMATIVA sinalizada. A tabela aplicada depende do estado civil, dependentes e deficiência (I: não casado s/ dep. ou casado 2 titulares; II: não casado c/ dep.; III: casado único titular; IV–VII: deficiência). Subsídios de férias/Natal têm retenção autónoma; em duodécimos retém-se a parte proporcional todos os meses. IRS Jovem: a taxa efetiva aplica-se só à parte não isenta. O simulador também estima o IRS anual (escalões art. 68.º) e o acerto esperado na declaração.
 
 ### irs (Simulador de IRS — Modelo 3)
 Campos de topo (preenchíveis pelo bot):

@@ -113,3 +113,15 @@ Legenda: [x] implementado com valor-base (a validar) · [~] decisão tomada (nã
 - [ ] IRC / Previsa — taxas, derrama, tributações autónomas.
 - [ ] Viaturas — tabela do imposto de circulação, tributação autónoma.
 - [ ] Tickets — limites do subsídio de refeição (cartão vs dinheiro).
+
+## Salário Líquido — tabelas oficiais de retenção na fonte 2026 (11-jun)
+Implementadas no simulador (substituem a estimativa anualizada). Para validação da Sandrine:
+- [x] **Continente:** tabelas I–VII extraídas do XLSX oficial do Portal das Finanças ("Despacho SEAF, de 05/01/2026"). **Confirmar o número oficial do despacho** na publicação em DR (a fonte do agente que indicou "Despacho n.º 233-A/2026" colide com o despacho do subsídio de alimentação — não usámos).
+- [x] **Madeira:** Despacho n.º 19/2026, de 20 de janeiro (JORAM, II Série, n.º 13, 4.º Supl.) — verificado contra o PDF oficial da AT-RAM (76 amostras).
+- [ ] **Açores:** tabelas 2026 NÃO localizadas em fonte oficial (Portal AT é SharePoint dinâmico; JO Açores sem resultados). O simulador aplica estimativa = Continente × 0,80, sinalizada na UI como não-oficial. **Pedir à Sandrine a fonte/despacho regional 2026** e substituir em `src/lib/retencaoTabelas.ts`.
+- [x] **Arredondamento:** retenção arredondada por defeito à unidade de euro (regra do rodapé das tabelas oficiais). **Confirmar o artigo exato** (99.º-E?).
+- [x] **IRS Jovem na retenção (art. 99.º-F):** taxa efetiva da remuneração total aplicada só à parte não isenta, com teto anual 55×IAS rateado. **Confirmar mecânica do teto no processamento mensal.**
+- [x] **Duodécimos (art. 99.º-C):** retenção mensal = parte proporcional (2×1/12) da retenção autónoma de cada subsídio. **Confirmar prática de arredondamento por recibo.**
+- [ ] **Deficiência:** tabelas IV–VII aplicadas; **parcelas adicionais por dependente com incapacidade ≥60% (+€84,82/+€42,41) NÃO modeladas** — confirmar valores e relevância.
+- [x] **Acerto anual estimado:** IRS anual (escalões art. 68.º + dedução específica 8,54×IAS) − retenção anual. Para deficientes a estimativa anual não modela abatimentos próprios (indicativo).
+- [x] **Correção de bug anterior:** sem duodécimos, o total anual passou a incluir os 2 subsídios (14 remunerações); subsídio de alimentação anualizado a 11 meses (antes contava 14×).

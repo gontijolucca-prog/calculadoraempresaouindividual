@@ -84,6 +84,7 @@ export function resultSimulacao(tipo: string, state: unknown, profile?: Profilei
           tipoSubsidio: s.tipoSubsidio ?? 'cartao', diasSubsidio: num(s.diasSubsidio) || 22,
           irsJovem: !!s.irsJovem, anosAtividade: num(s.anosAtividade), idade: num(s.idade) || 30,
           taxaSeguroTrabalho: num(s.taxaSeguroTrabalho) || 0.01,
+          deficiente: !!s.deficiente,
         });
         return [
           { label: 'Líquido mensal', valor: eur(r.salarioLiquido) },

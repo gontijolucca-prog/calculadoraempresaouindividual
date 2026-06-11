@@ -22,6 +22,7 @@ export interface SalarioState {
   anosAtividade: number;
   idade: number;
   taxaSeguroTrabalho: number;
+  deficiente?: boolean;
 }
 
 interface Props {
@@ -53,6 +54,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
       anosAtividade: s.anosAtividade,
       idade: s.idade,
       taxaSeguroTrabalho: (s.taxaSeguroTrabalho || 0) / 100,
+      deficiente: s.deficiente ?? false,
     };
     return calcSalarioLiquido(params);
   }, [s]);
@@ -67,7 +69,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
     {
       id: 'salarioBruto',
       label: 'Salário Bruto e Estado Civil',
-      description: 'Indique o salário bruto mensal e o estado civil. O líquido apresentado é uma estimativa anualizada da retenção de IRS — o valor mensal exato segue a tabela oficial e acerta-se no IRS anual.',
+      description: 'Indique o salário bruto mensal e o estado civil. A retenção de IRS segue as tabelas oficiais de retenção na fonte 2026.',
       render: (state, setSt) => (
         <div className="space-y-[18px]">
           <div>
@@ -88,7 +90,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
           </div>
 
           <div>
-            <label className={labelCls}>Estado Civil <Tip>Casado com um titular de rendimentos beneficia do quociente conjugal (retenção mais baixa); casado com dois titulares ou solteiro retêm sobre o próprio rendimento. Estimativa anualizada — o valor exato segue a tabela mensal oficial e acerta-se no IRS anual.</Tip></label>
+            <label className={labelCls}>Estado Civil <Tip>Determina a tabela oficial de retenção na fonte: casado único titular usa a Tabela III (retém menos); não casado com dependentes a Tabela II; solteiro sem dependentes e casado dois titulares a Tabela I.</Tip></label>
             <select value={state.estadoCivil} onChange={e => setSt({ estadoCivil: e.target.value as EstadoCivil })} className={inputCls}>
               <option value="solteiro">Solteiro / Não casado</option>
               <option value="casado_1titular">Casado — 1 titular</option>
@@ -117,7 +119,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
           </div>
 
           <div>
-            <label className={labelCls}>Localização <Tip>Continente, Açores ou Madeira. Nas regiões autónomas a retenção de IRS é mais baixa — já refletida no líquido mensal apresentado.</Tip></label>
+            <label className={labelCls}>Localização <Tip>Cada região tem tabelas de retenção próprias: Continente (Despacho SEAF 05/01/2026) e Madeira (Despacho n.º 19/2026 AT-RAM) oficiais. Açores: tabelas 2026 em validação — retenção apresentada como estimativa.</Tip></label>
             <select value={state.localizacao} onChange={e => setSt({ localizacao: e.target.value as SalarioState['localizacao'] })} className={inputCls}>
               <option value="continente">Continente</option>
               <option value="madeira">Madeira</option>
@@ -143,8 +145,8 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
               {state.duodecimos && <span className="text-white text-[10px] font-[900]">✓</span>}
             </div>
             <div>
-              <span className="text-[13px] font-[600] text-[#475569]">Duodécimos <Tip>Se os subsídios de Natal e Férias são pagos distribuídos pelos 12 meses (duodécimos) ou em 2 pagamentos anuais. Afeta a retenção mensal.</Tip></span>
-              <p className="text-[11px] text-[#94A3B8]">Subsídios distribuídos mensalmente (14 pagamentos → 12)</p>
+              <span className="text-[13px] font-[600] text-[#475569]">Duodécimos <Tip>Se os subsídios de Natal e Férias são pagos distribuídos pelos 12 meses (duodécimos) ou em 2 pagamentos anuais. Com duodécimos, o mês inclui a parte proporcional dos subsídios e da respetiva retenção autónoma (CIRS Art. 99.º-C).</Tip></span>
+              <p className="text-[11px] text-[#94A3B8]">Subsídios distribuídos mensalmente (12 recibos em vez de 14)</p>
             </div>
           </label>
 
@@ -237,6 +239,18 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
               </div>
             </div>
           )}
+
+          <label className={cn(
+            "flex items-center gap-3 p-[14px] rounded-[12px] border-2 cursor-pointer transition-colors",
+            state.deficiente ? "bg-sky-50 border-sky-300" : "bg-[#F5F7FA] border-[#E2E8F0] hover:border-[#94A3B8]"
+          )}>
+            <input type="checkbox" checked={state.deficiente ?? false} onChange={e => setSt({ deficiente: e.target.checked })} className="hidden" />
+            <div className={cn("w-5 h-5 rounded-[4px] border-2 flex items-center justify-center shrink-0",
+              state.deficiente ? "bg-sky-600 border-sky-600" : "border-[#E2E8F0]")}>
+              {state.deficiente && <span className="text-white text-[10px] font-[900]">✓</span>}
+            </div>
+            <span className="text-[13px] font-[600] text-[#475569]">Pessoa com deficiência <Tip>Titular com grau de incapacidade fiscalmente relevante (≥60%). Aplica as tabelas oficiais IV–VII, com limites de isenção mais elevados.</Tip></span>
+          </label>
         </div>
       ),
     },
@@ -265,7 +279,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
               </div>
             )}
             <div className="text-[12px] text-slate-400 mt-1">
-              {ptEur(result.salarioLiquidoAnual)}/ano · {result.nrPagamentos} meses
+              {ptEur(result.salarioLiquidoAnual)}/ano · {result.nrPagamentos} recibos
             </div>
           </div>
 
@@ -277,12 +291,18 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
                 <span className="text-[#64748B]">Salário Bruto</span>
                 <span className="font-[700] text-[#0F172A]">{ptEur(result.salarioBruto)}</span>
               </div>
+              {s.duodecimos && (
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-[#64748B]">Duodécimos férias/Natal (2/12)</span>
+                  <span className="font-[700] text-[#0F172A]">+ {ptEur(result.salarioBruto * 2 / 12)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-[14px]">
                 <span className="text-[#64748B]">SS Trabalhador (11%)</span>
                 <span className="font-[700] text-red-600">- {ptEur(result.ssTrabalhador)}</span>
               </div>
               <div className="flex justify-between text-[14px]">
-                <span className="text-[#64748B]">Retenção IRS</span>
+                <span className="text-[#64748B]">Retenção IRS{result.tabelaRetencao ? ` — Tabela ${result.tabelaRetencao}` : ' (estimativa)'}</span>
                 <span className="font-[700] text-red-600">- {ptEur(result.retencaoIRS)}</span>
               </div>
               {result.irsJovemIsencao > 0 && (
@@ -305,9 +325,15 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
               <div className="text-[11px] text-[#94A3B8]">
                 Taxa efetiva de desconto: {pctOf(result.ssTrabalhador + result.retencaoIRS, result.salarioBruto)}
               </div>
-              <div className="text-[11px] text-[#94A3B8] leading-snug">
-                Retenção estimada pelo método anualizado dos escalões 2026 — não substitui o recibo de vencimento; o IRS final acerta-se na declaração anual.
-              </div>
+              {result.retencaoOficial ? (
+                <div className="text-[11px] text-[#94A3B8] leading-snug">
+                  Retenção segundo as tabelas oficiais 2026 ({s.localizacao === 'madeira' ? 'Despacho n.º 19/2026 — AT-RAM' : 'Despacho SEAF de 05/01/2026'}). O IRS final acerta-se na declaração anual — acerto estimado: {result.acertoEstimado >= 0 ? 'a pagar ' : 'a receber '}{ptEur(Math.abs(result.acertoEstimado))}.
+                </div>
+              ) : (
+                <div className="text-[11px] text-amber-700 font-[600] leading-snug">
+                  ⚠ Açores: as tabelas oficiais de retenção 2026 estão em validação — o valor apresentado é uma estimativa e não substitui o recibo de vencimento.
+                </div>
+              )}
             </div>
           </div>
 
@@ -359,7 +385,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
                 <span className="font-[900] text-[#0F172A]">{ptEur(result.custoEmpregadorReal)}</span>
               </div>
               <div className="flex justify-between text-[13px] text-[#64748B]">
-                <span>Custo Total Anual ({result.nrPagamentos} meses)</span>
+                <span>Custo Total Anual (14 remunerações + sub. alimentação)</span>
                 <span className="font-[700]">{ptEur(result.totalAnual)}</span>
               </div>
               <div className="text-[11px] text-[#94A3B8]">
@@ -396,12 +422,12 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
 
           {/* Tabela anual */}
           <div className="bg-white border border-[#E2E8F0] rounded-[20px] p-[20px]">
-            <h3 className="text-[13px] font-[700] uppercase tracking-[1px] text-[#64748B] mb-[14px]">Perspectiva Anual ({result.nrPagamentos} meses)</h3>
+            <h3 className="text-[13px] font-[700] uppercase tracking-[1px] text-[#64748B] mb-[14px]">Perspectiva Anual (14 remunerações)</h3>
             <div className="grid grid-cols-2 gap-[10px]">
               {[
-                { label: 'Bruto anual', value: result.salarioBruto * result.nrPagamentos, red: false },
-                { label: 'SS anual', value: result.ssTrabalhador * result.nrPagamentos, red: true },
-                { label: 'IRS retido anual', value: result.retencaoIRS * result.nrPagamentos, red: true },
+                { label: 'Bruto anual', value: result.brutoAnual, red: false },
+                { label: 'SS anual', value: result.ssAnual, red: true },
+                { label: 'IRS retido anual', value: result.retencaoAnual, red: true },
                 { label: 'Líquido anual', value: result.salarioLiquidoAnual, red: false },
               ].map(({ label, value, red }) => (
                 <div key={label} className={cn("p-[12px] rounded-[12px] border", red ? "bg-red-50 border-red-100" : "bg-slate-50 border-slate-100")}>
@@ -471,7 +497,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
 
           {/* Estado civil */}
           <div>
-            <label className={labelCls}>Estado Civil <Tip>Casado com um titular de rendimentos beneficia do quociente conjugal (retenção mais baixa); casado com dois titulares ou solteiro retêm sobre o próprio rendimento. Estimativa anualizada — o valor exato segue a tabela mensal oficial e acerta-se no IRS anual.</Tip></label>
+            <label className={labelCls}>Estado Civil <Tip>Determina a tabela oficial de retenção na fonte: casado único titular usa a Tabela III (retém menos); não casado com dependentes a Tabela II; solteiro sem dependentes e casado dois titulares a Tabela I.</Tip></label>
             <select value={s.estadoCivil} onChange={e => setState({ estadoCivil: e.target.value as EstadoCivil })} className={inputCls}>
               <option value="solteiro">Solteiro / Não casado</option>
               <option value="casado_1titular">Casado — 1 titular</option>
@@ -494,7 +520,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
 
           {/* Localização */}
           <div>
-            <label className={labelCls}>Localização <Tip>Continente, Açores ou Madeira. Nas regiões autónomas a retenção de IRS é mais baixa — já refletida no líquido mensal apresentado.</Tip></label>
+            <label className={labelCls}>Localização <Tip>Cada região tem tabelas de retenção próprias: Continente (Despacho SEAF 05/01/2026) e Madeira (Despacho n.º 19/2026 AT-RAM) oficiais. Açores: tabelas 2026 em validação — retenção apresentada como estimativa.</Tip></label>
             <select value={s.localizacao} onChange={e => setState({ localizacao: e.target.value as SalarioState['localizacao'] })} className={inputCls}>
               <option value="continente">Continente</option>
               <option value="madeira">Madeira</option>
@@ -513,8 +539,8 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
               {s.duodecimos && <span className="text-white text-[10px] font-[900]">✓</span>}
             </div>
             <div>
-              <span className="text-[13px] font-[600] text-[#475569]">Duodécimos <Tip>Se os subsídios de Natal e Férias são pagos distribuídos pelos 12 meses (duodécimos) ou em 2 pagamentos anuais. Afeta a retenção mensal.</Tip></span>
-              <p className="text-[11px] text-[#94A3B8]">Subsídios distribuídos mensalmente (14 pagamentos → 12)</p>
+              <span className="text-[13px] font-[600] text-[#475569]">Duodécimos <Tip>Se os subsídios de Natal e Férias são pagos distribuídos pelos 12 meses (duodécimos) ou em 2 pagamentos anuais. Com duodécimos, o mês inclui a parte proporcional dos subsídios e da respetiva retenção autónoma (CIRS Art. 99.º-C).</Tip></span>
+              <p className="text-[11px] text-[#94A3B8]">Subsídios distribuídos mensalmente (12 recibos em vez de 14)</p>
             </div>
           </label>
 
@@ -602,6 +628,18 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
               </div>
             </div>
           )}
+
+          <label className={cn(
+            "flex items-center gap-3 p-[14px] rounded-[12px] border-2 cursor-pointer transition-colors",
+            s.deficiente ? "bg-sky-50 border-sky-300" : "bg-[#F5F7FA] border-[#E2E8F0] hover:border-[#94A3B8]"
+          )}>
+            <input type="checkbox" checked={s.deficiente ?? false} onChange={e => setState({ deficiente: e.target.checked })} className="hidden" />
+            <div className={cn("w-5 h-5 rounded-[4px] border-2 flex items-center justify-center shrink-0",
+              s.deficiente ? "bg-sky-600 border-sky-600" : "border-[#E2E8F0]")}>
+              {s.deficiente && <span className="text-white text-[10px] font-[900]">✓</span>}
+            </div>
+            <span className="text-[13px] font-[600] text-[#475569]">Pessoa com deficiência <Tip>Titular com grau de incapacidade fiscalmente relevante (≥60%). Aplica as tabelas oficiais IV–VII, com limites de isenção mais elevados.</Tip></span>
+          </label>
         </div>
       </div>
 

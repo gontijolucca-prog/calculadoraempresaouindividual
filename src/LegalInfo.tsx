@@ -1118,7 +1118,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
 
           <div className="space-y-6">
             <p className="text-[13px] text-[#64748B] font-[500] leading-relaxed">
-              Cálculo do salário líquido para TCO, com descontos de SS, retenção de IRS e subsídio de alimentação. Base legal: CIRS Art. 99.º (retenção) e CRCSPSS Art. 53.º (SS).
+              Cálculo do salário líquido para TCO, com descontos de SS, retenção de IRS pelas tabelas oficiais 2026 e subsídio de alimentação. Base legal: CIRS Art. 99.º a 99.º-F (retenção na fonte), despachos regionais das tabelas e CRCSPSS Art. 53.º (SS).
             </p>
 
             {/* SS TCO */}
@@ -1133,18 +1133,24 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
               </div>
             </div>
 
-            {/* Dedução específica */}
+            {/* Tabelas oficiais de retenção na fonte */}
             <div>
-              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Retenção na Fonte IRS — CIRS Art. 99.º</h3>
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Retenção na Fonte IRS — Tabelas Oficiais 2026 (CIRS Art. 99.º-C / 99.º-F)</h3>
               <div className="bg-blue-50 border border-blue-200 rounded-[12px] p-4 mb-3">
                 <p className="text-[13px] text-blue-900 font-[500] leading-relaxed">
-                  A retenção aproxima-se do IRS anual estimado / nº de pagamentos anuais. Fórmula simplificada utilizada no simulador (via escalões progressivos 2026).
+                  O simulador aplica as tabelas oficiais de retenção mensal (modelo da taxa marginal máxima, em vigor desde julho de 2023): Retenção = Remuneração × Taxa marginal máxima − Parcela a abater − (Parcela adicional × n.º de dependentes), arredondada por defeito à unidade de euro. O IRS final acerta-se na declaração anual — o simulador apresenta também o acerto estimado.
                 </p>
               </div>
               <div className="space-y-2">
-                <LegalRow label="Dedução específica Cat. A — CIRS Art. 25.º" value="Maior de: €4.104 ou 72% do rendimento anual bruto" note="Subtrai ao rendimento bruto para determinar o rendimento coletável" />
-                <LegalRow label="Nº de pagamentos (sem duodécimos)" value="14 pagamentos (12 × ordenado + sub. férias + sub. Natal)" />
-                <LegalRow label="Nº de pagamentos (com duodécimos)" value="12 pagamentos (subsídios distribuídos mensalmente)" />
+                <LegalRow label="Continente — Despacho SEAF de 05/01/2026" value="Tabelas I–VII (trabalho dependente), vigência 01/01–31/12/2026" note="Extraídas do ficheiro oficial do Portal das Finanças; n.º do despacho a confirmar na publicação em DR" />
+                <LegalRow label="Madeira — Despacho n.º 19/2026, de 20 de janeiro" value="Tabelas regionais próprias (AT-RAM)" note="JORAM, II Série, n.º 13, 4.º Suplemento — não é um simples fator sobre o Continente" />
+                <LegalRow label="Açores — tabelas 2026" value="Em validação — o simulador apresenta estimativa sinalizada" note="Tabelas regionais 2026 não localizadas em fonte oficial à data de 11/06/2026" />
+                <LegalRow label="Seleção da tabela" value="I: não casado s/ dep. ou casado 2 titulares · II: não casado c/ dep. · III: casado único titular · IV–VII: pessoa com deficiência" />
+                <LegalRow label="Subsídios de férias e Natal" value="Retenção autónoma — CIRS Art. 99.º-C n.º 5" note="Pagos em duodécimos: retém-se mensalmente a parte proporcional do imposto de cada subsídio" />
+                <LegalRow label="IRS Jovem na retenção — CIRS Art. 99.º-F" value="A taxa efetiva da remuneração total aplica-se apenas à parte não isenta" />
+                <LegalRow label="Dedução específica Cat. A — CIRS Art. 25.º (OE 2026)" value="Maior de: 8,54 × IAS (€4.587,09 em 2026) ou contribuições obrigatórias" note="Usada na estimativa do IRS anual para o cálculo do acerto" />
+                <LegalRow label="Nº de recibos (sem duodécimos)" value="14 (12 × ordenado + sub. férias + sub. Natal, com retenção autónoma)" />
+                <LegalRow label="Nº de recibos (com duodécimos)" value="12 (subsídios e respetiva retenção distribuídos mensalmente)" />
               </div>
             </div>
 
@@ -1280,8 +1286,12 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
             <Article code="CIMT Art. 17.º" description="Tabela de taxas IMT — HPP, habitação secundária, prédios urbanos e rústicos" />
             <Article code="TGIS Verba 1.1" description="Imposto de Selo sobre transmissões de imóveis — 0,8% sobre o valor de aquisição" />
             <Article code="CRCSPSS Art. 53.º" description="Taxas de SS TCO: 11% (trabalhador) + 23,75% (patronal lucrativa) / 22,3% (patronal não lucrativa)" />
-            <Article code="CIRS Art. 25.º" description="Dedução específica Categoria A — mínimo €4.104 ou 72% do rendimento bruto anual" />
+            <Article code="CIRS Art. 25.º" description="Dedução específica Categoria A — maior de 8,54 × IAS (€4.587,09 em 2026) ou contribuições obrigatórias (OE 2026)" />
             <Article code="Despacho 233-A/2026" description="Limites do subsídio de alimentação 2026: €6,15/dia (dinheiro), €10,46/dia (cartão)" />
+            <Article code="Despacho SEAF de 05/01/2026" description="Tabelas de retenção na fonte 2026 — Continente (trabalho dependente e pensões); n.º do despacho a confirmar em DR" />
+            <Article code="Despacho n.º 19/2026 (AT-RAM)" description="Tabelas de retenção na fonte 2026 — Região Autónoma da Madeira (JORAM, II Série, n.º 13, 4.º Supl.)" />
+            <Article code="CIRS Art. 99.º-C" description="Retenção na fonte Cat. A — remuneração mensal; retenção autónoma de subsídios de férias/Natal (n.º 5) e duodécimos" />
+            <Article code="CIRS Art. 99.º-F" description="Tabelas de retenção aprovadas por despacho; aplicação da taxa efetiva à parte não isenta (IRS Jovem)" />
             <Article code="DL n.º 139/2025" description="Salário Mínimo Nacional 2026: €920/mês" />
             <Article code="Portaria 480-A/2025" description="IAS 2026: €537,13" />
             <Article code="Lei n.º 98/2009" description="Seguro obrigatório de acidentes de trabalho" />
