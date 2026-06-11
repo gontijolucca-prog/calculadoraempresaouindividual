@@ -13,7 +13,7 @@ import type { AppMode } from './ModeSelector';
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal'
-  | 'previsa' | 'office-settings' | 'empresas' | 'historico' | 'exportar';
+  | 'previsa' | 'office-settings' | 'empresas' | 'historico' | 'exportar' | 'hub';
 
 export interface LayoutProps {
   view: ViewType;
@@ -69,7 +69,7 @@ const NAV_ITEMS = [
 ] as const;
 
 /** Opções de navegação por cliente — mesma semântica dos cartões da Lista. */
-type NavOpts = { openPackage?: boolean; toggleFlow?: boolean };
+type NavOpts = { openPackage?: boolean; toggleFlow?: boolean; skipIntro?: boolean };
 
 /** Menu do cliente ativo, replicado na sidebar por baixo de "A trabalhar em".
  *  Reaproveita exatamente a navegação dos cartões (navigateClient) para não
@@ -240,7 +240,13 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
               <div className="mt-1.5">
                 <button
                   type="button"
-                  onClick={() => setClientMenuOpen((v) => !v)}
+                  onClick={() => {
+                    const opening = !clientMenuOpen;
+                    setClientMenuOpen(opening);
+                    // Abrir o menu também abre a galeria do cliente no ecrã
+                    // principal — 2 caminhos para o mesmo destino (sidebar/cards).
+                    if (opening) goClient('hub');
+                  }}
                   aria-expanded={clientMenuOpen}
                   title={clientMenuOpen ? 'Fechar o menu do cliente' : 'Abrir o menu do cliente (perfil e simuladores)'}
                   className="group w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-left transition-all hover:brightness-[0.98] focus-visible:outline-none"

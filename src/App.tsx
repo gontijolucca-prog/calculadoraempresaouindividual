@@ -9,6 +9,7 @@ import LoginPage from './LoginPage';
 import LandingPage from './LandingPage';
 import EmpresasList from './EmpresasList';
 import SimIntro, { SIM_INTROS } from './SimIntro';
+import ClientHub from './ClientHub';
 import ExportarRelatorio from './ExportarRelatorio';
 import type { AppMode } from './ModeSelector';
 import {
@@ -76,7 +77,7 @@ const AIContabilista = lazy(() => import('./ai/AIContabilista'));
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal'
-  | 'previsa' | 'office-settings' | 'empresas' | 'historico' | 'exportar';
+  | 'previsa' | 'office-settings' | 'empresas' | 'historico' | 'exportar' | 'hub';
 
 // Default landing view when the user picks a mode.
 const DEFAULT_VIEW_BY_MODE: Record<AppMode, ViewType> = {
@@ -101,6 +102,7 @@ const VIEW_TITLES: Record<ViewType, string> = {
   'office-settings': 'Definições do Escritório',
   historico: 'Histórico de Simulações',
   exportar: 'Relatórios',
+  hub: 'Menu do Cliente',
 };
 
 /**
@@ -634,13 +636,15 @@ function AppContent() {
   // Seleciona o cliente e abre directamente a vista pedida (perfil, simulador,
   // histórico…). Para "Pacote cliente" e "Vista detalhada", regista a intenção
   // que o ClientProfile consome ao montar.
-  const navigateClient = (empId: string, view: string, opts?: { openPackage?: boolean; toggleFlow?: boolean }) => {
+  const navigateClient = (empId: string, view: string, opts?: { openPackage?: boolean; toggleFlow?: boolean; skipIntro?: boolean }) => {
     if (!selectEmpresa(empId)) return;
     setMode('empresa');
     if (opts?.openPackage) requestOpenPackage();
     if (opts?.toggleFlow) requestFlowToggle();
     // Simulador escolhido no menu → mostra primeiro o ecrã-intro ("Simular" entra).
-    if (SIM_INTROS[view]) setIntroFor(view as ViewType);
+    // Os cards da galeria do cliente já explicam o simulador → entram diretos.
+    if (SIM_INTROS[view] && !opts?.skipIntro) setIntroFor(view as ViewType);
+    else setIntroFor(null);
     setView(view as ViewType);
   };
 
@@ -1093,6 +1097,12 @@ function AppContent() {
             onVoltar={() => { setIntroFor(null); setView('empresas'); }}
           />
         )}
+        {view === 'hub' && (currentEmpresaId
+          ? <ClientHub
+              clientName={clientProfile.nomeCliente?.trim() || 'Cliente sem nome'}
+              onNavigate={(v, opts) => navigateClient(currentEmpresaId, v, opts)}
+            />
+          : simGate)}
         {view === 'empresas' && (
           <EmpresasList
             refreshKey={empresasRefresh}
