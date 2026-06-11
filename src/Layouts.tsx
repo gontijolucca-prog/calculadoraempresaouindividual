@@ -129,6 +129,9 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
   const go = (v: ViewType) => { setView(v); setDrawerOpen(false); };
   const runAction = (fn?: () => void) => { if (fn) fn(); setDrawerOpen(false); };
 
+  // Menu do cliente ativo ("A trabalhar em") é um dropdown que INICIA FECHADO.
+  const [clientMenuOpen, setClientMenuOpen] = useState(false);
+
   // Navega dentro do cliente ativo usando a MESMA função dos cartões da Lista
   // (seleciona empresa + dispara intenções pacote/vista + muda de vista), para
   // o menu da sidebar e o dropdown do cartão nunca divergirem.
@@ -214,8 +217,9 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
               <div className="mt-1.5">
                 <button
                   type="button"
-                  onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }}
-                  title="Voltar à Lista de Empresas"
+                  onClick={() => setClientMenuOpen((v) => !v)}
+                  aria-expanded={clientMenuOpen}
+                  title={clientMenuOpen ? 'Fechar o menu do cliente' : 'Abrir o menu do cliente (perfil e simuladores)'}
                   className="group w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-left transition-all hover:brightness-[0.98] focus-visible:outline-none"
                   style={{
                     background: 'linear-gradient(135deg, rgba(6,119,255,0.12), rgba(6,119,255,0.04))',
@@ -227,10 +231,11 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                     <span className="block text-[9px] font-[800] uppercase tracking-[1px] text-[#0677FF]">A trabalhar em</span>
                     <span className="block text-[13px] font-[700] text-[#0B1D2D] truncate">{activeClientName}</span>
                   </span>
-                  <ChevronRight className="w-4 h-4 text-[#0677FF]/50 shrink-0 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                  <ChevronRight className={cn('w-4 h-4 text-[#0677FF]/50 shrink-0 transition-transform', clientMenuOpen && 'rotate-90')} aria-hidden="true" />
                 </button>
 
-                {/* Menu do cliente ativo — aninhado sob o indicador. */}
+                {/* Menu do cliente ativo — dropdown fechado por defeito. */}
+                {clientMenuOpen && (
                 <div className="mt-1 ml-2.5 pl-2 border-l-2 border-[#0677FF]/20 space-y-0.5">
                   {CLIENT_MENU.map((it) => (
                     <ClientNavItem
@@ -253,6 +258,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                     />
                   ))}
                 </div>
+                )}
               </div>
             )}
 
