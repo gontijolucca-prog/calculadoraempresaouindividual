@@ -169,19 +169,14 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
     if (open) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [msgs, busy, open]);
 
-  // Como o contexto é efémero (limpa em cada refresh/nova tab), o bot volta SEMPRE
-  // a tentar interagir após carregar a página: abre sozinho e cumprimenta de forma
-  // proativa. Sem gate de sessão — cada load é uma interação nova.
+  // O painel NÃO abre sozinho — só quando o utilizador clica no botão.
+  // A saudação proativa fica pré-carregada para o aguardar quando abrir.
   useEffect(() => {
-    const t = setTimeout(() => {
-      setMsgs((prev) => {
-        // Só injeta a saudação proativa se ainda não houve conversa nesta sessão.
-        if (prev.length <= 1) return [PROACTIVE_GREETING];
-        return prev;
-      });
-      setOpen(true);
-    }, 1400);
-    return () => clearTimeout(t);
+    setMsgs((prev) => {
+      // Só injeta a saudação proativa se ainda não houve conversa nesta sessão.
+      if (prev.length <= 1) return [PROACTIVE_GREETING];
+      return prev;
+    });
   }, []);
 
   useEffect(() => {
