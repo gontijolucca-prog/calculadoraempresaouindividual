@@ -587,6 +587,14 @@ function AppContent() {
     return () => document.removeEventListener('keydown', onKey);
   }, [showSaftViewer]);
 
+  // Input escondido que o AI Contabilista aciona para importar um SAF-T. O alvo
+  // (criar cliente novo, ou substituir/importar no cliente ativo) é guardado num
+  // ref antes de abrir o seletor de ficheiro. Estes refs têm de viver ANTES do
+  // return condicional do login — hooks depois dele mudam a contagem entre
+  // renders e crasham a app (React #310).
+  const botSaftInputRef = useRef<HTMLInputElement>(null);
+  const botSaftTargetRef = useRef<'novo' | 'empresa'>('novo');
+
   if (!loggedIn) {
     return showLogin
       ? <LoginPage onLogin={() => setLoggedIn(true)} onBack={() => setShowLogin(false)} />
@@ -994,11 +1002,6 @@ function AppContent() {
     diagnostico: setDiagnosticoState, imoveis: setImoveisState, imt: setImtState,
     salario: setSalarioState, irs: setIrsState, previsa: setPreviSaState,
   };
-  // Input escondido que o AI Contabilista aciona para importar um SAF-T. O alvo
-  // (criar cliente novo, ou substituir/importar no cliente ativo) é guardado num
-  // ref antes de abrir o seletor de ficheiro.
-  const botSaftInputRef = useRef<HTMLInputElement>(null);
-  const botSaftTargetRef = useRef<'novo' | 'empresa'>('novo');
   const botBridge: BotBridge = {
     currentUser: officeSettings.nome?.trim() || undefined,
     currentView: VIEW_TITLES[view],
