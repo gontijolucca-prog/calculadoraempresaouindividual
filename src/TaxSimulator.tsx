@@ -16,6 +16,8 @@ import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import EnquadramentoCompleto from './EnquadramentoCompleto';
 import type { InputEnq2026 } from './lib/enquadramento2026';
+import { seedEnqFromSaft } from './lib/enqSaftSeed';
+import { getCurrentEmpresaId, listEmpresas } from './lib/empresas';
 
 interface TaxSimulatorState {
   profSit: string;
@@ -568,6 +570,11 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
   // ── Análise completa 2026 (desenho da contabilista): validação jurídica +
   //    comparação económica por cenários elegíveis. Vista própria, persistida. ──
   if (vistaCompleta) {
+    // Auto-preenche tudo o que o SAF-T da empresa ativa permitir (vendas,
+    // serviços, gastos, TA, balanço); o que o utilizador guardou prevalece.
+    const empId = getCurrentEmpresaId();
+    const emp = empId ? listEmpresas().find(e => e.id === empId) ?? null : null;
+    const saft = seedEnqFromSaft(emp, profile);
     const seed: Partial<InputEnq2026> = {
       rend: { vendas: isServices ? 0 : rev, servicosProf: isServices ? rev : 0, outrosServicos: 0, restantes: 0 },
       faturacaoAnoAnterior: rev,
@@ -579,12 +586,14 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
       accMensalSimplificado: accMoEni,
       accMensalOrganizada: accMoLda || 100,
       anoAtividade: anosAtividade <= 1 ? 1 : anosAtividade === 2 ? 2 : 3,
+      ...saft.seed,
       ...(enq2026 as Partial<InputEnq2026> | undefined ?? {}),
     };
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <EnquadramentoCompleto
           value={seed}
+          saftPreenchidos={saft.preenchidos}
           onChange={(patch) => setState({ enq2026: { ...seed, ...patch } as Record<string, unknown> })}
           onVoltar={() => setState({ vistaCompleta: false })}
         />

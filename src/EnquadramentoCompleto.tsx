@@ -18,10 +18,12 @@ import { numInput, pctInput } from './lib/inputGuards';
 
 const eur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
 
-export default function EnquadramentoCompleto({ value, onChange, onVoltar }: {
+export default function EnquadramentoCompleto({ value, onChange, onVoltar, saftPreenchidos = [] }: {
   value: Partial<InputEnq2026>;
   onChange: (patch: Partial<InputEnq2026>) => void;
   onVoltar: () => void;
+  /** Campos pré-preenchidos a partir do SAF-T da empresa (proveniência). */
+  saftPreenchidos?: string[];
 }) {
   const input: InputEnq2026 = useMemo(() => ({ ...defaultInputEnq2026(), ...value }), [value]);
   const r = useMemo(() => compararEnquadramento2026(input), [input]);
@@ -82,6 +84,16 @@ export default function EnquadramentoCompleto({ value, onChange, onVoltar }: {
           <ArrowLeft className="w-4 h-4" /> Comparação rápida
         </button>
       </div>
+
+      {/* Proveniência: o que veio do SAF-T (editável — o guardado prevalece) */}
+      {saftPreenchidos.length > 0 && (
+        <div className="flex items-start gap-2.5 rounded-[12px] border border-sky-200 bg-sky-50 px-4 py-3">
+          <CheckCircle2 className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+          <p className="text-[12px] text-sky-900 font-[500] leading-relaxed">
+            <strong>Pré-preenchido do SAF-T:</strong> {saftPreenchidos.join(' · ')}. Podes corrigir qualquer valor — o que editares fica guardado.
+          </p>
+        </div>
+      )}
 
       {/* ── Inputs ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

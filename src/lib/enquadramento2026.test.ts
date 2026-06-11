@@ -166,5 +166,28 @@ approx('C: SS independente (70% serviços + 20% vendas × 21,4%)', ssIndependent
   approx('H: sociedade + IVA mensal = 26 obrigações', socM.obrigacoes, 26);
 }
 
+// ── I: auto-preenchimento a partir do SAF-T (seedEnqFromSaft) ──
+{
+  const { seedEnqFromSaft } = await import('./enqSaftSeed');
+  const emp = {
+    id: 'x', nome: 'Teste',
+    previsa: { rai_711: 50000, rai_72: 30000, rai_75: 1000, rai_cmv: 10000, rai_62: 5000, rai_63: 8000, rai_64: 2000 },
+  } as never;
+  const prof = { atividadePrincipal: 'servicos_listados', contabilidade: { clientes: 20000, caixaDepositos: 30000 } } as never;
+  const { seed, preenchidos } = seedEnqFromSaft(emp, prof);
+  approx('I: vendas do SAF-T (711)', seed.rend?.vendas ?? 0, 50000);
+  approx('I: prestações 72 → serviços art. 151.º (atividade do perfil)', seed.rend?.servicosProf ?? 0, 30000);
+  approx('I: subsídios/outros (75/78)', seed.rend?.restantes ?? 0, 1000);
+  approx('I: faturação ano anterior = total SAF-T', seed.faturacaoAnoAnterior ?? 0, 81000);
+  approx('I: gastos de caixa (sem depreciações 64)', seed.gastosReais ?? 0, 23000);
+  approx('I: total balanço = ativo do perfil', seed.totalBalanco ?? 0, 50000);
+  check('I: proveniência lista os campos', preenchidos.length >= 5);
+  // atividade NÃO-151.º → prestações vão para "outros serviços"
+  const outro = seedEnqFromSaft(emp, { atividadePrincipal: 'servicos_outros', contabilidade: {} } as never);
+  approx('I: atividade não-151.º → 72 vai para outros serviços', outro.seed.rend?.outrosServicos ?? 0, 30000);
+  // sem empresa → não preenche nada
+  check('I: sem empresa → seed vazio', Object.keys(seedEnqFromSaft(null, undefined).seed).length === 0);
+}
+
 if (fails) { console.error(`\n${fails} caso(s) FALHARAM`); process.exit(1); }
 else console.log('\nTodos os casos golden do Enquadramento 2026 passaram.');
