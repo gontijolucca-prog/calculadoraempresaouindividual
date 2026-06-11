@@ -8,10 +8,10 @@ import {
 import { cn } from './lib/utils';
 import { useTheme } from './ThemeContext';
 import { Tip } from './Tip';
-import { numInput, pctInput } from './lib/inputGuards';
+import { numInput, pctInput, intInput } from './lib/inputGuards';
 import type { ClientProfile } from './ClientProfile';
 import { coefFromProfile } from './lib/pt2026';
-import { compararEniLda } from './lib/fiscal';
+import { compararEnquadramentos } from './lib/fiscal';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 
@@ -37,6 +37,10 @@ interface TaxSimulatorState {
   transparenciaFiscal: boolean;
   /** Taxa de derrama municipal (fração, ex. 0.015). Default 0. ⚠ por município. */
   taxaDerramaMunicipal?: number;
+  /** N.º de sócios/pessoas no projeto (1 = unipessoal). */
+  nrSocios?: number;
+  /** Atividade exclusivamente profissional do art. 151.º CIRS. */
+  atividadeArt151?: boolean;
 }
 
 interface Props {
@@ -54,6 +58,8 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
     fixedMo, varYr, accMoLda, accMoEni, anosAtividade,
     transparenciaFiscal = false,
     taxaDerramaMunicipal = 0,
+    nrSocios = 1,
+    atividadeArt151 = false,
   } = initialState;
 
   const setState = (updates: Partial<TaxSimulatorState>) => {
@@ -77,21 +83,32 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
   const hdrIcon  = "w-5 h-5 opacity-80 mr-2 inline-block -mt-0.5";
 
   /* ── Cálculo: motor puro em src/lib/fiscal.ts (testável) ── */
-  const results = useMemo(() => compararEniLda({
+  const results = useMemo(() => compararEnquadramentos({
     profSit, currentInc, isMainAct, monthlyNeed, isServices, rev,
     invEquip, invLic, invWorks, invFundo, fixedMo, varYr, accMoLda, accMoEni,
     anosAtividade, transparenciaFiscal,
     coefArt31: profile?.atividadePrincipal ? coefFromProfile(profile.atividadePrincipal) : undefined,
     beneficioJovem: profile.beneficioJovem, idade: profile.idade, nrDependentes: profile.nrDependentes,
-    taxaDerramaMunicipal,
+    taxaDerramaMunicipal, nrSocios, atividadeArt151,
   }), [profSit, currentInc, isMainAct, monthlyNeed, isServices, rev,
       invEquip, invLic, invWorks, invFundo, fixedMo, varYr, accMoLda, accMoEni,
-      anosAtividade, transparenciaFiscal, taxaDerramaMunicipal,
+      anosAtividade, transparenciaFiscal, taxaDerramaMunicipal, nrSocios, atividadeArt151,
       profile?.atividadePrincipal, profile.beneficioJovem, profile.idade, profile.nrDependentes]);
 
   const ptEur  = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.max(0, v));
-  const winner = results.lda.net > results.eni.net ? 'LDA' : 'ENI';
-  const diff   = Math.abs(results.lda.net - results.eni.net);
+  const nets = {
+    ENI: results.eniSimplificadoDisponivel ? results.eni.net : -Infinity,
+    ENI_ORG: results.eniOrganizada.net,
+    LDA: results.lda.net,
+  } as const;
+  const winner = (Object.keys(nets) as (keyof typeof nets)[]).reduce((a, b) => nets[b] > nets[a] ? b : a, 'ENI' as keyof typeof nets);
+  const sorted = (Object.values(nets).filter(Number.isFinite) as number[]).sort((a, b) => b - a);
+  const diff = sorted.length >= 2 ? sorted[0] - sorted[1] : 0;
+  const WINNER_LABEL: Record<string, string> = {
+    ENI: 'Trabalhador Independente (ENI — simplificado)',
+    ENI_ORG: 'ENI — Contabilidade Organizada',
+    LDA: 'Sociedade Unipessoal / Lda',
+  };
 
   const resetAll = () => {
     onStateChange({
@@ -177,6 +194,17 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           <label className={lblCls}>Previsão Faturação (Ano 1) <Tip>O total de faturação anual que espera ter (todas as vendas/serviços). É a base para calcular impostos e regime de IVA.</Tip></label>
           <input type="number" value={rev === 0 ? '' : rev} onChange={e=>setState({rev: numInput(e.target.value)})} className={inputCls} />
         </div>
+        <div>
+          <label className={lblCls}>N.º de Sócios <Tip>Quantas pessoas vão ser donas do negócio. 1 = unipessoal; 2+ abre a porta a Lda plural e, com 5+, à SA. Também liga o aviso de transparência fiscal nas sociedades de profissionais.</Tip></label>
+          <input type="number" min={1} max={50} value={nrSocios === 0 ? '' : nrSocios} onChange={e=>setState({nrSocios: Math.max(1, intInput(e.target.value))})} className={inputCls} />
+        </div>
+        <label className={cn("flex items-start gap-3 p-3 border rounded-[8px] cursor-pointer transition-colors", atividadeArt151 ? "bg-sky-50 border-sky-300" : "bg-slate-50 border-slate-200")}>
+          <input type="checkbox" checked={atividadeArt151} onChange={e=>setState({atividadeArt151: e.target.checked})} className="mt-1 w-4 h-4 accent-sky-600" />
+          <div>
+            <span className="text-[12px] font-[700] text-slate-800 block">Atividade profissional (art. 151.º)</span>
+            <span className="text-[11px] text-slate-500 font-[500]">Médicos, advogados, engenheiros, consultores…</span>
+          </div>
+        </label>
         <label className="col-span-2 flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-[8px] cursor-pointer hover:bg-amber-100 transition-colors">
           <input type="checkbox" checked={isSeasonal} onChange={e=>setState({isSeasonal: e.target.checked})} className="mt-1 w-4 h-4 accent-amber-600" />
           <span className="text-[12px] font-[600] text-amber-900 leading-snug">Negócio Sazonal</span>
@@ -239,10 +267,10 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
       <div className="flex-1">
         <div className="text-[11px] font-[800] uppercase tracking-[1px] mb-1 opacity-70">Parecer & Conclusão</div>
         <h3 className="text-[20px] font-[800] tracking-tight mb-2 text-emerald-900">
-          Regime Ideal: {winner === 'LDA' ? 'Sociedade Unipessoal / Lda' : 'Trabalhador Independente (ENI)'}
+          Regime Ideal: {WINNER_LABEL[winner]}
         </h3>
         <p className="text-[14px] leading-relaxed font-[500] text-emerald-800">
-          {ptEur(rev)} faturados → <strong>{winner === 'LDA' ? 'Empresa' : 'Atividade Pessoal'}</strong> maximiza {ptEur(diff)} adicionais/ano.
+          {ptEur(rev)} faturados → <strong>{WINNER_LABEL[winner]}</strong> rende mais {ptEur(diff)}/ano do que a alternativa seguinte.
           {profile.beneficioJovem && profile.idade <= 35 && results.irsJovemDeduction > 0 &&
             ` IRS Jovem reduz rendimento coletável em ${ptEur(results.irsJovemDeduction)}.`
           }
@@ -270,8 +298,9 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
 
   const eniCard = (
     <div className={cn("bg-white border-2 rounded-[20px] p-6 shadow-sm flex flex-col", winner === 'ENI' ? "border-emerald-500 ring-4 ring-emerald-50" : "border-[#E2E8F0]")}>
-      <h4 className="text-[18px] font-[800] text-[#0F172A] mb-5 flex items-center justify-between">Recibos Verdes (ENI)
+      <h4 className="text-[18px] font-[800] text-[#0F172A] mb-5 flex items-center justify-between">ENI — Simplificado
         {winner === 'ENI' && <span className="bg-emerald-500 text-white text-[10px] font-[800] uppercase px-3 py-1 rounded-full tracking-widest">Melhor Opção</span>}
+        {!results.eniSimplificadoDisponivel && <span className="bg-red-100 text-red-700 text-[10px] font-[800] uppercase px-3 py-1 rounded-full tracking-widest">Indisponível &gt;200k</span>}
       </h4>
       <div className="space-y-3 mb-6 flex-1">
         <div className="flex justify-between items-center border-b border-slate-100 pb-2">
@@ -302,6 +331,44 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           <span className="text-[11px] font-[700] text-slate-500 uppercase tracking-widest flex items-center gap-1">Cash-Flow Livre Y1 <Tip>Cash-Flow Livre = dinheiro real disponível no final do ano. É o Net Income mais despesas não monetárias (ex: amortizações), menos investimentos. Y1 = Ano 1.</Tip></span>
           <span className="text-[18px] font-[800] text-emerald-600">{ptEur(results.eni.cashFlow)}</span>
         </div>
+      </div>
+    </div>
+  );
+
+  const eniOrgCard = (
+    <div className={cn("bg-white border-2 rounded-[20px] p-6 shadow-sm flex flex-col", winner === 'ENI_ORG' ? "border-emerald-500 ring-4 ring-emerald-50" : "border-[#E2E8F0]")}>
+      <h4 className="text-[18px] font-[800] text-[#0F172A] mb-5 flex items-center justify-between">ENI — Contab. Organizada
+        {winner === 'ENI_ORG' && <span className="bg-emerald-500 text-white text-[10px] font-[800] uppercase px-3 py-1 rounded-full tracking-widest">Melhor Opção</span>}
+      </h4>
+      <div className="space-y-3 mb-6 flex-1">
+        <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+          <span className="text-[13px] font-[600] text-slate-600 flex items-center gap-1">Lucro real (rendimento coletável) <Tip>Na contabilidade organizada o IRS incide sobre o LUCRO REAL: faturação menos os custos documentados (fixos, produção, contabilidade e depreciação do investimento) — em vez do coeficiente do regime simplificado. Compensa quando os custos reais são altos.</Tip></span>
+          <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.eniOrganizada.rendColetavel)}</span>
+        </div>
+        <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+          <span className="text-[13px] font-[600] text-slate-600 flex items-center gap-1">IRS Agravado <Tip>IRS extra que a atividade acrescenta ao rendimento atual, calculado sobre o lucro real (escalões do art. 68.º CIRS), com IRS Jovem e dedução por dependentes quando aplicáveis.</Tip></span>
+          <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.eniOrganizada.irs)}</span>
+        </div>
+        <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+          <span className="text-[13px] font-[600] text-slate-600 flex items-center gap-1">Seg. Social (21,4%) <Tip>Contribuição de trabalhador independente — igual ao regime simplificado. ⚠ A base de incidência na contabilidade organizada tem nuances a validar pela contabilista.</Tip></span>
+          <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.eniOrganizada.ss)}</span>
+        </div>
+        <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+          <span className="text-[13px] font-[600] text-slate-600 flex items-center gap-1">Custos considerados <Tip>Custos fixos anuais + custos de produção + contabilidade ENI + 25% do investimento (depreciação, mesma convenção da sociedade). Contabilista certificado é obrigatório neste regime.</Tip></span>
+          <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.eniOrganizada.custosConsiderados)}</span>
+        </div>
+      </div>
+      <div className="bg-slate-50 p-4 rounded-[12px] space-y-2">
+        <div className="flex justify-between items-center">
+          <span className="text-[11px] font-[700] text-slate-500 uppercase tracking-widest">Net Income Ano 1</span>
+          <span className="text-[20px] font-[800] text-[#0F172A]">{ptEur(results.eniOrganizada.net)}</span>
+        </div>
+      </div>
+      <div className="mt-3 flex items-start gap-2 bg-slate-50 border border-slate-200 rounded-[8px] px-3 py-2">
+        <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-500" />
+        <span className="text-[11px] text-slate-600 font-[500] leading-relaxed">
+          Responsabilidade ilimitada (como no simplificado). Obrigatória acima de 200 000 € de faturação; opcional abaixo — compensa com custos reais elevados. ⚠ validar com a contabilista.
+        </span>
       </div>
     </div>
   );
@@ -375,6 +442,33 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           </span>
         </div>
       )}
+    </div>
+  );
+
+  const avisosBanner = results.avisos.length > 0 && (
+    <div className="bg-amber-50 border border-amber-200 rounded-[16px] p-4 space-y-2">
+      {results.avisos.map((a, i) => (
+        <div key={i} className="flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-600" />
+          <span className="text-[12.5px] text-amber-900 font-[500] leading-relaxed">{a}</span>
+        </div>
+      ))}
+    </div>
+  );
+
+  const outrosPanel = (
+    <div className="bg-white border border-slate-200 rounded-[20px] p-6 shadow-sm">
+      <h4 className="text-[14px] font-[800] uppercase tracking-[1px] text-slate-500 mb-1">Outros enquadramentos a considerar</h4>
+      <p className="text-[12px] text-slate-500 font-[500] mb-4">Orientação qualitativa — quando algum fizer sentido, a decisão final é validada pela contabilista.</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        {results.outros.map((e) => (
+          <div key={e.id} className="bg-slate-50 border border-slate-200 rounded-[12px] p-4">
+            <div className="text-[13px] font-[800] text-[#0F172A] mb-1">{e.nome}</div>
+            <p className="text-[12px] text-slate-600 font-[500] leading-relaxed">{e.quando}</p>
+            {e.nota && <p className="text-[11px] text-slate-500 font-[600] mt-1.5">{e.nota}</p>}
+          </div>
+        ))}
+      </div>
     </div>
   );
 
@@ -531,9 +625,10 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           </div>
 
           <h2 className="text-[18px] font-[800] text-[#0F172A] pt-4">Resultados</h2>
-          {winnerBanner}{irsChips}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{eniCard}{ldaCard}</div>
+          {winnerBanner}{irsChips}{avisosBanner}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">{eniCard}{eniOrgCard}{ldaCard}</div>
           {extras}
+          {outrosPanel}
         </div>
       </div>
     );
@@ -594,6 +689,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
 
             {/* ENI card */}
             <div className="md:col-span-2 xl:col-span-1">{eniCard}</div>
+            <div className="md:col-span-2 xl:col-span-1">{eniOrgCard}</div>
             {/* LDA card */}
             <div className="md:col-span-2 xl:col-span-1">{ldaCard}</div>
 
@@ -690,8 +786,10 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           <div className="pt-2 space-y-3">
             {winnerBanner}
             {irsChips}
-            <div className="grid grid-cols-1 gap-4">{eniCard}{ldaCard}</div>
+            {avisosBanner}
+            <div className="grid grid-cols-1 gap-4">{eniCard}{eniOrgCard}{ldaCard}</div>
             {extras}
+            {outrosPanel}
           </div>
         </div>
       </div>
@@ -754,8 +852,10 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
 
           <div className="md:col-span-2 space-y-4">
             {irsChips}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{eniCard}{ldaCard}</div>
+            {avisosBanner}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">{eniCard}{eniOrgCard}{ldaCard}</div>
             {extras}
+            {outrosPanel}
           </div>
         </div>
       </div>

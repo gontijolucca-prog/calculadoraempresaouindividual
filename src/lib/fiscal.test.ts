@@ -3,13 +3,17 @@
 // (derrama municipal e hipótese de dividendos). ⚠ Valores fiscais a confirmar pela
 // um contabilista — ver docs/AUDITORIA-FISCAL-PENDENTE.md.
 
-import { compararEniLda, type FiscalInput } from './fiscal';
+import { compararEniLda, compararEnquadramentos, type FiscalInput } from './fiscal';
 
 let fails = 0;
 function approx(label: string, got: number, exp: number, tol = 0.5) {
   const ok = Math.abs(got - exp) <= tol;
   if (!ok) { fails++; console.error(`✗ ${label}: esperado ${exp}, obteve ${got.toFixed(2)}`); }
   else console.log(`✓ ${label} = ${got.toFixed(2)}`);
+}
+function check(label: string, cond: boolean) {
+  if (!cond) { fails++; console.error(`✗ ${label}`); }
+  else console.log(`✓ ${label}`);
 }
 
 const base: FiscalInput = {
@@ -45,6 +49,41 @@ const base: FiscalInput = {
   const r = compararEniLda({ ...base, rev: 120000, transparenciaFiscal: true });
   approx('C: IRC = 0 (transparência)', r.lda.irc, 0);
   approx('C: derrama = 0 (transparência)', r.derramaMunicipal, 0);
+}
+
+// ── D: compararEnquadramentos — ENI organizada, avisos e disponibilidade ──
+{
+  const r = compararEnquadramentos(base); // 50k serviços, custos 0
+  approx('D: organizada custos considerados = 0', r.eniOrganizada.custosConsiderados, 0);
+  approx('D: organizada rend. coletável = faturação (sem custos)', r.eniOrganizada.rendColetavel, 50000);
+  approx('D: organizada SS = SS do simplificado', r.eniOrganizada.ss, 7490);
+  check('D: sem custos documentados, simplificado bate organizada', r.eni.net > r.eniOrganizada.net);
+  check('D: simplificado disponível até 200k', r.eniSimplificadoDisponivel);
+  check('D: 50k sem avisos de elegibilidade', r.avisos.length === 0);
+  check('D: 6 enquadramentos informativos', r.outros.length === 6);
+  check('D: EIRL listado como extinto', r.outros.some(o => o.id === 'eirl' && o.quando.includes('NÃO')));
+}
+
+// ── E: custos documentados altos → organizada compensa; coerência do líquido ──
+{
+  const r = compararEnquadramentos({ ...base, fixedMo: 3000 }); // 36k/ano de custos reais
+  approx('E: organizada rend. coletável = 50k − 36k', r.eniOrganizada.rendColetavel, 14000);
+  check('E: com custos reais altos, organizada bate simplificado', r.eniOrganizada.net > r.eni.net);
+  approx('E: líquido organizada = rev − custos − SS − IRS',
+    r.eniOrganizada.net, 50000 - 36000 - r.eniOrganizada.ss - r.eniOrganizada.irs);
+}
+
+// ── F: avisos de elegibilidade ──
+{
+  const acima = compararEnquadramentos({ ...base, rev: 250000 });
+  check('F: >200k → simplificado indisponível', !acima.eniSimplificadoDisponivel);
+  check('F: >200k → aviso de contabilidade organizada', acima.avisos.some(a => a.includes('200 000')));
+  const profis = compararEnquadramentos({ ...base, nrSocios: 2, atividadeArt151: true });
+  check('F: art. 151.º + 2 sócios → aviso transparência obrigatória', profis.avisos.some(a => a.includes('transparência') || a.includes('art. 6.º')));
+  const pequeno = compararEnquadramentos({ ...base, rev: 12000 });
+  check('F: ≤15k → aviso isenção de IVA art. 53.º', pequeno.avisos.some(a => a.includes('53.º')));
+  const sa = compararEnquadramentos({ ...base, nrSocios: 5 });
+  check('F: 5+ sócios → nota SA como alternativa real', sa.outros.some(o => o.id === 'sa' && (o.nota ?? '').includes('alternativa real')));
 }
 
 if (fails) { console.error(`\n${fails} caso(s) FALHARAM`); process.exit(1); }

@@ -131,3 +131,14 @@ Implementadas no simulador (substituem a estimativa anualizada). Para validaçã
 - [x] **PPC (art. 105.º CIRC):** próximo período = (c358 − retenções na fonte) × 80% (VN ≤ 500 k€) / 95% (VN > 500 k€), 3 prestações jul/set/15-dez; sem PPC quando a base ≤ 200 €. **Confirmar limiar dos 200 € e datas.**
 - [x] **PAC (art. 105.º-A CIRC):** sobre o lucro tributável > 1,5 M€ — escalões 1,5–7,5M / 7,5–35M / >35M às taxas 2,5/4,5/8,5% (continental; Madeira/Açores reduzidas). **Confirmar taxas regionais.**
 - [x] Prejuízos fiscais: dedução Q09 já existia (limite 65%/75% c/ limiteMaisPP) — adicionada linha visível "(−) Prejuízos deduzidos" no resumo. **Confirmar regime de reporte sem prazo (pós-OE2023) e limite 65%.**
+
+## Simulador Fiscal — enquadramentos alargados (11-jun)
+O comparador passou de 2 para 3 colunas (ENI simplificado / ENI organizada / Sociedade) + avisos + painel informativo. Para validação da Sandrine:
+- [ ] **ENI contabilidade organizada:** lucro real = faturação − custos documentados − 25% do investimento em equipamento/licenças/obras (mesma convenção de depreciação usada na Sociedade). **Confirmar taxa de depreciação média e elegibilidade dos custos.**
+- [ ] **SS do ENI organizada:** usámos a MESMA contribuição do simplificado (base de incidência sobre o rendimento relevante tem nuances no regime organizado — art. 162.º CRC?). **Confirmar base correta.**
+- [ ] **Limite do regime simplificado:** 200 000 € de faturação anual (art. 28.º CIRS). Acima disso o simulador avisa que o ENI cai em organizada. **Confirmar valor e regras de transição (2 anos?).**
+- [ ] **Transparência fiscal obrigatória (art. 6.º CIRC):** aviso quando atividade do art. 151.º CIRS + 2 ou mais sócios (sociedade de profissionais). **Confirmar critérios exatos (75% capital? todos os sócios profissionais?).**
+- [ ] **SA:** capital mínimo 50 000 € e regra geral de 5 acionistas (1 no caso unipessoal). Tratada como fiscalmente idêntica à Lda. **Confirmar.**
+- [ ] **EIRL:** apresentado como extinto para novas constituições. **Confirmar diploma/data da extinção.**
+- [ ] **Isenção IVA art. 53.º:** aviso quando faturação ≤ 15 000 €. **Confirmar limiar 2026.**
+- Cooperativa / Associação-IPSS / ACE-AEIE / herança indivisa: apenas descrições qualitativas, sem números.

@@ -22,7 +22,7 @@ Arranque: Após login, começa em "Empresa" com lista de empresas. Modo "Novo Cl
 
 2. **profile (Perfil do Cliente)** — Vários separadores: dados pessoais, contacto, endereço, regime fiscal, atividade, documentos e balanço. Validação de formato em tempo real.
 
-3. **tax (Simulador Fiscal)** — Compara 3 regimes: ENI (Empresa em Nome Individual), Lda (Sociedade por Quotas), SA (Sociedade Anónima). Mostra resultados estimados de impostos, contribuições, benefícios fiscais, anos de amortização.
+3. **tax (Simulador Fiscal)** — Compara os enquadramentos: ENI simplificado, ENI em contabilidade organizada e Sociedade (Lda/Unipessoal), com avisos de elegibilidade (limite do simplificado, transparência fiscal obrigatória, isenção de IVA) e painel informativo de enquadramentos especiais (SA, cooperativa, associação, ACE, herança indivisa).
 
 4. **vehicle (Simulador de Viaturas)** — Inventário de veículos (marca, modelo, ano, cilindrada, combustível, data aquisição). Calcula o imposto de circulação anual e a recuperação de IVA aplicável, segundo as tabelas em vigor. Valida o formato da matrícula.
 
@@ -95,7 +95,7 @@ Chaves para preenchimento automático. Estrutura aninhada onde aplicável (ex.: 
 - ativoTotal, passivoTotal, ativoCorrente, passivoCorrente (currency)
 - resultadoLiquido, volumeNegocios (currency)
 
-### tax (Simulador Fiscal — ENI vs Lda)
+### tax (Simulador Fiscal — Enquadramentos: ENI simplificado vs ENI organizada vs Sociedade)
 Campos reais do estado (preenchíveis pelo bot — usar EXATAMENTE estas chaves):
 - rev (currency — faturação anual prevista) ; isServices (boolean — serviços vs bens) ; b2b (boolean)
 - currentInc (currency — outro rendimento já existente do sócio) ; monthlyNeed (currency — quanto o sócio precisa de levantar por mês na Lda)
@@ -104,7 +104,8 @@ Campos reais do estado (preenchíveis pelo bot — usar EXATAMENTE estas chaves)
 - fixedMo (currency/mês — custos fixos) ; varYr (currency/ano — custos variáveis) ; accMoLda, accMoEni (currency/mês — contabilidade)
 - invEquip, invLic, invWorks, invFundo (currency — investimento inicial)
 - taxaDerramaMunicipal (fração, ex. 0.015 — derrama municipal sobre o lucro; default 0)
-Método: ENI = regime simplificado (coeficiente art.31 × faturação, com regra de justificação 15% n.º13) + SS independente + IRS marginal. Lda = remuneração do gerente (gross-up de monthlyNeed) + IRC 15%/19% PME (+ derrama municipal, taxa do concelho) OU transparência fiscal. Mostra o líquido com lucro RETIDO e a hipótese com lucro DISTRIBUÍDO (dividendos −28%, CIRS art.71). O coeficiente vem do perfil (atividadePrincipal) quando disponível. Motor em src/lib/fiscal.ts (testável).
+- nrSocios (number — quantas pessoas no projeto; default 1) ; atividadeArt151 (boolean — atividade da lista do art. 151.º CIRS, ex. médicos/advogados/engenheiros)
+Método: ENI = regime simplificado (coeficiente art.31 × faturação, com regra de justificação 15% n.º13) + SS independente + IRS marginal. Lda = remuneração do gerente (gross-up de monthlyNeed) + IRC 15%/19% PME (+ derrama municipal, taxa do concelho) OU transparência fiscal. Mostra o líquido com lucro RETIDO e a hipótese com lucro DISTRIBUÍDO (dividendos −28%, CIRS art.71). O coeficiente vem do perfil (atividadePrincipal) quando disponível. Desde jun-2026 compara TRÊS colunas: ENI simplificado, ENI em contabilidade organizada (lucro real = faturação − custos documentados) e Sociedade — e avisa quando: faturação acima do limite torna o simplificado indisponível; atividade do art. 151.º com 2+ sócios pode cair obrigatoriamente em transparência fiscal; faturação baixa pode dar isenção de IVA (art. 53.º). Inclui ainda um painel informativo de outros enquadramentos (SA, cooperativa, associação/IPSS, ACE/AEIE, herança indivisa, EIRL extinto) — qualitativo, sem números. Motor em src/lib/fiscal.ts (testável).
 
 ### vehicle (Simulador de Viaturas)
 - category (select: passageiros/comercial)
