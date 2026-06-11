@@ -348,10 +348,13 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
                 <div className="text-[15px] font-[800] leading-tight">AI Contabilista</div>
                 <div className="text-[11px] font-[600] text-white/70 leading-tight">Assistente do Estudo 360 · grátis</div>
               </div>
-              <button type="button" onClick={clearChat} aria-label="Limpar conversa"
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors">
-                <Trash2 className="w-4 h-4" strokeWidth={2.2} />
-              </button>
+              {/* Limpar só com histórico — conversa nova (só boas-vindas) não tem nada para apagar. */}
+              {msgs.length > 1 && (
+                <button type="button" onClick={clearChat} aria-label="Limpar conversa"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors">
+                  <Trash2 className="w-4 h-4" strokeWidth={2.2} />
+                </button>
+              )}
               <button type="button" onClick={() => setOpen(false)} aria-label="Fechar"
                 className="w-8 h-8 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors">
                 <X className="w-4.5 h-4.5" strokeWidth={2.4} style={{ width: 18, height: 18 }} />

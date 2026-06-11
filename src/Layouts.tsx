@@ -166,15 +166,18 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
     </button>
   );
 
-  const NavItem = ({ label, Icon, onClick, current, tone = 'default', title }: {
+  const NavItem = ({ label, Icon, onClick, current, tone = 'default', title, chevronOpen }: {
     label: string; Icon: React.ComponentType<{ className?: string }>;
     onClick: () => void; current?: boolean; tone?: 'default' | 'danger'; title?: string;
+    /** Definido = o item é um dropdown: mostra seta que roda quando aberto. */
+    chevronOpen?: boolean;
   }) => (
     <button
       type="button"
       onClick={onClick}
       title={title}
       aria-current={current ? 'page' : undefined}
+      aria-expanded={chevronOpen === undefined ? undefined : chevronOpen}
       className={cn(
         'w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-[14px] font-[600] transition-colors text-left',
         current
@@ -185,7 +188,10 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
       )}
     >
       <Icon className="w-[18px] h-[18px] shrink-0" />
-      <span className="truncate">{label}</span>
+      <span className="truncate flex-1">{label}</span>
+      {chevronOpen !== undefined && (
+        <ChevronRight className={cn('w-4 h-4 shrink-0 transition-transform', current ? 'text-white/60' : 'text-slate-400', chevronOpen && 'rotate-90')} aria-hidden="true" />
+      )}
     </button>
   );
 
@@ -213,7 +219,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
       <nav aria-label="Navegação principal" className="flex-1 overflow-y-auto px-2 py-1">
         <SectionLabel>Carteira</SectionLabel>
             <NavItem label="Lista de Empresas" Icon={Briefcase} onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }} current={active === 'empresas'} title="Carteira de clientes — cada um abre o seu menu (perfil, simuladores, histórico). Aqui também adicionas novas empresas." />
-            <NavItem label="Relatórios" Icon={FileDown} onClick={() => setRelatoriosOpen(v => !v)} current={active === 'exportar'} title="Demonstrações financeiras, documentos de encerramento de contas e pacote do cliente." />
+            <NavItem label="Relatórios" Icon={FileDown} onClick={() => setRelatoriosOpen(v => !v)} current={active === 'exportar'} chevronOpen={relatoriosOpen} title="Demonstrações financeiras, documentos de encerramento de contas e pacote do cliente." />
             {relatoriosOpen && (
               <div className="mt-0.5 ml-2.5 pl-2 border-l-2 border-slate-200 space-y-0.5">
                 <ClientNavItem label="Demonstrações financeiras" Icon={FileDown}

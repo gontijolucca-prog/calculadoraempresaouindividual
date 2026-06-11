@@ -73,6 +73,21 @@ function normalizeProfile(p: ClientProfile | undefined): ClientProfile | undefin
   return p ? deepMerge(defaultProfile, p) : undefined;
 }
 
+// ─── Categorias do dropdown "Relatórios" (vistas separadas) ───────────────────
+export type RelCategoria = 'df' | 'fecho' | 'pacote';
+const DF_GROUP = ['balanco', 'dr', 'alteracoes', 'fluxos', 'df'];
+const FECHO_GROUP = ['acta', 'declaracao'];
+const CATEGORIAS: { id: RelCategoria; label: string; Icon: typeof FileText; primeiro: string }[] = [
+  { id: 'df',     label: 'Demonstrações financeiras', Icon: FileText,        primeiro: 'balanco' },
+  { id: 'fecho',  label: 'Encerramento de contas',    Icon: FileSpreadsheet, primeiro: 'acta' },
+  { id: 'pacote', label: 'Pacote cliente',            Icon: Package,         primeiro: 'simulacao' },
+];
+function categoriaOf(id: string): RelCategoria {
+  if (DF_GROUP.includes(id)) return 'df';
+  if (FECHO_GROUP.includes(id) || id === 'previsa') return 'fecho';
+  return 'pacote';
+}
+
 const FILL_BADGE: Record<string, { txt: string; cls: string }> = {
   completo: { txt: 'Preenchido', cls: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
   parcial:  { txt: 'Parcial',    cls: 'text-amber-700 bg-amber-50 border-amber-200' },
@@ -111,9 +126,15 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
     const saved = loadFromStorage<string | null>('exportarDocId', null);
     return validDocId(saved) ? saved : 'simulacao';
   });
-  // Pedido novo da sidebar com o ecrã já aberto → muda a seleção.
+  // Os 3 menus do dropdown "Relatórios" são vistas SEPARADAS: cada categoria só
+  // mostra os seus documentos. A categoria ativa segue o documento selecionado
+  // (que vem da sidebar via initialDocId) e pode mudar-se nas tabs do ecrã.
+  const [categoria, setCategoria] = useState<RelCategoria>(() => categoriaOf(
+    validDocId(initialDocId) ? initialDocId : (loadFromStorage<string | null>('exportarDocId', null) ?? 'simulacao'),
+  ));
+  // Pedido novo da sidebar com o ecrã já aberto → muda a seleção e a categoria.
   useEffect(() => {
-    if (validDocId(initialDocId)) setDocId(initialDocId);
+    if (validDocId(initialDocId)) { setDocId(initialDocId); setCategoria(categoriaOf(initialDocId)); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialDocId]);
   useEffect(() => { saveToStorage('exportarEmpresaId', empresaId); }, [empresaId]);
@@ -225,9 +246,12 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
     else if (ev.key === 'Escape') { ev.preventDefault(); setEmpresaOpen(false); }
   };
 
-  // Categorias dos documentos Word (dropdown "Relatórios" usa as mesmas).
-  const DF_GROUP = ['balanco', 'dr', 'alteracoes', 'fluxos', 'df'];
-  const FECHO_GROUP = ['acta', 'declaracao'];
+  // Muda de categoria nas tabs: se o documento selecionado não pertence à nova
+  // categoria, salta para o primeiro documento dela (a vista nunca fica vazia).
+  const goCategoria = (c: RelCategoria) => {
+    setCategoria(c);
+    if (categoriaOf(docId) !== c) setDocId(CATEGORIAS.find(x => x.id === c)!.primeiro);
+  };
 
   const renderWordDoc = (d: (typeof DOC_TYPES)[number]) => {
                   const active = d.id === docId;
@@ -451,7 +475,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
             <FileDown className="w-5 h-5 text-[#0677FF]" />
           </div>
           <div>
-            <h1 className="text-[22px] font-[800] text-[#0B1D2D] leading-tight tracking-[-0.4px]">Exportar documentos</h1>
+            <h1 className="text-[22px] font-[800] text-[#0B1D2D] leading-tight tracking-[-0.4px]">Relatórios — {CATEGORIAS.find(c => c.id === categoria)?.label}</h1>
             <p className="text-[13px] text-slate-500 font-[500]">Escolhe a empresa e o documento, edita na folha e descarrega ou imprime.</p>
           </div>
         </div>
@@ -554,33 +578,46 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                 )}
               </div>
 
-              {/* Passo 2 — documento */}
+              {/* Passo 2 — documento. Os 3 menus de "Relatórios" são vistas
+                  separadas: só os documentos da categoria ativa aparecem; as
+                  tabs permitem trocar sem voltar à sidebar. */}
               <p className="mt-6 mb-2 text-[11px] font-[800] uppercase tracking-[0.6px] text-slate-400">2 · Documento</p>
+              <div role="tablist" aria-label="Categoria de relatórios" className="flex gap-1 mb-3 p-1 rounded-[12px] bg-slate-200/60">
+                {CATEGORIAS.map(c => {
+                  const active = c.id === categoria;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => goCategoria(c.id)}
+                      title={c.label}
+                      className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-2 rounded-[9px] text-[11px] font-[800] transition-all ${
+                        active ? 'bg-white text-[#0677FF] shadow-sm' : 'text-slate-500 hover:text-[#0F172A]'
+                      }`}
+                    >
+                      <c.Icon className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{c.id === 'df' ? 'Demonstrações' : c.id === 'fecho' ? 'Encerramento' : 'Pacote cliente'}</span>
+                    </button>
+                  );
+                })}
+              </div>
 
-              {/* Grupo 1: Demonstrações financeiras */}
-              <div className="flex items-center gap-1.5 mb-2 text-[10.5px] font-[800] uppercase tracking-[0.5px] text-[#0677FF]">
-                <FileText className="w-3.5 h-3.5" />
-                Demonstrações financeiras
-              </div>
-              <div className="space-y-2" role="radiogroup" aria-label="Demonstrações financeiras">
-                {DOC_TYPES.filter(d => DF_GROUP.includes(d.id)).map(renderWordDoc)}
-              </div>
+              {categoria === 'df' && (
+                <div className="space-y-2" role="radiogroup" aria-label="Demonstrações financeiras">
+                  {DOC_TYPES.filter(d => DF_GROUP.includes(d.id)).map(renderWordDoc)}
+                </div>
+              )}
 
-              {/* Grupo 2: Documentos de encerramento de contas */}
-              <div className="flex items-center gap-1.5 mt-5 mb-2 text-[10.5px] font-[800] uppercase tracking-[0.5px] text-[#0677FF]">
-                <FileSpreadsheet className="w-3.5 h-3.5" />
-                Documentos de encerramento de contas
-              </div>
-              <div className="space-y-2" role="radiogroup" aria-label="Documentos de encerramento de contas">
-                {DOC_TYPES.filter(d => FECHO_GROUP.includes(d.id)).map(renderWordDoc)}
-                {renderPrevisaDoc()}
-              </div>
+              {categoria === 'fecho' && (
+                <div className="space-y-2" role="radiogroup" aria-label="Documentos de encerramento de contas">
+                  {DOC_TYPES.filter(d => FECHO_GROUP.includes(d.id)).map(renderWordDoc)}
+                  {renderPrevisaDoc()}
+                </div>
+              )}
 
-              {/* Grupo 3: Pacote do cliente */}
-              <div className="flex items-center gap-1.5 mt-5 mb-2 text-[10.5px] font-[800] uppercase tracking-[0.5px] text-[#0677FF]">
-                <Package className="w-3.5 h-3.5" />
-                Pacote do cliente
-              </div>
+              {categoria === 'pacote' && (
               <div className="space-y-2" role="radiogroup" aria-label="Documentos do pacote do cliente">
                 {PACKAGE_DOCS.map(d => {
                   const active = d.id === docId;
@@ -613,8 +650,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                   );
                 })}
               </div>
-
-              {(() => { return null; })()}
+              )}
 
               {/* Aviso: documento precisa de dados do Previsa que faltam */}
               {avisoPrevisa && (
