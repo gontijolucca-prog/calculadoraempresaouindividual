@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Scale, BookOpen, Car, Ticket, Shield, AlertTriangle, CheckCircle2, Briefcase, Save, Layers, Building, Banknote, Home, ClipboardList } from 'lucide-react';
 import { IRS_BRACKETS_2026, IAS_2026 } from './lib/pt2026';
+import { TABELAS_RF_CONTINENTE_2026, TABELAS_RF_MADEIRA_2026, type LinhaRetencao, type TabelaRetencao } from './lib/retencaoTabelas';
 import {
   loadPricing,
   savePricing,
@@ -28,6 +29,77 @@ const SectionHeader = ({ icon: Icon, title, color = '#0677FF' }: { icon: React.E
       <Icon className="w-5 h-5" style={{ color }} />
     </div>
     <h2 className="text-[18px] font-[800] text-[#0F172A]">{title}</h2>
+  </div>
+);
+
+
+// ─── Tabelas de retenção na fonte 2026 — render integral na Base Legal ────────
+const fmtEurRF = (v: number) =>
+  new Intl.NumberFormat('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
+const fmtPctRF = (taxa: number) =>
+  `${new Intl.NumberFormat('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(taxa * 100)}%`;
+const fmtParcelaRF = (l: LinhaRetencao) =>
+  typeof l.parcela === 'number'
+    ? fmtEurRF(l.parcela)
+    : `${fmtPctRF(l.parcela.coef)} × ${new Intl.NumberFormat('pt-PT').format(l.parcela.mult)} × (${fmtEurRF(l.parcela.ref)} − R)`;
+
+const TabelaRF: React.FC<{ tabela: TabelaRetencao }> = ({ tabela }) => (
+  <details className="border border-slate-200 rounded-[10px] overflow-hidden">
+    <summary className="cursor-pointer select-none px-4 py-2.5 text-[13px] font-[700] text-[#0F172A] bg-slate-50 hover:bg-slate-100 transition-colors">
+      Tabela {tabela.id} — {tabela.descricao}
+    </summary>
+    <div className="overflow-x-auto">
+      <table className="w-full text-[12px]">
+        <thead>
+          <tr className="text-left text-[11px] uppercase tracking-[0.5px] text-[#64748B] border-b border-slate-200">
+            <th className="px-4 py-2 font-[700]">Remuneração mensal (€)</th>
+            <th className="px-4 py-2 font-[700] text-right">Taxa marginal máxima</th>
+            <th className="px-4 py-2 font-[700] text-right">Parcela a abater (€)</th>
+            <th className="px-4 py-2 font-[700] text-right">Parcela por dependente (€)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {tabela.linhas.map((l, i) => (
+            <tr key={i} className="border-b border-slate-100 last:border-0">
+              <td className="px-4 py-1.5 font-[600] text-[#0F172A]">
+                {l.ate === null ? `Superior a ${fmtEurRF(tabela.linhas[i - 1]?.ate ?? 0)}` : `Até ${fmtEurRF(l.ate)}`}
+              </td>
+              <td className="px-4 py-1.5 text-right tabular-nums">{fmtPctRF(l.taxa)}</td>
+              <td className="px-4 py-1.5 text-right tabular-nums whitespace-nowrap">{fmtParcelaRF(l)}</td>
+              <td className="px-4 py-1.5 text-right tabular-nums">{l.parcelaDep > 0 ? fmtEurRF(l.parcelaDep) : '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </details>
+);
+
+const TabelasRetencaoFonte = () => (
+  <div>
+    <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Tabelas de Retenção na Fonte 2026 — Valores Integrais (Trabalho Dependente)</h3>
+    <p className="text-[12px] text-[#64748B] font-[500] mb-3 leading-relaxed">
+      Fórmula: Retenção = R × Taxa marginal máxima − Parcela a abater − (Parcela por dependente × n.º de dependentes), arredondada
+      por defeito à unidade de euro (negativa → 0). R = remuneração mensal. Nas primeiras linhas a parcela a abater é variável (fórmula com R).
+    </p>
+    <div className="space-y-4">
+      <div>
+        <div className="text-[12px] font-[800] uppercase tracking-[1px] text-[#0369A1] mb-2">Continente — Despacho SEAF de 05/01/2026</div>
+        <div className="space-y-2">
+          {TABELAS_RF_CONTINENTE_2026.map(tb => <TabelaRF key={tb.id} tabela={tb} />)}
+        </div>
+      </div>
+      <div>
+        <div className="text-[12px] font-[800] uppercase tracking-[1px] text-[#0369A1] mb-2">Madeira — Despacho n.º 19/2026, de 20 de janeiro (AT-RAM)</div>
+        <div className="space-y-2">
+          {TABELAS_RF_MADEIRA_2026.map(tb => <TabelaRF key={tb.id} tabela={tb} />)}
+        </div>
+      </div>
+      <p className="text-[12px] text-amber-700 font-[600]">
+        ⚠ Açores: as tabelas regionais 2026 não foram localizadas em fonte oficial à data de 11/06/2026 — o simulador apresenta
+        uma estimativa sinalizada até as tabelas serem publicadas/confirmadas.
+      </p>
+    </div>
   </div>
 );
 
@@ -1153,6 +1225,9 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
                 <LegalRow label="Nº de recibos (com duodécimos)" value="12 (subsídios e respetiva retenção distribuídos mensalmente)" />
               </div>
             </div>
+
+            {/* Tabelas integrais de retenção na fonte 2026 */}
+            <TabelasRetencaoFonte />
 
             {/* Subsídio alimentação */}
             <div>
