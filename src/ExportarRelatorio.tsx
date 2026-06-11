@@ -80,13 +80,15 @@ const FILL_BADGE: Record<string, { txt: string; cls: string }> = {
   pacote:   { txt: 'Pacote',     cls: 'text-[#0677FF] bg-[#0677FF]/10 border-[#0677FF]/20' },
 };
 
-export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, onGoToOfficeSettings, currentEmpresaId }: {
+export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, onGoToOfficeSettings, currentEmpresaId, initialDocId }: {
   office: OfficeSettings;
   honorarios: HonorariosConfig;
   onOpenPrevisa?: (empresaId: string) => void;
   onGoToOfficeSettings?: () => void;
   /** Empresa "a trabalhar" — fica pré-selecionada ao entrar no Exportar. */
   currentEmpresaId?: string | null;
+  /** Documento a pré-selecionar (vindo do dropdown "Relatórios" da sidebar). */
+  initialDocId?: string | null;
 }) {
   const [empresas, setEmpresas] = useState<EmpresaRecord[]>(() => listEmpresas());
   // Pré-seleção: 1.º a empresa ativa ("a trabalhar"), 2.º a última escolhida
@@ -102,10 +104,18 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentEmpresaId]);
   // Seleção pode ser um doc do pacote (PkgId) ou um doc Word (DocTypeId).
+  const validDocId = (id: string | null | undefined): id is string =>
+    !!id && (isPkg(id) || id === 'previsa' || DOC_TYPES.some(d => d.id === id));
   const [docId, setDocId] = useState<string>(() => {
+    if (validDocId(initialDocId)) return initialDocId;
     const saved = loadFromStorage<string | null>('exportarDocId', null);
-    return (saved && (isPkg(saved) || saved === 'previsa' || DOC_TYPES.some(d => d.id === saved))) ? saved : 'simulacao';
+    return validDocId(saved) ? saved : 'simulacao';
   });
+  // Pedido novo da sidebar com o ecrã já aberto → muda a seleção.
+  useEffect(() => {
+    if (validDocId(initialDocId)) setDocId(initialDocId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialDocId]);
   useEffect(() => { saveToStorage('exportarEmpresaId', empresaId); }, [empresaId]);
   useEffect(() => { saveToStorage('exportarDocId', docId); }, [docId]);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -213,6 +223,72 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
     else if (ev.key === 'ArrowUp') { ev.preventDefault(); setHighlight(h => Math.max(0, h - 1)); }
     else if (ev.key === 'Enter') { ev.preventDefault(); selectEmpresaAt(highlight); }
     else if (ev.key === 'Escape') { ev.preventDefault(); setEmpresaOpen(false); }
+  };
+
+  // Categorias dos documentos Word (dropdown "Relatórios" usa as mesmas).
+  const DF_GROUP = ['balanco', 'dr', 'alteracoes', 'fluxos', 'df'];
+  const FECHO_GROUP = ['acta', 'declaracao'];
+
+  const renderWordDoc = (d: (typeof DOC_TYPES)[number]) => {
+                  const active = d.id === docId;
+                  // Badge dinâmico: reflete os dados REAIS da empresa selecionada,
+                  // não o melhor caso do modelo (que dizia "Preenchido" com tudo vazio).
+                  const badge = FILL_BADGE[emp ? fillStatusFor(d.id, emp, office) : d.fill];
+                  return (
+                    <button
+                      key={d.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => setDocId(d.id)}
+                      className={`w-full text-left flex items-start gap-3 p-3.5 rounded-[14px] border transition-all ${
+                        active
+                          ? 'border-[#0677FF] bg-[#0677FF]/[0.04] shadow-[0_2px_10px_-6px_rgba(6,119,255,0.5)]'
+                          : 'border-slate-200/80 bg-white hover:border-[#0677FF]/40'
+                      }`}
+                    >
+                      <span className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center ${active ? 'border-[#0677FF]' : 'border-slate-300'}`}>
+                        {active && <span className="w-[9px] h-[9px] rounded-full bg-[#0677FF]" />}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[13.5px] font-[800] text-[#0F172A] leading-tight">{d.label}</span>
+                          <span className={`text-[9px] font-[800] uppercase tracking-[0.4px] px-1.5 py-0.5 rounded-[5px] border ${badge.cls}`}>{badge.txt}</span>
+                        </span>
+                        <span className="block text-[12px] text-slate-500 font-[500] mt-0.5">{d.descricao}</span>
+                      </span>
+                    </button>
+                  );
+  };
+
+  const renderPrevisaDoc = () => {
+                  const active = isPrevisa;
+                  const badge = FILL_BADGE[emp && hasPrevisaData(emp) ? 'completo' : 'modelo'];
+                  return (
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => setDocId('previsa')}
+                      className={`w-full text-left flex items-start gap-3 p-3.5 rounded-[14px] border transition-all ${
+                        active
+                          ? 'border-[#0677FF] bg-[#0677FF]/[0.04] shadow-[0_2px_10px_-6px_rgba(6,119,255,0.5)]'
+                          : 'border-slate-200/80 bg-white hover:border-[#0677FF]/40'
+                      }`}
+                    >
+                      <span className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center ${active ? 'border-[#0677FF]' : 'border-slate-300'}`}>
+                        {active && <span className="w-[9px] h-[9px] rounded-full bg-[#0677FF]" />}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2 flex-wrap">
+                          <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span className="text-[13.5px] font-[800] text-[#0F172A] leading-tight">Previsa — Modelo 22 (Excel)</span>
+                          <span className={`text-[9px] font-[800] uppercase tracking-[0.4px] px-1.5 py-0.5 rounded-[5px] border ${badge.cls}`}>{badge.txt}</span>
+                        </span>
+                        <span className="block text-[12px] text-slate-500 font-[500] mt-0.5">O ficheiro original do Previsa preenchido com os dados da empresa; recalcula ao abrir.</span>
+                      </span>
+                    </button>
+                  );
   };
 
   const pkg = isPkg(docId);
@@ -481,8 +557,27 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
               {/* Passo 2 — documento */}
               <p className="mt-6 mb-2 text-[11px] font-[800] uppercase tracking-[0.6px] text-slate-400">2 · Documento</p>
 
-              {/* Grupo: Pacote do cliente (primeiro) */}
+              {/* Grupo 1: Demonstrações financeiras */}
               <div className="flex items-center gap-1.5 mb-2 text-[10.5px] font-[800] uppercase tracking-[0.5px] text-[#0677FF]">
+                <FileText className="w-3.5 h-3.5" />
+                Demonstrações financeiras
+              </div>
+              <div className="space-y-2" role="radiogroup" aria-label="Demonstrações financeiras">
+                {DOC_TYPES.filter(d => DF_GROUP.includes(d.id)).map(renderWordDoc)}
+              </div>
+
+              {/* Grupo 2: Documentos de encerramento de contas */}
+              <div className="flex items-center gap-1.5 mt-5 mb-2 text-[10.5px] font-[800] uppercase tracking-[0.5px] text-[#0677FF]">
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                Documentos de encerramento de contas
+              </div>
+              <div className="space-y-2" role="radiogroup" aria-label="Documentos de encerramento de contas">
+                {DOC_TYPES.filter(d => FECHO_GROUP.includes(d.id)).map(renderWordDoc)}
+                {renderPrevisaDoc()}
+              </div>
+
+              {/* Grupo 3: Pacote do cliente */}
+              <div className="flex items-center gap-1.5 mt-5 mb-2 text-[10.5px] font-[800] uppercase tracking-[0.5px] text-[#0677FF]">
                 <Package className="w-3.5 h-3.5" />
                 Pacote do cliente
               </div>
@@ -519,75 +614,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                 })}
               </div>
 
-              {/* Grupo: Documentos da contabilista */}
-              <div className="flex items-center gap-1.5 mt-5 mb-2 text-[10.5px] font-[800] uppercase tracking-[0.5px] text-slate-400">
-                <FileText className="w-3.5 h-3.5" />
-                Demonstrações & documentos
-              </div>
-              <div className="space-y-2" role="radiogroup" aria-label="Documentos da contabilista">
-                {DOC_TYPES.map(d => {
-                  const active = d.id === docId;
-                  // Badge dinâmico: reflete os dados REAIS da empresa selecionada,
-                  // não o melhor caso do modelo (que dizia "Preenchido" com tudo vazio).
-                  const badge = FILL_BADGE[emp ? fillStatusFor(d.id, emp, office) : d.fill];
-                  return (
-                    <button
-                      key={d.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={active}
-                      onClick={() => setDocId(d.id)}
-                      className={`w-full text-left flex items-start gap-3 p-3.5 rounded-[14px] border transition-all ${
-                        active
-                          ? 'border-[#0677FF] bg-[#0677FF]/[0.04] shadow-[0_2px_10px_-6px_rgba(6,119,255,0.5)]'
-                          : 'border-slate-200/80 bg-white hover:border-[#0677FF]/40'
-                      }`}
-                    >
-                      <span className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center ${active ? 'border-[#0677FF]' : 'border-slate-300'}`}>
-                        {active && <span className="w-[9px] h-[9px] rounded-full bg-[#0677FF]" />}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[13.5px] font-[800] text-[#0F172A] leading-tight">{d.label}</span>
-                          <span className={`text-[9px] font-[800] uppercase tracking-[0.4px] px-1.5 py-0.5 rounded-[5px] border ${badge.cls}`}>{badge.txt}</span>
-                        </span>
-                        <span className="block text-[12px] text-slate-500 font-[500] mt-0.5">{d.descricao}</span>
-                      </span>
-                    </button>
-                  );
-                })}
-
-                {/* Previsa — Modelo 22 em Excel (o ficheiro original preenchido) */}
-                {(() => {
-                  const active = isPrevisa;
-                  const badge = FILL_BADGE[emp && hasPrevisaData(emp) ? 'completo' : 'modelo'];
-                  return (
-                    <button
-                      type="button"
-                      role="radio"
-                      aria-checked={active}
-                      onClick={() => setDocId('previsa')}
-                      className={`w-full text-left flex items-start gap-3 p-3.5 rounded-[14px] border transition-all ${
-                        active
-                          ? 'border-[#0677FF] bg-[#0677FF]/[0.04] shadow-[0_2px_10px_-6px_rgba(6,119,255,0.5)]'
-                          : 'border-slate-200/80 bg-white hover:border-[#0677FF]/40'
-                      }`}
-                    >
-                      <span className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center ${active ? 'border-[#0677FF]' : 'border-slate-300'}`}>
-                        {active && <span className="w-[9px] h-[9px] rounded-full bg-[#0677FF]" />}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-center gap-2 flex-wrap">
-                          <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                          <span className="text-[13.5px] font-[800] text-[#0F172A] leading-tight">Previsa — Modelo 22 (Excel)</span>
-                          <span className={`text-[9px] font-[800] uppercase tracking-[0.4px] px-1.5 py-0.5 rounded-[5px] border ${badge.cls}`}>{badge.txt}</span>
-                        </span>
-                        <span className="block text-[12px] text-slate-500 font-[500] mt-0.5">O ficheiro original do Previsa preenchido com os dados da empresa; recalcula ao abrir.</span>
-                      </span>
-                    </button>
-                  );
-                })()}
-              </div>
+              {(() => { return null; })()}
 
               {/* Aviso: documento precisa de dados do Previsa que faltam */}
               {avisoPrevisa && (

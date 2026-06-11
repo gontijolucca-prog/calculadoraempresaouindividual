@@ -100,7 +100,7 @@ const VIEW_TITLES: Record<ViewType, string> = {
   previsa: 'Simulador Previsa',
   'office-settings': 'Definições do Escritório',
   historico: 'Histórico de Simulações',
-  exportar: 'Exportar documentos',
+  exportar: 'Relatórios',
 };
 
 /**
@@ -534,6 +534,10 @@ function AppContent() {
     }, 2000);
     return () => clearTimeout(t);
   }, [loggedIn, clientProfile, previSaState, currentEmpresaId, empresasRefresh, officeSettings.nif]);
+
+  // Dropdown "Relatórios" da sidebar: documento a pré-selecionar na vista.
+  const [relatorioDocPreselect, setRelatorioDocPreselect] = useState<string | null>(null);
+  const openRelatorios = (docId: string) => { setRelatorioDocPreselect(docId); setView('exportar'); };
 
   // Ecrã-intro dos simuladores: ao escolher um simulador na sidebar aparece
   // primeiro um resumo da utilidade; só o botão "Simular" entra no formulário.
@@ -1149,7 +1153,7 @@ function AppContent() {
           />
         )}
         {view === 'exportar' && (
-          <ExportarRelatorio office={officeSettings} honorarios={honorariosConfig} currentEmpresaId={currentEmpresaId} onOpenPrevisa={(empId) => navigateClient(empId, 'previsa')} onGoToOfficeSettings={() => setView('office-settings')} />
+          <ExportarRelatorio office={officeSettings} honorarios={honorariosConfig} currentEmpresaId={currentEmpresaId} initialDocId={relatorioDocPreselect} onOpenPrevisa={(empId) => navigateClient(empId, 'previsa')} onGoToOfficeSettings={() => setView('office-settings')} />
         )}
         {view === 'legal' && (
           <LegalInfo onBack={closeLegal} clientProfile={clientProfile} vehicleState={vehicleState} ticketState={ticketState} initialAnchor={legalAnchor} />
@@ -1398,6 +1402,7 @@ function AppContent() {
           mode={mode}
           onBackToModeSelection={backToModeSelection}
           onSelectMode={selectMode}
+          onOpenRelatorios={openRelatorios}
           activeClientName={currentEmpresaId ? (clientProfile.nomeCliente?.trim() || 'Cliente sem nome') : ''}
           currentEmpresaId={currentEmpresaId}
           onNavigateClient={navigateClient}

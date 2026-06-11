@@ -34,6 +34,8 @@ export interface LayoutProps {
    *  por baixo do indicador "A trabalhar em". */
   currentEmpresaId?: string | null;
   onNavigateClient?: (empId: string, view: ViewType, opts?: NavOpts) => void;
+  /** Abre a vista Relatórios com um documento pré-selecionado. */
+  onOpenRelatorios?: (docId: string) => void;
   children: React.ReactNode;
 }
 
@@ -106,7 +108,7 @@ function Logo({ className = 'w-7 h-7' }: { className?: string }) {
   );
 }
 
-export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload, onLogout, hasSaftData, onOpenSaftViewer, mode, onSelectMode, activeClientName, currentEmpresaId, onNavigateClient, children }: LayoutProps) {
+export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload, onLogout, hasSaftData, onOpenSaftViewer, mode, onSelectMode, activeClientName, currentEmpresaId, onNavigateClient, children , onOpenRelatorios}: LayoutProps) {
   const active = view === 'legal' ? prevView : view;
   const saftInputRef = useRef<HTMLInputElement>(null);
 
@@ -131,6 +133,8 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
 
   // Menu do cliente ativo ("A trabalhar em") é um dropdown que INICIA FECHADO.
   const [clientMenuOpen, setClientMenuOpen] = useState(false);
+  // Dropdown "Relatórios" — também inicia fechado.
+  const [relatoriosOpen, setRelatoriosOpen] = useState(false);
 
   // Navega dentro do cliente ativo usando a MESMA função dos cartões da Lista
   // (seleciona empresa + dispara intenções pacote/vista + muda de vista), para
@@ -209,7 +213,20 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
       <nav aria-label="Navegação principal" className="flex-1 overflow-y-auto px-2 py-1">
         <SectionLabel>Carteira</SectionLabel>
             <NavItem label="Lista de Empresas" Icon={Briefcase} onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }} current={active === 'empresas'} title="Carteira de clientes — cada um abre o seu menu (perfil, simuladores, histórico). Aqui também adicionas novas empresas." />
-            <NavItem label="Exportar documentos" Icon={FileDown} onClick={() => { setView('exportar'); setDrawerOpen(false); }} current={active === 'exportar'} title="Escolhe a empresa e o tipo de documento e descarrega em Word." />
+            <NavItem label="Relatórios" Icon={FileDown} onClick={() => setRelatoriosOpen(v => !v)} current={active === 'exportar'} title="Demonstrações financeiras, documentos de encerramento de contas e pacote do cliente." />
+            {relatoriosOpen && (
+              <div className="mt-0.5 ml-2.5 pl-2 border-l-2 border-slate-200 space-y-0.5">
+                <ClientNavItem label="Demonstrações financeiras" Icon={FileDown}
+                  onClick={() => { onOpenRelatorios?.('balanco'); setDrawerOpen(false); }}
+                  title="Balanço, Demonstração de Resultados, Alterações no CP, Fluxos de Caixa e pacote completo." />
+                <ClientNavItem label="Encerramento de contas" Icon={FileDown}
+                  onClick={() => { onOpenRelatorios?.('acta'); setDrawerOpen(false); }}
+                  title="Ata de Assembleia Geral, Previsa (Modelo 22 em Excel) e Declaração de Responsabilidade." />
+                <ClientNavItem label="Pacote cliente" Icon={FileDown}
+                  onClick={() => { onOpenRelatorios?.('simulacao'); setDrawerOpen(false); }}
+                  title="Simulação Fiscal, Proposta de Honorários e Minuta de Contrato." />
+              </div>
+            )}
             {/* "A trabalhar em": deixa sempre claro o cliente ativo. Por baixo,
                 o menu específico desse cliente (perfil, pacote, histórico e os
                 simuladores) — atalho directo sem ter de abrir a lista. */}
