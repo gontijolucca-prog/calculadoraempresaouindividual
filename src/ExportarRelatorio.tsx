@@ -80,20 +80,27 @@ const FILL_BADGE: Record<string, { txt: string; cls: string }> = {
   pacote:   { txt: 'Pacote',     cls: 'text-[#0677FF] bg-[#0677FF]/10 border-[#0677FF]/20' },
 };
 
-export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, onGoToOfficeSettings }: {
+export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, onGoToOfficeSettings, currentEmpresaId }: {
   office: OfficeSettings;
   honorarios: HonorariosConfig;
   onOpenPrevisa?: (empresaId: string) => void;
   onGoToOfficeSettings?: () => void;
+  /** Empresa "a trabalhar" — fica pré-selecionada ao entrar no Exportar. */
+  currentEmpresaId?: string | null;
 }) {
   const [empresas, setEmpresas] = useState<EmpresaRecord[]>(() => listEmpresas());
-  // Empresa e documento selecionados sobrevivem a refresh/auto-update — o
-  // utilizador volta exatamente onde estava. Ids guardados são validados
-  // contra as listas atuais (empresa apagada → cai na primeira).
+  // Pré-seleção: 1.º a empresa ativa ("a trabalhar"), 2.º a última escolhida
+  // neste ecrã (sobrevive a refresh), 3.º a primeira da lista.
   const [empresaId, setEmpresaId] = useState<string>(() => {
+    if (currentEmpresaId && empresas.some(e => e.id === currentEmpresaId)) return currentEmpresaId;
     const saved = loadFromStorage<string | null>('exportarEmpresaId', null);
     return (saved && empresas.some(e => e.id === saved)) ? saved : (empresas[0]?.id ?? '');
   });
+  // Se a empresa ativa mudar com o ecrã aberto, acompanha-a.
+  useEffect(() => {
+    if (currentEmpresaId && empresas.some(e => e.id === currentEmpresaId)) setEmpresaId(currentEmpresaId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentEmpresaId]);
   // Seleção pode ser um doc do pacote (PkgId) ou um doc Word (DocTypeId).
   const [docId, setDocId] = useState<string>(() => {
     const saved = loadFromStorage<string | null>('exportarDocId', null);

@@ -1127,7 +1127,7 @@ function AppContent() {
           />
         )}
         {view === 'exportar' && (
-          <ExportarRelatorio office={officeSettings} honorarios={honorariosConfig} onOpenPrevisa={(empId) => navigateClient(empId, 'previsa')} onGoToOfficeSettings={() => setView('office-settings')} />
+          <ExportarRelatorio office={officeSettings} honorarios={honorariosConfig} currentEmpresaId={currentEmpresaId} onOpenPrevisa={(empId) => navigateClient(empId, 'previsa')} onGoToOfficeSettings={() => setView('office-settings')} />
         )}
         {view === 'legal' && (
           <LegalInfo onBack={closeLegal} clientProfile={clientProfile} vehicleState={vehicleState} ticketState={ticketState} initialAnchor={legalAnchor} />
