@@ -617,6 +617,21 @@ function AppContent() {
     setView(view as ViewType);
   };
 
+  // Clique no cartão da Lista: seleciona o cliente para trabalhar e FICA na lista
+  // (o dropdown do cartão mostra o histórico; perfil/simuladores via sidebar).
+  const selectEmpresaParaTrabalhar = (empId: string) => {
+    if (!selectEmpresa(empId)) return;
+    setMode('empresa');
+  };
+
+  // Restauro de simulação a partir do dropdown da Lista de Empresas: seleciona
+  // o cliente (carrega o estado dele) e só depois aplica o snapshot + navega.
+  const restoreSimulacaoCliente = (empId: string, rec: SimulationRecord) => {
+    if (!selectEmpresa(empId)) return;
+    setMode('empresa');
+    restoreSimulacao(rec);
+  };
+
   /** Eliminação AUTORITATIVA: remove do localStorage E propaga já ao Firestore.
    *  Sem isto, o merge de arranque (união por id) ressuscitava a empresa apagada
    *  a partir da cloud ("Hydra"). Também limpa o currentEmpresaId em memória. */
@@ -1045,6 +1060,9 @@ function AppContent() {
             refreshKey={empresasRefresh}
             currentEmpresaId={currentEmpresaId}
             onNavigate={navigateClient}
+            onSelect={selectEmpresaParaTrabalhar}
+            onRestoreSimulacao={restoreSimulacaoCliente}
+            onHistoricoChanged={() => setEmpresasRefresh(n => n + 1)}
             onNovaEmpresaManual={handleNovaEmpresaManual}
             onNovaEmpresaFromSAFT={handleNovaEmpresaFromSAFT}
             onSAFTUpload={handleEmpresaSAFT}

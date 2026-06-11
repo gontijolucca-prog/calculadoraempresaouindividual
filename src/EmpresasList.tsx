@@ -2,61 +2,60 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import {
   Plus, Building2, FileUp, Trash2, ChevronDown, Search, FileText, Pencil, X, Download,
-  UserCircle, ListOrdered, Package, History,
+  History, RotateCcw,
   Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote, Receipt, TrendingUp,
 } from 'lucide-react';
 import {
-  listEmpresas,
-  type EmpresaRecord,
+  listEmpresas, listSimulacoes, deleteSimulacao,
+  type EmpresaRecord, type SimulationRecord,
 } from './lib/empresas';
+import { SIM_LABELS, type SimView } from './lib/simSummary';
 import { cn } from './lib/utils';
 
-// Menu de cada cliente (antes vivia na sidebar; agora abre dentro do cartão).
 type NavOpts = { openPackage?: boolean; toggleFlow?: boolean };
-const SIM_MENU: { view: string; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
-  { view: 'tax', label: 'Fiscal', Icon: Calculator },
-  { view: 'vehicle', label: 'Viaturas', Icon: Car },
-  { view: 'ticket', label: 'Tickets', Icon: Ticket },
-  { view: 'selfss', label: 'SS Indep.', Icon: User },
-  { view: 'diagnostico', label: 'Diagnóstico', Icon: BarChart2 },
-  { view: 'imoveis', label: 'Imóveis', Icon: Home },
-  { view: 'imt', label: 'IMT', Icon: Building },
-  { view: 'salario', label: 'Salário', Icon: Banknote },
-  { view: 'irs', label: 'IRS', Icon: Receipt },
-  { view: 'previsa', label: 'Previsa', Icon: TrendingUp },
-];
+
+// Ícone por tipo de simulação — usado no histórico dentro do cartão.
+const TIPO_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
+  tax: Calculator, vehicle: Car, ticket: Ticket, selfss: User,
+  diagnostico: BarChart2, imoveis: Home, imt: Building, salario: Banknote,
+  irs: Receipt, previsa: TrendingUp,
+};
+
+const fmtDateHist = (ms: number) =>
+  new Intl.DateTimeFormat('pt-PT', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(ms));
 
 interface Props {
   /** Seleciona o cliente e abre a vista pedida (Perfil, simulador, histórico…). */
   onNavigate: (empId: string, view: string, opts?: NavOpts) => void;
+  /** Seleciona o cliente para trabalhar SEM navegar (fica na lista). */
+  onSelect: (empId: string) => void;
   /** "Inserir à mão": abre um rascunho limpo no modo Novo Cliente (a empresa só
    *  é criada quando o utilizador carrega em "Guardar cliente"). */
   onNovaEmpresaManual: () => void;
   onNovaEmpresaFromSAFT: (file: File) => void;
   onSAFTUpload: (file: File, empId: string) => void;
   onDeleteEmpresa: (empId: string) => void;
+  /** Restaura uma simulação do histórico deste cliente (seleciona-o primeiro). */
+  onRestoreSimulacao: (empId: string, rec: SimulationRecord) => void;
+  /** Avisa o App que o histórico mudou (propagar ao Firestore). */
+  onHistoricoChanged: () => void;
   refreshKey?: number;
-  /** Cliente ativo — cartão fica destacado e expandido por defeito. */
+  /** Cliente ativo — cartão fica destacado. */
   currentEmpresaId?: string | null;
 }
 
-export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEmpresaFromSAFT, onSAFTUpload, onDeleteEmpresa, refreshKey, currentEmpresaId }: Props) {
+export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual, onNovaEmpresaFromSAFT, onSAFTUpload, onDeleteEmpresa, onRestoreSimulacao, onHistoricoChanged, refreshKey, currentEmpresaId }: Props) {
   const [empresas, setEmpresas] = useState<EmpresaRecord[]>(() => listEmpresas());
   const [query, setQuery] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<EmpresaRecord | null>(null);
   const [showNovaModal, setShowNovaModal] = useState(false);
-  // Acordeão: um cartão expandido de cada vez. Por defeito, o cliente ativo.
-  const [expandedId, setExpandedId] = useState<string | null>(currentEmpresaId ?? null);
+  // Acordeão: um cartão expandido de cada vez. Inicia sempre FECHADO.
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const novaSaftInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setEmpresas(listEmpresas());
   }, [refreshKey]);
-
-  // Ao chegar com um cliente ativo, abre o seu cartão.
-  useEffect(() => {
-    if (currentEmpresaId) setExpandedId(currentEmpresaId);
-  }, [currentEmpresaId]);
 
   // Close modal with Escape
   useEffect(() => {
@@ -150,7 +149,11 @@ export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEm
                 active={emp.id === currentEmpresaId}
                 expanded={emp.id === expandedId}
                 onToggle={() => setExpandedId(id => id === emp.id ? null : emp.id)}
+                onSelectCard={() => { onSelect(emp.id); setExpandedId(id => id === emp.id ? null : emp.id); }}
                 onNavigate={onNavigate}
+                onRestore={(rec) => onRestoreSimulacao(emp.id, rec)}
+                onHistoricoChanged={onHistoricoChanged}
+                refreshKey={refreshKey}
                 onUploadSaft={(file) => onSAFTUpload(file, emp.id)}
                 onAskDelete={() => { setConfirmDelete(emp); }}
               />
@@ -292,23 +295,86 @@ interface EmpresaCardProps {
   expanded: boolean;
   onToggle: () => void;
   onNavigate: (empId: string, view: string, opts?: NavOpts) => void;
+  /** Clique no corpo do cartão: seleciona o cliente e abre/fecha o histórico. */
+  onSelectCard: () => void;
+  /** Restaura uma simulação do histórico deste cliente. */
+  onRestore: (rec: SimulationRecord) => void;
+  onHistoricoChanged: () => void;
+  refreshKey?: number;
   onUploadSaft: (file: File) => void;
   onAskDelete: () => void;
 }
 
-// Item do menu do cliente (dentro do dropdown do cartão).
-const MenuItem: React.FC<{ Icon: React.ComponentType<{ className?: string }>; label: string; onClick: () => void }> = ({ Icon, label, onClick }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="w-full min-w-0 flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[13px] font-[600] text-[#334155] hover:bg-[#0677FF]/8 hover:text-[#0677FF] active:scale-[0.99] transition-colors text-left"
-  >
-    <Icon className="w-4 h-4 shrink-0" />
-    <span className="truncate">{label}</span>
-  </button>
-);
+// Histórico de simulações do cliente — vive dentro do dropdown do cartão.
+const CardHistorico: React.FC<{ empId: string; onRestore: (rec: SimulationRecord) => void; onChanged: () => void; refreshKey?: number }> = ({ empId, onRestore, onChanged, refreshKey }) => {
+  const [tick, setTick] = useState(0);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const records = useMemo(() => listSimulacoes(empId), [empId, tick, refreshKey]);
 
-const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onToggle, onNavigate, onUploadSaft, onAskDelete }) => {
+  if (records.length === 0) {
+    return (
+      <p className="px-3 py-3 text-[12.5px] text-[#6B7280] font-[500]">
+        Ainda não há simulações guardadas para este cliente — abre um simulador e a simulação fica guardada aqui automaticamente.
+      </p>
+    );
+  }
+  return (
+    <div className="max-h-72 overflow-y-auto pr-1 space-y-1">
+      {records.map((rec) => {
+        const Icon = TIPO_ICON[rec.tipo] ?? Calculator;
+        const label = SIM_LABELS[rec.tipo as SimView] ?? rec.label ?? 'Simulação';
+        const confirming = confirmId === rec.id;
+        return (
+          <div key={rec.id} className="flex items-center gap-2.5 px-3 py-2 rounded-[10px] hover:bg-[#F5F7FA] transition-colors">
+            <div className="w-8 h-8 rounded-[8px] bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+              <Icon className="w-4 h-4 text-[#0677FF]" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[13px] font-[800] text-[#0F172A] leading-tight">{label}</span>
+                <span className="text-[10px] font-[700] uppercase tracking-[0.5px] text-slate-400">{fmtDateHist(rec.createdAt)}</span>
+              </div>
+              <p className="text-[12px] text-[#475569] font-[500] truncate">{rec.resumo}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => onRestore(rec)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[12px] font-[700] text-[#0677FF] bg-[#0677FF]/10 hover:bg-[#0677FF]/15 active:scale-[0.97] transition-all shrink-0"
+              title="Reabrir esta simulação no simulador"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Abrir</span>
+            </button>
+            {confirming ? (
+              <button
+                type="button"
+                onClick={() => { deleteSimulacao(empId, rec.id); setConfirmId(null); setTick(n => n + 1); onChanged(); }}
+                onBlur={() => setConfirmId(null)}
+                autoFocus
+                className="px-2.5 py-1.5 rounded-[8px] text-[12px] font-[700] text-white bg-red-600 hover:bg-red-700 transition-all shrink-0"
+                title="Confirmar eliminação"
+              >
+                Confirmar?
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmId(rec.id)}
+                className="p-1.5 rounded-[8px] text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
+                title="Eliminar simulação"
+                aria-label="Eliminar simulação"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onToggle, onSelectCard, onNavigate, onRestore, onHistoricoChanged, refreshKey, onUploadSaft, onAskDelete }) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const updated = formatRelative(emp.updatedAt);
   const displayNome = emp.nome.trim() || 'Empresa sem nome';
@@ -322,8 +388,8 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
       <div className="flex items-stretch">
         <button
           type="button"
-          onClick={() => onNavigate(emp.id, 'profile')}
-          title="Abrir perfil do cliente"
+          onClick={onSelectCard}
+          title="Selecionar este cliente e ver o histórico de simulações"
           className="flex-1 flex items-center gap-4 text-left px-5 py-4 min-w-0"
         >
           <div className="w-11 h-11 rounded-[10px] bg-[#0677FF]/10 text-[#0677FF] font-[800] text-[14px] flex items-center justify-center shrink-0">
@@ -352,8 +418,8 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
             type="button"
             onClick={onToggle}
             aria-expanded={expanded}
-            title="Mostrar menu rápido (simuladores, histórico…)"
-            aria-label={`Menu rápido de ${displayNome}`}
+            title="Mostrar histórico de simulações"
+            aria-label={`Histórico de simulações de ${displayNome}`}
             className="p-2 rounded-[8px] text-[#6B7280] hover:text-[#0677FF] hover:bg-[#0677FF]/8 transition-colors"
           >
             <ChevronDown className={cn('w-4 h-4 transition-transform', expanded ? 'text-[#0677FF]' : '-rotate-90')} />
@@ -411,19 +477,15 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
         </div>
       </div>
 
-      {/* Dropdown do cliente: os menus que antes viviam na sidebar. */}
+      {/* Dropdown do cliente = histórico de simulações (perfil abre no clique do cartão;
+          simuladores ficam na sidebar depois de selecionar o cliente). */}
       {expanded && (
         <div className="border-t border-[#EEF2F7] px-3 py-2">
-          <div className="grid gap-0.5">
-            <MenuItem Icon={UserCircle} label="Perfil do Cliente" onClick={() => onNavigate(emp.id, 'profile')} />
-            <MenuItem Icon={History} label="Histórico de simulações" onClick={() => onNavigate(emp.id, 'historico')} />
+          <div className="flex items-center gap-2 px-3 pt-1 pb-2">
+            <History className="w-3.5 h-3.5 text-[#0677FF]" />
+            <span className="text-[10px] font-[800] uppercase tracking-[1px] text-[#0677FF]">Histórico de simulações</span>
           </div>
-          <div className="mt-2 mb-1 px-3 text-[10px] font-[800] uppercase tracking-[1px] text-[#0677FF]">Simuladores</div>
-          <div className="grid grid-cols-2 gap-0.5">
-            {SIM_MENU.map(s => (
-              <MenuItem key={s.view} Icon={s.Icon} label={s.label} onClick={() => onNavigate(emp.id, s.view)} />
-            ))}
-          </div>
+          <CardHistorico empId={emp.id} onRestore={onRestore} onChanged={onHistoricoChanged} refreshKey={refreshKey} />
         </div>
       )}
     </li>

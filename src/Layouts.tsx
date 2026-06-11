@@ -72,9 +72,11 @@ type NavOpts = { openPackage?: boolean; toggleFlow?: boolean };
 /** Menu do cliente ativo, replicado na sidebar por baixo de "A trabalhar em".
  *  Reaproveita exatamente a navegação dos cartões (navigateClient) para não
  *  divergir do comportamento da Lista de Empresas. */
+// O histórico de simulações vive agora no dropdown de cada cartão da Lista de
+// Empresas — o botão da sidebar foi removido (a view 'historico' mantém-se
+// alcançável programaticamente).
 const CLIENT_MENU: { view: ViewType; label: string; Icon: React.ComponentType<{ className?: string }>; opts?: NavOpts }[] = [
   { view: 'profile',   label: 'Perfil do Cliente',       Icon: UserCircle },
-  { view: 'historico', label: 'Histórico de simulações', Icon: History },
 ];
 const SIM_MENU_SIDEBAR = NAV_ITEMS.filter((i) => i.group === 'sim');
 
