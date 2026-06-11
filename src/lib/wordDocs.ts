@@ -378,16 +378,9 @@ ${rodape()}`;
   return wordShell(`Alteracoes Capital Proprio ${c.ano}`, body);
 }
 
-export function buildDemonstracoesFinanceiras(emp: EmpresaRecord, office: OfficeSettings): string {
-  const c = ctx(emp, office);
-  // Capa
-  // Cabeçalho curto no topo da página (antes era uma capa com 9cm de espaço em
-  // branco antes do título — o documento parecia começar a meio da folha).
-  const capa = `<div class="meta" style="font-size:12pt;color:#555">${esc(c.nome.toUpperCase())}</div>
-<div style="font-size:22pt;font-weight:bold;color:#111;margin:4pt 0">Demonstra&ccedil;&otilde;es Financeiras</div>
-<div class="meta" style="font-size:12pt">Exerc&iacute;cio de ${c.ano}</div>
-<div style="margin:12pt 0 18pt 0;width:7cm;border-top:0.75pt solid #ccc"></div>`;
-  // Balanço — preenchido a partir da contabilidade (perfil); totais calculados.
+/** Corpo do Balanço — partilhado pelo documento próprio e pelo pacote DF. */
+function buildBalancoBody(c: Ctx): string {
+  // Preenchido a partir da contabilidade (perfil); totais calculados.
   const k = c.cont;
   const z = (v: number | null) => v ?? 0;
   const aft = cv(k, 'ativoFixoTangivel'), intang = cv(k, 'ativoIntangivel'), invFin = cv(k, 'investimentosFinanceiros');
@@ -421,7 +414,7 @@ export function buildDemonstracoesFinanceiras(emp: EmpresaRecord, office: Office
   const brow = (label: string, v: number | null, tot = false, vAnt: number | null = null) =>
     `<tr class="${tot ? 'tot' : ''}"><td class="${tot ? '' : 'ind'}">${label}</td><td class="num"></td><td class="num">${v != null ? val(v) : (tot ? '' : DASH)}</td><td class="num">${vAnt != null ? val(vAnt) : ''}</td></tr>`;
   const bsec = (label: string) => `<tr class="tot"><td colspan="4" class="sec">${label}</td></tr>`;
-  const balanco = `<div class="pgbreak">${cabecalho(c, `Balan&ccedil;o em 31 de dezembro de ${c.ano}`)}
+  return `<div class="pgbreak">${cabecalho(c, `Balan&ccedil;o em 31 de dezembro de ${c.ano}`)}
 <table class="dr">
 <tr><th style="text-align:left">Rubricas</th><th class="num">Notas</th><th class="num">${c.ano}</th><th class="num">${c.anoAnt}</th></tr>
 ${bsec('ATIVO')}
@@ -453,6 +446,24 @@ ${brow('Total do capital pr&oacute;prio e do passivo', totalCPPass, true, totalC
 </table>
 <p class="meta">Nota: Balan&ccedil;o preenchido a partir da contabilidade (perfil do cliente / SAF-T)${anyAssetA || anyCPA || anyPassA ? `; a coluna de ${c.anoAnt} vem dos saldos de abertura do SAF-T` : ''}; rubricas sem dados ficam por preencher.</p>
 ${rodape()}</div>`;
+}
+
+/** Balanço como documento único (também incluído no pacote DF). */
+export function buildBalanco(emp: EmpresaRecord, office: OfficeSettings): string {
+  const c = ctx(emp, office);
+  return wordShell(`Balanco ${c.ano}`, buildBalancoBody(c));
+}
+
+export function buildDemonstracoesFinanceiras(emp: EmpresaRecord, office: OfficeSettings): string {
+  const c = ctx(emp, office);
+  // Capa
+  // Cabeçalho curto no topo da página (antes era uma capa com 9cm de espaço em
+  // branco antes do título — o documento parecia começar a meio da folha).
+  const capa = `<div class="meta" style="font-size:12pt;color:#555">${esc(c.nome.toUpperCase())}</div>
+<div style="font-size:22pt;font-weight:bold;color:#111;margin:4pt 0">Demonstra&ccedil;&otilde;es Financeiras</div>
+<div class="meta" style="font-size:12pt">Exerc&iacute;cio de ${c.ano}</div>
+<div style="margin:12pt 0 18pt 0;width:7cm;border-top:0.75pt solid #ccc"></div>`;
+  const balanco = buildBalancoBody(c);
   // DR + Alterações CP + Fluxos como páginas seguintes (reutiliza os builders, sem <html>)
   const inner = (html: string) => {
     const m = html.match(/<body>([\s\S]*)<\/body>/);
@@ -543,7 +554,7 @@ ${rodape()}`;
 
 // ─── Registo de tipos de documento (alimenta o radio + o handler) ─────────────
 
-export type DocTypeId = 'dr' | 'declaracao' | 'acta' | 'alteracoes' | 'fluxos' | 'df';
+export type DocTypeId = 'dr' | 'declaracao' | 'acta' | 'alteracoes' | 'fluxos' | 'balanco' | 'df';
 
 export interface DocTypeDef {
   id: DocTypeId;
@@ -592,6 +603,13 @@ export const DOC_TYPES: DocTypeDef[] = [
     fill: 'completo', precisaPrevisa: false,
     build: buildFluxosCaixa,
     filename: (e) => `Fluxos_Caixa_${slug(e.nome || '')}`,
+  },
+  {
+    id: 'balanco', label: 'Balanço',
+    descricao: 'Preenchido a partir da contabilidade (perfil/SAF-T); coluna do ano anterior com os saldos de abertura.',
+    fill: 'parcial', precisaPrevisa: false,
+    build: buildBalanco,
+    filename: (e) => `Balanco_${slug(e.nome || '')}`,
   },
   {
     id: 'df', label: 'Demonstrações Financeiras (pacote completo)',
@@ -656,6 +674,14 @@ export function fillStatusFor(id: DocTypeId, emp: EmpresaRecord, office: OfficeS
       // Derivados dos diários do SAF-T: com 3+ rubricas de fluxos o documento
       // sai utilizável; só caixa início/fim ou poucas rubricas → parcial.
       return nFc >= 3 ? 'completo' : (nFc > 0 || temCaixa) ? 'parcial' : 'modelo';
+    case 'balanco': {
+      const nBal = (['ativoFixoTangivel', 'ativoIntangivel', 'investimentosFinanceiros', 'inventarios',
+        'clientes', 'estadoOutrosAtivo', 'outrosAtivosCorrentes', 'caixaDepositos', 'capitalRealizado',
+        'reservasResultadosTransitados', 'outrasVariacoesCapital', 'financiamentosObtidos', 'fornecedores',
+        'estadoOutrosPassivo', 'outrosPassivos', 'resultadoLiquido'] as (keyof ContabilidadeData)[])
+        .filter(kk => cv(cont, kk) !== null).length;
+      return nBal >= 6 ? 'completo' : nBal > 0 ? 'parcial' : 'modelo';
+    }
     case 'df':
       return previsa && temBalanco && nFc >= 3 ? 'completo' : (previsa || temBalanco) ? 'parcial' : 'modelo';
     default:

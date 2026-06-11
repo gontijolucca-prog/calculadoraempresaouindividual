@@ -46,7 +46,7 @@ Arranque: Após login, começa em "Empresa" com lista de empresas. Modo "Novo Cl
 
 14. **historico (Histórico de Simulações)** — Timeline todas operações (create/update/export/simulação). Timestamps + resumos. Permite restaurar cenários antigos.
 
-15. **exportar (Exportar documentos)** — Hub 3 documentos (Simulação 4-5pp PDF, Proposta 1pp, Minuta 3pp). Exporta também Excel com formulas.
+15. **exportar (Exportar documentos)** — Hub de documentos: Simulação (4-5pp PDF), Proposta (1pp), Minuta (3pp) e documentos Word de fecho de exercício (Demonstração de Resultados, Balanço como documento único, Declaração de Responsabilidade, Ata de AG, Alterações no Capital Próprio, Fluxos de Caixa, e pacote completo de Demonstrações Financeiras = capa + Balanço + DR + ACP + FC). Exporta também Excel com fórmulas (Previsa/Modelo 22).
 
 16. **office-settings (Definições do Escritório)** — Branding (logo, cor, tabela honorários). localStorage por browser. Persiste cross-sessões.
 
