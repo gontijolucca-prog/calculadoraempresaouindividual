@@ -1339,10 +1339,13 @@ function UpdateToolsPanel({
   const [openPreju, setOpenPreju] = useState(false);
   const [openPPC, setOpenPPC] = useState(false);
   const [open3PPC, setOpen3PPC] = useState(false);
+  const [open3Decisao, setOpen3Decisao] = useState(false);
   const [nivelPreju, setNivelPreju] = useState<NivelAtualizacao>('assistida');
   const [origemPreju, setOrigemPreju] = useState<OrigemAT>('AT');
   const [userPPC, setUserPPC] = useState('Lucca');
   const [userPreju, setUserPreju] = useState('Sandrine');
+  const [decisao3PPC, setDecisao3PPC] = useState<'' | 'suspender' | 'limitar' | 'pagar'>('');
+  const [jurosConfirm, setJurosConfirm] = useState(false);
 
   const nowIso = () => new Date().toISOString();
 
@@ -1363,6 +1366,39 @@ function UpdateToolsPanel({
     onSaveLog?.({ tipo: 'ppc3', ts: nowIso(), user: userPPC });
     setOpen3PPC(false);
   };
+
+  const confirmar3Decisao = () => {
+    if (!decisao3PPC) return;
+    // Suspender / limitar não exige confirmação de juros; pagar exige (art. 107.º
+    // CIRC: juros compensatórios a 20% se o contribuinte não reavaliou atempadamente
+    // e acabou por pagar mais do que o IRC liquidado final).
+    if (decisao3PPC === 'pagar' && !jurosConfirm) return;
+    setState(prev => ({
+      ...prev,
+      ppc3Reavaliado: nowIso(),
+      ppc3ReavaliadoUser: userPPC,
+      ppc3Decisao: decisao3PPC,
+      ppc3JurosConfirm: jurosConfirm,
+    }));
+    onSaveLog?.({
+      tipo: 'ppc3',
+      ts: nowIso(),
+      user: userPPC,
+      nivel: decisao3PPC + (jurosConfirm ? '+juros' : ''),
+    });
+    setOpen3Decisao(false);
+  };
+
+  // Sugestão automática: regra 3 cenários (Sandrine 11-jun)
+  const ppc1p2pago = state.ppc1Pago && state.ppc2Pago;
+  const ppcJaPago = ppc1p2pago ? res.ppcPrestacao * 2 : (state.ppc1Pago ? res.ppcPrestacao : 0);
+  const ircEstimado = res.c358 + res.taTotal;
+  const diferencaVsEstimado = ircEstimado - ppcJaPago; // 0 se igual
+  const sugestao3PPC: 'suspender' | 'limitar' | 'pagar' =
+    ppcJaPago >= ircEstimado ? 'suspender'
+    : diferencaVsEstimado < res.ppcPrestacao ? 'limitar'
+    : 'pagar';
+  const jurosAplicaveis = decisao3PPC === 'pagar' && ppcJaPago > ircEstimado * 0.34; // pagou > 1/3 do LT final
 
   const toggle = (key: keyof PreviSaState) => setState(prev => ({ ...prev, [key]: !prev[key] as never }));
 
@@ -1517,6 +1553,86 @@ function UpdateToolsPanel({
             </div>
           </div>
         )}
+
+        {/* Decisão 3.ª prestação — suspender / limitar / pagar (Sandrine 11-jun) */}
+        <button type="button" onClick={() => setOpen3Decisao(o => !o)}
+          className="flex items-center justify-between px-2.5 py-2 rounded-[8px] border border-slate-200 hover:border-[#0677FF] hover:bg-[#0677FF]/5 transition-colors text-left">
+          <span className="flex flex-col">
+            <span className="text-[12px] font-[700] text-[#0F172A]">Decisão 3.ª prestação (15-dez)</span>
+            <span className="text-[10px] text-slate-500">
+              {state.ppc3Decisao ? `${state.ppc3Decisao}${state.ppc3JurosConfirm ? ' + juros 20%' : ''} · ${fmtDate(state.ppc3Reavaliado)}` : `Sugestão: ${sugestao3PPC}`}
+            </span>
+          </span>
+          <span className="text-[#0677FF] text-[14px]">↻</span>
+        </button>
+        {open3Decisao && (
+          <div className="bg-slate-50 rounded-[8px] p-2.5 flex flex-col gap-2 border border-slate-200">
+            <p className="text-[10px] text-slate-600 leading-tight">
+              PPC já pago: <strong>{fmt(ppcJaPago)} €</strong> · IRC estimado: <strong>{fmt(ircEstimado)} €</strong> · Diferença: <strong>{fmt(diferencaVsEstimado)} €</strong> · 3.ª PPC normal: <strong>{fmt(res.ppcPrestacao)} €</strong>.
+            </p>
+            <div className="grid grid-cols-3 gap-1">
+              {(['suspender', 'limitar', 'pagar'] as const).map(op => (
+                <button key={op} type="button" onClick={() => setDecisao3PPC(op)}
+                  className={`px-2 py-1.5 text-[10px] font-[700] rounded-[6px] border transition-colors ${decisao3PPC === op ? 'bg-[#0677FF] text-white border-[#0677FF]' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'}`}>
+                  {op === 'suspender' ? 'Suspender' : op === 'limitar' ? 'Limitar' : 'Pagar'}
+                </button>
+              ))}
+            </div>
+            <div className="text-[10px] text-slate-500 leading-tight">
+              {decisao3PPC === 'suspender' && 'art. 105.º n.5: PPC pago ≥ IRC estimado. Suspender a 3.ª prestação (jul/set já cobrem o ano).'}
+              {decisao3PPC === 'limitar' && `Diferença (${fmt(diferencaVsEstimado)} €) < 3.ª PPC normal (${fmt(res.ppcPrestacao)} €). Pagar só a diferença — sem juros. (sugestão: ${sugestao3PPC})`}
+              {decisao3PPC === 'pagar' && `Diferença ≥ 3.ª PPC normal. Pagar integral — confirmar juros compensatórios 20% abaixo. (sugestão: ${sugestao3PPC})`}
+            </div>
+            {jurosAplicaveis && (
+              <label className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-[6px] p-2">
+                <input type="checkbox" checked={jurosConfirm} onChange={e => setJurosConfirm(e.target.checked)}
+                  className="mt-0.5 w-3.5 h-3.5 accent-[#0677FF]" />
+                <span className="text-[10px] text-amber-900 leading-tight">
+                  Confirmo juros compensatórios a 20% (art. 107.º CIRC) — pagou {'>'}1/3 do LT final e não reavaliou atempadamente. {fmt(ppcJaPago * 0.2)} € de juros estimados.
+                </span>
+              </label>
+            )}
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-[600] text-slate-500">Utilizador</span>
+              <input type="text" value={userPPC} onChange={e => setUserPPC(e.target.value)}
+                className="text-[11px] border border-slate-200 rounded-[6px] px-2 py-1 bg-white" />
+            </label>
+            <div className="flex gap-1.5 pt-1">
+              <button type="button" onClick={confirmar3Decisao}
+                disabled={!decisao3PPC || (decisao3PPC === 'pagar' && !jurosConfirm)}
+                className="flex-1 px-2 py-1.5 text-[11px] font-[700] bg-[#0677FF] text-white rounded-[6px] hover:bg-[#0560d6] disabled:opacity-50 disabled:cursor-not-allowed">
+                Confirmar decisão
+              </button>
+              <button type="button" onClick={() => setOpen3Decisao(false)}
+                className="px-2 py-1.5 text-[11px] font-[600] text-slate-500 hover:text-slate-700">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Validação cruzada (Sandrine 11-jun) */}
+        <div className="border-t border-slate-200 pt-2 mt-1 flex flex-col gap-1">
+          <p className="text-[10px] font-[700] uppercase tracking-[0.5px] text-slate-400">Validação cruzada AT</p>
+          <label className="flex items-center gap-2 py-0.5 cursor-pointer">
+            <input type="checkbox" checked={state.ppc1Pago} onChange={() => toggle('ppc1Pago')} className="w-3.5 h-3.5 accent-[#0677FF]" />
+            <span className="text-[11px] font-[500] text-slate-600">1.ª prestação (jul) paga</span>
+          </label>
+          <label className="flex items-center gap-2 py-0.5 cursor-pointer">
+            <input type="checkbox" checked={state.ppc2Pago} onChange={() => toggle('ppc2Pago')} className="w-3.5 h-3.5 accent-[#0677FF]" />
+            <span className="text-[11px] font-[500] text-slate-600">2.ª prestação (set) paga</span>
+          </label>
+          <label className="flex items-center gap-2 py-0.5 cursor-pointer">
+            <input type="checkbox" checked={state.modelo22AnteriorDisponivel} onChange={() => toggle('modelo22AnteriorDisponivel')} className="w-3.5 h-3.5 accent-[#0677FF]" />
+            <span className="text-[11px] font-[500] text-slate-600">Mod. 22 período anterior importado</span>
+          </label>
+          <label className="flex flex-col gap-1 py-0.5">
+            <span className="text-[10px] font-[600] text-slate-500">Data último balancete</span>
+            <input type="date" value={state.balanceteData ? state.balanceteData.substring(0, 10) : ''}
+              onChange={e => setState(prev => ({ ...prev, balanceteData: e.target.value ? new Date(e.target.value).toISOString() : '' }))}
+              className="text-[11px] border border-slate-200 rounded-[6px] px-2 py-1 bg-white" />
+          </label>
+        </div>
       </div>
     </div>
   );

@@ -133,6 +133,14 @@ export interface PreviSaState {
   ppcAtUser: string;              // user que confirmou
   ppc3Reavaliado: string;         // ISO datetime 3.ª prestação reavaliada
   ppc3ReavaliadoUser: string;     // user
+  // ── 3.ª prestação — decisão Sandrine (suspender / limitar / pagar) ──
+  ppc1Pago: boolean;              // 1.ª prestação (jul) paga?
+  ppc2Pago: boolean;              // 2.ª prestação (set) paga?
+  ppc3Decisao: '' | 'suspender' | 'limitar' | 'pagar'; // decisão contabilista
+  ppc3JurosConfirm: boolean;      // confirmação expressa juros compensatórios 20%
+  // ── Validações AT extras (Sandrine 11-jun) ──────────────────────
+  modelo22AnteriorDisponivel: boolean; // Mod.22 período anterior importado?
+  balanceteData: string;          // ISO data último balancete (idade >90d = desatualizado)
 }
 
 export function defaultPreviSaState(): PreviSaState {
@@ -189,5 +197,8 @@ export function defaultPreviSaState(): PreviSaState {
     prejuAt: '', prejuAtOrigem: 'manual', prejuAtUser: '',
     ppcAt: '', ppcAtUser: '',
     ppc3Reavaliado: '', ppc3ReavaliadoUser: '',
+    ppc1Pago: false, ppc2Pago: false,
+    ppc3Decisao: '', ppc3JurosConfirm: false,
+    modelo22AnteriorDisponivel: false, balanceteData: '',
   };
 }

@@ -356,6 +356,41 @@ export function calculate(s: PreviSaState): CalcResult {
       });
     }
   }
+  // Modelo 22 do período anterior não importado (Sandrine 11-jun) — afeta
+  // validação cruzada dos prejuízos e base PPC.
+  if (!s.modelo22AnteriorDisponivel && (s.periodo - 1) > 0) {
+    alertasPPC.push({
+      chave: 'ppc_mod22_indisponivel',
+      severidade: 'warning',
+      texto: `Modelo 22 de ${s.periodo - 1} não importado. Sem ele, validação cruzada da base PPC e dos prejuízos reportados fica limitada.`,
+    });
+  }
+  // 1.ª ou 2.ª prestação sem registo de pagamento — registar antes da 3.ª
+  if (ppcBase > 200 && ppcProximoAno > 0 && (!s.ppc1Pago || !s.ppc2Pago)) {
+    const falta = !s.ppc1Pago && !s.ppc2Pago ? '1.ª e 2.ª prestações' : !s.ppc1Pago ? '1.ª prestação' : '2.ª prestação';
+    alertasPPC.push({
+      chave: 'ppc_prestacoes_pendentes',
+      severidade: 'warning',
+      texto: `${falta} ainda não registada(s) como paga(s). Confirmar antes de reavaliar a 3.ª prestação (15-dez).`,
+    });
+  }
+  // Estimativa fiscal desatualizada — balancete > 90 dias
+  if (s.balanceteData) {
+    const dias = Math.floor((Date.now() - new Date(s.balanceteData).getTime()) / 86_400_000);
+    if (dias > 90) {
+      alertasPPC.push({
+        chave: 'ppc_estimativa_desatualizada',
+        severidade: 'warning',
+        texto: `Último balancete há ${dias} dias. Estimativa de LT pode não refletir a situação atual.`,
+      });
+    }
+  } else if (ppcBase > 200) {
+    alertasPPC.push({
+      chave: 'ppc_sem_balancete',
+      severidade: 'info',
+      texto: 'Sem data de balancete registada. Reavaliar 3.ª prestação exige um balancete com menos de 90 dias.',
+    });
+  }
 
   return {
     totalRendimentos, totalGastos,
