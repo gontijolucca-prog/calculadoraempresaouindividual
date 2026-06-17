@@ -171,6 +171,46 @@ const PREJ_KEYS: (keyof PreviSaState)[] = [
   'prej_2021','prej_2022','prej_2023','prej_2024','c397',
 ];
 
+// Saldo de prejuízos por ano de origem (Sandrine 11-jun 11:02):
+// "informação deve ser guardada por ano de origem: ano · apurado · já deduzido
+//  · saldo disponível · elegível?". Mantém-se a discriminação mesmo quando o
+//  painel principal só mostra o total.
+export interface PrejPorAno {
+  ano: number;       // 0 = agrupado 2014-2017
+  apurado: number;   // valor inicialmente apurado
+  deduzido: number;  // já deduzido em períodos anteriores
+  saldo: number;     // = apurado − deduzido
+  elegivel: boolean; // utilizador marcou
+  obs: string;
+}
+export function saldosPorAno(s: PreviSaState): PrejPorAno[] {
+  const pares: [keyof PreviSaState, keyof PreviSaState, keyof PreviSaState, keyof PreviSaState, keyof PreviSaState, number][] = [
+    ['prej_ate2017', 'prej_ate2017_deduzido' as keyof PreviSaState, 'prej_2018_elegivel' as keyof PreviSaState, 'prej_2018_obs' as keyof PreviSaState, 'prej_2018_elegivel' as keyof PreviSaState, 0],
+    ['prej_2018', 'prej_2018_deduzido', 'prej_2018_elegivel', 'prej_2018_obs', 'prej_2018_elegivel', 2018],
+    ['prej_2019', 'prej_2019_deduzido', 'prej_2019_elegivel', 'prej_2019_obs', 'prej_2019_elegivel', 2019],
+    ['prej_2020', 'prej_2020_deduzido', 'prej_2020_elegivel', 'prej_2020_obs', 'prej_2020_elegivel', 2020],
+    ['prej_2021', 'prej_2021_deduzido', 'prej_2021_elegivel', 'prej_2021_obs', 'prej_2021_elegivel', 2021],
+    ['prej_2022', 'prej_2022_deduzido', 'prej_2022_elegivel', 'prej_2022_obs', 'prej_2022_elegivel', 2022],
+    ['prej_2023', 'prej_2023_deduzido', 'prej_2023_elegivel', 'prej_2023_obs', 'prej_2023_elegivel', 2023],
+    ['prej_2024', 'prej_2024_deduzido', 'prej_2024_elegivel', 'prej_2024_obs', 'prej_2024_elegivel', 2024],
+  ];
+  return pares.map(([kAp, kDed, kEl, kObs, _kDup, ano]) => {
+    const apurado = Number(s[kAp]) || 0;
+    const deduzido = Number(s[kDed]) || 0;
+    return {
+      ano,
+      apurado,
+      deduzido,
+      saldo: Math.max(0, apurado - deduzido),
+      elegivel: Boolean(s[kEl]),
+      obs: String(s[kObs] || ''),
+    };
+  });
+}
+export function totalSaldoElegivel(s: PreviSaState): number {
+  return saldosPorAno(s).reduce((acc, r) => acc + (r.elegivel ? r.saldo : 0), 0);
+}
+
 export function calculate(s: PreviSaState): CalcResult {
   // RAI — mesma demonstração de resultados do Excel ' Res Q10':
   // TOTAL DE RENDIMENTOS (C21) − total de gastos (C62) ± imposto diferido (C64).
@@ -197,8 +237,11 @@ export function calculate(s: PreviSaState): CalcResult {
   const lucroTributavel = Math.max(0, rawLT);
   const prejuizoFiscal  = Math.abs(Math.min(0, rawLT));
 
-  // Q09 prejuízos
-  const totalPrejuziosDisp = sumFields(s, PREJ_KEYS);
+  // Q09 prejuízos — Sandrine 11-jun 11:02: dedução por ano de origem.
+  // Saldo disponível = (apurado − já deduzido) só conta se o ano estiver marcado
+  // como elegível. Os prejuízos de transmissão autorizada (c397) somam à parte
+  // porque não caducam pela janela de 5 anos (CIRC art. 15.º).
+  const totalPrejuziosDisp = totalSaldoElegivel(s) + s.c397;
   const limite = s.limiteMaisPP ? 0.75 : 0.65;
   const prejuziosEfetivos = Math.min(totalPrejuziosDisp, lucroTributavel * limite);
   const materiaColetavel  = Math.max(0, lucroTributavel - prejuziosEfetivos - s.beneficiosFiscais);

@@ -84,6 +84,36 @@ export interface PreviSaState {
   prej_2022: number;
   prej_2023: number;
   prej_2024: number;
+  // ── Prejuízos discriminados por ano (Sandrine 11-jun 11:02) ─────────
+  // Estrutura por ano de origem: apurado, já deduzido, elegível.
+  // Saldo = apurado − deduzido. Mantém-se a discriminação mesmo quando o
+  // painel principal mostra apenas o total.
+  prej_ate2017_deduzido: number;
+  prej_2018_deduzido: number;
+  prej_2019_deduzido: number;
+  prej_2020_deduzido: number;
+  prej_2021_deduzido: number;
+  prej_2022_deduzido: number;
+  prej_2023_deduzido: number;
+  prej_2024_deduzido: number;
+  prej_2018_elegivel: boolean;
+  prej_2019_elegivel: boolean;
+  prej_2020_elegivel: boolean;
+  prej_2021_elegivel: boolean;
+  prej_2022_elegivel: boolean;
+  prej_2023_elegivel: boolean;
+  prej_2024_elegivel: boolean;
+  prej_2018_obs: string;
+  prej_2019_obs: string;
+  prej_2020_obs: string;
+  prej_2021_obs: string;
+  prej_2022_obs: string;
+  prej_2023_obs: string;
+  prej_2024_obs: string;
+  // ── Saldos por regime (Sandrine 11-jun: regra 3 — separar regimes) ──
+  prej_regimeGeral: number;          // prejuízos regime geral
+  prej_reducaoTaxa: number;          // atividade c/ redução de taxa
+  prej_isencaoParcial: number;       // parcialmente isenta
   c397: number;           // Prejuízos c/ transmissão autorizada (art.15)
   limiteMaisPP: boolean;  // aumentar limite dedução p/ 75%
   beneficiosFiscais: number; // c774+c775 — benefícios fiscais Q09
@@ -176,6 +206,14 @@ export function defaultPreviSaState(): PreviSaState {
     // Q09
     prej_ate2017: 0, prej_2018: 0, prej_2019: 0, prej_2020: 0, prej_2021: 0,
     prej_2022: 0, prej_2023: 0, prej_2024: 0, c397: 0,
+    prej_ate2017_deduzido: 0,
+    prej_2018_deduzido: 0, prej_2019_deduzido: 0, prej_2020_deduzido: 0,
+    prej_2021_deduzido: 0, prej_2022_deduzido: 0, prej_2023_deduzido: 0, prej_2024_deduzido: 0,
+    prej_2018_elegivel: true, prej_2019_elegivel: true, prej_2020_elegivel: true,
+    prej_2021_elegivel: true, prej_2022_elegivel: true, prej_2023_elegivel: true, prej_2024_elegivel: true,
+    prej_2018_obs: '', prej_2019_obs: '', prej_2020_obs: '', prej_2021_obs: '',
+    prej_2022_obs: '', prej_2023_obs: '', prej_2024_obs: '',
+    prej_regimeGeral: 0, prej_reducaoTaxa: 0, prej_isencaoParcial: 0,
     limiteMaisPP: false, beneficiosFiscais: 0,
     // TA
     viaturas: [],

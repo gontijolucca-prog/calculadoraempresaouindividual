@@ -8,7 +8,7 @@ import { defaultPreviSaState } from './previSaState';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { downloadPrevisaExcel } from './lib/previsaExcel';
-import { calculate, calcTAVeiculo, RATES, type CalcResult } from './lib/previsaCalc';
+import { calculate, calcTAVeiculo, RATES, type CalcResult, saldosPorAno, totalSaldoElegivel } from './lib/previsaCalc';
 
 export type { PreviSaState } from './previSaState';
 export { defaultPreviSaState } from './previSaState';
@@ -582,6 +582,8 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <CalcRow label="778 — Lucro tributável" value={stepRes.lucroTributavel} highlight />
             </Section>
 
+            <PrejCard st={st} s={s} res={stepRes} />
+
             <Section title="Prejuízos Fiscais Dedutíveis" cols>
               <NumInput label="Prejuízos 2014–2017 (agrupados)" value={st.prej_ate2017} onChange={v => s('prej_ate2017', v)} />
               <NumInput label="Prejuízos 2018" value={st.prej_2018} onChange={v => s('prej_2018', v)} indent />
@@ -1113,6 +1115,8 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <Section title="Lucro Tributável (de Q07)" cols>
                 <CalcRow label="778 — Lucro tributável" value={res.lucroTributavel} highlight />
               </Section>
+
+              <PrejCard st={state} s={set} res={res} />
 
               <Section title="Prejuízos Fiscais Dedutíveis" cols>
                 <NumInput label="Prejuízos 2014–2017 (agrupados)" value={state.prej_ate2017} onChange={v => set('prej_ate2017', v)} />
@@ -1646,4 +1650,201 @@ export interface LogPrevisa {
   user: string;
   origem?: string;
   nivel?: string;
+}
+
+// ─── PREJUÍZOS FISCAIS — Card Sandrine 11-jun 11:02 ──────────────────────
+// Resumo canónico + discriminação por ano de origem, com separador por
+// regime (geral / redução de taxa / isenção parcial).
+function PrejCard({ st, s, res }: { st: PreviSaState; s: (k: keyof PreviSaState, v: unknown) => void; res: CalcResult }) {
+  const [open, setOpen] = useState(false);
+  const rows = saldosPorAno(st);
+  const totalElegivel = totalSaldoElegivel(st);
+  const saldoAT = totalElegivel + (st.c397 || 0);
+  const ltAntes = res.lucroTributavel;
+  const pctLimite = st.limiteMaisPP ? 0.75 : 0.65;
+  const limiteLegal = ltAntes * pctLimite;
+  const deducao = res.prejuziosEfetivos;
+  const saldoReportar = Math.max(0, saldoAT - deducao);
+  const ultimaAt = st.prejuAt
+    ? new Date(st.prejuAt).toLocaleDateString('pt-PT')
+    : '—';
+  const origem = st.prejuAtOrigem || 'manual';
+  const estado = st.prejuAt ? 'confirmado' : 'pendente';
+
+  // Validação cruzada: soma por regime = soma por ano (segue a regra 3 da
+  // Sandrine — separar regimes). Os inputs editáveis permitem ao contabilista
+  // reconciliar quando há mistura de atividades.
+  const somaPorAno = rows.reduce((acc, r) => acc + r.apurado, 0) + (st.c397 || 0);
+  const somaPorRegime =
+    (st.prej_regimeGeral || 0) + (st.prej_reducaoTaxa || 0) + (st.prej_isencaoParcial || 0);
+  const divida = Math.abs(somaPorAno - somaPorRegime) > 0.01;
+
+  return (
+    <div className="bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-[12px] p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-[14px] font-[800] text-[#0F172A] tracking-[-0.01em]">
+          PREJUÍZOS FISCAIS
+        </h3>
+        <span className={`text-[10px] font-[700] uppercase tracking-[0.5px] px-2 py-1 rounded-[6px] ${
+          estado === 'confirmado' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+        }`}>{estado}</span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[12px]">
+        <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
+          <span className="text-slate-500">Saldo disponível na AT</span>
+          <span className="font-[700] tabular-nums text-[#0F172A]">{fmt(saldoAT)} €</span>
+        </div>
+        <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
+          <span className="text-slate-500">Lucro tributável antes da dedução</span>
+          <span className="font-[700] tabular-nums text-[#0F172A]">{fmt(ltAntes)} €</span>
+        </div>
+        <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
+          <span className="text-slate-500">Limite legal aplicável — {(pctLimite * 100).toFixed(0)}%</span>
+          <span className="font-[700] tabular-nums text-[#0F172A]">{fmt(limiteLegal)} €</span>
+        </div>
+        <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
+          <span className="text-slate-500">Dedução considerada na simulação</span>
+          <span className="font-[700] tabular-nums text-emerald-700">{fmt(deducao)} €</span>
+        </div>
+        <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
+          <span className="text-slate-500">Saldo a reportar</span>
+          <span className="font-[700] tabular-nums text-[#0F172A]">{fmt(saldoReportar)} €</span>
+        </div>
+        <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
+          <span className="text-slate-500">Última atualização</span>
+          <span className="font-[600] tabular-nums text-slate-700">{ultimaAt}</span>
+        </div>
+        <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
+          <span className="text-slate-500">Origem</span>
+          <span className="font-[600] text-slate-700">{origem}</span>
+        </div>
+        <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
+          <span className="text-slate-500">Estado</span>
+          <span className="font-[600] text-slate-700">{estado}</span>
+        </div>
+      </div>
+
+      {/* Confirmação última atualização */}
+      <div className="mt-4 flex flex-wrap items-end gap-3 text-[11px]">
+        <label className="flex flex-col gap-1">
+          <span className="font-[600] text-slate-500">Data última atualização AT</span>
+          <input type="date"
+            value={st.prejuAt ? st.prejuAt.substring(0, 10) : ''}
+            onChange={e => s('prejuAt', e.target.value ? new Date(e.target.value).toISOString() : '')}
+            className="text-[11px] border border-slate-200 rounded-[6px] px-2 py-1 bg-white" />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="font-[600] text-slate-500">Origem</span>
+          <select value={st.prejuAtOrigem} onChange={e => s('prejuAtOrigem', e.target.value)}
+            className="text-[11px] border border-slate-200 rounded-[6px] px-2 py-1 bg-white">
+            <option value="manual">manual</option>
+            <option value="AT">AT</option>
+            <option value="e-fatura">e-fatura</option>
+            <option value="declaração Mod.22">declaração Mod.22</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="font-[600] text-slate-500">Confirmado por</span>
+          <input type="text" value={st.prejuAtUser} onChange={e => s('prejuAtUser', e.target.value)}
+            placeholder="utilizador" className="text-[11px] border border-slate-200 rounded-[6px] px-2 py-1 bg-white w-32" />
+        </label>
+      </div>
+
+      {/* Saldos por regime (regra 3 Sandrine) */}
+      <div className="mt-4">
+        <p className="text-[11px] font-[700] text-slate-500 uppercase tracking-[0.5px] mb-2">
+          Saldos por regime
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] text-slate-500">Regime geral</span>
+            <input type="number" value={st.prej_regimeGeral} onChange={e => s('prej_regimeGeral', numInput(e.target.value))}
+              className="text-[12px] border border-slate-200 rounded-[6px] px-2 py-1 bg-white tabular-nums" />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] text-slate-500">Redução de taxa</span>
+            <input type="number" value={st.prej_reducaoTaxa} onChange={e => s('prej_reducaoTaxa', numInput(e.target.value))}
+              className="text-[12px] border border-slate-200 rounded-[6px] px-2 py-1 bg-white tabular-nums" />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] text-slate-500">Isenção parcial</span>
+            <input type="number" value={st.prej_isencaoParcial} onChange={e => s('prej_isencaoParcial', numInput(e.target.value))}
+              className="text-[12px] border border-slate-200 rounded-[6px] px-2 py-1 bg-white tabular-nums" />
+          </label>
+        </div>
+        {divida && (
+          <p className="mt-2 text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded-[6px] px-2 py-1">
+            ⚠ Soma por ano ({fmt(somaPorAno)} €) ≠ soma por regime ({fmt(somaPorRegime)} €). Reconciliar.
+          </p>
+        )}
+      </div>
+
+      {/* Tabela por ano de origem (apurado | deduzido | saldo | elegível | obs) */}
+      <button type="button" onClick={() => setOpen(!open)}
+        className="mt-4 flex items-center gap-2 text-[11px] font-[700] text-[#0677FF] uppercase tracking-[0.5px]">
+        {open ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+        Prejuízos por ano de origem ({rows.length})
+      </button>
+      {open && (
+        <div className="mt-2 overflow-x-auto">
+          <table className="w-full text-[11px] border border-slate-200 rounded-[6px] overflow-hidden">
+            <thead className="bg-slate-100 text-slate-600 font-[700]">
+              <tr>
+                <th className="text-left px-2 py-1.5">Ano</th>
+                <th className="text-right px-2 py-1.5">Apurado</th>
+                <th className="text-right px-2 py-1.5">Já deduzido</th>
+                <th className="text-right px-2 py-1.5">Saldo</th>
+                <th className="text-center px-2 py-1.5">Elegível</th>
+                <th className="text-left px-2 py-1.5">Observações</th>
+              </tr>
+            </thead>
+            <tbody className="font-[500]">
+              {rows.map(r => {
+                const kAp = `prej_${r.ano === 0 ? 'ate2017' : r.ano}` as keyof PreviSaState;
+                const kDed = `prej_${r.ano === 0 ? 'ate2017' : r.ano}_deduzido` as keyof PreviSaState;
+                const kEl = `prej_${r.ano === 0 ? 'ate2017' : r.ano}_elegivel` as keyof PreviSaState;
+                const kObs = `prej_${r.ano === 0 ? 'ate2017' : r.ano}_obs` as keyof PreviSaState;
+                return (
+                  <tr key={r.ano} className="border-t border-slate-100">
+                    <td className="px-2 py-1.5 text-slate-700 font-[600]">
+                      {r.ano === 0 ? '2014–2017' : r.ano}
+                    </td>
+                    <td className="px-2 py-1.5 text-right">
+                      <input type="number" value={st[kAp] as number}
+                        onChange={e => s(kAp, numInput(e.target.value))}
+                        className="w-24 text-right border border-slate-200 rounded-[4px] px-1.5 py-0.5 tabular-nums" />
+                    </td>
+                    <td className="px-2 py-1.5 text-right">
+                      <input type="number" value={st[kDed] as number}
+                        onChange={e => s(kDed, numInput(e.target.value))}
+                        className="w-24 text-right border border-slate-200 rounded-[4px] px-1.5 py-0.5 tabular-nums" />
+                    </td>
+                    <td className="px-2 py-1.5 text-right tabular-nums text-[#0F172A] font-[700]">
+                      {fmt(r.saldo)} €
+                    </td>
+                    <td className="px-2 py-1.5 text-center">
+                      <input type="checkbox" checked={st[kEl] as boolean}
+                        onChange={e => s(kEl, e.target.checked)}
+                        className="w-3.5 h-3.5 accent-[#0677FF]" />
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <input type="text" value={st[kObs] as string}
+                        onChange={e => s(kObs, e.target.value)}
+                        placeholder="opcional"
+                        className="w-full border border-slate-200 rounded-[4px] px-1.5 py-0.5" />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <p className="mt-2 text-[10px] text-slate-500">
+            Janela art. 52.º CIRC: 5 anos (12 em caso de transmissão autorizada — campo 397). Saldo = apurado − já deduzido.
+            Anos fora da janela marcados como não elegíveis.
+          </p>
+        </div>
+      )}
+    </div>
+  );
 }
