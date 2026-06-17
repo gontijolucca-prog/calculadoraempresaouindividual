@@ -120,6 +120,19 @@ export interface PreviSaState {
   c369: number;           // Juros de mora
   // ── Derrama Municipal ────────────────────────────────────────────
   taxaDerramaMunicipal: number; // % (ex: 0.015 = 1,5%)
+  // ── Validação RETGS / capital / métodos indiretos (CIRC) ─────────
+  retgsAtiva: boolean;            // Regime especial tributação grupos sociedades (art 71.º)
+  variacaoCapital50: boolean;     // >50% alteração capital social / direitos voto (aviso AT)
+  metodosIndiretos: boolean;      // métodos indiretos apuramento LT (aviso AT)
+  atividadesIsentas: boolean;     // atividades parcialmente isentas (limitação dedução)
+  // ── Registo atualizações (Sandrine 11-jun) ───────────────────────
+  prejuAt: string;                // ISO datetime última atualização AT
+  prejuAtOrigem: string;          // 'AT' | 'e-fatura' | 'manual' | 'declaração Mod.22'
+  prejuAtUser: string;            // user que confirmou
+  ppcAt: string;                  // ISO datetime última atualização PPC
+  ppcAtUser: string;              // user que confirmou
+  ppc3Reavaliado: string;         // ISO datetime 3.ª prestação reavaliada
+  ppc3ReavaliadoUser: string;     // user
 }
 
 export function defaultPreviSaState(): PreviSaState {
@@ -170,5 +183,11 @@ export function defaultPreviSaState(): PreviSaState {
     c363: 0, c372: 0, c379: 0, c366: 0, c369: 0,
     // Derrama Municipal
     taxaDerramaMunicipal: 0,
+    // Validação
+    retgsAtiva: false, variacaoCapital50: false, metodosIndiretos: false, atividadesIsentas: false,
+    // Registo atualizações
+    prejuAt: '', prejuAtOrigem: 'manual', prejuAtUser: '',
+    ppcAt: '', ppcAtUser: '',
+    ppc3Reavaliado: '', ppc3ReavaliadoUser: '',
   };
 }

@@ -325,6 +325,19 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
     });
   }, [onStateChange]);
 
+  // Registo de auditoria (Sandrine 11-jun) — falhas silenciosas: log local.
+  const addLog = useCallback((linha: LogPrevisa) => {
+    const key = 'previsa_log';
+    try {
+      const raw = localStorage.getItem(key);
+      const arr: LogPrevisa[] = raw ? JSON.parse(raw) : [];
+      arr.push(linha);
+      localStorage.setItem(key, JSON.stringify(arr.slice(-200)));
+    } catch {
+      // sem-op: log local é best-effort
+    }
+  }, []);
+
   const addViatura = () => setState(prev => ({
     ...prev,
     viaturas: [...prev.viaturas, {
@@ -855,6 +868,8 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
         </div>
       </div>
 
+      <UpdateToolsPanel state={state} setState={setState} res={res} onSaveLog={addLog} />
+
       <button
         type="button"
         onClick={handleExportExcel}
@@ -1284,4 +1299,235 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
       </div>
     </div>
   );
+}
+
+// ─── Painel: botões "Atualizar" + Alertas (Sandrine 11-jun) ───────────────────
+
+type OrigemAT = 'AT' | 'e-fatura' | 'manual' | 'declaração Mod.22';
+type NivelAtualizacao = 'auto' | 'assistida' | 'manual';
+
+function fmtDate(iso: string): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function AlertaBox({ alerta }: { alerta: { chave: string; severidade: 'info' | 'warning' | 'error'; texto: string } }) {
+  const cores = {
+    info:    { bg: 'bg-[#0677FF]/8',  border: 'border-[#0677FF]/30',  text: 'text-[#0677FF]' },
+    warning: { bg: 'bg-amber-50',     border: 'border-amber-300',     text: 'text-amber-800' },
+    error:   { bg: 'bg-red-50',       border: 'border-red-300',       text: 'text-red-800' },
+  }[alerta.severidade];
+  const icone = { info: 'i', warning: '!', error: '✕' }[alerta.severidade];
+  return (
+    <div className={`rounded-[8px] border ${cores.border} ${cores.bg} px-2.5 py-1.5 flex gap-2`}>
+      <span className={`font-[800] text-[11px] leading-snug ${cores.text}`}>{icone}</span>
+      <span className="text-[11px] leading-snug text-slate-700">{alerta.texto}</span>
+    </div>
+  );
+}
+
+function UpdateToolsPanel({
+  state, setState, res, onSaveLog,
+}: {
+  state: PreviSaState;
+  setState: React.Dispatch<React.SetStateAction<PreviSaState>>;
+  res: CalcResult;
+  onSaveLog?: (linha: LogPrevisa) => void;
+}) {
+  const [openPreju, setOpenPreju] = useState(false);
+  const [openPPC, setOpenPPC] = useState(false);
+  const [open3PPC, setOpen3PPC] = useState(false);
+  const [nivelPreju, setNivelPreju] = useState<NivelAtualizacao>('assistida');
+  const [origemPreju, setOrigemPreju] = useState<OrigemAT>('AT');
+  const [userPPC, setUserPPC] = useState('Lucca');
+  const [userPreju, setUserPreju] = useState('Sandrine');
+
+  const nowIso = () => new Date().toISOString();
+
+  const confirmarPreju = () => {
+    setState(prev => ({ ...prev, prejuAt: nowIso(), prejuAtOrigem: origemPreju, prejuAtUser: userPreju }));
+    onSaveLog?.({ tipo: 'prejuizos', ts: nowIso(), user: userPreju, origem: origemPreju, nivel: nivelPreju });
+    setOpenPreju(false);
+  };
+
+  const confirmarPPC = () => {
+    setState(prev => ({ ...prev, ppcAt: nowIso(), ppcAtUser: userPPC }));
+    onSaveLog?.({ tipo: 'ppc', ts: nowIso(), user: userPPC });
+    setOpenPPC(false);
+  };
+
+  const confirmar3PPC = () => {
+    setState(prev => ({ ...prev, ppc3Reavaliado: nowIso(), ppc3ReavaliadoUser: userPPC }));
+    onSaveLog?.({ tipo: 'ppc3', ts: nowIso(), user: userPPC });
+    setOpen3PPC(false);
+  };
+
+  const toggle = (key: keyof PreviSaState) => setState(prev => ({ ...prev, [key]: !prev[key] as never }));
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* ── Alertas consolidados ── */}
+      {(res.alertasPrejuizos.length > 0 || res.alertasPPC.length > 0) && (
+        <div className="bg-white border border-slate-200 rounded-[12px] p-3 flex flex-col gap-1.5">
+          <p className="text-[10px] font-[700] uppercase tracking-[0.5px] text-slate-400">Alertas validação</p>
+          {[...res.alertasPrejuizos, ...res.alertasPPC].map((a, i) => (
+            <AlertaBox key={i} alerta={a} />
+          ))}
+        </div>
+      )}
+
+      {/* ── Flags validação (Sandrine 11-jun) ── */}
+      <div className="bg-white border border-slate-200 rounded-[12px] p-3 flex flex-col gap-1">
+        <p className="text-[10px] font-[700] uppercase tracking-[0.5px] text-slate-400 mb-1">Validação CIRC</p>
+        {([
+          ['retgsAtiva',         'RETGS ativo (art. 71.º)'],
+          ['variacaoCapital50',  '>50% alteração capital/voto'],
+          ['metodosIndiretos',   'Métodos indiretos (art. 90.º)'],
+          ['atividadesIsentas',  'Atividades parcialmente isentas'],
+        ] as [keyof PreviSaState, string][]).map(([key, label]) => (
+          <label key={key} className="flex items-center gap-2 py-0.5 cursor-pointer">
+            <input type="checkbox" checked={Boolean(state[key])} onChange={() => toggle(key)} className="w-3.5 h-3.5 accent-[#0677FF]" />
+            <span className="text-[11px] font-[500] text-slate-600">{label}</span>
+          </label>
+        ))}
+      </div>
+
+      {/* ── Botões "Atualizar" ── */}
+      <div className="bg-white border border-slate-200 rounded-[12px] p-3 flex flex-col gap-2">
+        <p className="text-[10px] font-[700] uppercase tracking-[0.5px] text-slate-400">Sincronização AT</p>
+
+        <button type="button" onClick={() => setOpenPreju(o => !o)}
+          className="flex items-center justify-between px-2.5 py-2 rounded-[8px] border border-slate-200 hover:border-[#0677FF] hover:bg-[#0677FF]/5 transition-colors text-left">
+          <span className="flex flex-col">
+            <span className="text-[12px] font-[700] text-[#0F172A]">Atualizar prejuízos fiscais da AT</span>
+            <span className="text-[10px] text-slate-500">
+              {state.prejuAt ? `Atualizado ${fmtDate(state.prejuAt)} · ${state.prejuAtUser || '—'}` : 'Não sincronizado'}
+            </span>
+          </span>
+          <span className="text-[#0677FF] text-[14px]">↻</span>
+        </button>
+        {openPreju && (
+          <div className="bg-slate-50 rounded-[8px] p-2.5 flex flex-col gap-2 border border-slate-200">
+            <p className="text-[10px] font-[700] text-slate-500 uppercase">Nível de atualização</p>
+            <div className="flex gap-1">
+              {(['auto', 'assistida', 'manual'] as NivelAtualizacao[]).map(n => (
+                <button key={n} type="button" onClick={() => setNivelPreju(n)}
+                  className={`flex-1 px-2 py-1.5 text-[10px] font-[700] rounded-[6px] border transition-colors ${nivelPreju === n ? 'bg-[#0677FF] text-white border-[#0677FF]' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'}`}>
+                  {n === 'auto' ? 'Auto' : n === 'assistida' ? 'Assistida' : 'Manual'}
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-slate-500 leading-tight">
+              {nivelPreju === 'auto' && 'Cruzar com e-fatura + SAF-T + Modelo 22 (recomendado).'}
+              {nivelPreju === 'assistida' && 'Validar campo a campo contra declaração anterior.'}
+              {nivelPreju === 'manual' && 'Inserção direta — auditoria futura.'}
+            </p>
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-[600] text-slate-500">Origem</span>
+              <select value={origemPreju} onChange={e => setOrigemPreju(e.target.value as OrigemAT)}
+                className="text-[11px] border border-slate-200 rounded-[6px] px-2 py-1 bg-white">
+                <option value="AT">Portal AT (e-fatura)</option>
+                <option value="e-fatura">e-fatura</option>
+                <option value="declaração Mod.22">Declaração Mod. 22</option>
+                <option value="manual">Manual</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-[600] text-slate-500">Utilizador</span>
+              <input type="text" value={userPreju} onChange={e => setUserPreju(e.target.value)}
+                className="text-[11px] border border-slate-200 rounded-[6px] px-2 py-1 bg-white" />
+            </label>
+            <div className="flex gap-1.5 pt-1">
+              <button type="button" onClick={confirmarPreju}
+                className="flex-1 px-2 py-1.5 text-[11px] font-[700] bg-[#0677FF] text-white rounded-[6px] hover:bg-[#0560d6]">
+                Confirmar
+              </button>
+              <button type="button" onClick={() => setOpenPreju(false)}
+                className="px-2 py-1.5 text-[11px] font-[600] text-slate-500 hover:text-slate-700">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
+        <button type="button" onClick={() => setOpenPPC(o => !o)}
+          className="flex items-center justify-between px-2.5 py-2 rounded-[8px] border border-slate-200 hover:border-[#0677FF] hover:bg-[#0677FF]/5 transition-colors text-left">
+          <span className="flex flex-col">
+            <span className="text-[12px] font-[700] text-[#0F172A]">Atualizar PPC de IRC</span>
+            <span className="text-[10px] text-slate-500">
+              {state.ppcAt ? `Atualizado ${fmtDate(state.ppcAt)} · ${state.ppcAtUser || '—'}` : 'Não sincronizado'}
+            </span>
+          </span>
+          <span className="text-[#0677FF] text-[14px]">↻</span>
+        </button>
+        {openPPC && (
+          <div className="bg-slate-50 rounded-[8px] p-2.5 flex flex-col gap-2 border border-slate-200">
+            <p className="text-[10px] text-slate-600 leading-tight">
+              Confirma base PPC = (c358 − retenções) × {pct(res.ppcTaxa)} = <strong>{fmt(res.ppcProximoAno)} €</strong> (3 × {fmt(res.ppcPrestacao)} €).
+            </p>
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-[600] text-slate-500">Utilizador</span>
+              <input type="text" value={userPPC} onChange={e => setUserPPC(e.target.value)}
+                className="text-[11px] border border-slate-200 rounded-[6px] px-2 py-1 bg-white" />
+            </label>
+            <div className="flex gap-1.5 pt-1">
+              <button type="button" onClick={confirmarPPC}
+                className="flex-1 px-2 py-1.5 text-[11px] font-[700] bg-[#0677FF] text-white rounded-[6px] hover:bg-[#0560d6]">
+                Confirmar
+              </button>
+              <button type="button" onClick={() => setOpenPPC(false)}
+                className="px-2 py-1.5 text-[11px] font-[600] text-slate-500 hover:text-slate-700">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
+        <button type="button" onClick={() => setOpen3PPC(o => !o)}
+          className="flex items-center justify-between px-2.5 py-2 rounded-[8px] border border-slate-200 hover:border-[#0677FF] hover:bg-[#0677FF]/5 transition-colors text-left">
+          <span className="flex flex-col">
+            <span className="text-[12px] font-[700] text-[#0F172A]">Reavaliar 3.º PPC (15-dez)</span>
+            <span className="text-[10px] text-slate-500">
+              {state.ppc3Reavaliado ? `Reavaliado ${fmtDate(state.ppc3Reavaliado)} · ${state.ppc3ReavaliadoUser || '—'}` : 'Não reavaliado'}
+            </span>
+          </span>
+          <span className="text-[#0677FF] text-[14px]">↻</span>
+        </button>
+        {open3PPC && (
+          <div className="bg-slate-50 rounded-[8px] p-2.5 flex flex-col gap-2 border border-slate-200">
+            <p className="text-[10px] text-slate-600 leading-tight">
+              art. 105.º n.4: se LT do próprio período cair {'>'}20% vs. ano anterior, a 3.ª prestação pode ser ajustada para 1/3 do PPC restante.
+            </p>
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-[600] text-slate-500">Utilizador</span>
+              <input type="text" value={userPPC} onChange={e => setUserPPC(e.target.value)}
+                className="text-[11px] border border-slate-200 rounded-[6px] px-2 py-1 bg-white" />
+            </label>
+            <div className="flex gap-1.5 pt-1">
+              <button type="button" onClick={confirmar3PPC}
+                className="flex-1 px-2 py-1.5 text-[11px] font-[700] bg-[#0677FF] text-white rounded-[6px] hover:bg-[#0560d6]">
+                Confirmar reavaliação
+              </button>
+              <button type="button" onClick={() => setOpen3PPC(false)}
+                className="px-2 py-1.5 text-[11px] font-[600] text-slate-500 hover:text-slate-700">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Tipo do log de auditoria (Firestore) ────────────────────────────────────
+
+export interface LogPrevisa {
+  tipo: 'prejuizos' | 'ppc' | 'ppc3';
+  ts: string;
+  user: string;
+  origem?: string;
+  nivel?: string;
 }

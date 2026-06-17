@@ -135,6 +135,19 @@ export interface CalcResult {
   ppcTaxa: number;
   /** PAC do próximo período (art. 105.º-A) sobre o lucro tributável > 1,5 M€. */
   pacProximoAno: number;
+  /** Alertas de validação (Sandrine 11-jun). Cada item = chave + severidade + texto. */
+  alertasPrejuizos: AlertaValidacao[];
+  /** Alertas PPC (RETGS, juros compensatórios, etc). */
+  alertasPPC: AlertaValidacao[];
+  /** Limite efetivo de dedução de prejuízos (0,65 ou 0,75). */
+  limiteDedPrejuizo: number;
+}
+
+export type SeveridadeAlerta = 'info' | 'warning' | 'error';
+export interface AlertaValidacao {
+  chave: string;
+  severidade: SeveridadeAlerta;
+  texto: string;
 }
 
 const ACRESCER_KEYS: (keyof PreviSaState)[] = [
@@ -265,6 +278,85 @@ export function calculate(s: PreviSaState): CalcResult {
     pacProximoAno = t1 * pacRates[0] + t2 * pacRates[1] + t3 * pacRates[2];
   }
 
+  // ── Alertas de validação (Sandrine 11-jun) ────────────────────────
+  const alertasPrejuizos: AlertaValidacao[] = [];
+  if (totalPrejuziosDisp > 0 && lucroTributavel > 0 && prejuziosEfetivos < totalPrejuziosDisp) {
+    alertasPrejuizos.push({
+      chave: 'prej_efeito_limite',
+      severidade: 'warning',
+      texto: `Limite de dedução aplicado: ${(limite * 100).toFixed(0)}% do LT. Excedente de ${(totalPrejuziosDisp - prejuziosEfetivos).toLocaleString('pt-PT', { minimumFractionDigits: 2 })} € não dedutível este período.`,
+    });
+  }
+  if (s.variacaoCapital50) {
+    alertasPrejuizos.push({
+      chave: 'prej_variacao_capital',
+      severidade: 'error',
+      texto: '>50% alteração capital social / direitos de voto. AT pode recusar dedução de prejuízos (CIRC art. 52.º).',
+    });
+  }
+  if (s.metodosIndiretos) {
+    alertasPrejuizos.push({
+      chave: 'prej_metodos_indiretos',
+      severidade: 'error',
+      texto: 'LT apurado por métodos indiretos (CIRC art. 90.º). Dedução de prejuízos condicionada.',
+    });
+  }
+  if (s.atividadesIsentas) {
+    alertasPrejuizos.push({
+      chave: 'prej_atividades_isentas',
+      severidade: 'warning',
+      texto: 'Atividades parcialmente isentas: dedução de prejuízos proporcional à parte não isenta.',
+    });
+  }
+  if (s.retgsAtiva) {
+    alertasPrejuizos.push({
+      chave: 'prej_retgs',
+      severidade: 'info',
+      texto: 'RETGS (art. 71.º): prejuízos deduzidos ao grupo, não à entidade. Confirmar consolidação.',
+    });
+  }
+  if (totalPrejuziosDisp > 0 && !s.prejuAt) {
+    alertasPrejuizos.push({
+      chave: 'prej_at_atualizar',
+      severidade: 'info',
+      texto: 'Prejuízos carregados manualmente. Use "Atualizar AT" para validar origem e data.',
+    });
+  }
+
+  const alertasPPC: AlertaValidacao[] = [];
+  if (ppcBase > 200) {
+    if (s.retgsAtiva) {
+      alertasPPC.push({
+        chave: 'ppc_retgs',
+        severidade: 'warning',
+        texto: 'RETGS (art. 71.º): PPC da sociedade dominante pode ser centralizado. Verificar perímetro do grupo.',
+      });
+    }
+    if (s.ppcAt) {
+      const dias = Math.floor((Date.now() - new Date(s.ppcAt).getTime()) / 86_400_000);
+      if (dias > 90) {
+        alertasPPC.push({
+          chave: 'ppc_at_stale',
+          severidade: 'warning',
+          texto: `Última atualização PPC há ${dias} dias. Juros compensatórios podem ser aplicáveis se base se alterou.`,
+        });
+      }
+    } else {
+      alertasPPC.push({
+        chave: 'ppc_at_atualizar',
+        severidade: 'info',
+        texto: 'PPC não confirmado contra AT. Use "Atualizar PPC" para validar base do próximo período.',
+      });
+    }
+    if (!s.ppc3Reavaliado && ppcBase > 0) {
+      alertasPPC.push({
+        chave: 'ppc_3_nao_reavaliado',
+        severidade: 'info',
+        texto: '3.ª prestação (15-dez) ainda não foi reavaliada. Pode ajustar a 1/3 se LT descer 20% (art. 105.º n.4).',
+      });
+    }
+  }
+
   return {
     totalRendimentos, totalGastos,
     raiCalc, effectiveRai, c708, acrescer, c753, c776,
@@ -273,6 +365,7 @@ export function calculate(s: PreviSaState): CalcResult {
     taViaturas, taOutras, taBruta, taTotal,
     totalPagamentos, c367, pecCalculado,
     ppcProximoAno, ppcPrestacao, ppcTaxa, pacProximoAno,
+    alertasPrejuizos, alertasPPC, limiteDedPrejuizo: limite,
   };
 }
 
