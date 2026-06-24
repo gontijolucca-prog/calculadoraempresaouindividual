@@ -10,19 +10,38 @@ import type { Regime, Territorio, ViaturaRow, PreviSaState } from '../previSaSta
 
 const PME_BRACKET = 50_000;
 
-// Taxas de IRC OE 2026 — CIRC Art. 87.º (Lei 73-A/2025, em vigor a 1-jan-2026).
-// Taxa geral baixou de 20% para 19%; PME continua 15% sobre os primeiros €50.000.
+// Taxas de IRC por ano — CIRC Art. 87.º.
+// 2025: OE 2025 (Lei 45-A/2024) — geral 20%, PME 16%.
+// 2026: OE 2026 (Lei 73-A/2025) — geral 19%, PME 15%.
 // Madeira: 13,3% geral (era 14%) / 10,5% PME (era 11,2%) — DL Regional 8/2025/M.
 // Açores: redução de 20% sobre a taxa do continente; PME beneficia de taxa especial 8,75%.
 // Interior: 12,5% PME (EBF art. 41º-B) — sem redução na taxa geral.
 // Startup: 12,5% — regime IFICI (Lei 21/2023), aplica-se sobre a totalidade.
-export const RATES: Record<Regime, { main: number; pme: number }> = {
-  geral:         { main: 0.19,   pme: 0.15   },
-  madeira:       { main: 0.133,  pme: 0.105  },
-  acores:        { main: 0.152,  pme: 0.0875 },
-  interioridade: { main: 0.19,   pme: 0.125  },
-  startup:       { main: 0.125,  pme: 0.125  },
+const RATES_BY_YEAR: Record<number, Record<Regime, { main: number; pme: number }>> = {
+  2025: {
+    geral:         { main: 0.20,   pme: 0.16   },
+    madeira:       { main: 0.14,   pme: 0.112  },
+    acores:        { main: 0.16,   pme: 0.0875 },
+    interioridade: { main: 0.20,   pme: 0.125  },
+    startup:       { main: 0.125,  pme: 0.125  },
+  },
+  2026: {
+    geral:         { main: 0.19,   pme: 0.15   },
+    madeira:       { main: 0.133,  pme: 0.105  },
+    acores:        { main: 0.152,  pme: 0.0875 },
+    interioridade: { main: 0.19,   pme: 0.125  },
+    startup:       { main: 0.125,  pme: 0.125  },
+  },
 };
+
+/** Taxas de IRC para o ano `periodo`. Fallback para 2026 se o ano não estiver definido. */
+export function getRates(periodo: number, regime: Regime): { main: number; pme: number } {
+  const yearRates = RATES_BY_YEAR[periodo] ?? RATES_BY_YEAR[2026];
+  return yearRates[regime];
+}
+
+/** @deprecated Usar `getRates(periodo, regime)` em vez de aceder diretamente a RATES. */
+export const RATES: Record<Regime, { main: number; pme: number }> = RATES_BY_YEAR[2026];
 
 // Derrama estadual — CIRC Art. 87.º-A (OE 2026, sem alterações vs 2025):
 //   0%   até        €1.500.000
@@ -101,7 +120,7 @@ export function calcDerramaEstadual(mc: number, territorio: Territorio): number 
 // ─── Calculation engine ───────────────────────────────────────────────────────
 
 export interface CalcResult {
-  totalRendimentos: number; // soma 711+712+72+74..79 (Excel ' Res Q10'!C21)
+  totalRendimentos: number; // volume de negócios: 711+712+72 (vendas + serviços)
   totalGastos: number;      // CMV+CMC+62..69 (Excel ' Res Q10'!C62)
   raiCalc: number;
   effectiveRai: number;
@@ -215,8 +234,7 @@ export function calculate(s: PreviSaState): CalcResult {
   // RAI — mesma demonstração de resultados do Excel ' Res Q10':
   // TOTAL DE RENDIMENTOS (C21) − total de gastos (C62) ± imposto diferido (C64).
   const totalRendimentos =
-    s.rai_711 + s.rai_712 + s.rai_72 + s.rai_74 + s.rai_75 +
-    s.rai_76 + s.rai_77 + s.rai_78 + s.rai_79;
+    s.rai_711 + s.rai_712 + s.rai_72;
   const totalGastos =
     s.rai_cmv + s.rai_cmc + s.rai_62 + s.rai_63 + s.rai_64 +
     s.rai_65 + s.rai_66 + s.rai_67 + s.rai_68 + s.rai_69;
@@ -247,7 +265,7 @@ export function calculate(s: PreviSaState): CalcResult {
   const materiaColetavel  = Math.max(0, lucroTributavel - prejuziosEfetivos - s.beneficiosFiscais);
 
   // IRC coleta (c347)
-  const r = RATES[s.isStartup ? 'startup' : s.regime];
+  const r = getRates(s.periodo, s.isStartup ? 'startup' : s.regime);
   let ircBase = 0;
   if (s.isPME && !s.isStartup) {
     ircBase = Math.min(materiaColetavel, PME_BRACKET) * r.pme
@@ -358,7 +376,7 @@ export function calculate(s: PreviSaState): CalcResult {
       texto: 'RETGS (art. 71.º): prejuízos deduzidos ao grupo, não à entidade. Confirmar consolidação.',
     });
   }
-  if (totalPrejuziosDisp > 0 && !s.prejuAt) {
+  if (totalPrejuziosDisp > 0) {
     alertasPrejuizos.push({
       chave: 'prej_at_atualizar',
       severidade: 'info',
@@ -375,64 +393,13 @@ export function calculate(s: PreviSaState): CalcResult {
         texto: 'RETGS (art. 71.º): PPC da sociedade dominante pode ser centralizado. Verificar perímetro do grupo.',
       });
     }
-    if (s.ppcAt) {
-      const dias = Math.floor((Date.now() - new Date(s.ppcAt).getTime()) / 86_400_000);
-      if (dias > 90) {
-        alertasPPC.push({
-          chave: 'ppc_at_stale',
-          severidade: 'warning',
-          texto: `Última atualização PPC há ${dias} dias. Juros compensatórios podem ser aplicáveis se base se alterou.`,
-        });
-      }
-    } else {
-      alertasPPC.push({
-        chave: 'ppc_at_atualizar',
-        severidade: 'info',
-        texto: 'PPC não confirmado contra AT. Use "Atualizar PPC" para validar base do próximo período.',
-      });
-    }
-    if (!s.ppc3Reavaliado && ppcBase > 0) {
+    if (ppcBase > 0) {
       alertasPPC.push({
         chave: 'ppc_3_nao_reavaliado',
         severidade: 'info',
         texto: '3.ª prestação (15-dez) ainda não foi reavaliada. Pode ajustar a 1/3 se LT descer 20% (art. 105.º n.4).',
       });
     }
-  }
-  // Modelo 22 do período anterior não importado (Sandrine 11-jun) — afeta
-  // validação cruzada dos prejuízos e base PPC.
-  if (!s.modelo22AnteriorDisponivel && (s.periodo - 1) > 0) {
-    alertasPPC.push({
-      chave: 'ppc_mod22_indisponivel',
-      severidade: 'warning',
-      texto: `Modelo 22 de ${s.periodo - 1} não importado. Sem ele, validação cruzada da base PPC e dos prejuízos reportados fica limitada.`,
-    });
-  }
-  // 1.ª ou 2.ª prestação sem registo de pagamento — registar antes da 3.ª
-  if (ppcBase > 200 && ppcProximoAno > 0 && (!s.ppc1Pago || !s.ppc2Pago)) {
-    const falta = !s.ppc1Pago && !s.ppc2Pago ? '1.ª e 2.ª prestações' : !s.ppc1Pago ? '1.ª prestação' : '2.ª prestação';
-    alertasPPC.push({
-      chave: 'ppc_prestacoes_pendentes',
-      severidade: 'warning',
-      texto: `${falta} ainda não registada(s) como paga(s). Confirmar antes de reavaliar a 3.ª prestação (15-dez).`,
-    });
-  }
-  // Estimativa fiscal desatualizada — balancete > 90 dias
-  if (s.balanceteData) {
-    const dias = Math.floor((Date.now() - new Date(s.balanceteData).getTime()) / 86_400_000);
-    if (dias > 90) {
-      alertasPPC.push({
-        chave: 'ppc_estimativa_desatualizada',
-        severidade: 'warning',
-        texto: `Último balancete há ${dias} dias. Estimativa de LT pode não refletir a situação atual.`,
-      });
-    }
-  } else if (ppcBase > 200) {
-    alertasPPC.push({
-      chave: 'ppc_sem_balancete',
-      severidade: 'info',
-      texto: 'Sem data de balancete registada. Reavaliar 3.ª prestação exige um balancete com menos de 90 dias.',
-    });
   }
 
   return {

@@ -5,7 +5,6 @@ import { UpdateNotification } from './components/UpdateNotification';
 import { useUnsavedEdits } from './hooks/useUnsavedEdits';
 import { initVersionChecker, stopVersionChecker } from './lib/version-checker';
 import LegalInfo from './LegalInfo';
-import LoginPage from './LoginPage';
 import LandingPage from './LandingPage';
 import EmpresasList from './EmpresasList';
 import SimIntro, { SIM_INTROS } from './SimIntro';
@@ -333,7 +332,6 @@ function NoEmpresaGate({ onGo }: { onGo: () => void }) {
 
 function AppContent() {
   const [loggedIn, setLoggedIn] = useState(() => loadFromStorage('loggedIn', false));
-  const [showLogin, setShowLogin] = useState(false);
   // Mode is persisted: ao atualizar a página o utilizador continua no mesmo contexto.
   // Default = 'empresa' (CRM): após login vai directo para a Lista de Empresas. O
   // selector "Como queres trabalhar hoje?" foi removido do fluxo.
@@ -596,9 +594,7 @@ function AppContent() {
   const botSaftTargetRef = useRef<'novo' | 'empresa'>('novo');
 
   if (!loggedIn) {
-    return showLogin
-      ? <LoginPage onLogin={() => setLoggedIn(true)} onBack={() => setShowLogin(false)} />
-      : <LandingPage onEnter={() => setShowLogin(true)} />;
+    return <LandingPage onEnter={() => setShowLogin(true)} />;
   }
 
   // O selector "Como queres trabalhar hoje?" foi removido: após login vai-se directo

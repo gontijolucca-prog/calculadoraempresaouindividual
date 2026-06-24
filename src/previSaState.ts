@@ -155,22 +155,6 @@ export interface PreviSaState {
   variacaoCapital50: boolean;     // >50% alteração capital social / direitos voto (aviso AT)
   metodosIndiretos: boolean;      // métodos indiretos apuramento LT (aviso AT)
   atividadesIsentas: boolean;     // atividades parcialmente isentas (limitação dedução)
-  // ── Registo atualizações (Sandrine 11-jun) ───────────────────────
-  prejuAt: string;                // ISO datetime última atualização AT
-  prejuAtOrigem: string;          // 'AT' | 'e-fatura' | 'manual' | 'declaração Mod.22'
-  prejuAtUser: string;            // user que confirmou
-  ppcAt: string;                  // ISO datetime última atualização PPC
-  ppcAtUser: string;              // user que confirmou
-  ppc3Reavaliado: string;         // ISO datetime 3.ª prestação reavaliada
-  ppc3ReavaliadoUser: string;     // user
-  // ── 3.ª prestação — decisão Sandrine (suspender / limitar / pagar) ──
-  ppc1Pago: boolean;              // 1.ª prestação (jul) paga?
-  ppc2Pago: boolean;              // 2.ª prestação (set) paga?
-  ppc3Decisao: '' | 'suspender' | 'limitar' | 'pagar'; // decisão contabilista
-  ppc3JurosConfirm: boolean;      // confirmação expressa juros compensatórios 20%
-  // ── Validações AT extras (Sandrine 11-jun) ──────────────────────
-  modelo22AnteriorDisponivel: boolean; // Mod.22 período anterior importado?
-  balanceteData: string;          // ISO data último balancete (idade >90d = desatualizado)
 }
 
 export function defaultPreviSaState(): PreviSaState {
@@ -231,12 +215,5 @@ export function defaultPreviSaState(): PreviSaState {
     taxaDerramaMunicipal: 0,
     // Validação
     retgsAtiva: false, variacaoCapital50: false, metodosIndiretos: false, atividadesIsentas: false,
-    // Registo atualizações
-    prejuAt: '', prejuAtOrigem: 'manual', prejuAtUser: '',
-    ppcAt: '', ppcAtUser: '',
-    ppc3Reavaliado: '', ppc3ReavaliadoUser: '',
-    ppc1Pago: false, ppc2Pago: false,
-    ppc3Decisao: '', ppc3JurosConfirm: false,
-    modelo22AnteriorDisponivel: false, balanceteData: '',
   };
 }
