@@ -1314,14 +1314,24 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   profile.atividadePrincipal = activityType;
   filled.push('Tipo de atividade');
 
-  // Revenue / VN: prefer SalesInvoices netTotal (NC subtracted), fall back to gross credit
+  // Revenue: prefer SalesInvoices netTotal (NC subtracted), fall back to gross credit.
+  // Usado para faturaçaoAnualPrevista / cálculo de RAI — engloba toda a classe 7.
   let revenue = salesNetTotal > 0 ? salesNetTotal : totalCredit;
-  // For organizada, prefer class 7 total
+  // VN fiscal (art. 105.º CIRC): só 71 (vendas) + 72 (prestações serviços).
+  // Separado da revenue porque subsídios (75), reversões (76), etc. não contam
+  // para o escalão de PPC (80% vs 95%) nem para PEC.
+  let volumeNegocios = 0;
+  // For organizada, prefer class 7 total; VN vai só 71+72
   if (useRaiCalc) {
     const cls7 = (previsa.rai_711 ?? 0) + (previsa.rai_712 ?? 0) + (previsa.rai_72 ?? 0)
                + (previsa.rai_74 ?? 0) + (previsa.rai_75 ?? 0) + (previsa.rai_76 ?? 0)
                + (previsa.rai_77 ?? 0) + (previsa.rai_78 ?? 0) + (previsa.rai_79 ?? 0);
     if (cls7 > 0) revenue = cls7;
+    // VN fiscal = só vendas + prestações serviços
+    volumeNegocios = (previsa.rai_711 ?? 0) + (previsa.rai_712 ?? 0) + (previsa.rai_72 ?? 0);
+  } else {
+    // Simplified: salesNetTotal/totalCredit já é só facturação (≈71+72)
+    volumeNegocios = revenue;
   }
 
   if (revenue > 0 && startDate && endDate) {
@@ -1403,11 +1413,9 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   if (companyName)  previsa.designacao  = companyName;
   if (period > 2000) previsa.periodo   = period;
 
-  // Volume de negócios para PEC/PC
-  if (profile.faturaçaoAnualPrevista && profile.faturaçaoAnualPrevista > 0) {
-    previsa.volumeNegocios = profile.faturaçaoAnualPrevista;
-  } else if (revenue > 0) {
-    previsa.volumeNegocios = Math.round(revenue * 100) / 100;
+  // Volume de negócios para PPC/PEC (art. 105.º CIRC: só 71+72)
+  if (volumeNegocios > 0) {
+    previsa.volumeNegocios = Math.round(volumeNegocios * 100) / 100;
   }
 
   // PME / Regime
