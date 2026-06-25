@@ -62,7 +62,7 @@ if $NPM run lint 2>/dev/null; then
   pass "tsc --noEmit OK"
 else
   fail "TypeScript errors found"
-  ((failures++))
+  failures=$((failures + 1))
 fi
 
 # ── 3. TESTS ──
@@ -76,7 +76,7 @@ if [ "$FAIL_COUNT" -eq 0 ] && [ "$PASS_COUNT" -gt 0 ]; then
 else
   fail "$FAIL_COUNT test(s) failed ($PASS_COUNT passed)"
   echo "$TEST_OUTPUT" | grep '✗' | head -10
-  ((failures++))
+  failures=$((failures + 1))
 fi
 
 # ── 4. BUILD ──
@@ -88,7 +88,7 @@ if echo "$BUILD_OUTPUT" | grep -q "✓ built"; then
 else
   fail "Build failed"
   echo "$BUILD_OUTPUT" | tail -10
-  ((failures++))
+  failures=$((failures + 1))
 fi
 
 # ── 5. LIVE CHECK ──
@@ -100,7 +100,7 @@ if [ "$HTTP_CODE" = "200" ] && echo "$TITLE" | grep -q "Estudo 360"; then
   pass "$LIVE_URL — HTTP $HTTP_CODE, title OK"
 else
   fail "$LIVE_URL — HTTP $HTTP_CODE, title=$TITLE"
-  ((failures++))
+  failures=$((failures + 1))
 fi
 
 # ── 6. CF PAGES DEPLOY STATUS (via GH API) ──

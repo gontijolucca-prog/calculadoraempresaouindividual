@@ -10,7 +10,10 @@ export type RegimeIva = ClientProfile['regimeIva'];
 // Limiares legais (CIVA / CIRS) — manter alinhados com os comentários da UI.
 export const LIMIAR_ISENCAO_IVA = 15000;      // Art. 53.º CIVA — até este valor pode ser isento
 export const LIMIAR_IVA_MENSAL = 650000;      // Art. 41.º n.º 1 al. a) CIVA — acima disto, IVA mensal obrigatório
-export const LIMIAR_ENI_ORGANIZADA = 200000;  // Art. 28.º/31.º CIRS — ENI acima disto vai a contabilidade organizada
+export const LIMIAR_ENI_ORGANIZADA = 200000;  // Art. 28.º/31.º CIRS / Art. 86.º-A CIRC — acima disto, contab. organizada obrigatória
+
+/** Tipos de entidade que são sociedades comerciais (precisam de contab. organizada >200k). */
+export const SOCIEDADE_TYPES = ['lda', 'unipessoal', 'sa', 'socio_unico'];
 
 /** Regimes de IVA legalmente possíveis para uma dada faturação anual. */
 export function allowedIvaRegimes(fat: number): RegimeIva[] {
@@ -35,11 +38,11 @@ export function ivaForFat(regimeIva: RegimeIva, fat: number): RegimeIva {
 export function regimeContabForFat(
   tipoEntidade: string, regimeContabilidade: ClientProfile['regimeContabilidade'], fat: number,
 ): ClientProfile['regimeContabilidade'] {
-  const isSociedade = ['lda', 'unipessoal', 'sa', 'socio_unico'].includes(tipoEntidade);
-  if (tipoEntidade === 'eni' && regimeContabilidade === 'simplificado' && fat > LIMIAR_ENI_ORGANIZADA)
+  const isSociedade = SOCIEDADE_TYPES.includes(tipoEntidade);
+  if ((tipoEntidade === 'eni' || isSociedade) && regimeContabilidade === 'simplificado' && fat > LIMIAR_ENI_ORGANIZADA)
     return 'organizada';
-  if (isSociedade && regimeContabilidade === 'simplificado' && fat > LIMIAR_ENI_ORGANIZADA)
-    return 'organizada';
+  // Nota: transparencia_fiscal e RETGS nao sao forcados porque ja implicam
+  // contabilidade organizada na pratica (art.86-A CIRC).
   return regimeContabilidade;
 }
 

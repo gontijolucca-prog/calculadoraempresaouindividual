@@ -20,10 +20,13 @@ eq('faixa intermédia mantém mensal voluntário', ivaForFat('normal_mensal', 10
 eq('> 650.000 força mensal', ivaForFat('normal_trimestral', 700000), 'normal_mensal');
 eq('> 650.000 só permite mensal', allowedIvaRegimes(700000), ['normal_mensal']);
 
-// Contabilidade do ENI
+// Contabilidade do ENI e sociedades (art. 86.º-A CIRC)
 eq('ENI simplificado > 200.000 → organizada', regimeContabForFat('eni', 'simplificado', 250000), 'organizada');
 eq('ENI simplificado <= 200.000 mantém', regimeContabForFat('eni', 'simplificado', 150000), 'simplificado');
-eq('sociedade não forçada por este limiar', regimeContabForFat('lda', 'simplificado', 250000), 'simplificado');
+eq('sociedade simplificada > 200k → organizada (art.86-A)', regimeContabForFat('lda', 'simplificado', 250000), 'organizada');
+eq('sociedade <= 200k mantém simplificado', regimeContabForFat('lda', 'simplificado', 150000), 'simplificado');
+eq('sociedade em transparencia fiscal >200k mantém (não simplificado)', regimeContabForFat('lda', 'transparencia_fiscal', 250000), 'transparencia_fiscal');
+eq('sociedade em retgs >200k mantém (não simplificado)', regimeContabForFat('sa', 'retgs', 250000), 'retgs');
 
 // Guarda-rede central
 const ilegal = { ...defaultProfile, regimeIva: 'isento' as const, faturaçaoAnualPrevista: 20000 };

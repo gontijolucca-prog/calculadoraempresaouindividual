@@ -9,7 +9,7 @@ import ExportPackageModal from './ExportPackageModal';
 import { consumeOpenPackage, consumeFlowToggle } from './lib/profileIntent';
 import {
   ivaForFat as ivaRegimeForFat, regimeContabForFat, allowedIvaRegimes,
-  LIMIAR_ISENCAO_IVA, LIMIAR_IVA_MENSAL, LIMIAR_ENI_ORGANIZADA,
+  LIMIAR_ISENCAO_IVA, LIMIAR_IVA_MENSAL, LIMIAR_ENI_ORGANIZADA, SOCIEDADE_TYPES,
 } from './lib/profileRules';
 import type { OfficeSettings } from './lib/officeSettings';
 import type { HonorariosConfig } from './lib/honorarios';
@@ -744,7 +744,7 @@ export default function ClientProfile({
               onChange={e => setSt({ regimeContabilidade: regimeContabForFat(st.tipoEntidade, e.target.value as ClientProfile['regimeContabilidade'], st.faturaçaoAnualPrevista) })}
               className={inputClass}
             >
-              <option value="simplificado" disabled={(st.tipoEntidade === 'eni' || st.tipoEntidade === 'lda' || st.tipoEntidade === 'unipessoal' || st.tipoEntidade === 'sa' || st.tipoEntidade === 'socio_unico') && st.faturaçaoAnualPrevista > LIMIAR_ENI_ORGANIZADA}>Regime Simplificado</option>
+              <option value="simplificado" disabled={(st.tipoEntidade === 'eni' || SOCIEDADE_TYPES.includes(st.tipoEntidade)) && st.faturaçaoAnualPrevista > LIMIAR_ENI_ORGANIZADA}>Regime Simplificado</option>
               <option value="organizada">Contabilidade Organizada</option>
               {st.tipoEntidade !== 'eni' && <option value="transparencia_fiscal">Transparência Fiscal</option>}
               {st.tipoEntidade !== 'eni' && <option value="retgs">RETGS (Grupo de Empresas)</option>}
@@ -1394,7 +1394,7 @@ export default function ClientProfile({
                   onChange={e => updateProfile('regimeContabilidade', regimeContabForFat(profile.tipoEntidade, e.target.value as ClientProfile['regimeContabilidade'], profile.faturaçaoAnualPrevista))}
                   className={inputClass}
                 >
-                  <option value="simplificado" disabled={(profile.tipoEntidade === 'eni' || profile.tipoEntidade === 'lda' || profile.tipoEntidade === 'unipessoal' || profile.tipoEntidade === 'sa' || profile.tipoEntidade === 'socio_unico') && profile.faturaçaoAnualPrevista > LIMIAR_ENI_ORGANIZADA}>Regime Simplificado</option>
+                  <option value="simplificado" disabled={(profile.tipoEntidade === 'eni' || SOCIEDADE_TYPES.includes(profile.tipoEntidade)) && profile.faturaçaoAnualPrevista > LIMIAR_ENI_ORGANIZADA}>Regime Simplificado</option>
                   <option value="organizada">Contabilidade Organizada</option>
                   {profile.tipoEntidade !== 'eni' && <option value="transparencia_fiscal">Transparência Fiscal</option>}
                   {profile.tipoEntidade !== 'eni' && <option value="retgs">RETGS (Grupo de Empresas)</option>}
