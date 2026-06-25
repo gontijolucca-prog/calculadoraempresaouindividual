@@ -856,7 +856,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
         </div>
       </div>
 
-      <UpdateToolsPanel state={state} setState={setState} res={res} onSaveLog={addLog} />
+      <UpdateToolsPanel state={state} setState={setState} res={res} />
 
       <button
         type="button"
@@ -1300,7 +1300,10 @@ function fmtDate(iso: string): string {
   return d.toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-function AlertaBox({ alerta, key }: { alerta: { chave: string; severidade: 'info' | 'warning' | 'error'; texto: string }; key?: string | number }) {
+interface AlertaBoxProps {
+  alerta: { chave: string; severidade: 'info' | 'warning' | 'error'; texto: string };
+}
+const AlertaBox: React.FC<AlertaBoxProps> = ({ alerta }) => {
   const cores = {
     info:    { bg: 'bg-[#0677FF]/8',  border: 'border-[#0677FF]/30',  text: 'text-[#0677FF]' },
     warning: { bg: 'bg-amber-50',     border: 'border-amber-300',     text: 'text-amber-800' },
@@ -1350,8 +1353,6 @@ function UpdateToolsPanel({
             <span className="text-[11px] font-[500] text-slate-600">{label}</span>
           </label>
         ))}
-      </div>
-
       </div>
     </div>
   );

@@ -594,7 +594,7 @@ function AppContent() {
   const botSaftTargetRef = useRef<'novo' | 'empresa'>('novo');
 
   if (!loggedIn) {
-    return <LandingPage onEnter={() => setShowLogin(true)} />;
+    return <LandingPage onEnter={() => setLoggedIn(true)} />;
   }
 
   // O selector "Como queres trabalhar hoje?" foi removido: após login vai-se directo

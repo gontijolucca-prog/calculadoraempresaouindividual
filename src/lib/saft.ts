@@ -1413,9 +1413,14 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   if (companyName)  previsa.designacao  = companyName;
   if (period > 2000) previsa.periodo   = period;
 
-  // Volume de negócios para PPC/PEC (art. 105.º CIRC: só 71+72)
+  // Volume de negócios para PPC/PEC (art. 105.º CIRC: só 71+72).
+  // Fallback: se o utilizador definiu manualmente faturação anual no perfil, usa essa.
   if (volumeNegocios > 0) {
     previsa.volumeNegocios = Math.round(volumeNegocios * 100) / 100;
+  } else if (profile.faturaçaoAnualPrevista && profile.faturaçaoAnualPrevista > 0) {
+    previsa.volumeNegocios = Math.round(profile.faturaçaoAnualPrevista * 100) / 100;
+  } else {
+    previsa.volumeNegocios = 0; // explícito: VN=0 fiscalmente válido (sem PPC threshold)
   }
 
   // PME / Regime
