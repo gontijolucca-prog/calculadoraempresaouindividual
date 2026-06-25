@@ -17,7 +17,7 @@ function approx(label: string, got: number, exp: number, tol = 0.5) {
 // ── A: PME geral, matéria coletável 40 000 € → 15% ──
 {
   const s = defaultPreviSaState();
-  s.isPME = true; s.regime = 'geral'; s.useRaiCalc = false; s.c701_rai = 40000;
+  s.isPME = true; s.regime = 'geral'; s.useRaiCalc = false; s.c701_rai = 40000; s.periodo = 2026;
   const r = calculate(s);
   approx('A: matéria coletável', r.materiaColetavel, 40000);
   approx('A: coleta IRC (15%)', r.ircColeta, 6000);
@@ -27,7 +27,7 @@ function approx(label: string, got: number, exp: number, tol = 0.5) {
 // ── B: PME geral, 80 000 € → 50k×15% + 30k×19% ──
 {
   const s = defaultPreviSaState();
-  s.isPME = true; s.regime = 'geral'; s.c701_rai = 80000;
+  s.isPME = true; s.regime = 'geral'; s.c701_rai = 80000; s.periodo = 2026;
   const r = calculate(s);
   approx('B: coleta (7500 + 5700)', r.ircColeta, 13200);
 }
@@ -35,7 +35,7 @@ function approx(label: string, got: number, exp: number, tol = 0.5) {
 // ── C: não-PME geral, 100 000 € → 19% ──
 {
   const s = defaultPreviSaState();
-  s.isPME = false; s.regime = 'geral'; s.c701_rai = 100000;
+  s.isPME = false; s.regime = 'geral'; s.c701_rai = 100000; s.periodo = 2026;
   const r = calculate(s);
   approx('C: coleta (19%)', r.ircColeta, 19000);
 }
@@ -63,7 +63,7 @@ function approx(label: string, got: number, exp: number, tol = 0.5) {
 {
   const s = defaultPreviSaState();
   s.isPME = true; s.regime = 'geral'; s.useRaiCalc = false; s.c701_rai = 40000;
-  s.volumeNegocios = 400_000; s.retencoesFonte = 1000;
+  s.volumeNegocios = 400_000; s.retencoesFonte = 1000; s.periodo = 2026;
   const r = calculate(s);                       // c358 = 6000 (caso A)
   approx('G: taxa PPC 80% (VN ≤ 500k)', r.ppcTaxa, 0.8, 0.001);
   approx('G: PPC = (6000 − 1000) × 80%', r.ppcProximoAno, 4000);
@@ -74,7 +74,7 @@ function approx(label: string, got: number, exp: number, tol = 0.5) {
 {
   const s = defaultPreviSaState();
   s.isPME = true; s.regime = 'geral'; s.useRaiCalc = false; s.c701_rai = 40000;
-  s.volumeNegocios = 600_000;
+  s.volumeNegocios = 600_000; s.periodo = 2026;
   const r = calculate(s);
   approx('H: taxa PPC 95% (VN > 500k)', r.ppcTaxa, 0.95, 0.001);
   approx('H: PPC = 6000 × 95%', r.ppcProximoAno, 5700);

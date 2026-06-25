@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
+    "test": "for f in src/lib/*.test.ts; do node --import tsx \"$f\" || exit 1; done",
     "tauri": "tauri"
   },
   "dependencies": {
