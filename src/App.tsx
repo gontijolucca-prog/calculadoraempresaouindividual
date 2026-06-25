@@ -1497,6 +1497,12 @@ function AppContent() {
       <Suspense fallback={null}>
         <AIContabilista bridge={botBridge} liftBottom={draftNewClient} />
       </Suspense>
+
+      {/* Disclaimer legal — sempre visível enquanto logged in */}
+      <div className="border-t border-slate-200 bg-slate-50/80 px-4 py-1.5 text-[10px] text-slate-400 text-center leading-tight flex-shrink-0">
+        Cálculos indicativos — confirme com o seu TOC. 
+        <span className="hidden sm:inline"> Base legal: CIRS/CIRC/CIVA OE 2026.</span>
+      </div>
     </div>
     </SimulacaoSaveProvider>
   );

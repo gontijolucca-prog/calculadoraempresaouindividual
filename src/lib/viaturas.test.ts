@@ -53,5 +53,37 @@ const base: ViaturaInput = {
   is('D: isElecTaxed', r.isElecTaxed, true);
 }
 
-if (fails) { console.error(`\n${fails} caso(s) FALHARAM`); process.exit(1); }
-else console.log('\nTodos os casos golden de Viaturas passaram.');
+// ── E: PHEV compliant 44 999 € → TA 7,5% (escalão 37,5k-45k) ──
+{
+  const r = calcViatura({ ...base, engineType: 'phev', price: 44999, phevCompliant: true });
+  approx('E: taxa TA PHEV (37,5k-45k)', r.taRate, 0.075);
+  approx('E: IVA aquisição PHEV ≤50k', r.ivaAquisicaoDedutivel, 10349.77);
+  approx('E: limite depreciação PHEV', r.limit, 50000);
+}
+
+// ── F: comercial diesel → IVA aquisição 50%, combustível 50%, TA 0 ──
+{
+  const r = calcViatura({ ...base, category: 'comercial', engineType: 'diesel', price: 30000 });
+  const ivaEsperado = (30000 * 0.23) * 0.5;
+  approx('F: IVA aquisição comercial diesel (50%)', r.ivaAquisicaoDedutivel, ivaEsperado);
+  is('F: TA = 0 (comercial)', r.taRate, 0);
+  approx('F: combustível IVA 50%', r.ivaRecupCombustivel, 115);
+}
+
+// ── G: gasolina passageiros 30 000 € → TA 8% (escalão <37,5k) ──
+{
+  const r = calcViatura({ ...base, engineType: 'gasoline', price: 30000 });
+  approx('G: taxa TA gasolina <37,5k', r.taRate, 0.08);
+  approx('G: limite depreciação 25k (gasolina)', r.limit, 25000);
+}
+
+// ── H: actividade isenta (transportes) com exemptTA → TA 0, depreciação total ──
+{
+  const r = calcViatura({ ...base, activity: 'public_transport', price: 80000, exemptTA: true });
+  is('H: TA = 0 (transporte público)', r.taRate, 0);
+  approx('H: IVA aquisição 100% (actividade isenta)', r.ivaAquisicaoDedutivel, 18400);
+  is('H: limite = ∞ (deprecia total)', r.limit, Infinity);
+}
+
+if (fails) { console.error(`\\n${fails} caso(s) FALHARAM`); process.exit(1); }
+else console.log('\\nTodos os casos golden de Viaturas passaram.');

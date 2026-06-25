@@ -86,5 +86,34 @@ const base: FiscalInput = {
   check('F: 5+ sócios → nota SA como alternativa real', sa.outros.some(o => o.id === 'sa' && (o.nota ?? '').includes('alternativa real')));
 }
 
+// ── G: boundary 200k — simplificado vs organizada ──
+{
+  const noLimiar = compararEnquadramentos({ ...base, rev: 200000 });
+  check('G: 200k exactos → simplificado disponível', noLimiar.eniSimplificadoDisponivel);
+  const acima = compararEnquadramentos({ ...base, rev: 200001 });
+  check('G: 200 001 € → simplificado INDISPONÍVEL', !acima.eniSimplificadoDisponivel);
+  const org = compararEnquadramentos({ ...base, rev: 200001, fixedMo: 5000 });
+  check('G: >200k tem ENI organizada como alternativa', org.eniOrganizada.net > 0);
+}
+
+// ── H: bens (coef 0,15) vs serviços (coef 0,75) — diferença no rendimento ──
+{
+  const bens = compararEniLda({ ...base, isServices: false, rev: 100000 });
+  const serv = compararEniLda({ ...base, isServices: true, rev: 100000 });
+  approx('H: bens RC (15%)', bens.eni.rendColetavel, 15000);
+  approx('H: serviços RC (75% + acréscimo 15%)', serv.eni.rendColetavel, 85412.91);
+  check('H: bens IRS menor que serviços (RC menor)', bens.eni.irs < serv.eni.irs);
+}
+
+// ── I: regra de justificação 15% (art.31 n.13) — sem custos, >27 360 € ──
+{
+  const semCustos = compararEniLda({ ...base, isServices: true, rev: 50000, fixedMo: 0 });
+  // RC base = 50k × 0,75 = 37 500. Sem custos, justificação = 0 + 4587,09 = 4587,09.
+  // 15% × 50k = 7500. Acréscimo = 7500 - 4587,09 = 2912,91. RC final = 37 500 + 2912,91 = 40 412,91
+  approx('I: RC com acréscimo regra 15%', semCustos.eni.rendColetavel, 40412.91);
+  const comCustos = compararEniLda({ ...base, isServices: true, rev: 50000, fixedMo: 3000 });
+  check('I: com custos reais >15%, sem acréscimo', comCustos.eni.rendColetavel < 40000);
+}
+
 if (fails) { console.error(`\n${fails} caso(s) FALHARAM`); process.exit(1); }
 else console.log('\nTodos os casos golden de Fiscal passaram.');
