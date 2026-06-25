@@ -1317,20 +1317,28 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
   // Revenue: prefer SalesInvoices netTotal (NC subtracted), fall back to gross credit.
   // Usado para faturaçaoAnualPrevista / cálculo de RAI — engloba toda a classe 7.
   let revenue = salesNetTotal > 0 ? salesNetTotal : totalCredit;
-  // VN fiscal (art. 105.º CIRC): só 71 (vendas) + 72 (prestações serviços).
+
+  // Determine VN fiscal (art. 105.º CIRC): só 71 (vendas) + 72 (prestações serviços).
   // Separado da revenue porque subsídios (75), reversões (76), etc. não contam
   // para o escalão de PPC (80% vs 95%) nem para PEC.
+  // Se o SAF-T trouxer dados de contabilidade (accounts nivel 7), usa-os mesmo em
+  // simplified — mais preciso que salesNetTotal/totalCredit.
   let volumeNegocios = 0;
-  // For organizada, prefer class 7 total; VN vai só 71+72
+  const temAccountsCls7 = (previsa.rai_711 ?? 0) > 0 || (previsa.rai_712 ?? 0) > 0 || (previsa.rai_72 ?? 0) > 0;
+
   if (useRaiCalc) {
+    // Classe 7 completa para revenue (RAI)
     const cls7 = (previsa.rai_711 ?? 0) + (previsa.rai_712 ?? 0) + (previsa.rai_72 ?? 0)
                + (previsa.rai_74 ?? 0) + (previsa.rai_75 ?? 0) + (previsa.rai_76 ?? 0)
                + (previsa.rai_77 ?? 0) + (previsa.rai_78 ?? 0) + (previsa.rai_79 ?? 0);
     if (cls7 > 0) revenue = cls7;
-    // VN fiscal = só vendas + prestações serviços
+    // VN fiscal = só vendas + prestações serviços (71+72)
+    volumeNegocios = (previsa.rai_711 ?? 0) + (previsa.rai_712 ?? 0) + (previsa.rai_72 ?? 0);
+  } else if (temAccountsCls7) {
+    // Simplified mas SAF-T trouxe contas — usa as contas em vez de totalCredit genérico
     volumeNegocios = (previsa.rai_711 ?? 0) + (previsa.rai_712 ?? 0) + (previsa.rai_72 ?? 0);
   } else {
-    // Simplified: salesNetTotal/totalCredit já é só facturação (≈71+72)
+    // Simplified sem contas: salesNetTotal/totalCredit ≈ 71+72 (facturação emitida)
     volumeNegocios = revenue;
   }
 

@@ -11,3 +11,9 @@ coverage/
 # Cloudflare Pages local secrets
 .dev.vars
 .wrangler/
+pnpm-lock.yaml
+pnpm-workspace.yaml
+AUDITORIA-*.md
+abrir-simuladores.ps1
+.claude/
+.aider*
