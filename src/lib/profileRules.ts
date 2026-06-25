@@ -30,13 +30,17 @@ export function ivaForFat(regimeIva: RegimeIva, fat: number): RegimeIva {
   return regimeIva === 'isento' ? 'normal_trimestral' : regimeIva;
 }
 
-/** ENI no simplificado acima do limiar passa obrigatoriamente a organizada. */
+/** ENI no simplificado acima do limiar passa obrigatoriamente a organizada.
+ *  Art. 86.º-A CIRC: sociedades com VN >200k também precisam de contab. organizada. */
 export function regimeContabForFat(
   tipoEntidade: string, regimeContabilidade: ClientProfile['regimeContabilidade'], fat: number,
 ): ClientProfile['regimeContabilidade'] {
-  return tipoEntidade === 'eni' && regimeContabilidade === 'simplificado' && fat > LIMIAR_ENI_ORGANIZADA
-    ? 'organizada'
-    : regimeContabilidade;
+  const isSociedade = ['lda', 'unipessoal', 'sa', 'socio_unico'].includes(tipoEntidade);
+  if (tipoEntidade === 'eni' && regimeContabilidade === 'simplificado' && fat > LIMIAR_ENI_ORGANIZADA)
+    return 'organizada';
+  if (isSociedade && regimeContabilidade === 'simplificado' && fat > LIMIAR_ENI_ORGANIZADA)
+    return 'organizada';
+  return regimeContabilidade;
 }
 
 /**

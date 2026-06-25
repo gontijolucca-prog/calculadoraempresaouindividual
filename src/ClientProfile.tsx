@@ -744,7 +744,7 @@ export default function ClientProfile({
               onChange={e => setSt({ regimeContabilidade: regimeContabForFat(st.tipoEntidade, e.target.value as ClientProfile['regimeContabilidade'], st.faturaçaoAnualPrevista) })}
               className={inputClass}
             >
-              <option value="simplificado" disabled={st.tipoEntidade === 'eni' && st.faturaçaoAnualPrevista > LIMIAR_ENI_ORGANIZADA}>Regime Simplificado</option>
+              <option value="simplificado" disabled={(st.tipoEntidade === 'eni' || st.tipoEntidade === 'lda' || st.tipoEntidade === 'unipessoal' || st.tipoEntidade === 'sa' || st.tipoEntidade === 'socio_unico') && st.faturaçaoAnualPrevista > LIMIAR_ENI_ORGANIZADA}>Regime Simplificado</option>
               <option value="organizada">Contabilidade Organizada</option>
               {st.tipoEntidade !== 'eni' && <option value="transparencia_fiscal">Transparência Fiscal</option>}
               {st.tipoEntidade !== 'eni' && <option value="retgs">RETGS (Grupo de Empresas)</option>}
@@ -1366,7 +1366,7 @@ export default function ClientProfile({
               </div>
               <div>
                 <label className={labelClass}>Faturação Anual Prevista <Tip>O total de vendas/serviços que espera faturar num ano. Base para escolher o regime de IVA e calcular impostos.</Tip></label>
-                <input type="number" value={profile.faturaçaoAnualPrevista === 0 ? '' : profile.faturaçaoAnualPrevista} onChange={e => { const fat = Number(e.target.value) || 0; onChange({ ...profile, faturaçaoAnualPrevista: fat, ...ivaForFat(profile.regimeIva, fat), ...regimeForFat(profile.tipoEntidade, profile.regimeContabilidade, fat) }); }} className={inputClass} />
+                <input type="number" min="0" value={profile.faturaçaoAnualPrevista === 0 ? '' : profile.faturaçaoAnualPrevista} onChange={e => { const fat = Math.max(0, Number(e.target.value) || 0); onChange({ ...profile, faturaçaoAnualPrevista: fat, ...ivaForFat(profile.regimeIva, fat), ...regimeForFat(profile.tipoEntidade, profile.regimeContabilidade, fat) }); }} className={inputClass} />
               </div>
               <div>
                 <label className={labelClass}>Nr. Funcionários <Tip>Quantas pessoas trabalham na empresa com contrato de trabalho. Afeta os custos de Segurança Social patronal.</Tip></label>
@@ -1394,7 +1394,7 @@ export default function ClientProfile({
                   onChange={e => updateProfile('regimeContabilidade', regimeContabForFat(profile.tipoEntidade, e.target.value as ClientProfile['regimeContabilidade'], profile.faturaçaoAnualPrevista))}
                   className={inputClass}
                 >
-                  <option value="simplificado" disabled={profile.tipoEntidade === 'eni' && profile.faturaçaoAnualPrevista > LIMIAR_ENI_ORGANIZADA}>Regime Simplificado</option>
+                  <option value="simplificado" disabled={(profile.tipoEntidade === 'eni' || profile.tipoEntidade === 'lda' || profile.tipoEntidade === 'unipessoal' || profile.tipoEntidade === 'sa' || profile.tipoEntidade === 'socio_unico') && profile.faturaçaoAnualPrevista > LIMIAR_ENI_ORGANIZADA}>Regime Simplificado</option>
                   <option value="organizada">Contabilidade Organizada</option>
                   {profile.tipoEntidade !== 'eni' && <option value="transparencia_fiscal">Transparência Fiscal</option>}
                   {profile.tipoEntidade !== 'eni' && <option value="retgs">RETGS (Grupo de Empresas)</option>}
