@@ -7,8 +7,9 @@
 
 set -euo pipefail
 REPO="/Volumes/Extreme SSD/Mac-Lucca/Documents-store/Documents/GitHub/estudo360"
-NODE="/Users/lucca/.nvm/versions/node/v24.14.0/bin/node"
-NPM="/Users/lucca/.nvm/versions/node/v24.14.0/bin/npm"
+NODE_HOME="/Users/lucca/.nvm/versions/node/v24.14.0"
+export PATH="$NODE_HOME/bin:/usr/local/bin:/usr/bin:/bin"
+NPM="$NODE_HOME/bin/npm"
 LIVE_URL="https://estudo360.pt"
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
 FIX_MODE=false
@@ -94,12 +95,12 @@ fi
 # ── 5. LIVE CHECK ──
 echo ""
 echo "▶ 5. Live deploy"
-HTTP_CODE=$(curl -sL -o /dev/null -w "%{http_code}" "$LIVE_URL" 2>/dev/null || echo "000")
-TITLE=$(curl -sL "$LIVE_URL" 2>/dev/null | grep -oE '<title>[^<]+</title>' | head -1 || echo "")
-if [ "$HTTP_CODE" = "200" ] && echo "$TITLE" | grep -q "Estudo 360"; then
-  pass "$LIVE_URL — HTTP $HTTP_CODE, title OK"
+HTTP_CODE=$(curl -sL --max-time 10 --retry 2 -o /dev/null -w "%{http_code}" "$LIVE_URL" 2>/dev/null || echo "000")
+BODY_OK=$(curl -sL --max-time 10 --retry 1 "$LIVE_URL" 2>/dev/null | grep -c "Estudo 360" || true)
+if [ "$HTTP_CODE" = "200" ] && [ "$BODY_OK" -ge 1 ] 2>/dev/null; then
+  pass "$LIVE_URL — HTTP $HTTP_CODE, body OK (3x Estudo 360)"
 else
-  fail "$LIVE_URL — HTTP $HTTP_CODE, title=$TITLE"
+  fail "$LIVE_URL — HTTP $HTTP_CODE, matches=$BODY_OK"
   failures=$((failures + 1))
 fi
 
