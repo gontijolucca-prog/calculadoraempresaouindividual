@@ -716,7 +716,7 @@ export default function ClientProfile({
           </div>
           <div>
             <label className={labelClass}>Faturação Anual Prevista <Tip>O total de vendas/serviços que espera faturar num ano. Base para escolher o regime de IVA e calcular impostos.</Tip></label>
-            <input type="number" value={st.faturaçaoAnualPrevista === 0 ? '' : st.faturaçaoAnualPrevista} onChange={e => { const fat = Number(e.target.value) || 0; setSt({ faturaçaoAnualPrevista: fat, ...ivaForFat(st.regimeIva, fat), ...regimeForFat(st.tipoEntidade, st.regimeContabilidade, fat) }); }} className={inputClass} />
+            <input type="number" min="0" value={st.faturaçaoAnualPrevista === 0 ? '' : st.faturaçaoAnualPrevista} onChange={e => { const fat = Math.max(0, Number(e.target.value) || 0); setSt({ faturaçaoAnualPrevista: fat, ...ivaForFat(st.regimeIva, fat), ...regimeForFat(st.tipoEntidade, st.regimeContabilidade, fat) }); }} className={inputClass} />
           </div>
           <div>
             <label className={labelClass}>Nr. Funcionários <Tip>Quantas pessoas trabalham na empresa com contrato de trabalho. Afeta os custos de Segurança Social patronal.</Tip></label>
