@@ -1,4 +1,4 @@
-# CLAUDE.md
+# CLAUDE.md — Estudo 360
 
 ## Auto-learned Rules
 
@@ -12,36 +12,46 @@
 - Before committing any code change, run tsc --noEmit AND verify the production build succeeds — grep counts or partial checks are not sufficient.
 <!-- /claude-evolve:rule -->
 
-<!-- claude-evolve:rule id=r_mppi6d8y_3ecl score=5.1 created=2026-05-28 source=observation complexity=simple -->
-- Before navigating to an external console (Firebase, GCP, etc.), read local config files first to confirm the correct project ID — use Bash to cat .firebaserc, firebase.json, and grep the SDK config in parallel
-<!-- /claude-evolve:rule -->
-
-<!-- claude-evolve:rule id=r_mpubmvep_yp25 score=7.7 created=2026-05-31 source=observation complexity=simple -->
-- After rebuilding for a new preview server port, always kill the old vite preview process first (pkill -f 'vite preview') before spawning a new one to avoid port conflicts
-<!-- /claude-evolve:rule -->
-
-<!-- claude-evolve:rule id=r_mpubmvge_helb score=5.1 created=2026-05-31 source=anti_pattern complexity=simple -->
-- Search for screenshot files with scoped find paths (project dir, then home dir) — never start from / root
-<!-- /claude-evolve:rule -->
-
-<!-- claude-evolve:rule id=r_mq0oghsw_coqk score=5 created=2026-06-05 source=observation complexity=simple -->
-- After taking a browser screenshot, immediately Read the saved file to visually verify its contents before proceeding to the next action
-<!-- /claude-evolve:rule -->
-
-<!-- claude-evolve:rule id=r_mq0oghtq_ze4c score=5 created=2026-06-05 source=observation complexity=simple -->
-- When verifying production UI across multiple document templates, test each template in sequence within the same browser session — navigate, screenshot, Read, then switch template and repeat
-<!-- /claude-evolve:rule -->
-
-<!-- claude-evolve:rule id=r_mq0oocbw_tvsn score=5.4 created=2026-06-05 source=observation complexity=simple -->
-- When testing a fallback/default UI state (e.g. logo fallback), clear the relevant localStorage key programmatically via browser_evaluate before navigating to the target page — do not rely on manual state or assume the app starts clean
-<!-- /claude-evolve:rule -->
-
-<!-- claude-evolve:rule id=r_mq0ooccn_1qje score=7.6 created=2026-06-05 source=observation complexity=simple -->
-- After committing, monitor the CI/CD deployment pipeline via Monitor (not just assuming push = deploy) — use a polling loop against the GitHub API deploy status until the deployment reaches 'success' or times out
-<!-- /claude-evolve:rule -->
-
-<!-- claude-evolve:rule id=r_mq0oocdb_el5e score=5.1 created=2026-06-05 source=anti_pattern complexity=simple -->
-- Do not Edit a file without first using Read or a targeted grep to confirm the exact current state of the function/block being replaced — cat+grep reconnaissance at the Bash level is not a substitute for a Read before Edit
-<!-- /claude-evolve:rule -->
-
 <!-- claude-evolve:managed-end -->
+
+## Project state (2026-06-26 — Hermes handoff)
+
+**Estudo 360** = estudo360.pt — plataforma de simulação fiscal para escritórios de contabilidade.
+Cliente: Recofátima (contacto: Sandrine, WhatsApp 133921408831547@lid).
+
+### Paths
+- Repo: `/Volumes/Extreme SSD/Mac-Lucca/Documents-store/Documents/GitHub/estudo360`
+- GitHub: `gontijolucca-prog/calculadoraempresaouindividual`
+- Domain: https://estudo360.pt (CF Pages auto-deploy on push to main)
+- Node: `/Users/lucca/.nvm/versions/node/v24.14.0/bin/node`
+- NPM: `/Users/lucca/.nvm/versions/node/v24.14.0/bin/npm`
+- PDF report: `~/Desktop/relatorio-estudo360-junho2026.pdf`
+- HTML source: `~/Desktop/relatorio.html`
+
+### Stack
+- React 19 + Vite 6 + TypeScript 5.8 + Tailwind v4 + Firebase + Cloudflare Pages
+- 10 simuladores; 11 documentos automatizados; AI Contabilista (OpenRouter free models)
+- 254 testes golden (npm test); verify.sh em scripts/
+
+### Key fixes (June 2026 — Hermes sessions)
+- Volume de negócios: só contas 71+72 (art.105 CIRC) — `src/lib/saft.ts`
+- Taxas IRC dinâmicas por ano: `RATES_BY_YEAR` em `src/lib/previsaCalc.ts`
+- profileRules: sociedades >200k → organizada (art.86-A) — `src/lib/profileRules.ts`
+- SOCIEDADE_TYPES exported; ClientProfile.tsx reusa
+- Faturação não aceita negativos: `min="0"` + `Math.max(0,val)` — `src/ClientProfile.tsx`
+- Disclaimer legal: "Cálculos indicativos — confirme com o seu TOC" — `src/App.tsx`
+- 4.779 linhas removidas (código morto, pnpm-lock, auditorias)
+
+### Commands
+```
+npm run dev       # local dev
+npm run build     # production build
+npm run lint      # tsc --noEmit
+npm test          # all golden tests (tsx)
+bash scripts/verify.sh   # full check: lint+test+build+live
+```
+
+### Memory
+- Sessão Hermes 25-26 jun: 9 commits, GLM review cycles, +82 asserções golden
+- Deploy: commit `3e9e20eb` — CF Pages passing
+- Próximo: multi-tenancy, constantes fiscais externalizadas, onboarding
