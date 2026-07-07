@@ -166,44 +166,13 @@ export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual
         </p>
       </div>
 
-      {/* Confirmação de eliminação */}
+      {/* Confirmação de eliminação — focus trap + Escape key */}
       {confirmDelete && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-[1000] flex items-center justify-center p-6"
-        >
-          <button
-            type="button"
-            aria-label="Cancelar"
-            onClick={() => setConfirmDelete(null)}
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
-          />
-          <div className="relative bg-white rounded-[20px] shadow-2xl max-w-md w-full p-6">
-            <h2 className="text-[18px] font-[800] text-[#0B1D2D] mb-2">
-              Eliminar {confirmDelete.nome || 'esta empresa'}?
-            </h2>
-            <p className="text-[13px] text-[#6B7280] font-[500] mb-5">
-              Esta ação remove o perfil e os dados associados desta empresa do equipamento. Não pode ser desfeita.
-            </p>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(null)}
-                className="flex-1 py-2.5 rounded-[10px] text-[13px] font-[700] bg-[#F1F5F9] text-[#0B1D2D] hover:bg-[#E2E8F0] transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDelete(confirmDelete)}
-                className="flex-1 py-2.5 rounded-[10px] text-[13px] font-[700] bg-red-600 text-white hover:bg-red-700 transition-colors"
-              >
-                Eliminar
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteConfirmModal
+          name={confirmDelete.nome || 'esta empresa'}
+          onConfirm={() => handleDelete(confirmDelete)}
+          onCancel={() => setConfirmDelete(null)}
+        />
       )}
 
       {/* Nova Empresa: escolher fluxo (SAFT vs manual) */}
@@ -524,6 +493,63 @@ function EmptyState({ onNova, hasQuery }: { onNova: () => void; hasQuery: boolea
       >
         <Plus className="w-4 h-4" /> Criar primeira empresa
       </button>
+    </div>
+  );
+}
+
+function DeleteConfirmModal({ name, onConfirm, onCancel }: { name: string; onConfirm: () => void; onCancel: () => void }) {
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    cancelRef.current?.focus();
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel();
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        cancelRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onCancel]);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Eliminar ${name}`}
+      className="fixed inset-0 z-[1000] flex items-center justify-center p-6"
+    >
+      <button
+        type="button"
+        aria-label="Cancelar"
+        onClick={onCancel}
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
+      />
+      <div className="relative bg-white rounded-[20px] shadow-2xl max-w-md w-full p-6">
+        <h2 className="text-[18px] font-[800] text-[#0B1D2D] mb-2">
+          Eliminar {name}?
+        </h2>
+        <p className="text-[13px] text-[#6B7280] font-[500] mb-5">
+          Esta ação remove o perfil e os dados associados desta empresa do equipamento. Não pode ser desfeita.
+        </p>
+        <div className="flex gap-3">
+          <button
+            ref={cancelRef}
+            type="button"
+            onClick={onCancel}
+            className="flex-1 py-2.5 rounded-[10px] text-[13px] font-[700] bg-[#F1F5F9] text-[#0B1D2D] hover:bg-[#E2E8F0] transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="flex-1 py-2.5 rounded-[10px] text-[13px] font-[700] bg-red-600 text-white hover:bg-red-700 transition-colors"
+          >
+            Eliminar
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
