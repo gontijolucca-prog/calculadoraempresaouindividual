@@ -64,7 +64,7 @@ async function fetchAndCheckVersion() {
     });
 
     if (!response.ok) {
-      console.warn('[Version Checker] Failed to fetch version:', response.status);
+      if (import.meta.env.DEV) console.warn('[Version Checker] Failed to fetch version:', response.status);
       return;
     }
 
