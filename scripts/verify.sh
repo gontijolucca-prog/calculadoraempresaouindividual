@@ -6,7 +6,7 @@
 # Exit code: 0 = tudo OK, 1 = falhou (mas --fix tentou corrigir)
 
 set -euo pipefail
-REPO="/Volumes/Extreme SSD/Mac-Lucca/Documents-store/Documents/GitHub/estudo360"
+REPO="$(cd "$(dirname "$0")/.." && pwd)"
 NODE_HOME="/Users/lucca/.nvm/versions/node/v24.14.0"
 export PATH="$NODE_HOME/bin:/usr/local/bin:/usr/bin:/bin"
 NPM="$NODE_HOME/bin/npm"

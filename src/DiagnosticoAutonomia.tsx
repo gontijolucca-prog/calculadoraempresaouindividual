@@ -63,7 +63,7 @@ function calcScores(d: DiagnosticoState) {
 
   // Pilar 2 — Tesouraria
   const liquidez = d.passivoCorrente > 0 ? d.ativoCorrente / d.passivoCorrente : 5;
-  const mesesDisp = d.custoFixoMensal > 0 ? d.disponibilidades / d.custoFixoMensal : 0;
+  const mesesDisp = d.custoFixoMensal > 0 ? d.disponibilidades / d.custoFixoMensal : Infinity;
   const s2a = liquidez >= 1.5 ? 5 : liquidez >= 1 ? 3 : 1;
   const s2b = mesesDisp >= 6 ? 5 : mesesDisp >= 3 ? 3 : 1;
   const p2 = (s2a + s2b) / 2;
@@ -388,7 +388,7 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
             { label: 'Autonomia Financeira', value: d.ativoTotal > 0 ? `${(d.capitaisProprios / d.ativoTotal * 100).toFixed(1)}%` : '—', ok: d.ativoTotal > 0 && d.capitaisProprios / d.ativoTotal >= 0.25 },
             { label: 'Liquidez Geral', value: d.passivoCorrente > 0 ? `${(d.ativoCorrente / d.passivoCorrente).toFixed(2)}x` : '—', ok: d.passivoCorrente > 0 && d.ativoCorrente / d.passivoCorrente >= 1 },
             { label: 'Margem Líquida', value: d.volumeNegocios > 0 ? `${(d.resultadoLiquido / d.volumeNegocios * 100).toFixed(1)}%` : '—', ok: d.volumeNegocios > 0 && d.resultadoLiquido / d.volumeNegocios >= 0.05 },
-            { label: 'Meses de Autonomia', value: d.custoFixoMensal > 0 ? `${(d.disponibilidades / d.custoFixoMensal).toFixed(1)}m` : '—', ok: d.custoFixoMensal > 0 && d.disponibilidades / d.custoFixoMensal >= 3 },
+            { label: 'Meses de Autonomia', value: d.custoFixoMensal > 0 ? `${(d.disponibilidades / d.custoFixoMensal).toFixed(1)}m` : (d.disponibilidades > 0 ? '∞' : '—'), ok: d.custoFixoMensal > 0 ? d.disponibilidades / d.custoFixoMensal >= 3 : d.disponibilidades > 0 },
             { label: 'Conc. maior cliente', value: d.volumeNegocios > 0 ? `${(d.faturacaoMaiorCliente / d.volumeNegocios * 100).toFixed(1)}%` : '—', ok: d.volumeNegocios > 0 && d.faturacaoMaiorCliente / d.volumeNegocios <= 0.4 },
             { label: 'Dep. financiamento ext.', value: d.totalFinanciamento > 0 ? `${(d.financiamentoExterno / d.totalFinanciamento * 100).toFixed(1)}%` : '—', ok: d.totalFinanciamento > 0 && d.financiamentoExterno / d.totalFinanciamento <= 0.60 },
           ].map(({ label, value, ok }) => (

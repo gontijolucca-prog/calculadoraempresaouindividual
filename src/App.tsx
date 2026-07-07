@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Loader2, Save, Calculator, ArrowLeft } from 'lucide-react';
+import { useAuth } from './lib/auth';
 import ClientProfile, { defaultProfile } from './ClientProfile';
 import { UpdateNotification } from './components/UpdateNotification';
 import { useUnsavedEdits } from './hooks/useUnsavedEdits';
@@ -331,7 +332,8 @@ function NoEmpresaGate({ onGo }: { onGo: () => void }) {
 }
 
 function AppContent() {
-  const [loggedIn, setLoggedIn] = useState(() => loadFromStorage('loggedIn', false));
+  const { user, loading: authLoading, logout } = useAuth();
+  const loggedIn = !!user;
   // Mode is persisted: ao atualizar a página o utilizador continua no mesmo contexto.
   // Default = 'empresa' (CRM): após login vai directo para a Lista de Empresas. O
   // selector "Como queres trabalhar hoje?" foi removido do fluxo.
@@ -424,7 +426,6 @@ function AppContent() {
 
   // Auto-save em localStorage — debounce implícito via React batching.
   useEffect(() => { saveToStorage('clientProfile', clientProfile); }, [clientProfile]);
-  useEffect(() => { saveToStorage('loggedIn', loggedIn); }, [loggedIn]);
   useEffect(() => { saveToStorage('mode', mode); }, [mode]);
   useEffect(() => { saveToStorage('lastView', view); }, [view]);
   useEffect(() => { saveOfficeSettings(officeSettings); }, [officeSettings]);
@@ -594,7 +595,9 @@ function AppContent() {
   const botSaftTargetRef = useRef<'novo' | 'empresa'>('novo');
 
   if (!loggedIn) {
-    return <LandingPage onEnter={() => setLoggedIn(true)} />;
+    // onEnter is called after successful Firebase Auth — the auth state change
+    // automatically updates loggedIn via useAuth hook, so this is a no-op.
+    return <LandingPage onEnter={() => {}} />;
   }
 
   // O selector "Como queres trabalhar hoje?" foi removido: após login vai-se directo
@@ -815,11 +818,10 @@ function AppContent() {
     // Lê os bytes em bruto; decodeSaftText() escolhe o charset pelo declarado no XML.
     reader.readAsArrayBuffer(file);
   };
-  const handleLogout = () => {
-    setLoggedIn(false);
+  const handleLogout = async () => {
+    await logout();
     setMode('empresa');
     setView('empresas');
-    clearStorage('loggedIn');
     clearStorage('mode');
   };
   // Deep-link from Ficha → Legal at a given anchor.
@@ -1087,6 +1089,7 @@ function AppContent() {
   };
 
   const content = (
+    <main id="main-content" tabIndex={-1}>
     <Suspense fallback={<ViewLoading />}>
       <PageTransition pageKey={view}>
         {introFor && view === introFor && SIM_INTROS[introFor] && (
@@ -1180,6 +1183,7 @@ function AppContent() {
           os últimos campos do formulário. */}
       {draftNewClient && <div aria-hidden style={{ height: 96 }} />}
     </Suspense>
+    </main>
   );
 
   const CurrentLayout = LAYOUTS[0].component;

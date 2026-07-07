@@ -42,8 +42,13 @@ export const ESCALOES_DEMO = ESCALOES_OFICIAL_2026;
 // fator (coerência entre ferramentas). ⚠ Percentagens a confirmar por um contabilista.
 export const REGIOES: Record<string, number> = { continente: 1.0, acores: 0.80, madeira: 0.70 };
 
-// Mínimo de existência 2026 — 14 × SMN (art. 70.º CIRS, OE 2026).
-export const MINIMO_EXISTENCIA = 14 * SMN_2026; // 12.880,00 €
+// Mínimo de existência 2026 — art. 70.º-A CIRS, OE 2026.
+// Valores por composição do agregado familiar (não é fixo 14×SMN).
+export const MINIMO_EXISTENCIA_TITULAR = 14 * SMN_2026; // 12.880,00 € (titular sozinho)
+export const MINIMO_EXISTENCIA_CONJUGE = 16_044; // €16.044 (com cônjuge — 2025: €15.171 × atualização)
+export const MINIMO_EXISTENCIA_DEPENDENTE = 3_909; // €3.909 por dependente (2025: €3.697 × atualização)
+// Fallback retro-compatível (14 × SMN)
+export const MINIMO_EXISTENCIA = MINIMO_EXISTENCIA_TITULAR;
 // Dedução específica Cat A — 8,54 × IAS_2026 (art. 25.º CIRS).
 export const DED_ESPECIFICA_CAT_A = Math.round(8.54 * IAS_2026 * 100) / 100; // 4 587,09 €
 // Limite de isenção IRS Jovem — 55 × IAS_2026 (art. 12.º-B CIRS).
@@ -409,14 +414,21 @@ export function simular(sim: IRSSim, opts: { tabela?: Tabela } = {}): IRSResulta
 
   let impostoFinal = Math.max(0, coletaTotal - ded.total - beneficioMunicipal);
 
-  // Mínimo de Existência — Art.º 70.º CIRS: o IRS líquido devido pelo SP nunca
-  // pode reduzir o rendimento líquido abaixo do mínimo de existência (14 × SMN).
+  // Mínimo de Existência — Art.º 70.º-A CIRS: o IRS líquido devido pelo SP nunca
+  // pode reduzir o rendimento líquido abaixo do mínimo de existência, que varia
+  // conforme a composição do agregado familiar.
   // Aplicado apenas a agregados com rendimento de trabalho dependente; ENI puro
   // (cat. B) tem regra própria que este motor ainda não modela.
-  if (rendGlobalBruto > 0 && rendGlobalBruto <= MINIMO_EXISTENCIA) {
+  const nrDep = +sim.dependentes || 0;
+  const temConjuge = sim.cenario === 'conjunto' && sim.agregado && sim.agregado.length > 1;
+  const minimoExistencia = MINIMO_EXISTENCIA_TITULAR
+    + (temConjuge ? MINIMO_EXISTENCIA_CONJUGE - MINIMO_EXISTENCIA_TITULAR : 0)
+    + nrDep * MINIMO_EXISTENCIA_DEPENDENTE;
+
+  if (rendGlobalBruto > 0 && rendGlobalBruto <= minimoExistencia) {
     impostoFinal = 0;
-  } else if (rendGlobalBruto > MINIMO_EXISTENCIA && (rendGlobalBruto - impostoFinal) < MINIMO_EXISTENCIA) {
-    impostoFinal = Math.max(0, rendGlobalBruto - MINIMO_EXISTENCIA);
+  } else if (rendGlobalBruto > minimoExistencia && (rendGlobalBruto - impostoFinal) < minimoExistencia) {
+    impostoFinal = Math.max(0, rendGlobalBruto - minimoExistencia);
   }
 
   // Tributação autónoma (anexos E/F/G a 28%) — não está sujeita ao mínimo de

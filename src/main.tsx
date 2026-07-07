@@ -2,6 +2,7 @@ import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import ErrorBoundary from './ErrorBoundary.tsx';
+import { AuthProvider } from './lib/auth';
 import './index.css';
 
 // O version-checker é iniciado dentro do App (useEffect), para poder mostrar o
@@ -10,7 +11,9 @@ import './index.css';
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </ErrorBoundary>
   </StrictMode>,
 );

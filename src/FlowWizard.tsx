@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ArrowLeft, ArrowRight, ListOrdered, ShieldCheck } from 'lucide-react';
 import { cn } from './lib/utils';
@@ -62,6 +62,16 @@ export function FlowWizard<T>({
     ? 100
     : Math.round(((currentStep) / Math.max(1, totalQuestions)) * 100);
 
+  // Escape key handler
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   const Icon = IconComponent || ListOrdered;
@@ -69,7 +79,7 @@ export function FlowWizard<T>({
   return (
     <div className="h-full w-full bg-white flex flex-col overflow-hidden">
       {/* Top progress bar */}
-      <div className="shrink-0 w-full h-1.5 bg-[#F1F5F9]">
+      <div className="shrink-0 w-full h-1.5 bg-[#F1F5F9]" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Progresso do wizard">
         <motion.div
           className="h-full bg-[#0677FF]"
           initial={false}
@@ -79,7 +89,7 @@ export function FlowWizard<T>({
       </div>
 
       {/* Header */}
-      <div className="shrink-0 flex items-center gap-3 px-6 sm:px-10 lg:px-16 py-5">
+      <div className="shrink-0 flex items-center gap-3 px-6 sm:px-10 lg:px-16 py-5" role="banner">
         <div className="bg-[#F1F5F9] text-[#0F172A] p-2.5 rounded-[12px]">
           <Icon className="w-5 h-5" />
         </div>

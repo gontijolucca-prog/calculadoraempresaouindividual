@@ -522,6 +522,7 @@ function EmptyState({ onNova, hasQuery }: { onNova: () => void; hasQuery: boolea
 
 function formatRelative(ts: number): string {
   const diff = Date.now() - ts;
+  if (diff < 0) return 'agora'; // future timestamp (clock skew)
   const m = Math.floor(diff / 60000);
   if (m < 1) return 'agora';
   if (m < 60) return `há ${m} min`;

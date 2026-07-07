@@ -20,6 +20,9 @@ let pollTimer: ReturnType<typeof setInterval> | null = null;
 let updateAvailableCallback: (() => void) | null = null;
 let reloadNeededCallback: (() => void) | null = null;
 let checkUnsavedEditsFn: (() => boolean) | null = null;
+let focusHandler: (() => void) | null = null;
+let visHandler: (() => void) | null = null;
+let unloadHandler: (() => void) | null = null;
 
 export function initVersionChecker(config: VersionCheckConfig = {}) {
   const {
@@ -45,17 +48,12 @@ export function initVersionChecker(config: VersionCheckConfig = {}) {
   // de separador, voltar de outra app no telemóvel), por isso ouvimos também
   // `visibilitychange` — garante que ninguém fica preso numa versão antiga só
   // porque o evento de foco não chegou a disparar.
-  window.addEventListener('focus', () => {
-    fetchAndCheckVersion();
-  });
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') fetchAndCheckVersion();
-  });
-
-  // Cleanup on unload
-  window.addEventListener('beforeunload', () => {
-    if (pollTimer) clearInterval(pollTimer);
-  });
+  focusHandler = () => fetchAndCheckVersion();
+  visHandler = () => { if (document.visibilityState === 'visible') fetchAndCheckVersion(); };
+  unloadHandler = () => { if (pollTimer) clearInterval(pollTimer); };
+  window.addEventListener('focus', focusHandler);
+  document.addEventListener('visibilitychange', visHandler);
+  window.addEventListener('beforeunload', unloadHandler);
 }
 
 async function fetchAndCheckVersion() {
@@ -80,7 +78,7 @@ async function fetchAndCheckVersion() {
     }
 
     if (currentVersion !== lastVersion) {
-      console.log(
+      if (import.meta.env.DEV) console.log(
         '[Version Checker] Update detected:',
         lastVersion,
         '→',
@@ -95,13 +93,13 @@ async function fetchAndCheckVersion() {
         // No unsaved edits — safe to reload automatically after brief delay
         // (gives user time to see the toast)
         setTimeout(() => {
-          console.log('[Version Checker] Reloading to new version...');
+          if (import.meta.env.DEV) console.log('[Version Checker] Reloading to new version...');
           reloadNeededCallback?.();
           // Hard reload: bypasses cache, fetches fresh index.html + all assets
           window.location.replace(window.location.href);
         }, 2000);
       } else {
-        console.log(
+        if (import.meta.env.DEV) console.log(
           '[Version Checker] Unsaved edits detected — showing manual reload option',
         );
         // User will see toast with manual "Reload now" button
@@ -110,18 +108,18 @@ async function fetchAndCheckVersion() {
       lastVersion = currentVersion;
     }
   } catch (error) {
-    console.error('[Version Checker] Error checking version:', error);
+    if (import.meta.env.DEV) console.error('[Version Checker] Error checking version:', error);
   }
 }
 
 export function stopVersionChecker() {
-  if (pollTimer) {
-    clearInterval(pollTimer);
-    pollTimer = null;
-  }
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  if (focusHandler) { window.removeEventListener('focus', focusHandler); focusHandler = null; }
+  if (visHandler) { document.removeEventListener('visibilitychange', visHandler); visHandler = null; }
+  if (unloadHandler) { window.removeEventListener('beforeunload', unloadHandler); unloadHandler = null; }
 }
 
 export function manualReload() {
-  console.log('[Version Checker] Manual reload triggered');
+  if (import.meta.env.DEV) console.log('[Version Checker] Manual reload triggered');
   window.location.replace(window.location.href);
 }

@@ -235,7 +235,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
               </div>
               <div>
                 <label className={labelCls}>Anos de atividade <Tip>Há quantos anos está a trabalhar. O benefício de IRS Jovem varia conforme o número de anos de atividade.</Tip></label>
-                <input type="number" min="0" max="5" value={state.anosAtividade === 0 ? '' : state.anosAtividade} onChange={e => setSt({ anosAtividade: intInput(e.target.value) })} className={inputCls} />
+                <input type="number" min="0" max="9" value={state.anosAtividade === 0 ? '' : state.anosAtividade} onChange={e => setSt({ anosAtividade: intInput(e.target.value) })} className={inputCls} />
               </div>
             </div>
           )}
@@ -624,7 +624,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
               </div>
               <div>
                 <label className={labelCls}>Anos de atividade <Tip>Há quantos anos está a trabalhar. O benefício de IRS Jovem varia conforme o número de anos de atividade.</Tip></label>
-                <input type="number" min="0" max="5" value={s.anosAtividade === 0 ? '' : s.anosAtividade} onChange={e => setState({ anosAtividade: intInput(e.target.value) })} className={inputCls} />
+                <input type="number" min="0" max="9" value={s.anosAtividade === 0 ? '' : s.anosAtividade} onChange={e => setState({ anosAtividade: intInput(e.target.value) })} className={inputCls} />
               </div>
             </div>
           )}

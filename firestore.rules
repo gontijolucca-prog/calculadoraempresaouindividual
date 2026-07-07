@@ -1,21 +1,8 @@
 rules_version = '2';
 
-// Regras conservadoras para a coleção `updates` (lista de updates dev↔cliente).
-//
-// Estado actual: a app não tem autenticação real (LoginPage é mock). Por isso,
-// as regras abaixo aplicam restrições estruturais em vez de identidade:
-//
-//  - read: qualquer pessoa pode ler (a lista é mostrada na UI).
-//  - create: qualquer pessoa pode criar, MAS só com a forma esperada e tamanho razoável.
-//  - update: só permitido alternar os flags `atualizado` e `aprovado` (toggle workflow);
-//    o `text` e `createdAt` ficam imutáveis para evitar reescritas oportunistas.
-//  - delete: só permitido em items já marcados como `aprovado:true` (housekeeping
-//    seguro). Items pendentes ou só atualizados não podem ser apagados — protege
-//    contra "cliente apaga update do dev por engano".
-//
-// Quando integrares Firebase Auth, restringir create/update/delete a:
-//   request.auth != null && request.auth.token.admin == true
-// E adicionar regras específicas para outros caminhos (clientProfile, fichaState, etc.).
+// Firestore Security Rules — Estudo 360
+// Requer Firebase Auth para escrita. Leitura pública para updates (compatibilidade).
+// Multi-tenant: cada utilizador só acede aos seus dados (empresas/{uid}).
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -23,29 +10,26 @@ service cloud.firestore {
     match /updates/{docId} {
       allow read: if true;
 
-      allow create: if isValidUpdateCreate(request.resource.data);
+      allow create: if request.auth != null && isValidUpdateCreate(request.resource.data);
 
-      allow update: if isToggleOnly(resource.data, request.resource.data);
+      allow update: if request.auth != null && isToggleOnly(resource.data, request.resource.data);
 
-      allow delete: if resource.data.aprovado == true;
+      allow delete: if request.auth != null && resource.data.aprovado == true;
     }
 
-    // Registry de empresas por escritório (multi-tenant via officeId = NIF do escritório).
-    // Ainda sem auth: validamos estruturalmente que o payload é um array de empresas.
-    // Quando integrares Firebase Auth, restringir a request.auth.uid == officeId.
+    // Registry de empresas por utilizador (multi-tenant via officeId = UID do utilizador).
+    // Cada utilizador só lê/escreve os seus próprios dados.
     match /empresas/{officeId} {
-      allow read: if true;
-      allow write: if isValidEmpresasPayload(request.resource.data);
+      allow read: if request.auth != null && request.auth.uid == officeId;
+      allow write: if request.auth != null && request.auth.uid == officeId && isValidEmpresasPayload(request.resource.data);
     }
 
-    // Sugestões de melhoria recolhidas pelo AI Contabilista (bot do site).
-    // Sem auth real: validação estrutural. Qualquer um cria (o bot regista a
-    // sugestão do utilizador), todos leem (vista de administração interna),
-    // update só para alternar o estado, e sem delete (housekeeping manual).
+    // Sugestões de melhoria recolhidas pelo AI Contabilista.
+    // Autenticação obrigatória para criar/atualizar.
     match /ai_suggestions/{docId} {
-      allow read: if true;
-      allow create: if isValidSuggestion(request.resource.data);
-      allow update: if isSuggestionStatusOnly(resource.data, request.resource.data);
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && isValidSuggestion(request.resource.data);
+      allow update: if request.auth != null && isSuggestionStatusOnly(resource.data, request.resource.data);
       allow delete: if false;
     }
 
