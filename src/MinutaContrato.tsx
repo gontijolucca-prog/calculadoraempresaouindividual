@@ -108,15 +108,14 @@ export default function MinutaContrato({
           #${printRootId} h1, #${printRootId} h2 { break-after: avoid; page-break-after: avoid; }
           @page { size: A4; margin: 0; }
         }
-        /* Em ecrãs estreitos a folha A4 não cabe — encolhe com zoom (impressão fica intacta). */
+        /* Em ecrãs estreitos a folha A4 não cabe — mostra vista de formulário */
         @media screen and (max-width: 820px) {
           #${printRootId} .mc-page { zoom: 0.46; }
+          #${printRootId} .mc-mobile-form { display: block; }
         }
         @media screen and (max-width: 480px) {
-          #${printRootId} .mc-page { zoom: 0.42; }
-        }
-        @media screen and (max-width: 380px) {
-          #${printRootId} .mc-page { zoom: 0.38; }
+          #${printRootId} .mc-page { display: none; }
+          #${printRootId} .mc-mobile-form { display: block; }
         }
       `}</style>
 
@@ -124,6 +123,21 @@ export default function MinutaContrato({
       <div className="no-print" style={{ maxWidth: '210mm', margin: '0 auto 8px auto', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, fontSize: '12px', color: '#1D4ED8', fontWeight: 600 }}>
         <span aria-hidden>✏️</span>
         <span>Clique em qualquer cláusula ou texto para o editar antes de imprimir.</span>
+      </div>
+
+      {/* Vista de formulário para mobile — layout vertical legível */}
+      <div className="mc-mobile-form" style={{ display: 'none', maxWidth: 480, margin: '0 auto', padding: 16 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0B1D2D', marginBottom: 12 }}>Contrato de Prestação de Serviços</h2>
+        <p style={{ fontSize: 13, color: '#64748B', marginBottom: 16 }}>Escritório: {office.nome || '—'} · Cliente: {profile.nomeCliente || profile.nif || '(NIF)'}</p>
+        <div style={{ background: 'white', borderRadius: 12, padding: 16, border: '1px solid #E2E8F0', fontSize: 14, lineHeight: 1.8, color: '#333' }}>
+          <p style={{ marginBottom: 12 }}>Contrato de prestação de serviços contabilísticos entre o escritório e o cliente.</p>
+          <p style={{ marginBottom: 12 }}><strong>Objeto:</strong> Prestação de serviços de contabilidade, fiscalidade e administração.</p>
+          <p style={{ marginBottom: 12 }}><strong>Retribuição:</strong> {eur(Object.values(honorarios.baseMensal || {})[0] || 0)}/mês + IVA</p>
+          <p style={{ marginBottom: 12 }}><strong>Duração:</strong> 12 meses, renovável.</p>
+          <div style={{ textAlign: 'center', marginTop: 16 }}>
+            <button onClick={() => window.print()} style={{ background: '#0677FF', color: 'white', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Imprimir contrato</button>
+          </div>
+        </div>
       </div>
 
       <div className="mc-page" contentEditable suppressContentEditableWarning>

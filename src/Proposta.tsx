@@ -116,15 +116,14 @@ export default function Proposta({ profile, office, honorarios, servicosIds, onS
           #${printRootId} table, #${printRootId} tr, #${printRootId} .pp-keep { break-inside: avoid; page-break-inside: avoid; }
           @page { size: A4; margin: 0; }
         }
-        /* Em ecrãs estreitos a folha A4 não cabe — encolhe com zoom (impressão fica intacta). */
+        /* Em ecrãs estreitos a folha A4 não cabe — mostra vista de formulário */
         @media screen and (max-width: 820px) {
           #${printRootId} .pp-page { zoom: 0.46; }
+          #${printRootId} .pp-mobile-form { display: block; }
         }
         @media screen and (max-width: 480px) {
-          #${printRootId} .pp-page { zoom: 0.42; }
-        }
-        @media screen and (max-width: 380px) {
-          #${printRootId} .pp-page { zoom: 0.38; }
+          #${printRootId} .pp-page { display: none; }
+          #${printRootId} .pp-mobile-form { display: block; }
         }
       `}</style>
 
@@ -132,6 +131,27 @@ export default function Proposta({ profile, office, honorarios, servicosIds, onS
       <div className="no-print" style={{ maxWidth: '210mm', margin: '0 auto 8px auto', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, fontSize: '12px', color: '#1D4ED8', fontWeight: 600 }}>
         <span aria-hidden>✏️</span>
         <span>Clique em qualquer texto para o editar antes de imprimir.</span>
+      </div>
+
+      {/* Vista de formulário para mobile — layout vertical legível */}
+      <div className="pp-mobile-form" style={{ display: 'none', maxWidth: 480, margin: '0 auto', padding: 16 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0B1D2D', marginBottom: 12 }}>Proposta de Honorários</h2>
+        <p style={{ fontSize: 13, color: '#64748B', marginBottom: 16 }}>{today()} · Ref.: {profile.nif || '(NIF)'}</p>
+        <div style={{ background: 'white', borderRadius: 12, padding: 16, border: '1px solid #E2E8F0' }}>
+          {ativas.map((l, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F1F5F9' }}>
+              <span style={{ fontSize: 14, color: '#333' }}>{l.descricao}</span>
+              <span style={{ fontSize: 14, fontWeight: 700 }}>{eur(l.valorMensal)}</span>
+            </div>
+          ))}
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderTop: '2px solid #0B1D2D', marginTop: 8 }}>
+            <span style={{ fontSize: 16, fontWeight: 800 }}>Mensal c/ IVA</span>
+            <span style={{ fontSize: 16, fontWeight: 900, color: '#0677FF' }}>{eur(mensalComIVA)}</span>
+          </div>
+          <div style={{ textAlign: 'center', marginTop: 12 }}>
+            <button onClick={() => window.print()} style={{ background: '#0677FF', color: 'white', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Imprimir proposta</button>
+          </div>
+        </div>
       </div>
 
       <div className="pp-page" contentEditable suppressContentEditableWarning>
