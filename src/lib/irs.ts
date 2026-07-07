@@ -145,6 +145,7 @@ export interface IRSSim {
   cenario: Cenario;
   dependentes: number;
   dep0a3: number;
+  dep4a6?: number;
   regiao: Regiao;
   concelho: string;
   despesas: Despesas;
@@ -152,6 +153,7 @@ export interface IRSSim {
   beneficioMunicipal: number;
   perdas: number;
   rendimentosAutonomos?: RendimentosAutonomos;
+  monoparental?: boolean;
 }
 
 export interface ModeloLinha {
@@ -215,6 +217,7 @@ function deducoesColeta(d: {
   gerais?: number;
   dependentes?: number;
   dep0a3?: number;
+  dep4a6?: number;
   pensoes?: number;
   cenario?: Cenario;
   monoparental?: boolean;
@@ -235,22 +238,30 @@ function deducoesColeta(d: {
   const tetoGerais = d.monoparental ? 335 : (d.cenario === 'conjunto' ? 500 : 250);
   const dGerais = Math.min((d.gerais || 0) * taxaGerais, tetoGerais);
   // Dedução por dependente — Art. 78.º-A CIRS, OE 2026:
-  //  €600 por dependente > 3 anos
+  //  €600 por dependente > 6 anos
   //  €726 1.º dependente ≤ 3 anos
-  //  €900 a partir do 2.º dependente com idade ≤ 6 anos (independente da idade do 1.º)
+  //  €900 a partir do 2.º dependente com idade ≤ 6 anos (alargado de ≤3 para ≤6 no OE 2026)
   //
-  // Limitação prática deste motor: `dep0a3` distingue só ≤3a; a regra "2.º+ ≤6a"
-  // (OE 2026, alargou de ≤3 para ≤6) não pode ser totalmente aplicada sem campo
-  // adicional para 4-6 anos. Aplicamos a regra exata para os filhos ≤3a (que é
-  // o caso mais comum) e mantemos €600 para >3a.
+  // Regra completa:
+  //  - ≤3 anos: 1.º = €726, 2.º+ = €900
+  //  - 4-6 anos: se já há ≤3 anos, conta como 2.º+ ≤6a = €900; senão = €600
+  //  - >6 anos: €600
   let dDependentes = 0;
   const totalDeps = d.dependentes || 0;
   const ate3 = Math.min(d.dep0a3 || 0, totalDeps);
+  const ate6 = Math.min(d.dep4a6 || 0, totalDeps - ate3); // 4-6 anos
   if (totalDeps > 0) {
-    const mais3 = totalDeps - ate3;
-    dDependentes = mais3 * 600;
-    if (ate3 >= 1) dDependentes += 726;            // 1.º filho ≤ 3 anos
-    if (ate3 >= 2) dDependentes += (ate3 - 1) * 900; // 2.º+ filhos ≤ 3 anos (e <6 por extensão)
+    const mais6 = totalDeps - ate3 - ate6; // >6 anos
+    dDependentes = mais6 * 600; // >6 anos: €600 cada
+    // ≤3 anos
+    if (ate3 >= 1) dDependentes += 726; // 1.º filho ≤ 3 anos
+    if (ate3 >= 2) dDependentes += (ate3 - 1) * 900; // 2.º+ ≤3 anos = €900
+    // 4-6 anos: se há ≤3 anos, são "2.º+ ≤6a" = €900; senão €600
+    if (ate3 >= 1 && ate6 >= 1) {
+      dDependentes += ate6 * 900; // todos os 4-6 são 2.º+ ≤6a
+    } else {
+      dDependentes += ate6 * 600; // sem filhos ≤3, ficam a €600
+    }
   }
   const dPensoes = Math.min((d.pensoes || 0) * 0.2, 419.22);
   const total = dSaude + dEducacao + dHabitacao + dLares + dGerais + dDependentes + dPensoes;
@@ -399,6 +410,7 @@ export function simular(sim: IRSSim, opts: { tabela?: Tabela } = {}): IRSResulta
     gerais: +sim.despesas?.gerais || 0,
     dependentes: +sim.dependentes || 0,
     dep0a3: +sim.dep0a3 || 0,
+    dep4a6: +sim.dep4a6 || 0,
     pensoes: +sim.despesas?.pensoes || 0,
     cenario: sim.cenario,
     monoparental: (sim as { monoparental?: boolean }).monoparental,
@@ -525,6 +537,7 @@ export interface IRSState {
   concelho: string;
   dependentes: number;
   dep0a3: number;
+  dep4a6: number;
   beneficioMunicipal: number;
   pagamentosConta: number;
   perdas: number;
@@ -545,6 +558,7 @@ export function defaultIRSState(): IRSState {
     concelho: 'outro',
     dependentes: 0,
     dep0a3: 0,
+    dep4a6: 0,
     beneficioMunicipal: 0,
     pagamentosConta: 0,
     perdas: 0,

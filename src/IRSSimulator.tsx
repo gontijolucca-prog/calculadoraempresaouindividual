@@ -4,6 +4,7 @@ import { Receipt, Plus, Trash2, Users, Wallet, Sliders } from 'lucide-react';
 import { cn } from './lib/utils';
 import { intInput } from './lib/inputGuards';
 import { Tip } from './Tip';
+import { Combobox } from './Combobox';
 import {
   simular,
   MUNICIPIOS_BM,
@@ -33,6 +34,7 @@ function toSim(s: IRSState): IRSSim {
     cenario: s.cenario,
     dependentes: +s.dependentes,
     dep0a3: +s.dep0a3,
+    dep4a6: +s.dep4a6,
     regiao: s.regiao,
     concelho: s.concelho,
     despesas: s.despesas,
@@ -40,7 +42,8 @@ function toSim(s: IRSState): IRSSim {
     beneficioMunicipal: +(s.beneficioMunicipal || 0),
     perdas: +(s.perdas || 0),
     rendimentosAutonomos: s.rendimentosAutonomos,
-  };
+    monoparental: !!(s as any).monoparental,
+  } as IRSSim;
 }
 
 export default function IRSSimulator({ initialState, onStateChange }: Props) {
@@ -116,25 +119,37 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className={labelCls}>Dependentes</label>
-              <input type="number" min={0} step={1} className={inputCls} value={s.dependentes === 0 ? '' : s.dependentes} onChange={(e) => { const nd = intInput(e.target.value); set({ dependentes: nd, dep0a3: Math.min(s.dep0a3, nd) }); }} />
+              <input type="number" min={0} step={1} className={inputCls} value={s.dependentes === 0 ? '' : s.dependentes} onChange={(e) => { const nd = intInput(e.target.value); set({ dependentes: nd, dep0a3: Math.min(s.dep0a3, nd), dep4a6: Math.min(s.dep4a6, Math.max(0, nd - Math.min(s.dep0a3, nd))) }); }} />
             </div>
             <div>
               <label className={labelCls}>… dos quais ≤ 3 anos</label>
               <input type="number" min={0} max={s.dependentes} step={1} className={inputCls} value={s.dep0a3 === 0 ? '' : s.dep0a3} onChange={(e) => set({ dep0a3: intInput(e.target.value, 0, s.dependentes) })} />
             </div>
+            <div>
+              <label className={labelCls}>… dos quais 4–6 anos</label>
+              <input type="number" min={0} max={Math.max(0, s.dependentes - s.dep0a3)} step={1} className={inputCls} value={s.dep4a6 === 0 ? '' : s.dep4a6} onChange={(e) => set({ dep4a6: intInput(e.target.value, 0, Math.max(0, s.dependentes - s.dep0a3)) })} />
+            </div>
           </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={!!(s as any).monoparental} onChange={(e) => set({ monoparental: e.target.checked } as any)} className="w-4 h-4 rounded border-[#E2E8F0] text-[#0677FF] focus:ring-[#0677FF]" />
+            <span className="text-[13px] font-[500] text-[#475569]">Família monoparental</span>
+            <Tip>Dedutibilidade majorada: 45% (em vez de 35%) com teto €335 (em vez de €250).</Tip>
+          </label>
           <div>
             <label className={labelCls}>Concelho de residência <Tip>Determina o benefício municipal — devolução de parte da coleta (até 5%) decidida pela câmara.</Tip></label>
-            <select className={inputCls} value={s.concelho} onChange={(e) => set({ concelho: e.target.value })}>
-              {concelhos.map((k) => (
-                <option key={k} value={k}>
-                  {k.replace(/\b\w/g, (l) => l.toUpperCase())} (BM {(MUNICIPIOS_BM[k] * 100).toFixed(2).replace('.', ',')}%)
-                </option>
-              ))}
-            </select>
+            <Combobox
+              value={s.concelho}
+              onChange={(v) => set({ concelho: v })}
+              options={concelhos.map(k => ({
+                value: k,
+                label: k.replace(/\b\w/g, (l) => l.toUpperCase()),
+                hint: `BM ${(MUNICIPIOS_BM[k] * 100).toFixed(2).replace('.', ',')}%`,
+              }))}
+              placeholder="Pesquisar concelho..."
+            />
           </div>
         </section>
 

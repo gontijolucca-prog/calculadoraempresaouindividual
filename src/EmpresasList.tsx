@@ -346,16 +346,24 @@ const CardHistorico: React.FC<{ empId: string; onRestore: (rec: SimulationRecord
               <span className="hidden sm:inline">Abrir</span>
             </button>
             {confirming ? (
-              <button
-                type="button"
-                onClick={() => { deleteSimulacao(empId, rec.id); setConfirmId(null); setTick(n => n + 1); onChanged(); }}
-                onBlur={() => setConfirmId(null)}
-                autoFocus
-                className="px-2.5 py-1.5 rounded-[8px] text-[12px] font-[700] text-white bg-red-600 hover:bg-red-700 transition-all shrink-0"
-                title="Confirmar eliminação"
-              >
-                Confirmar?
-              </button>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => { deleteSimulacao(empId, rec.id); setConfirmId(null); setTick(n => n + 1); onChanged(); }}
+                  autoFocus
+                  className="px-2.5 py-1.5 rounded-[8px] text-[12px] font-[700] text-white bg-red-600 hover:bg-red-700 transition-all"
+                  title="Confirmar eliminação"
+                >
+                  Confirmar?
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmId(null)}
+                  className="px-1.5 py-1.5 rounded-[8px] text-[12px] font-[700] text-slate-500 hover:bg-slate-100 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
             ) : (
               <button
                 type="button"

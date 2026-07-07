@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Loader2, Save, Calculator, ArrowLeft } from 'lucide-react';
 import { useAuth } from './lib/auth';
+import ErrorBoundary from './ErrorBoundary';
 import ClientProfile, { defaultProfile } from './ClientProfile';
 import { UpdateNotification } from './components/UpdateNotification';
 import { useUnsavedEdits } from './hooks/useUnsavedEdits';
@@ -1090,6 +1091,7 @@ function AppContent() {
 
   const content = (
     <main id="main-content" tabIndex={-1}>
+    <ErrorBoundary>
     <Suspense fallback={<ViewLoading />}>
       <PageTransition pageKey={view}>
         {introFor && view === introFor && SIM_INTROS[introFor] && (
@@ -1183,6 +1185,7 @@ function AppContent() {
           os últimos campos do formulário. */}
       {draftNewClient && <div aria-hidden style={{ height: 96 }} />}
     </Suspense>
+    </ErrorBoundary>
     </main>
   );
 

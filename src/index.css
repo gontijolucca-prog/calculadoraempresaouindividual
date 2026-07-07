@@ -157,3 +157,47 @@ textarea:focus-visible,
     position: static !important;
   }
 }
+
+/* ── Print rules for Simulators (IRS, Salário, etc.) ── */
+@media print {
+  /* Hide sidebar, nav, landing page */
+  nav, aside, .no-print, [role='banner'] {
+    display: none !important;
+  }
+
+  /* Main content fills page */
+  #main-content {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  /* Simulator grid: force single column */
+  #main-content > div {
+    display: block !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Hide simulator left pane (form inputs) — only print results */
+  #main-content .bg-white.border-r {
+    display: none !important;
+  }
+
+  /* Results pane fills width */
+  #main-content .bg-\[\#F5F7FA\] {
+    background: white !important;
+  }
+
+  /* Cards: no shadow, clean borders */
+  #main-content [class*="rounded-"] {
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  /* Dark hero card: print with colors */
+  #main-content .bg-\[\#0F172A\] {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

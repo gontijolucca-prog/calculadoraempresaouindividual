@@ -142,16 +142,24 @@ export default function SimulacoesHistory({ empresaId, empresaNome, onRestore, o
                       <span className="hidden sm:inline">Abrir</span>
                     </button>
                     {confirming ? (
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(rec.id)}
-                        onBlur={() => setConfirmId(null)}
-                        autoFocus
-                        className="px-3 py-2 rounded-[10px] text-[12px] font-[700] text-white bg-red-600 hover:bg-red-700 active:scale-[0.97] transition-all"
-                        title="Confirmar eliminação"
-                      >
-                        Confirmar?
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(rec.id)}
+                          autoFocus
+                          className="px-3 py-2 rounded-[10px] text-[12px] font-[700] text-white bg-red-600 hover:bg-red-700 active:scale-[0.97] transition-all"
+                          title="Confirmar eliminação"
+                        >
+                          Confirmar?
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmId(null)}
+                          className="px-2 py-2 rounded-[10px] text-[12px] font-[700] text-slate-500 hover:bg-slate-100 transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     ) : (
                       <button
                         type="button"
