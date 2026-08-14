@@ -201,3 +201,20 @@ textarea:focus-visible,
     print-color-adjust: exact !important;
   }
 }
+
+/* ── Destaque da oferta de visita guiada (AI Contabilista) ── */
+@keyframes guia-pulse-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(6, 119, 255, 0.45), 0 24px 60px rgba(2, 6, 23, 0.18); }
+  50%      { box-shadow: 0 0 0 7px rgba(6, 119, 255, 0.10), 0 24px 60px rgba(2, 6, 23, 0.18); }
+}
+.guia-destaque { animation: guia-pulse-ring 1.5s ease-in-out infinite; }
+
+@keyframes guia-card-pulse {
+  0%, 100% { border-color: rgba(6, 119, 255, 0.35); background-color: rgba(6, 119, 255, 0.07); }
+  50%      { border-color: rgba(6, 119, 255, 0.75); background-color: rgba(6, 119, 255, 0.13); }
+}
+.guia-card-destaque { animation: guia-card-pulse 1.5s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .guia-destaque, .guia-card-destaque { animation: none; }
+}

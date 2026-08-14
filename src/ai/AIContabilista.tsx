@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useImperativeHandle } from 'react';
 import { Sparkles, X, Send, Trash2, Check, RotateCcw, Lightbulb, FileUp } from 'lucide-react';
 import { parseReply, type BotAction, type FillField, type ViewId } from './actions';
 import { registerSuggestion } from './suggestions';
+import { GUIAS, reativarGuias, guiaDesativado, type ViewKey } from '../lib/guias';
 
 // Bridge fornecida pelo App: dá ao bot poderes de navegação e preenchimento,
 // e um contexto ANONIMIZADO (sem dados sensíveis) para enviar ao modelo.
@@ -23,6 +24,17 @@ export interface BotBridge {
   downloadDoc?: (docId: string) => Promise<{ ok: boolean; label?: string; reason?: string }>;
   currentUser?: string;
   currentView?: string;
+  /** Inicia a visita guiada da ferramenta indicada. */
+  startTour?: (view: string) => void;
+  /** Marca a ferramenta como "não perguntar novamente". */
+  setTourDisabled?: (view: string) => void;
+  /** true enquanto uma visita guiada está a decorrer. */
+  tourActive?: () => boolean;
+}
+
+/** API exposta pelo bot à app (ref). */
+export interface BotApi {
+  notifyTourEnd: (view: string) => void;
 }
 
 // Nota de ação aplicada — guarda a ação para o utilizador poder REPETI-LA com um clique.
@@ -37,6 +49,7 @@ interface ChatMsg {
   replies?: string[];               // sugestões de próximo passo (botões clicáveis)
   saftCta?: 'novo' | 'empresa' | 'escolher'; // botão de SAF-T; 'escolher' mostra os clientes
   downloadPicker?: boolean;         // assistente guiado: escolher cliente + documento
+  tourOffer?: { titulo: string; intro: string } | null; // oferta de visita guiada
 }
 
 // Chat só por sessão (sobrevive a refresh, limpa-se ao fechar o separador/browser);
@@ -155,13 +168,71 @@ function DownloadPicker({ bridge }: { bridge: BotBridge }) {
   );
 }
 
-export default function AIContabilista({ bridge, liftBottom = false }: { bridge: BotBridge; liftBottom?: boolean }) {
+export default function AIContabilista({ ref, bridge, liftBottom = false, view, viewTitle = '' }: {
+  ref?: React.Ref<BotApi>;
+  bridge: BotBridge;
+  liftBottom?: boolean;
+  view: string;
+  viewTitle?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<ChatMsg[]>(loadChat);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const lastOfferView = useRef<string>('');
+  // Destaque + som quando o bot sugere uma visita guiada
+  const [destaque, setDestaque] = useState(false);
+  const destaqueTimer = useRef<number | undefined>(undefined);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  // Desbloqueia o áudio no primeiro gesto do utilizador (política de autoplay)
+  useEffect(() => {
+    const unlock = () => {
+      try {
+        if (!audioCtxRef.current) {
+          const AC = window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+          if (AC) audioCtxRef.current = new AC();
+        }
+        audioCtxRef.current?.resume?.();
+      } catch { /* sem áudio — o destaque visual continua a funcionar */ }
+    };
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+  }, []);
+
+  const tocarSino = useCallback(() => {
+    try {
+      const ctx = audioCtxRef.current;
+      if (!ctx || ctx.state !== 'running') return;
+      const t = ctx.currentTime;
+      const nota = (freq: number, inicio: number, dur: number, ganho: number) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        g.gain.setValueAtTime(ganho, t + inicio);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + inicio + dur);
+        osc.connect(g).connect(ctx.destination);
+        osc.start(t + inicio);
+        osc.stop(t + inicio + dur + 0.03);
+      };
+      nota(880, 0, 0.16, 0.07);       // lá — suave
+      nota(1174.66, 0.11, 0.22, 0.05); // ré — confirmação
+    } catch { /* noop */ }
+  }, []);
+
+  const notificarGuia = useCallback(() => {
+    setDestaque(true);
+    window.clearTimeout(destaqueTimer.current);
+    destaqueTimer.current = window.setTimeout(() => setDestaque(false), 3400);
+    tocarSino();
+  }, [tocarSino]);
 
   // Sem persistência: o chat vive só em memória e desaparece no refresh/nova tab.
 
@@ -169,15 +240,32 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
     if (open) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [msgs, busy, open]);
 
-  // O painel NÃO abre sozinho — só quando o utilizador clica no botão.
-  // A saudação proativa fica pré-carregada para o aguardar quando abrir.
+  // O bot FALA PRIMEIRO: abre sozinho com a saudação proativa (pedido Lucca).
+  // Depois, sempre que o utilizador muda de página, oferece uma visita guiada.
   useEffect(() => {
     setMsgs((prev) => {
-      // Só injeta a saudação proativa se ainda não houve conversa nesta sessão.
       if (prev.length <= 1) return [PROACTIVE_GREETING];
       return prev;
     });
+    setOpen(true);
   }, []);
+
+  // Oferta de visita guiada em cada página nova (salvo "não perguntar novamente").
+  useEffect(() => {
+    const v = view as ViewKey;
+    if (v === lastOfferView.current) return; // mesma vista — não repete a cada render
+    lastOfferView.current = v;
+    if (bridge.tourActive?.()) return; // já há um tour a decorrer
+    const g = GUIAS[v];
+    if (!g) return;
+    if (guiaDesativado(v)) return;
+    setMsgs((prev) => [...prev, {
+      role: 'assistant',
+      content: '',
+      tourOffer: { titulo: g.titulo, intro: g.intro },
+    }]);
+    notificarGuia(); // destaque visual + som
+  }, [view, bridge, notificarGuia]);
 
   useEffect(() => {
     if (!open) return;
@@ -231,6 +319,24 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
     const trimmed = text.trim();
     if (!trimmed || busy) return;
     setInput('');
+
+    // Pedido de guia/tour → tratado localmente (sem chamar a API):
+    // reativa as perguntas e oferece a visita guiada da página atual.
+    if (/\b(guia|tour|visita)\b/i.test(trimmed)) {
+      reativarGuias();
+      const v = view as ViewKey;
+      const g = GUIAS[v];
+      setMsgs((prev) => [
+        ...prev,
+        { role: 'user', content: trimmed },
+        ...(g
+          ? [{ role: 'assistant' as const, content: 'Claro! Aqui tens a visita guiada desta página 👇', tourOffer: { titulo: g.titulo, intro: g.intro } }]
+          : [{ role: 'assistant' as const, content: 'Esta página não tem visita guiada — mas posso explicar-te o que ela faz!' }]),
+      ]);
+      if (g) notificarGuia();
+      return;
+    }
+
     const history = [...msgs, { role: 'user' as const, content: trimmed }];
     setMsgs(history);
     setBusy(true);
@@ -270,7 +376,7 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
     } finally {
       setBusy(false);
     }
-  }, [msgs, busy, bridge, applyAutoActions]);
+  }, [msgs, busy, bridge, applyAutoActions, view]);
 
   const confirmFill = (idx: number) => {
     setMsgs((prev) => {
@@ -293,6 +399,18 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
 
   const clearChat = () => setMsgs([GREETING]);
 
+  // Aviso ao bot quando o tour fecha: mensagem de follow-up (ativação — nunca beco sem saída).
+  const notifyTourEnd = useCallback((v: string) => {
+    const label = VIEW_LABEL[v as ViewId] ?? viewTitle ?? v;
+    setMsgs((prev) => [...prev, {
+      role: 'assistant',
+      content: `Fechaste a visita guiada de **${label}**. Posso ajudar-te a avançar — por exemplo: *"abre o PreviSa"*, *"cria um cliente novo"* ou *"gera um documento"*.`,
+      replies: ['Abre o PreviSa', 'Cria um cliente novo', 'Gera um documento'],
+    }]);
+  }, [viewTitle]);
+
+  useImperativeHandle(ref, () => ({ notifyTourEnd }), [notifyTourEnd]);
+
   return (
     <>
       {/* Botão flutuante */}
@@ -301,7 +419,7 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Abrir o AI Contabilista"
-          className={`no-print fixed z-[90] ${liftBottom ? 'bottom-24' : 'bottom-5'} right-5 sm:bottom-6 sm:right-6 flex items-center gap-2.5 pl-3.5 pr-4 py-3 rounded-full text-white font-[800] text-[14px] active:scale-[0.97] transition-all group`}
+          className={`no-print fixed z-[90] ${liftBottom ? 'bottom-24' : 'bottom-5'} right-5 sm:bottom-6 sm:right-6 flex items-center gap-2.5 pl-3.5 pr-4 py-3 rounded-full text-white font-[800] text-[14px] active:scale-[0.97] transition-all group ${destaque ? 'guia-destaque' : ''}`}
           style={{
             background: 'linear-gradient(135deg, #0677FF 0%, #00C2FF 100%)',
             boxShadow: '0 8px 28px -8px rgba(6,119,255,0.65), 0 0 0 1px rgba(6,119,255,0.25)',
@@ -317,7 +435,7 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
 
       {/* Painel */}
       {open && (
-        <div className="no-print fixed inset-0 z-[95] sm:inset-auto sm:bottom-6 sm:right-6 flex items-end sm:items-stretch justify-center sm:justify-end">
+        <div className={`no-print fixed inset-0 z-[95] sm:inset-auto sm:bottom-6 sm:right-6 flex items-end sm:items-stretch justify-center sm:justify-end ${destaque ? 'guia-destaque rounded-[20px]' : ''}`}>
           {/* Backdrop (só mobile) */}
           <button
             type="button"
@@ -449,6 +567,32 @@ export default function AIContabilista({ bridge, liftBottom = false }: { bridge:
                     )}
                     {m.downloadPicker && (
                       <DownloadPicker bridge={bridge} />
+                    )}
+                    {m.tourOffer && (
+                      <div className={`mt-2.5 rounded-[12px] border border-[#0677FF]/25 bg-[#0677FF]/5 p-3 ${destaque ? 'guia-card-destaque' : ''}`}>
+                        <div className="text-[11px] font-[800] uppercase tracking-[0.4px] text-[#0677FF] mb-1">
+                          Visita guiada · {m.tourOffer.titulo}
+                        </div>
+                        <p className="text-[12px] text-slate-600 leading-relaxed">{m.tourOffer.intro}</p>
+                        <label className="mt-2 flex items-center gap-2 text-[11.5px] text-slate-500 cursor-pointer select-none">
+                          <input type="checkbox"
+                            onChange={(e) => { if (e.target.checked) bridge.setTourDisabled?.(view); }}
+                            className="accent-[#0677FF]" />
+                          Não perguntar novamente nesta ferramenta
+                        </label>
+                        <div className="mt-2 flex gap-2">
+                          <button type="button"
+                            onClick={() => bridge.startTour?.(view)}
+                            className="inline-flex items-center gap-1.5 text-[12px] font-[800] px-3 py-2 rounded-xl bg-[#0677FF] text-white hover:bg-[#0560d6] active:scale-[0.97] transition-all">
+                            Ver tour · {viewTitle || m.tourOffer.titulo}
+                          </button>
+                          <button type="button"
+                            onClick={() => setMsgs((prev) => prev.filter((x) => x !== m))}
+                            className="text-[12px] font-[700] px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 active:scale-[0.97] transition-all">
+                            Agora não
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </div>
 

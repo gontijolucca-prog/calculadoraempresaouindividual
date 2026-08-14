@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import React, { useCallback, useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Loader2, Save, Calculator, ArrowLeft } from 'lucide-react';
 import { useAuth } from './lib/auth';
 import ErrorBoundary from './ErrorBoundary';
@@ -24,6 +24,7 @@ import {
   syncEmpresasFromFirestore,
   saveEmpresasToFirestore,
   listEmpresas,
+  saveEmpresas,
   deleteEmpresa,
   addSimulacao,
   upsertAutoSimulacao,
@@ -46,6 +47,9 @@ import { parseSAFT, decodeSaftText, normalizeXmlEncodingToUtf8, type SAFTParseRe
 import { enforceProfileRules } from './lib/profileRules';
 import { DOC_TYPES, downloadAsWord } from './lib/wordDocs';
 import { downloadPrevisaExcel } from './lib/previsaExcel';
+import GuiaSistema from './components/GuiaSistema';
+import type { ViewKey } from './lib/guias';
+import { marcarGuiaDesativado } from './lib/guias';
 import { LAYOUTS } from './Layouts';
 import { loadFromStorage, saveToStorage, clearStorage } from './lib/storage';
 import { loadOfficeSettings, saveOfficeSettings, type OfficeSettings } from './lib/officeSettings';
@@ -70,7 +74,7 @@ import { resultSimulacao } from './lib/simResults';
 import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
 import { SimulacaoSaveProvider, type SimSaveCtx } from './SimulacaoSave';
 import { setByPath } from './ai/actions';
-import type { BotBridge } from './ai/AIContabilista';
+import type { BotBridge, BotApi } from './ai/AIContabilista';
 import SuggestionsAdmin from './ai/SuggestionsAdmin';
 const SimulacoesHistory = lazy(() => import('./SimulacoesHistory'));
 const AIContabilista = lazy(() => import('./ai/AIContabilista'));
@@ -335,6 +339,13 @@ function NoEmpresaGate({ onGo }: { onGo: () => void }) {
 function AppContent() {
   const { user, loading: authLoading, logout } = useAuth();
   const loggedIn = !!user;
+  // Sessão local (piloto): a app abre na landing; "Entrar" entra direto, sem
+  // email/senha/Google. Os dados continuam só no localStorage desta máquina.
+  const [sessaoLocal, setSessaoLocal] = useState<boolean>(() => loadFromStorage<boolean>('sessao', false));
+  const entrarLocal = useCallback(() => {
+    saveToStorage('sessao', true);
+    setSessaoLocal(true);
+  }, []);
   // Mode is persisted: ao atualizar a página o utilizador continua no mesmo contexto.
   // Default = 'empresa' (CRM): após login vai directo para a Lista de Empresas. O
   // selector "Como queres trabalhar hoje?" foi removido do fluxo.
@@ -418,6 +429,33 @@ function AppContent() {
   // render do simulador.
   const [justSavedSim, setJustSavedSim] = useState(false);
   const lastResumoRef = useRef<string>('');
+  // API do bot (para o guia avisar quando o tour termina)
+  const botApiRef = useRef<BotApi | null>(null);
+  // Pedido de visita guiada vindo do AI Contabilista (nonce novo = iniciar).
+  const [tourRequest, setTourRequest] = useState<{ view: ViewKey; nonce: number } | null>(null);
+
+  // ── Importação de empresas (só DEV): se existir public/import-empresas.json e o
+  // registry local estiver vazio, semeia as empresas (ex: dados exportados do live).
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    if (loadFromStorage<boolean>('importFeito', false)) return;
+    fetch('/import-empresas.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: unknown) => {
+        const list = Array.isArray((data as { list?: unknown })?.list)
+          ? (data as { list: EmpresaRecord[] }).list
+          : [];
+        if (list.length > 0 && listEmpresas().length === 0) {
+          saveEmpresas(list);
+          setCurrentEmpresaId(list[0].id);
+          setCurrentEmpresaIdState(list[0].id);
+          saveToStorage('importFeito', true);
+          setEmpresasRefresh((n) => n + 1);
+        }
+      })
+      .catch(() => { /* sem ficheiro → nada a importar */ });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const reportResumo = useRef((r: string) => { lastResumoRef.current = r; }).current;
 
   // Definições do escritório (branding + honorários). Persistidas em localStorage —
@@ -595,10 +633,10 @@ function AppContent() {
   const botSaftInputRef = useRef<HTMLInputElement>(null);
   const botSaftTargetRef = useRef<'novo' | 'empresa'>('novo');
 
-  if (!loggedIn) {
-    // onEnter is called after successful Firebase Auth — the auth state change
-    // automatically updates loggedIn via useAuth hook, so this is a no-op.
-    return <LandingPage onEnter={() => {}} />;
+  // Sessão local (piloto): landing primeiro; "Entrar" entra direto (sem
+  // email/senha/Google); "Sair" no menu volta à landing. Dados ficam locais.
+  if (!sessaoLocal) {
+    return <LandingPage onEnter={entrarLocal} />;
   }
 
   // O selector "Como queres trabalhar hoje?" foi removido: após login vai-se directo
@@ -820,6 +858,8 @@ function AppContent() {
     reader.readAsArrayBuffer(file);
   };
   const handleLogout = async () => {
+    clearStorage('sessao'); // volta à landing (sessão local simulada)
+    setSessaoLocal(false);
     await logout();
     setMode('empresa');
     setView('empresas');
@@ -1004,6 +1044,9 @@ function AppContent() {
   const botBridge: BotBridge = {
     currentUser: officeSettings.nome?.trim() || undefined,
     currentView: VIEW_TITLES[view],
+    startTour: (v) => setTourRequest({ view: v as ViewKey, nonce: Date.now() }),
+    setTourDisabled: (v) => marcarGuiaDesativado(v as ViewKey),
+    tourActive: () => !!tourRequest,
     navigate: (v) => setView(v as ViewType),
     setMode: (m) => { if (m === 'novo-cliente') handleNovaEmpresaManual(); else selectMode('empresa'); },
     openSaftUpload: (mode = 'novo') => {
@@ -1090,7 +1133,7 @@ function AppContent() {
   };
 
   const content = (
-    <main id="main-content" tabIndex={-1}>
+    <main id="main-content" tabIndex={-1} data-view={view}>
     <ErrorBoundary>
     <Suspense fallback={<ViewLoading />}>
       <PageTransition pageKey={view}>
@@ -1502,8 +1545,15 @@ function AppContent() {
       />
       {/* AI Contabilista — assistente flutuante (grátis, OpenRouter free models) */}
       <Suspense fallback={null}>
-        <AIContabilista bridge={botBridge} liftBottom={draftNewClient} />
+        <AIContabilista ref={botApiRef} bridge={botBridge} liftBottom={draftNewClient} view={view} viewTitle={VIEW_TITLES[view]} />
       </Suspense>
+
+      {/* Visitas guiadas — controladas pelo AI Contabilista (oferece e inicia) */}
+      <GuiaSistema
+        view={view as ViewKey}
+        iniciar={tourRequest}
+        onEnd={(v) => botApiRef.current?.notifyTourEnd(v)}
+      />
 
       {/* Disclaimer legal — sempre visível enquanto logged in */}
       <div className="border-t border-slate-200 bg-slate-50/80 px-4 py-1.5 text-[10px] text-slate-400 text-center leading-tight flex-shrink-0">
