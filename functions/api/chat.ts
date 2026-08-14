@@ -1,19 +1,25 @@
-// Proxy server-side do AI Contabilista → OpenRouter (modelos GRÁTIS).
+// Proxy server-side do AI Contabilista → OpenCode Go (deepseek-v4-flash).
 //
 // Porquê um proxy: a chave da API NUNCA pode ir para o cliente (site estático).
-// Aqui ela vive como secret do Cloudflare Pages (env.OPENROUTER_API_KEY) e o
-// browser fala apenas com /api/chat.
+// Aqui ela vive como secret do Cloudflare Pages (env.OPENCODE_GO_KEY) e o
+// browser fala apenas com /api/chat. Fallback legado para OpenRouter mantém-se
+// se a chave do OpenCode Go não estiver configurada neste ambiente.
 //
 // Defesas (o bot é público): allowlist de origem, limites de payload, rate-limit
-// best-effort por IP, e percurso da cadeia de modelos free quando há 429.
+// best-effort por IP, e percurso da cadeia de modelos quando há 429.
 
 import { FREE_MODELS } from '../_models';
 import { SYSTEM_PROMPT } from '../_systemPrompt';
 import { KNOWLEDGE_BASE } from '../_kb';
 
 interface Env {
-  OPENROUTER_API_KEY?: string;
+  OPENCODE_GO_KEY?: string;
+  OPENROUTER_API_KEY?: string; // fallback legado
 }
+
+// Endpoint do OpenCode Go (OpenAI-compatible) — mesmo formato do opencode local.
+const GO_ENDPOINT = 'https://opencode.ai/zen/go/v1/chat/completions';
+const OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 
 type Msg = { role: 'user' | 'assistant' | 'system'; content: string };
 
@@ -85,8 +91,9 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
     return json({ error: 'origem_nao_autorizada' }, 403, origin);
   }
 
-  // 2) Chave configurada?
-  if (!env.OPENROUTER_API_KEY) {
+  // 2) Chave configurada? (OpenCode Go primeiro; OpenRouter como fallback)
+  const provider = env.OPENCODE_GO_KEY ? 'go' : env.OPENROUTER_API_KEY ? 'openrouter' : null;
+  if (!provider) {
     return json({ error: 'config', reply: 'O AI Contabilista ainda não está configurado neste ambiente. Avisa a equipa.' }, 503, origin);
   }
 
@@ -125,18 +132,23 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
 
   const finalMessages: Msg[] = [{ role: 'system', content: systemContent }, ...messages];
 
-  // 6) Percorre a cadeia de modelos free; salta em 429/erro/corpo vazio.
+  // 6) Percorre a cadeia de modelos; salta em 429/erro/corpo vazio.
   let lastErr = 'sem_resposta';
+  const endpoint = provider === 'go' ? GO_ENDPOINT : OPENROUTER_ENDPOINT;
+  const authKey = provider === 'go' ? env.OPENCODE_GO_KEY : env.OPENROUTER_API_KEY;
   for (const model of FREE_MODELS) {
     try {
-      const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${authKey}`,
+        'Content-Type': 'application/json',
+      };
+      if (provider === 'openrouter') {
+        headers['HTTP-Referer'] = 'https://estudo360.pt';
+        headers['X-Title'] = 'Estudo 360 — AI Contabilista';
+      }
+      const r = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${env.OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://estudo360.pt',
-          'X-Title': 'Estudo 360 — AI Contabilista',
-        },
+        headers,
         body: JSON.stringify({
           model,
           messages: finalMessages,
@@ -161,7 +173,7 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
         continue; // modelos de "reasoning" às vezes devolvem content vazio
       }
 
-      return json({ reply, model }, 200, origin);
+      return json({ reply, model, provider }, 200, origin);
     } catch (e) {
       lastErr = e instanceof Error ? e.message : 'excecao';
       continue;
@@ -171,7 +183,7 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
   return json(
     {
       error: lastErr,
-      reply: 'Os modelos gratuitos estão todos ocupados neste momento. Tenta de novo daqui a um minuto — é normal acontecer nas horas de ponta.',
+      reply: 'O modelo está ocupado neste momento. Tenta de novo daqui a um instante.',
     },
     503,
     origin,
