@@ -393,6 +393,16 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
         <div className="flex items-center gap-1 pr-3">
           <button
             type="button"
+            onClick={() => onNavigate(emp.id, 'hub')}
+            title={`Abrir os simuladores de ${displayNome}`}
+            aria-label={`Abrir os simuladores de ${displayNome}`}
+            className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] bg-[#0677FF]/10 text-[#0677FF] text-[12px] font-[700] whitespace-nowrap hover:bg-[#0677FF] hover:text-white transition-colors"
+          >
+            <Calculator className="w-3.5 h-3.5" />
+            <span>Simuladores</span>
+          </button>
+          <button
+            type="button"
             onClick={onToggle}
             aria-expanded={expanded}
             title="Mostrar histórico de simulações"
