@@ -48,7 +48,7 @@ const TabelaRF: React.FC<{ tabela: TabelaRetencao }> = ({ tabela }) => (
     <summary className="cursor-pointer select-none px-4 py-2.5 text-[13px] font-[700] text-[#0F172A] bg-slate-50 hover:bg-slate-100 transition-colors">
       Tabela {tabela.id} — {tabela.descricao}
     </summary>
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto tbl-scroll">
       <table className="w-full text-[12px]">
         <thead>
           <tr className="text-left text-[11px] uppercase tracking-[0.5px] text-[#64748B] border-b border-slate-200">
@@ -105,11 +105,11 @@ const TabelasRetencaoFonte = () => (
 
 const LegalRow = ({ label, value, note }: { label: string; value: string; note?: string }) => (
   <div className="py-[10px] border-b border-[#F1F5F9] last:border-0">
-    <div className="flex justify-between items-start gap-4">
-      <span className="text-[13px] font-[700] text-[#475569] shrink-0 w-[200px]">{label}</span>
-      <span className="text-[13px] font-[600] text-[#0F172A] text-right flex-1">{value}</span>
+    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-4">
+      <span className="text-[13px] font-[700] text-[#475569] sm:shrink-0 sm:w-[200px]">{label}</span>
+      <span className="text-[13px] font-[600] text-[#0F172A] sm:text-right flex-1 min-w-0 break-words">{value}</span>
     </div>
-    {note && <p className="text-[11px] text-[#94A3B8] mt-1 ml-0 font-[500]">{note}</p>}
+    {note && <p className="text-[11px] text-[#94A3B8] mt-1 font-[500]">{note}</p>}
   </div>
 );
 
@@ -546,7 +546,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
           </div>
 
           {/* Tabela resumo obrigações */}
-          <div className="mt-8 overflow-x-auto">
+          <div className="mt-8 overflow-x-auto tbl-scroll">
             <h3 className="text-[13px] font-[800] text-[#0F172A] mb-3 uppercase tracking-[0.5px]">Resumo de Obrigações por Regime</h3>
             <table className="w-full text-[12px]">
               <thead>
@@ -635,7 +635,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
             {/* Escalões */}
             <div>
               <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Escalões de IRS 2026 (Art. 68.º CIRS)</h3>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto tbl-scroll">
                 <table className="w-full text-[13px]">
                   <thead>
                     <tr className="bg-[#0F172A] text-white">
@@ -761,7 +761,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
               <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Tributação Autónoma (TA) — Art. 88.º CIRC</h3>
               <p className="text-[13px] text-[#64748B] font-[500] mb-3">Incide sobre encargos com viaturas ligeiras de passageiros. Base de cálculo: depreciação + manutenção + seguro + combustível.</p>
 
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto tbl-scroll">
                 <table className="w-full text-[13px]">
                   <thead>
                     <tr className="bg-[#0677FF] text-white">
@@ -861,7 +861,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
 
             <div>
               <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Dedução IVA — Viaturas (Art. 21.º CIVA)</h3>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto tbl-scroll">
                 <table className="w-full text-[13px]">
                   <thead>
                     <tr className="bg-[#1D4ED8] text-white">
@@ -976,7 +976,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
             {/* Resumo comparativo */}
             <div>
               <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Resumo Comparativo — Todos os Tipos</h3>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto tbl-scroll">
                 <table className="w-full text-[12px]">
                   <thead>
                     <tr className="bg-[#7C3AED] text-white">
@@ -1104,7 +1104,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
             {/* Tabela HPP */}
             <div>
               <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Habitação Própria e Permanente (HPP) — Continente 2026</h3>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto tbl-scroll">
                 <table className="w-full text-[13px]">
                   <thead>
                     <tr className="bg-[#7C3AED] text-white">

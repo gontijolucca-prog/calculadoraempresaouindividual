@@ -1405,8 +1405,8 @@ function AppContent() {
                     <div key={group}>
                     <SaftSection title={group} count={items.length}>
                       {items.map((d, i) => (
-                        <div key={i} className="flex items-baseline gap-3 py-1.5 border-b border-slate-50 last:border-0">
-                          <span className="text-[11px] font-[600] text-[#0677FF] shrink-0 w-[150px] leading-snug">{d.label}</span>
+                        <div key={i} className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3 py-1.5 border-b border-slate-50 last:border-0">
+                          <span className="text-[11px] font-[600] text-[#0677FF] sm:shrink-0 sm:w-[150px] leading-snug">{d.label}</span>
                           <span className="text-[12px] font-[500] text-[#0F172A] leading-snug break-words min-w-0">{d.value}</span>
                         </div>
                       ))}
@@ -1493,7 +1493,7 @@ function AppContent() {
 
       {/* Barra "Guardar cliente" — só no rascunho de cliente novo (modo Novo Cliente). */}
       {draftNewClient && (
-        <div className="fixed bottom-0 right-0 left-0 md:left-64 z-[70] no-print border-t border-slate-200 bg-white/95 backdrop-blur-sm px-4 sm:px-6 py-3 flex items-center gap-3 shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.25)]">
+        <div className="fixed bottom-0 right-0 left-0 md:left-64 z-[70] no-print border-t border-slate-200 bg-white/95 backdrop-blur-sm px-4 sm:px-6 py-3 flex flex-col-reverse sm:flex-row sm:items-center gap-3 shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.25)]">
           <div className="min-w-0 flex-1">
             <div className="text-[13px] font-[800] text-[#0F172A] leading-tight truncate">
               {clientProfile.nomeCliente?.trim() || 'Novo cliente'}

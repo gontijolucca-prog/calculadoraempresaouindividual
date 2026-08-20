@@ -225,7 +225,7 @@ export default function EnquadramentoCompleto({ value, onChange, onVoltar, saftP
 
       {/* ── Dashboard: indicadores × top 3 cenários ── */}
       {top.length > 0 && (
-        <div className={`${secCls} overflow-x-auto`}>
+        <div className={`${secCls} overflow-x-auto tbl-scroll`}>
           <h3 className={secHdr}>Comparação económica — melhores cenários elegíveis</h3>
           <table className="w-full min-w-[640px] text-[12.5px]">
             <thead>

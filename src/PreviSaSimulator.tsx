@@ -909,9 +909,11 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
             Não colocar botões aqui — ficam tapados. O botão de Excel vive no cartão de resumo. */}
       </div>
 
-      {/* Tabs */}
+      {/* Tabs: em mobile fazem wrap (todas visíveis, nada escondido); em >=sm mantêm
+          scroll horizontal suave, útil se o nº de tabs crescer. O wrap garante que em
+          telemóvel nunca fica uma tab inacessível. */}
       <div className="bg-white border-b border-slate-200 px-4 sm:px-6 overflow-x-auto scrollbar-none shrink-0">
-        <div className="flex gap-0 min-w-max">
+        <div className="flex flex-wrap sm:flex-nowrap sm:min-w-max gap-0">
           {TABS.map(t => (
             <button key={t} type="button" onClick={() => setTab(t)}
               className={cn(
@@ -1447,7 +1449,7 @@ function PrejCard({ st, s, res }: { st: PreviSaState; s: (k: keyof PreviSaState,
         Prejuízos por ano de origem ({rows.length})
       </button>
       {open && (
-        <div className="mt-2 overflow-x-auto">
+        <div className="mt-2 overflow-x-auto tbl-scroll">
           <table className="w-full text-[11px] border border-slate-200 rounded-[6px] overflow-hidden">
             <thead className="bg-slate-100 text-slate-600 font-[700]">
               <tr>

@@ -27,6 +27,29 @@ body {
   display: none;
 }
 
+/* Tabelas largas em mobile: notificar que há mais conteúdo para a direita.
+   Show scrollbar fina + fade gradiente à direita quando há overflow real.
+   O ::after usa position:sticky dentro do scroll container para colar na
+   borda direita visível apenas se a tabela transborda (só aí o wrapper
+   é scrollável). */
+.tbl-scroll {
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(6, 119, 255, 0.45) transparent;
+}
+.tbl-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+.tbl-scroll::-webkit-scrollbar-thumb {
+  background: rgba(6, 119, 255, 0.45);
+  border-radius: 999px;
+}
+.tbl-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 /* Clamp text to avoid overflow in small containers */
 @media (max-width: 640px) {
   h1 { font-size: clamp(1.4rem, 5vw, 2.5rem) !important; }
