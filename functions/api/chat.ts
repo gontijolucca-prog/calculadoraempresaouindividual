@@ -1,4 +1,4 @@
-// Proxy server-side do AI Contabilista → OpenCode Go (deepseek-v4-flash).
+// Proxy server-side do AI Contabilista → OpenCode Go (mimo-v2.5).
 //
 // Porquê um proxy: a chave da API NUNCA pode ir para o cliente (site estático).
 // Aqui ela vive como secret do Cloudflare Pages (env.OPENCODE_GO_KEY) e o
@@ -27,7 +27,7 @@ type Msg = { role: 'user' | 'assistant' | 'system'; content: string };
 const MAX_MESSAGES = 24;        // turnos de conversa aceites
 const MAX_CHARS_PER_MSG = 4000; // por mensagem
 const MAX_CONTEXT_CHARS = 6000; // contexto-app anonimizado
-const MAX_OUTPUT_TOKENS = 1100; // texto curto + bloco de ações/replies sem cortar a meio
+const MAX_OUTPUT_TOKENS = 1600; // reasoning + resposta (mimo-v2.5 é modelo de reasoning)
 
 // Origens autorizadas a usar o proxy.
 const ALLOWED_HOST_SUFFIXES = [
@@ -167,10 +167,19 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
       }
 
       const data: any = await r.json();
-      const reply: string = data?.choices?.[0]?.message?.content?.trim() || '';
+      const msg = data?.choices?.[0]?.message;
+      let reply: string = (msg?.content || '').trim();
+      // mimo-v2.5 é modelo de reasoning: às vezes devolve content vazio e põe
+      // tudo no campo `reasoning`. Nesse caso usamos o reasoning como resposta
+      // em vez de saltar para o próximo modelo (cadeia tem só um modelo).
+      if (!reply && msg?.reasoning) {
+        reply = (msg.reasoning as string).trim();
+        // corta o raciocínio a um tamanho útil e garante que acaba limpo
+        reply = reply.length > 600 ? reply.slice(0, 600).trimEnd() + '…' : reply;
+      }
       if (!reply) {
         lastErr = 'corpo_vazio';
-        continue; // modelos de "reasoning" às vezes devolvem content vazio
+        continue; // sem conteúdo nenhum (nem content nem reasoning)
       }
 
       return json({ reply, model, provider }, 200, origin);
