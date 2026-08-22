@@ -48,6 +48,21 @@ jobs:
           OPENCODE_GO_KEY: ${{ secrets.OPENCODE_GO_KEY }}
         run: printf '%s' "$OPENCODE_GO_KEY" | npx wrangler@4 pages secret put OPENCODE_GO_KEY --project-name=estudo360
 
+      # Webhook de log de sugestões (server-side): URL + token como secrets de
+      # runtime do Pages para a Function /api/chat enviar as sugestões dos
+      # utilizadores para o log do VPS (a equipa trabalha nessas melhorias).
+      # Best-effort: se falhar, o deploy continua (o chat não depende disto).
+      - name: Configurar secrets de feedback no Pages
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          FEEDBACK_WEBHOOK_URL: ${{ secrets.FEEDBACK_WEBHOOK_URL }}
+          FEEDBACK_TOKEN: ${{ secrets.FEEDBACK_TOKEN }}
+        run: |
+          printf '%s' "$FEEDBACK_WEBHOOK_URL" | npx wrangler@4 pages secret put FEEDBACK_WEBHOOK_URL --project-name=estudo360
+          printf '%s' "$FEEDBACK_TOKEN" | npx wrangler@4 pages secret put FEEDBACK_TOKEN --project-name=estudo360
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:

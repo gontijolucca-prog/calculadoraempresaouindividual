@@ -8,6 +8,12 @@ export const KNOWLEDGE_BASE = `# BASE DE CONHECIMENTO — AI Contabilista (Estud
 
 Estudo 360 é uma ferramenta web de contabilidade portuguesa para escritórios de contabilidade e empresários. Funciona em dois modos: "Novo Cliente" (rascunho em localStorage) e "Empresa" (sincronização cloud via Firestore). Ajuda a gerir empresas, simular cenários fiscais, calcular honorários, preencher documentos e exportar para Excel/PDF.
 
+## Preços e Planos (mensal, sem fidelização, sem custo por cliente)
+- **Solo — 49 €/mês**: 1 utilizador, logo + dados no PDF, todos os 10 simuladores.
+- **Escritório — 129 €/mês**: até 5 utilizadores, branding completo, tabela de honorários partilhada, histórico por cliente, suporte prioritário.
+- **Sociedade — 249 €/mês**: até 15 utilizadores, multi-marca, importação SAF-T, API privada (em breve), onboarding dedicado.
+- Acesso imediato, sem cartão de crédito. AI Contabilista incluído e grátis.
+
 ## Dois Modos de Operação
 
 **Novo Cliente (Draft):** Rascunho limpo em localStorage, sem sincronização cloud, sem empresa ativa. O bot consegue preencher o perfil; simulações estão em preview. Ao guardar, cria a empresa e passa para modo "Empresa".
@@ -285,7 +291,7 @@ R: Se Empresa, calcula automático. Atualizar receita/despesas para forecast cor
 R: Novo Cliente = localStorage. Passar para Empresa = cloud sync.
 
 **P: Como peço uma melhoria ou reporto um problema?**
-R: Diz-me a sugestão e eu registo-a para a equipa de desenvolvimento do Estudo 360.
+R: Diz-me a sugestão e eu comento-a e adiciono-a à lista de atualizações futuras do Estudo 360.
 
 ## Avisos
 
