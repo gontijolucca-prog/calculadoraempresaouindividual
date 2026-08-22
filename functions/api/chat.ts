@@ -1,5 +1,9 @@
 // Proxy server-side do AI Contabilista → OpenCode Go (mimo-v2.5), com
-// fallback para OpenRouter (:free) quando o Go está em limite/indisponível.
+// fallback para OpenRouter (:free) e OmniRoute (gateway multi-provider)
+// quando o Go está em limite/indisponível.
+//
+// Cadeia: 1) OpenCode Go (mimo-v2.5) → 2) OpenRouter (:free) →
+//         3) OmniRoute (modelo "auto" — roteia por 90+ providers free).
 //
 // Porquê um proxy: a chave da API NUNCA pode ir para o cliente (site estático).
 // Aqui ela vive como secret do Cloudflare Pages (env.OPENCODE_GO_KEY) e o
@@ -13,13 +17,15 @@
 // Defesas (o bot é público): allowlist de origem, limites de payload, rate-limit
 // best-effort por IP.
 
-import { GO_MODELS, OPENROUTER_FALLBACK_MODELS } from '../_models';
+import { GO_MODELS, OPENROUTER_FALLBACK_MODELS, OMNIROUTE_MODELS } from '../_models';
 import { SYSTEM_PROMPT } from '../_systemPrompt';
 import { KNOWLEDGE_BASE } from '../_kb';
 
 interface Env {
   OPENCODE_GO_KEY?: string;
   OPENROUTER_API_KEY?: string; // fallback legado
+  OMNIROUTE_URL?: string;      // gateway OmniRoute (ex.: https://media.pontofinal.site/__omni)
+  OMNIROUTE_API_KEY?: string;  // chave de API do OmniRoute
   FEEDBACK_WEBHOOK_URL?: string; // log de sugestões (VPS)
   FEEDBACK_TOKEN?: string;       // token do webhook de log
 }
@@ -157,7 +163,8 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
   // 2) Chave configurada? (OpenCode Go primeiro; OpenRouter como fallback)
   const hasGo = !!env.OPENCODE_GO_KEY;
   const hasOpenRouter = !!env.OPENROUTER_API_KEY;
-  if (!hasGo && !hasOpenRouter) {
+  const hasOmni = !!(env.OMNIROUTE_URL && env.OMNIROUTE_API_KEY);
+  if (!hasGo && !hasOpenRouter && !hasOmni) {
     return json({ error: 'config', reply: 'O AI Contabilista ainda não está configurado neste ambiente. Avisa a equipa.' }, 503, origin);
   }
 
@@ -196,7 +203,7 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
 
   const finalMessages: Msg[] = [{ role: 'system', content: systemContent }, ...messages];
 
-  // 6) Percorre os providers: OpenCode Go primeiro, OpenRouter (:free) como fallback.
+  // 6) Percorre os providers: OpenCode Go → OpenRouter (:free) → OmniRoute.
   //    Salta em 429/erro/corpo vazio e passa ao próximo modelo da cadeia.
   let lastErr = 'sem_resposta';
 
@@ -224,6 +231,7 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
             messages: finalMessages,
             max_tokens: MAX_OUTPUT_TOKENS,
             temperature: 0.4,
+            stream: false, // OmniRoute devolve SSE por omissão; queremos JSON
           }),
         });
 
@@ -239,16 +247,21 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
         const data: any = await r.json();
         const msg = data?.choices?.[0]?.message;
         let reply: string = (msg?.content || '').trim();
-        // mimo-v2.5 é modelo de reasoning: às vezes devolve content vazio e põe
-        // tudo no campo `reasoning`. Nesse caso usamos o reasoning como resposta
-        // em vez de saltar para o próximo modelo.
+        // Modelos de reasoning (mimo-v2.5, OmniRoute): às vezes devolvem content
+        // vazio e põem tudo no campo `reasoning` (OpenCode Go) ou
+        // `reasoning_content` (OmniRoute). Nesse caso usamos o raciocínio como
+        // resposta em vez de saltar para o próximo modelo.
         if (!reply && msg?.reasoning) {
           reply = (msg.reasoning as string).trim();
           reply = reply.length > 600 ? reply.slice(0, 600).trimEnd() + '…' : reply;
         }
+        if (!reply && msg?.reasoning_content) {
+          reply = (msg.reasoning_content as string).trim();
+          reply = reply.length > 600 ? reply.slice(0, 600).trimEnd() + '…' : reply;
+        }
         if (!reply) {
           lastErr = 'corpo_vazio';
-          continue; // sem conteúdo nenhum (nem content nem reasoning)
+          continue; // sem conteúdo nenhum
         }
 
         return { ok: true, reply, model };
@@ -270,13 +283,25 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
     }
   }
 
-  // Fallback: OpenRouter (:free) — mantém o bot vivo quando o Go está em limite.
+  // Fallback 1: OpenRouter (:free) — mantém o bot vivo quando o Go está em limite.
   if (hasOpenRouter) {
     const or = await tryProvider(OPENROUTER_ENDPOINT, env.OPENROUTER_API_KEY!, OPENROUTER_FALLBACK_MODELS, true);
     if (or.ok) {
       const sugs = extractSuggestions(or.reply!);
       if (sugs.length) await relaySuggestions(env, sugs);
       return json({ reply: or.reply, model: or.model, provider: 'openrouter' }, 200, origin);
+    }
+  }
+
+  // Fallback 2: OmniRoute (gateway multi-provider) — modelo "auto" roteia por
+  // 90+ providers free; quota esgotada num, desliza para o próximo. Última rede.
+  if (env.OMNIROUTE_URL && env.OMNIROUTE_API_KEY) {
+    const orUrl = env.OMNIROUTE_URL.replace(/\/$/, '') + '/v1/chat/completions';
+    const omni = await tryProvider(orUrl, env.OMNIROUTE_API_KEY, OMNIROUTE_MODELS, false);
+    if (omni.ok) {
+      const sugs = extractSuggestions(omni.reply!);
+      if (sugs.length) await relaySuggestions(env, sugs);
+      return json({ reply: omni.reply, model: omni.model, provider: 'omniroute' }, 200, origin);
     }
   }
 

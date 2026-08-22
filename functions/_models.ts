@@ -18,3 +18,11 @@ export const OPENROUTER_FALLBACK_MODELS: string[] = [
   'z-ai/glm-4.5-air:free',
   'nousresearch/hermes-3-405b:free',
 ];
+
+// OmniRoute — gateway multi-provider: o modelo "auto" roteia por 90+ providers
+// free (quota esgotada num provider, desliza para o próximo automaticamente).
+export const OMNIROUTE_MODELS: string[] = [
+  'auto',
+  'auto/fast',
+  'auto/cheap',
+];

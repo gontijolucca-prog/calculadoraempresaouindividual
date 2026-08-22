@@ -63,6 +63,20 @@ jobs:
           printf '%s' "$FEEDBACK_WEBHOOK_URL" | npx wrangler@4 pages secret put FEEDBACK_WEBHOOK_URL --project-name=estudo360
           printf '%s' "$FEEDBACK_TOKEN" | npx wrangler@4 pages secret put FEEDBACK_TOKEN --project-name=estudo360
 
+      # OmniRoute — gateway AI de fallback no VPS: URL + chave como secrets de
+      # runtime do Pages para a Function /api/chat usar como última rede (modelo
+      # "auto" roteia por 90+ providers free quando Go/OpenRouter falham).
+      - name: Configurar secrets OmniRoute no Pages
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          OMNIROUTE_URL: ${{ secrets.OMNIROUTE_URL }}
+          OMNIROUTE_API_KEY: ${{ secrets.OMNIROUTE_API_KEY }}
+        run: |
+          printf '%s' "$OMNIROUTE_URL" | npx wrangler@4 pages secret put OMNIROUTE_URL --project-name=estudo360
+          printf '%s' "$OMNIROUTE_API_KEY" | npx wrangler@4 pages secret put OMNIROUTE_API_KEY --project-name=estudo360
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
