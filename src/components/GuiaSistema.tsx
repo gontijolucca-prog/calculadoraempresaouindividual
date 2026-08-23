@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { GUIAS, ViewKey } from '../lib/guias';
+import { ChevronLeft, ChevronRight, Ban } from 'lucide-react';
+import { GUIAS, marcarGuiaDesativado, ViewKey } from '../lib/guias';
 
 /**
  * Motor de visitas guiadas do Estudo 360 — controlado pelo AI Contabilista.
@@ -268,6 +268,12 @@ export default function GuiaSistema({
             <ChevronLeft className="w-3.5 h-3.5" /> Anterior
           </button>
           <div className="flex-1" />
+          <button type="button"
+            onClick={() => { if (tourView) marcarGuiaDesativado(tourView); fechar(); }}
+            title="Deixar de sugerir este guia nesta página"
+            className="inline-flex items-center gap-1 text-[12px] font-[700] text-slate-500 hover:text-red-600 px-2 py-1.5 rounded-[8px] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0677FF]">
+            <Ban className="w-3.5 h-3.5" /> Não mostrar novamente
+          </button>
           <button type="button" onClick={fechar}
             className="text-[12px] font-[700] text-slate-500 hover:text-slate-700 px-2 py-1.5 rounded-[8px] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0677FF]">
             Saltar

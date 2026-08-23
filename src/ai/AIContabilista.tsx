@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, useImperativeHandle } 
 import { Sparkles, X, Send, Trash2, Check, RotateCcw, Lightbulb, FileUp } from 'lucide-react';
 import { parseReply, type BotAction, type FillField, type ViewId } from './actions';
 import { registerSuggestion } from './suggestions';
-import { GUIAS, reativarGuias, guiaDesativado, type ViewKey } from '../lib/guias';
+import { GUIAS, reativarGuias, type ViewKey } from '../lib/guias';
 
 // Bridge fornecida pelo App: dá ao bot poderes de navegação e preenchimento,
 // e um contexto ANONIMIZADO (sem dados sensíveis) para enviar ao modelo.
@@ -60,16 +60,7 @@ const GREETING: ChatMsg = {
   role: 'assistant',
   content: 'Olá! Sou o **AI Contabilista**, o teu assistente aqui no Estudo 360. Posso explicar qualquer função, abrir os simuladores por ti, ajudar a preencher um cliente e registar sugestões de melhoria. Em que te ajudo?',
 };
-// Saudação proativa quando abro sozinho ao entrar no site.
-const PROACTIVE_GREETING: ChatMsg = {
-  role: 'assistant',
-  content: 'Olá! 👋 Sou o **AI Contabilista**. Posso ajudar-te com alguma coisa? Explico funções, abro simuladores por ti ou ajudo a criar um cliente.',
-  replies: [
-    'Como funciona o Simulador de IRS?',
-    'Ajuda-me a criar um cliente novo',
-    'Mostra-me o que sabes fazer',
-  ],
-};
+// (Removida a saudação proativa — o bot fica quieto até o utilizador interagir.)
 
 const QUICK = [
   'Como funciona o Simulador de IRS?',
@@ -181,7 +172,7 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const lastOfferView = useRef<string>('');
+
   // Destaque + som quando o bot sugere uma visita guiada
   const [destaque, setDestaque] = useState(false);
   const destaqueTimer = useRef<number | undefined>(undefined);
@@ -240,32 +231,8 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
     if (open) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [msgs, busy, open]);
 
-  // O bot FALA PRIMEIRO: abre sozinho com a saudação proativa (pedido Lucca).
-  // Depois, sempre que o utilizador muda de página, oferece uma visita guiada.
-  useEffect(() => {
-    setMsgs((prev) => {
-      if (prev.length <= 1) return [PROACTIVE_GREETING];
-      return prev;
-    });
-    setOpen(true);
-  }, []);
-
-  // Oferta de visita guiada em cada página nova (salvo "não perguntar novamente").
-  useEffect(() => {
-    const v = view as ViewKey;
-    if (v === lastOfferView.current) return; // mesma vista — não repete a cada render
-    lastOfferView.current = v;
-    if (bridge.tourActive?.()) return; // já há um tour a decorrer
-    const g = GUIAS[v];
-    if (!g) return;
-    if (guiaDesativado(v)) return;
-    setMsgs((prev) => [...prev, {
-      role: 'assistant',
-      content: '',
-      tourOffer: { titulo: g.titulo, intro: g.intro },
-    }]);
-    notificarGuia(); // destaque visual + som
-  }, [view, bridge, notificarGuia]);
+  // O bot fica QUIETO: só intervém quando o utilizador interage (pedido Lucca).
+  // As sugestões de guia passaram para a própria página (GuiaSugestao).
 
   useEffect(() => {
     if (!open) return;
@@ -399,15 +366,9 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
 
   const clearChat = () => setMsgs([GREETING]);
 
-  // Aviso ao bot quando o tour fecha: mensagem de follow-up (ativação — nunca beco sem saída).
-  const notifyTourEnd = useCallback((v: string) => {
-    const label = VIEW_LABEL[v as ViewId] ?? viewTitle ?? v;
-    setMsgs((prev) => [...prev, {
-      role: 'assistant',
-      content: `Fechaste a visita guiada de **${label}**. Posso ajudar-te a avançar — por exemplo: *"abre o PreviSa"*, *"cria um cliente novo"* ou *"gera um documento"*.`,
-      replies: ['Abre o PreviSa', 'Cria um cliente novo', 'Gera um documento'],
-    }]);
-  }, [viewTitle]);
+  // O bot fica quieto também depois do tour: sem follow-up automático.
+  // (O utilizador interage com ele se quiser ajuda — nada de mensagens não pedidas.)
+  const notifyTourEnd = useCallback((_v: string) => { /* silencioso */ }, []);
 
   useImperativeHandle(ref, () => ({ notifyTourEnd }), [notifyTourEnd]);
 

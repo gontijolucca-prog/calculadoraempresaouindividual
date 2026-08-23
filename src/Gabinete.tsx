@@ -10,6 +10,17 @@ import {
 } from './lib/gabinete';
 import { listEmpresas } from './lib/empresas';
 import { encryptSecret, decryptSecret, setCofrePassphrase, getCofrePassphrase, cofreIsUnlocked } from './lib/cofreCrypto';
+import GuiaSugestao from './components/GuiaSugestao';
+import type { ViewKey } from './lib/guias';
+
+// Guia por tab interna do Gabinete (a sugestão muda conforme a tab ativa)
+const GAB_TAB_GUIA: Record<GabTab, ViewKey> = {
+  dashboard: 'gabinete',
+  clientes: 'gab-clientes',
+  tarefas: 'gab-tarefas',
+  obrigacoes: 'gab-obrigacoes',
+  cofre: 'gab-cofre',
+};
 
 // ─── Layout ─────────────────────────────────────────────────────────────────
 type GabTab = 'dashboard' | 'clientes' | 'tarefas' | 'obrigacoes' | 'cofre';
@@ -21,15 +32,19 @@ const TABS: { id: GabTab; label: string; icon: React.ElementType; desc: string }
   { id: 'cofre', label: 'Cofre', icon: Lock, desc: 'Zero-knowledge' },
 ];
 
-export default function Gabinete() {
+export default function Gabinete({ onStartTour }: { onStartTour?: (v: ViewKey) => void }) {
   const [tab, setTab] = useState<GabTab>('dashboard');
   const clientes = useGabineteClientes();
   const tarefas = useGabineteTarefas();
   const obrigacoes = useGabineteObrigacoes();
   const cofre = useGabineteCofre();
 
+  // Por defeito, se o App não passar callback, navega para o dashboard (no-op)
+  const startTour = (v: ViewKey) => onStartTour?.(v);
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-zinc-900">
+      <GuiaSugestao view={GAB_TAB_GUIA[tab]} onStart={startTour} />
       {/* Header */}
       <div className="sticky top-0 z-20 bg-white/80 backdrop-blur border-b border-zinc-200">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">

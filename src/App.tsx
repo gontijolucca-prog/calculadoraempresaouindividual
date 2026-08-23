@@ -48,6 +48,7 @@ import { enforceProfileRules } from './lib/profileRules';
 import { DOC_TYPES, downloadAsWord } from './lib/wordDocs';
 import { downloadPrevisaExcel } from './lib/previsaExcel';
 import GuiaSistema from './components/GuiaSistema';
+import GuiaSugestao from './components/GuiaSugestao';
 import type { ViewKey } from './lib/guias';
 import { marcarGuiaDesativado } from './lib/guias';
 import { LAYOUTS } from './Layouts';
@@ -1220,7 +1221,7 @@ function AppContent() {
         )}
         {view === 'gabinete' && (
           <Suspense fallback={<div className="p-8 text-center text-zinc-500">A carregar Gabinete…</div>}>
-            <Gabinete />
+            <Gabinete onStartTour={(v) => setTourRequest({ view: v, nonce: Date.now() })} />
           </Suspense>
         )}
         {view === 'office-settings' && (
@@ -1551,16 +1552,22 @@ function AppContent() {
           e.target.value = '';
         }}
       />
-      {/* AI Contabilista — assistente flutuante (grátis, OpenRouter free models) */}
+      {/* AI Contabilista — assistente flutuante: fica quieto até o utilizador interagir */}
       <Suspense fallback={null}>
         <AIContabilista ref={botApiRef} bridge={botBridge} liftBottom={draftNewClient} view={view} viewTitle={VIEW_TITLES[view]} />
       </Suspense>
 
-      {/* Visitas guiadas — controladas pelo AI Contabilista (oferece e inicia) */}
+      {/* Sugestão de guia por página (discreta, com "não mostrar novamente").
+          O Gabinete tem as suas próprias tabs — gere a sugestão internamente. */}
+      {view !== 'gabinete' && (
+        <GuiaSugestao view={view as ViewKey} onStart={(v) => setTourRequest({ view: v, nonce: Date.now() })} />
+      )}
+
+      {/* Visitas guiadas — motor de tour (iniciadas pela sugestão da página ou pelo bot a pedido) */}
       <GuiaSistema
         view={view as ViewKey}
         iniciar={tourRequest}
-        onEnd={(v) => botApiRef.current?.notifyTourEnd(v)}
+        onEnd={(_v) => { /* sem follow-up do bot — fica quieto */ }}
       />
 
       {/* Disclaimer legal — sempre visível enquanto logged in */}

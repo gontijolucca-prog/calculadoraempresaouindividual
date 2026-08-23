@@ -3,6 +3,7 @@ import { motion, useScroll, useTransform } from 'motion/react';
 import {
   ArrowRight, Calculator, FileText, FileSignature, Layers, ShieldCheck,
   Clock, Sparkles, ChevronDown, Check, BadgeCheck, Building2, BookOpen,
+  LayoutDashboard, CheckSquare, CalendarClock, Lock, Database, ListChecks, Scale, Receipt,
 } from 'lucide-react';
 
 interface Props {
@@ -31,6 +32,7 @@ export default function LandingPage({ onEnter }: Props) {
       <HowItWorks />
       <ToolsCatalog />
       <PackageBlock />
+      <GabineteBlock />
       <Compliance />
       <Pricing onEnter={onEnter} />
       <FinalCTA onEnter={onEnter} />
@@ -69,6 +71,7 @@ function NavBar({ onEnter }: { onEnter: () => void }) {
         <nav className="hidden md:flex items-center gap-7 text-[13px] font-[600] text-[#0B1D2D]/70">
           <a href="#funciona" className="hover:text-[#0B1D2D] transition-colors">Como funciona</a>
           <a href="#simuladores" className="hover:text-[#0B1D2D] transition-colors">Simuladores</a>
+          <a href="#gabinete" className="hover:text-[#0B1D2D] transition-colors">Gabinete</a>
           <a href="#pacote" className="hover:text-[#0B1D2D] transition-colors">Pacote do cliente</a>
           <a href="#precos" className="hover:text-[#0B1D2D] transition-colors">Preços</a>
         </nav>
@@ -102,6 +105,7 @@ function NavBar({ onEnter }: { onEnter: () => void }) {
         <div className="md:hidden border-t border-[#0B1D2D]/8 px-5 py-4 space-y-3 text-[14px] font-[600] text-[#0B1D2D]/75">
           <a onClick={() => setOpen(false)} href="#funciona" className="block">Como funciona</a>
           <a onClick={() => setOpen(false)} href="#simuladores" className="block">Simuladores</a>
+          <a onClick={() => setOpen(false)} href="#gabinete" className="block">Gabinete</a>
           <a onClick={() => setOpen(false)} href="#pacote" className="block">Pacote do cliente</a>
           <a onClick={() => setOpen(false)} href="#precos" className="block">Preços</a>
           <button type="button" onClick={onEnter} className="block w-full text-left text-[#0B1D2D]">Entrar</button>
@@ -345,6 +349,8 @@ function HowItWorks() {
 function ToolsCatalog() {
   const tools = [
     { label: 'Fiscal', sub: 'ENI vs Lda', Icon: Calculator },
+    { label: 'IRS', sub: 'Modelo 3 + Jovem', Icon: Receipt },
+    { label: 'Previsa', sub: 'Modelo 22/IRC', Icon: Calculator },
     { label: 'Viaturas', sub: 'IVA + TA', Icon: Layers },
     { label: 'Tickets', sub: 'Vales refeição', Icon: BadgeCheck },
     { label: 'SS Indep.', sub: 'Contribuições', Icon: ShieldCheck },
@@ -352,8 +358,10 @@ function ToolsCatalog() {
     { label: 'Imóveis', sub: 'Arrendar vs entrada', Icon: Building2 },
     { label: 'IMT', sub: 'Aquisição', Icon: BookOpen },
     { label: 'Salário', sub: 'Líquido + custo', Icon: BadgeCheck },
-    { label: 'Previsa', sub: 'Modelo 22/IRC', Icon: Calculator },
+    { label: 'Enquadramento', sub: 'Cenários elegíveis', Icon: Scale },
+    { label: 'Gestor PPC', sub: 'Art. 104/105/107', Icon: ListChecks },
     { label: 'Base Legal', sub: '30+ fontes', Icon: BookOpen },
+    { label: 'Gabinete', sub: 'Gestão do escritório', Icon: LayoutDashboard },
   ];
   return (
     <section id="simuladores" className="py-24 md:py-32 border-t border-[#0B1D2D]/8">
@@ -361,14 +369,14 @@ function ToolsCatalog() {
         <div className="lg:sticky lg:top-32">
           <SectionLabel>Catálogo</SectionLabel>
           <h2 className="display-serif mt-4 text-[34px] md:text-[52px] leading-[1.02] tracking-[-0.03em] font-[200]">
-            <span className="italic font-[800]">10</span> simuladores.
+            <span className="italic font-[800]">14</span> ferramentas.
             <br />
             Um cliente, todos os ângulos.
           </h2>
           <p className="mt-5 text-[15px] text-[#0B1D2D]/65 leading-[1.6] max-w-lg">
-            Construídos para contabilistas certificados, com base na legislação portuguesa em vigor.
-            Cada simulador é independente, mas todos partilham o mesmo perfil — preenche uma vez,
-            usa em todo o lado.
+            Simuladores construídos para contabilistas certificados, com base na legislação portuguesa
+            em vigor — mais a gestão do dia a dia do escritório. Cada ferramenta tem guia interativo
+            que ensina a usar, com opção de "não mostrar novamente".
           </p>
         </div>
 
@@ -445,6 +453,89 @@ function PackageBlock() {
   );
 }
 
+/* ───────── Gabinete — novas features de gestão ───────── */
+function GabineteBlock() {
+  const feats = [
+    {
+      Icon: LayoutDashboard,
+      label: 'Dashboard do dia',
+      body: 'Ao abrir: o que vence hoje, tarefas atrasadas, obrigações vencidas e clientes sem movimento há 30 dias. Tudo numa página, sem pesquisas.',
+    },
+    {
+      Icon: CheckSquare,
+      label: 'Tarefas em Kanban',
+      body: 'A fazer → Em curso → Feito (e Atrasada). Atribui tarefas à equipa com prazo e prioridade — a nova colaboradora vê só as suas.',
+    },
+    {
+      Icon: CalendarClock,
+      label: 'Obrigações automáticas',
+      body: 'Ao criar o cliente, o sistema gera as obrigações do ano: IVA (mensal/trimestral), 3 PPC (jul/set/15-dez), IES e Modelo 22 — com prazos reais.',
+    },
+    {
+      Icon: Lock,
+      label: 'Cofre zero-knowledge',
+      body: 'Senhas de AT, SS e bancos cifradas no browser (AES-GCM). Nem a plataforma vê os segredos — com registo de quem viu e quando.',
+    },
+    {
+      Icon: Database,
+      label: 'Memória reliable + live',
+      body: 'Tudo fica guardado na base de dados com cache offline (IndexedDB): se a internet cair, continua a trabalhar e sincroniza sozinho. Colaboradores veem as mudanças em tempo real.',
+    },
+    {
+      Icon: Scale,
+      label: 'Fecho fiscal 2026',
+      body: 'Cenários só legalmente elegíveis (com os inelegíveis cinzentos + motivo), Gestor PPC com 2 botões (atualizar 80/95% e reavaliar o 3.º por art. 107.º com aviso de juros) e exportar honorários para Excel.',
+    },
+  ];
+  return (
+    <section id="gabinete" className="py-24 md:py-32 relative overflow-hidden">
+      <div aria-hidden="true" className="absolute inset-0 -z-10" style={{
+        background: 'radial-gradient(45% 55% at 15% 30%, rgba(6,119,255,0.20) 0%, transparent 65%), radial-gradient(40% 50% at 90% 80%, rgba(11,29,45,0.28) 0%, transparent 65%)',
+      }} />
+      <div className="max-w-7xl mx-auto px-5 md:px-8">
+        <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-12 lg:gap-20 items-start">
+          <div className="lg:sticky lg:top-32">
+            <SectionLabel>Gabinete — novo</SectionLabel>
+            <h2 className="display-serif mt-4 text-[36px] md:text-[56px] leading-[1] tracking-[-0.03em] font-[200]">
+              Simula, decide,
+              <br />
+              <span className="italic font-[800] text-[#0677FF]">gere.</span>
+            </h2>
+            <p className="mt-6 text-[15px] text-[#0B1D2D]/65 leading-[1.6]">
+              O Estudo 360 deixou de ser só calculadora: é a ferramenta única de gestão do gabinete.
+              Clientes, tarefas, obrigações, acessos e documentos — centralizados, sempre guardados e
+              atualizados entre toda a equipa.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#0B1D2D]/10 text-[11px] mono uppercase tracking-[1.5px] text-[#0B1D2D]/70"><Check className="w-3 h-3 text-[#0677FF]" /> Live entre colaboradores</span>
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#0B1D2D]/10 text-[11px] mono uppercase tracking-[1.5px] text-[#0B1D2D]/70"><Check className="w-3 h-3 text-[#0677FF]" /> Offline-first</span>
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#0B1D2D]/10 text-[11px] mono uppercase tracking-[1.5px] text-[#0B1D2D]/70"><Check className="w-3 h-3 text-[#0677FF]" /> Cofre cifrado</span>
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4 md:gap-5">
+            {feats.map((f, i) => (
+              <motion.div
+                key={f.label}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.45, delay: i * 0.06, ease: [0.32, 0.72, 0, 1] }}
+                className="bg-white border border-[#0B1D2D]/10 rounded-[20px] p-6 hover:border-[#0677FF]/35 hover:bg-[#F7FAFD] transition-all"
+              >
+                <div className="w-10 h-10 rounded-[12px] bg-[#0677FF]/12 border border-[#0677FF]/25 flex items-center justify-center">
+                  <f.Icon className="w-5 h-5 text-[#0677FF]" />
+                </div>
+                <div className="display-serif text-[19px] font-[800] mt-4 leading-tight">{f.label}</div>
+                <p className="text-[13px] mt-2.5 text-[#0B1D2D]/60 leading-[1.6]">{f.body}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ───────── Compliance ───────── */
 function Compliance() {
   return (
@@ -490,21 +581,21 @@ function Pricing({ onEnter }: { onEnter: () => void }) {
       name: 'Solo',
       tag: 'CC a título individual',
       price: '49',
-      features: ['1 utilizador', 'Logo + dados no PDF', 'Todos os 10 simuladores', 'Pacote do cliente', 'Suporte por email'],
+      features: ['1 utilizador', 'Todos os simuladores + guias', 'Gabinete: tarefas + obrigações', 'Pacote do cliente', 'Suporte por email'],
       featured: false,
     },
     {
       name: 'Escritório',
       tag: 'Mais usado',
       price: '129',
-      features: ['Até 5 utilizadores', 'Branding completo', 'Tabela de honorários partilhada', 'Histórico por cliente', 'Suporte prioritário'],
+      features: ['Até 5 utilizadores', 'Gabinete completo: tarefas + obrigações + cofre', 'Live entre a equipa (tempo real)', 'Tabela de honorários + exportar Excel', 'Histórico por cliente', 'Suporte prioritário'],
       featured: true,
     },
     {
       name: 'Sociedade',
       tag: 'PJ + Sociedade C.C.',
       price: '249',
-      features: ['Até 15 utilizadores', 'Multi-marca', 'Importação SAF-T', 'API privada (em breve)', 'Onboarding dedicado'],
+      features: ['Até 15 utilizadores', 'Cofre zero-knowledge multi-colaborador', 'Importação SAF-T', 'Multi-marca', 'API privada (em breve)', 'Onboarding dedicado'],
       featured: false,
     },
   ];
@@ -608,6 +699,7 @@ function Footer() {
         <div className="flex flex-wrap gap-x-5 gap-y-2 text-[12px] text-[#0B1D2D]/55">
           <a href="#funciona" className="hover:text-[#0B1D2D] transition-colors">Como funciona</a>
           <a href="#simuladores" className="hover:text-[#0B1D2D] transition-colors">Simuladores</a>
+          <a href="#gabinete" className="hover:text-[#0B1D2D] transition-colors">Gabinete</a>
           <a href="#pacote" className="hover:text-[#0B1D2D] transition-colors">Pacote</a>
           <a href="#precos" className="hover:text-[#0B1D2D] transition-colors">Preços</a>
         </div>

@@ -11,7 +11,8 @@
 export type ViewKey =
   | 'empresas' | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'previsa'
-  | 'legal' | 'office-settings' | 'historico' | 'exportar' | 'hub';
+  | 'legal' | 'office-settings' | 'historico' | 'exportar' | 'hub'
+  | 'gabinete' | 'gab-clientes' | 'gab-tarefas' | 'gab-obrigacoes' | 'gab-cofre';
 
 export interface GuiaPasso {
   titulo: string;
@@ -245,6 +246,62 @@ export const GUIAS: Record<ViewKey, Guia> = {
     passos: [
       { titulo: 'Navegação do cliente', corpo: 'A partir daqui saltas diretamente para qualquer ferramenta do cliente ativo — perfil, simuladores, histórico e documentos.', alvo: { sel: '[data-view="hub"]' } },
       { titulo: 'Voltar à lista', corpo: 'A lista de empresas continua a um clique — o menu do cliente é só um atalho, nunca uma página à parte.', alvo: { sel: '[data-view="hub"]' } },
+    ],
+  },
+
+  gabinete: {
+    titulo: 'Gabinete',
+    intro: 'A gestão do dia do escritório: tarefas, obrigações dos clientes, cofre de senhas e visão do que está atrasado — tudo num só sítio, sempre atualizado.',
+    acao: 'Cria a primeira tarefa ou guarda o primeiro acesso no cofre.',
+    passos: [
+      { titulo: 'Visão do dia', corpo: 'KPIs no topo: tarefas que vencem hoje, atrasadas, obrigações vencidas e clientes sem tarefa há 30 dias — o que precisa de atenção hoje.', alvo: { texto: 'Tarefas hoje' } },
+      { titulo: 'Próximos 7 dias', corpo: 'Lista do que vence na semana: obrigações e tarefas juntas, por data. Clica em "Ver tudo" para ir às tarefas.', alvo: { texto: 'Próximos 7 dias' } },
+      { titulo: 'Atalhos', corpo: 'Novo cliente, nova tarefa e guardar acesso — atalhos diretos para as ações mais frequentes do escritório.', alvo: { texto: 'Atalhos' } },
+    ],
+  },
+
+  'gab-clientes': {
+    titulo: 'Clientes 360',
+    intro: 'A ficha centralizada do cliente no gabinete: dados, regime de IVA, território e ligação ao perfil de simulações. Ao guardar, as obrigações fiscais do ano são geradas sozinhas.',
+    acao: 'Cria um cliente de teste e vê as obrigações a aparecerem automaticamente.',
+    passos: [
+      { titulo: 'Pesquisar e filtrar', corpo: 'Procura por nome/NIF/email e filtra por estado (ativo/arquivado). A lista fica atualizada em tempo real.', alvo: { texto: 'Pesquisar nome, NIF, email' } },
+      { titulo: 'Novo cliente', corpo: 'Nome, NIF, regime de IVA e território. Ao guardar, o sistema cria as obrigações do ano (IVA, PPC, IES, Modelo 22).', alvo: { texto: 'Novo cliente' } },
+      { titulo: 'Migrar de EmpresasList', corpo: 'Importa as empresas já existentes do Estudo 360 para o gabinete — não precisas de as recriar à mão.', alvo: { texto: 'Migrar de EmpresasList' } },
+      { titulo: 'Gerar obrigações', corpo: 'O ícone do calendário gera (ou completa) as obrigações fiscais do cliente para o ano — idempotente, não duplica.', alvo: { texto: 'Gerar obrigações' } },
+    ],
+  },
+
+  'gab-tarefas': {
+    titulo: 'Tarefas',
+    intro: 'O quadro Kanban do gabinete: A fazer / Em curso / Feito / Atrasada. Cada tarefa pode ter cliente, prazo, prioridade e responsável.',
+    acao: 'Cria uma tarefa com prazo e muda-a de coluna — vê como fica instantâneo.',
+    passos: [
+      { titulo: 'Colunas do Kanban', corpo: 'Arrasta o trabalho pela vida útil: A fazer → Em curso → Feito. A coluna Atrasada marca o que passou do prazo.', alvo: { texto: 'A fazer' } },
+      { titulo: 'Criar tarefa', corpo: 'Título, cliente (opcional), prazo, prioridade e tipo. O botão "Feito" fecha a tarefa com registo de data.', alvo: { texto: 'Nova tarefa' } },
+      { titulo: 'Obrigações automáticas', corpo: 'As obrigações fiscais geradas dos clientes aparecem aqui como tarefas do tipo obrigação — não precisas de as criar à mão.', alvo: { texto: 'obrigacao' } },
+    ],
+  },
+
+  'gab-obrigacoes': {
+    titulo: 'Obrigações',
+    intro: 'O calendário fiscal do gabinete: IVA, PPC, IES e Modelo 22 por cliente e por mês — para nunca falhar uma entrega.',
+    acao: 'Navega nos meses e marca uma obrigação como entregue.',
+    passos: [
+      { titulo: 'Mês e cliente', corpo: 'Escolhe o mês (YYYY-MM) e filtra por cliente. As obrigações listam vencimento, tipo e estado.', alvo: { texto: 'Todos clientes' } },
+      { titulo: 'Estados', corpo: 'Pendente (âmbar), Entregue (verde), Atrasada (vermelho) ou Dispensada — atualizas com um clique.', alvo: { texto: 'Entregue' } },
+      { titulo: 'Geração automática', corpo: 'Cada cliente em Clientes 360 gera IVA mensal/trimestral + 3 PPC (jul/set/15 dez) + Modelo 22 e IES — com prazos reais.', alvo: { texto: 'Obrigações são geradas automaticamente' } },
+    ],
+  },
+
+  'gab-cofre': {
+    titulo: 'Cofre',
+    intro: 'Senhas e acessos do escritório cifrados no browser (AES-GCM) — ninguém, nem mesmo a plataforma, vê os segredos em texto limpo.',
+    acao: 'Define uma passphrase do cofre e guarda o primeiro acesso.',
+    passos: [
+      { titulo: 'Passphrase', corpo: 'A chave do cofre. Sem ela não consegues revelar nada — guarda-a no gestor de senhas do escritório (perdê-la = perder o cofre).', alvo: { texto: 'Passphrase do cofre' } },
+      { titulo: 'Guardar acesso', corpo: 'Título, categoria (AT/SS/Banco/…), cliente opcional, username e o segredo. Tudo cifrado antes de ir para a base de dados.', alvo: { texto: 'Guardar acesso' } },
+      { titulo: 'Revelar', corpo: 'Clica em "Revelar" com a passphrase para ver a senha, copiar e registar a vista (audit: quem viu e quando).', alvo: { texto: 'Revelar (re-auth)' } },
     ],
   },
 };
