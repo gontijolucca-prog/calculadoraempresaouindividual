@@ -48,14 +48,14 @@ function measure(el: HTMLElement): Rect {
   return { top: r.top, left: r.left, width: r.width, height: r.height, right: r.right, bottom: r.bottom };
 }
 
-const TIP_W = 340;
+const TIP_W = 390;
 
 function tipPos(rect: Rect, vw: number, vh: number) {
   let x = rect.left + rect.width / 2 - TIP_W / 2;
   let y = rect.bottom + 14;
-  if (y + 210 > vh) y = rect.top - 210 - 14;
+  if (y + 260 > vh) y = rect.top - 260 - 14;
   x = Math.max(12, Math.min(x, vw - TIP_W - 12));
-  y = Math.max(12, Math.min(y, vh - 220));
+  y = Math.max(12, Math.min(y, vh - 270));
   return { x, y };
 }
 
@@ -246,42 +246,42 @@ export default function GuiaSistema({
         aria-labelledby="guia-titulo"
         aria-describedby="guia-corpo"
         tabIndex={-1}
-        className="fixed z-[99] w-[340px] max-w-[calc(100vw-24px)] rounded-2xl bg-white border border-slate-200 shadow-2xl p-4 outline-none"
+        className="fixed z-[99] w-[390px] max-w-[calc(100vw-24px)] rounded-2xl bg-white border border-slate-200 shadow-2xl p-5 outline-none"
         style={{ left: tip.x, top: tip.y }}
       >
         <div className="flex items-center justify-between">
-          <span id="guia-titulo" className="text-[10.5px] font-[800] uppercase tracking-[0.5px] text-[#0456C0]">Guia · {guia.titulo}</span>
-          <span className="text-[11px] font-[700] text-slate-500" aria-label={`Passo ${passo + 1} de ${total}`}>
+          <span id="guia-titulo" className="text-[12px] font-[800] uppercase tracking-[0.5px] text-[#0456C0]">Guia · {guia.titulo}</span>
+          <span className="text-[12.5px] font-[700] text-slate-500" aria-label={`Passo ${passo + 1} de ${total}`}>
             Passo {passo + 1} de {total}
           </span>
         </div>
-        <h3 className="mt-1 text-[15px] font-[800] text-slate-900">{step.titulo}</h3>
-        <p id="guia-corpo" className="mt-1 text-[12.5px] leading-relaxed text-slate-700">{step.corpo}</p>
+        <h3 className="mt-2 text-[18px] font-[800] text-slate-900 leading-snug">{step.titulo}</h3>
+        <p id="guia-corpo" className="mt-1.5 text-[14.5px] leading-[1.65] text-slate-700">{step.corpo}</p>
         {isLast && guia.acao && (
-          <p className="mt-2 rounded-[10px] bg-[#0677FF]/8 border border-[#0677FF]/20 px-3 py-2 text-[12px] font-[700] text-[#0456C0]">
+          <p className="mt-3 rounded-[10px] bg-[#0677FF]/8 border border-[#0677FF]/20 px-3.5 py-2.5 text-[13.5px] font-[700] text-[#0456C0] leading-snug">
             → Agora experimenta: {guia.acao}
           </p>
         )}
-        <div className="mt-3 flex items-center gap-1.5">
+        <div className="mt-4 flex items-center gap-1.5">
           <button type="button" onClick={() => setPasso((p) => Math.max(0, p - 1))} disabled={passo === 0}
-            className="inline-flex items-center gap-1 rounded-[9px] border border-slate-200 text-slate-600 text-[12px] font-[700] px-2.5 py-1.5 hover:bg-slate-50 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0677FF] transition-all">
-            <ChevronLeft className="w-3.5 h-3.5" /> Anterior
+            className="inline-flex items-center gap-1 rounded-[10px] border border-slate-200 text-slate-600 text-[13px] font-[700] px-3 py-2 hover:bg-slate-50 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0677FF] transition-all">
+            <ChevronLeft className="w-4 h-4" /> Anterior
           </button>
           <div className="flex-1" />
           <button type="button"
             onClick={() => { if (tourView) marcarGuiaDesativado(tourView); fechar(); }}
             title="Deixar de sugerir este guia nesta página"
-            className="inline-flex items-center gap-1 text-[12px] font-[700] text-slate-500 hover:text-red-600 px-2 py-1.5 rounded-[8px] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0677FF]">
-            <Ban className="w-3.5 h-3.5" /> Não mostrar novamente
+            className="inline-flex items-center gap-1 text-[13px] font-[700] text-slate-500 hover:text-red-600 px-2.5 py-2 rounded-[10px] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0677FF]">
+            <Ban className="w-4 h-4" /> Não mostrar novamente
           </button>
           <button type="button" onClick={fechar}
-            className="text-[12px] font-[700] text-slate-500 hover:text-slate-700 px-2 py-1.5 rounded-[8px] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0677FF]">
+            className="text-[13px] font-[700] text-slate-500 hover:text-slate-700 px-2.5 py-2 rounded-[10px] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0677FF]">
             Saltar
           </button>
           <button type="button"
             onClick={() => isLast ? fechar() : setPasso((p) => p + 1)}
-            className="inline-flex items-center gap-1 rounded-[9px] bg-[#0677FF] text-white text-[12px] font-[700] px-3 py-1.5 hover:bg-blue-600 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0456C0] transition-all">
-            {isLast ? 'Concluir' : 'Seguinte'} <ChevronRight className="w-3.5 h-3.5" />
+            className="inline-flex items-center gap-1 rounded-[10px] bg-[#0677FF] text-white text-[13px] font-[800] px-4 py-2 hover:bg-blue-600 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0456C0] transition-all">
+            {isLast ? 'Concluir' : 'Seguinte'} <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>

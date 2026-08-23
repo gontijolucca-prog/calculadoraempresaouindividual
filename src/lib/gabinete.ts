@@ -38,11 +38,24 @@ function writeCache<T>(col: string, data: T[]): void {
   saveToStorage(lsKey(col), data);
 }
 
+/** Remove campos `undefined` (o Firestore rejeita) e serializa valores limpos. */
+function sanitizeForFirestore<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(sanitizeForFirestore) as unknown as T;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+    if (v === undefined) continue;          // Firestore: unsupported field value: undefined
+    out[k] = v === null ? '' : (typeof v === 'object' ? sanitizeForFirestore(v) : v);
+  }
+  return out as T;
+}
+
 async function safeSetDoc(path: string, id: string, data: unknown): Promise<void> {
   // Cache local primeiro (optimistic, offline-first)
   // Firestore depois (live)
   try {
-    await setDoc(doc(db, path, id), { ...data as object, _updatedAt: Date.now(), _updatedAtServer: serverTimestamp() }, { merge: true });
+    const payload = sanitizeForFirestore({ ...data as object, _updatedAt: Date.now(), _updatedAtServer: serverTimestamp() });
+    await setDoc(doc(db, path, id), payload, { merge: true });
     window.dispatchEvent(new CustomEvent('estudo360:cloud-sync', { detail: { ok: true } }));
   } catch (e) {
     console.warn(`[gabinete] setDoc falhou ${path}/${id}:`, e);
