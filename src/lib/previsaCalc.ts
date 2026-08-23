@@ -425,3 +425,46 @@ export function impostoEstimado(s: PreviSaState): number | null {
   if (r.totalRendimentos === 0 && r.totalGastos === 0 && !s.c701_rai) return null;
   return Math.round((r.c358 + r.taTotal) * 100) / 100;
 }
+
+// ─── Reavaliação do 3.º PPC — Sandrine 11-jun (art. 107.º CIRC) ──────────────
+// O terceiro pagamento por conta pode ser limitado/suspenso quando os
+// pagamentos já realizados (1.º + 2.º PPC) igualam ou excedem o imposto que se
+// estima ser devido. Regras:
+//   • PPC pagos ≥ imposto estimado  → suspender integralmente o 3.º PPC
+//   • diferença < 3.º PPC normal    → limitar o 3.º PPC à diferença
+//   • diferença ≥ 3.º PPC normal    → pagar integralmente
+// A subavaliação > 20% depois da Modelo 22 pode gerar juros compensatórios,
+// por isso a confirmação explícita é guardada (ppcReavaliadoEm) para auditoria.
+export type PPCRecomendacao =
+  | { tipo: 'suspender'; motivo: string; valor: number }
+  | { tipo: 'limitar'; motivo: string; valor: number }
+  | { tipo: 'pagar'; motivo: string; valor: number };
+
+export function reavaliar3PPC(
+  s: PreviSaState,
+  ppcNormal: number,
+): PPCRecomendacao {
+  const estimado = s.ppcIrcEstimado > 0 ? s.ppcIrcEstimado : impostoEstimado(s) ?? 0;
+  const pagos = (s.ppcPago1 ? ppcNormal : 0) + (s.ppcPago2 ? ppcNormal : 0);
+
+  if (pagos >= estimado) {
+    return {
+      tipo: 'suspender',
+      motivo: `PPC já pagos (${pagos.toLocaleString('pt-PT')} €) ≥ IRC estimado (${estimado.toLocaleString('pt-PT')} €). Art. 107.º n.º 1 CIRC.`,
+      valor: 0,
+    };
+  }
+  const diferenca = estimado - pagos;
+  if (diferenca < ppcNormal) {
+    return {
+      tipo: 'limitar',
+      motivo: `3.º PPC normal (${ppcNormal.toLocaleString('pt-PT')} €) é superior à diferença (${diferenca.toLocaleString('pt-PT')} €). Limitar ao valor em falta. Art. 107.º n.º 3 CIRC.`,
+      valor: Math.ceil(diferenca),
+    };
+  }
+  return {
+    tipo: 'pagar',
+    motivo: `Diferença (${diferenca.toLocaleString('pt-PT')} €) ≥ 3.º PPC normal (${ppcNormal.toLocaleString('pt-PT')} €). Pagar integralmente.`,
+    valor: ppcNormal,
+  };
+}

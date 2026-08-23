@@ -101,3 +101,41 @@ function approx(label: string, got: number, exp: number, tol = 0.5) {
 if (fails) { console.error(`\n${fails} caso(s) FALHARAM`); process.exit(1); }
 else console.log('\nTodos os casos golden do Previsa passaram.');
 
+
+// ── PPC — reavaliação do 3.º PPC (Sandrine 11-jun, art. 107.º) ──
+import { reavaliar3PPC } from './previsaCalc';
+
+{
+  // Exemplo da Sandrine: prestação 3200, 1.º+2.º pagos = 6400, IRC estimado 7000
+  const s = defaultPreviSaState();
+  s.ppcPago1 = true; s.ppcPago2 = true; s.ppcIrcEstimado = 7000;
+  const r = reavaliar3PPC(s, 3200);
+  if (r.tipo !== 'limitar' || Math.abs(r.valor - 600) > 0.01) { fails++; console.error(`✗ PPC limitar: ${r.tipo} ${r.valor}`); }
+  else console.log(`✓ PPC 3.º limitado a ${r.valor.toFixed(0)} € (diferença 600)`);
+}
+
+{
+  // Pagos ≥ estimado → suspender
+  const s = defaultPreviSaState();
+  s.ppcPago1 = true; s.ppcPago2 = true; s.ppcIrcEstimado = 6000;
+  const r = reavaliar3PPC(s, 3200);
+  if (r.tipo !== 'suspender' || r.valor !== 0) { fails++; console.error(`✗ PPC suspender: ${r.tipo}`); }
+  else console.log('✓ PPC 3.º suspenso (pagos ≥ estimado)');
+}
+
+{
+  // Diferença ≥ prestação normal → pagar integralmente
+  const s = defaultPreviSaState();
+  s.ppcPago1 = true; s.ppcPago2 = true; s.ppcIrcEstimado = 15000;
+  const r = reavaliar3PPC(s, 3200);
+  if (r.tipo !== 'pagar' || r.valor !== 3200) { fails++; console.error(`✗ PPC pagar: ${r.tipo}`); }
+  else console.log('✓ PPC 3.º pago integralmente (diferença ≥ normal)');
+}
+
+// PPC arredondamento por excesso: total 9600 → 3200 cada (já exato)
+{
+  // 3 prestações com ceil: total 10 000 → 3 334 / 3 333 + resto? Reiniciamos: ceil(10000/3) = 3334
+  const prest = Math.ceil(10000 / 3);
+  if (prest !== 3334) { fails++; console.error(`✗ ceil prestação: ${prest}`); }
+  else console.log(`✓ Prestação por excesso: ${prest} € (10 000 ÷ 3)`);
+}
