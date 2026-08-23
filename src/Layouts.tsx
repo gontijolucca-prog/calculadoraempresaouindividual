@@ -3,7 +3,7 @@ import {
   UserCircle, Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote, Info,
   ClipboardList, Upload, LogOut, Receipt,
   ChevronDown, ChevronRight, TrendingUp, Settings, UserPlus, Building2,
-  Menu, X, Clock, Briefcase, ListOrdered, Package, History, FileDown,
+  Menu, X, Clock, Briefcase, ListOrdered, Package, History, FileDown, LayoutDashboard,
 } from 'lucide-react';
 import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
 import { cn } from './lib/utils';
@@ -12,7 +12,8 @@ import type { AppMode } from './ModeSelector';
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal'
-  | 'previsa' | 'office-settings' | 'empresas' | 'historico' | 'exportar' | 'hub';
+  | 'previsa' | 'office-settings' | 'empresas' | 'historico' | 'exportar' | 'hub'
+  | 'gabinete';
 
 export interface LayoutProps {
   view: ViewType;
@@ -41,7 +42,7 @@ export interface LayoutProps {
 // Which simulator views are reachable from each mode (besides legal which is always open).
 const VIEWS_BY_MODE: Record<AppMode, ViewType[]> = {
   'novo-cliente': ['profile'],
-  empresa: ['empresas', 'profile', 'historico', 'tax', 'vehicle', 'ticket', 'selfss', 'imoveis', 'imt', 'salario', 'irs', 'diagnostico', 'previsa'],
+  empresa: ['gabinete', 'empresas', 'profile', 'historico', 'tax', 'vehicle', 'ticket', 'selfss', 'imoveis', 'imt', 'salario', 'irs', 'diagnostico', 'previsa'],
 };
 
 const MODE_META: Record<AppMode, { label: string; Icon: typeof Building2; color: string; soft: string }> = {
@@ -53,6 +54,7 @@ const MODE_META: Record<AppMode, { label: string; Icon: typeof Building2; color:
 const MODE_ORDER: AppMode[] = ['novo-cliente', 'empresa'];
 
 const NAV_ITEMS = [
+  { id: 'gabinete'   as ViewType, label: 'Gabinete',            Icon: LayoutDashboard, group: 'carteira' },
   { id: 'empresas'   as ViewType, label: 'Lista de Empresas', Icon: Briefcase,  group: 'carteira' },
   { id: 'profile'    as ViewType, label: 'Perfil',      Icon: UserCircle, group: 'profile' },
   { id: 'tax'        as ViewType, label: 'Fiscal',       Icon: Calculator, group: 'sim'     },
@@ -217,6 +219,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
 
       <nav aria-label="Navegação principal" className="flex-1 overflow-y-auto px-2 py-1">
         <SectionLabel>Carteira</SectionLabel>
+            <NavItem label="Gabinete" Icon={LayoutDashboard} onClick={() => go('gabinete')} current={active === 'gabinete'} title="Dashboard live: tarefas, obrigações, cofre — memória reliable do gabinete" />
             <NavItem label="Lista de Empresas" Icon={Briefcase} onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }} current={active === 'empresas'} title="Carteira de clientes — cada um abre o seu menu (perfil, simuladores, histórico). Aqui também adicionas novas empresas." />
             <NavItem label="Relatórios" Icon={FileDown} onClick={() => setRelatoriosOpen(v => !v)} current={active === 'exportar'} chevronOpen={relatoriosOpen} title="Demonstrações financeiras, documentos de encerramento de contas e pacote do cliente." />
             {relatoriosOpen && (

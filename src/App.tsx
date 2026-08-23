@@ -67,6 +67,7 @@ const SalarioLiquidoSimulator = lazy(() => import('./SalarioLiquidoSimulator'));
 const IRSSimulator = lazy(() => import('./IRSSimulator'));
 const PreviSaSimulator = lazy(() => import('./PreviSaSimulator'));
 const OfficeSettingsView = lazy(() => import('./OfficeSettingsView'));
+const Gabinete = lazy(() => import('./Gabinete'));
 import { defaultPreviSaState } from './previSaState';
 import type { PreviSaState } from './previSaState';
 import { SIM_LABELS, isSimView, summarizeSimulacao, simHasData, detailSimulacao, type SimView } from './lib/simSummary';
@@ -82,7 +83,8 @@ const AIContabilista = lazy(() => import('./ai/AIContabilista'));
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal'
-  | 'previsa' | 'office-settings' | 'empresas' | 'historico' | 'exportar' | 'hub';
+  | 'previsa' | 'office-settings' | 'empresas' | 'historico' | 'exportar' | 'hub'
+  | 'gabinete';
 
 // Default landing view when the user picks a mode.
 const DEFAULT_VIEW_BY_MODE: Record<AppMode, ViewType> = {
@@ -91,6 +93,7 @@ const DEFAULT_VIEW_BY_MODE: Record<AppMode, ViewType> = {
 };
 
 const VIEW_TITLES: Record<ViewType, string> = {
+  gabinete: 'Gabinete',
   empresas: 'Lista de Empresas',
   profile: 'Perfil do Cliente',
   tax: 'Simulador Fiscal',
@@ -1214,6 +1217,11 @@ function AppContent() {
         )}
         {view === 'legal' && (
           <LegalInfo onBack={closeLegal} clientProfile={clientProfile} vehicleState={vehicleState} ticketState={ticketState} initialAnchor={legalAnchor} />
+        )}
+        {view === 'gabinete' && (
+          <Suspense fallback={<div className="p-8 text-center text-zinc-500">A carregar Gabinete…</div>}>
+            <Gabinete />
+          </Suspense>
         )}
         {view === 'office-settings' && (
           <OfficeSettingsView

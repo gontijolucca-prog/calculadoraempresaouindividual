@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentSingleTabManager, enableIndexedDbPersistence, getFirestore } from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
 // ⚠ SECURITY: Move to env vars in production.
@@ -16,6 +16,30 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+
+// Firestore com cache persistente offline-first (IndexedDB) — torna a app
+// "reliable memory": tudo fica guardado localmente e sincroniza live quando há rede.
+// Usa persistentLocalCache (SDK v12) com fallback para enableIndexedDbPersistence.
+let _db;
+try {
+  _db = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentSingleTabManager(undefined) }),
+  });
+} catch {
+  // Já inicializado (HMR) ou ambiente sem IndexedDB
+  _db = getFirestore(app);
+  try { enableIndexedDbPersistence(_db).catch(() => {}); } catch {}
+}
+
+export const db = _db;
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+
+// Helper para UI: estado da ligação live
+export function onFirestoreError(cb: (err: unknown) => void) {
+  if (typeof window !== 'undefined') {
+    window.addEventListener('estudo360:cloud-sync', ((e: CustomEvent) => cb(e.detail)) as EventListener);
+    return () => window.removeEventListener('estudo360:cloud-sync', ((e: CustomEvent) => cb(e.detail)) as EventListener);
+  }
+  return () => {};
+}
