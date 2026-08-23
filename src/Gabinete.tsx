@@ -37,11 +37,7 @@ export default function Gabinete() {
             <div className="w-8 h-8 rounded-lg bg-[#0677FF] flex items-center justify-center text-white font-bold text-sm">E3</div>
             <div>
               <div className="font-semibold leading-none">Gabinete</div>
-              <div className="text-xs text-zinc-500">Estudo360 • memória reliable • live</div>
             </div>
-            <span className="hidden sm:inline-flex items-center gap-1.5 ml-3 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> LIVE • Firestore + IndexedDB
-            </span>
           </div>
           <div className="flex items-center gap-2 text-xs text-zinc-500">
             <span>{clientes.length} clientes</span>

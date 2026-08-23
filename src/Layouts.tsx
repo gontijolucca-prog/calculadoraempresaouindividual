@@ -219,7 +219,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
 
       <nav aria-label="Navegação principal" className="flex-1 overflow-y-auto px-2 py-1">
         <SectionLabel>Carteira</SectionLabel>
-            <NavItem label="Gabinete" Icon={LayoutDashboard} onClick={() => go('gabinete')} current={active === 'gabinete'} title="Dashboard live: tarefas, obrigações, cofre — memória reliable do gabinete" />
+            <NavItem label="Gabinete" Icon={LayoutDashboard} onClick={() => go('gabinete')} current={active === 'gabinete'} title="Dashboard: tarefas, obrigações e cofre do gabinete" />
             <NavItem label="Lista de Empresas" Icon={Briefcase} onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }} current={active === 'empresas'} title="Carteira de clientes — cada um abre o seu menu (perfil, simuladores, histórico). Aqui também adicionas novas empresas." />
             <NavItem label="Relatórios" Icon={FileDown} onClick={() => setRelatoriosOpen(v => !v)} current={active === 'exportar'} chevronOpen={relatoriosOpen} title="Demonstrações financeiras, documentos de encerramento de contas e pacote do cliente." />
             {relatoriosOpen && (
