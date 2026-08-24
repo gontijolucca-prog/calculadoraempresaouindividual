@@ -119,6 +119,8 @@ export interface GabineteCliente {
     certidaoPermanente?: number;
   };
   projectos?: string[];
+  avencaMensal?: number;
+  avencaPeriodicidade?: 'mensal' | 'trimestral' | 'anual';
   createdAt: number;
   updatedAt: number;
   createdBy?: string;
@@ -367,6 +369,92 @@ export async function deleteConversa(id: string): Promise<void> {
 }
 export function newConversaId(): string { return newId('cnv'); }
 
+// ─── Comunicação — Fase 2 ────────────────────────────────────────────────────
+export type ModeloTipo = 'email' | 'sms' | 'carta';
+export interface ModeloComunicacao {
+  id: string;
+  titulo: string;
+  tipo: ModeloTipo;
+  assunto?: string;
+  corpo: string; // com variáveis {{cliente.nome}} {{nif}} etc
+  categoria?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+export interface EnvioComunicacao {
+  id: string;
+  clienteId: string;
+  clienteNome?: string;
+  modeloId?: string;
+  tipo: ModeloTipo;
+  destinatario: string;
+  assunto?: string;
+  corpo: string;
+  data: number;
+  estado: 'enviado' | 'pendente';
+  autor?: string;
+  createdAt: number;
+}
+export function listModelosCache(): ModeloComunicacao[] { return readCache<ModeloComunicacao>('modelos', []); }
+export function saveModelosCache(list: ModeloComunicacao[]): void { writeCache('modelos', list); }
+export async function upsertModelo(m: ModeloComunicacao): Promise<ModeloComunicacao> {
+  const list = listModelosCache(); const idx=list.findIndex(x=>x.id===m.id); const next={...m, updatedAt: Date.now()}; if(idx>=0) list[idx]=next; else list.unshift(next); saveModelosCache(list); try{ await safeSetDoc(colPath('modelos'), m.id, next);}catch{}
+  return next;
+}
+export async function deleteModelo(id:string):Promise<void>{ const list=listModelosCache().filter(x=>x.id!==id); saveModelosCache(list); try{ await safeDeleteDoc(colPath('modelos'), id);}catch{} }
+export function newModeloId():string{ return newId('mdl'); }
+export function listEnviosCache(): EnvioComunicacao[] { return readCache<EnvioComunicacao>('envios', []); }
+export function saveEnviosCache(list: EnvioComunicacao[]): void { writeCache('envios', list); }
+export async function upsertEnvio(e: EnvioComunicacao): Promise<EnvioComunicacao> {
+  const list=listEnviosCache(); const idx=list.findIndex(x=>x.id===e.id); if(idx>=0) list[idx]=e; else list.unshift(e); saveEnviosCache(list); try{ await safeSetDoc(colPath('envios'), e.id, e);}catch{} return e;
+}
+export function newEnvioId():string{ return newId('env'); }
+
+// ─── Rentabilidade — Fase 3 ──────────────────────────────────────────────────
+export interface Tempo {
+  id: string;
+  clienteId: string;
+  clienteNome?: string;
+  colaboradorId?: string;
+  colaboradorNome?: string;
+  data: number;
+  minutos: number;
+  descricao?: string;
+  faturavel: boolean;
+  valor?: number; // custo calculado
+  createdAt: number;
+  updatedAt: number;
+}
+export function listTemposCache(): Tempo[] { return readCache<Tempo>('tempos', []); }
+export function saveTemposCache(list: Tempo[]): void { writeCache('tempos', list); }
+export async function upsertTempo(t: Tempo): Promise<Tempo> {
+  const list=listTemposCache(); const idx=list.findIndex(x=>x.id===t.id); const next={...t, updatedAt: Date.now()}; if(idx>=0) list[idx]=next; else list.unshift(next); saveTemposCache(list); try{ await safeSetDoc(colPath('tempos'), t.id, next);}catch{} return next;
+}
+export async function deleteTempo(id:string):Promise<void>{ const list=listTemposCache().filter(x=>x.id!==id); saveTemposCache(list); try{ await safeDeleteDoc(colPath('tempos'), id);}catch{} }
+export function newTempoId():string{ return newId('tmp'); }
+
+// ─── Actas & Guias — Fase 4 ──────────────────────────────────────────────────
+export interface Acta {
+  id: string;
+  clienteId: string;
+  clienteNome?: string;
+  data: number;
+  tipo: 'ordinaria' | 'extraordinaria' | 'outro';
+  titulo: string;
+  conteudo: string;
+  createdAt: number;
+  updatedAt: number;
+}
+export function listActasCache(): Acta[] { return readCache<Acta>('actas', []); }
+export function saveActasCache(list: Acta[]): void { writeCache('actas', list); }
+export async function upsertActa(a: Acta): Promise<Acta> {
+  const list=listActasCache(); const idx=list.findIndex(x=>x.id===a.id); const next={...a, updatedAt: Date.now()}; if(idx>=0) list[idx]=next; else list.unshift(next); saveActasCache(list); try{ await safeSetDoc(colPath('actas'), a.id, next);}catch{} return next;
+}
+export async function deleteActa(id:string):Promise<void>{ const list=listActasCache().filter(x=>x.id!==id); saveActasCache(list); try{ await safeDeleteDoc(colPath('actas'), id);}catch{} }
+export function newActaId():string{ return newId('act'); }
+
+// Fase 3 — avença já no GabineteCliente acima
+
 // ─── Alertas — helpers Fase 1 ────────────────────────────────────────────────
 export function getAlertasVencidos(cli: GabineteCliente, diasAviso = 30): { tipo: keyof NonNullable<GabineteCliente['alertas']>; vencimento: number; dias: number }[] {
   if (!cli.alertas) return [];
@@ -419,6 +507,10 @@ export const subscribeObrigacoes = makeSubscriber<Obrigacao>('obrigacoes');
 export const subscribeCofre = makeSubscriber<CofreEntrada>('cofre');
 export const subscribeColaboradores = makeSubscriber<Colaborador>('colaboradores');
 export const subscribeConversas = makeSubscriber<Conversa>('conversas');
+export const subscribeModelos = makeSubscriber<ModeloComunicacao>('modelos');
+export const subscribeEnvios = makeSubscriber<EnvioComunicacao>('envios');
+export const subscribeTempos = makeSubscriber<Tempo>('tempos');
+export const subscribeActas = makeSubscriber<Acta>('actas');
 
 // One-shot fetch (para seed/migração)
 export async function fetchAll<T>(col: string): Promise<T[]> {

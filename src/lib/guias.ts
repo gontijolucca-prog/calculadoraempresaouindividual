@@ -12,7 +12,7 @@ export type ViewKey =
   | 'empresas' | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'previsa'
   | 'legal' | 'office-settings' | 'historico' | 'exportar' | 'hub'
-  | 'gabinete' | 'gab-agenda' | 'gab-clientes' | 'gab-tarefas' | 'gab-obrigacoes' | 'gab-cofre';
+  | 'gabinete' | 'gab-agenda' | 'gab-clientes' | 'gab-tarefas' | 'gab-obrigacoes' | 'gab-comunicacao' | 'gab-rentabilidade' | 'gab-actas' | 'gab-cofre';
 
 export interface GuiaPasso {
   titulo: string;
@@ -302,6 +302,39 @@ export const GUIAS: Record<ViewKey, Guia> = {
       { titulo: 'Mês e cliente', corpo: 'Escolhe o mês (YYYY-MM) e filtra por cliente. As obrigações listam vencimento, tipo e estado.', alvo: { texto: 'Todos clientes' } },
       { titulo: 'Estados', corpo: 'Pendente (âmbar), Entregue (verde), Atrasada (vermelho) ou Dispensada — atualizas com um clique.', alvo: { texto: 'Entregue' } },
       { titulo: 'Geração automática', corpo: 'Cada cliente em Clientes 360 gera IVA mensal/trimestral + 3 PPC (jul/set/15 dez) + Modelo 22 e IES — com prazos reais.', alvo: { texto: 'Obrigações são geradas automaticamente' } },
+    ],
+  },
+
+  'gab-comunicacao': {
+    titulo: 'Comunicação',
+    intro: 'Central de comunicação do gabinete: modelos de email/SMS/cartas e histórico de envios por cliente.',
+    acao: 'Cria um modelo com variáveis {{cliente.nome}} e envia um teste.',
+    passos: [
+      { titulo: 'Modelos', corpo: 'Cria modelos de email, SMS ou carta com variáveis. Reutiliza-os para todos os clientes sem reescrever.', alvo: { texto: 'Modelos' } },
+      { titulo: 'Histórico de envios', corpo: 'Todos os envios ficam registados por cliente — sabes o que foi enviado, quando e a quem.', alvo: { texto: 'Histórico' } },
+      { titulo: 'Pré-visualização', corpo: 'Vê o modelo preenchido com os dados do cliente antes de enviar — sem surpresas.', alvo: { texto: 'Pré-visualizar' } },
+    ],
+  },
+
+  'gab-rentabilidade': {
+    titulo: 'Rentabilidade',
+    intro: 'Horas, custos e avenças por cliente. Vê onde ganhas e onde perdes tempo.',
+    acao: 'Regista as primeiras horas e vê o custo vs avença.',
+    passos: [
+      { titulo: 'Imputação de tempos', corpo: 'Regista horas por cliente e colaborador — manual ou a partir das tarefas concluídas.', alvo: { texto: 'Novo registo' } },
+      { titulo: 'Custo vs Avença', corpo: 'Compara o custo das horas com a avença mensal do cliente — rentabilidade real.', alvo: { texto: 'Rentabilidade' } },
+      { titulo: 'Top clientes', corpo: 'Ranking de clientes por horas e por margem — decide onde focar.', alvo: { texto: 'Top clientes' } },
+    ],
+  },
+
+  'gab-actas': {
+    titulo: 'Livro de Actas',
+    intro: 'Actas de assembleia e deliberações por cliente — tudo arquivado e pesquisável.',
+    acao: 'Cria a primeira acta para um cliente.',
+    passos: [
+      { titulo: 'Nova acta', corpo: 'Data, tipo (ordinária/extraordinária) e conteúdo. Fica logo live para toda a equipa.', alvo: { texto: 'Nova acta' } },
+      { titulo: 'Pesquisar', corpo: 'Filtra por cliente e pesquisa no conteúdo — encontra qualquer deliberação em segundos.', alvo: { texto: 'Pesquisar' } },
+      { titulo: 'Histórico', corpo: 'Todas as actas por cliente, ordenadas por data — com quem criou e quando.', alvo: { texto: 'Actas' } },
     ],
   },
 

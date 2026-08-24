@@ -1,13 +1,16 @@
 import React, { useMemo, useState } from 'react';
-import { Search, Plus, Users, CheckSquare, Calendar, Lock, LayoutDashboard, Building2, Trash2, Eye, EyeOff, Copy, Shield, AlertTriangle, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Clock, Briefcase, MessageSquare, X } from 'lucide-react';
-import { useGabineteClientes, useGabineteTarefas, useGabineteObrigacoes, useGabineteCofre, useGabineteConversas } from './lib/useGabinete';
+import { Search, Plus, Users, CheckSquare, Calendar, Lock, LayoutDashboard, Building2, Trash2, Eye, EyeOff, Copy, Shield, AlertTriangle, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Clock, Briefcase, MessageSquare, X, Mail, FileText, BarChart3, Send } from 'lucide-react';
+import { useGabineteClientes, useGabineteTarefas, useGabineteObrigacoes, useGabineteCofre, useGabineteConversas, useGabineteModelos, useGabineteEnvios, useGabineteTempos, useGabineteActas } from './lib/useGabinete';
 import {
   upsertCliente, deleteCliente, newClienteId, gerarObrigacoesParaCliente, migrarEmpresasParaGabinete,
   upsertTarefa, deleteTarefa, marcarTarefaFeita, newTarefaId,
   upsertObrigacao,
   upsertCofre, deleteCofre, registarVistaCofre, newCofreId,
   upsertConversa, deleteConversa, newConversaId,
-  type GabineteCliente, type Tarefa, type Obrigacao, type CofreEntrada, type Conversa,
+  upsertModelo, deleteModelo, newModeloId, upsertEnvio, newEnvioId,
+  upsertTempo, deleteTempo, newTempoId,
+  upsertActa, deleteActa, newActaId,
+  type GabineteCliente, type Tarefa, type Obrigacao, type CofreEntrada, type Conversa, type ModeloComunicacao, type EnvioComunicacao, type Tempo, type Acta,
 } from './lib/gabinete';
 import { listEmpresas } from './lib/empresas';
 import { encryptSecret, decryptSecret, setCofrePassphrase, getCofrePassphrase, cofreIsUnlocked } from './lib/cofreCrypto';
@@ -21,17 +24,23 @@ const GAB_TAB_GUIA: Record<GabTab, ViewKey> = {
   clientes: 'gab-clientes',
   tarefas: 'gab-tarefas',
   obrigacoes: 'gab-obrigacoes',
+  comunicacao: 'gab-comunicacao',
+  rentabilidade: 'gab-rentabilidade',
+  actas: 'gab-actas',
   cofre: 'gab-cofre',
 };
 
 // ─── Layout ─────────────────────────────────────────────────────────────────
-type GabTab = 'dashboard' | 'agenda' | 'clientes' | 'tarefas' | 'obrigacoes' | 'cofre';
+type GabTab = 'dashboard' | 'agenda' | 'clientes' | 'tarefas' | 'obrigacoes' | 'comunicacao' | 'rentabilidade' | 'actas' | 'cofre';
 const TABS: { id: GabTab; label: string; icon: React.ElementType; desc: string }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Visão do dia' },
   { id: 'agenda', label: 'Agenda', icon: Calendar, desc: 'Calendário' },
   { id: 'clientes', label: 'Clientes 360', icon: Users, desc: 'Ficha centralizada' },
   { id: 'tarefas', label: 'Tarefas', icon: CheckSquare, desc: 'Kanban + lista' },
   { id: 'obrigacoes', label: 'Obrigações', icon: Calendar, desc: 'Calendário fiscal' },
+  { id: 'comunicacao', label: 'Comunicação', icon: Mail, desc: 'Email/SMS' },
+  { id: 'rentabilidade', label: 'Rentabilidade', icon: BarChart3, desc: 'Tempos & Custo' },
+  { id: 'actas', label: 'Actas', icon: FileText, desc: 'Livro de Actas' },
   { id: 'cofre', label: 'Cofre', icon: Lock, desc: 'Zero-knowledge' },
 ];
 
@@ -76,6 +85,9 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour 
         {tab === 'clientes' && <ClientesView clientes={clientes} />}
         {tab === 'tarefas' && <TarefasView tarefas={tarefas} clientes={clientes} />}
         {tab === 'obrigacoes' && <ObrigacoesView obrigacoes={obrigacoes} clientes={clientes} />}
+        {tab === 'comunicacao' && <ComunicacaoView clientes={clientes} />}
+        {tab === 'rentabilidade' && <RentabilidadeView clientes={clientes} />}
+        {tab === 'actas' && <ActasView clientes={clientes} />}
         {tab === 'cofre' && <CofreView cofre={cofre} clientes={clientes} />}
       </div>
     </div>
@@ -328,6 +340,8 @@ function ClientesView({ clientes }: { clientes: GabineteCliente[] }) {
       estado: (form.estado as GabineteCliente['estado']) || 'ativo',
       contactos: (form.contactos as any)?.filter((c:any)=> c.nome?.trim()).map((c:any)=> ({...c, nome:c.nome.trim(), cargo:c.cargo?.trim(), email:c.email?.trim(), telefone:c.telefone?.trim()})) || undefined,
       alertas: form.alertas && Object.values(form.alertas).some(Boolean) ? form.alertas : undefined,
+      avencaMensal: form.avencaMensal ? Number(form.avencaMensal) : undefined,
+      avencaPeriodicidade: form.avencaPeriodicidade as any,
       createdAt: (form.createdAt as number) || Date.now(),
       updatedAt: Date.now(),
     };
@@ -458,6 +472,14 @@ function ClientesView({ clientes }: { clientes: GabineteCliente[] }) {
                 <label><span className="text-[11px] font-medium">IMI</span><input type="date" value={form.alertas?.imi ? new Date(form.alertas.imi).toISOString().slice(0,10) : ''} onChange={e=>setForm({...form, alertas: {...(form.alertas||{}), imi: e.target.value ? new Date(e.target.value).getTime() : undefined}})} className="mt-1 w-full px-2.5 py-2 rounded-lg border border-amber-200 bg-white text-sm" /></label>
                 <label><span className="text-[11px] font-medium">Seguros</span><input type="date" value={form.alertas?.seguros ? new Date(form.alertas.seguros).toISOString().slice(0,10) : ''} onChange={e=>setForm({...form, alertas: {...(form.alertas||{}), seguros: e.target.value ? new Date(e.target.value).getTime() : undefined}})} className="mt-1 w-full px-2.5 py-2 rounded-lg border border-amber-200 bg-white text-sm" /></label>
                 <label><span className="text-[11px] font-medium">Certidão Permanente</span><input type="date" value={form.alertas?.certidaoPermanente ? new Date(form.alertas.certidaoPermanente).toISOString().slice(0,10) : ''} onChange={e=>setForm({...form, alertas: {...(form.alertas||{}), certidaoPermanente: e.target.value ? new Date(e.target.value).getTime() : undefined}})} className="mt-1 w-full px-2.5 py-2 rounded-lg border border-amber-200 bg-white text-sm" /></label>
+              </div>
+            </div>
+            {/* Avença — Fase 3 */}
+            <div className="mt-4 p-4 rounded-xl bg-blue-50/50 border border-blue-200">
+              <div className="text-xs font-bold text-blue-900 flex items-center gap-1.5"><BarChart3 className="w-3.5 h-3.5" /> Avença (Rentabilidade)</div>
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <label><span className="text-[11px] font-medium">Valor mensal (€)</span><input type="number" value={form.avencaMensal||''} onChange={e=>setForm({...form, avencaMensal: e.target.value? Number(e.target.value): undefined})} placeholder="ex: 150" className="mt-1 w-full px-2.5 py-2 rounded-lg border border-blue-200 bg-white text-sm" /></label>
+                <label><span className="text-[11px] font-medium">Periodicidade</span><select value={form.avencaPeriodicidade||'mensal'} onChange={e=>setForm({...form, avencaPeriodicidade: e.target.value as any})} className="mt-1 w-full px-2.5 py-2 rounded-lg border border-blue-200 bg-white text-sm"><option value="mensal">Mensal</option><option value="trimestral">Trimestral</option><option value="anual">Anual</option></select></label>
               </div>
             </div>
             {/* Contactos de Quadros — Fase 1 */}
@@ -781,6 +803,250 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
               <textarea value={form.notas||''} onChange={e=>setForm({...form, notas:e.target.value})} placeholder="Notas (opcional)" rows={2} className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
             </div>
             <div className="flex justify-end gap-2 mt-6"><button onClick={()=>setShowNew(false)} className="px-4 py-2.5 rounded-xl border border-zinc-200 text-sm">Cancelar</button><button onClick={handleSave} className="px-4 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-medium">Cifrar e guardar</button></div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Comunicação — Fase 2 ────────────────────────────────────────────────────
+function ComunicacaoView({ clientes }: { clientes: GabineteCliente[] }) {
+  const modelos = useGabineteModelos();
+  const envios = useGabineteEnvios();
+  const [showModelo, setShowModelo] = useState(false);
+  const [mForm, setMForm] = useState<Partial<ModeloComunicacao>>({ tipo: 'email' as const });
+  const [showEnvio, setShowEnvio] = useState(false);
+  const [eForm, setEForm] = useState<Partial<EnvioComunicacao>>({ tipo: 'email' as const });
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const preview = modelos.find(m=> m.id===previewId);
+  const handleSaveModelo = async () => {
+    if (!mForm.titulo?.trim() || !mForm.corpo?.trim()) return alert('Título e corpo obrigatórios');
+    const m: ModeloComunicacao = { id: (mForm.id as string) || newModeloId(), titulo: mForm.titulo!.trim(), tipo: (mForm.tipo as any)||'email', assunto: mForm.assunto?.trim(), corpo: mForm.corpo!.trim(), categoria: mForm.categoria?.trim(), createdAt: (mForm.createdAt as number)||Date.now(), updatedAt: Date.now() };
+    await upsertModelo(m); setShowModelo(false); setMForm({ tipo: 'email' as const });
+  };
+  const handleEnvio = async () => {
+    if (!eForm.clienteId || !eForm.destinatario?.trim() || !eForm.corpo?.trim()) return alert('Cliente, destinatário e corpo obrigatórios');
+    const cli = clientes.find(c=> c.id===eForm.clienteId);
+    const corpo = eForm.corpo!.replaceAll('{{cliente.nome}}', cli?.nome||'').replaceAll('{{nif}}', cli?.nif||'');
+    const env: EnvioComunicacao = { id: newEnvioId(), clienteId: eForm.clienteId!, clienteNome: cli?.nome, modeloId: eForm.modeloId, tipo: (eForm.tipo as any)||'email', destinatario: eForm.destinatario!.trim(), assunto: eForm.assunto?.trim(), corpo, data: Date.now(), estado: 'enviado', autor: 'local', createdAt: Date.now() };
+    await upsertEnvio(env); setShowEnvio(false); setEForm({ tipo: 'email' as const });
+  };
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold flex items-center gap-2"><Mail className="w-5 h-5 text-[#0677FF]" /> Comunicação</h2>
+        <div className="flex gap-2">
+          <button onClick={()=>{ setMForm({ tipo: 'email' as const }); setShowModelo(true); }} className="px-4 py-2 rounded-xl bg-white border border-zinc-200 text-sm hover:bg-zinc-50 flex items-center gap-2"><Plus className="w-4 h-4" /> Novo modelo</button>
+          <button onClick={()=>{ setEForm({ tipo: 'email' as const }); setShowEnvio(true); }} className="px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm font-medium flex items-center gap-2"><Send className="w-4 h-4" /> Novo envio</button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-2xl border border-zinc-200 p-4">
+          <h3 className="font-semibold mb-3">Modelos ({modelos.length})</h3>
+          <p className="text-xs text-zinc-500 mb-3">Usa variáveis {"{{cliente.nome}}"} e {"{{nif}}"} no corpo. Pré-visualiza antes de enviar.</p>
+          <div className="space-y-2 max-h-[420px] overflow-y-auto">
+            {modelos.length===0 ? <div className="py-12 text-center text-sm text-zinc-500 border-2 border-dashed rounded-xl">Sem modelos. Cria o primeiro.</div> : modelos.map(m=> (
+              <div key={m.id} className="p-3 rounded-xl border border-zinc-200 hover:bg-zinc-50">
+                <div className="flex items-start justify-between gap-2"><span className="text-xs px-2 py-1 rounded-full bg-zinc-100 border">{m.tipo}</span><button onClick={()=>deleteModelo(m.id)} className="text-rose-600 hover:underline text-xs">Apagar</button></div>
+                <div className="text-sm font-medium mt-1">{m.titulo}</div>
+                {m.assunto && <div className="text-xs text-zinc-600">Assunto: {m.assunto}</div>}
+                <div className="text-xs text-zinc-500 mt-1 line-clamp-2">{m.corpo.slice(0,120)}</div>
+                <div className="flex gap-1 mt-2">
+                  <button onClick={()=>{ setMForm(m); setShowModelo(true); }} className="text-xs px-2 py-1 rounded-lg bg-white border">Editar</button>
+                  <button onClick={()=>setPreviewId(m.id)} className="text-xs px-2 py-1 rounded-lg bg-[#0677FF] text-white">Pré-visualizar</button>
+                </div>
+                {previewId===m.id && preview && <div className="mt-2 p-3 rounded-xl bg-blue-50 border border-blue-200 text-sm whitespace-pre-wrap">{preview.corpo.replaceAll('{{cliente.nome}}','Empresa Exemplo').replaceAll('{{nif}}','500000000')}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl border border-zinc-200 p-4">
+          <h3 className="font-semibold mb-3">Histórico de envios ({envios.length})</h3>
+          <div className="space-y-2 max-h-[420px] overflow-y-auto">
+            {envios.length===0 ? <div className="py-12 text-center text-sm text-zinc-500 border-2 border-dashed rounded-xl">Sem envios ainda.</div> : envios.slice(0,20).map(e=> (
+              <div key={e.id} className="p-3 rounded-xl border border-zinc-200">
+                <div className="flex items-center gap-2 text-xs"><span className="px-2 py-1 rounded-full bg-emerald-50 border border-emerald-200">{e.tipo}</span><span className="text-zinc-500">{new Date(e.data).toLocaleDateString('pt-PT')}</span><span className="text-zinc-500">• {e.clienteNome||'—'}</span></div>
+                <div className="text-sm font-medium mt-1">{e.assunto || e.destinatario}</div>
+                <div className="text-xs text-zinc-600 line-clamp-2">{e.corpo.slice(0,120)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      {showModelo && (
+        <div className="fixed inset-0 z-30 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowModelo(false)}>
+          <div className="w-full max-w-[560px] bg-white rounded-2xl p-6 border shadow-xl" onClick={e=>e.stopPropagation()}>
+            <h3 className="font-semibold">{mForm.id ? 'Editar modelo' : 'Novo modelo'}</h3>
+            <div className="space-y-3 mt-4">
+              <input value={mForm.titulo||''} onChange={e=>setMForm({...mForm, titulo:e.target.value})} placeholder="Título — ex: Lembrete IVA" className="w-full px-3 py-2.5 rounded-xl border text-sm" />
+              <div className="grid grid-cols-2 gap-3">
+                <select value={mForm.tipo} onChange={e=>setMForm({...mForm, tipo:e.target.value as any})} className="px-3 py-2.5 rounded-xl border bg-white text-sm"><option value="email">Email</option><option value="sms">SMS</option><option value="carta">Carta</option></select>
+                <input value={mForm.assunto||''} onChange={e=>setMForm({...mForm, assunto:e.target.value})} placeholder="Assunto (email)" className="px-3 py-2.5 rounded-xl border text-sm" />
+              </div>
+              <textarea value={mForm.corpo||''} onChange={e=>setMForm({...mForm, corpo:e.target.value})} placeholder="Corpo com {{cliente.nome}} {{nif}}" rows={5} className="w-full px-3 py-2.5 rounded-xl border text-sm font-mono" />
+              <div className="flex justify-end gap-2"><button onClick={()=>setShowModelo(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleSaveModelo} className="px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Guardar modelo (live)</button></div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showEnvio && (
+        <div className="fixed inset-0 z-30 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowEnvio(false)}>
+          <div className="w-full max-w-[560px] bg-white rounded-2xl p-6 border shadow-xl" onClick={e=>e.stopPropagation()}>
+            <h3 className="font-semibold">Novo envio</h3>
+            <div className="space-y-3 mt-4">
+              <select value={eForm.clienteId||''} onChange={e=>setEForm({...eForm, clienteId:e.target.value})} className="w-full px-3 py-2.5 rounded-xl border bg-white text-sm"><option value="">Escolhe cliente</option>{clientes.map(c=> <option key={c.id} value={c.id}>{c.nome}</option>)}</select>
+              <select value={eForm.modeloId||''} onChange={e=>{ const m=modelos.find(x=>x.id===e.target.value); setEForm({...eForm, modeloId:e.target.value, tipo: m?.tipo as any || eForm.tipo, assunto: m?.assunto || eForm.assunto, corpo: m?.corpo || eForm.corpo}); }} className="w-full px-3 py-2.5 rounded-xl border bg-white text-sm"><option value="">Sem modelo (manual)</option>{modelos.map(m=> <option key={m.id} value={m.id}>{m.titulo} — {m.tipo}</option>)}</select>
+              <input value={eForm.destinatario||''} onChange={e=>setEForm({...eForm, destinatario:e.target.value})} placeholder="Destinatário — email ou telefone" className="w-full px-3 py-2.5 rounded-xl border text-sm" />
+              <input value={eForm.assunto||''} onChange={e=>setEForm({...eForm, assunto:e.target.value})} placeholder="Assunto" className="w-full px-3 py-2.5 rounded-xl border text-sm" />
+              <textarea value={eForm.corpo||''} onChange={e=>setEForm({...eForm, corpo:e.target.value})} placeholder="Corpo" rows={4} className="w-full px-3 py-2.5 rounded-xl border text-sm" />
+              <div className="flex justify-end gap-2"><button onClick={()=>setShowEnvio(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleEnvio} className="px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Registar envio (live)</button></div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Rentabilidade — Fase 3 ──────────────────────────────────────────────────
+function RentabilidadeView({ clientes }: { clientes: GabineteCliente[] }) {
+  const tempos = useGabineteTempos();
+  const [filtroCli, setFiltroCli] = useState<string>('todos');
+  const [showNew, setShowNew] = useState(false);
+  const [form, setForm] = useState<Partial<Tempo>>({ faturavel: true });
+  const filtered = useMemo(()=> filtroCli==='todos' ? tempos : tempos.filter(t=> t.clienteId===filtroCli), [tempos, filtroCli]);
+  const totalMin = filtered.reduce((a,b)=> a+b.minutos, 0);
+  const totalHoras = (totalMin/60).toFixed(1);
+  const porCliente = useMemo(()=> {
+    const map: Record<string, { nome: string; min: number; avenca?: number }> = {};
+    filtered.forEach(t=> { if(!map[t.clienteId]) map[t.clienteId]={ nome: t.clienteNome||clientes.find(c=>c.id===t.clienteId)?.nome||t.clienteId, min:0, avenca: clientes.find(c=>c.id===t.clienteId)?.avencaMensal }; map[t.clienteId].min+=t.minutos; });
+    return Object.entries(map).map(([id, v])=> ({ id, ...v, horas: (v.min/60).toFixed(1), custo: (v.min/60*50).toFixed(0), rent: v.avenca ? (v.avenca - v.min/60*50).toFixed(0) : '—' })).sort((a,b)=> b.min - a.min);
+  }, [filtered, clientes]);
+  const handleSave = async () => {
+    if (!form.clienteId || !form.minutos) return alert('Cliente e minutos obrigatórios');
+    const cli = clientes.find(c=>c.id===form.clienteId);
+    const t: Tempo = { id: (form.id as string)||newTempoId(), clienteId: form.clienteId!, clienteNome: cli?.nome, colaboradorId: form.colaboradorId, colaboradorNome: form.colaboradorNome, data: form.data||Date.now(), minutos: Number(form.minutos), descricao: form.descricao?.trim(), faturavel: !!form.faturavel, valor: Number(form.minutos)/60*50, createdAt: (form.createdAt as number)||Date.now(), updatedAt: Date.now() };
+    await upsertTempo(t); setShowNew(false); setForm({ faturavel: true });
+  };
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-bold flex items-center gap-2"><BarChart3 className="w-5 h-5 text-[#0677FF]" /> Rentabilidade</h2>
+        <div className="flex gap-2">
+          <select value={filtroCli} onChange={e=>setFiltroCli(e.target.value)} className="px-3 py-2.5 rounded-xl border bg-white text-sm"><option value="todos">Todos clientes</option>{clientes.map(c=> <option key={c.id} value={c.id}>{c.nome}</option>)}</select>
+          <button onClick={()=>{ setForm({ faturavel: true, data: Date.now() }); setShowNew(true); }} className="px-4 py-2.5 rounded-xl bg-[#0677FF] text-white text-sm font-medium flex items-center gap-2"><Plus className="w-4 h-4" /> Novo registo</button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white rounded-2xl border p-4"><div className="text-xs font-bold text-zinc-500">Horas totais</div><div className="text-2xl font-bold">{totalHoras}h</div><div className="text-xs text-zinc-500">{filtered.length} registos</div></div>
+        <div className="bg-white rounded-2xl border p-4"><div className="text-xs font-bold text-zinc-500">Custo (50€/h)</div><div className="text-2xl font-bold">{(totalMin/60*50).toFixed(0)}€</div><div className="text-xs text-zinc-500">estimado</div></div>
+        <div className="bg-white rounded-2xl border p-4"><div className="text-xs font-bold text-zinc-500">Clientes com avença</div><div className="text-2xl font-bold">{clientes.filter(c=>c.avencaMensal).length}</div><div className="text-xs text-zinc-500">com avença definida</div></div>
+      </div>
+      <div className="bg-white rounded-2xl border overflow-hidden">
+        <div className="p-4 font-semibold">Por cliente</div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-zinc-50 text-zinc-600"><tr><th className="text-left px-4 py-2">Cliente</th><th className="text-left px-4 py-2">Horas</th><th className="text-left px-4 py-2">Custo</th><th className="text-left px-4 py-2">Avença</th><th className="text-left px-4 py-2">Margem</th></tr></thead>
+            <tbody className="divide-y">
+              {porCliente.length===0 ? <tr><td colSpan={5} className="px-4 py-12 text-center text-zinc-500">Sem tempos registados.</td></tr> : porCliente.map(r=> (
+                <tr key={r.id} className="hover:bg-zinc-50"><td className="px-4 py-2 font-medium">{r.nome}</td><td className="px-4 py-2">{r.horas}h</td><td className="px-4 py-2">{r.custo}€</td><td className="px-4 py-2">{r.avenca? r.avenca+'€':'—'}</td><td className={`px-4 py-2 font-bold ${r.rent==='—' ? 'text-zinc-400' : Number(r.rent)>=0 ? 'text-emerald-600' : 'text-rose-600'}`}>{r.rent==='—' ? '—' : r.rent+'€'}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="bg-white rounded-2xl border p-4">
+        <h3 className="font-semibold mb-3">Registos recentes</h3>
+        <div className="space-y-2 max-h-[360px] overflow-y-auto">
+          {filtered.slice(0,20).map(t=> (
+            <div key={t.id} className="p-3 rounded-xl border flex items-center justify-between">
+              <div><div className="text-sm font-medium">{t.clienteNome} • {t.minutos}min • {t.faturavel ? 'Faturável' : 'Não faturável'}</div><div className="text-xs text-zinc-500">{new Date(t.data).toLocaleDateString('pt-PT')} • {t.descricao||'—'}</div></div>
+              <button onClick={()=>deleteTempo(t.id)} className="text-rose-600 text-xs hover:underline">Apagar</button>
+            </div>
+          ))}
+        </div>
+      </div>
+      {showNew && (
+        <div className="fixed inset-0 z-30 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowNew(false)}>
+          <div className="w-full max-w-[480px] bg-white rounded-2xl p-6 border shadow-xl" onClick={e=>e.stopPropagation()}>
+            <h3 className="font-semibold">Novo tempo</h3>
+            <div className="space-y-3 mt-4">
+              <select value={form.clienteId||''} onChange={e=>setForm({...form, clienteId:e.target.value, clienteNome: clientes.find(c=>c.id===e.target.value)?.nome})} className="w-full px-3 py-2.5 rounded-xl border bg-white text-sm"><option value="">Cliente</option>{clientes.map(c=> <option key={c.id} value={c.id}>{c.nome}</option>)}</select>
+              <div className="grid grid-cols-2 gap-3">
+                <input type="number" value={form.minutos||''} onChange={e=>setForm({...form, minutos: Number(e.target.value)})} placeholder="Minutos" className="px-3 py-2.5 rounded-xl border text-sm" />
+                <input type="date" value={form.data ? new Date(form.data).toISOString().slice(0,10) : new Date().toISOString().slice(0,10)} onChange={e=>setForm({...form, data: e.target.value? new Date(e.target.value).getTime(): Date.now()})} className="px-3 py-2.5 rounded-xl border text-sm" />
+              </div>
+              <input value={form.descricao||''} onChange={e=>setForm({...form, descricao:e.target.value})} placeholder="Descrição" className="w-full px-3 py-2.5 rounded-xl border text-sm" />
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.faturavel} onChange={e=>setForm({...form, faturavel: e.target.checked})} /> Faturável</label>
+              <div className="flex justify-end gap-2"><button onClick={()=>setShowNew(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleSave} className="px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Guardar (live)</button></div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Actas — Fase 4 ──────────────────────────────────────────────────────────
+function ActasView({ clientes }: { clientes: GabineteCliente[] }) {
+  const actas = useGabineteActas();
+  const [q, setQ] = useState('');
+  const [filtroCli, setFiltroCli] = useState<string>('todos');
+  const [showNew, setShowNew] = useState(false);
+  const [form, setForm] = useState<Partial<Acta>>({ tipo: 'ordinaria' as const });
+  const filtered = useMemo(()=> {
+    const s=q.toLowerCase();
+    return actas.filter(a=> {
+      if(filtroCli!=='todos' && a.clienteId!==filtroCli) return false;
+      if(!s) return true;
+      return (a.titulo+' '+a.conteudo).toLowerCase().includes(s);
+    }).sort((a,b)=> b.data - a.data);
+  }, [actas, q, filtroCli]);
+  const handleSave = async () => {
+    if(!form.clienteId || !form.titulo?.trim() || !form.conteudo?.trim()) return alert('Cliente, título e conteúdo obrigatórios');
+    const cli=clientes.find(c=>c.id===form.clienteId);
+    const a: Acta = { id: (form.id as string)||newActaId(), clienteId: form.clienteId!, clienteNome: cli?.nome, data: form.data||Date.now(), tipo: (form.tipo as any)||'ordinaria', titulo: form.titulo!.trim(), conteudo: form.conteudo!.trim(), createdAt: (form.createdAt as number)||Date.now(), updatedAt: Date.now() };
+    await upsertActa(a); setShowNew(false); setForm({ tipo: 'ordinaria' as const });
+  };
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-3 items-center justify-between">
+        <h2 className="text-lg font-bold flex items-center gap-2"><FileText className="w-5 h-5 text-[#0677FF]" /> Livro de Actas</h2>
+        <button onClick={()=>{ setForm({ tipo: 'ordinaria' as const, data: Date.now() }); setShowNew(true); }} className="px-4 py-2.5 rounded-xl bg-[#0677FF] text-white text-sm font-medium flex items-center gap-2"><Plus className="w-4 h-4" /> Nova acta</button>
+      </div>
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+          <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Pesquisar actas..." className="w-full pl-9 pr-3 py-2.5 rounded-xl border bg-white text-sm" />
+        </div>
+        <select value={filtroCli} onChange={e=>setFiltroCli(e.target.value)} className="px-3 py-2.5 rounded-xl border bg-white text-sm"><option value="todos">Todos clientes</option>{clientes.map(c=> <option key={c.id} value={c.id}>{c.nome}</option>)}</select>
+      </div>
+      <div className="space-y-2">
+        {filtered.length===0 ? <div className="py-12 text-center text-sm text-zinc-500 border-2 border-dashed rounded-xl">Sem actas.</div> : filtered.map(a=> (
+          <div key={a.id} className="bg-white rounded-2xl border p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div><div className="text-sm font-semibold">{a.titulo}</div><div className="text-xs text-zinc-500">{a.clienteNome} • {new Date(a.data).toLocaleDateString('pt-PT')} • {a.tipo}</div></div>
+              <button onClick={()=>deleteActa(a.id)} className="text-rose-600 text-xs hover:underline">Apagar</button>
+            </div>
+            <div className="text-sm text-zinc-700 mt-2 whitespace-pre-wrap bg-zinc-50 border rounded-xl p-3">{a.conteudo}</div>
+          </div>
+        ))}
+      </div>
+      {showNew && (
+        <div className="fixed inset-0 z-30 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowNew(false)}>
+          <div className="w-full max-w-[560px] bg-white rounded-2xl p-6 border shadow-xl" onClick={e=>e.stopPropagation()}>
+            <h3 className="font-semibold">{form.id ? 'Editar acta' : 'Nova acta'}</h3>
+            <div className="space-y-3 mt-4">
+              <select value={form.clienteId||''} onChange={e=>setForm({...form, clienteId:e.target.value})} className="w-full px-3 py-2.5 rounded-xl border bg-white text-sm"><option value="">Cliente</option>{clientes.map(c=> <option key={c.id} value={c.id}>{c.nome}</option>)}</select>
+              <div className="grid grid-cols-2 gap-3">
+                <input type="date" value={form.data ? new Date(form.data).toISOString().slice(0,10) : ''} onChange={e=>setForm({...form, data: e.target.value? new Date(e.target.value).getTime(): Date.now()})} className="px-3 py-2.5 rounded-xl border text-sm" />
+                <select value={form.tipo} onChange={e=>setForm({...form, tipo:e.target.value as any})} className="px-3 py-2.5 rounded-xl border bg-white text-sm"><option value="ordinaria">Ordinária</option><option value="extraordinaria">Extraordinária</option><option value="outro">Outro</option></select>
+              </div>
+              <input value={form.titulo||''} onChange={e=>setForm({...form, titulo:e.target.value})} placeholder="Título" className="w-full px-3 py-2.5 rounded-xl border text-sm" />
+              <textarea value={form.conteudo||''} onChange={e=>setForm({...form, conteudo:e.target.value})} placeholder="Conteúdo da acta..." rows={6} className="w-full px-3 py-2.5 rounded-xl border text-sm" />
+              <div className="flex justify-end gap-2"><button onClick={()=>setShowNew(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleSave} className="px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Guardar acta (live)</button></div>
+            </div>
           </div>
         </div>
       )}
