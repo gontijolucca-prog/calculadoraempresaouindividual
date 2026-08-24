@@ -32,8 +32,10 @@ const TABS: { id: GabTab; label: string; icon: React.ElementType; desc: string }
   { id: 'cofre', label: 'Cofre', icon: Lock, desc: 'Zero-knowledge' },
 ];
 
-export default function Gabinete({ onStartTour }: { onStartTour?: (v: ViewKey) => void }) {
-  const [tab, setTab] = useState<GabTab>('dashboard');
+export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour }: { tab?: GabTab; onTabChange?: (t: GabTab) => void; onStartTour?: (v: ViewKey) => void }) {
+  const [internalTab, setInternalTab] = useState<GabTab>('dashboard');
+  const tab = controlledTab ?? internalTab;
+  const setTab = (onTabChange ?? setInternalTab) as (t: GabTab) => void;
   const clientes = useGabineteClientes();
   const tarefas = useGabineteTarefas();
   const obrigacoes = useGabineteObrigacoes();
@@ -45,13 +47,14 @@ export default function Gabinete({ onStartTour }: { onStartTour?: (v: ViewKey) =
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-zinc-900">
       <GuiaSugestao view={GAB_TAB_GUIA[tab]} onStart={startTour} />
-      {/* Header */}
+      {/* Header — sem tabs no topo; navegação agora no dropdown da sidebar */}
       <div className="sticky top-0 z-20 bg-white/80 backdrop-blur border-b border-zinc-200">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-[#0677FF] flex items-center justify-center text-white font-bold text-sm">E3</div>
             <div>
               <div className="font-semibold leading-none">Gabinete</div>
+              <div className="text-xs text-zinc-500 hidden sm:block">{TABS.find(t=>t.id===tab)?.label} · {TABS.find(t=>t.id===tab)?.desc}</div>
             </div>
           </div>
           <div className="flex items-center gap-2 text-xs text-zinc-500">
@@ -61,21 +64,6 @@ export default function Gabinete({ onStartTour }: { onStartTour?: (v: ViewKey) =
             <span className="opacity-30">•</span>
             <span>{cofre.length} acessos</span>
           </div>
-        </div>
-        {/* Tabs */}
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 flex gap-1 overflow-x-auto pb-2 -mb-px">
-          {TABS.map(t => {
-            const Icon = t.icon;
-            const active = tab === t.id;
-            return (
-              <button key={t.id} onClick={() => setTab(t.id)}
-                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-t-lg border-b-2 text-sm font-medium whitespace-nowrap transition
-                  ${active ? 'bg-white border-[#0677FF] text-[#0677FF]' : 'border-transparent text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50'}`}>
-                <Icon className="w-4 h-4" /> {t.label}
-                <span className={`hidden lg:inline text-xs ${active ? 'text-[#0677FF]/60' : 'text-zinc-400'}`}>{t.desc}</span>
-              </button>
-            );
-          })}
         </div>
       </div>
 

@@ -4,6 +4,7 @@ import {
   ClipboardList, Upload, LogOut, Receipt,
   ChevronDown, ChevronRight, TrendingUp, Settings, UserPlus, Building2,
   Menu, X, Clock, Briefcase, ListOrdered, Package, History, FileDown, LayoutDashboard,
+  Users, CheckSquare, Calendar, Lock,
 } from 'lucide-react';
 import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
 import { cn } from './lib/utils';
@@ -36,6 +37,9 @@ export interface LayoutProps {
   onNavigateClient?: (empId: string, view: ViewType, opts?: NavOpts) => void;
   /** Abre a vista Relatórios com um documento pré-selecionado. */
   onOpenRelatorios?: (docId: string) => void;
+  /** Tab ativa do Gabinete (quando view === 'gabinete') */
+  gabineteTab?: string;
+  onGabineteTab?: (tab: string) => void;
   children: React.ReactNode;
 }
 
@@ -109,7 +113,7 @@ function Logo({ className = 'w-7 h-7' }: { className?: string }) {
   );
 }
 
-export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload, onLogout, hasSaftData, onOpenSaftViewer, mode, onSelectMode, activeClientName, currentEmpresaId, onNavigateClient, children , onOpenRelatorios}: LayoutProps) {
+export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload, onLogout, hasSaftData, onOpenSaftViewer, mode, onSelectMode, activeClientName, currentEmpresaId, onNavigateClient, children , onOpenRelatorios, gabineteTab, onGabineteTab}: LayoutProps) {
   const active = view === 'legal' ? prevView : view;
   const saftInputRef = useRef<HTMLInputElement>(null);
 
@@ -136,6 +140,23 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
   const [clientMenuOpen, setClientMenuOpen] = useState(false);
   // Dropdown "Relatórios" — também inicia fechado.
   const [relatoriosOpen, setRelatoriosOpen] = useState(false);
+  // Dropdown "Gabinete" — inicia aberto quando estamos no gabinete
+  const [gabineteOpen, setGabineteOpen] = useState(active === 'gabinete');
+  useEffect(() => { if (active === 'gabinete') setGabineteOpen(true); }, [active]);
+
+  const GAB_TABS = [
+    { id: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard, desc: 'Visão do dia' },
+    { id: 'clientes', label: 'Clientes 360', Icon: Users, desc: 'Ficha' },
+    { id: 'tarefas', label: 'Tarefas', Icon: CheckSquare, desc: 'Kanban' },
+    { id: 'obrigacoes', label: 'Obrigações', Icon: Calendar, desc: 'Calendário' },
+    { id: 'cofre', label: 'Cofre', Icon: Lock, desc: 'Zero-knowledge' },
+  ] as const;
+  const goGabinete = (tab: string) => {
+    onGabineteTab?.(tab);
+    if (active !== 'gabinete') setView('gabinete');
+    setGabineteOpen(true);
+    setDrawerOpen(false);
+  };
 
   // Navega dentro do cliente ativo usando a MESMA função dos cartões da Lista
   // (seleciona empresa + dispara intenções pacote/vista + muda de vista), para
@@ -219,7 +240,14 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
 
       <nav aria-label="Navegação principal" className="flex-1 overflow-y-auto px-2 py-1">
         <SectionLabel>Carteira</SectionLabel>
-            <NavItem label="Gabinete" Icon={LayoutDashboard} onClick={() => go('gabinete')} current={active === 'gabinete'} title="Dashboard: tarefas, obrigações e cofre do gabinete" />
+            <NavItem label="Gabinete" Icon={LayoutDashboard} onClick={() => { if (active === 'gabinete') setGabineteOpen(v=>!v); else { go('gabinete'); setGabineteOpen(true); } }} current={active === 'gabinete'} chevronOpen={gabineteOpen} title="Gabinete — dashboard, clientes, tarefas, obrigações e cofre" />
+            {gabineteOpen && (
+              <div className="mt-0.5 ml-2.5 pl-2 border-l-2 border-slate-200 space-y-0.5">
+                {GAB_TABS.map(t => (
+                  <ClientNavItem key={t.id} label={t.label} Icon={t.Icon} onClick={() => goGabinete(t.id)} current={active==='gabinete' && gabineteTab===t.id} title={t.desc} />
+                ))}
+              </div>
+            )}
             <NavItem label="Lista de Empresas" Icon={Briefcase} onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }} current={active === 'empresas'} title="Carteira de clientes — cada um abre o seu menu (perfil, simuladores, histórico). Aqui também adicionas novas empresas." />
             <NavItem label="Relatórios" Icon={FileDown} onClick={() => setRelatoriosOpen(v => !v)} current={active === 'exportar'} chevronOpen={relatoriosOpen} title="Demonstrações financeiras, documentos de encerramento de contas e pacote do cliente." />
             {relatoriosOpen && (

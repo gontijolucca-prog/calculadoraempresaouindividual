@@ -371,6 +371,9 @@ function AppContent() {
     return DEFAULT_VIEW_BY_MODE[initialMode];
   });
   const [prevView, setPrevView] = useState<ViewType>('profile');
+  // Gabinete: tab ativa dentro do dropdown da sidebar
+  const [gabineteTab, setGabineteTab] = useState<string>(() => loadFromStorage<string>('gabineteTab', 'dashboard') || 'dashboard');
+  useEffect(() => { saveToStorage('gabineteTab', gabineteTab); }, [gabineteTab]);
   // Bump para forçar refresh da Lista de Empresas após mutações (criar/eliminar/SAFT).
   const [empresasRefresh, setEmpresasRefresh] = useState(0);
   const [currentEmpresaId, setCurrentEmpresaIdState] = useState<string | null>(() => getCurrentEmpresaId());
@@ -1221,7 +1224,7 @@ function AppContent() {
         )}
         {view === 'gabinete' && (
           <Suspense fallback={<div className="p-8 text-center text-zinc-500">A carregar Gabinete…</div>}>
-            <Gabinete onStartTour={(v) => setTourRequest({ view: v, nonce: Date.now() })} />
+            <Gabinete tab={gabineteTab as any} onTabChange={setGabineteTab} onStartTour={(v) => setTourRequest({ view: v, nonce: Date.now() })} />
           </Suspense>
         )}
         {view === 'office-settings' && (
@@ -1474,6 +1477,8 @@ function AppContent() {
           activeClientName={currentEmpresaId ? (clientProfile.nomeCliente?.trim() || 'Cliente sem nome') : ''}
           currentEmpresaId={currentEmpresaId}
           onNavigateClient={navigateClient}
+          gabineteTab={gabineteTab}
+          onGabineteTab={setGabineteTab}
         >
           {content}
         </CurrentLayout>
