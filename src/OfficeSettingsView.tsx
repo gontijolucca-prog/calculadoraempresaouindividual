@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { Building2, Image as ImageIcon, Upload, Trash2, Save, Calculator, Plus, X, Info } from 'lucide-react';
+import { Building2, Image as ImageIcon, Upload, Trash2, Save, Calculator, Plus, X, Info, Download } from 'lucide-react';
+import { downloadHonorariosExcel } from './lib/honorariosExcel';
 import type { OfficeSettings, EntidadeOutorgante } from './lib/officeSettings';
 import { officeSettingsAreComplete } from './lib/officeSettings';
 import type { HonorariosConfig, TipoEntidadeCliente } from './lib/honorarios';
@@ -380,6 +381,23 @@ function HonorariosForm({ config, onChange }: { config: HonorariosConfig; onChan
               </button>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Exportar Excel */}
+      <section className="bg-white rounded-[16px] border border-[#E2E8F0] p-6">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h2 className={sectionTitleCls}>Exportar Tabela de Honorários</h2>
+            <p className="text-[12px] text-[#64748B]">Descarrega um Excel (.xlsx) com a tabela atual + exemplos por tipo de entidade, para enviar ao cliente.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => downloadHonorariosExcel(config)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#0677FF] text-white text-[13px] font-[700] rounded-[10px] hover:bg-[#0556CC] transition-colors"
+          >
+            <Download className="w-4 h-4" /> Exportar Excel
+          </button>
         </div>
       </section>
 

@@ -48,6 +48,7 @@ import { enforceProfileRules } from './lib/profileRules';
 import { DOC_TYPES, downloadAsWord } from './lib/wordDocs';
 import { downloadPrevisaExcel } from './lib/previsaExcel';
 import GuiaSistema from './components/GuiaSistema';
+import GuiaSugestao from './components/GuiaSugestao';
 import type { ViewKey } from './lib/guias';
 import { marcarGuiaDesativado } from './lib/guias';
 import { LAYOUTS } from './Layouts';
@@ -67,6 +68,7 @@ const SalarioLiquidoSimulator = lazy(() => import('./SalarioLiquidoSimulator'));
 const IRSSimulator = lazy(() => import('./IRSSimulator'));
 const PreviSaSimulator = lazy(() => import('./PreviSaSimulator'));
 const OfficeSettingsView = lazy(() => import('./OfficeSettingsView'));
+const Gabinete = lazy(() => import('./Gabinete'));
 import { defaultPreviSaState } from './previSaState';
 import type { PreviSaState } from './previSaState';
 import { SIM_LABELS, isSimView, summarizeSimulacao, simHasData, detailSimulacao, type SimView } from './lib/simSummary';
@@ -82,7 +84,8 @@ const AIContabilista = lazy(() => import('./ai/AIContabilista'));
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal'
-  | 'previsa' | 'office-settings' | 'empresas' | 'historico' | 'exportar' | 'hub';
+  | 'previsa' | 'office-settings' | 'empresas' | 'historico' | 'exportar' | 'hub'
+  | 'gabinete';
 
 // Default landing view when the user picks a mode.
 const DEFAULT_VIEW_BY_MODE: Record<AppMode, ViewType> = {
@@ -91,6 +94,7 @@ const DEFAULT_VIEW_BY_MODE: Record<AppMode, ViewType> = {
 };
 
 const VIEW_TITLES: Record<ViewType, string> = {
+  gabinete: 'Gabinete',
   empresas: 'Lista de Empresas',
   profile: 'Perfil do Cliente',
   tax: 'Simulador Fiscal',
@@ -367,6 +371,9 @@ function AppContent() {
     return DEFAULT_VIEW_BY_MODE[initialMode];
   });
   const [prevView, setPrevView] = useState<ViewType>('profile');
+  // Gabinete: tab ativa dentro do dropdown da sidebar
+  const [gabineteTab, setGabineteTab] = useState<string>(() => loadFromStorage<string>('gabineteTab', 'dashboard') || 'dashboard');
+  useEffect(() => { saveToStorage('gabineteTab', gabineteTab); }, [gabineteTab]);
   // Bump para forçar refresh da Lista de Empresas após mutações (criar/eliminar/SAFT).
   const [empresasRefresh, setEmpresasRefresh] = useState(0);
   const [currentEmpresaId, setCurrentEmpresaIdState] = useState<string | null>(() => getCurrentEmpresaId());
@@ -1215,6 +1222,11 @@ function AppContent() {
         {view === 'legal' && (
           <LegalInfo onBack={closeLegal} clientProfile={clientProfile} vehicleState={vehicleState} ticketState={ticketState} initialAnchor={legalAnchor} />
         )}
+        {view === 'gabinete' && (
+          <Suspense fallback={<div className="p-8 text-center text-zinc-500">A carregar Gabinete…</div>}>
+            <Gabinete tab={gabineteTab as any} onTabChange={setGabineteTab} onStartTour={(v) => setTourRequest({ view: v, nonce: Date.now() })} />
+          </Suspense>
+        )}
         {view === 'office-settings' && (
           <OfficeSettingsView
             office={officeSettings}
@@ -1465,6 +1477,8 @@ function AppContent() {
           activeClientName={currentEmpresaId ? (clientProfile.nomeCliente?.trim() || 'Cliente sem nome') : ''}
           currentEmpresaId={currentEmpresaId}
           onNavigateClient={navigateClient}
+          gabineteTab={gabineteTab}
+          onGabineteTab={setGabineteTab}
         >
           {content}
         </CurrentLayout>
@@ -1543,16 +1557,22 @@ function AppContent() {
           e.target.value = '';
         }}
       />
-      {/* AI Contabilista — assistente flutuante (grátis, OpenRouter free models) */}
+      {/* AI Contabilista — assistente flutuante: fica quieto até o utilizador interagir */}
       <Suspense fallback={null}>
         <AIContabilista ref={botApiRef} bridge={botBridge} liftBottom={draftNewClient} view={view} viewTitle={VIEW_TITLES[view]} />
       </Suspense>
 
-      {/* Visitas guiadas — controladas pelo AI Contabilista (oferece e inicia) */}
+      {/* Sugestão de guia por página (discreta, com "não mostrar novamente").
+          O Gabinete tem as suas próprias tabs — gere a sugestão internamente. */}
+      {view !== 'gabinete' && (
+        <GuiaSugestao view={view as ViewKey} onStart={(v) => setTourRequest({ view: v, nonce: Date.now() })} />
+      )}
+
+      {/* Visitas guiadas — motor de tour (iniciadas pela sugestão da página ou pelo bot a pedido) */}
       <GuiaSistema
         view={view as ViewKey}
         iniciar={tourRequest}
-        onEnd={(v) => botApiRef.current?.notifyTourEnd(v)}
+        onEnd={(_v) => { /* sem follow-up do bot — fica quieto */ }}
       />
 
       {/* Disclaimer legal — sempre visível enquanto logged in */}

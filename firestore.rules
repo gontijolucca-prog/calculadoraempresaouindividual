@@ -18,10 +18,23 @@ service cloud.firestore {
     }
 
     // Registry de empresas por utilizador (multi-tenant via officeId = UID do utilizador).
-    // Cada utilizador só lê/escreve os seus próprios dados.
+    // Cada utilizador só lê/escreve os seus próprios dados. 'shared' é modo demo/local sem auth.
     match /empresas/{officeId} {
-      allow read: if request.auth != null && request.auth.uid == officeId;
-      allow write: if request.auth != null && request.auth.uid == officeId && isValidEmpresasPayload(request.resource.data);
+      allow read: if officeId == 'shared' || (request.auth != null && request.auth.uid == officeId);
+      allow write: if (officeId == 'shared' || (request.auth != null && request.auth.uid == officeId)) && isValidEmpresasPayload(request.resource.data);
+    }
+
+    // Gabinete — gestão reliable + live. Cada doc tem _updatedAt para ordenar.
+    // 'shared' permite demo local sem login; com login isola por uid.
+    match /gabinete/{officeId}/{col}/{docId} {
+      allow read: if officeId == 'shared' || (request.auth != null && request.auth.uid == officeId);
+      allow create, update: if (officeId == 'shared' || (request.auth != null && request.auth.uid == officeId)) && isValidGabineteDoc(request.resource.data);
+      allow delete: if officeId == 'shared' || (request.auth != null && request.auth.uid == officeId);
+    }
+    // Permitir listar as subcoleções (necessário para collectionGroup ou list)
+    match /gabinete/{officeId} {
+      allow read: if officeId == 'shared' || (request.auth != null && request.auth.uid == officeId);
+      allow write: if false;
     }
 
     // Sugestões de melhoria recolhidas pelo AI Contabilista.
@@ -90,4 +103,11 @@ function isValidEmpresasPayload(data) {
       && data.list is list
       && data.list.size() < 500
       && data.updatedAt is number;
+}
+
+function isValidGabineteDoc(data) {
+  // Docs do gabinete são flexíveis; só validamos tamanho e presença de _updatedAt quando existe.
+  // Permite qualquer payload < 500KB com _updatedAt numérico se presente.
+  return data.size() < 500
+      && (!('_updatedAt' in data) || data._updatedAt is number);
 }

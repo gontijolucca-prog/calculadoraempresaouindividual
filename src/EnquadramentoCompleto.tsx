@@ -1,10 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  ArrowLeft, Scale, AlertTriangle, CheckCircle2, XCircle, Trophy, Landmark,
+  ArrowLeft, Scale, AlertTriangle, CheckCircle2, XCircle, Trophy, Landmark, Eye, EyeOff,
 } from 'lucide-react';
 import {
   compararEnquadramento2026, defaultInputEnq2026, PARAMS_2026,
-  type InputEnq2026, type CenarioEnq,
+  type InputEnq2026, type CenarioEnq, type ValidacaoRegimes,
 } from './lib/enquadramento2026';
 import { numInput, pctInput } from './lib/inputGuards';
 
@@ -55,6 +55,32 @@ export default function EnquadramentoCompleto({ value, onChange, onVoltar, saftP
       {label}
     </label>
   );
+
+  const [mostrarInelegiveis, setMostrarInelegiveis] = useState(false);
+
+  // Grelha completa A1-A6/B1-B6 (todos os cenários, elegíveis ou não — os
+  // inelegíveis aparecem cinzentos com o motivo, tal como pedido pela Sandrine).
+  const grelhaCompleta = useMemo(() => {
+    const v = r.validacao;
+    const rends: { id: string; label: string; ok: boolean; motivos: string[] }[] = [
+      { id: 'eni-simplificado', label: 'A — ENI · IRS simplificado', ok: v.irsSimplificado.elegivel, motivos: v.irsSimplificado.motivos },
+      { id: 'eni-organizada', label: 'B — ENI · contabilidade organizada', ok: true, motivos: [] },
+      { id: 'soc-irc-normal', label: 'C — Sociedade · IRC normal', ok: true, motivos: [] },
+      { id: 'soc-irc-simplificado', label: 'D — Sociedade · IRC simplificado', ok: v.ircSimplificado.elegivel, motivos: v.ircSimplificado.motivos },
+    ];
+    const ivas: { id: string; label: string; ok: boolean; motivos: string[] }[] = [
+      { id: 'isencao53', label: '1 — IVA isento (art. 53.º)', ok: v.ivaIsencao53.elegivel, motivos: v.ivaIsencao53.motivos },
+      { id: 'trimestral', label: '2 — IVA trimestral', ok: v.ivaTrimestral.elegivel, motivos: v.ivaTrimestral.motivos },
+      { id: 'mensal', label: '3 — IVA mensal', ok: true, motivos: [] },
+    ];
+    return rends.map(rend =>
+      ivas.map(iva => ({
+        label: `${rend.label} + ${iva.label}`,
+        ok: rend.ok && iva.ok,
+        motivos: [...rend.motivos, ...iva.motivos],
+      })),
+    ).flat();
+  }, [r.validacao]);
 
   // Dashboard: indicadores em linhas × melhores cenários em colunas (top 3).
   const top = r.cenarios.slice(0, 3);
@@ -270,6 +296,59 @@ export default function EnquadramentoCompleto({ value, onChange, onVoltar, saftP
           </p>
         </div>
       )}
+
+      {/* ── Poupança fiscal vs tesouraria + grelha completa ── */}
+      <div className={secCls}>
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+          <h3 className={secHdr + ' mb-0'}>Poupança fiscal ≠ vantagem de tesouraria</h3>
+          <button
+            type="button"
+            onClick={() => setMostrarInelegiveis(v => !v)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[11.5px] font-[700] text-[#0F172A] bg-[#F1F5F9] border border-slate-200 hover:bg-slate-200 transition-colors"
+          >
+            {mostrarInelegiveis ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+            {mostrarInelegiveis ? 'Ocultar inelegíveis' : 'Mostrar também inelegíveis'}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+          <div className="rounded-[12px] border border-emerald-200 bg-emerald-50 p-3">
+            <p className="text-[11px] font-[800] uppercase tracking-[0.5px] text-emerald-700 mb-1">Poupança fiscal</p>
+            <p className="text-[12px] text-emerald-900 font-[500] leading-relaxed">
+              Reduz o imposto efetivamente devido no ano (IRS/IRC + derramas + tributações autónomas).
+              É o que distingue cenários entre si no quadro acima.
+            </p>
+          </div>
+          <div className="rounded-[12px] border border-sky-200 bg-sky-50 p-3">
+            <p className="text-[11px] font-[800] uppercase tracking-[0.5px] text-sky-700 mb-1">Vantagem de tesouraria</p>
+            <p className="text-[12px] text-sky-900 font-[500] leading-relaxed">
+              Adia ou distribui pagamentos no tempo (IVA trimestral vs mensal, PPC, retenções).
+              Não reduz o imposto anual — melhora o caixa. O simulador mostra o pico de tesouraria,
+              nunca como "poupança".
+            </p>
+          </div>
+        </div>
+
+        {mostrarInelegiveis && (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 mt-2">
+            {grelhaCompleta.map(c => (
+              <div key={c.label} className={`rounded-[10px] border px-3 py-2 ${c.ok ? 'bg-white border-slate-200' : 'bg-slate-50 border-slate-200 opacity-75'}`}>
+                <div className="flex items-start gap-2">
+                  {c.ok
+                    ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                    : <XCircle className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />}
+                  <div className="min-w-0">
+                    <p className={`text-[12px] font-[700] leading-tight ${c.ok ? 'text-[#0B1D2D]' : 'text-slate-500'}`}>{c.label}</p>
+                    {!c.ok && c.motivos.length > 0 && (
+                      <p className="text-[11px] text-red-700 font-[500] mt-0.5">{c.motivos.join(' · ')}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

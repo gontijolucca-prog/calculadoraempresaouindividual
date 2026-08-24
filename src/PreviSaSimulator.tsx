@@ -8,7 +8,7 @@ import { defaultPreviSaState } from './previSaState';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { downloadPrevisaExcel } from './lib/previsaExcel';
-import { calculate, calcTAVeiculo, getRates, type CalcResult, saldosPorAno, totalSaldoElegivel } from './lib/previsaCalc';
+import { calculate, calcTAVeiculo, getRates, type CalcResult, saldosPorAno, totalSaldoElegivel, reavaliar3PPC, type PPCRecomendacao } from './lib/previsaCalc';
 
 export type { PreviSaState } from './previSaState';
 export { defaultPreviSaState } from './previSaState';
@@ -856,6 +856,9 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
         </div>
       </div>
 
+      {/* Gestor PPC — Sandrine 11-jun: 2 botões (art. 105.º + art. 107.º) */}
+      <GestorPPC state={state} setState={setState} res={res} />
+
       <UpdateToolsPanel state={state} setState={setState} res={res} />
 
       <button
@@ -1316,6 +1319,189 @@ const AlertaBox: React.FC<AlertaBoxProps> = ({ alerta }) => {
     <div className={`rounded-[8px] border ${cores.border} ${cores.bg} px-2.5 py-1.5 flex gap-2`}>
       <span className={`font-[800] text-[11px] leading-snug ${cores.text}`}>{icone}</span>
       <span className="text-[11px] leading-snug text-slate-700">{alerta.texto}</span>
+    </div>
+  );
+}
+
+// ─── GESTOR PPC — Sandrine 11-jun (art. 104/105/107 CIRC) ────────────────
+// Dois botões:
+//   1. "Atualizar PPC de IRC"  — calcula base (c358 − retenções), aplica 80%/95%
+//      conforme volume de negócios, divide em 3 prestações arredondadas por
+//      excesso, mostra vencimentos julho/setembro/15-dezembro e estado pago.
+//   2. "Reavaliar 3.º PPC"      — ativo após o registo das 2 primeiras prestações;
+//      compara IRC estimado vs PPC pagos e recomenda suspender/limitar/pagar,
+//      sempre com aviso de juros compensatórios + confirmação guardada.
+function GestorPPC({
+  state, setState, res,
+}: {
+  state: PreviSaState;
+  setState: React.Dispatch<React.SetStateAction<PreviSaState>>;
+  res: CalcResult;
+}) {
+  const [mostrarReavaliar, setMostrarReavaliar] = useState(false);
+  const [recomendacao, setRecomendacao] = useState<PPCRecomendacao | null>(null);
+  const [confirmado, setConfirmado] = useState(false);
+
+  const s = (key: keyof PreviSaState, value: unknown) => setState(prev => ({ ...prev, [key]: value }));
+
+  // Prestações arredondadas POR EXCESSO (art. 104.º/105.º — cada uma = ceil(total/3))
+  const totalAnual = res.ppcProximoAno;
+  const ppcBase = res.ppcProximoAno / (res.ppcTaxa || 1);
+  const prestacao = res.ppcPrestacao > 0 ? Math.ceil(res.ppcProximoAno / 3) : 0;
+  const dispensado = ppcBase <= 200 && ppcBase > 0;
+  const podeReavaliar = (state.ppcPago1 || state.ppcPago2);
+
+  const ppcPago3 = !!recomendacao && confirmado;
+  const efetivo3PPC = ppcPago3 && recomendacao ? recomendacao.valor : prestacao;
+  const pagoTotal = (state.ppcPago1 ? prestacao : 0) + (state.ppcPago2 ? prestacao : 0) + (ppcPago3 ? (recomendacao ? recomendacao.valor : 0) : 0);
+
+  const handleAtualizar = () => {
+    // força recalcular do motor (já acontece com qualquer input) — reset da reavaliação
+    setRecomendacao(null); setConfirmado(false); setMostrarReavaliar(false);
+  };
+
+  const handleReavaliar = () => {
+    const rec = reavaliar3PPC(state, prestacao);
+    setRecomendacao(rec);
+    setMostrarReavaliar(true);
+    setConfirmado(false);
+  };
+
+  const handleConfirmar = () => {
+    if (!recomendacao) return;
+    setConfirmado(true);
+    s('ppcReavaliadoEm', Date.now());
+    if (recomendacao.tipo === 'limitar') s('ppcLimitarValor', recomendacao.valor);
+    else if (recomendacao.tipo === 'suspender') s('ppcLimitarValor', 0);
+  };
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-[12px] p-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-[700] uppercase tracking-[0.5px] text-slate-400">Gestor PPC · art. 104/105/107 CIRC</p>
+        {state.ppcReavaliadoEm > 0 && (
+          <span className="text-[10px] text-slate-400">Reavaliado {new Date(state.ppcReavaliadoEm).toLocaleDateString('pt-PT')}</span>
+        )}
+      </div>
+
+      {/* Botão 1 — Atualizar PPC */}
+      <button
+        type="button"
+        onClick={handleAtualizar}
+        className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#0677FF] px-3 py-2 text-[12px] font-[700] text-white transition hover:bg-[#0560d6]"
+        title="Calcula a base (IRC liquidado − retenções), aplica 80% (≤500k€) ou 95% (>500k€) e divide em 3 prestações."
+      >
+        <Calculator className="w-4 h-4" /> Atualizar PPC de IRC
+      </button>
+
+      {res.ppcProximoAno > 0 ? (
+        <div className="rounded-[10px] border border-slate-200 overflow-hidden">
+          <div className="bg-slate-50 px-3 py-2 text-[11px] font-[600] flex justify-between">
+            <span>Base = c358 − retenções</span>
+            <span className="font-[700]">{fmt(ppcBase)} €</span>
+          </div>
+          <div className="bg-slate-50 px-3 pb-2 text-[11px] font-[600] flex justify-between border-t border-slate-100">
+            <span>Taxa {pct(res.ppcTaxa)} (volume {fmt(state.volumeNegocios)} €)</span>
+            <span className="font-[700]">{fmt(totalAnual)} €</span>
+          </div>
+          {dispensado ? (
+            <div className="px-3 py-2 text-[11px] font-[600] text-emerald-700 bg-emerald-50">
+              ✅ Empresa dispensada de PPC — imposto de referência &lt; 200 € (art. 104.º n.º 4).
+            </div>
+          ) : (
+            <>
+              {[
+                { label: '1.º PPC — julho', pago: state.ppcPago1, key: 'ppcPago1' as const },
+                { label: '2.º PPC — setembro', pago: state.ppcPago2, key: 'ppcPago2' as const },
+                { label: '3.º PPC — 15 dezembro', pago: ppcPago3, key: null },
+              ].map((linha, i) => {
+                const valor = i === 2 && ppcPago3 && recomendacao ? recomendacao.valor : prestacao;
+                return (
+                  <div key={linha.label} className="flex items-center justify-between px-3 py-1.5 border-t border-slate-100 text-[11px]">
+                    <span className="text-slate-600 font-[500]">{linha.label}</span>
+                    <span className="flex items-center gap-2">
+                      <span className="font-[700] text-slate-700">{fmt(valor)} €</span>
+                      {linha.key ? (
+                        <button
+                          type="button"
+                          onClick={() => s(linha.key, !state[linha.key])}
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-[700] border transition ${state[linha.key] ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300'}`}
+                        >
+                          {state[linha.key] ? 'Pago ✓' : 'Pago?'}
+                        </button>
+                      ) : (
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-[700] border ${ppcPago3 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-white text-slate-400 border-slate-200'}`}>
+                          {ppcPago3 ? 'Pago ✓' : '—'}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
+              <div className="flex justify-between px-3 py-1.5 border-t border-slate-100 text-[11px] font-[700] ">
+                <span>Total PPC {new Date().getFullYear() + 1}</span>
+                <span>{fmt(pagoTotal)} €</span>
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="rounded-[10px] bg-slate-50 border border-dashed border-slate-200 px-3 py-3 text-[11px] text-slate-400 text-center">
+          {ppcBase === 0 ? 'Sem dados para PPC (preenche a simulação para calcular).' : 'Dispensado (base ≤ 200 €).'}
+        </div>
+      )}
+
+      {/* Botão 2 — Reavaliar 3.º PPC (ativo após pagar 1.º/2.º) */}
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={handleReavaliar}
+          disabled={!podeReavaliar}
+          className={`inline-flex items-center justify-center gap-2 rounded-[10px] px-3 py-2 text-[12px] font-[700] transition ${podeReavaliar ? 'bg-zinc-900 text-white hover:bg-black' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
+          title="Só disponível após registar as duas primeiras prestações."
+        >
+          Reavaliar 3.º PPC (art. 107.º)
+        </button>
+
+        {!podeReavaliar && res.ppcProximoAno > 0 && (
+          <span className="text-[10px] text-slate-400">Disponível depois de marcar 1.º e 2.º PPC como pagos.</span>
+        )}
+
+        {mostrarReavaliar && recomendacao && (
+          <div className={`rounded-[10px] border p-3 flex flex-col gap-2 ${recomendacao.tipo === 'pagar' ? 'border-slate-200 bg-white' : 'border-amber-300 bg-amber-50'}`}>
+            <div className="flex items-start gap-2">
+              <span className={`text-[11px] font-[800] uppercase px-2 py-0.5 rounded-md ${recomendacao.tipo === 'pagar' ? 'bg-slate-100 text-slate-600' : 'bg-amber-200 text-amber-900'}`}>
+                {recomendacao.tipo === 'suspender' ? 'Suspender' : recomendacao.tipo === 'limitar' ? 'Limitar' : 'Pagar integralmente'}
+              </span>
+              <span className="text-[11px] font-[700]">{fmt(recomendacao.valor)} €</span>
+            </div>
+            <p className="text-[11px] text-slate-600">{recomendacao.motivo}</p>
+            <div className="bg-amber-100 border border-amber-200 rounded-[8px] px-2 py-1.5 text-[10px] text-amber-800">
+              ⚠ Atenção: estimativa insuficiente pode originar juros compensatórios (art. 107.º). Confirmação fica registada para auditoria.
+            </div>
+            {!confirmado ? (
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleConfirmar}
+                  className="flex-1 rounded-[8px] bg-zinc-900 text-white text-[11px] font-[700] py-1.5 hover:bg-black"
+                >
+                  Confirmar limitação/suspensão
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMostrarReavaliar(false); setRecomendacao(null); }}
+                  className="rounded-[8px] bg-white border border-slate-200 text-[11px] font-[600] px-3"
+                >
+                  Cancelar
+                </button>
+              </div>
+            ) : (
+              <div className="text-[11px] font-[700] text-emerald-700">✓ Confirmado — {new Date(state.ppcReavaliadoEm).toLocaleString('pt-PT')}. Guardado para auditoria.</div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
