@@ -1562,9 +1562,8 @@ function AppContent() {
         <AIContabilista ref={botApiRef} bridge={botBridge} liftBottom={draftNewClient} view={view} viewTitle={VIEW_TITLES[view]} />
       </Suspense>
 
-      {/* Sugestão de guia por página (discreta, com "não mostrar novamente").
-          O Gabinete tem as suas próprias tabs — gere a sugestão internamente. */}
-      {view !== 'gabinete' && (
+      {/* Sugestão de guia por página — sempre visível excepto no Gabinete (tem o seu) e em office-settings (form longo) */}
+      {view !== 'gabinete' && view !== 'office-settings' && (
         <GuiaSugestao view={view as ViewKey} onStart={(v) => setTourRequest({ view: v, nonce: Date.now() })} />
       )}
 

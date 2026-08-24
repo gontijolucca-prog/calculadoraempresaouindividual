@@ -368,8 +368,9 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
           </div>
         </div>
 
-        <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto">
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto pb-28">
           {children}
+          <div aria-hidden className="h-20" />
         </main>
       </div>
 

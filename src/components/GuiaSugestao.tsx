@@ -25,7 +25,7 @@ export default function GuiaSugestao({
   if (!g) return null;
 
   return (
-    <div className="no-print fixed bottom-5 right-[96px] sm:bottom-6 sm:right-[220px] z-[75]">
+    <div className="no-print fixed bottom-3 right-[96px] sm:bottom-4 sm:right-[220px] z-[75]">
       {/* Pill única ao lado do AI Contabilista — sem cruz, sempre visível */}
       <button
         type="button"

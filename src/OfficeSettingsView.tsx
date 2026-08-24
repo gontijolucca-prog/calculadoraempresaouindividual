@@ -39,7 +39,7 @@ export default function OfficeSettingsView({ office, onOfficeChange, honorarios,
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
     >
-      <div className="max-w-5xl mx-auto p-6 md:p-10">
+      <div className="max-w-5xl mx-auto p-6 md:p-10 pb-32">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
           <div>
