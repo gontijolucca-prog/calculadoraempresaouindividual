@@ -1,19 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Lightbulb, X, Check, GraduationCap } from 'lucide-react';
-import { GUIAS, guiaDesativado, marcarGuiaDesativado, type ViewKey } from '../lib/guias';
+import { X, Check, GraduationCap } from 'lucide-react';
+import { GUIAS, type ViewKey } from '../lib/guias';
 
 /**
- * Sugestão de guia por página — substitui a oferta automática do AI Contabilista.
+ * Sugestão de guia por página — sempre visível.
  *
- * O bot fica quieto; quem sugere é a própria página, discretamente mas com presença:
- *   • pill fixa no CANTO INFERIOR ESQUERDO (o canto direito é do AI Contabilista e
- *     do toggle de fluxo — aqui não tapa nada);
- *   • clique → inicia a visita guiada (onStart);
- *   • "✕" → esconde a sugestão durante a sessão (volta ao entrar na página);
- *   • "Não mostrar novamente" → desativa o guia desta página para sempre
- *     (reativável no AI Contabilista: "ativa os guias").
- * Se o guia já estiver desativado (localStorage estudo360:guias:off:<view>),
- * a sugestão não aparece de todo.
+ * O guia "Aprender esta página" fica sempre no canto inferior esquerdo
+ * (gradiente #0B1D2D) e nunca desaparece — a cruz serve só para abrir/fechar
+ * o menu de opções, nunca para esconder a pill.
  */
 export default function GuiaSugestao({
   view,
@@ -23,14 +17,12 @@ export default function GuiaSugestao({
   /** Inicia a visita guiada desta página. */
   onStart: (v: ViewKey) => void;
 }) {
-  const [sessaoOculta, setSessaoOculta] = useState(false);
   const [menu, setMenu] = useState(false);
 
   const g = GUIAS[view];
-  // Reinicia a ocultação da sessão ao mudar de página
-  useEffect(() => { setSessaoOculta(false); setMenu(false); }, [view]);
+  useEffect(() => { setMenu(false); }, [view]);
 
-  if (!g || guiaDesativado(view) || sessaoOculta) return null;
+  if (!g) return null;
 
   return (
     <div className="no-print fixed bottom-5 left-5 md:left-[272px] z-[75]">
@@ -69,9 +61,21 @@ export default function GuiaSugestao({
         <>
           <div className="fixed inset-0 z-[74]" onClick={() => setMenu(false)} aria-hidden="true" />
           <div className="absolute bottom-full left-0 mb-3 w-[340px] max-w-[calc(100vw-32px)] rounded-2xl bg-white border border-slate-200 shadow-2xl p-5 z-[76]">
-            <div className="text-[11px] font-[800] uppercase tracking-[0.5px] text-slate-400">Sugestão de guia</div>
-            <h4 className="mt-1.5 text-[17px] font-[800] text-slate-900 leading-snug">Aprender a usar {g.titulo}</h4>
-            <p className="mt-1.5 text-[14px] leading-[1.6] text-slate-600">{g.intro}</p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-[11px] font-[800] uppercase tracking-[0.5px] text-slate-400">Sugestão de guia</div>
+                <h4 className="mt-1.5 text-[18px] font-[800] text-slate-900 leading-snug">Aprender a usar {g.titulo}</h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMenu(false)}
+                aria-label="Fechar"
+                className="shrink-0 w-8 h-8 rounded-full border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="mt-1.5 text-[14.5px] leading-[1.65] text-slate-600">{g.intro}</p>
             <div className="mt-4 flex flex-col gap-2">
               <button
                 type="button"
@@ -82,18 +86,10 @@ export default function GuiaSugestao({
               </button>
               <button
                 type="button"
-                onClick={() => { marcarGuiaDesativado(view); setMenu(false); setSessaoOculta(true); }}
-                className="flex items-center justify-center gap-1.5 rounded-[12px] border border-slate-200 text-slate-600 text-[13px] font-[700] px-4 py-2.5 hover:bg-slate-50 transition-colors"
-                title="Esta página deixa de sugerir o guia. Podes voltar a ativar tudo no AI Contabilista (&quot;ativa os guias&quot;)."
-              >
-                <Check className="w-4 h-4" /> Não mostrar novamente
-              </button>
-              <button
-                type="button"
                 onClick={() => setMenu(false)}
-                className="text-[12.5px] font-[600] text-slate-400 hover:text-slate-600 py-1 transition-colors"
+                className="flex items-center justify-center gap-1.5 rounded-[12px] border border-slate-200 text-slate-600 text-[13px] font-[700] px-4 py-2.5 hover:bg-slate-50 transition-colors"
               >
-                Esconder por agora
+                <Check className="w-4 h-4" /> Fechar
               </button>
             </div>
           </div>
