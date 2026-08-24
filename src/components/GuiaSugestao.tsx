@@ -25,42 +25,31 @@ export default function GuiaSugestao({
   if (!g) return null;
 
   return (
-    <div className="no-print fixed bottom-5 left-5 md:left-[272px] z-[75]">
-      {/* Botão principal — chamativo mas só ocupa o canto vazio */}
-      <div className={`flex items-center rounded-full shadow-[0_10px_30px_-6px_rgba(6,119,255,0.45)] transition-all ${menu ? '' : 'hover:scale-[1.04] hover:shadow-[0_14px_36px_-6px_rgba(6,119,255,0.55)]'}`}>
-        <button
-          type="button"
-          onClick={() => { setMenu(false); onStart(view); }}
-          className="group flex items-center gap-2.5 pl-4 pr-3.5 py-3 rounded-full text-white font-[800] text-[13.5px] tracking-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          style={{ background: 'linear-gradient(135deg, #0B1D2D 0%, #0677FF 115%)' }}
-          title={`Aprender a usar: ${g.titulo}`}
-        >
-          <span className="relative flex items-center justify-center">
-            <span className="absolute inset-0 rounded-full bg-amber-300/40 blur-[6px] animate-pulse" aria-hidden="true" />
-            <GraduationCap className="w-5 h-5 text-amber-300 relative" />
-          </span>
-          <span className="hidden sm:inline">Aprender esta página</span>
-          <span className="sm:hidden">Guia</span>
-          <span className="hidden md:inline-flex items-center gap-1 ml-1 rounded-full bg-white/15 border border-white/25 px-2 py-0.5 text-[9.5px] mono uppercase tracking-[1.5px] text-amber-200 font-[800]">
-            Guia
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setMenu(v => !v)}
-          aria-label="Opções do guia"
-          aria-expanded={menu}
-          className="self-stretch px-2.5 rounded-r-full text-white/70 hover:text-white hover:bg-white/10 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          style={{ background: 'linear-gradient(135deg, #0B1D2D 0%, #0677FF 115%)' }}
-        >
-          <X className={`w-4 h-4 transition-transform ${menu ? 'rotate-90' : ''}`} />
-        </button>
-      </div>
+    <div className="no-print fixed bottom-5 right-[96px] sm:bottom-6 sm:right-[220px] z-[75]">
+      {/* Pill única ao lado do AI Contabilista — sem cruz, sempre visível */}
+      <button
+        type="button"
+        onClick={() => setMenu(v => !v)}
+        className="group flex items-center gap-2.5 pl-4 pr-3.5 py-3 rounded-full text-white font-[800] text-[13.5px] tracking-tight shadow-[0_10px_30px_-6px_rgba(6,119,255,0.45)] hover:scale-[1.04] hover:shadow-[0_14px_36px_-6px_rgba(6,119,255,0.55)] transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        style={{ background: 'linear-gradient(135deg, #0B1D2D 0%, #0677FF 115%)' }}
+        title={`Aprender a usar: ${g.titulo}`}
+        aria-expanded={menu}
+      >
+        <span className="relative flex items-center justify-center">
+          <span className="absolute inset-0 rounded-full bg-amber-300/40 blur-[6px] animate-pulse" aria-hidden="true" />
+          <GraduationCap className="w-5 h-5 text-amber-300 relative" />
+        </span>
+        <span className="hidden sm:inline">Aprender esta página</span>
+        <span className="sm:hidden">Guia</span>
+        <span className="hidden md:inline-flex items-center gap-1 ml-1 rounded-full bg-white/15 border border-white/25 px-2 py-0.5 text-[9.5px] mono uppercase tracking-[1.5px] text-amber-200 font-[800]">
+          Guia
+        </span>
+      </button>
 
       {menu && (
         <>
           <div className="fixed inset-0 z-[74]" onClick={() => setMenu(false)} aria-hidden="true" />
-          <div className="absolute bottom-full left-0 mb-3 w-[340px] max-w-[calc(100vw-32px)] rounded-2xl bg-white border border-slate-200 shadow-2xl p-5 z-[76]">
+          <div className="absolute bottom-full right-0 mb-3 w-[340px] max-w-[calc(100vw-32px)] rounded-2xl bg-white border border-slate-200 shadow-2xl p-5 z-[76]">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-[11px] font-[800] uppercase tracking-[0.5px] text-slate-400">Sugestão de guia</div>
