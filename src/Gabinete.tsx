@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { Search, Plus, Users, CheckSquare, Calendar, Lock, LayoutDashboard, Building2, Trash2, Eye, EyeOff, Copy, Shield, AlertTriangle, ArrowRight, Sparkles } from 'lucide-react';
-import { useGabineteClientes, useGabineteTarefas, useGabineteObrigacoes, useGabineteCofre } from './lib/useGabinete';
+import { Search, Plus, Users, CheckSquare, Calendar, Lock, LayoutDashboard, Building2, Trash2, Eye, EyeOff, Copy, Shield, AlertTriangle, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Clock, Briefcase, MessageSquare, X } from 'lucide-react';
+import { useGabineteClientes, useGabineteTarefas, useGabineteObrigacoes, useGabineteCofre, useGabineteConversas } from './lib/useGabinete';
 import {
   upsertCliente, deleteCliente, newClienteId, gerarObrigacoesParaCliente, migrarEmpresasParaGabinete,
   upsertTarefa, deleteTarefa, marcarTarefaFeita, newTarefaId,
   upsertObrigacao,
   upsertCofre, deleteCofre, registarVistaCofre, newCofreId,
-  type GabineteCliente, type Tarefa, type Obrigacao, type CofreEntrada,
+  upsertConversa, deleteConversa, newConversaId,
+  type GabineteCliente, type Tarefa, type Obrigacao, type CofreEntrada, type Conversa,
 } from './lib/gabinete';
 import { listEmpresas } from './lib/empresas';
 import { encryptSecret, decryptSecret, setCofrePassphrase, getCofrePassphrase, cofreIsUnlocked } from './lib/cofreCrypto';
@@ -16,6 +17,7 @@ import type { ViewKey } from './lib/guias';
 // Guia por tab interna do Gabinete (a sugestão muda conforme a tab ativa)
 const GAB_TAB_GUIA: Record<GabTab, ViewKey> = {
   dashboard: 'gabinete',
+  agenda: 'gab-agenda',
   clientes: 'gab-clientes',
   tarefas: 'gab-tarefas',
   obrigacoes: 'gab-obrigacoes',
@@ -23,9 +25,10 @@ const GAB_TAB_GUIA: Record<GabTab, ViewKey> = {
 };
 
 // ─── Layout ─────────────────────────────────────────────────────────────────
-type GabTab = 'dashboard' | 'clientes' | 'tarefas' | 'obrigacoes' | 'cofre';
+type GabTab = 'dashboard' | 'agenda' | 'clientes' | 'tarefas' | 'obrigacoes' | 'cofre';
 const TABS: { id: GabTab; label: string; icon: React.ElementType; desc: string }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Visão do dia' },
+  { id: 'agenda', label: 'Agenda', icon: Calendar, desc: 'Calendário' },
   { id: 'clientes', label: 'Clientes 360', icon: Users, desc: 'Ficha centralizada' },
   { id: 'tarefas', label: 'Tarefas', icon: CheckSquare, desc: 'Kanban + lista' },
   { id: 'obrigacoes', label: 'Obrigações', icon: Calendar, desc: 'Calendário fiscal' },
@@ -69,6 +72,7 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour 
 
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
         {tab === 'dashboard' && <Dashboard clientes={clientes} tarefas={tarefas} obrigacoes={obrigacoes} cofre={cofre} onGo={setTab} />}
+        {tab === 'agenda' && <AgendaView tarefas={tarefas} obrigacoes={obrigacoes} clientes={clientes} />}
         {tab === 'clientes' && <ClientesView clientes={clientes} />}
         {tab === 'tarefas' && <TarefasView tarefas={tarefas} clientes={clientes} />}
         {tab === 'obrigacoes' && <ObrigacoesView obrigacoes={obrigacoes} clientes={clientes} />}
@@ -111,6 +115,20 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
   const proximos = [...tarefas, ...obrigacoes.map(o=> ({ id:o.id, titulo:o.titulo, dataVencimento:o.vencimento, estado:o.estado, tipo:'obrigacao' as const } as unknown as Tarefa))]
     .filter(x=> x.dataVencimento && x.dataVencimento >= hoje.getTime() && x.dataVencimento <= em7dias)
     .sort((a,b)=> (a.dataVencimento! - b.dataVencimento!)).slice(0,7);
+  const alertas = useMemo(()=> {
+    const out: { cliente: GabineteCliente; tipo: string; venc: number; dias: number }[] = [];
+    const now = Date.now();
+    clientes.forEach(c=> {
+      if(!c.alertas) return;
+      (['iuc','imi','seguros','certidaoPermanente'] as const).forEach(k=> {
+        const v = (c.alertas as any)[k] as number | undefined;
+        if(!v) return;
+        const dias = Math.ceil((v - now)/86400000);
+        if(dias <= 30) out.push({ cliente: c, tipo: k, venc: v, dias });
+      });
+    });
+    return out.sort((a,b)=> a.venc - b.venc).slice(0,8);
+  }, [clientes]);
 
   return (
     <div className="space-y-6">
@@ -120,6 +138,19 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
         <Kpi label="Obrigações vencidas" value={vencidasObr} sub="IVA/PPC/IES" icon={Calendar} tone={vencidasObr? 'amber':'zinc'} />
         <Kpi label="Clientes sem tarefa 30d" value={semTarefa30d} sub="risco de esquecimento" icon={Users} tone="zinc" />
       </div>
+      {alertas.length>0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+          <h3 className="font-semibold flex items-center gap-2 text-amber-900"><AlertTriangle className="w-4 h-4" /> Alertas IUC / IMI / Seguros / Certidão (30 dias)</h3>
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+            {alertas.map((a,i)=> (
+              <div key={i} className="p-3 rounded-xl bg-white border border-amber-200">
+                <div className="text-sm font-medium truncate">{a.cliente.nome}</div>
+                <div className="text-xs text-zinc-600">{a.tipo.toUpperCase()} • {new Date(a.venc).toLocaleDateString('pt-PT')} • {a.dias<=0 ? `${Math.abs(a.dias)} dias em atraso` : `${a.dias} dias`}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-200 p-5">
@@ -176,12 +207,102 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
   );
 }
 
+// ─── Agenda — Fase 1 ────────────────────────────────────────────────────────
+function AgendaView({ tarefas, obrigacoes, clientes }: { tarefas: Tarefa[]; obrigacoes: Obrigacao[]; clientes: GabineteCliente[] }) {
+  const [cur, setCur] = useState(() => { const d = new Date(); d.setDate(1); return d; });
+  const [sel, setSel] = useState<number | null>(() => new Date().getDate());
+  const ym = `${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,'0')}`;
+  const daysInMonth = new Date(cur.getFullYear(), cur.getMonth()+1, 0).getDate();
+  const startWeek = new Date(cur.getFullYear(), cur.getMonth(), 1).getDay(); // 0 Sun
+  const startMon = (startWeek + 6) % 7; // 0 Mon
+  const eventsByDay = useMemo(() => {
+    const map: Record<number, { tarefas: Tarefa[]; obrs: Obrigacao[] }> = {};
+    const add = (d: number, t?: Tarefa, o?: Obrigacao) => {
+      if (!map[d]) map[d] = { tarefas: [], obrs: [] };
+      if (t) map[d].tarefas.push(t);
+      if (o) map[d].obrs.push(o);
+    };
+    const y = cur.getFullYear(), m = cur.getMonth();
+    tarefas.forEach(t => { if (!t.dataVencimento) return; const d = new Date(t.dataVencimento); if (d.getFullYear()===y && d.getMonth()===m) add(d.getDate(), t); });
+    obrigacoes.forEach(o => { const d = new Date(o.vencimento); if (d.getFullYear()===y && d.getMonth()===m) add(d.getDate(), undefined, o); });
+    return map;
+  }, [tarefas, obrigacoes, cur]);
+  const selEvents = sel ? (eventsByDay[sel] || { tarefas: [], obrs: [] }) : { tarefas: [], obrs: [] };
+  const weekDays = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  const mesLabel = cur.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold capitalize flex items-center gap-2"><Calendar className="w-5 h-5 text-[#0677FF]" /> {mesLabel}</h2>
+        <div className="flex gap-1">
+          <button onClick={() => setCur(d => { const n=new Date(d); n.setMonth(n.getMonth()-1); return n; })} className="p-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50"><ChevronLeft className="w-4 h-4" /></button>
+          <button onClick={() => { const n=new Date(); n.setDate(1); setCur(n); setSel(n.getDate()); }} className="px-3 py-2 rounded-xl border border-zinc-200 bg-white text-sm hover:bg-zinc-50">Hoje</button>
+          <button onClick={() => setCur(d => { const n=new Date(d); n.setMonth(n.getMonth()+1); return n; })} className="p-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50"><ChevronRight className="w-4 h-4" /></button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-200 p-4">
+          <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-zinc-500 mb-2">{weekDays.map(w=> <div key={w} className="py-2">{w}</div>)}</div>
+          <div className="grid grid-cols-7 gap-1">
+            {Array.from({length: startMon}).map((_,i)=> <div key={'e'+i} className="h-[84px]" />)}
+            {Array.from({length: daysInMonth}).map((_,i)=> {
+              const d = i+1;
+              const ev = eventsByDay[d];
+              const count = ev ? ev.tarefas.length + ev.obrs.length : 0;
+              const isSel = sel===d;
+              const isToday = new Date().getFullYear()===cur.getFullYear() && new Date().getMonth()===cur.getMonth() && new Date().getDate()===d;
+              return (
+                <button key={d} onClick={()=>setSel(d)} className={`h-[84px] rounded-xl border text-left p-2 flex flex-col gap-1 transition ${isSel ? 'bg-[#0677FF] text-white border-[#0677FF] shadow' : isToday ? 'bg-blue-50 border-blue-200' : 'bg-white border-zinc-200 hover:bg-zinc-50'}`}>
+                  <span className={`text-sm font-bold ${isSel ? 'text-white' : isToday ? 'text-[#0677FF]' : 'text-zinc-900'}`}>{d}</span>
+                  {count>0 && (
+                    <div className="space-y-0.5">
+                      {ev.tarefas.slice(0,2).map(t=> <div key={t.id} className={`text-[10px] truncate px-1.5 py-0.5 rounded-full ${isSel ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'}`}>{t.titulo.slice(0,18)}</div>)}
+                      {ev.obrs.slice(0,2).map(o=> <div key={o.id} className={`text-[10px] truncate px-1.5 py-0.5 rounded-full ${isSel ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'}`}>{o.tipo.toUpperCase()}</div>)}
+                      {count>4 && <div className={`text-[10px] ${isSel? 'text-white/70':'text-zinc-500'}`}>+{count-4} mais</div>}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl border border-zinc-200 p-4">
+          <h3 className="font-semibold flex items-center gap-2">{sel ? `${sel} de ${mesLabel}` : 'Seleciona um dia'} {sel && <span className="text-xs font-normal text-zinc-500">({(selEvents.tarefas.length+selEvents.obrs.length)} itens)</span>}</h3>
+          {!sel ? <div className="py-12 text-center text-sm text-zinc-500">Clica num dia do calendário</div> : (selEvents.tarefas.length+selEvents.obrs.length===0 ? <div className="py-12 text-center text-sm text-zinc-500 border-2 border-dashed border-zinc-200 rounded-xl mt-3">Nada para este dia. Cria uma tarefa para {sel}/{cur.getMonth()+1}</div> : (
+            <div className="space-y-2 mt-3">
+              {selEvents.tarefas.map(t=> (
+                <div key={t.id} className="p-3 rounded-xl border border-zinc-200 hover:bg-zinc-50">
+                  <div className="text-sm font-medium">{t.titulo}</div>
+                  <div className="text-xs text-zinc-500">{t.clienteNome||'—'} • {t.prioridade} • {t.estado}</div>
+                </div>
+              ))}
+              {selEvents.obrs.map(o=> (
+                <div key={o.id} className="p-3 rounded-xl border border-amber-200 bg-amber-50/50">
+                  <div className="text-sm font-medium">{o.titulo}</div>
+                  <div className="text-xs text-zinc-600">{o.clienteNome||'—'} • {o.tipo} • {o.estado}</div>
+                </div>
+              ))}
+            </div>
+          ))}
+          <div className="mt-4 p-3 rounded-xl bg-zinc-50 border border-zinc-200">
+            <div className="text-xs font-bold text-zinc-700 flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Legenda</div>
+            <div className="text-xs text-zinc-600 mt-1 space-y-1"><div><span className="inline-block w-2 h-2 rounded-full bg-amber-400 mr-2" />Tarefas</div><div><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-2" />Obrigações fiscais</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Clientes 360 ─────────────────────────────────────────────────────────────
 function ClientesView({ clientes }: { clientes: GabineteCliente[] }) {
   const [q, setQ] = useState('');
   const [showNew, setShowNew] = useState(false);
   const [form, setForm] = useState<Partial<GabineteCliente>>({ tipoEntidade:'LDA', regimeIva:'trimestral', territorio:'continente', estado:'ativo' });
   const [filtroEstado, setFiltroEstado] = useState<'todos'|'ativo'|'arquivado'>('todos');
+  const conversas = useGabineteConversas();
+  const [histCliente, setHistCliente] = useState<GabineteCliente | null>(null);
+  const [novaConv, setNovaConv] = useState<Partial<Conversa>>({ tipo: 'nota' as const });
 
   const filtered = useMemo(()=> {
     const s = q.toLowerCase().trim();
@@ -205,6 +326,8 @@ function ClientesView({ clientes }: { clientes: GabineteCliente[] }) {
       territorio: (form.territorio as GabineteCliente['territorio']) || 'continente',
       municipio: form.municipio?.trim(),
       estado: (form.estado as GabineteCliente['estado']) || 'ativo',
+      contactos: (form.contactos as any)?.filter((c:any)=> c.nome?.trim()).map((c:any)=> ({...c, nome:c.nome.trim(), cargo:c.cargo?.trim(), email:c.email?.trim(), telefone:c.telefone?.trim()})) || undefined,
+      alertas: form.alertas && Object.values(form.alertas).some(Boolean) ? form.alertas : undefined,
       createdAt: (form.createdAt as number) || Date.now(),
       updatedAt: Date.now(),
     };
@@ -254,6 +377,7 @@ function ClientesView({ clientes }: { clientes: GabineteCliente[] }) {
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
                       <button onClick={()=>{ setForm(c); setShowNew(true); }} className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-zinc-200 text-zinc-600" title="Editar"><Building2 className="w-4 h-4" /></button>
+                      <button onClick={()=> setHistCliente(c)} className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-zinc-200 text-zinc-600" title="Histórico de conversação"><MessageSquare className="w-4 h-4" /></button>
                       <button onClick={()=> gerarObrigacoesParaCliente(c)} className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-zinc-200 text-zinc-600" title="Gerar obrigações"><Calendar className="w-4 h-4" /></button>
                       <button onClick={()=> { if(confirm(`Arquivar ${c.nome}?`)) upsertCliente({...c, estado: c.estado==='ativo'?'arquivado':'ativo'}); }} className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-zinc-200 text-zinc-600" title="Arquivar/Ativar"><Eye className="w-4 h-4" /></button>
                       <button onClick={()=> { if(confirm(`Apagar ${c.nome}?`)) deleteCliente(c.id); }} className="p-2 rounded-lg hover:bg-rose-50 text-rose-600 border border-transparent hover:border-rose-200" title="Apagar"><Trash2 className="w-4 h-4" /></button>
@@ -266,6 +390,39 @@ function ClientesView({ clientes }: { clientes: GabineteCliente[] }) {
         </div>
       </div>
 
+      {histCliente && (
+        <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={()=>setHistCliente(null)}>
+          <div className="w-full max-w-[640px] bg-white rounded-2xl border border-zinc-200 shadow-xl flex flex-col max-h-[85vh]" onClick={e=>e.stopPropagation()}>
+            <div className="p-6 border-b border-zinc-200 flex items-center justify-between">
+              <div><h3 className="font-semibold flex items-center gap-2"><MessageSquare className="w-5 h-5 text-[#0677FF]" /> Histórico — {histCliente.nome}</h3><p className="text-xs text-zinc-500">{histCliente.nif} • {conversas.filter(c=>c.clienteId===histCliente.id).length} registos</p></div>
+              <button onClick={()=>setHistCliente(null)} className="p-2 rounded-full hover:bg-zinc-100"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-3">
+              {conversas.filter(c=>c.clienteId===histCliente.id).length===0 ? <div className="py-12 text-center text-sm text-zinc-500 border-2 border-dashed border-zinc-200 rounded-xl">Sem histórico. Regista a primeira conversa.</div> : conversas.filter(c=>c.clienteId===histCliente.id).sort((a,b)=>b.data-a.data).map(c=> (
+                <div key={c.id} className="p-3 rounded-xl border border-zinc-200 bg-zinc-50/50">
+                  <div className="flex items-start justify-between gap-2"><span className="text-xs px-2 py-1 rounded-full bg-white border border-zinc-200">{c.tipo}</span><span className="text-xs text-zinc-500">{new Date(c.data).toLocaleDateString('pt-PT')} • {c.autor||'—'}</span></div>
+                  <div className="text-sm font-medium mt-1">{c.titulo}</div>
+                  {c.conteudo && <div className="text-sm text-zinc-600 mt-1 whitespace-pre-wrap">{c.conteudo}</div>}
+                  <button onClick={()=>{ if(confirm('Apagar registo?')) deleteConversa(c.id); }} className="mt-2 text-xs text-rose-600 hover:underline">Apagar</button>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 border-t border-zinc-200 bg-zinc-50 rounded-b-2xl">
+              <div className="text-xs font-bold mb-2">Novo registo</div>
+              <div className="grid grid-cols-2 gap-2">
+                <select value={novaConv.tipo} onChange={e=>setNovaConv({...novaConv, tipo:e.target.value as any})} className="px-3 py-2 rounded-xl border border-zinc-200 bg-white text-sm"><option value="nota">Nota</option><option value="chamada">Chamada</option><option value="reuniao">Reunião</option><option value="email">Email</option><option value="outro">Outro</option></select>
+                <input type="date" value={novaConv.data ? new Date(novaConv.data).toISOString().slice(0,10) : new Date().toISOString().slice(0,10)} onChange={e=>setNovaConv({...novaConv, data: e.target.value ? new Date(e.target.value).getTime() : Date.now()})} className="px-3 py-2 rounded-xl border border-zinc-200 bg-white text-sm" />
+              </div>
+              <input value={novaConv.titulo||''} onChange={e=>setNovaConv({...novaConv, titulo:e.target.value})} placeholder="Título — ex: Chamada sobre IVA Julho" className="mt-2 w-full px-3 py-2 rounded-xl border border-zinc-200 text-sm" />
+              <textarea value={novaConv.conteudo||''} onChange={e=>setNovaConv({...novaConv, conteudo:e.target.value})} placeholder="Detalhes da conversa..." rows={2} className="mt-2 w-full px-3 py-2 rounded-xl border border-zinc-200 text-sm" />
+              <div className="flex justify-end gap-2 mt-3">
+                <button onClick={()=>setHistCliente(null)} className="px-4 py-2 rounded-xl border border-zinc-200 bg-white text-sm">Fechar</button>
+                <button onClick={async()=>{ if(!novaConv.titulo?.trim()) return alert('Título obrigatório'); const c: Conversa={ id: newConversaId(), clienteId: histCliente!.id, clienteNome: histCliente!.nome, tipo: (novaConv.tipo as any)||'nota', titulo: novaConv.titulo!.trim(), conteudo: novaConv.conteudo?.trim(), data: novaConv.data||Date.now(), autor: 'local', createdAt: Date.now(), updatedAt: Date.now() }; await upsertConversa(c); setNovaConv({ tipo: 'nota' as const }); }} className="px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm font-medium">Guardar no histórico (live)</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {showNew && (
         <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={()=>setShowNew(false)}>
           <div className="w-full max-w-[560px] bg-white rounded-2xl border border-zinc-200 p-6 shadow-xl" onClick={e=>e.stopPropagation()}>
@@ -291,6 +448,37 @@ function ClientesView({ clientes }: { clientes: GabineteCliente[] }) {
                   <option value="continente">Continente</option><option value="madeira">Madeira</option><option value="acores">Açores</option>
                 </select>
               </label>
+            </div>
+            {/* Alertas Fase 1 — IUC/IMI/Seguros/Certidão */}
+            <div className="mt-5 p-4 rounded-xl bg-amber-50/50 border border-amber-200">
+              <div className="text-xs font-bold text-amber-900 flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Alertas do cliente (Fase 1)</div>
+              <div className="text-[11px] text-amber-700 mt-1">Define os vencimentos para aparecerem na Agenda e no Dashboard. Deixa vazio se não aplicável.</div>
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <label><span className="text-[11px] font-medium">IUC</span><input type="date" value={form.alertas?.iuc ? new Date(form.alertas.iuc).toISOString().slice(0,10) : ''} onChange={e=>setForm({...form, alertas: {...(form.alertas||{}), iuc: e.target.value ? new Date(e.target.value).getTime() : undefined}})} className="mt-1 w-full px-2.5 py-2 rounded-lg border border-amber-200 bg-white text-sm" /></label>
+                <label><span className="text-[11px] font-medium">IMI</span><input type="date" value={form.alertas?.imi ? new Date(form.alertas.imi).toISOString().slice(0,10) : ''} onChange={e=>setForm({...form, alertas: {...(form.alertas||{}), imi: e.target.value ? new Date(e.target.value).getTime() : undefined}})} className="mt-1 w-full px-2.5 py-2 rounded-lg border border-amber-200 bg-white text-sm" /></label>
+                <label><span className="text-[11px] font-medium">Seguros</span><input type="date" value={form.alertas?.seguros ? new Date(form.alertas.seguros).toISOString().slice(0,10) : ''} onChange={e=>setForm({...form, alertas: {...(form.alertas||{}), seguros: e.target.value ? new Date(e.target.value).getTime() : undefined}})} className="mt-1 w-full px-2.5 py-2 rounded-lg border border-amber-200 bg-white text-sm" /></label>
+                <label><span className="text-[11px] font-medium">Certidão Permanente</span><input type="date" value={form.alertas?.certidaoPermanente ? new Date(form.alertas.certidaoPermanente).toISOString().slice(0,10) : ''} onChange={e=>setForm({...form, alertas: {...(form.alertas||{}), certidaoPermanente: e.target.value ? new Date(e.target.value).getTime() : undefined}})} className="mt-1 w-full px-2.5 py-2 rounded-lg border border-amber-200 bg-white text-sm" /></label>
+              </div>
+            </div>
+            {/* Contactos de Quadros — Fase 1 */}
+            <div className="mt-4 p-4 rounded-xl bg-white border border-zinc-200">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-bold text-zinc-700 flex items-center gap-1.5"><Users className="w-3.5 h-3.5" /> Contactos de Quadros</div>
+                <button type="button" onClick={()=>{ const c={ id: newClienteId()+"_ct"+Date.now(), nome: '', cargo: '', email: '', telefone: '' } as any; setForm({...form, contactos: [...(form.contactos||[]), c]}); }} className="text-xs px-2.5 py-1 rounded-full bg-zinc-900 text-white hover:bg-black">+ Adicionar</button>
+              </div>
+              {(form.contactos||[]).length===0 ? <div className="text-xs text-zinc-500 mt-2">Sem contactos. Adiciona gerentes, TOC, administrativos.</div> : (
+                <div className="space-y-2 mt-3">
+                  {(form.contactos||[]).map((ct:any, idx:number)=> (
+                    <div key={ct.id||idx} className="grid grid-cols-2 gap-2 p-2 rounded-lg bg-zinc-50 border border-zinc-200">
+                      <input value={ct.nome||''} onChange={e=>{ const n=[...(form.contactos||[])]; n[idx]={...n[idx], nome:e.target.value}; setForm({...form, contactos:n}); }} placeholder="Nome" className="px-2 py-1.5 rounded-lg border border-zinc-200 text-sm" />
+                      <input value={ct.cargo||''} onChange={e=>{ const n=[...(form.contactos||[])]; n[idx]={...n[idx], cargo:e.target.value}; setForm({...form, contactos:n}); }} placeholder="Cargo" className="px-2 py-1.5 rounded-lg border border-zinc-200 text-sm" />
+                      <input value={ct.email||''} onChange={e=>{ const n=[...(form.contactos||[])]; n[idx]={...n[idx], email:e.target.value}; setForm({...form, contactos:n}); }} placeholder="Email" className="px-2 py-1.5 rounded-lg border border-zinc-200 text-sm" />
+                      <input value={ct.telefone||''} onChange={e=>{ const n=[...(form.contactos||[])]; n[idx]={...n[idx], telefone:e.target.value}; setForm({...form, contactos:n}); }} placeholder="Telefone" className="px-2 py-1.5 rounded-lg border border-zinc-200 text-sm" />
+                      <button type="button" onClick={()=>{ const n=[...(form.contactos||[])]; n.splice(idx,1); setForm({...form, contactos:n}); }} className="col-span-2 text-xs text-rose-600 hover:underline text-left">Remover</button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="mt-6 flex justify-end gap-2">
               <button onClick={()=>setShowNew(false)} className="px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm">Cancelar</button>

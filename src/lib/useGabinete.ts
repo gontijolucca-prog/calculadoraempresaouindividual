@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import {
-  subscribeClientes, subscribeTarefas, subscribeObrigacoes, subscribeCofre, subscribeColaboradores,
-  listClientesCache, listTarefasCache, listObrigacoesCache, listCofreCache, listColaboradoresCache,
-  type GabineteCliente, type Tarefa, type Obrigacao, type CofreEntrada, type Colaborador,
+  subscribeClientes, subscribeTarefas, subscribeObrigacoes, subscribeCofre, subscribeColaboradores, subscribeConversas,
+  listClientesCache, listTarefasCache, listObrigacoesCache, listCofreCache, listColaboradoresCache, listConversasCache,
+  type GabineteCliente, type Tarefa, type Obrigacao, type CofreEntrada, type Colaborador, type Conversa,
 } from './gabinete';
 
 export function useGabineteClientes(): GabineteCliente[] {
@@ -28,5 +28,10 @@ export function useGabineteCofre(): CofreEntrada[] {
 export function useGabineteColaboradores(): Colaborador[] {
   const [items, setItems] = useState<Colaborador[]>(() => listColaboradoresCache());
   useEffect(() => subscribeColaboradores(setItems), []);
+  return items;
+}
+export function useGabineteConversas(): Conversa[] {
+  const [items, setItems] = useState<Conversa[]>(() => listConversasCache());
+  useEffect(() => subscribeConversas(setItems), []);
   return items;
 }

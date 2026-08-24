@@ -77,6 +77,17 @@ async function safeDeleteDoc(path: string, id: string): Promise<void> {
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
+// ─── Contactos de Quadros ──────────────────────────────────────────────────
+export interface ContactoQuadro {
+  id: string;
+  nome: string;
+  cargo?: string; // ex: Gerente, TOC, Administrativo
+  email?: string;
+  telefone?: string;
+  nif?: string;
+  principal?: boolean;
+}
+
 // Cliente 360 — espelho leve do EmpresaRecord + gestão
 export type ClienteEstado = 'ativo' | 'arquivado';
 export type ClienteRegimeIva = 'isencao53' | 'trimestral' | 'mensal';
@@ -99,6 +110,15 @@ export interface GabineteCliente {
   tags?: string[];
   empresaId?: string; // link para EmpresaRecord existente
   observacoes?: string;
+  // Fase 1 — novos campos
+  contactos?: ContactoQuadro[];
+  alertas?: {
+    iuc?: number; // ms timestamp do próximo vencimento
+    imi?: number;
+    seguros?: number;
+    certidaoPermanente?: number;
+  };
+  projectos?: string[];
   createdAt: number;
   updatedAt: number;
   createdBy?: string;
@@ -194,6 +214,21 @@ export interface GabineteDocumento {
   versao?: number;
   dataUpload: number;
   uploadedBy?: string;
+}
+
+// Histórico de Conversação — Fase 1
+export type ConversaTipo = 'nota' | 'chamada' | 'reuniao' | 'email' | 'outro';
+export interface Conversa {
+  id: string;
+  clienteId: string;
+  clienteNome?: string;
+  tipo: ConversaTipo;
+  titulo: string;
+  conteudo?: string;
+  data: number; // quando aconteceu
+  autor?: string;
+  createdAt: number;
+  updatedAt: number;
 }
 
 // ─── CRUD — Clientes ─────────────────────────────────────────────────────────
@@ -313,6 +348,38 @@ export async function upsertColaborador(c: Colaborador): Promise<void> {
   try { await safeSetDoc(colPath('colaboradores'), c.id, c); } catch {}
 }
 
+// ─── CRUD — Conversas (Histórico) — Fase 1 ────────────────────────────────────
+export function listConversasCache(): Conversa[] { return readCache<Conversa>('conversas', []); }
+export function saveConversasCache(list: Conversa[]): void { writeCache('conversas', list); }
+export async function upsertConversa(c: Conversa): Promise<Conversa> {
+  const list = listConversasCache();
+  const idx = list.findIndex(x => x.id === c.id);
+  const next = { ...c, updatedAt: Date.now() };
+  if (idx >= 0) list[idx] = next; else list.unshift(next);
+  saveConversasCache(list);
+  try { await safeSetDoc(colPath('conversas'), c.id, next); } catch {}
+  return next;
+}
+export async function deleteConversa(id: string): Promise<void> {
+  const list = listConversasCache().filter(x => x.id !== id);
+  saveConversasCache(list);
+  try { await safeDeleteDoc(colPath('conversas'), id); } catch {}
+}
+export function newConversaId(): string { return newId('cnv'); }
+
+// ─── Alertas — helpers Fase 1 ────────────────────────────────────────────────
+export function getAlertasVencidos(cli: GabineteCliente, diasAviso = 30): { tipo: keyof NonNullable<GabineteCliente['alertas']>; vencimento: number; dias: number }[] {
+  if (!cli.alertas) return [];
+  const now = Date.now();
+  const out: { tipo: keyof NonNullable<GabineteCliente['alertas']>; vencimento: number; dias: number }[] = [];
+  for (const [k, v] of Object.entries(cli.alertas) as [keyof NonNullable<GabineteCliente['alertas']>, number | undefined][]) {
+    if (!v) continue;
+    const dias = Math.ceil((v - now) / 86400000);
+    if (dias <= diasAviso) out.push({ tipo: k, vencimento: v, dias });
+  }
+  return out.sort((a,b)=> a.vencimento - b.vencimento);
+}
+
 // ─── Subscriptions LIVE (onSnapshot) ─────────────────────────────────────────
 // Cada subscribe tenta Firestore live; se falhar (offline/sem auth), devolve o cache
 // e mantém o callback com o cache. Quando a rede voltar, o snapshot atualiza sozinho.
@@ -351,6 +418,7 @@ export const subscribeTarefas = makeSubscriber<Tarefa>('tarefas');
 export const subscribeObrigacoes = makeSubscriber<Obrigacao>('obrigacoes');
 export const subscribeCofre = makeSubscriber<CofreEntrada>('cofre');
 export const subscribeColaboradores = makeSubscriber<Colaborador>('colaboradores');
+export const subscribeConversas = makeSubscriber<Conversa>('conversas');
 
 // One-shot fetch (para seed/migração)
 export async function fetchAll<T>(col: string): Promise<T[]> {

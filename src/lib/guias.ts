@@ -12,7 +12,7 @@ export type ViewKey =
   | 'empresas' | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'previsa'
   | 'legal' | 'office-settings' | 'historico' | 'exportar' | 'hub'
-  | 'gabinete' | 'gab-clientes' | 'gab-tarefas' | 'gab-obrigacoes' | 'gab-cofre';
+  | 'gabinete' | 'gab-agenda' | 'gab-clientes' | 'gab-tarefas' | 'gab-obrigacoes' | 'gab-cofre';
 
 export interface GuiaPasso {
   titulo: string;
@@ -257,6 +257,17 @@ export const GUIAS: Record<ViewKey, Guia> = {
       { titulo: 'Visão do dia', corpo: 'KPIs no topo: tarefas que vencem hoje, atrasadas, obrigações vencidas e clientes sem tarefa há 30 dias — o que precisa de atenção hoje.', alvo: { texto: 'Tarefas hoje' } },
       { titulo: 'Próximos 7 dias', corpo: 'Lista do que vence na semana: obrigações e tarefas juntas, por data. Clica em "Ver tudo" para ir às tarefas.', alvo: { texto: 'Próximos 7 dias' } },
       { titulo: 'Atalhos', corpo: 'Novo cliente, nova tarefa e guardar acesso — atalhos diretos para as ações mais frequentes do escritório.', alvo: { texto: 'Atalhos' } },
+    ],
+  },
+
+  'gab-agenda': {
+    titulo: 'Agenda',
+    intro: 'Calendário mensal de tudo o que vence: tarefas e obrigações fiscais juntas. Clica num dia para ver o detalhe e criar novas tarefas.',
+    acao: 'Navega no calendário e clica num dia com eventos para ver os detalhes.',
+    passos: [
+      { titulo: 'Calendário mensal', corpo: 'Vês o mês inteiro com os dias que têm tarefas (âmbar) e obrigações (verde). O dia de hoje fica destacado.', alvo: { texto: 'Agenda' } },
+      { titulo: 'Detalhe do dia', corpo: 'Ao clicares num dia, vês à direita todas as tarefas e obrigações desse dia — com cliente, prioridade e estado.', alvo: { texto: 'Seleciona um dia' } },
+      { titulo: 'Navegação', corpo: 'Muda de mês com as setas ou volta a "Hoje" num clique. A agenda é live — outra colaboradora vê logo o que criares.', alvo: { texto: 'Hoje' } },
     ],
   },
 
