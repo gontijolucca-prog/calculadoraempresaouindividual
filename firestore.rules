@@ -28,7 +28,8 @@ service cloud.firestore {
     // 'shared' permite demo local sem login; com login isola por uid.
     match /gabinete/{officeId}/{col}/{docId} {
       allow read: if officeId == 'shared' || (request.auth != null && request.auth.uid == officeId);
-      allow write: if (officeId == 'shared' || (request.auth != null && request.auth.uid == officeId)) && isValidGabineteDoc(request.resource.data);
+      allow create, update: if (officeId == 'shared' || (request.auth != null && request.auth.uid == officeId)) && isValidGabineteDoc(request.resource.data);
+      allow delete: if officeId == 'shared' || (request.auth != null && request.auth.uid == officeId);
     }
     // Permitir listar as subcoleções (necessário para collectionGroup ou list)
     match /gabinete/{officeId} {
