@@ -488,7 +488,7 @@ function EmptyState({ onNova, hasQuery }: { onNova: () => void; hasQuery: boolea
     );
   }
   return (
-    <div className="text-center py-16 px-6 bg-white border border-dashed border-[#E5E9F0] rounded-[16px]">
+    <div className="text-center py-16 px-6 pb-40 bg-white border border-dashed border-[#E5E9F0] rounded-[16px]">
       <div className="w-14 h-14 rounded-full bg-[#0677FF]/10 text-[#0677FF] flex items-center justify-center mx-auto mb-4">
         <Building2 className="w-6 h-6" />
       </div>

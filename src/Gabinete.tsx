@@ -57,7 +57,7 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour 
   const startTour = (v: ViewKey) => onStartTour?.(v);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-zinc-900">
+    <div className="min-h-screen bg-[#F8FAFC] text-zinc-900 pb-6">
       <GuiaSugestao view={GAB_TAB_GUIA[tab]} onStart={startTour} />
       {/* Header — sem tabs no topo; navegação agora no dropdown da sidebar */}
       <div className="sticky top-0 z-20 bg-white/80 backdrop-blur border-b border-zinc-200">
@@ -221,6 +221,8 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
 
 // ─── Agenda — Fase 1 ────────────────────────────────────────────────────────
 function AgendaView({ tarefas, obrigacoes, clientes }: { tarefas: Tarefa[]; obrigacoes: Obrigacao[]; clientes: GabineteCliente[] }) {
+  // Agenda com padding extra no mobile para não tapar com a pill
+
   const [cur, setCur] = useState(() => { const d = new Date(); d.setDate(1); return d; });
   const [sel, setSel] = useState<number | null>(() => new Date().getDate());
   const ym = `${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,'0')}`;

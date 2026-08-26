@@ -242,7 +242,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
         </div>
       </div>
 
-      <nav aria-label="Navegação principal" className="flex-1 overflow-y-auto px-2 py-1">
+      <nav aria-label="Navegação principal" className="flex-1 overflow-y-auto px-2 py-1 pb-16">
         <SectionLabel>Carteira</SectionLabel>
             <NavItem label="Gabinete" Icon={LayoutDashboard} onClick={() => { if (active === 'gabinete') setGabineteOpen(v=>!v); else { go('gabinete'); setGabineteOpen(true); } }} current={active === 'gabinete'} chevronOpen={gabineteOpen} title="Gabinete — dashboard, clientes, tarefas, obrigações e cofre" />
             {gabineteOpen && (
