@@ -24,7 +24,7 @@ function check(label: string, cond: boolean) {
 
 const base: InputEnq2026 = {
   ...defaultInputEnq2026(),
-  rend: { vendas: 60000, servicosProf: 30000, outrosServicos: 10000, restantes: 0 },
+  rend: { vendas: 60000, servicosProf: 30000, outrosServicos: 10000, subsidiosExploracao: 0, restantes: 0 },
   faturacaoAnoAnterior: 90000, anoAtividade: 3,
   gastosReais: 40000, ivaDedutivelCompras: 3000,
   remGerenteMensal: 1500, pctLucroDistribuido: 0.5,
@@ -39,7 +39,7 @@ const base: InputEnq2026 = {
   approx('A: RC 1.º ano (0,75/0,35 reduzidos 50%)', rendColetavelIrsSimplificado(base.rend, 1, 40000).rc, 22000);
   approx('A: RC 2.º ano (reduzidos 25%)', rendColetavelIrsSimplificado(base.rend, 2, 40000).rc, 28500);
   // Regra dos 15%: serviços 100k sem gastos justificados → acréscimo
-  const r15 = rendColetavelIrsSimplificado({ vendas: 0, servicosProf: 100000, outrosServicos: 0, restantes: 0 }, 3, 0);
+  const r15 = rendColetavelIrsSimplificado({ vendas: 0, servicosProf: 100000, outrosServicos: 0, subsidiosExploracao: 0, restantes: 0 }, 3, 0);
   approx('A: acréscimo regra 15% (sem gastos)', r15.acrescimo15, 15000 - DED_ESPECIFICA_CAT_A_2026);
   approx('A: RC com acréscimo', r15.rc, 75000 + 15000 - DED_ESPECIFICA_CAT_A_2026);
 }
@@ -72,7 +72,7 @@ approx('C: SS independente (70% serviços + 20% vendas × 21,4%)', ssIndependent
   const v5 = validarRegimes({ ...base, faturacaoAnoAnterior: 700000 });
   check('D: ≥650k → trimestral excluído + mensal obrigatório', !v5.ivaTrimestral.elegivel && v5.ivaMensalObrigatorio);
   // Início de atividade: isenção avaliada pela ESTIMATIVA do próprio ano
-  const v6 = validarRegimes({ ...base, anoAtividade: 1, faturacaoAnoAnterior: 0, rend: { vendas: 0, servicosProf: 12000, outrosServicos: 0, restantes: 0 } });
+  const v6 = validarRegimes({ ...base, anoAtividade: 1, faturacaoAnoAnterior: 0, rend: { vendas: 0, servicosProf: 12000, outrosServicos: 0, subsidiosExploracao: 0, restantes: 0 } });
   check('D: 1.º ano com estimativa 12k → isenção 53.º elegível', v6.ivaIsencao53.elegivel);
 }
 
@@ -116,7 +116,7 @@ approx('C: SS independente (70% serviços + 20% vendas × 21,4%)', ssIndependent
 {
   const peq: InputEnq2026 = {
     ...defaultInputEnq2026(),
-    rend: { vendas: 0, servicosProf: 14000, outrosServicos: 0, restantes: 0 },
+    rend: { vendas: 0, servicosProf: 14000, outrosServicos: 0, subsidiosExploracao: 0, restantes: 0 },
     faturacaoAnoAnterior: 14000, anoAtividade: 3,
     gastosReais: 2000, ivaDedutivelCompras: 460,
     accMensalSimplificado: 0, accMensalOrganizada: 100,
@@ -134,7 +134,7 @@ approx('C: SS independente (70% serviços + 20% vendas × 21,4%)', ssIndependent
 {
   const saida = compararEnquadramento2026({
     ...defaultInputEnq2026(),
-    rend: { vendas: 0, servicosProf: 19000, outrosServicos: 0, restantes: 0 },
+    rend: { vendas: 0, servicosProf: 19000, outrosServicos: 0, subsidiosExploracao: 0, restantes: 0 },
     faturacaoAnoAnterior: 14000, anoAtividade: 3,
   });
   check('G: previsão >18 750 € com isenção → alerta de saída IMEDIATA', saida.alertas.some(a => a.includes('IMEDIATA')));
@@ -148,7 +148,7 @@ approx('C: SS independente (70% serviços + 20% vendas × 21,4%)', ssIndependent
   check('G: TA a zero com gastos → alerta validar tributações autónomas', base.taManual === 0 && compararEnquadramento2026(base).alertas.some(a => a.toLowerCase().includes('autónomas')));
   check('G: clientes particulares ≥50% → alerta impacto comercial do IVA', compararEnquadramento2026(base).alertas.some(a => a.includes('particulares')));
 
-  const salto = compararEnquadramento2026({ ...base, rend: { vendas: 260000, servicosProf: 0, outrosServicos: 0, restantes: 0 } });
+  const salto = compararEnquadramento2026({ ...base, rend: { vendas: 260000, servicosProf: 0, outrosServicos: 0, subsidiosExploracao: 0, restantes: 0 } });
   check('G: previsão >250k (limite +25%) → alerta organizada obrigatória no seguinte', salto.alertas.some(a => a.includes('25%') && a.includes('seguinte')));
 }
 
@@ -156,7 +156,7 @@ approx('C: SS independente (70% serviços + 20% vendas × 21,4%)', ssIndependent
 {
   const peq = compararEnquadramento2026({
     ...defaultInputEnq2026(),
-    rend: { vendas: 0, servicosProf: 13000, outrosServicos: 0, restantes: 0 },
+    rend: { vendas: 0, servicosProf: 13000, outrosServicos: 0, subsidiosExploracao: 0, restantes: 0 },
     faturacaoAnoAnterior: 14000, anoAtividade: 3,
   });
   const isen = peq.cenarios.find(c => c.rendimento === 'eni-simplificado' && c.iva === 'isencao53')!;
@@ -177,7 +177,9 @@ approx('C: SS independente (70% serviços + 20% vendas × 21,4%)', ssIndependent
   const { seed, preenchidos } = seedEnqFromSaft(emp, prof);
   approx('I: vendas do SAF-T (711)', seed.rend?.vendas ?? 0, 50000);
   approx('I: prestações 72 → serviços art. 151.º (atividade do perfil)', seed.rend?.servicosProf ?? 0, 30000);
-  approx('I: subsídios/outros (75/78)', seed.rend?.restantes ?? 0, 1000);
+  // rai_75 (subsídios à exploração) → rend.subsidiosExploracao (coef. 0,30); rai_78 → restantes (coef. 0,10)
+  approx('I: subsídios à exploração (75)', seed.rend?.subsidiosExploracao ?? 0, 1000);
+  approx('I: outros rendimentos (78)', seed.rend?.restantes ?? 0, 0);
   approx('I: faturação ano anterior = total SAF-T', seed.faturacaoAnoAnterior ?? 0, 81000);
   approx('I: gastos de caixa (sem depreciações 64)', seed.gastosReais ?? 0, 23000);
   approx('I: total balanço = ativo do perfil', seed.totalBalanco ?? 0, 50000);

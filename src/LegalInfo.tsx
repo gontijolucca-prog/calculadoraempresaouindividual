@@ -664,17 +664,18 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
 
             {/* IRS Jovem */}
             <div>
-              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">IRS Jovem — Art. 12.º-B CIRS (OE 2025)</h3>
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">IRS Jovem — Art. 12.º-B CIRS (em vigor 2026)</h3>
               <div className="bg-blue-50 border border-blue-200 rounded-[12px] p-4 mb-3">
                 <p className="text-[13px] text-blue-900 font-[500] leading-relaxed">
-                  Aplica-se a trabalhadores até <strong>35 anos</strong>, nos primeiros 5 anos de atividade profissional. Teto máximo: <strong>5× IAS anual = {ptEur(IAS_2026 * 12 * 5)}</strong> (IAS 2026: {ptEur(IAS_2026)}).
+                  Aplica-se a trabalhadores até <strong>35 anos</strong> (categorias A e B), durante os <strong>primeiros 10 anos</strong> de obtenção de rendimentos. Teto máximo de rendimentos abrangidos: <strong>55 × IAS = {ptEur(Math.round(IAS_2026 * 55 * 100) / 100)}</strong> (IAS 2026: {ptEur(IAS_2026)}). O regime mantém-se em 2026 (sem alterações no OE 2026).
                 </p>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
-                  { ano: '1.º ano', taxa: '100%', desc: 'Isenção total do rendimento coletável' },
-                  { ano: '2.º e 3.º anos', taxa: '75%', desc: 'Isenção de 75% do rendimento coletável' },
-                  { ano: '4.º e 5.º anos', taxa: '50%', desc: 'Isenção de 50% do rendimento coletável' },
+                  { ano: '1.º ano', taxa: '100%', desc: 'Isenção total' },
+                  { ano: '2.º a 4.º anos', taxa: '75%', desc: 'Isenção de 75%' },
+                  { ano: '5.º a 7.º anos', taxa: '50%', desc: 'Isenção de 50%' },
+                  { ano: '8.º a 10.º anos', taxa: '25%', desc: 'Isenção de 25%' },
                 ].map(({ ano, taxa, desc }) => (
                   <div key={ano} className="bg-[#F5F7FA] border border-[#E2E8F0] rounded-[12px] p-4 text-center">
                     <div className="text-[11px] font-[700] text-[#64748B] uppercase mb-1">{ano}</div>

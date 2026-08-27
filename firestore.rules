@@ -37,6 +37,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Tabela de preços/honorários do escritório (config não sensível —
+    // permite a app funcionar sem login; sem dados de clientes).
+    match /pricing/{docId} {
+      allow read, write: if true;
+    }
+
     // Sugestões de melhoria recolhidas pelo AI Contabilista.
     // Autenticação obrigatória para criar/atualizar.
     match /ai_suggestions/{docId} {

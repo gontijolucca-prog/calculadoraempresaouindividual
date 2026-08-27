@@ -423,7 +423,11 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                   <input type="checkbox" checked={st.isStartup} onChange={e => s('isStartup', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
                   <span className="text-[13px] font-[600] text-[#0F172A]">Startup (12,5% em toda a matéria coletável)</span>
                 </label>
-                <NumInput label="Volume de Negócios (€)" value={st.volumeNegocios} onChange={v => s('volumeNegocios', v)} help="Para PEC/PC" />
+                <label className="flex items-center gap-3 cursor-pointer py-1">
+                  <input type="checkbox" checked={st.regimeSimplificado} onChange={e => s('regimeSimplificado', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
+                  <span className="text-[13px] font-[600] text-[#0F172A]">Regime simplificado de IRC (art. 86.º-A — exclui TA de representação, ajudas de custo, lucros distribuídos, indemnizações e bónus)</span>
+                </label>
+                <NumInput label="Volume de Negócios (€)" value={st.volumeNegocios} onChange={v => s('volumeNegocios', v)} help="Para PPC/PAC" />
                 <PctInput label="Taxa Derrama Municipal" value={st.taxaDerramaMunicipal} onChange={v => s('taxaDerramaMunicipal', v)} help="Ex: 1,5%" />
               </div>
             </Section>
@@ -579,6 +583,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <NumInput label="Prejuízos 2022" value={st.prej_2022} onChange={v => s('prej_2022', v)} indent />
               <NumInput label="Prejuízos 2023" value={st.prej_2023} onChange={v => s('prej_2023', v)} indent />
               <NumInput label="Prejuízos 2024" value={st.prej_2024} onChange={v => s('prej_2024', v)} indent />
+              <NumInput label="Prejuízos 2025" value={st.prej_2025} onChange={v => s('prej_2025', v)} indent />
               <NumInput label="397 — Prejuízos c/ transmissão autorizada (art.15)" value={st.c397} onChange={v => s('c397', v)} />
               <div className="flex items-center justify-between py-1.5 text-[12px] text-slate-500">
                 <span>Total prejuízos disponíveis</span>
@@ -590,8 +595,9 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               </div>
               <label className="flex items-center gap-3 py-1.5 cursor-pointer">
                 <input type="checkbox" checked={st.limiteMaisPP} onChange={e => s('limiteMaisPP', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
-                <span className="text-[12px] font-[500] text-slate-600">Aumentar limite para 75% (perda {'>'} 25% capital próprio)</span>
+                <span className="text-[12px] font-[500] text-slate-600">Limite 75% — tenho saldo de prejuízos de <b>2020/2021</b> a deduzir (Lei 27-A/2020, art. 11.º n.º 2; art. 52.º CIRC)</span>
               </label>
+              <p className="text-[11px] text-slate-400 leading-snug">O limite sobe de 65% para 75% apenas na medida dos prejuízos de 2020 e/ou 2021 deduzidos. O total deduzido nunca excede 65% do LT quando estes saldos não existam.</p>
               <CalcRow label="Prejuízos efetivamente deduzidos" value={stepRes.prejuziosEfetivos} />
             </Section>
 
@@ -631,7 +637,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
             <Section title="Tributações Autónomas — Viaturas">
               <label className="flex items-center gap-3 py-1.5 cursor-pointer">
                 <input type="checkbox" checked={st.agravamentoTA} onChange={e => s('agravamentoTA', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
-                <span className="text-[12px] font-[500] text-slate-600">Agravamento +10% (empresa com prejuízo fiscal no período)</span>
+                <span className="text-[12px] font-[500] text-slate-600">Agravamento +10 p.p. (prejuízo fiscal no período — só se NÃO cumprir o art. 95.º n.º 5 LOE 2026: lucro num dos 3 períodos anteriores + declarações em dia, ou início de atividade/2 períodos seguintes)</span>
               </label>
 
               {st.viaturas.length === 0 && (
@@ -689,6 +695,11 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
             </Section>
 
             <Section title="Outras Tributações Autónomas" cols>
+              {st.regimeSimplificado && (
+                <p className="col-span-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-[8px] px-3 py-2 leading-snug">
+                  Regime simplificado (art. 88.º n.º 16 CIRC): não se aplicam as TA de representação, ajudas de custo, lucros distribuídos, indemnizações e bónus — esses campos são ignorados.
+                </p>
+              )}
               <NumInput label="Despesas não documentadas — atividade principal" value={st.ta_despNaoDocPrincipal} onChange={v => s('ta_despNaoDocPrincipal', v)} help="50%" />
               <NumInput label="Despesas não documentadas — não atividade principal" value={st.ta_despNaoDocNaoPrincipal} onChange={v => s('ta_despNaoDocNaoPrincipal', v)} help="70%" />
               <NumInput label="Encargos de representação" value={st.ta_representacao} onChange={v => s('ta_representacao', v)} help="10%" />
@@ -752,8 +763,8 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
             <CalcRow label="358 — IRC liquidado (c378 − c357)" value={stepRes.c358} highlight />
 
             <Section title="Pagamentos e Deduções" cols>
-              <NumInput label="356 — PEC efetuado" value={st.pecPagamentos} onChange={v => s('pecPagamentos', v)}
-                help={`Estimado: ${fmt(stepRes.pecCalculado)} €`} />
+              <NumInput label="356 — PEC (só saldo ANTIGO a deduzir)" value={st.pecPagamentos} onChange={v => s('pecPagamentos', v)}
+                help="PEC extinto desde 2022 (Lei 12/2022) — aqui apenas saldos de 2020/2021 a deduzir (2020 termina em 2026; 2021 em 2027)" />
               <NumInput label="359 — Retenções na fonte" value={st.retencoesFonte} onChange={v => s('retencoesFonte', v)} />
               <NumInput label="360 — PC — pagamentos por conta" value={st.pcPagamentos} onChange={v => s('pcPagamentos', v)}
                 help="PC já efetuados DURANTE este período" />
@@ -827,8 +838,8 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               </div>
             )}
             <div className="flex justify-between text-[11px]">
-              <span className="text-slate-400 font-[500]">PEC estimado</span>
-              <span className="font-[700] text-slate-600">{fmt(res.pecCalculado)} €</span>
+              <span className="text-slate-400 font-[500]">PEC — extinto (Lei 12/2022)</span>
+              <span className="font-[700] text-slate-400">—</span>
             </div>
             <div className="flex justify-between text-[11px]">
               <span className="text-slate-400 font-[500]">PC próximo período (art. 105.º, {pct(res.ppcTaxa)})</span>
@@ -989,7 +1000,11 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                     <input type="checkbox" checked={state.isStartup} onChange={e => set('isStartup', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
                     <span className="text-[13px] font-[600] text-[#0F172A]">Startup (12,5% em toda a matéria coletável)</span>
                   </label>
-                  <NumInput label="Volume de Negócios (€)" value={state.volumeNegocios} onChange={v => set('volumeNegocios', v)} help="Para PEC/PC" />
+                  <label className="flex items-center gap-3 cursor-pointer py-1">
+                    <input type="checkbox" checked={state.regimeSimplificado} onChange={e => set('regimeSimplificado', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
+                    <span className="text-[13px] font-[600] text-[#0F172A]">Regime simplificado de IRC (art. 86.º-A — exclui TA de representação, ajudas de custo, lucros distribuídos, indemnizações e bónus)</span>
+                  </label>
+                  <NumInput label="Volume de Negócios (€)" value={state.volumeNegocios} onChange={v => set('volumeNegocios', v)} help="Para PPC/PAC" />
                   <PctInput label="Taxa Derrama Municipal" value={state.taxaDerramaMunicipal} onChange={v => set('taxaDerramaMunicipal', v)} help="Ex: 1,5%" />
                 </div>
               </Section>
@@ -1118,6 +1133,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 <NumInput label="Prejuízos 2022" value={state.prej_2022} onChange={v => set('prej_2022', v)} indent />
                 <NumInput label="Prejuízos 2023" value={state.prej_2023} onChange={v => set('prej_2023', v)} indent />
                 <NumInput label="Prejuízos 2024" value={state.prej_2024} onChange={v => set('prej_2024', v)} indent />
+                <NumInput label="Prejuízos 2025" value={state.prej_2025} onChange={v => set('prej_2025', v)} indent />
                 <NumInput label="397 — Prejuízos c/ transmissão autorizada (art.15)" value={state.c397} onChange={v => set('c397', v)} />
                 <div className="flex items-center justify-between py-1.5 text-[12px] text-slate-500">
                   <span>Total prejuízos disponíveis</span>
@@ -1129,8 +1145,9 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 </div>
                 <label className="flex items-center gap-3 py-1.5 cursor-pointer">
                   <input type="checkbox" checked={state.limiteMaisPP} onChange={e => set('limiteMaisPP', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
-                  <span className="text-[12px] font-[500] text-slate-600">Aumentar limite para 75% (perda {'>'} 25% capital próprio)</span>
+                  <span className="text-[12px] font-[500] text-slate-600">Limite 75% — tenho saldo de prejuízos de <b>2020/2021</b> a deduzir (Lei 27-A/2020, art. 11.º n.º 2; art. 52.º CIRC)</span>
                 </label>
+                <p className="text-[11px] text-slate-400 leading-snug">O limite sobe de 65% para 75% apenas na medida dos prejuízos de 2020 e/ou 2021 deduzidos.</p>
                 <CalcRow label="Prejuízos efetivamente deduzidos" value={res.prejuziosEfetivos} />
               </Section>
 
@@ -1147,7 +1164,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <Section title="Tributações Autónomas — Viaturas">
                 <label className="flex items-center gap-3 py-1.5 cursor-pointer">
                   <input type="checkbox" checked={state.agravamentoTA} onChange={e => set('agravamentoTA', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
-                  <span className="text-[12px] font-[500] text-slate-600">Agravamento +10% (empresa com prejuízo fiscal no período)</span>
+                  <span className="text-[12px] font-[500] text-slate-600">Agravamento +10 p.p. (prejuízo fiscal no período — só se NÃO cumprir o art. 95.º n.º 5 LOE 2026)</span>
                 </label>
 
                 {state.viaturas.length === 0 && (
@@ -1205,6 +1222,11 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               </Section>
 
               <Section title="Outras Tributações Autónomas" cols>
+                {state.regimeSimplificado && (
+                  <p className="col-span-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-[8px] px-3 py-2 leading-snug">
+                    Regime simplificado (art. 88.º n.º 16 CIRC): não se aplicam as TA de representação, ajudas de custo, lucros distribuídos, indemnizações e bónus — esses campos são ignorados.
+                  </p>
+                )}
                 <NumInput label="Despesas não documentadas — atividade principal" value={state.ta_despNaoDocPrincipal} onChange={v => set('ta_despNaoDocPrincipal', v)} help="50%" />
                 <NumInput label="Despesas não documentadas — não atividade principal" value={state.ta_despNaoDocNaoPrincipal} onChange={v => set('ta_despNaoDocNaoPrincipal', v)} help="70%" />
                 <NumInput label="Encargos de representação" value={state.ta_representacao} onChange={v => set('ta_representacao', v)} help="10%" />
@@ -1259,7 +1281,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <CalcRow label="358 — IRC liquidado (c378 − c357)" value={res.c358} highlight />
 
               <Section title="Pagamentos e Deduções" cols>
-                <NumInput label="356 — PEC efetuado" value={state.pecPagamentos} onChange={v => set('pecPagamentos', v)}
+                <NumInput label="356 — PEC (só saldo ANTIGO a deduzir)" value={state.pecPagamentos} onChange={v => set('pecPagamentos', v)}
                   help={`Estimado: ${fmt(res.pecCalculado)} €`} />
                 <NumInput label="359 — Retenções na fonte" value={state.retencoesFonte} onChange={v => set('retencoesFonte', v)} />
                 <NumInput label="360 — PC — pagamentos por conta" value={state.pcPagamentos} onChange={v => set('pcPagamentos', v)}

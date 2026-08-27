@@ -129,7 +129,8 @@ export default function EnquadramentoCompleto({ value, onChange, onVoltar, saftP
             <RendNum label="Venda de mercadorias" k="vendas" />
             <RendNum label="Serviços art. 151.º" k="servicosProf" />
             <RendNum label="Outros serviços" k="outrosServicos" />
-            <RendNum label="Subsídios e restantes" k="restantes" />
+            <RendNum label="Subsídios à exploração" k="subsidiosExploracao" />
+            <RendNum label="Outros rendimentos" k="restantes" />
           </div>
           <div className="grid grid-cols-2 gap-3 mt-3">
             <Num label="Faturação do ano anterior" k="faturacaoAnoAnterior" step={1000} />

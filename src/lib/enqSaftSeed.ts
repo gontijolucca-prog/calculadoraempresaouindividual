@@ -37,20 +37,22 @@ export function seedEnqFromSaft(emp: EmpresaRecord | null | undefined, profile: 
   // ── Rendimentos por natureza ──
   const vendas = r2(n(pv.rai_711) + n(pv.rai_712));
   const prest72 = r2(n(pv.rai_72));
-  const restantes = r2(n(pv.rai_75) + n(pv.rai_78)); // subsídios à exploração + outros rendimentos
+  const subsidiosExploracao = r2(n(pv.rai_75)); // subsídios à exploração — coef. 0,30
+  const restantes = r2(n(pv.rai_78));           // outros rendimentos — coef. 0,10
   const servProf151 = profile?.atividadePrincipal ? coefFromProfile(profile.atividadePrincipal) === 0.75 : false;
-  if (vendas || prest72 || restantes) {
+  if (vendas || prest72 || subsidiosExploracao || restantes) {
     seed.rend = {
       vendas,
       servicosProf: servProf151 ? prest72 : 0,
       outrosServicos: servProf151 ? 0 : prest72,
+      subsidiosExploracao,
       restantes,
     };
     if (vendas) preenchidos.push('vendas (contas 711/712)');
     if (prest72) preenchidos.push(`prestações de serviços (72) → ${servProf151 ? 'art. 151.º (atividade do perfil)' : 'outros serviços'}`);
     if (restantes) preenchidos.push('subsídios e outros rendimentos (75/78)');
     // O SAF-T é do exercício anterior — serve de base às validações de elegibilidade.
-    seed.faturacaoAnoAnterior = r2(vendas + prest72 + restantes);
+    seed.faturacaoAnoAnterior = r2(vendas + prest72 + subsidiosExploracao + restantes);
     preenchidos.push('faturação do ano anterior (total do SAF-T)');
   }
 

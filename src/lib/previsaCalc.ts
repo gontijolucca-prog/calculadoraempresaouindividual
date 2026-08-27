@@ -75,11 +75,9 @@ const PAC_RATES: Record<Territorio, number[]> = {
   acores:      [0.0175, 0.0315, 0.0595],
 };
 
-const PEC_LIMITS: Record<Territorio, [number, number]> = {
-  continental: [850, 70_000],
-  madeira:     [680, 56_000],
-  acores:      [680, 56_000],
-};
+// ⚠ PEC — Pagamento Especial por Conta REVOGADO pela Lei 12/2022 para períodos
+// com início em ou após 01/01/2022. O art. 93.º CIRC mantém-se apenas para
+// dedução/reembolso de saldos antigos (2020/2021). NÃO há PEC novo em 2026.
 
 const TA_BRACKETS: { max: number; conv: number; plug5050: number; gnv: number; eletrico: number }[] = [
   { max: 37_500,   conv: 0.08,  plug5050: 0.025, gnv: 0.025, eletrico: 0 },
@@ -101,7 +99,13 @@ export function calcTAVeiculo(v: ViaturaRow, agravamento: boolean): number {
   else if (v.combustivel === 'plug_in_5050') rate = b.plug5050;
   else if (v.combustivel === 'gnv')          rate = b.gnv;
   else                                       rate = b.conv; // convencional or plug_in
-  return v.encargos * rate * (agravamento ? 1.1 : 1);
+  // Art. 88.º n.º 14 CIRC: agravamento de +10 PONTOS PERCENTUAIS à taxa
+  // (e não ×1,1 do valor). A LOE 2026 (art. 95.º n.º 5) suspende o agravamento
+  // quando há lucro num dos 3 períodos anteriores + obrigações declarativas
+  // cumpridas, ou em início de atividade/2 períodos seguintes — o utilizador
+  // confirma antes de ativar.
+  if (agravamento) rate += 0.10;
+  return v.encargos * rate;
 }
 
 export function calcDerramaEstadual(mc: number, territorio: Territorio): number {
@@ -212,6 +216,7 @@ export function saldosPorAno(s: PreviSaState): PrejPorAno[] {
     ['prej_2022', 'prej_2022_deduzido', 'prej_2022_elegivel', 'prej_2022_obs', 'prej_2022_elegivel', 2022],
     ['prej_2023', 'prej_2023_deduzido', 'prej_2023_elegivel', 'prej_2023_obs', 'prej_2023_elegivel', 2023],
     ['prej_2024', 'prej_2024_deduzido', 'prej_2024_elegivel', 'prej_2024_obs', 'prej_2024_elegivel', 2024],
+    ['prej_2025', 'prej_2025_deduzido', 'prej_2025_elegivel', 'prej_2025_obs', 'prej_2025_elegivel', 2025],
   ];
   return pares.map(([kAp, kDed, kEl, kObs, _kDup, ano]) => {
     const apurado = Number(s[kAp]) || 0;
@@ -290,16 +295,20 @@ export function calculate(s: PreviSaState): CalcResult {
 
   // Tributações Autónomas
   const taViaturas = s.viaturas.reduce((sum, v) => sum + calcTAVeiculo(v, s.agravamentoTA), 0);
-  const agr = s.agravamentoTA ? 1.1 : 1;
+  // Agravamento art. 88.º n.º 14: +10 p.p. em CADA taxa (não ×1,1 do valor).
+  const agrav = s.agravamentoTA ? 0.10 : 0;
+  // Regime simplificado (art. 88.º n.º 16): exclui TA dos n.ºs 7/9/11/13
+  // (representação, ajudas de custo, lucros distribuídos, indemnizações, bónus).
+  const simpl = s.regimeSimplificado;
   const taOutras =
-    s.ta_despNaoDocPrincipal    * 0.50 * agr +
-    s.ta_despNaoDocNaoPrincipal * 0.70 * agr +
-    s.ta_representacao          * 0.10 * agr +
-    s.ta_ajadasCusto            * 0.05 * agr +
-    s.ta_lucrosDistribuidos     * 0.23 * agr +
-    s.ta_offshores              * 0.35 * agr +
-    s.ta_indemCessacao          * 0.35 * agr +
-    s.ta_bonus                  * 0.35 * agr;
+    s.ta_despNaoDocPrincipal    * (0.50 + agrav) +
+    s.ta_despNaoDocNaoPrincipal * (0.70 + agrav) +
+    (simpl ? 0 : s.ta_representacao   * (0.10 + agrav)) +
+    (simpl ? 0 : s.ta_ajadasCusto     * (0.05 + agrav)) +
+    (simpl ? 0 : s.ta_lucrosDistribuidos * (0.23 + agrav)) +
+    s.ta_offshores              * (0.35 + agrav) +
+    (simpl ? 0 : s.ta_indemCessacao * (0.35 + agrav)) +
+    (simpl ? 0 : s.ta_bonus         * (0.35 + agrav));
   const taBruta = taViaturas + taOutras;
   const taTotal = Math.max(0, taBruta - s.ta_retFonteArt88n12);
 
@@ -313,10 +322,9 @@ export function calculate(s: PreviSaState): CalcResult {
     - s.pecPagamentos - totalPagamentos - s.c379
     + s.c363 + s.c372;
 
-  // PEC estimado
-  const [pecMin, pecMax] = PEC_LIMITS[s.territorio];
-  const pecBruto = s.volumeNegocios * 0.01 - s.retencoesFonte;
-  const pecCalculado = pecBruto <= 0 ? 0 : Math.max(pecMin, Math.min(pecMax, pecBruto));
+  // PEC — extinto desde 2022 (Lei 12/2022). O campo 356 só admite saldos
+  // antigos de 2020/2021 a deduzir. NÃO é estimado qualquer PEC novo.
+  const pecCalculado = 0;
 
   // Pagamentos por conta do PRÓXIMO período — art. 105.º CIRC: base = IRC
   // liquidado (c358) deste período menos as retenções na fonte; taxa 80% se o

@@ -50,7 +50,7 @@ function approx(label: string, got: number, exp: number, tol = 0.5) {
 {
   const v = { id: 'x', ano: 2025, combustivel: 'convencional' as const, custoHistorico: 40000, encargos: 10000 };
   approx('E: TA viatura (25%)', calcTAVeiculo(v, false), 2500);
-  approx('E: TA viatura c/ agravamento (×1,1)', calcTAVeiculo(v, true), 2750);
+  approx('E: TA viatura c/ agravamento (+10 p.p. = 35%)', calcTAVeiculo(v, true), 3500);
 }
 
 // ── F: viatura elétrica até 62 500 € → 0% de TA ──

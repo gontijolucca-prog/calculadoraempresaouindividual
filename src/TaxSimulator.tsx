@@ -581,7 +581,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
     const emp = empId ? listEmpresas().find(e => e.id === empId) ?? null : null;
     const saft = seedEnqFromSaft(emp, profile);
     const seed: Partial<InputEnq2026> = {
-      rend: { vendas: isServices ? 0 : rev, servicosProf: isServices ? rev : 0, outrosServicos: 0, restantes: 0 },
+      rend: { vendas: isServices ? 0 : rev, servicosProf: isServices ? rev : 0, outrosServicos: 0, subsidiosExploracao: 0, restantes: 0 },
       faturacaoAnoAnterior: rev,
       gastosReais: fixedMo * 12 + varYr,
       remGerenteMensal: monthlyNeed,

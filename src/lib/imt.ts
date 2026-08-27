@@ -40,14 +40,16 @@ const IMT_HPP_CONTINENTE: IMTEscalao[] = [
   { limite: Infinity, taxa: 0.075, deducao: null },
 ];
 
-// Habitação Secundária / Arrendamento / Outros fins não-HPP (Continente) — CIMT Art. 17º
+// Habitação Secundária / Arrendamento / Outros fins não-HPP (Continente) —
+// CIMT Art. 17.º, OE 2026 (atualização de 2% + alargamento da taxa 0% ao
+// 1.º escalão — fonte: LOE 2026 / EY Tax Alert).
 const IMT_HABITACAO_SECUNDARIA: IMTEscalao[] = [
-  { limite: 97064,    taxa: 0.01,  deducao: 0 },
-  { limite: 132774,   taxa: 0.02,  deducao: 971.18 },
-  { limite: 181034,   taxa: 0.05,  deducao: 4954.55 },
-  { limite: 301688,   taxa: 0.07,  deducao: 8578.41 },
-  { limite: 603289,   taxa: 0.08,  deducao: 11594.88 },
-  { limite: 1050400,  taxa: 0.06,  deducao: null },
+  { limite: 106346,   taxa: 0,     deducao: 0 },
+  { limite: 145470,   taxa: 0.02,  deducao: 2126.92 },
+  { limite: 198347,   taxa: 0.05,  deducao: 6491.02 },
+  { limite: 330539,   taxa: 0.07,  deducao: 10457.96 },
+  { limite: 633931,   taxa: 0.08,  deducao: 13763.35 },
+  { limite: 1150853,  taxa: 0.06,  deducao: null },
   { limite: Infinity, taxa: 0.075, deducao: null },
 ];
 

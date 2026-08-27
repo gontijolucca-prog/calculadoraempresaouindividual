@@ -31,10 +31,10 @@ function is(label: string, got: unknown, exp: unknown) {
   approx('B: total (IMT + Selo)', r.total, 5142.04);
 }
 
-// ── C: Habitação secundária 200 000 € (7%, dedução 8 578,41) ──
+// ── C: Habitação secundária 200 000 € (7%, dedução 10 457,96 — OE 2026) ──
 {
   const r = calcIMT(200000, 'habitacao', 'continente', false, 40);
-  approx('C: IMT', r.imt, 5421.59);
+  approx('C: IMT', r.imt, 3542.04);
 }
 
 // ── D: Prédio rústico 100 000 € → taxa plana 5% ──

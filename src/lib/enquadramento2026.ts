@@ -26,7 +26,7 @@ export const PARAMS_2026 = {
   // IRS — regime simplificado (art. 28.º/31.º CIRS)
   irsSimplificadoLimite: 200_000,        // rendimentos cat. B ano anterior
   irsSimplificadoSaltoPct: 0.25,         // ultrapassagem >25% num ano → organizada obrigatória no seguinte
-  coefIRS: { vendas: 0.15, servicosProf: 0.75, outrosServicos: 0.35, restantes: 0.10 },
+  coefIRS: { vendas: 0.15, servicosProf: 0.75, outrosServicos: 0.35, subsidiosExploracao: 0.30, restantes: 0.10 },
   // Reduções no início de atividade (art. 31.º n.º 10 — aplicam-se aos coef. 0,75 e 0,35) ⚠ confirmar
   reducaoCoefIRS: { ano1: 0.50, ano2: 0.25 },
 
@@ -63,7 +63,8 @@ export interface RendimentosPorNatureza {
   vendas: number;            // mercadorias e produtos
   servicosProf: number;      // serviços da tabela do art. 151.º CIRS
   outrosServicos: number;
-  restantes: number;         // subsídios à exploração e outros
+  subsidiosExploracao: number; // subsídios à exploração — coef. 0,30 (art. 31.º d))
+  restantes: number;         // outros rendimentos da cat. B — coef. 0,10 (art. 31.º f))
 }
 
 export interface InputEnq2026 {
@@ -95,7 +96,7 @@ export interface InputEnq2026 {
 
 export function defaultInputEnq2026(): InputEnq2026 {
   return {
-    rend: { vendas: 0, servicosProf: 0, outrosServicos: 0, restantes: 0 },
+    rend: { vendas: 0, servicosProf: 0, outrosServicos: 0, subsidiosExploracao: 0, restantes: 0 },
     faturacaoAnoAnterior: 0, anoAtividade: 3,
     gastosReais: 0, ivaDedutivelCompras: 0, taManual: 0,
     remGerenteMensal: 1000, pctLucroDistribuido: 1, outrosRendimentos: 0, nrDependentes: 0,
@@ -105,7 +106,7 @@ export function defaultInputEnq2026(): InputEnq2026 {
   };
 }
 
-const faturacaoTotal = (r: RendimentosPorNatureza) => r.vendas + r.servicosProf + r.outrosServicos + r.restantes;
+const faturacaoTotal = (r: RendimentosPorNatureza) => r.vendas + r.servicosProf + r.outrosServicos + r.subsidiosExploracao + r.restantes;
 
 // ─── Camada 1: validação jurídica ─────────────────────────────────────────────
 export interface Elegibilidade { elegivel: boolean; motivos: string[] }
@@ -208,6 +209,7 @@ export function rendColetavelIrsSimplificado(rend: RendimentosPorNatureza, ano: 
   let rc = rend.vendas * P.coefIRS.vendas
     + rend.servicosProf * P.coefIRS.servicosProf * f
     + rend.outrosServicos * P.coefIRS.outrosServicos * f
+    + rend.subsidiosExploracao * P.coefIRS.subsidiosExploracao
     + rend.restantes * P.coefIRS.restantes;
   // Regra dos 15% (art. 31.º n.º 13): parte da dedução presumida nos serviços
   // (coef. 0,75/0,35) exige despesas efetivas justificadas. ⚠ confirmar mecânica.
@@ -232,7 +234,7 @@ export function materiaColetavelIrcSimplificado(rend: RendimentosPorNatureza, an
 
 /** SS de independente: base 70% serviços + 20% vendas × 21,4% (⚠ nuances da base). */
 export function ssIndependente(rend: RendimentosPorNatureza): number {
-  const servicos = rend.servicosProf + rend.outrosServicos + rend.restantes;
+  const servicos = rend.servicosProf + rend.outrosServicos + rend.subsidiosExploracao + rend.restantes;
   return (servicos * 0.70 + rend.vendas * 0.20) * PARAMS_2026.ss.independente;
 }
 
