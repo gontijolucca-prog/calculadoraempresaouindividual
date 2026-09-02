@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Search, Plus, Users, CheckSquare, Calendar, Lock, LayoutDashboard, Building2, Trash2, Eye, EyeOff, Copy, Shield, AlertTriangle, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Clock, Briefcase, MessageSquare, X, Mail, FileText, BarChart3, Send } from 'lucide-react';
+import { Search, Plus, Users, CheckSquare, Calendar, Lock, Building2, Trash2, Eye, EyeOff, Copy, Shield, AlertTriangle, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Clock, Briefcase, MessageSquare, X, Mail, FileText, BarChart3, Send } from 'lucide-react';
 import { useGabineteClientes, useGabineteTarefas, useGabineteObrigacoes, useGabineteCofre, useGabineteConversas, useGabineteModelos, useGabineteEnvios, useGabineteTempos, useGabineteActas } from './lib/useGabinete';
 import {
   upsertCliente, deleteCliente, newClienteId, gerarObrigacoesParaCliente, migrarEmpresasParaGabinete,
@@ -16,6 +16,7 @@ import { listEmpresas } from './lib/empresas';
 import { encryptSecret, decryptSecret, setCofrePassphrase, getCofrePassphrase, cofreIsUnlocked } from './lib/cofreCrypto';
 import GuiaSugestao from './components/GuiaSugestao';
 import type { ViewKey } from './lib/guias';
+import { GabineteGallery, GabineteIntro, GABINET_FUNCTIONS, type GabTab, type GabineteTab } from './GabineteHub';
 
 // Guia por tab interna do Gabinete (a sugestão muda conforme a tab ativa)
 const GAB_TAB_GUIA: Record<GabTab, ViewKey> = {
@@ -31,23 +32,24 @@ const GAB_TAB_GUIA: Record<GabTab, ViewKey> = {
 };
 
 // ─── Layout ─────────────────────────────────────────────────────────────────
-type GabTab = 'dashboard' | 'agenda' | 'clientes' | 'tarefas' | 'obrigacoes' | 'comunicacao' | 'rentabilidade' | 'actas' | 'cofre';
-const TABS: { id: GabTab; label: string; icon: React.ElementType; desc: string }[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Visão do dia' },
-  { id: 'agenda', label: 'Agenda', icon: Calendar, desc: 'Calendário' },
-  { id: 'clientes', label: 'Clientes 360', icon: Users, desc: 'Ficha centralizada' },
-  { id: 'tarefas', label: 'Tarefas', icon: CheckSquare, desc: 'Kanban + lista' },
-  { id: 'obrigacoes', label: 'Obrigações', icon: Calendar, desc: 'Calendário fiscal' },
-  { id: 'comunicacao', label: 'Comunicação', icon: Mail, desc: 'Email/SMS' },
-  { id: 'rentabilidade', label: 'Rentabilidade', icon: BarChart3, desc: 'Tempos & Custo' },
-  { id: 'actas', label: 'Actas', icon: FileText, desc: 'Livro de Actas' },
-  { id: 'cofre', label: 'Cofre', icon: Lock, desc: 'Zero-knowledge' },
-];
 
-export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour }: { tab?: GabTab; onTabChange?: (t: GabTab) => void; onStartTour?: (v: ViewKey) => void }) {
+export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour }: { tab?: GabineteTab; onTabChange?: (t: GabineteTab) => void; onStartTour?: (v: ViewKey) => void }) {
   const [internalTab, setInternalTab] = useState<GabTab>('dashboard');
-  const tab = controlledTab ?? internalTab;
-  const setTab = (onTabChange ?? setInternalTab) as (t: GabTab) => void;
+  const tab: GabineteTab = controlledTab ?? internalTab;
+  const setTab = (onTabChange ?? setInternalTab) as (t: GabineteTab) => void;
+  // Cada função abre primeiro o card informativo. O botão "Abrir função"
+  // marca apenas a função atual como vista e mostra o ecrã funcional.
+  const [introDismissedFor, setIntroDismissedFor] = useState<GabTab | null>(null);
+  const showIntro = tab !== 'gallery' && introDismissedFor !== tab;
+  const openFunction = (target: GabTab) => setTab(target);
+  const openCurrentFunction = () => {
+    if (tab !== 'gallery') setIntroDismissedFor(tab);
+  };
+  const backToGallery = () => {
+    setIntroDismissedFor(null);
+    setTab('gallery');
+  };
+  const activeFunction = tab === 'gallery' ? null : GABINET_FUNCTIONS.find((item) => item.id === tab);
   const clientes = useGabineteClientes();
   const tarefas = useGabineteTarefas();
   const obrigacoes = useGabineteObrigacoes();
@@ -55,21 +57,28 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour 
 
   // Por defeito, se o App não passar callback, navega para o dashboard (no-op)
   const startTour = (v: ViewKey) => onStartTour?.(v);
+  const guideView = tab === 'gallery' ? null : GAB_TAB_GUIA[tab];
+  const functionLabel = activeFunction?.label ?? 'Centro de operação';
+  const functionDesc = activeFunction?.desc ?? 'Escolhe uma função para começar';
+  const goFunction = (target: GabTab) => setTab(target);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-zinc-900 pb-6">
-      <GuiaSugestao view={GAB_TAB_GUIA[tab]} onStart={startTour} />
-      {/* Header — sem tabs no topo; navegação agora no dropdown da sidebar */}
-      <div className="sticky top-0 z-20 bg-white/80 backdrop-blur border-b border-zinc-200">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+    <div className="min-h-screen bg-[#F8FAFC] pb-6 text-zinc-900">
+      {/* A galeria tem os seus próprios tiles informativos; cada função mantém
+          a sugestão de guia contextual quando já estamos dentro dela. */}
+      {guideView && <GuiaSugestao view={guideView} onStart={startTour} />}
+
+      {/* Header — sem tabs no topo; navegação continua no dropdown da sidebar */}
+      <div className="sticky top-0 z-20 border-b border-zinc-200 bg-white/80 backdrop-blur">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#0677FF] flex items-center justify-center text-white font-bold text-sm">E3</div>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0677FF] text-sm font-bold text-white">E3</div>
             <div>
               <div className="font-semibold leading-none">Gabinete</div>
-              <div className="text-xs text-zinc-500 hidden sm:block">{TABS.find(t=>t.id===tab)?.label} · {TABS.find(t=>t.id===tab)?.desc}</div>
+              <div className="hidden text-xs text-zinc-500 sm:block">{functionLabel} · {functionDesc}</div>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-xs text-zinc-500">
+          <div className="flex items-center gap-2 text-right text-xs text-zinc-500">
             <span>{clientes.length} clientes</span>
             <span className="opacity-30">•</span>
             <span>{tarefas.filter(t=>t.estado!=='done').length} tarefas abertas</span>
@@ -79,16 +88,24 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour 
         </div>
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
-        {tab === 'dashboard' && <Dashboard clientes={clientes} tarefas={tarefas} obrigacoes={obrigacoes} cofre={cofre} onGo={setTab} />}
-        {tab === 'agenda' && <AgendaView tarefas={tarefas} obrigacoes={obrigacoes} clientes={clientes} />}
-        {tab === 'clientes' && <ClientesView clientes={clientes} />}
-        {tab === 'tarefas' && <TarefasView tarefas={tarefas} clientes={clientes} />}
-        {tab === 'obrigacoes' && <ObrigacoesView obrigacoes={obrigacoes} clientes={clientes} />}
-        {tab === 'comunicacao' && <ComunicacaoView clientes={clientes} />}
-        {tab === 'rentabilidade' && <RentabilidadeView clientes={clientes} />}
-        {tab === 'actas' && <ActasView clientes={clientes} />}
-        {tab === 'cofre' && <CofreView cofre={cofre} clientes={clientes} />}
+      <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6">
+        {tab === 'gallery' && <GabineteGallery onOpen={openFunction} />}
+        {tab !== 'gallery' && showIntro && (
+          <GabineteIntro tab={tab} onOpen={openCurrentFunction} onBack={backToGallery} />
+        )}
+        {tab !== 'gallery' && !showIntro && (
+          <>
+            {tab === 'dashboard' && <Dashboard clientes={clientes} tarefas={tarefas} obrigacoes={obrigacoes} cofre={cofre} onGo={goFunction} />}
+            {tab === 'agenda' && <AgendaView tarefas={tarefas} obrigacoes={obrigacoes} clientes={clientes} />}
+            {tab === 'clientes' && <ClientesView clientes={clientes} />}
+            {tab === 'tarefas' && <TarefasView tarefas={tarefas} clientes={clientes} />}
+            {tab === 'obrigacoes' && <ObrigacoesView obrigacoes={obrigacoes} clientes={clientes} />}
+            {tab === 'comunicacao' && <ComunicacaoView clientes={clientes} />}
+            {tab === 'rentabilidade' && <RentabilidadeView clientes={clientes} />}
+            {tab === 'actas' && <ActasView clientes={clientes} />}
+            {tab === 'cofre' && <CofreView cofre={cofre} clientes={clientes} />}
+          </>
+        )}
       </div>
     </div>
   );

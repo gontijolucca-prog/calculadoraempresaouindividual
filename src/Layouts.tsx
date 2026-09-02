@@ -244,7 +244,12 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
 
       <nav aria-label="Navegação principal" className="flex-1 overflow-y-auto px-2 py-1 pb-16">
         <SectionLabel>Carteira</SectionLabel>
-            <NavItem label="Gabinete" Icon={LayoutDashboard} onClick={() => { if (active === 'gabinete') setGabineteOpen(v=>!v); else { go('gabinete'); setGabineteOpen(true); } }} current={active === 'gabinete'} chevronOpen={gabineteOpen} title="Gabinete — dashboard, clientes, tarefas, obrigações e cofre" />
+            <NavItem label="Gabinete" Icon={LayoutDashboard} onClick={() => {
+              // O clique no item principal abre sempre a galeria do Gabinete,
+              // tal como "A trabalhar em" abre a galeria do cliente. As funções
+              // continuam acessíveis pelos tiles ou pelo submenu.
+              goGabinete('gallery');
+            }} current={active === 'gabinete'} chevronOpen={gabineteOpen} title="Gabinete — galeria de funções, clientes, tarefas, obrigações e cofre" />
             {gabineteOpen && (
               <div className="mt-0.5 ml-2.5 pl-2 border-l-2 border-slate-200 space-y-0.5">
                 {GAB_TABS.map(t => (
