@@ -245,13 +245,26 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
       <nav aria-label="Navegação principal" className="flex-1 overflow-y-auto px-2 py-1 pb-16">
         <SectionLabel>Carteira</SectionLabel>
             <NavItem label="Gabinete" Icon={LayoutDashboard} onClick={() => {
-              // O clique no item principal abre sempre a galeria do Gabinete,
-              // tal como "A trabalhar em" abre a galeria do cliente. As funções
-              // continuam acessíveis pelos tiles ou pelo submenu.
-              goGabinete('gallery');
-            }} current={active === 'gabinete'} chevronOpen={gabineteOpen} title="Gabinete — galeria de funções, clientes, tarefas, obrigações e cofre" />
+              // Mantém-se o comportamento de dropdown: ao entrar no Gabinete
+              // abre a galeria e o submenu; já dentro do Gabinete, o botão
+              // continua a abrir/fechar as ferramentas sem mudar de função.
+              if (active === 'gabinete') {
+                setGabineteOpen(v => !v);
+              } else {
+                onGabineteTab?.('gallery');
+                go('gabinete');
+                setGabineteOpen(true);
+              }
+            }} current={active === 'gabinete'} chevronOpen={gabineteOpen} title="Gabinete — abrir/fechar ferramentas e galeria de funções" />
             {gabineteOpen && (
-              <div className="mt-0.5 ml-2.5 pl-2 border-l-2 border-slate-200 space-y-0.5">
+              <div className="mt-0.5 ml-2.5 space-y-0.5 border-l-2 border-slate-200 pl-2">
+                <ClientNavItem
+                  label="Galeria do Gabinete"
+                  Icon={LayoutDashboard}
+                  onClick={() => goGabinete('gallery')}
+                  current={active === 'gabinete' && gabineteTab === 'gallery'}
+                  title="Voltar à galeria de funções do Gabinete"
+                />
                 {GAB_TABS.map(t => (
                   <ClientNavItem key={t.id} label={t.label} Icon={t.Icon} onClick={() => goGabinete(t.id)} current={active==='gabinete' && gabineteTab===t.id} title={t.desc} />
                 ))}
