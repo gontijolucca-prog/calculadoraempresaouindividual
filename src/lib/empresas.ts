@@ -10,7 +10,7 @@
 import type { ClientProfile } from '../ClientProfile';
 import type { PreviSaState } from '../previSaState';
 import { loadFromStorage, saveToStorage } from './storage';
-import { doc, getDoc, setDoc, getDocs, collection } from 'firebase/firestore';
+import { doc, getDoc, setDoc, getDocs, collection, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import { repairMojibake } from './mojibake';
 
@@ -333,6 +333,38 @@ export async function loadEmpresasFromFirestore(
     console.warn('[empresas] firestore load falhou:', err);
     return null;
   }
+}
+
+/**
+ * Listener LIVE do documento partilhado (o mesmo padrão do Gabinete com
+ * onSnapshot). Sem isto cada dispositivo só lia a cloud NO ARRANQUE: um
+ * computador que já estivesse aberto nunca via as empresas criadas/editadas
+ * noutro — só depois de recarregar a página. É exatamente isto que fazia
+ * "a lista de clientes não sincronizar em todos os computadores".
+ *
+ * Ignora ecos próprios e escritas mais antigas (remote.updatedAt <= stamp
+ * local), por isso a adoção não dispara loops nem rebenta edições locais
+ * mais recentes (LWW doc-inteiro, igual ao sync de arranque).
+ */
+export function subscribeEmpresasLive(
+  officeNif: string | undefined,
+  onRemote: (list: EmpresaRecord[]) => void,
+): () => void {
+  const officeId = getOfficeId(officeNif);
+  return onSnapshot(
+    doc(db, FIRESTORE_COLLECTION, officeId),
+    (snap) => {
+      if (!snap.exists()) return;
+      const data = snap.data();
+      if (!Array.isArray(data?.list)) return;
+      const remoteStamp = typeof data?.updatedAt === 'number' ? data.updatedAt : 0;
+      if (remoteStamp <= getEmpresasStamp()) return; // eco próprio ou mais antigo
+      const deduped = dedupeByNif(data.list as EmpresaRecord[]);
+      adoptRemoteEmpresas(deduped, remoteStamp);
+      onRemote(deduped);
+    },
+    (err) => console.warn('[empresas] onSnapshot falhou:', err),
+  );
 }
 
 /**

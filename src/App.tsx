@@ -22,9 +22,11 @@ import {
   upsertEmpresa,
   newId as newEmpresaId,
   syncEmpresasFromFirestore,
+  subscribeEmpresasLive,
   saveEmpresasToFirestore,
   listEmpresas,
   saveEmpresas,
+  getEmpresasStamp,
   deleteEmpresa,
   addSimulacao,
   upsertAutoSimulacao,
@@ -583,10 +585,36 @@ function AppContent() {
   useEffect(() => {
     if (!sessaoLocal) return;
     const t = setTimeout(() => {
+      // Dispositivo recém-chegado SEM dados não empurra lista vazia — evita
+      // limpar a cloud (e os outros computadores) antes do primeiro pull.
+      if (listEmpresas().length === 0 && getEmpresasStamp() === 0) return;
       saveEmpresasToFirestore(officeSettings.nif, listEmpresas()).catch(() => {});
     }, 2000);
     return () => clearTimeout(t);
   }, [sessaoLocal, clientProfile, previSaState, currentEmpresaId, empresasRefresh, officeSettings.nif]);
+
+  // Listener LIVE do registry na cloud: quando OUTRO computador cria/edita/
+  // elimina uma empresa, este adota a lista na hora — sem refresh. É isto que
+  // torna a lista de clientes igual em todos os computadores em tempo real.
+  // (currentEmpresaId lido via ref para não ressuscitar a subscrição a cada
+  // troca de cliente.)
+  const currentEmpresaIdRef = useRef(currentEmpresaId);
+  currentEmpresaIdRef.current = currentEmpresaId;
+  useEffect(() => {
+    if (!sessaoLocal) return;
+    const unsub = subscribeEmpresasLive(officeSettings.nif, (list) => {
+      setEmpresasRefresh(n => n + 1);
+      const empId = currentEmpresaIdRef.current;
+      if (empId) {
+        const emp = list.find(e => e.id === empId);
+        if (emp) loadEmpresaIntoState(emp);
+      }
+    });
+    return unsub;
+    // officeSettings.nif é irrelevante na prática (doc fixo 'shared'); não
+    // ressuscitar a subscrição quando as definições mudam.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessaoLocal]);
 
   // Dropdown "Relatórios" da sidebar: documento a pré-selecionar na vista.
   const [relatorioDocPreselect, setRelatorioDocPreselect] = useState<string | null>(null);
