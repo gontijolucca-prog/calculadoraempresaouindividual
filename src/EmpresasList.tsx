@@ -362,7 +362,9 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
       'bg-white border rounded-[14px] transition-all',
       active ? 'border-[#0677FF] ring-1 ring-[#0677FF]/30 shadow-md' : 'border-[#E5E9F0] hover:border-[#0677FF]/40 hover:shadow-md',
     )}>
-      <div className="flex items-stretch">
+      {/* No mobile empilha: linha do nome em cima, ações por baixo — antes os
+          5 botões + nome partilhavam a mesma linha de 375px e sobrepunham-se. */}
+      <div className="flex flex-col sm:flex-row sm:items-stretch">
         <button
           type="button"
           onClick={onSelectCard}
@@ -390,7 +392,7 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
             </div>
           </div>
         </button>
-        <div className="flex items-center gap-1 pr-3">
+        <div className="flex items-center gap-1 px-4 pb-3 -mt-1 sm:py-0 sm:pb-0 sm:pr-3 sm:mt-0 flex-wrap">
           <button
             type="button"
             onClick={() => onNavigate(emp.id, 'hub')}

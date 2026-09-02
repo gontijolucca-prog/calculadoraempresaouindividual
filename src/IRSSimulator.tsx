@@ -87,9 +87,11 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
   const pct = (n: number) => ((n / totalBar) * 100).toFixed(1);
 
   return (
-    <div className="overflow-y-auto lg:overflow-hidden lg:h-full lg:grid lg:grid-cols-[440px_1fr] bg-[#F5F7FA] text-[#1E293B]">
+    // Split só a partir de xl (1280px) — em tablet os painéis ficavam ~300px
+    // (valores "0,00 €" cortados e coluna Modelo 3 esmagada pela de 300px).
+    <div className="overflow-y-auto xl:overflow-hidden xl:h-full xl:grid xl:grid-cols-[440px_1fr] bg-[#F5F7FA] text-[#1E293B]">
       {/* ── Formulário ─────────────────────────────────────────── */}
-      <div className="bg-white border-b border-[#E2E8F0] lg:border-b-0 lg:border-r lg:overflow-y-auto p-4 sm:p-5 lg:p-[28px] flex flex-col gap-6 lg:h-full">
+      <div className="bg-white border-b border-[#E2E8F0] xl:border-b-0 xl:border-r xl:overflow-y-auto p-4 sm:p-5 xl:p-[28px] flex flex-col gap-6 xl:h-full">
         <div>
           <h1 className="text-[22px] font-[800] text-[#0F172A] leading-tight tracking-[-0.4px] flex items-center gap-2">
             <Receipt className="w-6 h-6 text-[#0677FF]" strokeWidth={2.25} /> Simulador de IRS
@@ -304,7 +306,7 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
       </div>
 
       {/* ── Resultados ─────────────────────────────────────────── */}
-      <div className="p-4 sm:p-5 lg:p-[28px] lg:overflow-y-auto lg:h-full flex flex-col gap-5">
+      <div className="p-4 sm:p-5 xl:p-[28px] xl:overflow-y-auto xl:h-full flex flex-col gap-5">
         {/* Hero apurado */}
         <motion.div
           key={reembolso ? 'good' : 'bad'}
@@ -339,7 +341,9 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-[1fr_300px] gap-5">
+        {/* Resumo lateral só aparece ao lado do Modelo 3 quando há largura
+            de sobra (xl) — a 1024px a coluna fixa de 300px esmagava o resto. */}
+        <div className="grid xl:grid-cols-[1fr_300px] gap-5">
           {/* Modelo 3 */}
           <div className="bg-white rounded-[16px] border border-[#E2E8F0] overflow-hidden">
             <h3 className="text-[12px] font-[800] uppercase tracking-[1px] text-[#0F172A] px-5 pt-4 pb-2">Apuramento — Modelo 3</h3>

@@ -836,9 +836,11 @@ function ComunicacaoView({ clientes }: { clientes: GabineteCliente[] }) {
   };
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* flex-wrap: no mobile os botões passam para a linha de baixo em vez de
+          saírem cortados fora do ecrã (right=388px num viewport de 375px). */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-bold flex items-center gap-2"><Mail className="w-5 h-5 text-[#0677FF]" /> Comunicação</h2>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button onClick={()=>{ setMForm({ tipo: 'email' as const }); setShowModelo(true); }} className="px-4 py-2 rounded-xl bg-white border border-zinc-200 text-sm hover:bg-zinc-50 flex items-center gap-2"><Plus className="w-4 h-4" /> Novo modelo</button>
           <button onClick={()=>{ setEForm({ tipo: 'email' as const }); setShowEnvio(true); }} className="px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm font-medium flex items-center gap-2"><Send className="w-4 h-4" /> Novo envio</button>
         </div>

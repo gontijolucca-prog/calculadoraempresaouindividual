@@ -47,7 +47,9 @@ export default function ClientHub({ clientName, onNavigate }: {
 
         {/* Rows 2–3 — simuladores */}
         <p className="mt-8 mb-3 text-[11px] font-[800] uppercase tracking-[1.5px] text-slate-400">Simuladores</p>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        {/* xl para 3 colunas: em tablet (1024px) a 3ª coluna deixava títulos como
+            "Enquadramento" sem espaço e o texto ficava cortado. */}
+        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
           {SIM_ORDER.map((id, i) => {
             const def = SIM_INTROS[id];
             if (!def) return null;

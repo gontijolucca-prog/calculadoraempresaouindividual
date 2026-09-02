@@ -3,6 +3,7 @@ import { Sparkles, X, Send, Trash2, Check, RotateCcw, Lightbulb, FileUp } from '
 import { parseReply, type BotAction, type FillField, type ViewId } from './actions';
 import { registerSuggestion } from './suggestions';
 import { GUIAS, reativarGuias, type ViewKey } from '../lib/guias';
+import { useHideOnScroll } from '../lib/useHideOnScroll';
 
 // Bridge fornecida pelo App: dá ao bot poderes de navegação e preenchimento,
 // e um contexto ANONIMIZADO (sem dados sensíveis) para enviar ao modelo.
@@ -167,6 +168,9 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
   viewTitle?: string;
 }) {
   const [open, setOpen] = useState(false);
+  // Esconde o botão flutuante durante o scroll ativo (só o botão fechado —
+  // o painel aberto é um dialog e não se esconde).
+  const scrollHidden = useHideOnScroll();
   const [msgs, setMsgs] = useState<ChatMsg[]>(loadChat);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -374,13 +378,17 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
 
   return (
     <>
-      {/* Botão flutuante */}
+      {/* Botão flutuante. Abaixo de lg: círculo só-com-ícone (o texto "AI
+          Contabilista" em tablet/mobile tapava conteúdo — agora é um círculo
+          compacto no canto, em cluster com a pill do Guia). */}
       {!open && (
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Abrir o AI Contabilista"
-          className={`no-print fixed z-[90] ${liftBottom ? 'bottom-24' : 'bottom-5'} right-5 sm:bottom-6 sm:right-6 flex items-center gap-2.5 pl-3.5 pr-4 py-3 rounded-full text-white font-[800] text-[14px] active:scale-[0.97] transition-all group ${destaque ? 'guia-destaque' : ''}`}
+          aria-hidden={scrollHidden}
+          tabIndex={scrollHidden ? -1 : 0}
+          className={`no-print fixed z-[90] right-5 lg:right-6 flex items-center gap-2.5 justify-center w-11 h-11 lg:w-auto lg:h-auto lg:py-3 lg:pl-3.5 lg:pr-4 py-0 rounded-full text-white font-[800] text-[14px] active:scale-[0.97] transition-all duration-200 group ${liftBottom ? 'bottom-40 lg:bottom-24' : 'bottom-5 lg:bottom-6'} ${scrollHidden ? 'opacity-0 translate-y-3 pointer-events-none' : ''} ${destaque ? 'guia-destaque' : ''}`}
           style={{
             background: 'linear-gradient(135deg, #0677FF 0%, #00C2FF 100%)',
             boxShadow: '0 8px 28px -8px rgba(6,119,255,0.65), 0 0 0 1px rgba(6,119,255,0.25)',
@@ -390,7 +398,7 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
             <Sparkles className="w-4.5 h-4.5" strokeWidth={2.5} style={{ width: 18, height: 18 }} />
             <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#00FFA3] border-2 border-[#0677FF]" />
           </span>
-          <span className="hidden sm:inline">AI Contabilista</span>
+          <span className="hidden lg:inline">AI Contabilista</span>
         </button>
       )}
 

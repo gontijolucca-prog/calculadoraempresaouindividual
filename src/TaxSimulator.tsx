@@ -626,8 +626,11 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
   ════════════════════════════════════════════════ */
   if (simMode === 'split') {
     return (
-      <div className="overflow-y-auto lg:overflow-hidden lg:h-full lg:flex lg:flex-row bg-[#F5F7FA]">
-        <div className="lg:w-[460px] shrink-0 bg-white border-b border-[#E2E8F0] lg:border-b-0 lg:border-r lg:overflow-y-auto lg:h-full flex flex-col">
+      // Split só a partir de xl (1280px): em tablet (768–1279) os dois painéis
+      // lado-a-lado ficavam com ~300px cada — textos partidos e valores cortados.
+      // Abaixo de xl: coluna única (form em cima, resultados abaixo).
+      <div className="overflow-y-auto xl:overflow-hidden xl:h-full xl:flex xl:flex-row bg-[#F5F7FA]">
+        <div className="xl:w-[460px] shrink-0 bg-white border-b border-[#E2E8F0] xl:border-b-0 xl:border-r xl:overflow-y-auto xl:h-full flex flex-col">
           <div className="p-6 md:p-8 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md z-20 border-b border-[#F1F5F9]">
             <div>
               <h2 className="text-[20px] font-[800] tracking-[-0.5px] text-[#0F172A]">Estudo 360</h2>
@@ -642,7 +645,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           </div>
         </div>
 
-        <div className="flex-1 p-4 sm:p-6 lg:p-10 lg:overflow-y-auto lg:h-full w-full flex flex-col gap-6 lg:gap-8 max-w-7xl mx-auto">
+        <div className="flex-1 p-4 sm:p-6 xl:p-10 xl:overflow-y-auto xl:h-full w-full flex flex-col gap-6 lg:gap-8 max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-[32px] md:text-[40px] font-[800] tracking-[-1.5px] text-[#0F172A] leading-[1.1]">Dashboard Decision Financeiro</h1>

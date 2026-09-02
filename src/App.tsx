@@ -341,8 +341,10 @@ function NoEmpresaGate({ onGo }: { onGo: () => void }) {
 }
 
 function AppContent() {
-  const { user, loading: authLoading, logout } = useAuth();
-  const loggedIn = !!user;
+  const { logout } = useAuth();
+  // Nota: o sync da cloud NÃO depende de Firebase Auth (a app usa sessão local;
+  // o doc 'shared' é acessível sem auth — ver firestore.rules). `user` mantém-se
+  // para o logout/futuro login real.
   // Sessão local (piloto): a app abre na landing; "Entrar" entra direto, sem
   // email/senha/Google. Os dados continuam só no localStorage desta máquina.
   const [sessaoLocal, setSessaoLocal] = useState<boolean>(() => loadFromStorage<boolean>('sessao', false));
@@ -552,10 +554,14 @@ function AppContent() {
   }, [currentEmpresaId, view, taxState, vehicleState, ticketState, ssState, diagnosticoState, imoveisState, imtState, salarioState, irsState, previSaState]);
 
   // ── Persistência permanente em Firestore ─────────────────────────────────
-  // No arranque: faz merge com o que está na cloud (usa o NIF do escritório
-  // como tenant-id, ou 'default' se ainda não estiver definido).
+  // No arranque: faz merge com o que está na cloud (documento partilhado 'shared',
+  // single-tenant). O gate é a SESSÃO (sessaoLocal), não o Firebase Auth — a app
+  // entra com sessão local (botão "Entrar" da landing, sem email/senha) e as
+  // regras do Firestore permitem ler/escrever o doc 'shared' sem auth. Com o gate
+  // antigo (`loggedIn`) o sync NUNCA corria: os dados ficavam presos no
+  // localStorage de cada máquina e um computador novo via a lista vazia.
   useEffect(() => {
-    if (!loggedIn) return;
+    if (!sessaoLocal) return;
     let cancelled = false;
     (async () => {
       const merged = await syncEmpresasFromFirestore(officeSettings.nif);
@@ -568,19 +574,19 @@ function AppContent() {
       }
     })();
     return () => { cancelled = true; };
-    // Intencionalmente apenas no login (não a cada mudança de office.nif para evitar
-    // sync infinitos quando a UI das definições do escritório está aberta).
+    // Intencionalmente apenas no início de sessão (não a cada mudança de office.nif
+    // para evitar sync infinitos quando a UI das definições do escritório está aberta).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loggedIn]);
+  }, [sessaoLocal]);
 
   // Empurra alterações ao registry para Firestore com debounce de 2s.
   useEffect(() => {
-    if (!loggedIn) return;
+    if (!sessaoLocal) return;
     const t = setTimeout(() => {
       saveEmpresasToFirestore(officeSettings.nif, listEmpresas()).catch(() => {});
     }, 2000);
     return () => clearTimeout(t);
-  }, [loggedIn, clientProfile, previSaState, currentEmpresaId, empresasRefresh, officeSettings.nif]);
+  }, [sessaoLocal, clientProfile, previSaState, currentEmpresaId, empresasRefresh, officeSettings.nif]);
 
   // Dropdown "Relatórios" da sidebar: documento a pré-selecionar na vista.
   const [relatorioDocPreselect, setRelatorioDocPreselect] = useState<string | null>(null);
@@ -1518,28 +1524,32 @@ function AppContent() {
                 : 'Ainda não guardado · preenche e carrega em guardar para adicionar à lista.'}
             </div>
           </div>
-          {/* Ver o simulador fiscal já preenchido com os dados deste cliente novo
-              (sem ter de o guardar primeiro). Alterna com o regresso ao perfil. */}
-          <button
-            type="button"
-            onClick={() => setView(view === 'tax' ? 'profile' : 'tax')}
-            className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-[12px] text-[14px] font-[700] text-[#0677FF] bg-[#0677FF]/10 hover:bg-[#0677FF]/15 active:scale-[0.98] transition-all"
-          >
-            {view === 'tax'
-              ? <><ArrowLeft className="w-4 h-4" strokeWidth={2.5} /> Voltar ao perfil</>
-              : <><Calculator className="w-4 h-4" strokeWidth={2.5} /> Ver enquadramento fiscal</>}
-          </button>
-          <button
-            type="button"
-            onClick={handleSaveNewClient}
-            className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-[12px] text-[14px] font-[800] text-white active:scale-[0.98] transition-all"
-            style={{
-              background: 'linear-gradient(135deg, #0677FF 0%, #044BB6 100%)',
-              boxShadow: '0 0 0 1px rgba(6,119,255,0.35), 0 8px 22px -8px rgba(6,119,255,0.6)',
-            }}
-          >
-            <Save className="w-4 h-4" strokeWidth={2.5} /> Guardar cliente
-          </button>
+          {/* Botões juntos numa linha também no mobile (antes empilhavam e a
+              barra ficava com ~200px de altura, tapando meio ecrã). */}
+          <div className="flex items-center gap-2 shrink-0 min-w-0">
+            {/* Ver o simulador fiscal já preenchido com os dados deste cliente novo
+                (sem ter de o guardar primeiro). Alterna com o regresso ao perfil. */}
+            <button
+              type="button"
+              onClick={() => setView(view === 'tax' ? 'profile' : 'tax')}
+              className="min-w-0 inline-flex items-center gap-1.5 px-3 py-2.5 rounded-[12px] text-[12.5px] sm:text-[14px] sm:px-4 font-[700] text-[#0677FF] bg-[#0677FF]/10 hover:bg-[#0677FF]/15 active:scale-[0.98] transition-all"
+            >
+              {view === 'tax'
+                ? <><ArrowLeft className="w-4 h-4 shrink-0" strokeWidth={2.5} /> <span className="truncate">Voltar ao perfil</span></>
+                : <><Calculator className="w-4 h-4 shrink-0" strokeWidth={2.5} /> <span className="truncate">Ver enquadramento</span></>}
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveNewClient}
+              className="inline-flex items-center gap-1.5 px-3 sm:px-5 py-2.5 rounded-[12px] text-[12.5px] sm:text-[14px] font-[800] text-white active:scale-[0.98] transition-all whitespace-nowrap"
+              style={{
+                background: 'linear-gradient(135deg, #0677FF 0%, #044BB6 100%)',
+                boxShadow: '0 0 0 1px rgba(6,119,255,0.35), 0 8px 22px -8px rgba(6,119,255,0.6)',
+              }}
+            >
+              <Save className="w-4 h-4 shrink-0" strokeWidth={2.5} /> Guardar cliente
+            </button>
+          </div>
         </div>
       )}
       {/* Input escondido acionado pelo AI Contabilista para importar SAF-T de cliente novo */}
@@ -1562,9 +1572,10 @@ function AppContent() {
         <AIContabilista ref={botApiRef} bridge={botBridge} liftBottom={draftNewClient} view={view} viewTitle={VIEW_TITLES[view]} />
       </Suspense>
 
-      {/* Sugestão de guia por página — sempre visível excepto no Gabinete (tem o seu) e em office-settings (form longo) */}
+      {/* Sugestão de guia por página — sempre visível excepto no Gabinete (tem o seu) e em office-settings (form longo).
+          `lift` levanta a pill acima da barra "Guardar cliente" quando esta está visível. */}
       {view !== 'gabinete' && view !== 'office-settings' && (
-        <GuiaSugestao view={view as ViewKey} onStart={(v) => setTourRequest({ view: v, nonce: Date.now() })} />
+        <GuiaSugestao view={view as ViewKey} lift={draftNewClient} onStart={(v) => setTourRequest({ view: v, nonce: Date.now() })} />
       )}
 
       {/* Visitas guiadas — motor de tour (iniciadas pela sugestão da página ou pelo bot a pedido) */}

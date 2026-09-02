@@ -1272,14 +1272,16 @@ export default function ClientProfile({
   return (
     <>
     <motion.div
-      className="overflow-y-auto lg:overflow-hidden lg:h-full lg:flex lg:flex-row bg-[#F5F7FA]"
+      // Split só a partir de xl (1280px): em tablet o resumo direito ficava com
+      // ~300px e os cards "Dados Fiscais" tinham labels/valores sobrepostos.
+      className="overflow-y-auto xl:overflow-hidden xl:h-full xl:flex xl:flex-row bg-[#F5F7FA]"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
     >
       {/* LEFT PANEL */}
       <motion.div
-        className="lg:w-[460px] shrink-0 bg-white border-b border-[#E2E8F0] lg:border-b-0 lg:border-r lg:overflow-y-auto lg:h-full flex flex-col"
+        className="xl:w-[460px] shrink-0 bg-white border-b border-[#E2E8F0] xl:border-b-0 xl:border-r xl:overflow-y-auto xl:h-full flex flex-col"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.35, delay: 0.05, ease: [0.32, 0.72, 0, 1] }}
@@ -1500,7 +1502,7 @@ export default function ClientProfile({
       </motion.div>
 
       {/* RIGHT PANEL */}
-      <div className="flex-1 p-4 sm:p-6 lg:p-10 lg:overflow-y-auto lg:h-full w-full flex flex-col gap-6 lg:gap-8 relative max-w-7xl mx-auto">
+      <div className="flex-1 p-4 sm:p-6 xl:p-10 xl:overflow-y-auto xl:h-full w-full flex flex-col gap-6 lg:gap-8 relative max-w-7xl mx-auto">
         {resultsContent}
       </div>
     </motion.div>
