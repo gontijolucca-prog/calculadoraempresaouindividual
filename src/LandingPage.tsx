@@ -84,7 +84,7 @@ function Hero({ onLogin, onSignup }: { onLogin: () => void; onSignup: () => void
     <section id="top" className="max-w-[1120px] mx-auto px-5 md:px-6 pt-14 md:pt-20 pb-12 md:pb-16">
       <div className="max-w-[720px]">
         <div className="inline-flex items-center gap-2 text-[11px] tracking-[1.6px] uppercase font-[700] text-black/40">
-          <span className="w-6 h-px bg-black/15" /> OE 2026 · CIRS/CIRC/CIVA atualizados
+          <span className="w-6 h-px bg-[var(--brand-bordeaux-neon)]" /> OE 2026 · CIRS/CIRC/CIVA atualizados
         </div>
         <h1 className="display-serif mt-4 text-[40px] md:text-[64px] leading-[0.95] tracking-[-0.03em] font-[200]">
           Recebe o cliente.<br />
@@ -228,7 +228,7 @@ function Gabinete() {
 function Novidades() {
   return (
     <section className="max-w-[1120px] mx-auto px-5 md:px-6 py-10 md:py-14 border-t border-black/5">
-      <div className="rounded-2xl border border-black/5 p-6 md:p-8 bg-[#F8FAFC]">
+      <div className="rounded-2xl border border-black/5 p-6 md:p-8 bg-[#F8FAFC] border-t-[3px] border-t-[var(--brand-bordeaux-neon)]/30">
         <div className="text-[11px] tracking-[1.4px] uppercase font-[700] text-black/30">Novidades</div>
         <div className="mt-2 grid md:grid-cols-3 gap-6">
           <div><div className="text-[14px] font-[700] flex items-center gap-2"><Lock className="w-4 h-4 text-[#0677FF]" /> Contas privadas</div><div className="mt-1 text-[13px] text-black/60">Cada conta vê só os seus clientes. Cofre por conta.</div></div>
@@ -263,7 +263,8 @@ function Pricing({ onSignup, onLogin }: { onSignup: () => void; onLogin: () => v
       <h2 className="display-serif text-[24px] md:text-[32px] font-[200] tracking-[-0.02em]">Preço por tamanho de escritório.</h2>
       <div className="mt-6 grid md:grid-cols-3 gap-4">
         {tiers.map(t=>(
-          <div key={t.name} className={`rounded-2xl border p-6 flex flex-col ${t.hi ? 'bg-[#0B1D2D] text-white border-black' : 'bg-white border-black/5'}`}>
+          <div key={t.name} className={`relative rounded-2xl border p-6 flex flex-col ${t.hi ? 'bg-[#0B1D2D] text-white border-black' : 'bg-white border-black/5'}`}>
+            {t.hi && <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] tracking-[1.4px] uppercase font-[700] px-2.5 py-1 rounded-full bg-[var(--brand-bordeaux-neon)] text-white" style={{ boxShadow: '0 4px 12px var(--brand-bordeaux-glow)' }}>Mais usado</span>}
             <div className="text-[11px] tracking-[1.4px] uppercase font-[700] opacity-60">{t.name} · {t.note}</div>
             <div className="mt-2 flex items-baseline gap-1"><span className="text-[36px] font-[200] tracking-tight">€{t.price}</span><span className="text-[12px] opacity-60">/mês</span></div>
             <ul className="mt-4 space-y-2 flex-1">

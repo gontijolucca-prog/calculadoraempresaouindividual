@@ -80,7 +80,7 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
           {/* Copy à esquerda — reassurance de segurança */}
           <div className="hidden lg:block pt-8">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#0B1D2D]/10 text-[11px] font-[700] tracking-[1.5px] uppercase text-[#0B1D2D]/60">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Acesso seguro por conta
+              <ShieldCheck className="w-3.5 h-3.5 text-[var(--brand-bordeaux-neon)]" /> Acesso seguro por conta
             </div>
             <h1 className="mt-4 text-[42px] font-[800] leading-[0.95] tracking-[-1.5px] text-[#0B1D2D]">
               Cada conta,<br /><span className="text-[#0677FF]">os seus clientes.</span>
@@ -96,7 +96,7 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
           </div>
 
           {/* Card de auth */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[20px] border border-[#E2E8F0] shadow-sm p-6 sm:p-8">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[20px] border border-[#E2E8F0] shadow-sm p-6 sm:p-8 border-t-[3px] border-t-[var(--brand-bordeaux-neon)]/25">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-[22px] font-[800] text-[#0B1D2D]">{mode === 'login' ? 'Entrar' : mode === 'signup' ? 'Criar conta' : 'Repor password'}</h2>
               <div className="flex gap-1 bg-[#F5F7FA] p-1 rounded-full">

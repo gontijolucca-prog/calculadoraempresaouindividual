@@ -288,19 +288,19 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                     title={clientMenuOpen ? 'Fechar o menu do cliente' : 'Abrir o menu do cliente (perfil e simuladores)'}
                     className="group w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-left transition-all hover:brightness-[0.98] focus-visible:outline-none"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(6,119,255,0.12), rgba(6,119,255,0.04))',
-                      boxShadow: 'inset 0 0 0 1px rgba(6,119,255,0.28)',
+                      background: 'linear-gradient(135deg, rgba(225,29,72,0.09), rgba(225,29,72,0.03))',
+                      boxShadow: 'inset 0 0 0 1px rgba(225,29,72,0.22)',
                     }}
                   >
-                    <span className="w-2 h-2 rounded-full bg-[#0677FF] shrink-0 animate-pulse" aria-hidden="true" />
+                    <span className="w-2 h-2 rounded-full bg-[var(--brand-bordeaux-neon)] shrink-0 animate-pulse" style={{ boxShadow: '0 0 0 6px var(--brand-bordeaux-glow)' }} aria-hidden="true" />
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[9px] font-[800] uppercase tracking-[1px] text-[#0677FF]">A trabalhar em</span>
+                      <span className="block text-[9px] font-[800] uppercase tracking-[1px] text-[var(--brand-bordeaux-neon)]">A trabalhar em</span>
                       <span className="block text-[13px] font-[700] text-[#0B1D2D] truncate">{activeClientName}</span>
                     </span>
-                    <ChevronRight className={cn('w-4 h-4 text-[#0677FF]/50 shrink-0 transition-transform', clientMenuOpen && 'rotate-90')} aria-hidden="true" />
+                    <ChevronRight className={cn('w-4 h-4 text-[var(--brand-bordeaux-neon)]/50 shrink-0 transition-transform', clientMenuOpen && 'rotate-90')} aria-hidden="true" />
                   </button>
                   {clientMenuOpen && (
-                  <div className="mt-1 ml-2.5 pl-2 border-l-2 border-[#0677FF]/20 space-y-0.5">
+                  <div className="mt-1 ml-2.5 pl-2 border-l-2 border-[var(--brand-bordeaux-neon)]/20 space-y-0.5">
                     {CLIENT_MENU.map((it) => (
                       <ClientNavItem
                         key={it.label}

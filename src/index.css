@@ -10,6 +10,11 @@
   --brand-cyan: #00C2FF;
   --brand-gray: #6B7280;
   --brand-surface: #F5F7FA;
+
+  --brand-bordeaux: #7A0C2E;
+  --brand-bordeaux-neon: #E11D48;
+  --brand-bordeaux-soft: #FFF1F5;
+  --brand-bordeaux-glow: rgba(225, 29, 72, 0.28);
 }
 
 body {
