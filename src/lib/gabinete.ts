@@ -15,13 +15,46 @@ import { CALENDARIO_FISCAL_2026 } from './calendarioFiscal2026';
 
 // ─── OfficeId (tenant) ───────────────────────────────────────────────────────
 export const GABINETE_SHARED_ID = 'shared';
+/** Retorna o officeId isolado por conta. Nunca cai para 'shared' em uso normal —
+ *  cada conta vê só os seus dados. O 'shared' só é lido uma vez para migração. */
 export function getGabineteOfficeId(): string {
   const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error('Não autenticado — inicia sessão para aceder ao Gabinete.');
+  return uid;
+}
+/** Usado só na migração legada shared → uid */
+export function getGabineteOfficeIdOrShared(): string {
+  const uid = auth.currentUser?.uid;
   if (uid) return uid;
-  // fallback para modo local/demo (sem login) — igual ao empresas shared
   return (loadFromStorage<string>('gabinete:officeId', GABINETE_SHARED_ID) as string) || GABINETE_SHARED_ID;
 }
 export function setGabineteOfficeId(id: string) { saveToStorage('gabinete:officeId', id); }
+
+/** Migra uma vez dados legados de gabinete/shared/* para gabinete/{uid}/* */
+export async function migrateGabineteSharedToUser(): Promise<void> {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+  const markerKey = `gabinete:migrated:${uid}`;
+  if (loadFromStorage<boolean>(markerKey, false)) return;
+  try {
+    const cols = ['clientes','tarefas','obrigacoes','cofre','colaboradores','conversas','modelos','envios','tempos','actas'];
+    for (const col of cols) {
+      const snap = await getDocs(collection(db, `gabinete/${GABINETE_SHARED_ID}/${col}`)).catch(()=>null);
+      if (!snap || snap.empty) continue;
+      // Se o destino já tem dados, não sobrescreve
+      const destSnap = await getDocs(collection(db, `gabinete/${uid}/${col}`)).catch(()=>null);
+      if (destSnap && !destSnap.empty) continue;
+      const batch = writeBatch(db);
+      snap.forEach(d => {
+        batch.set(doc(db, `gabinete/${uid}/${col}`, d.id), d.data(), { merge: true });
+      });
+      await batch.commit();
+    }
+    saveToStorage(markerKey, true);
+  } catch (e) {
+    console.warn('[gabinete] migração shared→uid falhou:', e);
+  }
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function newId(prefix: string): string {

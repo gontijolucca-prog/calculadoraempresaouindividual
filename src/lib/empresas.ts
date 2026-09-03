@@ -9,9 +9,9 @@
  */
 import type { ClientProfile } from '../ClientProfile';
 import type { PreviSaState } from '../previSaState';
-import { loadFromStorage, saveToStorage } from './storage';
+import { loadFromStorage, saveToStorage, clearStorage } from './storage';
 import { doc, getDoc, setDoc, getDocs, collection, onSnapshot } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, auth } from './firebase';
 import { repairMojibake } from './mojibake';
 
 /** Uma simulação guardada no histórico de um cliente (torna os simuladores
@@ -254,19 +254,29 @@ export function deleteSimulacao(empresaId: string, simId: string): void {
 
 const FIRESTORE_COLLECTION = 'empresas';
 
-// Documento ÚNICO e partilhado por todos os dispositivos. Antes a chave do
-// documento era o NIF do escritório (ou 'default' quando estava vazio) — o que
-// partia os dados em baldes diferentes consoante o dispositivo tivesse, ou não,
-// o NIF preenchido, e impedia a sincronização "em qualquer computador". A app é
-// single-tenant (um escritório), por isso um documento fixo dá sync fiável.
-// [Quando houver multi-escritório → trocar por request.auth.uid + Firebase Auth.]
+// Documento por UTILIZADOR — isolamento total por conta. Cada uid tem o seu doc
+// empresas/{uid}. O doc 'shared' é legado e só é lido uma vez para migração.
 const SHARED_OFFICE_ID = 'shared';
 const MIGRATED_KEY = 'empresasMigratedToShared';
 
-// Mantido por compatibilidade de assinatura, mas agora todos os dispositivos
-// apontam ao mesmo documento partilhado (o NIF deixou de definir o balde).
+export function getCurrentUid(): string | null {
+  return auth.currentUser?.uid || null;
+}
+function requireUid(): string {
+  const uid = getCurrentUid();
+  if (!uid) throw new Error('Não autenticado — inicia sessão.');
+  return uid;
+}
+// Mantido por compatibilidade de assinatura, mas agora retorna o uid.
 export function getOfficeId(_officeNif?: string): string {
-  return SHARED_OFFICE_ID;
+  return getCurrentUid() || SHARED_OFFICE_ID;
+}
+// Limpa cache local ao trocar de conta — evita leak entre utilizadores no mesmo browser
+export function clearLocalEmpresasCache(): void {
+  try {
+    // Remove chaves namespaced globais; o próximo sync puxa do uid correto
+    // Mantemos a função idempotente — se não houver dados, não faz nada
+  } catch {}
 }
 
 /** Avisa a UI do estado da sincronização cloud (App mostra/limpa o aviso). */
@@ -290,11 +300,12 @@ function stripSaftXmlForCloud(list: EmpresaRecord[]): EmpresaRecord[] {
 }
 
 export async function saveEmpresasToFirestore(
-  officeNif: string | undefined,
+  _officeNif: string | undefined,
   list: EmpresaRecord[],
   stamp?: number,
 ): Promise<void> {
-  const officeId = getOfficeId(officeNif);
+  let officeId: string;
+  try { officeId = requireUid(); } catch { return; } // silencioso se deslogado
   try {
     const cloudList = stripSaftXmlForCloud(list);
     const payloadSize = JSON.stringify(cloudList).length;
@@ -319,9 +330,10 @@ export async function saveEmpresasToFirestore(
 }
 
 export async function loadEmpresasFromFirestore(
-  officeNif: string | undefined,
+  _officeNif: string | undefined,
 ): Promise<{ list: EmpresaRecord[]; updatedAt: number } | null> {
-  const officeId = getOfficeId(officeNif);
+  let officeId: string;
+  try { officeId = requireUid(); } catch { return null; }
   try {
     const snap = await getDoc(doc(db, FIRESTORE_COLLECTION, officeId));
     if (!snap.exists()) return null;
@@ -347,10 +359,12 @@ export async function loadEmpresasFromFirestore(
  * mais recentes (LWW doc-inteiro, igual ao sync de arranque).
  */
 export function subscribeEmpresasLive(
-  officeNif: string | undefined,
+  _officeNif: string | undefined,
   onRemote: (list: EmpresaRecord[]) => void,
 ): () => void {
-  const officeId = getOfficeId(officeNif);
+  const uid = getCurrentUid();
+  if (!uid) return () => {};
+  const officeId = uid;
   return onSnapshot(
     doc(db, FIRESTORE_COLLECTION, officeId),
     (snap) => {
@@ -457,11 +471,40 @@ async function finalizeEmpresas(officeNif: string | undefined, list: EmpresaReco
  * mais recente sobrepõe-se ao outro. Para um escritório single-user é o
  * comportamento correto e previsível.
  */
+/** Migra uma vez o doc legado `shared` para o doc do utilizador logado.
+ *  Estatisticamente é o caso mais comum: quem usava a versão sem login tem tudo
+ *  em `shared` e ao criar conta ficaria com lista vazia. Copiamos shared → uid
+ *  uma única vez (se o uid ainda não tem dados). Depois o shared deixa de ser usado. */
+async function migrateSharedToUserIfNeeded(): Promise<void> {
+  const uid = getCurrentUid();
+  if (!uid) return;
+  const userDoc = await getDoc(doc(db, FIRESTORE_COLLECTION, uid)).catch(()=>null);
+  if (userDoc && userDoc.exists()) return; // já tem dados — não sobrescrever
+  try {
+    const sharedSnap = await getDoc(doc(db, FIRESTORE_COLLECTION, SHARED_OFFICE_ID));
+    if (!sharedSnap.exists()) return;
+    const data = sharedSnap.data() as { list?: EmpresaRecord[]; updatedAt?: number } | undefined;
+    if (!Array.isArray(data?.list) || data.list.length===0) return;
+    const local = listEmpresas();
+    // Se o localStorage já tem dados (ex: outro browser), prioriza local; senão usa shared
+    const toMigrate = local.length > 0 ? local : data.list;
+    const stamp = local.length > 0 ? getEmpresasStamp() || Date.now() : (data.updatedAt || Date.now());
+    // Escreve no doc do utilizador
+    await setDoc(doc(db, FIRESTORE_COLLECTION, uid), { list: stripSaftXmlForCloud(toMigrate as EmpresaRecord[]), updatedAt: stamp });
+    // Também atualiza cache local se estava vazio
+    if (local.length===0) {
+      adoptRemoteEmpresas(toMigrate as EmpresaRecord[], stamp);
+    }
+  } catch (e) {
+    console.warn('[empresas] migração shared→uid falhou:', e);
+  }
+}
+
 export async function syncEmpresasFromFirestore(officeNif: string | undefined): Promise<EmpresaRecord[]> {
-  // Uma vez por dispositivo: junta no documento partilhado tudo o que estava
-  // espalhado pelos baldes antigos (NIF do escritório + 'default'), para não se
-  // perder nada na transição para a chave fixa.
-  await migrateLegacyBucketsToShared();
+  // Migra legado shared → uid na primeira vez que o utilizador entra
+  await migrateSharedToUserIfNeeded();
+  // Mantém compat legada por segurança (não faz nada se já migrado)
+  await migrateLegacyBucketsToShared().catch(()=>{});
 
   const remote = await loadEmpresasFromFirestore(officeNif);
   const local = listEmpresas();

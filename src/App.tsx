@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { Loader2, Save, Calculator, ArrowLeft } from 'lucide-react';
+import { Loader2, Save, Calculator, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { useAuth } from './lib/auth';
 import ErrorBoundary from './ErrorBoundary';
 import ClientProfile, { defaultProfile } from './ClientProfile';
@@ -7,7 +7,7 @@ import { UpdateNotification } from './components/UpdateNotification';
 import { useUnsavedEdits } from './hooks/useUnsavedEdits';
 import { initVersionChecker, stopVersionChecker } from './lib/version-checker';
 import LegalInfo from './LegalInfo';
-import LandingPage from './LandingPage';
+import AuthView, { VerifyEmailGate } from './AuthView';
 import EmpresasList from './EmpresasList';
 import SimIntro, { SIM_INTROS } from './SimIntro';
 import ClientHub from './ClientHub';
@@ -344,17 +344,9 @@ function NoEmpresaGate({ onGo }: { onGo: () => void }) {
 }
 
 function AppContent() {
-  const { logout } = useAuth();
-  // Nota: o sync da cloud NÃO depende de Firebase Auth (a app usa sessão local;
-  // o doc 'shared' é acessível sem auth — ver firestore.rules). `user` mantém-se
-  // para o logout/futuro login real.
-  // Sessão local (piloto): a app abre na landing; "Entrar" entra direto, sem
-  // email/senha/Google. Os dados continuam só no localStorage desta máquina.
-  const [sessaoLocal, setSessaoLocal] = useState<boolean>(() => loadFromStorage<boolean>('sessao', false));
-  const entrarLocal = useCallback(() => {
-    saveToStorage('sessao', true);
-    setSessaoLocal(true);
-  }, []);
+  const { user, loading: authLoading, logout, sendVerificationEmail, reloadUser } = useAuth();
+  const isAuthenticated = !!user;
+  const needsVerification = !!user && !user.emailVerified && user.providerData.some(p => p.providerId === 'password');
   // Mode is persisted: ao atualizar a página o utilizador continua no mesmo contexto.
   // Default = 'empresa' (CRM): após login vai directo para a Lista de Empresas. O
   // selector "Como queres trabalhar hoje?" foi removido do fluxo.
@@ -556,15 +548,11 @@ function AppContent() {
     return () => window.clearTimeout(t);
   }, [currentEmpresaId, view, taxState, vehicleState, ticketState, ssState, diagnosticoState, imoveisState, imtState, salarioState, irsState, previSaState]);
 
-  // ── Persistência permanente em Firestore ─────────────────────────────────
-  // No arranque: faz merge com o que está na cloud (documento partilhado 'shared',
-  // single-tenant). O gate é a SESSÃO (sessaoLocal), não o Firebase Auth — a app
-  // entra com sessão local (botão "Entrar" da landing, sem email/senha) e as
-  // regras do Firestore permitem ler/escrever o doc 'shared' sem auth. Com o gate
-  // antigo (`loggedIn`) o sync NUNCA corria: os dados ficavam presos no
-  // localStorage de cada máquina e um computador novo via a lista vazia.
+  // ── Persistência permanente em Firestore (por CONTA) ───────────────────────
+  // Isolamento total: cada uid tem o seu doc empresas/{uid} e gabinete/{uid}/*.
+  // O doc legado 'shared' é migrado uma vez para o uid na primeira autenticação.
   useEffect(() => {
-    if (!sessaoLocal) return;
+    if (!isAuthenticated) return;
     let cancelled = false;
     (async () => {
       const merged = await syncEmpresasFromFirestore(officeSettings.nif);
@@ -580,11 +568,11 @@ function AppContent() {
     // Intencionalmente apenas no início de sessão (não a cada mudança de office.nif
     // para evitar sync infinitos quando a UI das definições do escritório está aberta).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessaoLocal]);
+  }, [isAuthenticated]);
 
   // Empurra alterações ao registry para Firestore com debounce de 2s.
   useEffect(() => {
-    if (!sessaoLocal) return;
+    if (!isAuthenticated) return;
     const t = setTimeout(() => {
       // Dispositivo recém-chegado SEM dados não empurra lista vazia — evita
       // limpar a cloud (e os outros computadores) antes do primeiro pull.
@@ -592,7 +580,7 @@ function AppContent() {
       saveEmpresasToFirestore(officeSettings.nif, listEmpresas()).catch(() => {});
     }, 2000);
     return () => clearTimeout(t);
-  }, [sessaoLocal, clientProfile, previSaState, currentEmpresaId, empresasRefresh, officeSettings.nif]);
+  }, [isAuthenticated, clientProfile, previSaState, currentEmpresaId, empresasRefresh, officeSettings.nif]);
 
   // Listener LIVE do registry na cloud: quando OUTRO computador cria/edita/
   // elimina uma empresa, este adota a lista na hora — sem refresh. É isto que
@@ -602,7 +590,7 @@ function AppContent() {
   const currentEmpresaIdRef = useRef(currentEmpresaId);
   currentEmpresaIdRef.current = currentEmpresaId;
   useEffect(() => {
-    if (!sessaoLocal) return;
+    if (!isAuthenticated) return;
     const unsub = subscribeEmpresasLive(officeSettings.nif, (list) => {
       setEmpresasRefresh(n => n + 1);
       const empId = currentEmpresaIdRef.current;
@@ -612,10 +600,10 @@ function AppContent() {
       }
     });
     return unsub;
-    // officeSettings.nif é irrelevante na prática (doc fixo 'shared'); não
+    // officeSettings.nif é irrelevante na prática (doc por uid); não
     // ressuscitar a subscrição quando as definições mudam.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessaoLocal]);
+  }, [isAuthenticated]);
 
   // Dropdown "Relatórios" da sidebar: documento a pré-selecionar na vista.
   const [relatorioDocPreselect, setRelatorioDocPreselect] = useState<string | null>(null);
@@ -675,10 +663,19 @@ function AppContent() {
   const botSaftInputRef = useRef<HTMLInputElement>(null);
   const botSaftTargetRef = useRef<'novo' | 'empresa'>('novo');
 
-  // Sessão local (piloto): landing primeiro; "Entrar" entra direto (sem
-  // email/senha/Google); "Sair" no menu volta à landing. Dados ficam locais.
-  if (!sessaoLocal) {
-    return <LandingPage onEnter={entrarLocal} />;
+  // ── Gate de autenticação seguro ──────────────────────────────────────────
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F7FA]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-[#0677FF] animate-spin" />
+          <p className="text-[13px] font-[600] text-[#64748B]">A verificar sessão…</p>
+        </div>
+      </div>
+    );
+  }
+  if (!user) {
+    return <AuthView />;
   }
 
   // O selector "Como queres trabalhar hoje?" foi removido: após login vai-se directo
@@ -900,13 +897,32 @@ function AppContent() {
     reader.readAsArrayBuffer(file);
   };
   const handleLogout = async () => {
-    clearStorage('sessao'); // volta à landing (sessão local simulada)
-    setSessaoLocal(false);
+    try { const { setCofrePassphrase } = await import('./lib/cofreCrypto'); setCofrePassphrase(null); } catch {}
+    try { clearStorage('empresas'); clearStorage('empresasUpdatedAt'); clearStorage('currentEmpresaId'); } catch {}
     await logout();
     setMode('empresa');
     setView('empresas');
     clearStorage('mode');
   };
+
+  // Ao trocar de conta, limpa estado sensível em memória para não fazer flash de dados do user anterior
+  const prevUidRef = useRef<string | null>(null);
+  useEffect(() => {
+    const uid = user?.uid || null;
+    if (prevUidRef.current && prevUidRef.current !== uid) {
+      setCurrentEmpresaIdState(null);
+      setClientProfile({ ...defaultProfile });
+      setPreviSaState(defaultPreviSaState());
+      setEmpresasRefresh(n => n + 1);
+    }
+    prevUidRef.current = uid;
+  }, [user?.uid]);
+
+  // Migra dados legados do Gabinete shared → uid na primeira autenticação
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    import('./lib/gabinete').then(m => m.migrateGabineteSharedToUser().catch(()=>{}));
+  }, [isAuthenticated]);
   // Deep-link from Ficha → Legal at a given anchor.
   // The anchor is passed via state; LegalInfo handles the scroll on mount via useEffect,
   // which avoids the previous race condition with setTimeout(50).
@@ -1290,6 +1306,17 @@ function AppContent() {
 
       {/* Skip link for keyboard users */}
       <a href="#main-content" className="skip-link">Saltar para conteúdo principal</a>
+
+      {/* Banner de verificação de email — não bloqueia, mas alerta e limita Cofre */}
+      {needsVerification && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[13px]">
+          <span className="flex items-center gap-2 text-amber-800"><AlertTriangle className="w-4 h-4 shrink-0" /> Verifica o teu email <strong>{user?.email}</strong> — o cofre fica bloqueado até confirmares.</span>
+          <span className="flex gap-2 shrink-0">
+            <button onClick={async()=>{ try{ await sendVerificationEmail(); }catch{} }} className="px-3 py-1.5 rounded-lg bg-white border border-amber-200 text-amber-800 text-xs font-[700] hover:bg-amber-100">Reenviar email</button>
+            <button onClick={async()=>{ try{ await reloadUser(); }catch{} }} className="px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-[700] hover:bg-amber-700">Já verifiquei</button>
+          </span>
+        </div>
+      )}
 
       {/* ── SAF-T import result modal ── */}
       {saftModal?.open && (

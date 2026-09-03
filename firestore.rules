@@ -1,50 +1,56 @@
 rules_version = '2';
 
 // Firestore Security Rules — Estudo 360
-// Requer Firebase Auth para escrita. Leitura pública para updates (compatibilidade).
-// Multi-tenant: cada utilizador só acede aos seus dados (empresas/{uid}).
+// Segurança por conta: cada uid só acede ao seu próprio documento.
+// O doc legado `shared` só é legível para migração (uma vez) e nunca gravável.
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
     match /updates/{docId} {
       allow read: if true;
-
       allow create: if request.auth != null && isValidUpdateCreate(request.resource.data);
-
       allow update: if request.auth != null && isToggleOnly(resource.data, request.resource.data);
-
       allow delete: if request.auth != null && resource.data.aprovado == true;
     }
 
-    // Registry de empresas por utilizador (multi-tenant via officeId = UID do utilizador).
-    // Cada utilizador só lê/escreve os seus próprios dados. 'shared' é modo demo/local sem auth.
+    // ——— Empresas por utilizador ———
+    // Leitura/escrita estrita por owner. Sem 'shared' gravável.
     match /empresas/{officeId} {
-      allow read: if officeId == 'shared' || (request.auth != null && request.auth.uid == officeId);
-      allow write: if (officeId == 'shared' || (request.auth != null && request.auth.uid == officeId)) && isValidEmpresasPayload(request.resource.data);
+      allow read: if request.auth != null && request.auth.uid == officeId;
+      allow write: if request.auth != null && request.auth.uid == officeId && isValidEmpresasPayload(request.resource.data);
     }
-
-    // Gabinete — gestão reliable + live. Cada doc tem _updatedAt para ordenar.
-    // 'shared' permite demo local sem login; com login isola por uid.
-    match /gabinete/{officeId}/{col}/{docId} {
-      allow read: if officeId == 'shared' || (request.auth != null && request.auth.uid == officeId);
-      allow create, update: if (officeId == 'shared' || (request.auth != null && request.auth.uid == officeId)) && isValidGabineteDoc(request.resource.data);
-      allow delete: if officeId == 'shared' || (request.auth != null && request.auth.uid == officeId);
-    }
-    // Permitir listar as subcoleções (necessário para collectionGroup ou list)
-    match /gabinete/{officeId} {
-      allow read: if officeId == 'shared' || (request.auth != null && request.auth.uid == officeId);
+    // Legado shared: só leitura para migração (autenticado), nunca escrita.
+    match /empresas/shared {
+      allow read: if request.auth != null;
       allow write: if false;
     }
 
-    // Tabela de preços/honorários do escritório (config não sensível —
-    // permite a app funcionar sem login; sem dados de clientes).
+    // ——— Gabinete por utilizador ———
+    match /gabinete/{officeId}/{col}/{docId} {
+      allow read: if request.auth != null && request.auth.uid == officeId;
+      allow create, update: if request.auth != null && request.auth.uid == officeId && isValidGabineteDoc(request.resource.data);
+      allow delete: if request.auth != null && request.auth.uid == officeId;
+    }
+    match /gabinete/{officeId} {
+      allow read: if request.auth != null && request.auth.uid == officeId;
+      allow write: if false;
+    }
+    // Legado gabinete/shared/* : leitura para migração, sem escrita
+    match /gabinete/shared/{col}/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+    match /gabinete/shared {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // Tabela de preços/honorários (config pública)
     match /pricing/{docId} {
       allow read, write: if true;
     }
 
-    // Sugestões de melhoria recolhidas pelo AI Contabilista.
-    // Autenticação obrigatória para criar/atualizar.
     match /ai_suggestions/{docId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && isValidSuggestion(request.resource.data);
@@ -52,7 +58,6 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Bloquear tudo o resto explicitamente até existir auth real.
     match /{document=**} {
       allow read, write: if false;
     }
@@ -77,8 +82,6 @@ function isSuggestionStatusOnly(before, after) {
 }
 
 function isValidUpdateCreate(data) {
-  // `autor` é opcional (compatibilidade com versões antigas da app que ainda
-  // criam sem assinatura), mas quando vem tem de ser um nome curto.
   return data.keys().hasOnly(['text', 'atualizado', 'aprovado', 'createdAt', 'autor'])
       && data.text is string
       && data.text.size() > 0
@@ -89,9 +92,6 @@ function isValidUpdateCreate(data) {
 }
 
 function isToggleOnly(before, after) {
-  // Permite alterar só os flags e as respectivas assinaturas (quem marcou +
-  // quando). Tudo o resto — text, createdAt, autor — fica imutável por exclusão:
-  // qualquer chave fora desta lista no diff chumba a regra.
   return after.diff(before).affectedKeys().hasOnly(
         ['atualizado', 'aprovado', 'atualizadoPor', 'atualizadoEm', 'aprovadoPor', 'aprovadoEm'])
       && after.atualizado is bool
@@ -103,8 +103,6 @@ function isToggleOnly(before, after) {
 }
 
 function isValidEmpresasPayload(data) {
-  // Estrutura esperada: { list: [...], updatedAt: <number> }.
-  // Limite estrutural para evitar payloads absurdos.
   return data.keys().hasOnly(['list', 'updatedAt'])
       && data.list is list
       && data.list.size() < 500
@@ -112,8 +110,6 @@ function isValidEmpresasPayload(data) {
 }
 
 function isValidGabineteDoc(data) {
-  // Docs do gabinete são flexíveis; só validamos tamanho e presença de _updatedAt quando existe.
-  // Permite qualquer payload < 500KB com _updatedAt numérico se presente.
   return data.size() < 500
       && (!('_updatedAt' in data) || data._updatedAt is number);
 }
