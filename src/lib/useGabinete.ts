@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   subscribeClientes, subscribeTarefas, subscribeObrigacoes, subscribeCofre, subscribeColaboradores, subscribeConversas, subscribeModelos, subscribeEnvios, subscribeTempos, subscribeActas,
   listClientesCache, listTarefasCache, listObrigacoesCache, listCofreCache, listColaboradoresCache, listConversasCache, listModelosCache, listEnviosCache, listTemposCache, listActasCache,
+  seedCalendarioFiscal2026,
   type GabineteCliente, type Tarefa, type Obrigacao, type CofreEntrada, type Colaborador, type Conversa, type ModeloComunicacao, type EnvioComunicacao, type Tempo, type Acta,
 } from './gabinete';
 
@@ -17,7 +18,19 @@ export function useGabineteTarefas(): Tarefa[] {
 }
 export function useGabineteObrigacoes(): Obrigacao[] {
   const [items, setItems] = useState<Obrigacao[]>(() => listObrigacoesCache());
-  useEffect(() => subscribeObrigacoes(setItems), []);
+  useEffect(() => {
+    let alive = true;
+    const unsubscribe = subscribeObrigacoes(setItems);
+    // Preenche também o cache local enquanto o snapshot inicial chega — assim
+    // o calendário já funciona offline e continua a atualizar em tempo real.
+    void seedCalendarioFiscal2026().then(() => {
+      if (alive) setItems(listObrigacoesCache());
+    });
+    return () => {
+      alive = false;
+      unsubscribe();
+    };
+  }, []);
   return items;
 }
 export function useGabineteCofre(): CofreEntrada[] {

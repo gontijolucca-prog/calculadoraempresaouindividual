@@ -139,7 +139,9 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
   const em7dias = hoje.getTime() + 7*86400000;
   const tarefasHoje = tarefas.filter(t=> t.dataVencimento && t.dataVencimento >= hoje.getTime() && t.dataVencimento < hoje.getTime()+86400000 && t.estado!=='done').length;
   const atrasadas = tarefas.filter(t=> t.estado==='atrasada' || (t.dataVencimento && t.dataVencimento < hoje.getTime() && t.estado!=='done')).length;
-  const vencidasObr = obrigacoes.filter(o=> o.vencimento < Date.now() && o.estado!=='entregue' && o.estado!=='dispensada').length;
+  // O catálogo nacional é referência de calendário, não uma obrigação de um
+  // cliente concreto: não deve inflacionar o KPI de atrasos do escritório.
+  const vencidasObr = obrigacoes.filter(o=> o.origem !== 'calendario_fiscal' && o.vencimento < Date.now() && o.estado!=='entregue' && o.estado!=='dispensada').length;
   const semTarefa30d = clientes.filter(c=> !tarefas.some(t=> t.clienteId===c.id && t.createdAt > Date.now()-30*86400000)).length;
   const proximos = [...tarefas, ...obrigacoes.map(o=> ({ id:o.id, titulo:o.titulo, dataVencimento:o.vencimento, estado:o.estado, tipo:'obrigacao' as const } as unknown as Tarefa))]
     .filter(x=> x.dataVencimento && x.dataVencimento >= hoje.getTime() && x.dataVencimento <= em7dias)
@@ -655,7 +657,8 @@ function ObrigacoesView({ obrigacoes, clientes }: { obrigacoes:Obrigacao[]; clie
   const [filtroCli, setFiltroCli] = useState('todos');
   const filtered = useMemo(()=> {
     return obrigacoes.filter(o=>{
-      if (filtroCli!=='todos' && o.clienteId!==filtroCli) return false;
+      if (filtroCli === 'fiscal' && o.origem !== 'calendario_fiscal') return false;
+      if (filtroCli !== 'todos' && filtroCli !== 'fiscal' && o.clienteId!==filtroCli) return false;
       const ym = new Date(o.vencimento).toISOString().slice(0,7);
       return ym===mes;
     }).sort((a,b)=>a.vencimento-b.vencimento);
@@ -666,7 +669,9 @@ function ObrigacoesView({ obrigacoes, clientes }: { obrigacoes:Obrigacao[]; clie
       <div className="flex flex-wrap gap-3 items-center">
         <input type="month" value={mes} onChange={e=>setMes(e.target.value)} className="px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm" />
         <select value={filtroCli} onChange={e=>setFiltroCli(e.target.value)} className="px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm">
-          <option value="todos">Todos clientes</option>{clientes.map(c=> <option key={c.id} value={c.id}>{c.nome}</option>)}
+          <option value="todos">Todos clientes</option>
+          <option value="fiscal">Calendário fiscal 2026</option>
+          {clientes.map(c=> <option key={c.id} value={c.id}>{c.nome}</option>)}
         </select>
         <span className="text-sm text-zinc-500">{filtered.length} obrigações em {mes}</span>
       </div>
@@ -685,8 +690,12 @@ function ObrigacoesView({ obrigacoes, clientes }: { obrigacoes:Obrigacao[]; clie
                   <td className="px-4 py-3"><span className={`px-2 py-1 rounded-full text-xs border ${o.estado==='entregue' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : o.estado==='atrasada' ? 'bg-rose-50 text-rose-700 border-rose-200' : o.estado==='dispensada' ? 'bg-zinc-100 text-zinc-500 border-zinc-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>{o.estado}</span></td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      {o.estado!=='entregue' && <button onClick={()=>upsertObrigacao({...o, estado:'entregue'})} className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs">Entregue</button>}
-                      {o.estado!=='dispensada' && <button onClick={()=>upsertObrigacao({...o, estado:'dispensada'})} className="px-3 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs">Dispensar</button>}
+                      {o.origem === 'calendario_fiscal'
+                        ? <span className="px-2 py-1.5 rounded-lg bg-blue-50 border border-blue-100 text-blue-700 text-xs whitespace-nowrap">Referência</span>
+                        : <>
+                            {o.estado!=='entregue' && <button onClick={()=>upsertObrigacao({...o, estado:'entregue'})} className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs">Entregue</button>}
+                            {o.estado!=='dispensada' && <button onClick={()=>upsertObrigacao({...o, estado:'dispensada'})} className="px-3 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs">Dispensar</button>}
+                          </>}
                     </div>
                   </td>
                 </tr>
@@ -695,7 +704,7 @@ function ObrigacoesView({ obrigacoes, clientes }: { obrigacoes:Obrigacao[]; clie
           </table>
         </div>
       </div>
-      <p className="text-xs text-zinc-500">As obrigações são geradas automaticamente ao criar/editar cliente (IVA mensal/trimestral + PPC jul/set/dez + Modelo 22/IES). Ficam sempre guardadas em Firestore + IndexedDB e atualizadas live.</p>
+      <p className="text-xs text-zinc-500">O calendário inclui as obrigações fiscais nacionais de 2026 importadas do ficheiro events (7).ics. As obrigações dos clientes são geradas automaticamente ao criar/editar a ficha. Tudo fica guardado em Firestore + IndexedDB e atualizado live.</p>
     </div>
   );
 }

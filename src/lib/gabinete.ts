@@ -4,13 +4,14 @@
  * Coleções: gabinete/{officeId}/clientes | tarefas | obrigacoes | cofre | documentos | colaboradores
  */
 import {
-  collection, doc, setDoc, deleteDoc, getDocs, onSnapshot,
+  collection, doc, setDoc, deleteDoc, getDoc, getDocs, writeBatch, onSnapshot,
   query, orderBy, where, serverTimestamp, Timestamp,
   type Unsubscribe,
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import { loadFromStorage, saveToStorage } from './storage';
 import type { CofreCipher } from './cofreCrypto';
+import { CALENDARIO_FISCAL_2026 } from './calendarioFiscal2026';
 
 // ─── OfficeId (tenant) ───────────────────────────────────────────────────────
 export const GABINETE_SHARED_ID = 'shared';
@@ -166,6 +167,9 @@ export interface Obrigacao {
   vencimento: number; // ms
   estado: ObrigacaoEstado;
   tarefaId?: string; // link para tarefa gerada
+  /** Obrigações importadas do calendário anual nacional são referência
+   *  transversal, não pertencem a um cliente específico. */
+  origem?: 'cliente' | 'calendario_fiscal';
   createdAt: number;
   updatedAt: number;
 }
@@ -302,6 +306,68 @@ export async function deleteObrigacao(id: string): Promise<void> {
   try { await safeDeleteDoc(colPath('obrigacoes'), id); } catch {}
 }
 export function newObrigacaoId(): string { return newId('obr'); }
+
+// ─── Calendário fiscal anual ─────────────────────────────────────────────────
+// As obrigações do ficheiro ICS são referências nacionais/transversais: não
+// pertencem a uma empresa e não devem ser confundidas com uma obrigação
+// operacional gerada para um cliente. Ficam na mesma coleção para aparecerem
+// na Agenda existente, mas com origem própria e sem ações "Entregue/Dispensar".
+const CALENDARIO_FISCAL_CLIENTE_ID = '__calendario_fiscal_2026__';
+const CALENDARIO_FISCAL_MARKER_ID = 'calendario-fiscal-2026';
+const CALENDARIO_FISCAL_VERSION = 1;
+
+/**
+ * Semeia, uma vez, as 312 obrigações CF_ de 2026 no Gabinete. Os IDs são
+ * determinísticos, por isso a operação é idempotente. O marker evita 312
+ * escritas em cada arranque; a batch (312 + marker = 313 writes) cabe no
+ * limite de 500 operações do Firestore.
+ *
+ * O cache local é preenchido primeiro para a Agenda funcionar offline. Se a
+ * rede falhar, a próxima abertura tenta novamente até o marker ficar gravado.
+ */
+export async function seedCalendarioFiscal2026(): Promise<void> {
+  const now = Date.now();
+  const current = listObrigacoesCache();
+  const currentIds = new Set(current.map((item) => item.id));
+  const allRecords: (Obrigacao & { _updatedAt: number })[] = CALENDARIO_FISCAL_2026.map((event) => ({
+    id: event.id,
+    tipo: event.tipo,
+    titulo: event.titulo,
+    descricao: 'Referência do calendário fiscal nacional 2026 (importado de events (7).ics).',
+    clienteId: CALENDARIO_FISCAL_CLIENTE_ID,
+    clienteNome: 'Calendário fiscal 2026',
+    periodo: event.data.slice(0, 7),
+    vencimento: new Date(`${event.data}T00:00:00Z`).getTime(),
+    estado: 'pendente',
+    origem: 'calendario_fiscal',
+    createdAt: now,
+    updatedAt: now,
+    _updatedAt: now,
+  }));
+  const missing = allRecords.filter((item) => !currentIds.has(item.id));
+  if (missing.length > 0) saveObrigacoesCache([...current, ...missing]);
+
+  try {
+    const markerRef = doc(db, colPath('meta'), CALENDARIO_FISCAL_MARKER_ID);
+    const marker = await getDoc(markerRef);
+    if (marker.exists() && marker.data()?.version >= CALENDARIO_FISCAL_VERSION) return;
+
+    const batch = writeBatch(db);
+    for (const record of allRecords) {
+      batch.set(doc(db, colPath('obrigacoes'), record.id), record, { merge: true });
+    }
+    batch.set(markerRef, {
+      version: CALENDARIO_FISCAL_VERSION,
+      count: allRecords.length,
+      updatedAt: now,
+      _updatedAt: now,
+    }, { merge: true });
+    await batch.commit();
+  } catch (err) {
+    // O cache local já está preenchido; repetir na próxima abertura é seguro.
+    console.warn('[gabinete] seed do calendário fiscal falhou:', err);
+  }
+}
 
 // ─── CRUD — Cofre ────────────────────────────────────────────────────────────
 export function listCofreCache(): CofreEntrada[] { return readCache<CofreEntrada>('cofre', []); }
