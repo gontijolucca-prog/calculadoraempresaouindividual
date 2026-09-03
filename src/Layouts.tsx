@@ -270,7 +270,62 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                 ))}
               </div>
             )}
-            <NavItem label="Lista de Empresas" Icon={Briefcase} onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }} current={active === 'empresas'} title="Carteira de clientes — cada um abre o seu menu (perfil, simuladores, histórico). Aqui também adicionas novas empresas." />
+            {/* Lista de Empresas + cliente ativo sempre juntos. Quando há cliente
+                selecionado, a lista vira "Trocar de Empresa" e o "A trabalhar em"
+                fica como dropdown ANINHADO dentro do mesmo bloco — 1 sítio para
+                tudo de carteira. */}
+            <div className={cn(activeClientName && "rounded-[12px] border border-[#E2E8F0] bg-[#F8FAFC] p-1")}>
+              <NavItem label={activeClientName ? "Trocar de Empresa" : "Lista de Empresas"} Icon={Briefcase} onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }} current={active === 'empresas'} title={activeClientName ? "Trocar de cliente — volta à lista para escolher outro" : "Carteira de clientes — cada um abre o seu menu (perfil, simuladores, histórico). Aqui também adicionas novas empresas."} />
+              {activeClientName && (
+                <div className="mt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setClientMenuOpen((v) => !v);
+                      goClient('hub');
+                    }}
+                    aria-expanded={clientMenuOpen}
+                    title={clientMenuOpen ? 'Fechar o menu do cliente' : 'Abrir o menu do cliente (perfil e simuladores)'}
+                    className="group w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-left transition-all hover:brightness-[0.98] focus-visible:outline-none"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(6,119,255,0.12), rgba(6,119,255,0.04))',
+                      boxShadow: 'inset 0 0 0 1px rgba(6,119,255,0.28)',
+                    }}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-[#0677FF] shrink-0 animate-pulse" aria-hidden="true" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[9px] font-[800] uppercase tracking-[1px] text-[#0677FF]">A trabalhar em</span>
+                      <span className="block text-[13px] font-[700] text-[#0B1D2D] truncate">{activeClientName}</span>
+                    </span>
+                    <ChevronRight className={cn('w-4 h-4 text-[#0677FF]/50 shrink-0 transition-transform', clientMenuOpen && 'rotate-90')} aria-hidden="true" />
+                  </button>
+                  {clientMenuOpen && (
+                  <div className="mt-1 ml-2.5 pl-2 border-l-2 border-[#0677FF]/20 space-y-0.5">
+                    {CLIENT_MENU.map((it) => (
+                      <ClientNavItem
+                        key={it.label}
+                        label={it.label}
+                        Icon={it.Icon}
+                        onClick={() => goClient(it.view, it.opts)}
+                        current={!it.opts && active === it.view}
+                      />
+                    ))}
+                    <div className="px-3 pt-2 pb-1 text-[9px] font-[800] uppercase tracking-[1px] text-[#0677FF]/70">Simuladores</div>
+                    {SIM_MENU_SIDEBAR.map((s) => (
+                      <ClientNavItem
+                        key={s.id}
+                        label={s.label}
+                        Icon={s.Icon}
+                        onClick={() => goClient(s.id)}
+                        current={active === s.id}
+                        title={NAV_TIPS[s.id]}
+                      />
+                    ))}
+                  </div>
+                  )}
+                </div>
+              )}
+            </div>
             <NavItem label="Relatórios" Icon={FileDown} onClick={() => setRelatoriosOpen(v => !v)} current={active === 'exportar'} chevronOpen={relatoriosOpen} title="Demonstrações financeiras, documentos de encerramento de contas e pacote do cliente." />
             {relatoriosOpen && (
               <div className="mt-0.5 ml-2.5 pl-2 border-l-2 border-slate-200 space-y-0.5">
@@ -283,62 +338,6 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                 <ClientNavItem label="Pacote cliente" Icon={FileDown}
                   onClick={() => { onOpenRelatorios?.('simulacao'); setDrawerOpen(false); }}
                   title="Simulação Fiscal, Proposta de Honorários e Minuta de Contrato." />
-              </div>
-            )}
-            {/* "A trabalhar em": deixa sempre claro o cliente ativo. Por baixo,
-                o menu específico desse cliente (perfil, pacote, histórico e os
-                simuladores) — atalho directo sem ter de abrir a lista. */}
-            {activeClientName && (
-              <div className="mt-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setClientMenuOpen((v) => !v);
-                    // Abrir OU recolher mostra sempre a galeria do cliente no
-                    // ecrã principal — 2 caminhos para o mesmo destino.
-                    goClient('hub');
-                  }}
-                  aria-expanded={clientMenuOpen}
-                  title={clientMenuOpen ? 'Fechar o menu do cliente' : 'Abrir o menu do cliente (perfil e simuladores)'}
-                  className="group w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-left transition-all hover:brightness-[0.98] focus-visible:outline-none"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(6,119,255,0.12), rgba(6,119,255,0.04))',
-                    boxShadow: 'inset 0 0 0 1px rgba(6,119,255,0.28)',
-                  }}
-                >
-                  <span className="w-2 h-2 rounded-full bg-[#0677FF] shrink-0 animate-pulse" aria-hidden="true" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[9px] font-[800] uppercase tracking-[1px] text-[#0677FF]">A trabalhar em</span>
-                    <span className="block text-[13px] font-[700] text-[#0B1D2D] truncate">{activeClientName}</span>
-                  </span>
-                  <ChevronRight className={cn('w-4 h-4 text-[#0677FF]/50 shrink-0 transition-transform', clientMenuOpen && 'rotate-90')} aria-hidden="true" />
-                </button>
-
-                {/* Menu do cliente ativo — dropdown fechado por defeito. */}
-                {clientMenuOpen && (
-                <div className="mt-1 ml-2.5 pl-2 border-l-2 border-[#0677FF]/20 space-y-0.5">
-                  {CLIENT_MENU.map((it) => (
-                    <ClientNavItem
-                      key={it.label}
-                      label={it.label}
-                      Icon={it.Icon}
-                      onClick={() => goClient(it.view, it.opts)}
-                      current={!it.opts && active === it.view}
-                    />
-                  ))}
-                  <div className="px-3 pt-2 pb-1 text-[9px] font-[800] uppercase tracking-[1px] text-[#0677FF]/70">Simuladores</div>
-                  {SIM_MENU_SIDEBAR.map((s) => (
-                    <ClientNavItem
-                      key={s.id}
-                      label={s.label}
-                      Icon={s.Icon}
-                      onClick={() => goClient(s.id)}
-                      current={active === s.id}
-                      title={NAV_TIPS[s.id]}
-                    />
-                  ))}
-                </div>
-                )}
               </div>
             )}
 
