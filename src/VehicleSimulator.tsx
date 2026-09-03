@@ -8,6 +8,7 @@ import { useTheme } from './ThemeContext';
 import { Tip } from './Tip';
 import { FlowWizard } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
+import { SimulatorPrintButton } from './SimulatorPrint';
 
 interface VehicleSimulatorState {
   category: 'comercial' | 'passageiros';
@@ -436,6 +437,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
             <h2 className="text-[24px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador Viaturas <Tip>Calcula o IVA que a empresa pode recuperar na compra e manutenção do carro, e a Tributação Autónoma sobre encargos com viaturas de passageiros.</Tip></h2>
             <p className="text-[14px] text-[#64748B] font-[500] mt-[4px]">Cálculo IVA e Tributação Autónoma. <Tip>IVA é o Imposto sobre o Valor Acrescentado — as empresas podem recuperar parte do IVA pago se usarem o carro para atividade tributável. Tributação Autónoma é um imposto extra sobre encargos com carros da empresa.</Tip></p>
           </div>
+          <SimulatorPrintButton />
         </div>
 
         <div className="space-y-[24px]">

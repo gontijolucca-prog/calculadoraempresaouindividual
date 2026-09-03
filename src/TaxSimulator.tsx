@@ -18,6 +18,7 @@ import EnquadramentoCompleto from './EnquadramentoCompleto';
 import type { InputEnq2026 } from './lib/enquadramento2026';
 import { seedEnqFromSaft } from './lib/enqSaftSeed';
 import { getCurrentEmpresaId, listEmpresas } from './lib/empresas';
+import { SimulatorPrintButton } from './SimulatorPrint';
 
 interface TaxSimulatorState {
   profSit: string;
@@ -637,6 +638,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
               <div className="text-[11px] font-[700] uppercase tracking-[1px] text-[#4F46E5] mt-1">Estudo de Negócio • OE 2026</div>
             </div>
             <div className="flex items-center gap-2">
+              <SimulatorPrintButton />
               <button onClick={resetAll} className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-[8px] transition-colors" title="Repor"><RefreshCw size={18} /></button>
             </div>
           </div>

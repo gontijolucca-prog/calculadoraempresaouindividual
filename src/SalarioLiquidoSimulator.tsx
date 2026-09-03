@@ -8,6 +8,7 @@ import { useTheme } from './ThemeContext';
 import { Tip } from './Tip';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
+import { SimulatorPrintButton } from './SimulatorPrint';
 
 export interface SalarioState {
   salarioBruto: number;
@@ -474,6 +475,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
             <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Salário Líquido (TCO)</h2>
             <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Simulador para trabalhadores por conta de outrem — 2026.</p>
           </div>
+          <SimulatorPrintButton />
         </div>
 
         <div className="space-y-[18px]">

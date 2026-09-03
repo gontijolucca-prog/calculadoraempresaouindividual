@@ -6,6 +6,7 @@ import { useFlowMode } from './AnimatedPage';
 import { cn } from './lib/utils';
 import { useTheme } from './ThemeContext';
 import { Tip } from './Tip';
+import { SimulatorPrintButton } from './SimulatorPrint';
 
 export interface DiagnosticoState {
   // Pilar 1 — Autonomia Financeira
@@ -441,6 +442,7 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
             <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Diagnóstico de Autonomia</h2>
             <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Avaliação por 5 pilares — balanço e gestão empresarial.</p>
           </div>
+          <SimulatorPrintButton />
         </div>
 
         {/* P1 — Autonomia Financeira */}

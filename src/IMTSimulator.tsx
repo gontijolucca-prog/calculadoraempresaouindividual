@@ -8,6 +8,7 @@ import { useTheme } from './ThemeContext';
 import { Tip } from './Tip';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
+import { SimulatorPrintButton } from './SimulatorPrint';
 
 export interface IMTState {
   valor: number;
@@ -219,6 +220,7 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
             <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador IMT <Tip>IMT = Imposto Municipal sobre Transmissões Onerosas de Imóveis. É pago pelo comprador no momento da escritura de compra e venda. Em 2026, jovens até 35 anos na 1ª habitação têm isenção total até €330.539.</Tip></h2>
             <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Imposto Municipal sobre Transmissões + Imposto de Selo (2026). <Tip>Para além do IMT, a compra de imóveis tem sempre Imposto de Selo de 0,8% sobre o valor de transação. Juntos, são o principal custo fiscal da compra.</Tip></p>
           </div>
+          <SimulatorPrintButton />
         </div>
 
         <div className="space-y-[20px]">

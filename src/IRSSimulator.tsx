@@ -5,6 +5,7 @@ import { cn } from './lib/utils';
 import { intInput } from './lib/inputGuards';
 import { Tip } from './Tip';
 import { Combobox } from './Combobox';
+import { SimulatorPrintButton } from './SimulatorPrint';
 import {
   simular,
   MUNICIPIOS_BM,
@@ -92,13 +93,16 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
     <div className="overflow-y-auto xl:overflow-hidden xl:h-full xl:grid xl:grid-cols-[440px_1fr] bg-[#F5F7FA] text-[#1E293B]">
       {/* ── Formulário ─────────────────────────────────────────── */}
       <div className="bg-white border-b border-[#E2E8F0] xl:border-b-0 xl:border-r xl:overflow-y-auto p-4 sm:p-5 xl:p-[28px] flex flex-col gap-6 xl:h-full">
-        <div>
-          <h1 className="text-[22px] font-[800] text-[#0F172A] leading-tight tracking-[-0.4px] flex items-center gap-2">
-            <Receipt className="w-6 h-6 text-[#0677FF]" strokeWidth={2.25} /> Simulador de IRS
-          </h1>
-          <p className="text-[13px] font-[500] text-[#64748B] mt-1.5 leading-relaxed">
-            Estimativa do IRS anual (Modelo 3) segundo o CIRS. Atualiza a cada alteração.
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-[22px] font-[800] text-[#0F172A] leading-tight tracking-[-0.4px] flex items-center gap-2">
+              <Receipt className="w-6 h-6 text-[#0677FF]" strokeWidth={2.25} /> Simulador de IRS
+            </h1>
+            <p className="text-[13px] font-[500] text-[#64748B] mt-1.5 leading-relaxed">
+              Estimativa do IRS anual (Modelo 3) segundo o CIRS. Atualiza a cada alteração.
+            </p>
+          </div>
+          <SimulatorPrintButton />
         </div>
 
         {/* Dados do agregado */}

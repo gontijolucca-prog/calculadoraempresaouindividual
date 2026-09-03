@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ArrowLeft, ArrowRight, ListOrdered, ShieldCheck } from 'lucide-react';
 import { cn } from './lib/utils';
+import { SimulatorPrintButton } from './SimulatorPrint';
 
 const PREMIUM_EASE = [0.32, 0.72, 0, 1] as const;
 
@@ -93,7 +94,8 @@ export function FlowWizard<T>({
         <div className="bg-[#F1F5F9] text-[#0F172A] p-2.5 rounded-[12px]">
           <Icon className="w-5 h-5" />
         </div>
-        <span className="text-[15px] font-[800] tracking-[-0.3px] text-[#0F172A]">{title}</span>
+        <span className="min-w-0 flex-1 truncate text-[15px] font-[800] tracking-[-0.3px] text-[#0F172A]">{title}</span>
+        <SimulatorPrintButton compact />
       </div>
 
       {/* Main content area.

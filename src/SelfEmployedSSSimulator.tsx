@@ -8,6 +8,7 @@ import { useTheme } from './ThemeContext';
 import { Tip } from './Tip';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
+import { SimulatorPrintButton } from './SimulatorPrint';
 
 interface SSState {
   income: number;
@@ -284,6 +285,7 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
             <h2 className="text-[24px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador SS Independente <Tip>SS Independente = Segurança Social para trabalhadores a recibos verdes ou ENI. Diferente dos trabalhadores por conta de outrem: o próprio paga a sua contribuição trimestralmente.</Tip></h2>
             <p className="text-[14px] text-[#64748B] font-[500] mt-[4px]">Contribuições de trabalhador independente (ENI). <Tip>ENI = Empresário em Nome Individual. É uma forma de trabalhar por conta própria sem criar uma empresa. Paga IRS em Categoria B e SS como independente.</Tip></p>
           </div>
+          <SimulatorPrintButton />
         </div>
 
         <div className="space-y-[24px]">

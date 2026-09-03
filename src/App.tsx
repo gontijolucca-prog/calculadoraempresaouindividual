@@ -77,6 +77,7 @@ import { SIM_LABELS, isSimView, summarizeSimulacao, simHasData, detailSimulacao,
 import { resultSimulacao } from './lib/simResults';
 import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
 import { SimulacaoSaveProvider, type SimSaveCtx } from './SimulacaoSave';
+import { SimulatorPrintProvider } from './SimulatorPrint';
 import { setByPath } from './ai/actions';
 import type { BotBridge, BotApi } from './ai/AIContabilista';
 import SuggestionsAdmin from './ai/SuggestionsAdmin';
@@ -1064,6 +1065,8 @@ function AppContent() {
     save: saveSimulacao,
     reportResumo,
   };
+  const printView: SimView | null = isSimView(view) ? view : null;
+  const printState = printView ? simStateByView[printView] : null;
 
   // Current simulator content
   // Funcionalidade D: simuladores são por-cliente — sem empresa ativa mostram o gate.
@@ -1282,6 +1285,7 @@ function AppContent() {
 
   return (
     <SimulacaoSaveProvider value={simSaveCtx}>
+    <SimulatorPrintProvider value={{ view: printView, state: printState, profile: clientProfile, office: officeSettings }}>
     <div className="h-screen flex flex-col overflow-hidden">
 
       {/* Skip link for keyboard users */}
@@ -1619,6 +1623,7 @@ function AppContent() {
         <span className="hidden sm:inline"> Base legal: CIRS/CIRC/CIVA OE 2026.</span>
       </div>
     </div>
+    </SimulatorPrintProvider>
     </SimulacaoSaveProvider>
   );
 }

@@ -12,6 +12,7 @@ import { useTheme } from './ThemeContext';
 import { Tip } from './Tip';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
+import { SimulatorPrintButton } from './SimulatorPrint';
 
 export type { TipoTicket, TipoSubsidioRefeicao };
 
@@ -583,11 +584,14 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }} className={outerCls}>
       {/* ── Left Pane ── */}
       <div className={leftCls}>
-        <div>
-          <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">
-            Simulador de Tickets <Tip>Calcula os benefícios fiscais dos tickets Ticket.pt — isenções de IRS e SS para o trabalhador e dedutibilidade em IRC para a empresa.</Tip>
-          </h2>
-          <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Todos os tipos Ticket.pt — benefícios fiscais 2026</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">
+              Simulador de Tickets <Tip>Calcula os benefícios fiscais dos tickets Ticket.pt — isenções de IRS e SS para o trabalhador e dedutibilidade em IRC para a empresa.</Tip>
+            </h2>
+            <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Todos os tipos Ticket.pt — benefícios fiscais 2026</p>
+          </div>
+          <SimulatorPrintButton />
         </div>
 
         {/* Type selector */}

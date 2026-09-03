@@ -9,6 +9,7 @@ import { useTheme } from './ThemeContext';
 import { Tip } from './Tip';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
+import { SimulatorPrintButton } from './SimulatorPrint';
 
 export interface ImoveisState {
   valorImovel: number;
@@ -312,6 +313,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
             <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Imóveis na Empresa</h2>
             <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Arrendamento/Comodato vs. Entrada em Espécie — guia de decisão.</p>
           </div>
+          <SimulatorPrintButton />
         </div>
 
         <div className="space-y-[18px]">

@@ -9,6 +9,7 @@ import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { downloadPrevisaExcel } from './lib/previsaExcel';
 import { calculate, calcTAVeiculo, getRates, type CalcResult, saldosPorAno, totalSaldoElegivel, reavaliar3PPC, type PPCRecomendacao } from './lib/previsaCalc';
+import { SimulatorPrintButton } from './SimulatorPrint';
 
 export type { PreviSaState } from './previSaState';
 export { defaultPreviSaState } from './previSaState';
@@ -919,8 +920,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
           <h1 className="text-[20px] font-[800] text-[#0F172A]">Simulador Previsa</h1>
           <p className="text-[12px] text-slate-500 font-[500] mt-0.5">IRC — Modelo 22 · Previsão de IRC</p>
         </div>
-        {/* Nota: o canto superior direito é ocupado pelo FloatingFlowToggle (fixed, z-60).
-            Não colocar botões aqui — ficam tapados. O botão de Excel vive no cartão de resumo. */}
+        <SimulatorPrintButton />
       </div>
 
       {/* Tabs: em mobile fazem wrap (todas visíveis, nada escondido); em >=sm mantêm
