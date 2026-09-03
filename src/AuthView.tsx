@@ -6,7 +6,7 @@ import { useAuth } from './lib/auth';
 // Mensagens de erro Firebase traduzidas e seguras (não revelam se email existe no reset)
 function mapAuthError(code: string): string {
   const c = code || '';
-  if (c.includes('auth/configuration-not-found')) return 'Email/password ainda não ativo neste projeto — ativa em Firebase Console > Authentication > Sign-in method > Email/Password > Enabled. Google continua a funcionar.';
+  if (c.includes('auth/configuration-not-found')) return 'Email/password ainda não ativo neste projeto — ativa em Firebase Console > Authentication > Sign-in method > Email/Password > Enabled.';
   if (c.includes('auth/invalid-email')) return 'Email inválido.';
   if (c.includes('auth/user-not-found') || c.includes('auth/wrong-password') || c.includes('auth/invalid-credential')) return 'Email ou password incorretos.';
   if (c.includes('auth/email-already-in-use')) return 'Já existe conta com este email. Tenta entrar.';
@@ -18,7 +18,7 @@ function mapAuthError(code: string): string {
 }
 
 export default function AuthView() {
-  const { signInWithEmail, signUpWithEmail, signInWithGoogle, resetPassword } = useAuth();
+  const { signInWithEmail, signUpWithEmail, resetPassword } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -58,13 +58,6 @@ export default function AuthView() {
     }
   };
 
-  const handleGoogle = async () => {
-    setError(null); setInfo(null); setLoading(true);
-    try { await signInWithGoogle(); }
-    catch (err: any) { setError(mapAuthError(err?.code || err?.message || '')); }
-    finally { setLoading(false); }
-  };
-
   return (
     <div className="min-h-screen w-full bg-[#F5F7FA] flex flex-col">
       <header className="px-6 py-4 flex items-center justify-between max-w-6xl mx-auto w-full">
@@ -88,12 +81,12 @@ export default function AuthView() {
               Cada conta,<br /><span className="text-[#0677FF]">os seus clientes.</span>
             </h1>
             <p className="mt-4 text-[15px] leading-relaxed text-[#475569] max-w-lg">
-              Email e password com verificação, isolamento total por utilizador no Firestore e cofre cifrado no browser (AES-GCM). Nem nós vemos as passwords do cofre.
+              A tua conta é privada. Só tu vês os teus clientes e o teu cofre.
             </p>
             <ul className="mt-6 space-y-3 text-[13px] text-[#334155]">
-              <li className="flex gap-2"><CheckCircle className="w-4 h-4 text-emerald-600 mt-0.5" /> Regras Firestore por <code className="bg-white px-1.5 py-0.5 rounded border text-[11px]">request.auth.uid == owner</code></li>
-              <li className="flex gap-2"><CheckCircle className="w-4 h-4 text-emerald-600 mt-0.5" /> Cofre zero-knowledge — chave deriva de passphrase + salt, 120k iterações PBKDF2</li>
-              <li className="flex gap-2"><CheckCircle className="w-4 h-4 text-emerald-600 mt-0.5" /> Sessão persistente, logout limpa chave do cofre e cache local</li>
+              <li className="flex gap-2"><CheckCircle className="w-4 h-4 text-emerald-600 mt-0.5" /> Cada conta vê só os seus clientes</li>
+              <li className="flex gap-2"><CheckCircle className="w-4 h-4 text-emerald-600 mt-0.5" /> Cofre protegido — só abre com a tua palavra-passe do cofre</li>
+              <li className="flex gap-2"><CheckCircle className="w-4 h-4 text-emerald-600 mt-0.5" /> Acesso seguro em todos os computadores</li>
             </ul>
           </div>
 
@@ -145,16 +138,6 @@ export default function AuthView() {
               </button>
             </form>
 
-            <div className="my-5 flex items-center gap-3">
-              <div className="h-px flex-1 bg-[#E2E8F0]" />
-              <span className="text-[11px] font-[700] tracking-[1px] uppercase text-[#94A3B8]">ou</span>
-              <div className="h-px flex-1 bg-[#E2E8F0]" />
-            </div>
-
-            <button onClick={handleGoogle} disabled={loading} className="w-full inline-flex items-center justify-center gap-2 bg-white border border-[#E2E8F0] py-3 rounded-xl text-[14px] font-[700] hover:bg-[#F5F7FA]">
-              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-4 h-4" /> Continuar com Google
-            </button>
-
             <div className="mt-4 flex justify-between text-[13px]">
               {mode !== 'reset' ? <button onClick={()=>setMode('reset')} className="text-[#0677FF] hover:underline">Esqueci-me da password</button> : <button onClick={()=>setMode('login')} className="text-[#0677FF] hover:underline">Voltar a entrar</button>}
               <span className="text-[#94A3B8] hidden sm:inline flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5" /> Ligação cifrada (HTTPS)</span>
@@ -163,7 +146,7 @@ export default function AuthView() {
         </div>
       </div>
 
-      <footer className="py-4 text-center text-[11px] text-[#94A3B8]">Ao criar conta aceitas os termos. Cofre com cifra AES-GCM 256 + PBKDF2 120k.</footer>
+      <footer className="py-4 text-center text-[11px] text-[#94A3B8]">Ao criar conta aceitas os termos. Cofre privado e protegido.</footer>
     </div>
   );
 }
