@@ -149,6 +149,8 @@ export interface Tarefa {
   createdAt: number;
   updatedAt: number;
   createdBy?: string;
+  /** Tarefa concluída movida para o arquivo (desaparece do kanban). */
+  arquivada?: boolean;
   // compat: campo antigo
   tags?: string[];
 }

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Search, Plus, Users, CheckSquare, Calendar, Lock, Building2, Trash2, Eye, EyeOff, Copy, Shield, AlertTriangle, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Clock, Briefcase, MessageSquare, X, Mail, FileText, BarChart3, Send } from 'lucide-react';
+import { Search, Plus, Users, CheckSquare, Calendar, Lock, Building2, Trash2, Eye, EyeOff, Copy, Shield, AlertTriangle, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Clock, Briefcase, MessageSquare, X, Mail, FileText, BarChart3, Send, Archive } from 'lucide-react';
 import { useGabineteClientes, useGabineteTarefas, useGabineteObrigacoes, useGabineteCofre, useGabineteConversas, useGabineteModelos, useGabineteEnvios, useGabineteTempos, useGabineteActas } from './lib/useGabinete';
 import {
   upsertCliente, deleteCliente, newClienteId, gerarObrigacoesParaCliente, migrarEmpresasParaGabinete,
@@ -98,7 +98,7 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour 
             {tab === 'dashboard' && <Dashboard clientes={clientes} tarefas={tarefas} obrigacoes={obrigacoes} cofre={cofre} onGo={goFunction} />}
             {tab === 'agenda' && <AgendaView tarefas={tarefas} obrigacoes={obrigacoes} clientes={clientes} />}
             {tab === 'clientes' && <ClientesView clientes={clientes} />}
-            {tab === 'tarefas' && <TarefasView tarefas={tarefas} clientes={clientes} />}
+            {tab === 'tarefas' && <TarefasView tarefas={tarefas} clientes={clientes} obrigacoes={obrigacoes} />}
             {tab === 'obrigacoes' && <ObrigacoesView obrigacoes={obrigacoes} clientes={clientes} />}
             {tab === 'comunicacao' && <ComunicacaoView clientes={clientes} />}
             {tab === 'rentabilidade' && <RentabilidadeView clientes={clientes} />}
@@ -535,15 +535,38 @@ function ClientesView({ clientes }: { clientes: GabineteCliente[] }) {
 }
 
 // ─── Tarefas (Kanban) ─────────────────────────────────────────────────────────
-function TarefasView({ tarefas, clientes }: { tarefas:Tarefa[]; clientes:GabineteCliente[] }) {
+function TarefasView({ tarefas, clientes, obrigacoes }: { tarefas:Tarefa[]; clientes:GabineteCliente[]; obrigacoes:Obrigacao[] }) {
   const [q, setQ] = useState('');
   const [filtroCli, setFiltroCli] = useState<string>('todos');
   const [showNew, setShowNew] = useState(false);
   const [form, setForm] = useState<Partial<Tarefa>>({ tipo:'tarefa', prioridade:'media', estado:'todo' });
+  // Arquivo: tarefas feitas saem do kanban; podem ser vistas e restauradas.
+  const [verArquivadas, setVerArquivadas] = useState(false);
+
+  const arquivadas = useMemo(()=> tarefas.filter(t=> t.arquivada), [tarefas]);
+
+  // Obrigações fiscais nacionais do MÊS ATUAL aparecem como tarefas no kanban
+  // (pendente → A fazer, vencida → Atrasada, entregue → Feito).
+  const obrigacoesMes = useMemo(()=> {
+    const agora = new Date();
+    return obrigacoes
+      .filter(o=> o.origem === 'calendario_fiscal')
+      .filter(o=> { const d = new Date(o.vencimento); return d.getMonth() === agora.getMonth() && d.getFullYear() === agora.getFullYear(); })
+      .map(o=>({
+        id: 'obr_' + o.id,
+        fiscal: true as const,
+        registo: o,
+        titulo: o.titulo,
+        estado: o.estado === 'entregue' ? 'done' : o.estado === 'atrasada' ? 'atrasada' : 'todo',
+        clienteNome: o.clienteNome || 'Calendário fiscal',
+        dataVencimento: o.vencimento,
+      }));
+  }, [obrigacoes]);
 
   const filtered = useMemo(()=> {
     const s=q.toLowerCase();
     return tarefas.filter(t=> {
+      if (t.arquivada) return false; // arquivadas vivem na secção própria
       if (filtroCli!=='todos' && t.clienteId!==filtroCli) return false;
       if (!s) return true;
       return (t.titulo + ' ' + (t.clienteNome||'')).toLowerCase().includes(s);
@@ -556,6 +579,12 @@ function TarefasView({ tarefas, clientes }: { tarefas:Tarefa[]; clientes:Gabinet
     { id:'done', label:'Feito' },
     { id:'atrasada', label:'Atrasada' },
   ];
+
+  const colItems = (colId: Tarefa['estado']) => {
+    const t = filtered.filter(x=> x.estado===colId);
+    const o = obrigacoesMes.filter(x=> x.estado===colId);
+    return [...t, ...o];
+  };
 
   const handleSave = async () => {
     if (!form.titulo?.trim()) return alert('Título obrigatório');
@@ -577,6 +606,8 @@ function TarefasView({ tarefas, clientes }: { tarefas:Tarefa[]; clientes:Gabinet
     setShowNew(false); setForm({ tipo:'tarefa', prioridade:'media', estado:'todo' });
   };
 
+  const mesLabel = new Intl.DateTimeFormat('pt-PT', { month: 'long', year: 'numeric' }).format(new Date());
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-3">
@@ -588,64 +619,95 @@ function TarefasView({ tarefas, clientes }: { tarefas:Tarefa[]; clientes:Gabinet
           <option value="todos">Todos clientes</option>
           {clientes.map(c=> <option key={c.id} value={c.id}>{c.nome}</option>)}
         </select>
+        <button onClick={()=>setVerArquivadas(v=>!v)} className={`px-4 py-2.5 rounded-xl border text-sm font-medium flex items-center gap-2 transition-colors ${verArquivadas ? 'bg-[#0F172A] text-white border-[#0F172A]' : 'bg-white border-zinc-200 hover:bg-zinc-50'}`}>
+          <Archive className="w-4 h-4" /> Ver arquivadas ({arquivadas.length})
+        </button>
         <button onClick={()=>{ setForm({ tipo:'tarefa', prioridade:'media', estado:'todo' }); setShowNew(true); }} className="px-4 py-2.5 rounded-xl bg-[#0677FF] text-white text-sm font-medium flex items-center gap-2"><Plus className="w-4 h-4" /> Nova tarefa</button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        {cols.map(col=> {
-          const items = filtered.filter(t=> t.estado===col.id);
-          return (
-            <div key={col.id} className="bg-white rounded-2xl border border-zinc-200 p-3 min-h-[360px]">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-semibold text-sm">{col.label}</h4>
-                <span className="text-xs px-2 py-1 rounded-full bg-zinc-100 border border-zinc-200">{items.length}</span>
-              </div>
-              <div className="space-y-2">
-                {items.length===0 ? <div className="py-8 text-center text-xs text-zinc-400 border-2 border-dashed border-zinc-200 rounded-xl">Vazio</div> :
-                items.map(t=> (
-                  <div key={t.id} className="p-3 rounded-xl border border-zinc-200 hover:border-zinc-300 bg-zinc-50/50">
-                    <div className="text-sm font-medium leading-tight line-clamp-2">{t.titulo}</div>
-                    <div className="text-xs text-zinc-500 mt-1">{t.clienteNome || '—'} • {t.dataVencimento ? new Date(t.dataVencimento).toLocaleDateString('pt-PT') : 'sem prazo'}</div>
-                    <div className="flex items-center gap-1 mt-2 flex-wrap">
-                      <span className={`text-[11px] px-2 py-1 rounded-full border ${t.prioridade==='urgente' ? 'bg-rose-50 text-rose-700 border-rose-200' : t.prioridade==='alta' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-white text-zinc-600 border-zinc-200'}`}>{t.prioridade}</span>
-                      <span className="text-[11px] px-2 py-1 rounded-full bg-white border border-zinc-200">{t.tipo}</span>
-                    </div>
-                    <div className="flex gap-1 mt-2">
-                      {col.id!=='done' && <button onClick={()=>marcarTarefaFeita(t.id,true)} className="flex-1 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium">Feito</button>}
-                      {col.id!=='todo' && col.id!=='done' && <button onClick={()=>upsertTarefa({...t, estado:'todo'})} className="flex-1 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs">A fazer</button>}
-                      {col.id==='todo' && <button onClick={()=>upsertTarefa({...t, estado:'doing'})} className="flex-1 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs">Em curso</button>}
-                      <button onClick={()=>deleteTarefa(t.id)} className="p-1.5 rounded-lg hover:bg-white border border-transparent hover:border-zinc-200"><Trash2 className="w-3.5 h-3.5 text-zinc-500" /></button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {showNew && (
-        <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={()=>setShowNew(false)}>
-          <div className="w-full max-w-[560px] bg-white rounded-2xl p-6 border border-zinc-200 shadow-xl" onClick={e=>e.stopPropagation()}>
-            <h3 className="font-semibold">{form.id ? 'Editar tarefa' : 'Nova tarefa'}</h3>
-            <div className="grid grid-cols-1 gap-3 mt-4">
-              <input value={form.titulo||''} onChange={e=>setForm({...form, titulo:e.target.value})} placeholder="Ex: Entregar IVA Julho — Cliente X" className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
-              <textarea value={form.descricao||''} onChange={e=>setForm({...form, descricao:e.target.value})} placeholder="Descrição (opcional)" rows={2} className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
-              <div className="grid grid-cols-2 gap-3">
-                <select value={form.clienteId||''} onChange={e=>setForm({...form, clienteId:e.target.value||undefined})} className="px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm">
-                  <option value="">Sem cliente</option>{clientes.map(c=> <option key={c.id} value={c.id}>{c.nome}</option>)}
-                </select>
-                <input type="date" value={form.dataVencimento ? new Date(form.dataVencimento).toISOString().slice(0,10) : ''} onChange={e=>setForm({...form, dataVencimento: e.target.value ? new Date(e.target.value).getTime() as never : undefined })} className="px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <select value={form.prioridade} onChange={e=>setForm({...form, prioridade:e.target.value as never})} className="px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm"><option value="baixa">Baixa</option><option value="media">Média</option><option value="alta">Alta</option><option value="urgente">Urgente</option></select>
-                <select value={form.tipo} onChange={e=>setForm({...form, tipo:e.target.value as never})} className="px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm"><option value="tarefa">Tarefa</option><option value="obrigacao">Obrigação</option><option value="lembrete">Lembrete</option></select>
-                <select value={form.estado} onChange={e=>setForm({...form, estado:e.target.value as never})} className="px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm"><option value="todo">A fazer</option><option value="doing">Em curso</option><option value="done">Feito</option><option value="atrasada">Atrasada</option></select>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-6"><button onClick={()=>setShowNew(false)} className="px-4 py-2.5 rounded-xl border border-zinc-200 text-sm">Cancelar</button><button onClick={handleSave} className="px-4 py-2.5 rounded-xl bg-[#0677FF] text-white text-sm font-medium">Guardar (live)</button></div>
+      {verArquivadas ? (
+        <div className="bg-white rounded-2xl border border-zinc-200 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-semibold text-sm flex items-center gap-2"><Archive className="w-4 h-4 text-zinc-400" /> Tarefas arquivadas</h4>
+            <span className="text-xs px-2 py-1 rounded-full bg-zinc-100 border border-zinc-200">{arquivadas.length}</span>
           </div>
+          {arquivadas.length === 0 ? <div className="py-10 text-center text-sm text-zinc-400 border-2 border-dashed border-zinc-200 rounded-xl">Nenhuma tarefa arquivada.</div> : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              {arquivadas.map(t=> (
+                <div key={t.id} className="p-3 rounded-xl border border-zinc-200 bg-zinc-50/50">
+                  <div className="text-sm font-medium leading-tight line-clamp-2">{t.titulo}</div>
+                  <div className="text-xs text-zinc-500 mt-1">{t.clienteNome || '—'} • {t.dataVencimento ? new Date(t.dataVencimento).toLocaleDateString('pt-PT') : 'sem prazo'}</div>
+                  <div className="flex gap-1 mt-2">
+                    <button onClick={()=>upsertTarefa({...t, arquivada:false})} className="flex-1 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs">Restaurar</button>
+                    <button onClick={()=>deleteTarefa(t.id)} className="p-1.5 rounded-lg hover:bg-white border border-transparent hover:border-zinc-200"><Trash2 className="w-3.5 h-3.5 text-zinc-500" /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500 px-1">
+            <Calendar className="w-3.5 h-3.5 text-[#0677FF]" />
+            <span><strong className="text-zinc-700 capitalize">{mesLabel}</strong> — {obrigacoesMes.length} obrigação(ões) fiscais no calendário</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            {cols.map(col=> {
+              const items = colItems(col.id);
+              return (
+                <div key={col.id} className="bg-white rounded-2xl border border-zinc-200 p-3 min-h-[360px]">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-sm">{col.label}</h4>
+                    <span className="text-xs px-2 py-1 rounded-full bg-zinc-100 border border-zinc-200">{items.length}</span>
+                  </div>
+                  <div className="space-y-2">
+                    {items.length===0 ? <div className="py-8 text-center text-xs text-zinc-400 border-2 border-dashed border-zinc-200 rounded-xl">Vazio</div> :
+                    items.map(item=> {
+                      // Obrigação fiscal do calendário → cartão com badge Fiscal
+                      if ('fiscal' in item && item.fiscal) {
+                        const o = item.registo;
+                        return (
+                          <div key={item.id} className="p-3 rounded-xl border border-blue-200 bg-blue-50/40">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#0677FF] text-white font-bold uppercase">Fiscal</span>
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white border border-blue-200">{o.tipo}</span>
+                            </div>
+                            <div className="text-sm font-medium leading-tight line-clamp-2 mt-1.5">{item.titulo}</div>
+                            <div className="text-xs text-zinc-500 mt-1">{item.dataVencimento ? new Date(item.dataVencimento).toLocaleDateString('pt-PT') : ''}</div>
+                            <div className="flex gap-1 mt-2">
+                              {o.estado !== 'entregue' && <button onClick={()=>upsertObrigacao({...o, estado:'entregue'})} className="flex-1 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium">Entregue</button>}
+                              {o.estado !== 'pendente' && o.estado !== 'dispensada' && <button onClick={()=>upsertObrigacao({...o, estado:'pendente'})} className="flex-1 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs">Repor</button>}
+                              {o.estado === 'entregue' && <span className="flex-1 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs text-center">✓ Entregue</span>}
+                            </div>
+                          </div>
+                        );
+                      }
+                      const t = item as Tarefa;
+                      return (
+                        <div key={t.id} className="p-3 rounded-xl border border-zinc-200 hover:border-zinc-300 bg-zinc-50/50">
+                          <div className="text-sm font-medium leading-tight line-clamp-2">{t.titulo}</div>
+                          <div className="text-xs text-zinc-500 mt-1">{t.clienteNome || '—'} • {t.dataVencimento ? new Date(t.dataVencimento).toLocaleDateString('pt-PT') : 'sem prazo'}</div>
+                          <div className="flex items-center gap-1 mt-2 flex-wrap">
+                            <span className={`text-[11px] px-2 py-1 rounded-full border ${t.prioridade==='urgente' ? 'bg-rose-50 text-rose-700 border-rose-200' : t.prioridade==='alta' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-white text-zinc-600 border-zinc-200'}`}>{t.prioridade}</span>
+                            <span className="text-[11px] px-2 py-1 rounded-full bg-white border border-zinc-200">{t.tipo}</span>
+                          </div>
+                          <div className="flex gap-1 mt-2">
+                            {col.id!=='done' && <button onClick={()=>marcarTarefaFeita(t.id,true)} className="flex-1 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium">Feito</button>}
+                            {col.id!=='todo' && col.id!=='done' && <button onClick={()=>upsertTarefa({...t, estado:'todo'})} className="flex-1 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs">A fazer</button>}
+                            {col.id==='todo' && <button onClick={()=>upsertTarefa({...t, estado:'doing'})} className="flex-1 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs">Em curso</button>}
+                            {col.id==='done' && <button onClick={()=>upsertTarefa({...t, arquivada:true})} className="flex-1 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs flex items-center justify-center gap-1"><Archive className="w-3 h-3" /> Arquivar</button>}
+                            <button onClick={()=>deleteTarefa(t.id)} className="p-1.5 rounded-lg hover:bg-white border border-transparent hover:border-zinc-200"><Trash2 className="w-3.5 h-3.5 text-zinc-500" /></button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );
