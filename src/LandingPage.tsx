@@ -1,47 +1,38 @@
 import React, { useState } from 'react';
-import { motion, useScroll, useTransform } from 'motion/react';
+import { motion } from 'motion/react';
 import {
   ArrowRight, Calculator, FileText, FileSignature, Layers, ShieldCheck,
   Clock, Sparkles, ChevronDown, Check, BadgeCheck, Building2, BookOpen,
   LayoutDashboard, CheckSquare, CalendarClock, Lock, Database, ListChecks, Scale, Receipt,
+  Printer, Users, Calendar, Mail,
 } from 'lucide-react';
 
 interface Props {
   onEnter: () => void;
+  onCreateAccount?: () => void;
 }
 
-/**
- * Landing page comercial — vista pública antes do login.
- *
- * Estrutura: Hero, "como funciona em 3 minutos", catálogo de simuladores,
- * pacote do cliente (3 outputs num clique), prova social, preços e CTA final.
- * Branding: paleta Estudo 360 (#0677FF + #0B1D2D) + tipografia de pesos extremos
- * (200 ↔ 800) e jumps de tamanho 3× sobre serif display.
- */
-export default function LandingPage({ onEnter }: Props) {
-  const { scrollY } = useScroll();
-  const heroParallax = useTransform(scrollY, [0, 600], [0, -120]);
-  const heroFade = useTransform(scrollY, [0, 400], [1, 0.2]);
+export default function LandingPage({ onEnter, onCreateAccount }: Props) {
+  const goSignup = onCreateAccount || onEnter;
   return (
-    <div className="min-h-screen w-full bg-[#F5F7FA] text-[#0B1D2D] overflow-x-hidden">
+    <div className="min-h-screen w-full bg-white text-[#0B1D2D] overflow-x-hidden">
       <FontInjector />
-      <NavBar onEnter={onEnter} />
-
-      <Hero onEnter={onEnter} parallaxY={heroParallax} fadeOpacity={heroFade} />
-      <ValueStrip />
+      <NavBar onLogin={onEnter} onSignup={goSignup} />
+      <Hero onLogin={onEnter} onSignup={goSignup} />
+      <Strip />
       <HowItWorks />
-      <ToolsCatalog />
-      <PackageBlock />
-      <GabineteBlock />
+      <Catalog />
+      <Package />
+      <Gabinete />
+      <Novidades />
       <Compliance />
-      <Pricing onEnter={onEnter} />
-      <FinalCTA onEnter={onEnter} />
+      <Pricing onSignup={goSignup} onLogin={onEnter} />
+      <FinalCTA onSignup={goSignup} />
       <Footer />
     </div>
   );
 }
 
-/* ───────── Web fonts via Google Fonts CSS (respects banned-fonts rule) ───────── */
 function FontInjector() {
   return (
     <style>{`
@@ -49,248 +40,110 @@ function FontInjector() {
       .display-serif { font-family: 'Fraunces', Georgia, serif; font-optical-sizing: auto; }
       .mono { font-family: 'JetBrains Mono', monospace; }
       .brand-sans { font-family: 'Montserrat', 'Helvetica Neue', sans-serif; }
-      html, body, #root { background: #F5F7FA; }
+      html, body, #root { background: #fff; }
     `}</style>
   );
 }
 
-/* ───────── NavBar ───────── */
-function NavBar({ onEnter }: { onEnter: () => void }) {
+function NavBar({ onLogin, onSignup }: { onLogin: () => void; onSignup: () => void }) {
   const [open, setOpen] = useState(false);
   return (
-    <header className="sticky top-0 z-50 bg-[#F5F7FA]/85 backdrop-blur-xl border-b border-[#0B1D2D]/8">
-      <div className="max-w-7xl mx-auto px-5 md:px-8 h-[64px] flex items-center justify-between">
-        <a href="#top" className="flex items-center gap-3 group">
-          <BrandMark size={36} />
-          <div className="leading-none">
-            <div className="brand-sans text-[16px] font-[800] tracking-[-0.2px] text-[#0B1D2D]">ESTUDO<span className="text-[#0677FF]">360°</span></div>
-            <div className="text-[9px] mono uppercase tracking-[2.5px] text-[#6B7280] mt-[3px]">Análise · Estratégia · Decisão</div>
-          </div>
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-black/[0.06]">
+      <div className="max-w-[1120px] mx-auto px-5 md:px-6 h-[60px] flex items-center justify-between">
+        <a href="#top" className="flex items-center gap-2.5">
+          <BrandMark size={28} />
+          <span className="brand-sans text-[14px] font-[800] tracking-[-0.2px]">ESTUDO<span className="text-[#0677FF]">360°</span></span>
         </a>
-
-        <nav className="hidden md:flex items-center gap-7 text-[13px] font-[600] text-[#0B1D2D]/70">
-          <a href="#funciona" className="hover:text-[#0B1D2D] transition-colors">Como funciona</a>
-          <a href="#simuladores" className="hover:text-[#0B1D2D] transition-colors">Simuladores</a>
-          <a href="#gabinete" className="hover:text-[#0B1D2D] transition-colors">Gabinete</a>
-          <a href="#pacote" className="hover:text-[#0B1D2D] transition-colors">Pacote do cliente</a>
-          <a href="#precos" className="hover:text-[#0B1D2D] transition-colors">Preços</a>
+        <nav className="hidden md:flex items-center gap-6 text-[13px] font-[500] text-black/60">
+          <a href="#funciona" className="hover:text-black">Como funciona</a>
+          <a href="#simuladores" className="hover:text-black">Simuladores</a>
+          <a href="#gabinete" className="hover:text-black">Gabinete</a>
+          <a href="#pacote" className="hover:text-black">Pacote</a>
         </nav>
-
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onEnter}
-            className="hidden sm:inline-flex items-center gap-1.5 text-[12px] font-[700] text-[#0B1D2D]/75 hover:text-[#0B1D2D] px-3 py-2 rounded-[10px] border border-[#0B1D2D]/10 hover:bg-[#0B1D2D]/5 transition-all"
-          >
-            Entrar
-          </button>
-          <button
-            type="button"
-            onClick={onEnter}
-            className="inline-flex items-center gap-1.5 text-[12px] font-[800] text-white bg-[#0B1D2D] hover:bg-[#26323f] px-4 py-2 rounded-[10px] transition-all"
-          >
-            Pedir demo <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setOpen(o => !o)}
-            aria-label="Menu"
-            className="md:hidden w-9 h-9 inline-flex items-center justify-center rounded-[10px] border border-[#0B1D2D]/10 hover:bg-[#0B1D2D]/5"
-          >
-            <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
-          </button>
+          <button onClick={onLogin} className="hidden sm:inline-flex text-[13px] font-[600] px-4 py-2 rounded-full hover:bg-black/[0.04]">Entrar</button>
+          <button onClick={onSignup} className="inline-flex items-center gap-1.5 text-[13px] font-[700] text-white bg-[#0B1D2D] px-4 py-2 rounded-full hover:bg-black">Criar conta <ArrowRight className="w-3.5 h-3.5" /></button>
+          <button onClick={() => setOpen(o=>!o)} className="md:hidden w-8 h-8 grid place-items-center rounded-full border border-black/10"><ChevronDown className={`w-4 h-4 ${open?'rotate-180':''}`} /></button>
         </div>
       </div>
       {open && (
-        <div className="md:hidden border-t border-[#0B1D2D]/8 px-5 py-4 space-y-3 text-[14px] font-[600] text-[#0B1D2D]/75">
-          <a onClick={() => setOpen(false)} href="#funciona" className="block">Como funciona</a>
-          <a onClick={() => setOpen(false)} href="#simuladores" className="block">Simuladores</a>
-          <a onClick={() => setOpen(false)} href="#gabinete" className="block">Gabinete</a>
-          <a onClick={() => setOpen(false)} href="#pacote" className="block">Pacote do cliente</a>
-          <a onClick={() => setOpen(false)} href="#precos" className="block">Preços</a>
-          <button type="button" onClick={onEnter} className="block w-full text-left text-[#0B1D2D]">Entrar</button>
+        <div className="md:hidden border-t border-black/5 px-5 py-4 space-y-3 text-[14px]">
+          <a href="#funciona" onClick={()=>setOpen(false)} className="block">Como funciona</a>
+          <a href="#simuladores" onClick={()=>setOpen(false)} className="block">Simuladores</a>
+          <a href="#gabinete" onClick={()=>setOpen(false)} className="block">Gabinete</a>
+          <button onClick={onLogin} className="block w-full text-left">Entrar</button>
+          <button onClick={onSignup} className="block w-full text-left font-[700]">Criar conta</button>
         </div>
       )}
     </header>
   );
 }
 
-/* ───────── Hero ───────── */
-function Hero({ onEnter, parallaxY, fadeOpacity }: { onEnter: () => void; parallaxY: any; fadeOpacity: any }) {
+function Hero({ onLogin, onSignup }: { onLogin: () => void; onSignup: () => void }) {
   return (
-    <section id="top" className="relative pt-16 pb-28 md:pt-24 md:pb-36 overflow-hidden">
-      {/* Atmospheric backdrop — layered gradients + noise */}
-      <motion.div
-        style={{ y: parallaxY, opacity: fadeOpacity }}
-        aria-hidden="true"
-        className="absolute inset-0 -z-10"
-      >
-        <div className="absolute inset-0" style={{
-          background: 'radial-gradient(60% 50% at 80% 10%, rgba(6,119,255,0.35) 0%, transparent 60%), radial-gradient(50% 40% at 10% 60%, rgba(11,29,45,0.45) 0%, transparent 70%), linear-gradient(180deg, #F5F7FA 0%, #F5F7FA 100%)',
-        }} />
-        <div className="absolute inset-0 opacity-[0.04]" style={{
-          backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
-        }} />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,#F5F7FA_85%)]" />
-      </motion.div>
-
-      <div className="max-w-7xl mx-auto px-5 md:px-8 grid lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center">
-        <div>
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.05, ease: [0.32, 0.72, 0, 1] }}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#0B1D2D]/10 bg-white backdrop-blur-sm text-[11px] mono uppercase tracking-[2.5px] text-[#0B1D2D]/70"
-          >
-            <Sparkles className="w-3 h-3 text-[#0677FF]" /> Atualizado · OE 2026
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.12, ease: [0.32, 0.72, 0, 1] }}
-            className="display-serif mt-6 text-[44px] leading-[0.98] sm:text-[64px] md:text-[84px] lg:text-[96px] tracking-[-0.04em] font-[200]"
-          >
-            Recebe o cliente.
-            <br />
-            Sai com <span className="italic font-[700] text-[#0677FF]">tudo</span> pronto.
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.25 }}
-            className="mt-6 text-[16px] md:text-[18px] leading-[1.55] text-[#0B1D2D]/65 font-[400] max-w-xl"
-          >
-            Ferramenta para escritórios de contabilidade em Portugal. Enquanto o cliente fala,
-            preenche o perfil. Um clique gera <strong className="text-[#0B1D2D]">simulação fiscal, proposta
-            de honorários e minuta de contrato</strong> — com a sua marca.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.38 }}
-            className="mt-9 flex flex-col sm:flex-row gap-3"
-          >
-            <button
-              type="button"
-              onClick={onEnter}
-              className="group inline-flex items-center justify-center gap-2 bg-[#0B1D2D] text-white px-6 py-4 rounded-[14px] text-[14px] font-[800] tracking-tight hover:bg-[#26323f] active:scale-[0.98] transition-all"
-            >
-              Experimentar agora
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-            <button
-              type="button"
-              onClick={onEnter}
-              className="inline-flex items-center justify-center gap-2 border border-[#0B1D2D]/12 bg-[#0B1D2D]/[0.03] text-[#0B1D2D]/80 hover:bg-[#0B1D2D]/[0.07] px-6 py-4 rounded-[14px] text-[14px] font-[700] transition-all"
-            >
-              Ver demo de 3 minutos
-            </button>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.55 }}
-            className="mt-10 flex flex-wrap items-center gap-x-7 gap-y-3 text-[11px] mono uppercase tracking-[2px] text-[#0B1D2D]/50"
-          >
-            <span className="flex items-center gap-2"><Check className="w-3 h-3 text-[#0677FF]" /> Sem cartão</span>
-            <span className="flex items-center gap-2"><Check className="w-3 h-3 text-[#0677FF]" /> Demo guiada</span>
-            <span className="flex items-center gap-2"><Check className="w-3 h-3 text-[#0677FF]" /> CIRS/CIRC 2026</span>
-          </motion.div>
+    <section id="top" className="max-w-[1120px] mx-auto px-5 md:px-6 pt-14 md:pt-20 pb-12 md:pb-16">
+      <div className="max-w-[720px]">
+        <div className="inline-flex items-center gap-2 text-[11px] tracking-[1.6px] uppercase font-[700] text-black/40">
+          <span className="w-6 h-px bg-black/15" /> OE 2026 · CIRS/CIRC/CIVA atualizados
         </div>
-
-        {/* Side mockup card — asymmetric, oversized stat */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96, y: 30 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.2, ease: [0.32, 0.72, 0, 1] }}
-          className="relative hidden lg:block"
-        >
-          <div className="relative">
-            <div
-              className="absolute -inset-6 rounded-[36px] blur-3xl opacity-60"
-              style={{ background: 'linear-gradient(135deg, rgba(6,119,255,0.35) 0%, rgba(11,29,45,0.4) 100%)' }}
-              aria-hidden="true"
-            />
-            <div className="relative bg-white text-[#0B1D2D] rounded-[26px] shadow-2xl border border-[#0B1D2D]/10 overflow-hidden">
-              <div className="px-6 py-3 border-b border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
-                </div>
-                <div className="text-[10px] mono uppercase tracking-[1.5px] text-slate-400">pacote.pdf</div>
-              </div>
-              <div className="p-7">
-                <div className="text-[10px] mono uppercase tracking-[2px] text-slate-400">Recomendação</div>
-                <div className="display-serif text-[44px] leading-none mt-3 font-[800] tracking-tight">
-                  Lda
-                </div>
-                <div className="text-[11px] font-[700] text-emerald-700 mt-1">+ €4.820/ano vs ENI</div>
-
-                <div className="grid grid-cols-2 gap-3 mt-7">
-                  <MiniStat label="IRC" value="15%" sub="primeiros €50k" />
-                  <MiniStat label="Honorários" value="170€" sub="/mês s/IVA" />
-                </div>
-                <div className="mt-6 border-t border-slate-100 pt-5 flex items-center gap-3 text-[11px] font-[700] text-slate-500">
-                  <DocPill icon={Calculator} label="Simulação" />
-                  <DocPill icon={FileText} label="Proposta" />
-                  <DocPill icon={FileSignature} label="Minuta" />
-                </div>
-              </div>
-            </div>
-            {/* Floating chip */}
-            <div className="absolute -bottom-6 -left-6 bg-[#0677FF] text-white rounded-[14px] px-4 py-3 shadow-xl flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              <div className="leading-tight">
-                <div className="text-[10px] mono uppercase tracking-[1.5px] opacity-70">tempo médio</div>
-                <div className="text-[16px] font-[800] mono">3 min 42s</div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+        <h1 className="display-serif mt-4 text-[40px] md:text-[64px] leading-[0.95] tracking-[-0.03em] font-[200]">
+          Recebe o cliente.<br />
+          Sai com <span className="italic font-[800] text-[#0677FF]">tudo</span> pronto.
+        </h1>
+        <p className="mt-5 text-[15px] leading-[1.6] text-black/60 max-w-[560px]">
+          Perfil, simulação fiscal, proposta e contrato — com a tua marca. Gabinete, cofre e calendário fiscal incluídos. Cada conta vê só os seus clientes.
+        </p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <button onClick={onSignup} className="inline-flex items-center gap-2 bg-[#0B1D2D] text-white px-6 py-3.5 rounded-full text-[14px] font-[700] hover:bg-black">Criar conta grátis <ArrowRight className="w-4 h-4" /></button>
+          <button onClick={onLogin} className="inline-flex items-center gap-2 bg-white border border-black/10 px-6 py-3.5 rounded-full text-[14px] font-[600] hover:bg-black/[0.03]">Entrar</button>
+        </div>
+        <div className="mt-6 flex flex-wrap gap-4 text-[12px] text-black/40">
+          <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /> Sem cartão</span>
+          <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /> Cofre privado</span>
+          <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /> Impressão A4</span>
+        </div>
       </div>
     </section>
   );
 }
 
-function MiniStat({ label, value, sub }: { label: string; value: string; sub: string }) {
-  return (
-    <div className="bg-slate-50 rounded-[12px] p-3">
-      <div className="text-[9px] mono uppercase tracking-[1.5px] text-slate-400">{label}</div>
-      <div className="display-serif text-[26px] font-[800] mt-1 leading-none">{value}</div>
-      <div className="text-[10px] text-slate-500 mt-0.5 font-[600]">{sub}</div>
-    </div>
-  );
-}
-
-function DocPill({ icon: Icon, label }: { icon: React.ComponentType<{ className?: string }>; label: string }) {
-  return (
-    <div className="flex items-center gap-1.5 bg-[#0677FF]/10 text-[#0B1D2D] px-2.5 py-1.5 rounded-[8px]">
-      <Icon className="w-3 h-3" />
-      <span>{label}</span>
-    </div>
-  );
-}
-
-/* ───────── Value Strip ───────── */
-function ValueStrip() {
-  const items = [
-    ['10', 'Simuladores fiscais'],
-    ['3', 'Documentos num clique'],
-    ['OE 2026', 'Sempre atualizado'],
-    ['100%', 'Sob a sua marca'],
+function Strip() {
+  const items: [string,string][] = [
+    ['10', 'simuladores'],
+    ['312', 'obrigações 2026'],
+    ['9', 'funções de gabinete'],
+    ['A4', 'impressão pronta'],
   ];
   return (
-    <section className="border-y border-[#0B1D2D]/8 bg-white/70">
-      <div className="max-w-7xl mx-auto px-5 md:px-8 py-8 md:py-10 grid grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-4">
-        {items.map(([n, l]) => (
-          <div key={l} className="text-left">
-            <div className="display-serif text-[34px] md:text-[44px] font-[800] leading-none tracking-tight">{n}</div>
-            <div className="mt-2 text-[10px] md:text-[11px] mono uppercase tracking-[2px] text-[#0B1D2D]/50">{l}</div>
+    <div className="border-y border-black/5">
+      <div className="max-w-[1120px] mx-auto px-5 md:px-6 py-6 grid grid-cols-2 md:grid-cols-4 gap-6">
+        {items.map(([n,l])=>(
+          <div key={l} className="flex items-baseline gap-3">
+            <span className="display-serif text-[28px] font-[800] tracking-tight">{n}</span>
+            <span className="text-[11px] tracking-[1.4px] uppercase font-[600] text-black/40">{l}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function HowItWorks() {
+  const steps = [
+    { k:'01', t:'O cliente fala.', d:'Preenche o perfil em 6 passos. Valida NIF, regime e limites.' },
+    { k:'02', t:'A simulação corre.', d:'ENI vs Lda, IRS, IVA, SS — tudo recalcula em tempo real.' },
+    { k:'03', t:'Um clique, pacote.', d:'Simulação + proposta + minuta com a tua marca. Imprime em A4.' },
+  ];
+  return (
+    <section id="funciona" className="max-w-[1120px] mx-auto px-5 md:px-6 py-14 md:py-20">
+      <div className="text-[11px] tracking-[1.6px] uppercase font-[700] text-black/30">Como funciona</div>
+      <h2 className="display-serif mt-2 text-[28px] md:text-[40px] leading-[0.95] tracking-[-0.02em] font-[200]">Do telefonema ao <span className="italic font-[800] text-[#0677FF]">PDF</span> em 3 passos.</h2>
+      <div className="mt-8 grid md:grid-cols-3 gap-4">
+        {steps.map(s=>(
+          <div key={s.k} className="rounded-2xl border border-black/5 p-6 bg-white">
+            <div className="text-[12px] tracking-[1.4px] uppercase font-[700] text-[#0677FF]">{s.k}</div>
+            <div className="mt-2 text-[16px] font-[700]">{s.t}</div>
+            <div className="mt-2 text-[13px] leading-[1.5] text-black/60">{s.d}</div>
           </div>
         ))}
       </div>
@@ -298,436 +151,154 @@ function ValueStrip() {
   );
 }
 
-/* ───────── How It Works ───────── */
-function HowItWorks() {
-  const steps = [
-    {
-      step: '01',
-      title: 'O cliente liga.',
-      body: 'Abre o Perfil. Vai escrevendo enquanto ele fala — em 6 passos guiados. O sistema avisa de NIF inválido, regime IVA errado, escalão acima do limite.',
-    },
-    {
-      step: '02',
-      title: 'A simulação corre sozinha.',
-      body: 'ENI ou Lda? IRS Jovem? Tickets de refeição? Salário líquido? Tudo recalcula em tempo real à medida que escreve. Sem folhas Excel paralelas.',
-    },
-    {
-      step: '03',
-      title: 'Um clique → pacote pronto.',
-      body: 'Simulação fiscal + proposta de honorários + minuta de contrato OCC, todos com a sua marca. Edita diretamente na página, imprime ou guarda em PDF.',
-    },
-  ];
-  return (
-    <section id="funciona" className="py-24 md:py-32">
-      <div className="max-w-7xl mx-auto px-5 md:px-8">
-        <SectionLabel>Como funciona</SectionLabel>
-        <h2 className="display-serif mt-4 text-[36px] md:text-[56px] lg:text-[68px] leading-[1] tracking-[-0.03em] font-[200] max-w-3xl">
-          Do telefonema ao <span className="italic font-[800] text-[#0677FF]">PDF assinado</span> em três passos.
-        </h2>
-        <div className="mt-14 grid md:grid-cols-3 gap-6 md:gap-8">
-          {steps.map((s, i) => (
-            <motion.div
-              key={s.step}
-              initial={{ opacity: 0, y: 26 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.5, delay: i * 0.1, ease: [0.32, 0.72, 0, 1] }}
-              className="relative bg-white border border-[#0B1D2D]/10 rounded-[20px] p-7 hover:bg-[#EAF0F5] hover:border-[#0B1D2D]/12 transition-all"
-            >
-              <div className="mono text-[40px] md:text-[52px] font-[700] text-[#0677FF] leading-none">{s.step}</div>
-              <div className="display-serif text-[22px] md:text-[26px] font-[800] mt-4 leading-tight">{s.title}</div>
-              <p className="text-[14px] mt-3 text-[#0B1D2D]/65 leading-[1.6]">{s.body}</p>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ───────── Tools Catalog ───────── */
-function ToolsCatalog() {
+function Catalog() {
   const tools = [
-    { label: 'Fiscal', sub: 'ENI vs Lda', Icon: Calculator },
-    { label: 'IRS', sub: 'Modelo 3 + Jovem', Icon: Receipt },
-    { label: 'Previsa', sub: 'Modelo 22/IRC', Icon: Calculator },
-    { label: 'Viaturas', sub: 'IVA + TA', Icon: Layers },
-    { label: 'Tickets', sub: 'Vales refeição', Icon: BadgeCheck },
-    { label: 'SS Indep.', sub: 'Contribuições', Icon: ShieldCheck },
-    { label: 'Diagnóstico', sub: 'Autonomia', Icon: Building2 },
-    { label: 'Imóveis', sub: 'Arrendar vs entrada', Icon: Building2 },
-    { label: 'IMT', sub: 'Aquisição', Icon: BookOpen },
-    { label: 'Salário', sub: 'Líquido + custo', Icon: BadgeCheck },
-    { label: 'Enquadramento', sub: 'Cenários elegíveis', Icon: Scale },
-    { label: 'Gestor PPC', sub: 'Art. 104/105/107', Icon: ListChecks },
-    { label: 'Base Legal', sub: '30+ fontes', Icon: BookOpen },
-    { label: 'Gabinete', sub: 'Gestão do escritório', Icon: LayoutDashboard },
-  ];
+    ['Fiscal','ENI vs Lda',Calculator], ['IRS','Modelo 3',Receipt], ['Previsa','Modelo 22',Calculator], ['Viaturas','IVA + TA',Layers],
+    ['Tickets','Vales',BadgeCheck], ['SS Indep.','Contribuições',ShieldCheck], ['Diagnóstico','Autonomia',Building2], ['Imóveis','Decisão',Building2],
+    ['IMT','Aquisição',BookOpen], ['Salário','Líquido',BadgeCheck], ['Gabinete','Gestão',LayoutDashboard], ['Cofre','Zero-knowledge',Lock],
+  ] as const;
   return (
-    <section id="simuladores" className="py-24 md:py-32 border-t border-[#0B1D2D]/8">
-      <div className="max-w-7xl mx-auto px-5 md:px-8 grid lg:grid-cols-[0.9fr_1.1fr] gap-12 lg:gap-20 items-start">
-        <div className="lg:sticky lg:top-32">
-          <SectionLabel>Catálogo</SectionLabel>
-          <h2 className="display-serif mt-4 text-[34px] md:text-[52px] leading-[1.02] tracking-[-0.03em] font-[200]">
-            <span className="italic font-[800]">14</span> ferramentas.
-            <br />
-            Um cliente, todos os ângulos.
-          </h2>
-          <p className="mt-5 text-[15px] text-[#0B1D2D]/65 leading-[1.6] max-w-lg">
-            Simuladores construídos para contabilistas certificados, com base na legislação portuguesa
-            em vigor — mais a gestão do dia a dia do escritório. Cada ferramenta tem guia interativo
-            que ensina a usar, com opção de "não mostrar novamente".
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
-          {tools.map((t, i) => (
-            <motion.div
-              key={t.label}
-              initial={{ opacity: 0, y: 14 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.35, delay: i * 0.04 }}
-              className="group bg-white border border-[#0B1D2D]/10 rounded-[16px] p-4 md:p-5 hover:bg-[#E7EDF3] hover:border-[#0677FF]/40 transition-all"
-            >
-              <t.Icon className="w-5 h-5 text-[#0677FF]" />
-              <div className="display-serif text-[18px] md:text-[20px] font-[800] mt-3 leading-tight">{t.label}</div>
-              <div className="text-[11px] mono uppercase tracking-[1.5px] text-[#0B1D2D]/45 mt-1">{t.sub}</div>
-            </motion.div>
-          ))}
-        </div>
+    <section id="simuladores" className="max-w-[1120px] mx-auto px-5 md:px-6 py-10 md:py-14 border-t border-black/5">
+      <div className="flex items-baseline justify-between gap-4">
+        <h2 className="display-serif text-[22px] md:text-[28px] font-[200] tracking-[-0.02em]"><span className="italic font-[800]">12</span> simuladores + gabinete</h2>
+        <span className="hidden md:inline text-[12px] text-black/40">Guias incluídos</span>
       </div>
-    </section>
-  );
-}
-
-/* ───────── Package Block ───────── */
-function PackageBlock() {
-  const docs = [
-    { Icon: Calculator,    label: 'Simulação Fiscal', body: 'Comparativo ENI vs Lda, IRS Jovem, escalões, IRC, deduções. Páginas editáveis em-linha.' },
-    { Icon: FileText,      label: 'Proposta de Honorários', body: 'Carta com cabeçalho do escritório, tabela de serviços, mensalidade calculada por escalão de faturação.' },
-    { Icon: FileSignature, label: 'Minuta de Contrato', body: 'Modelo OCC pré-preenchido com os dados do cliente, escritório e honorários acordados. Saltável.' },
-  ];
-  return (
-    <section id="pacote" className="py-24 md:py-32 relative overflow-hidden">
-      <div aria-hidden="true" className="absolute inset-0 -z-10" style={{
-        background: 'radial-gradient(50% 60% at 50% 40%, rgba(6,119,255,0.18) 0%, transparent 70%)',
-      }} />
-      <div className="max-w-7xl mx-auto px-5 md:px-8">
-        <div className="max-w-4xl">
-          <SectionLabel>Pacote do cliente</SectionLabel>
-          <h2 className="display-serif mt-4 text-[36px] md:text-[60px] lg:text-[72px] leading-[0.98] tracking-[-0.03em] font-[200]">
-            Três documentos.
-            <br />
-            <span className="italic font-[800] text-[#0677FF]">Um clique.</span>
-          </h2>
-          <p className="mt-6 text-[15px] md:text-[17px] text-[#0B1D2D]/65 leading-[1.6] max-w-2xl">
-            Em vez de copiar dados entre Word, Excel e PDF, o Estudo 360 puxa tudo do mesmo perfil.
-            Define uma vez o logo e a tabela de honorários — depois exporta o pacote completo por cada cliente.
-          </p>
-        </div>
-
-        <div className="mt-16 grid md:grid-cols-3 gap-5">
-          {docs.map((d, i) => (
-            <motion.div
-              key={d.label}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="relative bg-gradient-to-br from-white to-[#F4F8FB] border border-[#0B1D2D]/10 rounded-[22px] p-7 md:p-8 overflow-hidden"
-            >
-              <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-[#0677FF]/15 blur-2xl" aria-hidden="true" />
-              <div className="relative">
-                <div className="w-11 h-11 rounded-[12px] bg-[#0677FF]/15 border border-[#0677FF]/30 flex items-center justify-center">
-                  <d.Icon className="w-5 h-5 text-[#0677FF]" />
-                </div>
-                <div className="display-serif text-[24px] font-[800] mt-5 leading-tight">{d.label}</div>
-                <p className="text-[13.5px] mt-3 text-[#0B1D2D]/60 leading-[1.6]">{d.body}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ───────── Gabinete — novas features de gestão ───────── */
-function GabineteBlock() {
-  const feats = [
-    {
-      Icon: LayoutDashboard,
-      label: 'Dashboard do dia',
-      body: 'Ao abrir: o que vence hoje, tarefas atrasadas, obrigações vencidas e clientes sem movimento há 30 dias. Tudo numa página, sem pesquisas.',
-    },
-    {
-      Icon: CheckSquare,
-      label: 'Tarefas em Kanban',
-      body: 'A fazer → Em curso → Feito (e Atrasada). Atribui tarefas à equipa com prazo e prioridade — a nova colaboradora vê só as suas.',
-    },
-    {
-      Icon: CalendarClock,
-      label: 'Obrigações automáticas',
-      body: 'Ao criar o cliente, o sistema gera as obrigações do ano: IVA (mensal/trimestral), 3 PPC (jul/set/15-dez), IES e Modelo 22 — com prazos reais.',
-    },
-    {
-      Icon: Lock,
-      label: 'Cofre zero-knowledge',
-      body: 'Senhas de AT, SS e bancos cifradas no browser (AES-GCM). Nem a plataforma vê os segredos — com registo de quem viu e quando.',
-    },
-    {
-      Icon: Database,
-      label: 'Memória reliable + live',
-      body: 'Tudo fica guardado na base de dados com cache offline (IndexedDB): se a internet cair, continua a trabalhar e sincroniza sozinho. Colaboradores veem as mudanças em tempo real.',
-    },
-    {
-      Icon: Scale,
-      label: 'Fecho fiscal 2026',
-      body: 'Cenários só legalmente elegíveis (com os inelegíveis cinzentos + motivo), Gestor PPC com 2 botões (atualizar 80/95% e reavaliar o 3.º por art. 107.º com aviso de juros) e exportar honorários para Excel.',
-    },
-  ];
-  return (
-    <section id="gabinete" className="py-24 md:py-32 relative overflow-hidden">
-      <div aria-hidden="true" className="absolute inset-0 -z-10" style={{
-        background: 'radial-gradient(45% 55% at 15% 30%, rgba(6,119,255,0.20) 0%, transparent 65%), radial-gradient(40% 50% at 90% 80%, rgba(11,29,45,0.28) 0%, transparent 65%)',
-      }} />
-      <div className="max-w-7xl mx-auto px-5 md:px-8">
-        <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-12 lg:gap-20 items-start">
-          <div className="lg:sticky lg:top-32">
-            <SectionLabel>Gabinete — novo</SectionLabel>
-            <h2 className="display-serif mt-4 text-[36px] md:text-[56px] leading-[1] tracking-[-0.03em] font-[200]">
-              Simula, decide,
-              <br />
-              <span className="italic font-[800] text-[#0677FF]">gere.</span>
-            </h2>
-            <p className="mt-6 text-[15px] text-[#0B1D2D]/65 leading-[1.6]">
-              O Estudo 360 deixou de ser só calculadora: é a ferramenta única de gestão do gabinete.
-              Clientes, tarefas, obrigações, acessos e documentos — centralizados, sempre guardados e
-              atualizados entre toda a equipa.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#0B1D2D]/10 text-[11px] mono uppercase tracking-[1.5px] text-[#0B1D2D]/70"><Check className="w-3 h-3 text-[#0677FF]" /> Live entre colaboradores</span>
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#0B1D2D]/10 text-[11px] mono uppercase tracking-[1.5px] text-[#0B1D2D]/70"><Check className="w-3 h-3 text-[#0677FF]" /> Offline-first</span>
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#0B1D2D]/10 text-[11px] mono uppercase tracking-[1.5px] text-[#0B1D2D]/70"><Check className="w-3 h-3 text-[#0677FF]" /> Cofre cifrado</span>
+      <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        {tools.map(([label,sub,Icon])=>(
+          <div key={label} className="flex items-center gap-3 rounded-2xl border border-black/5 p-4 bg-white">
+            <span className="w-8 h-8 grid place-items-center rounded-full bg-[#0677FF]/10 text-[#0677FF]"><Icon className="w-4 h-4" /></span>
+            <div className="min-w-0">
+              <div className="text-[13px] font-[700] leading-none">{label}</div>
+              <div className="text-[11px] text-black/40">{sub}</div>
             </div>
           </div>
-          <div className="grid sm:grid-cols-2 gap-4 md:gap-5">
-            {feats.map((f, i) => (
-              <motion.div
-                key={f.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 0.45, delay: i * 0.06, ease: [0.32, 0.72, 0, 1] }}
-                className="bg-white border border-[#0B1D2D]/10 rounded-[20px] p-6 hover:border-[#0677FF]/35 hover:bg-[#F7FAFD] transition-all"
-              >
-                <div className="w-10 h-10 rounded-[12px] bg-[#0677FF]/12 border border-[#0677FF]/25 flex items-center justify-center">
-                  <f.Icon className="w-5 h-5 text-[#0677FF]" />
-                </div>
-                <div className="display-serif text-[19px] font-[800] mt-4 leading-tight">{f.label}</div>
-                <p className="text-[13px] mt-2.5 text-[#0B1D2D]/60 leading-[1.6]">{f.body}</p>
-              </motion.div>
-            ))}
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Package() {
+  const items = [
+    { t:'Simulação fiscal', d:'ENI vs Lda com IRS Jovem, escalões e IRC.', Icon: Calculator },
+    { t:'Proposta', d:'Com a tua marca e honorários por escalão.', Icon: FileText },
+    { t:'Minuta', d:'Contrato OCC pré-preenchido.', Icon: FileSignature },
+  ];
+  return (
+    <section id="pacote" className="max-w-[1120px] mx-auto px-5 md:px-6 py-10 md:py-14 border-t border-black/5">
+      <h2 className="display-serif text-[22px] md:text-[28px] font-[200] tracking-[-0.02em]">Três documentos. <span className="italic font-[800] text-[#0677FF]">Um clique.</span></h2>
+      <div className="mt-6 grid md:grid-cols-3 gap-4">
+        {items.map(({t,d,Icon})=>(
+          <div key={t} className="rounded-2xl border border-black/5 p-6 bg-white">
+            <span className="w-8 h-8 grid place-items-center rounded-full bg-black/[0.04]"><Icon className="w-4 h-4" /></span>
+            <div className="mt-3 text-[14px] font-[700]">{t}</div>
+            <div className="mt-1 text-[13px] text-black/60">{d}</div>
           </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Gabinete() {
+  const feats = [
+    ['Dashboard','Do dia',LayoutDashboard], ['Agenda','Mês',CalendarClock], ['Clientes 360','Fichas',Users],
+    ['Tarefas','Kanban',CheckSquare], ['Obrigações','Mês como tarefas',Calendar], ['Comunicação','Modelos',Mail],
+  ] as const;
+  return (
+    <section id="gabinete" className="max-w-[1120px] mx-auto px-5 md:px-6 py-10 md:py-14 border-t border-black/5">
+      <h2 className="display-serif text-[22px] md:text-[28px] font-[200] tracking-[-0.02em]">Gabinete. <span className="italic font-[800] text-[#0677FF]">Tudo num sítio.</span></h2>
+      <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-3">
+        {feats.map(([t,s,Icon])=>(
+          <div key={t} className="rounded-2xl border border-black/5 p-4 bg-white flex items-center gap-3">
+            <span className="w-8 h-8 grid place-items-center rounded-full bg-[#0677FF]/10 text-[#0677FF]"><Icon className="w-4 h-4" /></span>
+            <div><div className="text-[13px] font-[700] leading-none">{t}</div><div className="text-[11px] text-black/40">{s}</div></div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-black/50">
+        <span className="inline-flex items-center gap-1.5"><Check className="w-3 h-3" /> Galeria + cartão por função</span>
+        <span className="inline-flex items-center gap-1.5"><Check className="w-3 h-3" /> Calendário fiscal 2026</span>
+        <span className="inline-flex items-center gap-1.5"><Check className="w-3 h-3" /> Impressão A4</span>
+      </div>
+    </section>
+  );
+}
+
+function Novidades() {
+  return (
+    <section className="max-w-[1120px] mx-auto px-5 md:px-6 py-10 md:py-14 border-t border-black/5">
+      <div className="rounded-2xl border border-black/5 p-6 md:p-8 bg-[#F8FAFC]">
+        <div className="text-[11px] tracking-[1.4px] uppercase font-[700] text-black/30">Novidades</div>
+        <div className="mt-2 grid md:grid-cols-3 gap-6">
+          <div><div className="text-[14px] font-[700] flex items-center gap-2"><Lock className="w-4 h-4 text-[#0677FF]" /> Contas privadas</div><div className="mt-1 text-[13px] text-black/60">Cada conta vê só os seus clientes. Cofre por conta.</div></div>
+          <div><div className="text-[14px] font-[700] flex items-center gap-2"><Database className="w-4 h-4 text-[#0677FF]" /> Calendário fiscal</div><div className="mt-1 text-[13px] text-black/60">312 obrigações de 2026 já no gabinete. Mês atual como tarefas.</div></div>
+          <div><div className="text-[14px] font-[700] flex items-center gap-2"><Printer className="w-4 h-4 text-[#0677FF]" /> Impressão A4</div><div className="mt-1 text-[13px] text-black/60">Qualquer simulação sai bem formatada em A4.</div></div>
         </div>
       </div>
     </section>
   );
 }
 
-/* ───────── Compliance ───────── */
 function Compliance() {
   return (
-    <section className="py-24 md:py-32 border-t border-[#0B1D2D]/8">
-      <div className="max-w-7xl mx-auto px-5 md:px-8 grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
-        <div>
-          <SectionLabel>Conformidade</SectionLabel>
-          <h2 className="display-serif mt-4 text-[34px] md:text-[52px] leading-[1.02] tracking-[-0.03em] font-[200]">
-            Sempre alinhado com o
-            <br />
-            <span className="italic font-[800]">Orçamento do Estado.</span>
-          </h2>
-          <p className="mt-5 text-[15px] text-[#0B1D2D]/65 leading-[1.6] max-w-xl">
-            Escalões de IRS, taxas de IRC, IRS Jovem, IMT, tributação autónoma de viaturas,
-            limites de tickets de refeição — todos validados contra a legislação publicada e
-            cruzados com fontes profissionais. Quando algo muda, a aplicação é atualizada.
-          </p>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            ['CIRS', 'Escalões 2026'],
-            ['CIRC', 'PME 15% / 19%'],
-            ['CIVA', 'Regimes e isenções'],
-            ['CIMT', 'HPP, jovens, escalões'],
-            ['Lei 73-A/2025', 'OE 2026 final'],
-            ['EOCC', 'Estatuto da Ordem'],
-          ].map(([k, v]) => (
-            <div key={k} className="bg-white border border-[#0B1D2D]/10 rounded-[14px] p-4">
-              <div className="mono text-[11px] uppercase tracking-[1.5px] text-[#0677FF]">{k}</div>
-              <div className="text-[14px] font-[700] mt-1 text-[#0B1D2D]/90">{v}</div>
-            </div>
-          ))}
-        </div>
+    <section className="max-w-[1120px] mx-auto px-5 md:px-6 py-10 border-t border-black/5">
+      <div className="flex flex-wrap gap-2">
+        {['CIRS 2026','CIRC PME 15%','CIVA','CIMT HPP','OE 2026','EOCC'].map(k=>(
+          <span key={k} className="text-[11px] tracking-[1px] uppercase font-[600] px-3 py-1.5 rounded-full bg-white border border-black/10 text-black/60">{k}</span>
+        ))}
       </div>
     </section>
   );
 }
 
-/* ───────── Pricing ───────── */
-function Pricing({ onEnter }: { onEnter: () => void }) {
+function Pricing({ onSignup, onLogin }: { onSignup: () => void; onLogin: () => void }) {
   const tiers = [
-    {
-      name: 'Solo',
-      tag: 'CC a título individual',
-      price: '49',
-      features: ['1 utilizador', 'Todos os simuladores + guias', 'Gabinete: tarefas + obrigações', 'Pacote do cliente', 'Suporte por email'],
-      featured: false,
-    },
-    {
-      name: 'Escritório',
-      tag: 'Mais usado',
-      price: '129',
-      features: ['Até 5 utilizadores', 'Gabinete completo: tarefas + obrigações + cofre', 'Live entre a equipa (tempo real)', 'Tabela de honorários + exportar Excel', 'Histórico por cliente', 'Suporte prioritário'],
-      featured: true,
-    },
-    {
-      name: 'Sociedade',
-      tag: 'PJ + Sociedade C.C.',
-      price: '249',
-      features: ['Até 15 utilizadores', 'Cofre zero-knowledge multi-colaborador', 'Importação SAF-T', 'Multi-marca', 'API privada (em breve)', 'Onboarding dedicado'],
-      featured: false,
-    },
+    { name:'Solo', price:'49', note:'1 utilizador', feats:['Simuladores + guias','Gabinete essencial','Pacote A4'] },
+    { name:'Escritório', price:'129', note:'Até 5 utilizadores', feats:['Gabinete completo','Live + offline','Cofre por conta','Excel honorários'], hi:true },
+    { name:'Sociedade', price:'249', note:'Até 15', feats:['Multi-colaborador','SAF-T','Multi-marca','Onboarding'] },
   ];
   return (
-    <section id="precos" className="py-24 md:py-32 border-t border-[#0B1D2D]/8">
-      <div className="max-w-7xl mx-auto px-5 md:px-8">
-        <div className="text-center max-w-2xl mx-auto">
-          <SectionLabel>Preços</SectionLabel>
-          <h2 className="display-serif mt-4 text-[36px] md:text-[56px] leading-[1] tracking-[-0.03em] font-[200]">
-            Justo para o tamanho do escritório.
-          </h2>
-          <p className="mt-5 text-[15px] text-[#0B1D2D]/65 leading-[1.6]">
-            Mensal. Sem fidelização. Sem custo por cliente.
-          </p>
-        </div>
-
-        <div className="mt-14 grid md:grid-cols-3 gap-5 max-w-5xl mx-auto">
-          {tiers.map((t) => (
-            <div
-              key={t.name}
-              className={[
-                'relative rounded-[22px] p-7 md:p-8 flex flex-col',
-                t.featured
-                  ? 'bg-gradient-to-br from-[#0677FF] to-[#0B1D2D] text-white border border-white/20 shadow-2xl shadow-[#0677FF]/30 md:scale-[1.03]'
-                  : 'bg-white border border-[#0B1D2D]/10 text-[#0B1D2D]',
-              ].join(' ')}
-            >
-              {t.featured && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-white text-[#0B1D2D] text-[10px] mono uppercase tracking-[2px] font-[800]">
-                  Mais escolhido
-                </div>
-              )}
-              <div className="text-[11px] mono uppercase tracking-[2px] opacity-70">{t.tag}</div>
-              <div className="display-serif text-[28px] font-[800] mt-1">{t.name}</div>
-              <div className="mt-5 flex items-baseline gap-1.5">
-                <span className="display-serif text-[64px] font-[200] leading-none tracking-tight">€{t.price}</span>
-                <span className="text-[12px] opacity-70 font-[600]">/mês</span>
-              </div>
-              <ul className="mt-7 space-y-2.5 text-[13.5px] flex-1">
-                {t.features.map(f => (
-                  <li key={f} className="flex items-start gap-2">
-                    <Check className={`w-4 h-4 mt-0.5 shrink-0 ${t.featured ? 'text-white' : 'text-[#0677FF]'}`} />
-                    <span className={t.featured ? 'opacity-95' : 'text-[#0B1D2D]/70'}>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <button
-                type="button"
-                onClick={onEnter}
-                className={[
-                  'mt-7 inline-flex items-center justify-center gap-2 py-3.5 rounded-[12px] text-[13px] font-[800] transition-all',
-                  t.featured
-                    ? 'bg-white text-[#0B1D2D] hover:bg-[#E2E8F0]'
-                    : 'border border-[#0B1D2D]/12 hover:bg-[#0B1D2D]/[0.05] text-[#0B1D2D]',
-                ].join(' ')}
-              >
-                Começar agora <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ))}
-        </div>
+    <section id="precos" className="max-w-[1120px] mx-auto px-5 md:px-6 py-12 md:py-16 border-t border-black/5">
+      <h2 className="display-serif text-[24px] md:text-[32px] font-[200] tracking-[-0.02em]">Preço por tamanho de escritório.</h2>
+      <div className="mt-6 grid md:grid-cols-3 gap-4">
+        {tiers.map(t=>(
+          <div key={t.name} className={`rounded-2xl border p-6 flex flex-col ${t.hi ? 'bg-[#0B1D2D] text-white border-black' : 'bg-white border-black/5'}`}>
+            <div className="text-[11px] tracking-[1.4px] uppercase font-[700] opacity-60">{t.name} · {t.note}</div>
+            <div className="mt-2 flex items-baseline gap-1"><span className="text-[36px] font-[200] tracking-tight">€{t.price}</span><span className="text-[12px] opacity-60">/mês</span></div>
+            <ul className="mt-4 space-y-2 flex-1">
+              {t.feats.map(f=>(<li key={f} className="flex gap-2 text-[13px]"><Check className={`w-4 h-4 mt-0.5 ${t.hi ? 'text-white' : 'text-[#0677FF]'}`} /><span className={t.hi ? 'opacity-90' : 'text-black/70'}>{f}</span></li>))}
+            </ul>
+            <button onClick={onSignup} className={`mt-6 py-3 rounded-full text-[13px] font-[700] ${t.hi ? 'bg-white text-black' : 'bg-[#0B1D2D] text-white'}`}>Criar conta</button>
+          </div>
+        ))}
       </div>
+      <div className="mt-4 text-center"><button onClick={onLogin} className="text-[13px] text-black/50 hover:text-black">Já tenho conta — Entrar</button></div>
     </section>
   );
 }
 
-/* ───────── Final CTA ───────── */
-function FinalCTA({ onEnter }: { onEnter: () => void }) {
+function FinalCTA({ onSignup }: { onSignup: () => void }) {
   return (
-    <section className="py-24 md:py-36">
-      <div className="max-w-5xl mx-auto px-5 md:px-8 text-center">
-        <h2 className="display-serif text-[42px] md:text-[72px] lg:text-[88px] leading-[0.98] tracking-[-0.03em] font-[200]">
-          Próximo cliente que ligar:
-          <br />
-          <span className="italic font-[800] text-[#0677FF]">desligue com tudo pronto.</span>
-        </h2>
-        <button
-          type="button"
-          onClick={onEnter}
-          className="mt-10 inline-flex items-center gap-2 bg-[#0B1D2D] text-white px-7 py-4 rounded-[14px] text-[14px] font-[800] hover:bg-[#26323f] active:scale-[0.98] transition-all"
-        >
-          Experimentar o Estudo 360 <ArrowRight className="w-4 h-4" />
-        </button>
-        <p className="mt-4 text-[11px] mono uppercase tracking-[2.5px] text-[#0B1D2D]/45">
-          Sem cartão · acesso imediato
-        </p>
-      </div>
+    <section className="max-w-[1120px] mx-auto px-5 md:px-6 py-12 md:py-16 border-t border-black/5 text-center">
+      <h2 className="display-serif text-[28px] md:text-[40px] leading-[0.95] tracking-[-0.02em] font-[200]">Próximo cliente que ligar,<br /><span className="italic font-[800] text-[#0677FF]">desligue com tudo pronto.</span></h2>
+      <button onClick={onSignup} className="mt-6 inline-flex items-center gap-2 bg-[#0B1D2D] text-white px-6 py-3.5 rounded-full text-[14px] font-[700] hover:bg-black">Criar conta grátis <ArrowRight className="w-4 h-4" /></button>
+      <div className="mt-3 text-[11px] tracking-[1.4px] uppercase font-[600] text-black/30">Sem cartão · acesso imediato</div>
     </section>
   );
 }
 
-/* ───────── Footer ───────── */
 function Footer() {
   return (
-    <footer className="border-t border-[#0B1D2D]/8 py-12">
-      <div className="max-w-7xl mx-auto px-5 md:px-8 flex flex-col md:flex-row gap-6 md:gap-10 md:items-center justify-between">
-        <div className="flex items-center gap-3">
-          <BrandMark size={24} />
-          <div className="text-[12px] text-[#0B1D2D]/55">© {new Date().getFullYear()} Estudo 360 · Ferramentas para contabilistas certificados</div>
-        </div>
-        <div className="flex flex-wrap gap-x-5 gap-y-2 text-[12px] text-[#0B1D2D]/55">
-          <a href="#funciona" className="hover:text-[#0B1D2D] transition-colors">Como funciona</a>
-          <a href="#simuladores" className="hover:text-[#0B1D2D] transition-colors">Simuladores</a>
-          <a href="#gabinete" className="hover:text-[#0B1D2D] transition-colors">Gabinete</a>
-          <a href="#pacote" className="hover:text-[#0B1D2D] transition-colors">Pacote</a>
-          <a href="#precos" className="hover:text-[#0B1D2D] transition-colors">Preços</a>
-        </div>
+    <footer className="border-t border-black/5 py-8">
+      <div className="max-w-[1120px] mx-auto px-5 md:px-6 flex flex-col md:flex-row gap-4 justify-between text-[12px] text-black/40">
+        <span className="inline-flex items-center gap-2"><BrandMark size={20} /> © {new Date().getFullYear()} Estudo 360</span>
+        <span className="flex gap-4"><a href="#funciona" className="hover:text-black">Como funciona</a><a href="#simuladores" className="hover:text-black">Simuladores</a><a href="#gabinete" className="hover:text-black">Gabinete</a></span>
       </div>
     </footer>
   );
 }
 
-/* ───────── Atoms ───────── */
-function BrandMark({ size = 32 }: { size?: number }) {
-  return (
-    <img
-      src="/logo.svg"
-      alt=""
-      width={size}
-      height={size}
-      className="object-contain select-none shrink-0"
-      style={{ width: size, height: size }}
-      draggable={false}
-      aria-hidden="true"
-    />
-  );
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="inline-flex items-center gap-2 text-[11px] mono uppercase tracking-[2.5px] text-[#0677FF] font-[700]">
-      <span className="w-6 h-px bg-[#0677FF]" /> {children}
-    </div>
-  );
+function BrandMark({ size=28 }: { size?: number }) {
+  return <img src="/logo.svg" alt="" width={size} height={size} className="object-contain shrink-0" style={{width:size,height:size}} draggable={false} aria-hidden="true" />;
 }

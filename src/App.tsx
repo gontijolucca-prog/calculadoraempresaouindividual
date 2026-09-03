@@ -7,7 +7,8 @@ import { UpdateNotification } from './components/UpdateNotification';
 import { useUnsavedEdits } from './hooks/useUnsavedEdits';
 import { initVersionChecker, stopVersionChecker } from './lib/version-checker';
 import LegalInfo from './LegalInfo';
-import AuthView, { VerifyEmailGate } from './AuthView';
+import LandingPage from './LandingPage';
+import AuthView from './AuthView';
 import EmpresasList from './EmpresasList';
 import SimIntro, { SIM_INTROS } from './SimIntro';
 import ClientHub from './ClientHub';
@@ -347,6 +348,8 @@ function AppContent() {
   const { user, loading: authLoading, logout, sendVerificationEmail, reloadUser } = useAuth();
   const isAuthenticated = !!user;
   const needsVerification = !!user && !user.emailVerified && user.providerData.some(p => p.providerId === 'password');
+  const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   // Mode is persisted: ao atualizar a página o utilizador continua no mesmo contexto.
   // Default = 'empresa' (CRM): após login vai directo para a Lista de Empresas. O
   // selector "Como queres trabalhar hoje?" foi removido do fluxo.
@@ -675,7 +678,8 @@ function AppContent() {
     );
   }
   if (!user) {
-    return <AuthView />;
+    if (showAuth) return <AuthView initialMode={authMode} onBack={() => setShowAuth(false)} />;
+    return <LandingPage onEnter={() => { setAuthMode('login'); setShowAuth(true); }} onCreateAccount={() => { setAuthMode('signup'); setShowAuth(true); }} />;
   }
 
   // O selector "Como queres trabalhar hoje?" foi removido: após login vai-se directo

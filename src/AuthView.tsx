@@ -17,9 +17,9 @@ function mapAuthError(code: string): string {
   return 'Ocorreu um erro. Tenta novamente.';
 }
 
-export default function AuthView() {
+export default function AuthView({ initialMode = 'login', onBack }: { initialMode?: 'login' | 'signup'; onBack?: () => void }) {
   const { signInWithEmail, signUpWithEmail, resetPassword } = useAuth();
-  const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'reset'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -62,6 +62,11 @@ export default function AuthView() {
     <div className="min-h-screen w-full bg-[#F5F7FA] flex flex-col">
       <header className="px-6 py-4 flex items-center justify-between max-w-6xl mx-auto w-full">
         <div className="flex items-center gap-2.5">
+          {onBack ? (
+            <button onClick={onBack} className="inline-flex items-center gap-1.5 text-[13px] font-[600] px-3 py-1.5 rounded-full border border-black/10 hover:bg-black/5">
+              <ArrowRight className="w-3.5 h-3.5 rotate-180" /> Voltar
+            </button>
+          ) : null}
           <img src="/logo.svg" alt="" className="w-8 h-8 object-contain" />
           <span className="text-[16px] font-[800] tracking-[-0.2px] text-[#0B1D2D]">ESTUDO<span className="text-[#0677FF]">360°</span></span>
         </div>
