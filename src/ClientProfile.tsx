@@ -1282,7 +1282,7 @@ export default function ClientProfile({
     >
       {/* LEFT PANEL */}
       <motion.div
-        className="xl:w-[460px] shrink-0 bg-white border-b border-[#E2E8F0] xl:border-b-0 xl:border-r xl:overflow-y-auto xl:h-full flex flex-col"
+        data-print="form" className="xl:w-[460px] shrink-0 bg-white border-b border-[#E2E8F0] xl:border-b-0 xl:border-r xl:overflow-y-auto xl:h-full flex flex-col"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.35, delay: 0.05, ease: [0.32, 0.72, 0, 1] }}

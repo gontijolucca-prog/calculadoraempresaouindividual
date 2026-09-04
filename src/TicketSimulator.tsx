@@ -583,7 +583,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }} className={outerCls}>
       {/* ── Left Pane ── */}
-      <div className={leftCls}>
+      <div data-print="form" className={leftCls}>
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">

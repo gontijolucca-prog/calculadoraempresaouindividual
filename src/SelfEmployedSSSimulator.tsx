@@ -279,7 +279,7 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
   return (
     <motion.div className={outerCls} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}>
       {/* Left Pane - Form */}
-      <div className={leftCls}>
+      <div data-print="form" className={leftCls}>
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-[24px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador SS Independente <Tip>SS Independente = Segurança Social para trabalhadores a recibos verdes ou ENI. Diferente dos trabalhadores por conta de outrem: o próprio paga a sua contribuição trimestralmente.</Tip></h2>

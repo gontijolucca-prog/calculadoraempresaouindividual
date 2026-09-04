@@ -631,7 +631,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
       // lado-a-lado ficavam com ~300px cada — textos partidos e valores cortados.
       // Abaixo de xl: coluna única (form em cima, resultados abaixo).
       <div className="overflow-y-auto xl:overflow-hidden xl:h-full xl:flex xl:flex-row bg-[#F5F7FA]">
-        <div className="xl:w-[460px] shrink-0 bg-white border-b border-[#E2E8F0] xl:border-b-0 xl:border-r xl:overflow-y-auto xl:h-full flex flex-col">
+        <div data-print="form" className="xl:w-[460px] shrink-0 bg-white border-b border-[#E2E8F0] xl:border-b-0 xl:border-r xl:overflow-y-auto xl:h-full flex flex-col">
           <div className="p-6 md:p-8 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md z-20 border-b border-[#F1F5F9]">
             <div>
               <h2 className="text-[20px] font-[800] tracking-[-0.5px] text-[#0F172A]">Estudo 360</h2>

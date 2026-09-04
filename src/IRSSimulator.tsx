@@ -92,7 +92,7 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
     // (valores "0,00 €" cortados e coluna Modelo 3 esmagada pela de 300px).
     <div className="overflow-y-auto xl:overflow-hidden xl:h-full xl:grid xl:grid-cols-[440px_1fr] bg-[#F5F7FA] text-[#1E293B]">
       {/* ── Formulário ─────────────────────────────────────────── */}
-      <div className="bg-white border-b border-[#E2E8F0] xl:border-b-0 xl:border-r xl:overflow-y-auto p-4 sm:p-5 xl:p-[28px] flex flex-col gap-6 xl:h-full">
+      <div data-print="form" className="bg-white border-b border-[#E2E8F0] xl:border-b-0 xl:border-r xl:overflow-y-auto p-4 sm:p-5 xl:p-[28px] flex flex-col gap-6 xl:h-full">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="text-[22px] font-[800] text-[#0F172A] leading-tight tracking-[-0.4px] flex items-center gap-2">

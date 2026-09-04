@@ -211,8 +211,8 @@ textarea:focus-visible,
     height: auto !important;
   }
 
-  /* Hide simulator left pane (form inputs) — only print results */
-  #main-content .bg-white.border-r {
+  /* Hide simulator left pane (form inputs) — only print results (usa data-print para não depender de classe Tailwind) */
+  #main-content [data-print="form"] {
     display: none !important;
   }
 

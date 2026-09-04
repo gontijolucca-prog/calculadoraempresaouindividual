@@ -469,7 +469,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
   return (
     <motion.div className={outerCls} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}>
       {/* Left Pane */}
-      <div className={leftCls}>
+      <div data-print="form" className={leftCls}>
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Salário Líquido (TCO)</h2>
