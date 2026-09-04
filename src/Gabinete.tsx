@@ -779,6 +779,7 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
   const [passphrase, setPassphrase] = useState(()=> getCofrePassphrase() || '');
   const [revealed, setRevealed] = useState<Record<string,string>>({});
   const [showPass, setShowPass] = useState(false);
+  const [showSecret, setShowSecret] = useState(false);
 
   const filtered = useMemo(()=> {
     const s=q.toLowerCase();
@@ -889,7 +890,10 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
               </div>
               <input value={form.username||''} onChange={e=>setForm({...form, username:e.target.value})} placeholder="Username / NIF" className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
               <input value={form.url||''} onChange={e=>setForm({...form, url:e.target.value})} placeholder="URL (https://...)" className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
-              <input value={(form as unknown as { secretPlain?: string }).secretPlain||''} onChange={e=>setForm({...form, secretPlain:e.target.value} as never)} placeholder="Segredo — senha / token" type="password" className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm font-mono" />
+              <div className="relative">
+                <input value={(form as unknown as { secretPlain?: string }).secretPlain||''} onChange={e=>setForm({...form, secretPlain:e.target.value} as never)} placeholder="Segredo — senha / token" type={showSecret ? 'text' : 'password'} className="w-full pr-10 pl-3 py-2.5 rounded-xl border border-zinc-200 text-sm font-mono" />
+                <button type="button" onClick={()=>setShowSecret(v=>!v)} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-500" aria-label={showSecret ? 'Esconder segredo' : 'Mostrar segredo'}>{showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
+              </div>
               <textarea value={form.notas||''} onChange={e=>setForm({...form, notas:e.target.value})} placeholder="Notas (opcional)" rows={2} className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
             </div>
             <div className="flex justify-end gap-2 mt-6"><button onClick={()=>setShowNew(false)} className="px-4 py-2.5 rounded-xl border border-zinc-200 text-sm">Cancelar</button><button onClick={handleSave} className="px-4 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-medium">Cifrar e guardar</button></div>
