@@ -70,7 +70,7 @@ function Hero({ onLogin, onSignup }: { onLogin: () => void; onSignup: () => void
   return (
     <section id="top" className="max-w-[1120px] mx-auto px-5 md:px-6 pt-14 md:pt-20 pb-12 md:pb-16">
       <div className="max-w-[720px]">
-        <div className="inline-flex items-center gap-2 text-[11px] tracking-[1.6px] uppercase font-[700] text-black/40">
+        <div className="inline-flex items-center gap-2 text-[11px] tracking-[1.6px] uppercase font-[700] text-[#6B7280]">
           <span className="w-6 h-px bg-[var(--brand-bordeaux-neon)]" /> OE 2026 · CIRS/CIRC/CIVA atualizados
         </div>
         <h1 className="display-serif mt-4 text-[40px] md:text-[64px] leading-[0.95] tracking-[-0.03em] font-[200]">
@@ -84,7 +84,7 @@ function Hero({ onLogin, onSignup }: { onLogin: () => void; onSignup: () => void
           <button onClick={onSignup} className="inline-flex items-center gap-2 bg-[#0B1D2D] text-white px-6 py-3.5 rounded-full text-[14px] font-[700] hover:bg-black">Criar conta grátis <ArrowRight className="w-4 h-4" /></button>
           <button onClick={onLogin} className="inline-flex items-center gap-2 bg-white border border-black/10 px-6 py-3.5 rounded-full text-[14px] font-[600] hover:bg-black/[0.03]">Entrar</button>
         </div>
-        <div className="mt-6 flex flex-wrap gap-4 text-[12px] text-black/40">
+        <div className="mt-6 flex flex-wrap gap-4 text-[12px] text-[#6B7280]">
           <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /> Sem cartão</span>
           <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /> Cofre privado</span>
           <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /> Impressão A4</span>
@@ -107,7 +107,7 @@ function Strip() {
         {items.map(([n,l])=>(
           <div key={l} className="flex items-baseline gap-3">
             <span className="display-serif text-[28px] font-[800] tracking-tight">{n}</span>
-            <span className="text-[11px] tracking-[1.4px] uppercase font-[600] text-black/40">{l}</span>
+            <span className="text-[11px] tracking-[1.4px] uppercase font-[600] text-[#6B7280]">{l}</span>
           </div>
         ))}
       </div>
@@ -123,7 +123,7 @@ function HowItWorks() {
   ];
   return (
     <section id="funciona" className="max-w-[1120px] mx-auto px-5 md:px-6 py-14 md:py-20">
-      <div className="text-[11px] tracking-[1.6px] uppercase font-[700] text-black/30">Como funciona</div>
+      <div className="text-[11px] tracking-[1.6px] uppercase font-[700] text-[#6B7280]">Como funciona</div>
       <h2 className="display-serif mt-2 text-[28px] md:text-[40px] leading-[0.95] tracking-[-0.02em] font-[200]">Do telefonema ao <span className="italic font-[800] text-[#0677FF]">PDF</span> em 3 passos.</h2>
       <div className="mt-8 grid md:grid-cols-3 gap-4">
         {steps.map(s=>(
@@ -148,7 +148,7 @@ function Catalog() {
     <section id="simuladores" className="max-w-[1120px] mx-auto px-5 md:px-6 py-10 md:py-14 border-t border-black/5">
       <div className="flex items-baseline justify-between gap-4">
         <h2 className="display-serif text-[22px] md:text-[28px] font-[200] tracking-[-0.02em]"><span className="italic font-[800]">12</span> simuladores + gabinete</h2>
-        <span className="hidden md:inline text-[12px] text-black/40">Guias incluídos</span>
+        <span className="hidden md:inline text-[12px] text-[#6B7280]">Guias incluídos</span>
       </div>
       <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {tools.map(([label,sub,Icon])=>(
@@ -156,7 +156,7 @@ function Catalog() {
             <span className="w-8 h-8 grid place-items-center rounded-full bg-[#0677FF]/10 text-[#0677FF]"><Icon className="w-4 h-4" /></span>
             <div className="min-w-0">
               <div className="text-[13px] font-[700] leading-none">{label}</div>
-              <div className="text-[11px] text-black/40">{sub}</div>
+              <div className="text-[11px] text-[#6B7280]">{sub}</div>
             </div>
           </div>
         ))}
@@ -199,7 +199,7 @@ function Gabinete() {
         {feats.map(([t,s,Icon])=>(
           <div key={t} className="rounded-2xl border border-black/5 p-4 bg-white flex items-center gap-3">
             <span className="w-8 h-8 grid place-items-center rounded-full bg-[#0677FF]/10 text-[#0677FF]"><Icon className="w-4 h-4" /></span>
-            <div><div className="text-[13px] font-[700] leading-none">{t}</div><div className="text-[11px] text-black/40">{s}</div></div>
+            <div><div className="text-[13px] font-[700] leading-none">{t}</div><div className="text-[11px] text-[#6B7280]">{s}</div></div>
           </div>
         ))}
       </div>
@@ -216,7 +216,7 @@ function Novidades() {
   return (
     <section className="max-w-[1120px] mx-auto px-5 md:px-6 py-10 md:py-14 border-t border-black/5">
       <div className="rounded-2xl border border-black/5 p-6 md:p-8 bg-[#F8FAFC] border-t-[3px] border-t-[var(--brand-bordeaux-neon)]/30">
-        <div className="text-[11px] tracking-[1.4px] uppercase font-[700] text-black/30">Novidades</div>
+        <div className="text-[11px] tracking-[1.4px] uppercase font-[700] text-[#6B7280]">Novidades</div>
         <div className="mt-2 grid md:grid-cols-3 gap-6">
           <div><div className="text-[14px] font-[700] flex items-center gap-2"><Lock className="w-4 h-4 text-[#0677FF]" /> Contas privadas</div><div className="mt-1 text-[13px] text-black/60">Cada conta vê só os seus clientes. Cofre por conta.</div></div>
           <div><div className="text-[14px] font-[700] flex items-center gap-2"><Database className="w-4 h-4 text-[#0677FF]" /> Calendário fiscal</div><div className="mt-1 text-[13px] text-black/60">312 obrigações de 2026 já no gabinete. Mês atual como tarefas.</div></div>
@@ -271,7 +271,7 @@ function FinalCTA({ onSignup }: { onSignup: () => void }) {
     <section className="max-w-[1120px] mx-auto px-5 md:px-6 py-12 md:py-16 border-t border-black/5 text-center">
       <h2 className="display-serif text-[28px] md:text-[40px] leading-[0.95] tracking-[-0.02em] font-[200]">Próximo cliente que ligar,<br /><span className="italic font-[800] text-[#0677FF]">desligue com tudo pronto.</span></h2>
       <button onClick={onSignup} className="mt-6 inline-flex items-center gap-2 bg-[#0B1D2D] text-white px-6 py-3.5 rounded-full text-[14px] font-[700] hover:bg-black">Criar conta grátis <ArrowRight className="w-4 h-4" /></button>
-      <div className="mt-3 text-[11px] tracking-[1.4px] uppercase font-[600] text-black/30">Sem cartão · acesso imediato</div>
+      <div className="mt-3 text-[11px] tracking-[1.4px] uppercase font-[600] text-[#6B7280]">Sem cartão · acesso imediato</div>
     </section>
   );
 }
@@ -279,7 +279,7 @@ function FinalCTA({ onSignup }: { onSignup: () => void }) {
 function Footer() {
   return (
     <footer className="border-t border-black/5 py-8">
-      <div className="max-w-[1120px] mx-auto px-5 md:px-6 flex flex-col md:flex-row gap-4 justify-between text-[12px] text-black/40">
+      <div className="max-w-[1120px] mx-auto px-5 md:px-6 flex flex-col md:flex-row gap-4 justify-between text-[12px] text-[#6B7280]">
         <span className="inline-flex items-center gap-2"><BrandMark size={20} /> © {new Date().getFullYear()} Estudo 360</span>
         <span className="flex gap-4"><a href="#funciona" className="hover:text-black">Como funciona</a><a href="#simuladores" className="hover:text-black">Simuladores</a><a href="#gabinete" className="hover:text-black">Gabinete</a></span>
       </div>

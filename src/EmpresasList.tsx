@@ -288,7 +288,7 @@ const CardHistorico: React.FC<{ empId: string; onRestore: (rec: SimulationRecord
     );
   }
   return (
-    <div className="max-h-72 overflow-y-auto pr-1 space-y-1">
+    <div className="max-h-72 overflow-y-auto overscroll-contain pr-1 space-y-1">
       {records.map((rec) => {
         const Icon = TIPO_ICON[rec.tipo] ?? Calculator;
         const label = SIM_LABELS[rec.tipo as SimView] ?? rec.label ?? 'Simulação';
