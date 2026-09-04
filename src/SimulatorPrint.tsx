@@ -228,7 +228,7 @@ export function SimulatorPrintButton({ compact = false }: { compact?: boolean })
       onClick={onPrint}
       title="Imprimir esta simulação em A4 / Guardar PDF"
       aria-label="Imprimir simulação em A4"
-      className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[9px] border border-[#D7E2EE] bg-white px-2 py-2 text-[12px] font-[700] text-[#475569] transition-colors hover:border-[var(--brand-bordeaux-neon)] hover:bg-[var(--brand-bordeaux-soft)] hover:text-[var(--brand-bordeaux)] sm:px-3 ${compact ? 'sm:px-2.5' : ''}`}
+      className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[9px] border border-[#D7E2EE] bg-white px-3 py-2.5 text-[12px] font-[700] text-[#475569] transition-colors hover:border-[var(--brand-bordeaux-neon)] hover:bg-[var(--brand-bordeaux-soft)] hover:text-[var(--brand-bordeaux)] ${compact ? 'sm:px-2.5' : ''}`}
     >
       <Printer className="h-4 w-4 text-[#0677FF]" />
       <span className="hidden sm:inline">Imprimir A4</span>
