@@ -78,12 +78,16 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour 
               <div className="hidden text-xs text-zinc-500 sm:block">{functionLabel} · {functionDesc}</div>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-right text-xs text-zinc-500">
+          <div className="hidden sm:flex items-center gap-2 text-right text-xs text-zinc-500">
             <span>{clientes.length} clientes</span>
             <span className="opacity-30">•</span>
             <span>{tarefas.filter(t=>t.estado!=='done').length} tarefas abertas</span>
             <span className="opacity-30">•</span>
             <span>{cofre.length} acessos</span>
+          </div>
+          <div className="sm:hidden text-right text-[11px] leading-tight text-zinc-500">
+            <div>{clientes.length} clientes</div>
+            <div>{tarefas.filter(t=>t.estado!=='done').length} abertas</div>
           </div>
         </div>
       </div>
