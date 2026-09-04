@@ -107,10 +107,15 @@ function isValidEmpresasPayload(data) {
   return data.keys().hasOnly(['list', 'updatedAt'])
       && data.list is list
       && data.list.size() < 500
-      && data.updatedAt is number;
+      && data.updatedAt is number
+      // Validação leve de conteúdo para mitigar bomb JSON — cada empresa tem nome/nif curtos
+      && data.list.size() == 0 || (data.list[0].keys().hasAny(['nome', 'nif', 'profile']));
 }
 
 function isValidGabineteDoc(data) {
-  return data.size() < 500
-      && (!('_updatedAt' in data) || data._updatedAt is number);
+  return data.size() < 200
+      && (!('_updatedAt' in data) || data._updatedAt is number)
+      // Limita strings longas para evitar bomb de storage e XSS persistido
+      && (!('titulo' in data) || (data.titulo is string && data.titulo.size() < 300))
+      && (!('nome' in data) || (data.nome is string && data.nome.size() < 200));
 }

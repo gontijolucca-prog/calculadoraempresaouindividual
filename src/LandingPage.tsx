@@ -16,7 +16,6 @@ export default function LandingPage({ onEnter, onCreateAccount }: Props) {
   const goSignup = onCreateAccount || onEnter;
   return (
     <div className="min-h-screen w-full bg-white text-[#0B1D2D] overflow-x-hidden">
-      <FontInjector />
       <NavBar onLogin={onEnter} onSignup={goSignup} />
       <Hero onLogin={onEnter} onSignup={goSignup} />
       <Strip />
@@ -30,18 +29,6 @@ export default function LandingPage({ onEnter, onCreateAccount }: Props) {
       <FinalCTA onSignup={goSignup} />
       <Footer />
     </div>
-  );
-}
-
-function FontInjector() {
-  return (
-    <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,200;9..144,400;9..144,700;9..144,900&family=JetBrains+Mono:wght@500;700&display=swap');
-      .display-serif { font-family: 'Fraunces', Georgia, serif; font-optical-sizing: auto; }
-      .mono { font-family: 'JetBrains Mono', monospace; }
-      .brand-sans { font-family: 'Montserrat', 'Helvetica Neue', sans-serif; }
-      html, body, #root { background: #fff; }
-    `}</style>
   );
 }
 
@@ -63,7 +50,7 @@ function NavBar({ onLogin, onSignup }: { onLogin: () => void; onSignup: () => vo
         <div className="flex items-center gap-2">
           <button onClick={onLogin} className="hidden sm:inline-flex text-[13px] font-[600] px-4 py-2 rounded-full hover:bg-black/[0.04]">Entrar</button>
           <button onClick={onSignup} className="inline-flex items-center gap-1.5 text-[13px] font-[700] text-white bg-[#0B1D2D] px-4 py-2 rounded-full hover:bg-black">Criar conta <ArrowRight className="w-3.5 h-3.5" /></button>
-          <button onClick={() => setOpen(o=>!o)} className="md:hidden w-8 h-8 grid place-items-center rounded-full border border-black/10"><ChevronDown className={`w-4 h-4 ${open?'rotate-180':''}`} /></button>
+          <button onClick={() => setOpen(o=>!o)} aria-label="Abrir menu" aria-expanded={open} className="md:hidden w-8 h-8 grid place-items-center rounded-full border border-black/10"><ChevronDown className={`w-4 h-4 transition-transform ${open?'rotate-180':''}`} /></button>
         </div>
       </div>
       {open && (

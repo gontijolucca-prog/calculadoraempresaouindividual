@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache, persistentSingleTabManager, enableIndexedDbPersistence, getFirestore } from 'firebase/firestore';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 
 // ⚠ SECURITY: Move to env vars in production.
 // These are Firebase Web API keys (not secrets), but should still be
@@ -33,7 +33,6 @@ try {
 
 export const db = _db;
 export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
 
 // Helper para UI: estado da ligação live
 export function onFirestoreError(cb: (err: unknown) => void) {

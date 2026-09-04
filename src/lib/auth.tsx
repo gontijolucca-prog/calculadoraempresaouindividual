@@ -3,21 +3,19 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithPopup,
   signOut,
   sendEmailVerification,
   sendPasswordResetEmail,
   updateProfile,
   type User,
 } from 'firebase/auth';
-import { auth, googleProvider } from './firebase';
+import { auth } from './firebase';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string, displayName?: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   sendVerificationEmail: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -58,10 +56,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signInWithGoogle = async () => {
-    await signInWithPopup(auth, googleProvider);
-  };
-
   const logout = async () => {
     try { const { setCofrePassphrase } = await import('./cofreCrypto'); setCofrePassphrase(null); } catch {}
     try {
@@ -95,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithEmail, signUpWithEmail, signInWithGoogle, logout, sendVerificationEmail, resetPassword, reloadUser }}>
+    <AuthContext.Provider value={{ user, loading, signInWithEmail, signUpWithEmail, logout, sendVerificationEmail, resetPassword, reloadUser }}>
       {children}
     </AuthContext.Provider>
   );
