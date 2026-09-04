@@ -63,16 +63,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    // Limpa passphrase do cofre da sessão (zero-knowledge: nunca fica em storage)
     try { const { setCofrePassphrase } = await import('./cofreCrypto'); setCofrePassphrase(null); } catch {}
-    // Limpa caches locais namespaced por utilizador ao fazer logout — evita leak
-    // entre contas no mesmo browser (estatisticamente o maior vetor de fuga em apps B2B partilhadas).
     try {
-      const uid = auth.currentUser?.uid;
-      if (uid) {
-        // Remove chaves namespaced do utilizador; o resto fica para migração se necessário
-        // Não apagamos tudo para não perder a landing/cache público
+      // Limpa caches locais por prefixo — evita leak entre contas no mesmo browser
+      const prefixes = ['estudo360:v1:gabinete:', 'estudo360:v1:empresas', 'estudo360:v1:currentEmpresaId'];
+      const toRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && prefixes.some(p => k.startsWith(p))) toRemove.push(k);
       }
+      toRemove.forEach(k => localStorage.removeItem(k));
+      // Tenta limpar IndexedDB do Firestore (best-effort, não bloqueia logout)
+      try { indexedDB.deleteDatabase('firebaseLocalStorageDb'); } catch {}
     } catch {}
     await signOut(auth);
   };

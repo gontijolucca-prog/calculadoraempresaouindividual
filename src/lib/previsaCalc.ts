@@ -208,7 +208,7 @@ export interface PrejPorAno {
 }
 export function saldosPorAno(s: PreviSaState): PrejPorAno[] {
   const pares: [keyof PreviSaState, keyof PreviSaState, keyof PreviSaState, keyof PreviSaState, keyof PreviSaState, number][] = [
-    ['prej_ate2017', 'prej_ate2017_deduzido' as keyof PreviSaState, 'prej_2018_elegivel' as keyof PreviSaState, 'prej_2018_obs' as keyof PreviSaState, 'prej_2018_elegivel' as keyof PreviSaState, 0],
+    ['prej_ate2017', 'prej_ate2017_deduzido' as keyof PreviSaState, 'prej_ate2017_elegivel' as keyof PreviSaState, 'prej_ate2017_obs' as keyof PreviSaState, 'prej_ate2017_elegivel' as keyof PreviSaState, 0],
     ['prej_2018', 'prej_2018_deduzido', 'prej_2018_elegivel', 'prej_2018_obs', 'prej_2018_elegivel', 2018],
     ['prej_2019', 'prej_2019_deduzido', 'prej_2019_elegivel', 'prej_2019_obs', 'prej_2019_elegivel', 2019],
     ['prej_2020', 'prej_2020_deduzido', 'prej_2020_elegivel', 'prej_2020_obs', 'prej_2020_elegivel', 2020],

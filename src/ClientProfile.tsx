@@ -176,6 +176,7 @@ export interface ContabilidadeData {
   fornecedores: number;               // 22 (saldo credor)
   estadoOutrosPassivo: number;        // 24 a pagar (credor)
   outrosPassivos: number;             // 27/28 credor
+  provisoes: number;                  // 29 — provisões (não corrente)
   // Demonstração de Resultados — completar
   impostoRendimento: number;          // 812 — imposto sobre o rendimento do período
   // Fluxos de Caixa
@@ -424,7 +425,7 @@ export default function ClientProfile({
         : (taxState.isServices ? 0.75 : 0.15);
       let eniRC = taxState.rev * coefArt31;
       const aplicaJustificacao = coefArt31 === 0.75 || coefArt31 === 0.35;
-      const reqJust = aplicaJustificacao && taxState.rev > 27360 ? taxState.rev * 0.15 : 0;
+      const reqJust = aplicaJustificacao && taxState.rev > 28320 ? taxState.rev * 0.15 : 0; // OE 2026 provisório (27 360 ×1,0351)
       const justDocs = costsEni + DED_ESPECIFICA_CAT_A_2026;
       if (reqJust > 0 && justDocs < reqJust) eniRC += reqJust - justDocs;
       if (profile.beneficioJovem && profile.idade <= 35)
@@ -1550,7 +1551,7 @@ export const defaultProfile: ClientProfile = {
     ativoFixoTangivel: 0, ativoIntangivel: 0, investimentosFinanceiros: 0, inventarios: 0,
     clientes: 0, estadoOutrosAtivo: 0, outrosAtivosCorrentes: 0, caixaDepositos: 0,
     capitalRealizado: 0, reservasResultadosTransitados: 0, resultadoLiquido: 0, outrasVariacoesCapital: 0,
-    financiamentosObtidos: 0, fornecedores: 0, estadoOutrosPassivo: 0, outrosPassivos: 0,
+    financiamentosObtidos: 0, fornecedores: 0, estadoOutrosPassivo: 0, outrosPassivos: 0, provisoes: 0,
     impostoRendimento: 0, caixaInicio: 0, saftImportado: false,
   },
   distribuicao: { salario: false, dividendos: false, reinvestir: false, misto: false },

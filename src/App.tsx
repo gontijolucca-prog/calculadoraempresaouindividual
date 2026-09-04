@@ -8,7 +8,7 @@ import { useUnsavedEdits } from './hooks/useUnsavedEdits';
 import { initVersionChecker, stopVersionChecker } from './lib/version-checker';
 import LegalInfo from './LegalInfo';
 import LandingPage from './LandingPage';
-import AuthView from './AuthView';
+import AuthView, { VerifyEmailGate } from './AuthView';
 import EmpresasList from './EmpresasList';
 import SimIntro, { SIM_INTROS } from './SimIntro';
 import ClientHub from './ClientHub';
@@ -223,7 +223,7 @@ const getInitialDiagnosticoState = (p: ClientProfileType, tax: TaxSimulatorState
   const ativoCorrente = n(k.inventarios) + n(k.clientes) + n(k.estadoOutrosAtivo) + n(k.outrosAtivosCorrentes) + n(k.caixaDepositos);
   const ativoTotal = ativoCorrente + n(k.ativoFixoTangivel) + n(k.ativoIntangivel) + n(k.investimentosFinanceiros);
   const passivoCorrente = n(k.fornecedores) + n(k.estadoOutrosPassivo) + n(k.outrosPassivos);
-  const passivoTotal = passivoCorrente + n(k.financiamentosObtidos);
+  const passivoTotal = passivoCorrente + n(k.financiamentosObtidos) + n(k.provisoes);
   const capitaisProprios = n(k.capitalRealizado) + n(k.reservasResultadosTransitados) + n(k.resultadoLiquido) + n(k.outrasVariacoesCapital);
   const rl = n(k.resultadoLiquido);
   return {
@@ -504,22 +504,23 @@ function AppContent() {
     if (emp) upsertEmpresa({ ...emp, previsa: previSaState });
   }, [previSaState, currentEmpresaId]);
 
-  // Persiste o estado de TODOS os simuladores na empresa atual. É isto que dá
-  // independência por cliente: cada empresa guarda os seus próprios dados de
-  // simulador; ao reabri-la (selectEmpresa) carrega-se exatamente este snapshot.
-  // Corre depois dos syncs de perfil/previsa para ler a empresa já atualizada.
+  // Persiste o estado de TODOS os simuladores na empresa atual (debounced 400ms
+  // para não fazer stamp thrashing a cada keypress).
   useEffect(() => {
     if (!currentEmpresaId) return;
-    const emp = getEmpresa(currentEmpresaId);
-    if (!emp) return;
-    upsertEmpresa({
-      ...emp,
-      sims: {
-        tax: taxState, vehicle: vehicleState, ticket: ticketState, selfss: ssState,
-        diagnostico: diagnosticoState, imoveis: imoveisState, imt: imtState,
-        salario: salarioState, irs: irsState,
-      },
-    });
+    const t = window.setTimeout(() => {
+      const emp = getEmpresa(currentEmpresaId);
+      if (!emp) return;
+      upsertEmpresa({
+        ...emp,
+        sims: {
+          tax: taxState, vehicle: vehicleState, ticket: ticketState, selfss: ssState,
+          diagnostico: diagnosticoState, imoveis: imoveisState, imt: imtState,
+          salario: salarioState, irs: irsState,
+        },
+      });
+    }, 400);
+    return () => window.clearTimeout(t);
   }, [taxState, vehicleState, ticketState, ssState, diagnosticoState, imoveisState, imtState, salarioState, irsState, currentEmpresaId]);
 
   // Auto-guarda no histórico do cliente a simulação ativa (quando tem dados),
@@ -699,6 +700,16 @@ function AppContent() {
   if (!user) {
     if (showAuth) return <AuthView initialMode={authMode} onBack={() => setShowAuth(false)} />;
     return <LandingPage onEnter={() => { setAuthMode('login'); setShowAuth(true); }} onCreateAccount={() => { setAuthMode('signup'); setShowAuth(true); }} />;
+  }
+  if (needsVerification) {
+    return (
+      <VerifyEmailGate
+        email={user.email || ''}
+        onResend={async () => { await sendVerificationEmail(); }}
+        onReload={async () => { await reloadUser(); }}
+        onLogout={async () => { await logout(); }}
+      />
+    );
   }
 
   // O selector "Como queres trabalhar hoje?" foi removido: após login vai-se directo

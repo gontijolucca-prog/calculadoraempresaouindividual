@@ -20,7 +20,7 @@ import {
 export const DED_ESPECIFICA_CAT_A_2026 = Math.round(8.54 * IAS_2026 * 100) / 100; // 4587.09
 // Limiar da regra de justificação dos 15% (art.31 n.13). Valor 2025 mantido — a
 // Portaria de atualização 2026 ainda não foi publicada. ⚠ confirmar.
-export const LIMIAR_JUSTIFICACAO_15PCT = 27360;
+export const LIMIAR_JUSTIFICACAO_15PCT = 28320; // OE 2026 provisório: 27360 ×1,0351 — confirmar Portaria
 // Retenção liberatória sobre dividendos distribuídos — CIRS art.71.º.
 const TAXA_DIVIDENDOS = 0.28;
 

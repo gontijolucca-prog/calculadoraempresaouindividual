@@ -59,7 +59,7 @@ const LIMITE_ISENCAO_IRS_JOVEM = 55 * IAS_2026; // 29 542,15 €
 // Espelha src/lib/fiscal.ts (MESMO valor e MESMA interpretação — manter alinhados).
 // ⚠ Valor 2025 (27.360 €) mantido — a Portaria de atualização 2026 ainda não saiu;
 // confirmar com um contabilista. Ver docs/AUDITORIA-FISCAL-PENDENTE.md.
-export const LIMIAR_JUSTIFICACAO_15PCT = 27360;
+export const LIMIAR_JUSTIFICACAO_15PCT = 28320; // OE 2026 provisório: 27360 ×1,0351 (atualização IAS) — confirmar quando Portaria sair
 
 // Fração da coleta devolvida pelo município (0 a 5%) — Art.º 26.º Lei das
 // Finanças Locais. Cada câmara decide anualmente; valores abaixo são os

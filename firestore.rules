@@ -46,9 +46,10 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Tabela de preços/honorários (config pública)
+    // Tabela de preços/honorários — leitura pública, escrita só autenticada
     match /pricing/{docId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if request.auth != null;
     }
 
     match /ai_suggestions/{docId} {

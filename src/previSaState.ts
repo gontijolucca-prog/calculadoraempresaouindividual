@@ -90,6 +90,8 @@ export interface PreviSaState {
   // Saldo = apurado − deduzido. Mantém-se a discriminação mesmo quando o
   // painel principal mostra apenas o total.
   prej_ate2017_deduzido: number;
+  prej_ate2017_elegivel: boolean;
+  prej_ate2017_obs: string;
   prej_2018_deduzido: number;
   prej_2019_deduzido: number;
   prej_2020_deduzido: number;
@@ -202,6 +204,8 @@ export function defaultPreviSaState(): PreviSaState {
     prej_ate2017: 0, prej_2018: 0, prej_2019: 0, prej_2020: 0, prej_2021: 0,
     prej_2022: 0, prej_2023: 0, prej_2024: 0, prej_2025: 0, c397: 0,
     prej_ate2017_deduzido: 0,
+    prej_ate2017_elegivel: true,
+    prej_ate2017_obs: '',
     prej_2018_deduzido: 0, prej_2019_deduzido: 0, prej_2020_deduzido: 0,
     prej_2021_deduzido: 0, prej_2022_deduzido: 0, prej_2023_deduzido: 0, prej_2024_deduzido: 0,
     prej_2025_deduzido: 0,

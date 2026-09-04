@@ -566,7 +566,8 @@ function mergeEmpresasUnion(lists: EmpresaRecord[][]): EmpresaRecord[] {
  * protegida por uma flag em localStorage para não correr a cada arranque.
  */
 async function migrateLegacyBucketsToShared(): Promise<void> {
-  if (loadFromStorage<boolean>(MIGRATED_KEY, false)) return;
+  const perUidKey = getCurrentUid() ? `${MIGRATED_KEY}:${getCurrentUid()}` : MIGRATED_KEY;
+  if (loadFromStorage<boolean>(perUidKey, false)) return;
   try {
     const snap = await getDocs(collection(db, FIRESTORE_COLLECTION));
     const lists: EmpresaRecord[][] = [listEmpresas()];
@@ -582,7 +583,7 @@ async function migrateLegacyBucketsToShared(): Promise<void> {
         updatedAt: getEmpresasStamp(),
       });
     }
-    saveToStorage(MIGRATED_KEY, true);
+    saveToStorage(perUidKey, true);
   } catch (err) {
     // Falha silenciosa — repete-se no próximo arranque (flag não fica marcada).
     console.warn('[empresas] migração para documento partilhado falhou:', err);

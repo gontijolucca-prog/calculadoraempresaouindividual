@@ -24,11 +24,11 @@ function b64d(s: string): Uint8Array {
   return out;
 }
 
-async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKey> {
+async function deriveKey(passphrase: string, salt: Uint8Array, iter: number = ITER): Promise<CryptoKey> {
   const enc = new TextEncoder();
   const base = await crypto.subtle.importKey('raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
   return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt: salt as BufferSource, iterations: ITER, hash: HASH },
+    { name: 'PBKDF2', salt: salt as BufferSource, iterations: iter, hash: HASH },
     base,
     { name: ALGO, length: 256 },
     false,
@@ -60,7 +60,7 @@ export async function decryptSecret(cipher: CofreCipher, passphrase: string): Pr
   const salt = b64d(cipher.salt);
   const iv = b64d(cipher.iv);
   const ct = b64d(cipher.ciphertext);
-  const key = await deriveKey(passphrase, salt);
+  const key = await deriveKey(passphrase, salt, cipher.iter ?? ITER);
   const pt = await crypto.subtle.decrypt({ name: ALGO, iv: iv as BufferSource }, key, ct as BufferSource);
   return new TextDecoder().decode(pt);
 }
