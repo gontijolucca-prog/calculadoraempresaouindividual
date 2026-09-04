@@ -608,6 +608,25 @@ function AppContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
+  // Cross-fill: Diagnóstico vai buscar dados ao Previsa quando ainda está vazio
+  useEffect(() => {
+    if (!currentEmpresaId) return;
+    if (previSaState.volumeNegocios > 0 && diagnosticoState.volumeNegocios === 0) {
+      setDiagnosticoState(prev => ({ ...prev, volumeNegocios: previSaState.volumeNegocios }));
+    }
+  }, [previSaState.volumeNegocios, currentEmpresaId]);
+
+  // Cross-fill: perfil alimenta Previsa/Tax/Diagnóstico quando ainda vazios
+  useEffect(() => {
+    if (!currentEmpresaId) return;
+    const vol = clientProfile.faturaçaoAnualPrevista;
+    if (vol > 0) {
+      if (previSaState.volumeNegocios === 0) setPreviSaState(prev => ({ ...prev, volumeNegocios: vol }));
+      if (taxState.rev === 0) setTaxState(prev => ({ ...prev, rev: vol }));
+      if (diagnosticoState.volumeNegocios === 0) setDiagnosticoState(prev => ({ ...prev, volumeNegocios: vol }));
+    }
+  }, [clientProfile.faturaçaoAnualPrevista, currentEmpresaId]);
+
   // Dropdown "Relatórios" da sidebar: documento a pré-selecionar na vista.
   const [relatorioDocPreselect, setRelatorioDocPreselect] = useState<string | null>(null);
   const openRelatorios = (docId: string) => { setRelatorioDocPreselect(docId); setView('exportar'); };
@@ -979,17 +998,32 @@ function AppContent() {
     // os objetos aninhados (custos, contabilidade, …) e a vista de Perfil rebenta.
     const profile = normalizeProfile(emp.profile);
     const tax = (sims.tax as TaxSimulatorState) ?? getInitialTaxState(profile);
+    const previsaForInit = { ...defaultPreviSaState(), ...(emp.previsa ?? {}) };
     setClientProfile(profile);
     setTaxState(tax);
     setVehicleState((sims.vehicle as VehicleSimulatorState) ?? getInitialVehicleState(profile));
     setTicketState((sims.ticket as TicketSimulatorState) ?? getInitialTicketState(profile));
     setSSState((sims.selfss as SSState) ?? getInitialSSState(profile));
-    setDiagnosticoState((sims.diagnostico as DiagnosticoState) ?? getInitialDiagnosticoState(profile, tax));
+    const simsDiag = sims.diagnostico as DiagnosticoState | undefined;
+    if (simsDiag) {
+      setDiagnosticoState(simsDiag);
+    } else {
+      const diag = getInitialDiagnosticoState(profile, tax);
+      if (previsaForInit.volumeNegocios > 0) diag.volumeNegocios = previsaForInit.volumeNegocios;
+      // Se o diagnóstico ainda vem vazio mas o Previsa já tem RAI, usa-o como proxy de resultado
+      if (diag.resultadoLiquido === 0) {
+        const rai = previsaForInit.useRaiCalc
+          ? (previsaForInit.rai_711 + previsaForInit.rai_712 + previsaForInit.rai_72 + previsaForInit.rai_74 + previsaForInit.rai_75) - (previsaForInit.rai_cmv + previsaForInit.rai_62)
+          : previsaForInit.c701_rai;
+        if (rai !== 0) diag.resultadoLiquido = rai;
+      }
+      setDiagnosticoState(diag);
+    }
     setImoveisState((sims.imoveis as ImoveisState) ?? getInitialImoveisState(profile));
     setImtState((sims.imt as IMTState) ?? getInitialIMTState(profile));
     setSalarioState((sims.salario as SalarioState) ?? getInitialSalarioState(profile));
     setIrsState((sims.irs as IRSState) ?? getInitialIRSState(profile));
-    setPreviSaState({ ...defaultPreviSaState(), ...(emp.previsa ?? {}) });
+    setPreviSaState(previsaForInit);
     // Reconstrói os dados do SAF-T deste cliente a partir do XML guardado, para
     // que o botão "Ver dados do SAF-T" esteja SEMPRE disponível em clientes que
     // já têm SAF-T associado (não só na sessão em que foi importado).
@@ -1033,6 +1067,7 @@ function AppContent() {
         : prev.regimeContabilidade === 'transparencia_fiscal' ? 'organizada' : prev.regimeContabilidade,
     }));
     setDiagnosticoState(prev => ({ ...prev, custoFixoMensal: newState.fixedMo, volumeNegocios: newState.rev }));
+    if (newState.rev > 0) setPreviSaState(prev => prev.volumeNegocios === newState.rev ? prev : { ...prev, volumeNegocios: newState.rev });
   };
 
   const handleTicketStateChange = (newState: TicketSimulatorState) => {
@@ -1043,6 +1078,42 @@ function AppContent() {
   const handleSSStateChange = (newState: SSState) => {
     setSSState(newState);
     setClientProfile(prev => ({ ...prev, rendimentoMensalEni: newState.income, regimeSs: 'simplified', tipoRendimentoSs: newState.tipoRendimento }));
+  };
+
+  // Handlers que cruzam dados para não obrigar a reintroduzir a mesma info
+  const handleDiagnosticoStateChange = (newState: DiagnosticoState) => {
+    setDiagnosticoState(newState);
+    // Se o diagnóstico já tem volume e o perfil ainda não, alimenta o perfil
+    if (newState.volumeNegocios > 0) {
+      setClientProfile(prev => prev.faturaçaoAnualPrevista > 0 ? prev : { ...prev, faturaçaoAnualPrevista: newState.volumeNegocios });
+      setPreviSaState(prev => prev.volumeNegocios > 0 ? prev : { ...prev, volumeNegocios: newState.volumeNegocios });
+    }
+  };
+  const handleImoveisStateChange = (newState: ImoveisState) => setImoveisState(newState);
+  const handleIMTStateChange = (newState: IMTState) => {
+    setImtState(newState);
+    if (newState.idadeComprador > 0) setClientProfile(prev => prev.idade === newState.idadeComprador ? prev : { ...prev, idade: newState.idadeComprador });
+  };
+  const handleSalarioStateChange = (newState: SalarioState) => {
+    setSalarioState(newState);
+    setClientProfile(prev => {
+      let changed = false;
+      const next: ClientProfileType = { ...prev };
+      if (newState.nrDependentes !== prev.nrDependentes) { next.nrDependentes = newState.nrDependentes; changed = true; }
+      const civil = newState.estadoCivil === 'casado_1titular' || newState.estadoCivil === 'casado_2titulares' ? 'casado' : 'solteiro';
+      if (civil !== prev.estadoCivil) { (next as any).estadoCivil = civil; changed = true; }
+      return changed ? next : prev;
+    });
+  };
+  const handleIRSStateChange = (newState: IRSState) => setIrsState(newState);
+  const handleVehicleStateChange = (newState: VehicleSimulatorState) => setVehicleState(newState);
+  const handlePreviSaStateChange = (newState: PreviSaState) => {
+    setPreviSaState(newState);
+    if (newState.volumeNegocios > 0) {
+      setClientProfile(prev => prev.faturaçaoAnualPrevista === newState.volumeNegocios ? prev : { ...prev, faturaçaoAnualPrevista: newState.volumeNegocios });
+      setTaxState(prev => prev.rev === newState.volumeNegocios ? prev : { ...prev, rev: newState.volumeNegocios });
+      setDiagnosticoState(prev => prev.volumeNegocios === newState.volumeNegocios ? prev : { ...prev, volumeNegocios: newState.volumeNegocios });
+    }
   };
 
   // ── Funcionalidade D: guardar / restaurar simulações por cliente ──────────
@@ -1238,7 +1309,7 @@ function AppContent() {
           ? <TaxSimulator initialState={taxState} onStateChange={handleTaxStateChange} profile={clientProfile} />
           : simGate)}
         {view === 'vehicle' && introFor !== 'vehicle' && (currentEmpresaId
-          ? <VehicleSimulator initialState={vehicleState} onStateChange={setVehicleState} />
+          ? <VehicleSimulator initialState={vehicleState} onStateChange={handleVehicleStateChange} />
           : simGate)}
         {view === 'ticket' && introFor !== 'ticket' && (currentEmpresaId
           ? <TicketSimulator initialState={ticketState} onStateChange={handleTicketStateChange} profile={clientProfile} />
@@ -1247,22 +1318,22 @@ function AppContent() {
           ? <SelfEmployedSSSimulator initialState={ssState} onStateChange={handleSSStateChange} />
           : simGate)}
         {view === 'diagnostico' && introFor !== 'diagnostico' && (currentEmpresaId
-          ? <DiagnosticoAutonomia initialState={diagnosticoState} onStateChange={setDiagnosticoState} />
+          ? <DiagnosticoAutonomia initialState={diagnosticoState} onStateChange={handleDiagnosticoStateChange} />
           : simGate)}
         {view === 'imoveis' && introFor !== 'imoveis' && (currentEmpresaId
-          ? <ImoveisEmpresa initialState={imoveisState} onStateChange={setImoveisState} profile={clientProfile} />
+          ? <ImoveisEmpresa initialState={imoveisState} onStateChange={handleImoveisStateChange} profile={clientProfile} />
           : simGate)}
         {view === 'imt' && introFor !== 'imt' && (currentEmpresaId
-          ? <IMTSimulator initialState={imtState} onStateChange={setImtState} />
+          ? <IMTSimulator initialState={imtState} onStateChange={handleIMTStateChange} />
           : simGate)}
         {view === 'salario' && introFor !== 'salario' && (currentEmpresaId
-          ? <SalarioLiquidoSimulator initialState={salarioState} onStateChange={setSalarioState} />
+          ? <SalarioLiquidoSimulator initialState={salarioState} onStateChange={handleSalarioStateChange} />
           : simGate)}
         {view === 'irs' && introFor !== 'irs' && (currentEmpresaId
-          ? <IRSSimulator initialState={irsState} onStateChange={setIrsState} />
+          ? <IRSSimulator initialState={irsState} onStateChange={handleIRSStateChange} />
           : simGate)}
         {view === 'previsa' && introFor !== 'previsa' && (currentEmpresaId
-          ? <PreviSaSimulator initialState={previSaState} onStateChange={setPreviSaState} />
+          ? <PreviSaSimulator initialState={previSaState} onStateChange={handlePreviSaStateChange} />
           : simGate)}
         {view === 'historico' && (
           <SimulacoesHistory
