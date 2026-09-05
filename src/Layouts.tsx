@@ -292,7 +292,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                       boxShadow: 'inset 0 0 0 1px rgba(225,29,72,0.22)',
                     }}
                   >
-                    <span className="w-2 h-2 rounded-full bg-[var(--brand-bordeaux-neon)] shrink-0 animate-pulse" style={{ boxShadow: '0 0 0 6px var(--brand-bordeaux-glow)' }} aria-hidden="true" />
+                    <span className="w-2 h-2 rounded-full bg-[var(--brand-bordeaux-neon)] shrink-0 bordeaux-neon-pulse" style={{ boxShadow: '0 0 0 6px var(--brand-bordeaux-glow)' }} aria-hidden="true" />
                     <span className="min-w-0 flex-1">
                       <span className="block text-[9px] font-[800] uppercase tracking-[1px] text-[var(--brand-bordeaux-neon)]">A trabalhar em</span>
                       <span className="block text-[13px] font-[700] text-[#0B1D2D] truncate">{activeClientName}</span>

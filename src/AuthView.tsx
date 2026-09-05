@@ -79,7 +79,7 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
         <div className="w-full max-w-6xl grid lg:grid-cols-[1.1fr_0.9fr] gap-8 items-start">
           {/* Copy à esquerda — reassurance de segurança */}
           <div className="hidden lg:block pt-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#0B1D2D]/10 text-[11px] font-[700] tracking-[1.5px] uppercase text-[#0B1D2D]/60">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#0B1D2D]/10 text-[11px] font-[700] tracking-[1.5px] uppercase text-[#0B1D2D]/60 bordeaux-neon-pulse">
               <ShieldCheck className="w-3.5 h-3.5 text-[var(--brand-bordeaux-neon)]" /> Acesso seguro por conta
             </div>
             <h1 className="mt-4 text-[42px] font-[800] leading-[0.95] tracking-[-1.5px] text-[#0B1D2D]">

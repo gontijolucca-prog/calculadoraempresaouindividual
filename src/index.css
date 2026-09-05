@@ -247,6 +247,12 @@ textarea:focus-visible,
 }
 .guia-card-destaque { animation: guia-card-pulse 1.5s ease-in-out infinite; }
 
+@keyframes bordeaux-neon-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--brand-bordeaux-glow), 0 0 10px var(--brand-bordeaux-glow); }
+  50%      { box-shadow: 0 0 0 8px rgba(225, 29, 72, 0), 0 0 18px var(--brand-bordeaux-glow); }
+}
+.bordeaux-neon-pulse { animation: bordeaux-neon-pulse 2s ease-in-out infinite; }
+
 @media (prefers-reduced-motion: reduce) {
-  .guia-destaque, .guia-card-destaque { animation: none; }
+  .guia-destaque, .guia-card-destaque, .bordeaux-neon-pulse { animation: none; }
 }

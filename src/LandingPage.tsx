@@ -81,7 +81,7 @@ function Hero({ onLogin, onSignup }: { onLogin: () => void; onSignup: () => void
           Perfil, simulação fiscal, proposta e contrato — com a tua marca. Gabinete, cofre e calendário fiscal incluídos. Cada conta vê só os seus clientes.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <button onClick={onSignup} className="inline-flex items-center gap-2 bg-[#0B1D2D] text-white px-6 py-3.5 rounded-full text-[14px] font-[700] hover:bg-black">Criar conta grátis <ArrowRight className="w-4 h-4" /></button>
+          <button onClick={onSignup} className="inline-flex items-center gap-2 bg-[#0B1D2D] text-white px-6 py-3.5 rounded-full text-[14px] font-[700] hover:bg-black bordeaux-neon-pulse" style={{ boxShadow: '0 0 0 0 var(--brand-bordeaux-glow)' }}>Criar conta grátis <ArrowRight className="w-4 h-4" /></button>
           <button onClick={onLogin} className="inline-flex items-center gap-2 bg-white border border-black/10 px-6 py-3.5 rounded-full text-[14px] font-[600] hover:bg-black/[0.03]">Entrar</button>
         </div>
         <div className="mt-6 flex flex-wrap gap-4 text-[12px] text-[#6B7280]">
@@ -251,7 +251,7 @@ function Pricing({ onSignup, onLogin }: { onSignup: () => void; onLogin: () => v
       <div className="mt-6 grid md:grid-cols-3 gap-4">
         {tiers.map(t=>(
           <div key={t.name} className={`relative rounded-2xl border p-6 flex flex-col ${t.hi ? 'bg-[#0B1D2D] text-white border-black' : 'bg-white border-black/5'}`}>
-            {t.hi && <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] tracking-[1.4px] uppercase font-[700] px-2.5 py-1 rounded-full bg-[var(--brand-bordeaux-neon)] text-white" style={{ boxShadow: '0 4px 12px var(--brand-bordeaux-glow)' }}>Mais usado</span>}
+            {t.hi && <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] tracking-[1.4px] uppercase font-[700] px-2.5 py-1 rounded-full bg-[var(--brand-bordeaux-neon)] text-white bordeaux-neon-pulse" style={{ boxShadow: '0 4px 12px var(--brand-bordeaux-glow)' }}>Mais usado</span>}
             <div className="text-[11px] tracking-[1.4px] uppercase font-[700] opacity-60">{t.name} · {t.note}</div>
             <div className="mt-2 flex items-baseline gap-1"><span className="text-[36px] font-[200] tracking-tight">€{t.price}</span><span className="text-[12px] opacity-60">/mês</span></div>
             <ul className="mt-4 space-y-2 flex-1">
