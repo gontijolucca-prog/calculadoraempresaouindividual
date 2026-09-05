@@ -47,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUpWithEmail = async (email: string, password: string, displayName?: string) => {
+    auth.languageCode = 'pt-PT';
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     if (displayName?.trim() && cred.user) {
       await updateProfile(cred.user, { displayName: displayName.trim() });
@@ -75,10 +76,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const sendVerificationEmail = async () => {
     if (!auth.currentUser) throw new Error('Sem utilizador autenticado');
+    auth.languageCode = 'pt-PT';
     await sendEmailVerification(auth.currentUser);
   };
 
   const resetPassword = async (email: string) => {
+    auth.languageCode = 'pt-PT';
     await sendPasswordResetEmail(auth, email);
   };
 
