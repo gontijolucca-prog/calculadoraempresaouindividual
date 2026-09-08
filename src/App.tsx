@@ -685,6 +685,25 @@ function AppContent() {
   // ref antes de abrir o seletor de ficheiro. Estes refs têm de viver ANTES do
   // return condicional do login — hooks depois dele mudam a contagem entre
   // renders e crasham a app (React #310).
+  // Ao trocar de conta, limpa estado sensível em memória para não fazer flash de dados do user anterior
+  const prevUidRef = useRef<string | null>(null);
+  useEffect(() => {
+    const uid = user?.uid || null;
+    if (prevUidRef.current && prevUidRef.current !== uid) {
+      setCurrentEmpresaIdState(null);
+      setClientProfile({ ...defaultProfile });
+      setPreviSaState(defaultPreviSaState());
+      setEmpresasRefresh(n => n + 1);
+    }
+    prevUidRef.current = uid;
+  }, [user?.uid]);
+
+  // Migra dados legados do Gabinete shared → uid na primeira autenticação
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    import('./lib/gabinete').then(m => m.migrateGabineteSharedToUser().catch(()=>{}));
+  }, [isAuthenticated]);
+
   const botSaftInputRef = useRef<HTMLInputElement>(null);
   const botSaftTargetRef = useRef<'novo' | 'empresa'>('novo');
 
@@ -940,25 +959,6 @@ function AppContent() {
     setView('empresas');
     clearStorage('mode');
   };
-
-  // Ao trocar de conta, limpa estado sensível em memória para não fazer flash de dados do user anterior
-  const prevUidRef = useRef<string | null>(null);
-  useEffect(() => {
-    const uid = user?.uid || null;
-    if (prevUidRef.current && prevUidRef.current !== uid) {
-      setCurrentEmpresaIdState(null);
-      setClientProfile({ ...defaultProfile });
-      setPreviSaState(defaultPreviSaState());
-      setEmpresasRefresh(n => n + 1);
-    }
-    prevUidRef.current = uid;
-  }, [user?.uid]);
-
-  // Migra dados legados do Gabinete shared → uid na primeira autenticação
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    import('./lib/gabinete').then(m => m.migrateGabineteSharedToUser().catch(()=>{}));
-  }, [isAuthenticated]);
   // Deep-link from Ficha → Legal at a given anchor.
   // The anchor is passed via state; LegalInfo handles the scroll on mount via useEffect,
   // which avoids the previous race condition with setTimeout(50).
