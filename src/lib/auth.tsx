@@ -9,7 +9,8 @@ import {
   updateProfile,
   type User,
 } from 'firebase/auth';
-import { auth } from './firebase';
+import { auth, db } from './firebase';
+import { collection, addDoc } from 'firebase/firestore';
 
 interface AuthContextType {
   user: User | null;
@@ -42,8 +43,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
+  // Registo de acessos (fire-and-forget: nunca bloqueia o login se falhar).
+  // Cada utilizador só cria eventos próprios; só admin@estudo360.pt os lê.
+  const logAuthEvent = async (u: User, type: 'signup' | 'login') => {
+    try {
+      await addDoc(collection(db, 'auth_events'), {
+        uid: u.uid,
+        email: u.email || '',
+        type,
+        at: Date.now(),
+        verified: !!u.emailVerified,
+        app: 'estudo360',
+      });
+    } catch { /* offline ou rules antigas — login continua */ }
+  };
+
   const signInWithEmail = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    if (cred.user) void logAuthEvent(cred.user, 'login');
   };
 
   const signUpWithEmail = async (email: string, password: string, displayName?: string) => {
@@ -54,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     if (cred.user) {
       try { await sendEmailVerification(cred.user); } catch {}
+      void logAuthEvent(cred.user, 'signup');
     }
   };
 
