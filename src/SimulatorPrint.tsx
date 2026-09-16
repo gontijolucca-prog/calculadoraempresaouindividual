@@ -34,6 +34,19 @@ const PRINT_TITLES: Record<SimView, string> = {
   previsa: 'Simulação Previsa — IRC Modelo 22',
 };
 
+const PRINT_METHOD: Record<SimView, string> = {
+  tax: 'ENI em simplificado (coeficiente 0,75 nos serviços) com TSU de 21,4% vs. sociedade com IRC de 17% até €50.000 (PME) e 20% no excedente, TSU de 23,75% + 11% e derramas. Vence o regime com maior líquido anual.',
+  vehicle: 'IVA dedutível conforme a categoria e o regime da aquisição; Tributação Autónoma pela taxa do combustível e escalão de valor; limites de depreciação fiscal por tipo de viatura.',
+  ticket: 'Subsídio de refeição isento até €10,46/dia em cartão (€6,15 em numerário); 60% do encargo dedutível em IRC (art. 43.º do CIRC).',
+  selfss: 'Base de incidência de 70% nos serviços e 20% nos bens, taxa de 21,4%, com mínimo e teto indexados ao IAS; isenção total no 1.º ano de atividade (art. 164.º).',
+  diagnostico: 'Cinco pilares pontuados de 0 a 5 a partir dos rácios do balanço: autonomia (≥40%), endividamento (≤50%), liquidez (≥1,5), margem (≥15%), concentração de clientes e dependência financeira.',
+  imoveis: 'Comparativo arrendamento/comodato vs. entrada em espécie: IMT + Imposto do Selo (0,8%) + escritura na entrada, renda anual estimada de 4% e depreciação fiscal de 2% ao ano.',
+  imt: 'Tabelas de IMT por tipo de imóvel e localização, mais Imposto do Selo de 0,8%; benefício IMT Jovem na primeira habitação quando aplicável.',
+  salario: 'Tabelas de retenção na fonte de IRS de 2026 por estado civil, dependentes e região, com ou sem duodécimos; Segurança Social de 11% e subsídio de alimentação dentro dos limites.',
+  irs: 'Taxas progressivas do CIRS sobre o rendimento englobado, com deduções por dependentes e despesas, benefício do IRS Jovem e devolução municipal até 5%.',
+  previsa: 'Da Q07 (apuramento) à Q09 (matéria coletável) e Q10 (liquidação) do Modelo 22: IRC de 17% até €50.000 (PME) e 20% no excedente, tributações autónomas e pagamentos por conta.',
+};
+
 const num = (value: unknown): number => typeof value === 'number' && Number.isFinite(value) ? value : 0;
 const eur = (value: number): string => new Intl.NumberFormat('pt-PT', {
   style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2,
@@ -143,8 +156,8 @@ function buildReport(ctx: SimulatorPrintContextValue): string {
   const inputRows = [...detailSimulacao(ctx.view, ctx.state), ...extraInputs(ctx.view, ctx.state)];
   const resultRows = [...resultSimulacao(ctx.view, ctx.state, profile), ...extraResults(ctx.view, ctx.state, profile)];
   const officeName = office.nome?.trim() || 'Estudo 360';
-  const clientName = profile.nomeCliente?.trim() || 'Cliente não identificado';
-  const clientNif = profile.nif?.trim() || '—';
+  const clientName = profile.nomeCliente?.trim() || 'Por preencher (Perfil do cliente)';
+  const clientNif = profile.nif?.trim() || 'Por preencher';
   const date = new Intl.DateTimeFormat('pt-PT', { dateStyle: 'long' }).format(new Date());
   const color = /^#[0-9A-Fa-f]{6}$/.test(office.corPrimaria || '') ? office.corPrimaria : '#0677FF';
   const logo = office.logoDataUrl
@@ -163,8 +176,7 @@ function buildReport(ctx: SimulatorPrintContextValue): string {
   .logo-fallback { width: 18mm; height: 18mm; border-radius: 5mm; color:#fff; display:flex; align-items:center; justify-content:center; font-size:16pt; font-weight:800; }
   .office { font-size:8pt; color:#64748B; margin-top:1mm; }
   .doc-meta { text-align:right; color:#64748B; font-size:8pt; white-space:nowrap; }
-  .kicker { color:${esc(color)}; font-size:8pt; font-weight:800; letter-spacing:1.4px; text-transform:uppercase; margin: 9mm 0 1.5mm; }
-  h1 { font-size: 22pt; line-height:1.12; letter-spacing:-.4px; margin:0; }
+  h1 { font-size: 22pt; line-height:1.12; letter-spacing:-.4px; margin:9mm 0 0; }
   .subtitle { margin:2mm 0 7mm; color:#64748B; font-size:10pt; }
   .client-box { display:grid; grid-template-columns: 1fr 42mm; gap:6mm; background:#F5F7FA; border:1px solid #E2E8F0; border-radius:4mm; padding:4mm 5mm; margin-bottom:8mm; }
   .meta-label { color:#64748B; font-size:7.5pt; font-weight:800; letter-spacing:.7px; text-transform:uppercase; }
@@ -184,7 +196,6 @@ function buildReport(ctx: SimulatorPrintContextValue): string {
   .result-box .row:first-child span, .result-box .row:first-child strong { color:#fff; }
   .empty { color:#64748B; background:#F8FAFC; border:1px dashed #CBD5E1; border-radius:3mm; padding:5mm; margin:0; }
   .note { border-left:3px solid #F59E0B; background:#FFFBEB; color:#92400E; padding:3.5mm 4mm; border-radius:0 3mm 3mm 0; font-size:8.5pt; break-inside:avoid; }
-  .report-foot { margin-top:12mm; padding-top:4mm; border-top:1px solid #E2E8F0; color:#64748B; font-size:7.5pt; display:flex; justify-content:space-between; gap:8mm; }
   @media (max-width: 700px) { .report-head { gap:5mm; } .client-box { grid-template-columns:1fr; } .doc-meta { text-align:left; } h1 { font-size:19pt; } }
 </style>
 <article class="sim-report">
@@ -192,9 +203,8 @@ function buildReport(ctx: SimulatorPrintContextValue): string {
     <div class="brand">${logo}<div><strong>${esc(officeName)}</strong><div class="office">Estudo 360 · Análise · Estratégia · Decisão</div></div></div>
     <div class="doc-meta">RELATÓRIO DE SIMULAÇÃO<br>${esc(date)}</div>
   </header>
-  <div class="kicker">Estudo 360</div>
   <h1>${esc(title)}</h1>
-  <p class="subtitle">Relatório resumido da simulação efetuada na plataforma Estudo 360.</p>
+  <p class="subtitle">Relatório resumido da simulação efetuada.</p>
   <div class="client-box">
     <div><div class="meta-label">Cliente / Empresa</div><div class="meta-value">${esc(clientName)}</div></div>
     <div><div class="meta-label">NIF</div><div class="meta-value">${esc(clientNif)}</div></div>
@@ -207,8 +217,11 @@ function buildReport(ctx: SimulatorPrintContextValue): string {
     <div class="section-title">Resultado da simulação</div>
     <div class="result-box">${rowsHtml(resultRows)}</div>
   </section>
+  <section class="section">
+    <div class="section-title">Como se calcula</div>
+    <p class="note" style="border-color:${esc(color)};background:#F5FAFF;color:#0B1D2D;">${esc(PRINT_METHOD[ctx.view])}</p>
+  </section>
   <div class="note">${esc(legal)}</div>
-  <footer class="report-foot"><span>${esc(officeName)}</span><span>Estudo 360 · ${esc(title)}</span></footer>
 </article>`;
 }
 
@@ -218,8 +231,8 @@ export function SimulatorPrintButton({ compact = false }: { compact?: boolean })
   const onPrint = () => {
     printHtmlViaPaged(buildReport(ctx), {
       title: PRINT_TITLES[ctx.view],
-      footerLeft: ctx.office.nome?.trim() || 'Estudo 360',
-      footerRight: 'Estudo 360 · Simulação',
+      footerLeft: ctx.office.nome?.trim() || '',
+      footerRight: '',
     });
   };
   return (

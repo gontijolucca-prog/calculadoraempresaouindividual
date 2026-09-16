@@ -131,11 +131,11 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
               <input type="number" min={0} step={1} className={inputCls} value={s.dependentes === 0 ? '' : s.dependentes} onChange={(e) => { const nd = intInput(e.target.value); set({ dependentes: nd, dep0a3: Math.min(s.dep0a3, nd), dep4a6: Math.min(s.dep4a6, Math.max(0, nd - Math.min(s.dep0a3, nd))) }); }} />
             </div>
             <div>
-              <label className={labelCls}>… dos quais ≤ 3 anos</label>
+              <label className={labelCls}>≤ 3 anos <Tip>Dos dependentes declarados, quantos têm até 3 anos (majoração da dedução).</Tip></label>
               <input type="number" min={0} max={s.dependentes} step={1} className={inputCls} value={s.dep0a3 === 0 ? '' : s.dep0a3} onChange={(e) => set({ dep0a3: intInput(e.target.value, 0, s.dependentes) })} />
             </div>
             <div>
-              <label className={labelCls}>… dos quais 4–6 anos</label>
+              <label className={labelCls}>4–6 anos <Tip>Dos dependentes declarados, quantos têm entre 4 e 6 anos.</Tip></label>
               <input type="number" min={0} max={Math.max(0, s.dependentes - s.dep0a3)} step={1} className={inputCls} value={s.dep4a6 === 0 ? '' : s.dep4a6} onChange={(e) => set({ dep4a6: intInput(e.target.value, 0, Math.max(0, s.dependentes - s.dep0a3)) })} />
             </div>
           </div>

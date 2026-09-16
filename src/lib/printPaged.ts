@@ -250,7 +250,7 @@ function runPagedIframe(fullDoc: string, foot: { left: string; right: string }, 
         if (pg.querySelector('.pp-foot-injected')) return;
         const bar = doc.createElement('div');
         bar.className = 'pp-foot-injected';
-        bar.innerHTML = '<span>' + esc(foot.left) + '</span><span>P\u00e1gina ' + (i + 1) + ' de ' + pages.length + '</span><span>' + esc(foot.right) + '</span>';
+        bar.innerHTML = '<span>' + esc(foot.left) + '</span><span>P\u00e1gina ' + (i + 1) + ' de ' + pages.length + '</span>';
         pg.appendChild(bar);
       });
       win.focus();
