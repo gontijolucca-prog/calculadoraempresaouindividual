@@ -99,6 +99,12 @@ function buildPageBreakCss(footerLeft: string, footerRight: string): string {
     thead { display: table-header-group; }
     tfoot { display: table-footer-group; }
     table { break-inside: auto; }
+    .pagedjs_page { position: relative; }
+    .pp-foot-injected {
+      position: absolute; left: 16mm; right: 16mm; bottom: 8mm;
+      display: flex; justify-content: space-between; align-items: baseline;
+      font: 8pt Georgia, serif; color: #94A3B8; pointer-events: none;
+    }
     @page {
       size: A4; margin: 18mm 16mm 20mm 16mm;
       @bottom-center {
@@ -137,6 +143,8 @@ export function printViaPaged(printRoot: HTMLElement, opts: PagedOpts): void {
 
   const footerLeft = cssStr(opts.footerLeft || '');
   const footerRight = cssStr(opts.footerRight || '');
+  const footerLeftRaw = opts.footerLeft || '';
+  const footerRightRaw = opts.footerRight || '';
 
   // Achata a caixa A4 fixa para o conteúdo fluir; o paged.js + @page tratam das
   // margens/quebras. Margin-boxes dão o rodapé repetido e a numeração.
@@ -176,7 +184,7 @@ export function printViaPaged(printRoot: HTMLElement, opts: PagedOpts): void {
 </head><body>${clone.outerHTML}
 <script src="${pagedPolyfillUrl}"></script>
 </body></html>`;
-  runPagedIframe(fullDoc, opts.onSettled);
+  runPagedIframe(fullDoc, { left: footerLeftRaw, right: footerRightRaw }, opts.onSettled);
 }
 
 /**
@@ -191,6 +199,8 @@ export function printViaPaged(printRoot: HTMLElement, opts: PagedOpts): void {
 export function printHtmlViaPaged(fullHtml: string, opts: PagedOpts): void {
   const footerLeft = opts.footerLeft || '';
   const footerRight = opts.footerRight || '';
+  const footerLeftRaw = opts.footerLeft || '';
+  const footerRightRaw = opts.footerRight || '';
 
   let styleCss = '';
   let bodyHtml = fullHtml;
@@ -212,11 +222,11 @@ export function printHtmlViaPaged(fullHtml: string, opts: PagedOpts): void {
 </head><body>${bodyHtml}
 <script src="${pagedPolyfillUrl}"></script>
 </body></html>`;
-  runPagedIframe(fullDoc, opts.onSettled);
+  runPagedIframe(fullDoc, { left: footerLeftRaw, right: footerRightRaw }, opts.onSettled);
 }
 
 /** Cria um iframe isolado, escreve o documento, espera o paged.js paginar e imprime. */
-function runPagedIframe(fullDoc: string, onSettled?: () => void): void {
+function runPagedIframe(fullDoc: string, foot: { left: string; right: string }, onSettled?: () => void): void {
   const iframe = document.createElement('iframe');
   iframe.setAttribute('aria-hidden', 'true');
   iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:210mm;height:297mm;border:0;opacity:0;pointer-events:none;z-index:-1;';
@@ -235,6 +245,14 @@ function runPagedIframe(fullDoc: string, onSettled?: () => void): void {
     if (done) return;
     done = true;
     try {
+      const pages = [...doc.querySelectorAll('.pagedjs_page')];
+      pages.forEach((pg, i) => {
+        if (pg.querySelector('.pp-foot-injected')) return;
+        const bar = doc.createElement('div');
+        bar.className = 'pp-foot-injected';
+        bar.innerHTML = '<span>' + esc(foot.left) + '</span><span>P\u00e1gina ' + (i + 1) + ' de ' + pages.length + '</span><span>' + esc(foot.right) + '</span>';
+        pg.appendChild(bar);
+      });
       win.focus();
       win.print();
     } finally {

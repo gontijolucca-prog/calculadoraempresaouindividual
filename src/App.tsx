@@ -1005,7 +1005,7 @@ function AppContent() {
   // tiver dados de um simulador — semeia-se a partir do perfil DESSA empresa.
   // Nunca se herda o estado do cliente anterior (dados não-transversais entre
   // empresas). Dentro da mesma empresa mantêm-se transversais (derivam do perfil).
-  const loadEmpresaIntoState = (emp: EmpresaRecord) => {
+  function loadEmpresaIntoState(emp: EmpresaRecord) {
     const sims = (emp.sims ?? {}) as Record<string, unknown>;
     // Normaliza o perfil da empresa: perfis legados/cloud podem não trazer todos
     // os objetos aninhados (custos, contabilidade, …) e a vista de Perfil rebenta.
