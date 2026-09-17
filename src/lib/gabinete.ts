@@ -151,6 +151,8 @@ export interface GabineteCliente {
   situacaoAtual?: { texto: string; cor: 'red' | 'green' | 'orange' }[];
   faturacaoAnual?: number;
   responsavelId?: string; // colaborador
+  apoioId?: string;
+  supervisorId?: string;
   estado: ClienteEstado;
   tags?: string[];
   empresaId?: string; // link para EmpresaRecord existente
@@ -294,6 +296,11 @@ export interface Colaborador {
   role: ColaboradorRole;
   cor?: string;
   avatar?: string;
+  initials?: string;
+  status?: 'convite_pendente' | 'ativo';
+  inviteSentAt?: number;
+  linkedUid?: string;
+  updatedAt?: number;
   createdAt: number;
 }
 
@@ -500,9 +507,38 @@ export function saveColaboradoresCache(list: Colaborador[]): void { writeCache('
 export async function upsertColaborador(c: Colaborador): Promise<void> {
   const list = listColaboradoresCache();
   const idx = list.findIndex(x => x.id === c.id);
-  if (idx >= 0) list[idx] = c; else list.push(c);
+  const now = Date.now();
+  const withTs = { ...c, updatedAt: now, initials: c.initials || getColaboradorInitials(c.nome), status: c.status || 'ativo' as const };
+  if (idx >= 0) list[idx] = withTs as Colaborador; else list.push(withTs as Colaborador);
   saveColaboradoresCache(list);
-  try { await safeSetDoc(colPath('colaboradores'), c.id, c); } catch {}
+  try { await safeSetDoc(colPath('colaboradores'), c.id, withTs); } catch {}
+}
+export async function deleteColaborador(id: string): Promise<void> {
+  const list = listColaboradoresCache().filter(x => x.id !== id);
+  saveColaboradoresCache(list);
+  try { await safeDeleteDoc(colPath('colaboradores'), id); } catch {}
+}
+export function newColaboradorId(): string { return newId('col'); }
+export function getColaboradorInitials(nome: string): string {
+  const parts = nome.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '—';
+  if (parts.length === 1) return parts[0].slice(0,2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+export async function linkColaboradorPorEmail(email: string, uid: string): Promise<void> {
+  const lower = email.toLowerCase();
+  const list = listColaboradoresCache();
+  let changed = false;
+  for (const c of list) {
+    if (c.email.toLowerCase() === lower && c.status !== 'ativo') {
+      c.status = 'ativo';
+      c.linkedUid = uid;
+      c.updatedAt = Date.now();
+      changed = true;
+      try { await safeSetDoc(colPath('colaboradores'), c.id, c); } catch {}
+    }
+  }
+  if (changed) saveColaboradoresCache(list);
 }
 
 // ─── CRUD — Conversas (Histórico) — Fase 1 ────────────────────────────────────
@@ -994,6 +1030,16 @@ async function ensureMykolaDependencias(clienteId: string, clienteNome: string):
       await upsertDocumentoGeral({ id: newDocumentoGeralId(), clienteId, clienteNome, nome: d.nome, tipo: 'OUTRO', dataUpload: d.dataUpload });
     }
   }
+  // Equipa demo (se vazia global, cria 3 colaboradores)
+  if (listColaboradoresCache().length === 0) {
+    for (const col of [
+      { nome: 'Ana Margarida', email: 'ana.margarida@estudo360.pt', role: 'contabilista' as const, status: 'ativo' as const },
+      { nome: 'Vilma', email: 'vilma@estudo360.pt', role: 'estagiaria' as const, status: 'ativo' as const },
+      { nome: 'Sandrine Reis', email: 'admin@estudo360.pt', role: 'admin' as const, status: 'ativo' as const },
+    ]) {
+      await upsertColaborador({ id: newColaboradorId(), nome: col.nome, email: col.email, role: col.role, status: col.status, initials: getColaboradorInitials(col.nome), createdAt: Date.now(), updatedAt: Date.now() });
+    }
+  }
   // Cofre
   if (listCofreCache().filter(c=>c.clienteId===clienteId).length === 0) {
     // Acessos são placeholder sem segredo real - o utilizador coloca a passe depois
@@ -1009,6 +1055,29 @@ async function ensureMykolaDependencias(clienteId: string, clienteNome: string):
       const cipher = await encryptSecret('—', pass);
       await upsertCofre({ id: newCofreId(), titulo: a.titulo, categoria: a.categoria, clienteId, clienteNome, username: a.username, cipher, createdAt: Date.now(), updatedAt: Date.now() });
     }
+  }
+}
+
+export async function ensureAllClientesDefaults(): Promise<void> {
+  const all = listClientesCache();
+  let changed = false;
+  for (const cli of all) {
+    let upd = false;
+    if (!cli.situacaoAtual || cli.situacaoAtual.length === 0) {
+      cli.situacaoAtual = [
+        { texto: 'Documentação de julho e agosto em falta', cor: 'red' },
+        { texto: 'IVA tratado até julho', cor: 'green' },
+        { texto: 'Contabilidade em dia', cor: 'green' },
+        { texto: 'Processo de compensação Segurança Social pendente', cor: 'orange' },
+        { texto: 'Salários atualizados', cor: 'green' },
+      ];
+      upd = true;
+    }
+    if (!cli.orientacoes) {
+      cli.orientacoes = 'Todas as faturas devem ser digitalizadas e inseridas no TOCOnline no momento da receção.\nCliente prefere comunicação por WhatsApp.\nConfirmar sempre a afetação de despesas (pessoal vs. empresa).\nValidar dedutibilidade de despesas com viatura, combustível e portagens.\nAntes de fechar o mês, confirmar se existem documentos em falta.';
+      upd = true;
+    }
+    if (upd) { cli.updatedAt = Date.now(); await upsertCliente(cli); changed = true; }
   }
 }
 

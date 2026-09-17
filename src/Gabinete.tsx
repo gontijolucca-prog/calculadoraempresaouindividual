@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Search, Plus, Users, CheckSquare, Calendar, Lock, Building2, Trash2, Eye, EyeOff, Copy, Shield, AlertTriangle, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Clock, Briefcase, MessageSquare, X, Send, Archive, Share2 } from 'lucide-react';
-import { useGabineteClientes, useGabineteTarefas, useGabineteObrigacoes, useGabineteCofre, useGabineteContactosGeral, useGabineteAssuntos, useGabineteAlertas, useGabineteOcorrencias, useGabineteDocumentos } from './lib/useGabinete';
-import { seedMykolaVasylDemo } from './lib/gabinete';
+import { useGabineteClientes, useGabineteTarefas, useGabineteObrigacoes, useGabineteCofre, useGabineteContactosGeral, useGabineteAssuntos, useGabineteAlertas, useGabineteOcorrencias, useGabineteDocumentos, useGabineteColaboradores } from './lib/useGabinete';
+import { seedMykolaVasylDemo, ensureAllClientesDefaults, linkColaboradorPorEmail } from './lib/gabinete';
 import {
   upsertTarefa, deleteTarefa, marcarTarefaFeita, newTarefaId,
   upsertObrigacao,
@@ -14,11 +14,13 @@ import GuiaSugestao from './components/GuiaSugestao';
 import type { ViewKey } from './lib/guias';
 import { GabineteGallery, GabineteIntro, GABINET_FUNCTIONS, type GabTab, type GabineteTab } from './GabineteHub';
 import VisaoGeralView from './VisaoGeralView';
+import GabineteEquipa from './GabineteEquipa';
 
 // Guia por tab interna do Gabinete (a sugestão muda conforme a tab ativa)
 const GAB_TAB_GUIA: Record<GabTab, ViewKey> = {
   dashboard: 'gabinete',
   'visao-geral': 'gab-visao-geral',
+  equipa: 'gab-equipa',
   agenda: 'gab-agenda',
   tarefas: 'gab-tarefas',
   obrigacoes: 'gab-obrigacoes',
@@ -27,7 +29,7 @@ const GAB_TAB_GUIA: Record<GabTab, ViewKey> = {
 
 // ─── Layout ─────────────────────────────────────────────────────────────────
 
-const VALID_GAB_TABS_SET = new Set<GabineteTab>(['dashboard','visao-geral','agenda','tarefas','obrigacoes','cofre','gallery']);
+const VALID_GAB_TABS_SET = new Set<GabineteTab>(['dashboard','visao-geral','equipa','agenda','tarefas','obrigacoes','cofre','gallery']);
 export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour, activeEmpresaId, activeEmpresaNome, onGoEmpresas }: { tab?: GabineteTab; onTabChange?: (t: GabineteTab) => void; onStartTour?: (v: ViewKey) => void; activeEmpresaId?: string | null; activeEmpresaNome?: string | null; onGoEmpresas?: () => void }) {
   const [internalTab, setInternalTab] = useState<GabTab>('dashboard');
   const rawTab: GabineteTab = controlledTab ?? internalTab;
@@ -62,7 +64,8 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
   const alertasF = useMemo(() => activeEmpresaId ? alertasAll.filter(a => a.clienteId === activeEmpresaId) : alertasAll, [alertasAll, activeEmpresaId]);
   const ocorrenciasF = useMemo(() => activeEmpresaId ? ocorrenciasAll.filter(o => o.clienteId === activeEmpresaId) : ocorrenciasAll, [ocorrenciasAll, activeEmpresaId]);
   const documentosF = useMemo(() => activeEmpresaId ? documentosAll.filter(d => d.clienteId === activeEmpresaId) : documentosAll, [documentosAll, activeEmpresaId]);
-  React.useEffect(() => { seedMykolaVasylDemo().catch(()=>{}); }, []);
+  const colaboradores = useGabineteColaboradores();
+  React.useEffect(() => { seedMykolaVasylDemo().catch(()=>{}); ensureAllClientesDefaults().catch(()=>{}); import('./lib/firebase').then(m=>{ const uid = m.auth?.currentUser?.uid; const email = m.auth?.currentUser?.email; if(uid && email) linkColaboradorPorEmail(email, uid).catch(()=>{}); }).catch(()=>{}); }, []);
   const clienteAtivo = useMemo(() => {
     if (!activeEmpresaId) return null;
     const gc = clientes.find(c => c.id === activeEmpresaId);
@@ -135,11 +138,12 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
         )}
         {tab !== 'gallery' && !showIntro && (
           <>
-            {tab === 'visao-geral' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolhe um cliente na lista para ver a visão geral.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <VisaoGeralView cliente={clienteAtivo} contactos={contactosF} assuntos={assuntosF} alertas={alertasF} ocorrencias={ocorrenciasF} tarefas={tarefas} obrigacoes={obrigacoes} cofre={cofre} documentos={documentosF} onEditCliente={()=>{}} onGo={(tab)=>setTab(tab as GabineteTab)} onOpenCofre={()=>setTab('cofre')} />)}
+            {tab === 'visao-geral' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolhe um cliente na lista para ver a visão geral.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <VisaoGeralView cliente={clienteAtivo} contactos={contactosF} assuntos={assuntosF} alertas={alertasF} ocorrencias={ocorrenciasF} tarefas={tarefas} obrigacoes={obrigacoes} cofre={cofre} documentos={documentosF} colaboradores={colaboradores} onEditCliente={()=>{}} onGo={(tab)=>setTab(tab as GabineteTab)} onOpenCofre={()=>setTab('cofre')} />)}
             {tab === 'dashboard' && <Dashboard clientes={clientes} tarefas={tarefasRaw} obrigacoes={obrigacoesRaw} cofre={cofre} onGo={goFunction} />}
             {tab === 'agenda' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolhe um cliente na lista para ver a agenda.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <AgendaView tarefas={tarefas} obrigacoes={obrigacoes} clientes={clientes} />)}
             {tab === 'tarefas' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolhe um cliente na lista para ver as tarefas.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <TarefasView tarefas={tarefas} clientes={clientes} obrigacoes={obrigacoes} activeEmpresaId={activeEmpresaId} activeEmpresaNome={activeEmpresaNome} />)}
             {tab === 'obrigacoes' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolhe um cliente na lista para ver as obrigações.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <ObrigacoesView obrigacoes={obrigacoes} clientes={clientes} activeEmpresaId={activeEmpresaId} />)}
+            {tab === 'equipa' && <GabineteEquipa />}
             {tab === 'cofre' && <CofreView cofre={cofre} clientes={clientes} />}
           </>
         )}

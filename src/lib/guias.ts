@@ -11,7 +11,7 @@ export type ViewKey =
   | 'empresas' | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'previsa'
   | 'legal' | 'office-settings' | 'historico' | 'exportar' | 'hub'
-  | 'gabinete' | 'gab-visao-geral' | 'gab-agenda' | 'gab-tarefas' | 'gab-obrigacoes' | 'gab-cofre';
+  | 'gabinete' | 'gab-visao-geral' | 'gab-equipa' | 'gab-agenda' | 'gab-tarefas' | 'gab-obrigacoes' | 'gab-cofre';
 
 export interface GuiaPasso {
   titulo: string;
@@ -267,6 +267,16 @@ export const GUIAS: Record<ViewKey, Guia> = {
       { titulo: 'Resumo', corpo: 'Dados do cliente, NIF, CAE, regime e equipa responsável.', alvo: { texto: 'Resumo da empresa' } },
       { titulo: 'Situação', corpo: 'Estado documental, IVA, contabilidade e salários — com dots de estado.', alvo: { texto: 'Situação atual' } },
       { titulo: 'Alertas', corpo: 'Avisos de documentação e despesas a acompanhar.', alvo: { texto: 'Alertas' } },
+    ],
+  },
+  'gab-equipa': {
+    titulo: 'Equipa do gabinete',
+    intro: 'Gere quem trabalha no gabinete: adiciona por email, define cargo e associa a clientes.',
+    acao: 'Adiciona o primeiro membro da equipa e associa-o a um cliente.',
+    passos: [
+      { titulo: 'Equipa', corpo: 'Vês todos os colaboradores do gabinete com nome, email e cargo.', alvo: { texto: 'Equipa do gabinete' } },
+      { titulo: 'Convidar', corpo: 'Adiciona por email — o convidado depois cria conta com esse email e fica ativo.', alvo: { texto: 'Adicionar funcionário' } },
+      { titulo: 'Associar a cliente', corpo: 'Escolhe responsável, apoio e supervisor por cliente a partir da equipa.', alvo: { texto: 'Associações por cliente' } },
     ],
   },
   'gab-agenda': {

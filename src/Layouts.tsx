@@ -4,7 +4,7 @@ import {
   ClipboardList, Upload, LogOut, Receipt,
   ChevronDown, ChevronRight, TrendingUp, Settings, UserPlus, Building2,
   Menu, X, Clock, Briefcase, ListOrdered, Package, History, FileDown, LayoutDashboard, LayoutGrid,
-  CheckSquare, Calendar, Lock,
+  CheckSquare, Calendar, Lock, Users,
 } from 'lucide-react';
 import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
 import { cn } from './lib/utils';
@@ -155,6 +155,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
   const GAB_TABS = [
     { id: 'visao-geral', label: 'Visão geral', Icon: LayoutDashboard, desc: 'Ficha 360' },
     { id: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard, desc: 'Visão do dia' },
+    { id: 'equipa', label: 'Equipa', Icon: Users, desc: 'Funcionários' },
     { id: 'agenda', label: 'Agenda', Icon: Calendar, desc: 'Calendário' },
     { id: 'tarefas', label: 'Tarefas', Icon: CheckSquare, desc: 'Kanban' },
     { id: 'obrigacoes', label: 'Obrigações', Icon: Calendar, desc: 'Fiscal' },

@@ -11,7 +11,7 @@ import {
   upsertDocumentoGeral, deleteDocumentoGeral, newDocumentoGeralId,
   upsertTarefa, deleteTarefa, newTarefaId,
 } from './lib/gabinete';
-import type { GabineteCliente, Tarefa, Obrigacao, CofreEntrada, GabineteDocumento, ContactoGabinete, AssuntoGabinete, AlertaGabinete, OcorrenciaGabinete } from './lib/gabinete';
+import type { GabineteCliente, Tarefa, Obrigacao, CofreEntrada, GabineteDocumento, ContactoGabinete, AssuntoGabinete, AlertaGabinete, OcorrenciaGabinete, Colaborador } from './lib/gabinete';
 
 type Props = {
   cliente: GabineteCliente | null;
@@ -23,6 +23,7 @@ type Props = {
   obrigacoes: Obrigacao[];
   cofre: CofreEntrada[];
   documentos: GabineteDocumento[];
+  colaboradores?: Colaborador[];
   onEditCliente?: () => void;
   onGo?: (tab: string) => void;
   onOpenCofre?: () => void;
@@ -48,7 +49,7 @@ const estadoLabel: Record<string, string> = {
   concluido: 'Concluído',
 };
 
-export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, ocorrencias, tarefas, obrigacoes, cofre, documentos, onEditCliente, onGo, onOpenCofre }: Props) {
+export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, ocorrencias, tarefas, obrigacoes, cofre, documentos, colaboradores, onEditCliente, onGo, onOpenCofre }: Props) {
   const displayNome = cliente?.nome || 'Mykola & Vasyl, Lda';
   const displayNif = cliente?.nif || '518 123 456';
   const caeLabel = cliente?.caes || cliente?.caeDescricao || '43210';
@@ -143,7 +144,7 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
 
   const handleEditClienteOpen = () => {
     if (!cliente) return;
-    setFormCliente({ nome: cliente.nome, nif: cliente.nif, caes: cliente.caes, caeDescricao: cliente.caeDescricao, tipoSociedade: cliente.tipoSociedade, gerentes: cliente.gerentes, nrTrabalhadores: cliente.nrTrabalhadores, inicioAtividade: cliente.inicioAtividade });
+    setFormCliente({ nome: cliente.nome, nif: cliente.nif, caes: cliente.caes, caeDescricao: cliente.caeDescricao, tipoSociedade: cliente.tipoSociedade, gerentes: cliente.gerentes, nrTrabalhadores: cliente.nrTrabalhadores, inicioAtividade: cliente.inicioAtividade, responsavelId: cliente.responsavelId, responsavelInterno: cliente.responsavelInterno, apoioId: cliente.apoioId, apoioAdministrativo: cliente.apoioAdministrativo, supervisorId: cliente.supervisorId, supervisor: cliente.supervisor });
     setShowEditCliente(true);
   };
   const handleSaveCliente = async () => {
@@ -186,7 +187,7 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
   return (
     <div className="space-y-3">
       {/* Header empresa - exatamente como print */}
-      <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
+      <div id="top" className="bg-white rounded-xl border border-[#E2E8F0] p-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex gap-3.5 min-w-0">
             <div className="w-[52px] h-[52px] rounded-xl bg-[#DDE6F3] text-[#5B6B8A] flex items-center justify-center text-[15px] font-[800] tracking-[0.5px] shrink-0">{avatarInitials}</div>
@@ -208,7 +209,7 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-2 shrink-0">
-            <button className="px-3.5 py-1.5 rounded-lg bg-white border border-[#E2E8F0] text-[13px] font-[500] text-[#334155] flex items-center gap-1">Ações <span className="text-[10px]">▾</span></button>
+            <button onClick={handleEditClienteOpen} className="px-3.5 py-1.5 rounded-lg bg-white border border-[#E2E8F0] text-[13px] font-[500] text-[#334155] flex items-center gap-1">Ações <span className="text-[10px]">▾</span></button>
             <button onClick={handleEditClienteOpen} className="px-3.5 py-1.5 rounded-lg bg-[#0F172A] text-white text-[13px] font-[600] flex items-center gap-1.5">✎ Editar</button>
           </div>
         </div>
@@ -217,20 +218,20 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
         <div className="mt-4 -mb-4 border-t border-[#F1F5F9] -mx-4 px-4">
           <div className="flex gap-5 overflow-x-auto scrollbar-none text-[13px]">
             {[
-              { id: 'visao', label: 'Visão geral', active: true },
+              { id: 'visao', label: 'Visão geral', active: true, scroll: 'top' },
               { id: 'tarefas', label: `Tarefas (${tarefas.length || 4})`, go: 'tarefas' },
-              { id: 'assuntos', label: `Assuntos (${assuntos.length || 3})` },
-              { id: 'docs', label: 'Documentos' },
-              { id: 'contatos', label: 'Contatos' },
+              { id: 'assuntos', label: `Assuntos (${assuntos.length || 3})`, scroll: 'sec-assuntos' },
+              { id: 'docs', label: 'Documentos', scroll: 'sec-docs' },
+              { id: 'contatos', label: 'Contactos', scroll: 'sec-contactos' },
               { id: 'acessos', label: 'Acessos', go: 'cofre' },
               { id: 'obrig', label: 'Obrigações', go: 'obrigacoes' },
-              { id: 'hist', label: 'Histórico' },
-              { id: 'equipa', label: 'Equipa' },
-              { id: 'notas', label: 'Notas' },
+              { id: 'hist', label: 'Histórico', scroll: 'sec-historico' },
+              { id: 'equipa', label: 'Equipa', go: 'equipa' },
+              { id: 'notas', label: 'Notas', scroll: 'sec-orientacoes' },
             ].map(t => (
               <button
                 key={t.id}
-                onClick={() => t.go && onGo?.(t.go)}
+                onClick={() => t.go ? onGo?.(t.go) : t.scroll ? document.getElementById(t.scroll as string)?.scrollIntoView({ behavior: 'smooth', block: 'start' }) : undefined}
                 className={`whitespace-nowrap py-3 border-b-2 font-[600] ${t.active ? 'border-[#0F172A] text-[#0F172A]' : 'border-transparent text-[#64748B] hover:text-[#334155] font-[500]'}`}
               >
                 {t.label}
@@ -297,7 +298,7 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
             </ul>
           </div>
 
-          <div className="bg-[#F0FDF4] rounded-xl border border-[#BBF7D0] p-4">
+          <div id="sec-assuntos" className="bg-[#F0FDF4] rounded-xl border border-[#BBF7D0] p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#065F46]"><span className="w-5 h-5 rounded bg-white border border-[#BBF7D0] flex items-center justify-center">▭</span> Assuntos principais</h3>
               <div className="flex items-center gap-2">
@@ -360,7 +361,7 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
       </div>
 
       {/* Orientações */}
-      <div className="bg-[#FFFBEB] rounded-xl border border-[#FDE68A] p-4">
+      <div id="sec-orientacoes" className="bg-[#FFFBEB] rounded-xl border border-[#FDE68A] p-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#92400E]"><Info className="w-4 h-4 text-[#D97706]" /> Orientações à equipa</h3>
           <button onClick={()=>{ setOrientEdit(orientacoes); setShowEditOrient(true); }} className="text-[12px] font-[500] text-[#2563EB]">Editar</button>
@@ -374,7 +375,7 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
 
       {/* Bottom 3 cols */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
+        <div id="sec-docs" className="bg-white rounded-xl border border-[#E2E8F0] p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><FileText className="w-4 h-4 text-[#2563EB]" /> Documentos importantes</h3>
             <button onClick={()=>setShowAddDoc(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#E2E8F0] text-[#2563EB] hover:bg-zinc-50">+ Adicionar</button>
@@ -392,7 +393,7 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
           </ul>
         </div>
 
-        <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
+        <div id="sec-contactos" className="bg-white rounded-xl border border-[#E2E8F0] p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Users className="w-4 h-4 text-[#2563EB]" /> Contactos</h3>
             <button onClick={()=>setShowAddContacto(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#E2E8F0] text-[#2563EB] hover:bg-zinc-50">+ Adicionar</button>
@@ -437,7 +438,7 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
       </div>
 
       {/* Histórico */}
-      <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
+      <div id="sec-historico" className="bg-white rounded-xl border border-[#E2E8F0] p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Clock className="w-4 h-4 text-[#2563EB]" /> Histórico / Últimas ocorrências</h3>
           <div className="flex items-center gap-2"><button onClick={()=>setShowAddOcorr(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#E2E8F0] text-[#2563EB]">+ Ocorrência</button><button className="text-[12px] font-[500] text-[#2563EB]">Ver todo o histórico</button></div>
@@ -471,6 +472,9 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
               <input value={Array.isArray(formCliente.gerentes) ? formCliente.gerentes.join(', ') : (formCliente.gerentes as unknown as string) || ''} onChange={e=>setFormCliente({...formCliente, gerentes: e.target.value.split(',').map(s=>s.trim()).filter(Boolean) as unknown as string[]})} placeholder="Gerentes (virgula)" className="col-span-2 px-3 py-2 rounded-xl border text-sm" />
               <input type="number" value={formCliente.nrTrabalhadores ?? ''} onChange={e=>setFormCliente({...formCliente, nrTrabalhadores: e.target.value? Number(e.target.value): undefined})} placeholder="N trabalhadores" className="px-3 py-2 rounded-xl border text-sm" />
               <input type="date" value={formCliente.inicioAtividade ? new Date(formCliente.inicioAtividade).toISOString().slice(0,10) : ''} onChange={e=>setFormCliente({...formCliente, inicioAtividade: e.target.value? new Date(e.target.value).getTime(): undefined})} className="px-3 py-2 rounded-xl border text-sm" />
+              <select value={formCliente.responsavelId||''} onChange={e=>{ const col=(colaboradores||[]).find(c=>c.id===e.target.value); setFormCliente({...formCliente, responsavelId: e.target.value||undefined, responsavelInterno: col? {nome:col.nome, initials:col.initials||col.nome.slice(0,2).toUpperCase()}: undefined}); }} className="col-span-2 px-3 py-2 rounded-xl border bg-white text-sm"><option value="">Responsável interno — nenhum</option>{(colaboradores||[]).map(c=><option key={c.id} value={c.id}>{c.nome} ({c.role})</option>)}</select>
+              <select value={formCliente.apoioId||''} onChange={e=>{ const col=(colaboradores||[]).find(c=>c.id===e.target.value); setFormCliente({...formCliente, apoioId: e.target.value||undefined, apoioAdministrativo: col? {nome:col.nome, initials:col.initials||col.nome.slice(0,2).toUpperCase()}: undefined}); }} className="col-span-2 px-3 py-2 rounded-xl border bg-white text-sm"><option value="">Apoio administrativo — nenhum</option>{(colaboradores||[]).map(c=><option key={c.id} value={c.id}>{c.nome} ({c.role})</option>)}</select>
+              <select value={formCliente.supervisorId||''} onChange={e=>{ const col=(colaboradores||[]).find(c=>c.id===e.target.value); setFormCliente({...formCliente, supervisorId: e.target.value||undefined, supervisor: col? {nome:col.nome, initials:col.initials||col.nome.slice(0,2).toUpperCase()}: undefined}); }} className="col-span-2 px-3 py-2 rounded-xl border bg-white text-sm"><option value="">Supervisor — nenhum</option>{(colaboradores||[]).map(c=><option key={c.id} value={c.id}>{c.nome} ({c.role})</option>)}</select>
             </div>
             <div className="flex justify-end gap-2"><button onClick={()=>setShowEditCliente(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleSaveCliente} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Guardar</button></div>
           </div>

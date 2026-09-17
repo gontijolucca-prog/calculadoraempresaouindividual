@@ -8,12 +8,14 @@ import {
   LayoutDashboard,
   Lock,
   Play,
+  Users,
 } from 'lucide-react';
 
 /** Tabs funcionais do Gabinete. `gallery` é apenas a porta de entrada visual. */
 export type GabTab =
   | 'dashboard'
   | 'visao-geral'
+  | 'equipa'
   | 'agenda'
   | 'tarefas'
   | 'obrigacoes'
@@ -40,6 +42,7 @@ export interface GabineteIntroDef {
 export const GABINET_FUNCTIONS: GabineteFunction[] = [
   { id: 'visao-geral', label: 'Visão geral', icon: LayoutDashboard, desc: 'Ficha 360 do cliente' },
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Visão geral do escritório' },
+  { id: 'equipa', label: 'Equipa', icon: Users, desc: 'Funcionários e convites' },
   { id: 'agenda', label: 'Agenda', icon: Calendar, desc: 'Calendário de tarefas e obrigações' },
   { id: 'tarefas', label: 'Tarefas', icon: CheckSquare, desc: 'Kanban e lista de trabalho' },
   { id: 'obrigacoes', label: 'Obrigações', icon: Calendar, desc: 'Calendário fiscal' },
@@ -58,6 +61,13 @@ export const GABINET_INTROS: Record<GabTab, GabineteIntroDef> = {
     resumo: 'Vê num só lugar o estado do escritório: tarefas para hoje, atrasos, obrigações vencidas, clientes em risco e os próximos 7 dias.',
     dados: ['Clientes e tarefas guardados', 'Datas de vencimento', 'Obrigações fiscais'],
     resultado: 'Uma visão rápida do que precisa de atenção primeiro, com atalhos para criar clientes, tarefas e acessos.',
+  },
+  equipa: {
+    titulo: 'Equipa do gabinete',
+    Icon: Users,
+    resumo: 'Gere quem trabalha no gabinete: adiciona por email, define cargo e vê quem já tem acesso.',
+    dados: ['Nome e email', 'Cargo', 'Estado do convite'],
+    resultado: 'Equipa organizada pronta a associar a clientes.',
   },
   'visao-geral': {
     titulo: 'Visão geral do cliente',
