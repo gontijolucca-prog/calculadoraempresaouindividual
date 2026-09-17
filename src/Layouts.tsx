@@ -298,7 +298,12 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                   current={active === 'gabinete' && gabineteTab === 'gallery'}
                   title="Voltar à galeria de funções do Gabinete"
                 />
-                {GAB_TABS.map(t => (
+                {GAB_TABS.map(t => t.id === 'visao-geral' ? (
+                  <button key={t.id} type="button" onClick={() => goGabinete(t.id)} title={t.desc} aria-current={active==='gabinete' && gabineteTab===t.id ? 'page' : undefined} className={`w-full flex items-center gap-2.5 px-3 py-[7px] rounded-[10px] text-[12.5px] font-[700] transition-colors text-left border-2 ${active==='gabinete' && gabineteTab===t.id ? 'bg-[#0677FF] text-white border-[#0677FF] shadow-sm' : 'bg-[#0677FF]/6 text-[#0677FF] border-[#0677FF]/25 hover:bg-[#0677FF]/10 hover:border-[#0677FF]/40'}`}>
+                    <t.Icon className="w-[15px] h-[15px] shrink-0" />
+                    <span className="truncate">{t.label}</span>
+                  </button>
+                ) : (
                   <ClientNavItem key={t.id} label={t.label} Icon={t.Icon} onClick={() => goGabinete(t.id)} current={active==='gabinete' && gabineteTab===t.id} title={t.desc} />
                 ))}
               </div>
