@@ -5,12 +5,15 @@
  * empresa tem o seu perfil próprio + dados de SAFT. O perfil "atual" (currentEmpresaId)
  * é o que está ativo na sidebar — todos os simuladores e a vista Perfil leem dele.
  *
- * Persistência atual: localStorage. Migração futura para Firestore mantém esta API.
+ * Persistência: localStorage (cache) + Firestore (fonte de verdade).
+ * Firestore usa subcoleção escalável `empresas/{uid}/chunks/{idx}` — cada chunk
+ * guarda ~20 empresas (~500 KB), sem limite de 1 MiB. O doc legado
+ * `empresas/{uid}` com `{list, updatedAt}` é mantido para migração.
  */
 import type { ClientProfile } from '../ClientProfile';
 import type { PreviSaState } from '../previSaState';
 import { loadFromStorage, saveToStorage, clearStorage } from './storage';
-import { doc, getDoc, setDoc, getDocs, collection, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, getDocs, collection, onSnapshot, deleteDoc } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import { repairMojibake } from './mojibake';
 
@@ -253,6 +256,8 @@ export function deleteSimulacao(empresaId: string, simId: string): void {
 // Last-write-wins via timestamp; localStorage mantém-se como cache local + fallback.
 
 const FIRESTORE_COLLECTION = 'empresas';
+const FIRESTORE_CHUNKS_SUBCOLLECTION = 'chunks';
+const CHUNK_SIZE = 20; // ~20 empresas por chunk (~500 KB), bem abaixo de 1 MiB
 
 // Documento por UTILIZADOR — isolamento total por conta. Cada uid tem o seu doc
 // empresas/{uid}. O doc 'shared' é legado e só é lido uma vez para migração.
@@ -279,6 +284,18 @@ export function clearLocalEmpresasCache(): void {
   } catch {}
 }
 
+function chunksCollectionRef(uid: string) {
+  return collection(db, FIRESTORE_COLLECTION, uid, FIRESTORE_CHUNKS_SUBCOLLECTION);
+}
+function chunkDocRef(uid: string, idx: number) {
+  return doc(db, FIRESTORE_COLLECTION, uid, FIRESTORE_CHUNKS_SUBCOLLECTION, String(idx));
+}
+function splitIntoChunks<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
 /** Avisa a UI do estado da sincronização cloud (App mostra/limpa o aviso). */
 function emitCloudSync(ok: boolean, reason?: string): void {
   if (typeof window === 'undefined') return;
@@ -291,6 +308,11 @@ function emitCloudSync(ok: boolean, reason?: string): void {
 // nada (nem o balanço). Os dados DERIVADOS (perfil/contabilidade/fluxos/
 // simulações) continuam todos a sincronizar; o ficheiro original fica
 // disponível para re-exportar no computador onde foi importado.
+function stripSaftXmlForCloudSingle(e: EmpresaRecord): EmpresaRecord {
+  if (!e.saftXml) return e;
+  const { saftXml: _omit, ...rest } = e;
+  return rest as EmpresaRecord;
+}
 function stripSaftXmlForCloud(list: EmpresaRecord[]): EmpresaRecord[] {
   return list.map(e => {
     if (!e.saftXml) return e;
@@ -310,21 +332,40 @@ export async function saveEmpresasToFirestore(
     const cloudList = stripSaftXmlForCloud(list);
     const payloadSize = JSON.stringify(cloudList).length;
     if (payloadSize > 980_000) {
-      // Mesmo sem XML, perto do limite de 1 MiB — avisa antes de tentar.
-      console.warn(`[empresas] payload cloud grande (${payloadSize} bytes)`);
+      console.warn(`[empresas] payload cloud grande (${payloadSize} bytes) — a usar chunks, sem limite de 1 MiB por doc`);
     }
-    await setDoc(doc(db, FIRESTORE_COLLECTION, officeId), {
-      list: cloudList,
-      // Propaga o relógio do registry local. Sem isto, cada escrita levava
-      // updatedAt=now e a sincronização nunca distinguia uma eliminação de
-      // um estado mais antigo legítimo.
-      updatedAt: stamp ?? getEmpresasStamp() ?? Date.now(),
-    });
+    const chunks = splitIntoChunks(cloudList, CHUNK_SIZE);
+    const updatedAt = stamp ?? getEmpresasStamp() ?? Date.now();
+    // Lê chunks existentes para saber quais apagar quando a lista encolheu
+    let existingCount = 0;
+    try {
+      const snap = await getDocs(chunksCollectionRef(officeId));
+      existingCount = snap.size;
+    } catch {}
+    // Escreve chunks com writes paralelos (poucos chunks, < 50 para 1000 empresas)
+    const writes: Promise<void>[] = [];
+    for (let i = 0; i < chunks.length; i++) {
+      writes.push(setDoc(chunkDocRef(officeId, i), { list: chunks[i], updatedAt, chunk: i }));
+    }
+    // Apaga chunks excedentes (lista encolheu)
+    for (let i = chunks.length; i < existingCount; i++) {
+      writes.push(deleteDoc(chunkDocRef(officeId, i)).catch(()=>{}));
+    }
+    await Promise.all(writes);
+    // Dual-write legado para compat com clientes antigos (enquanto payload < 1 MiB)
+    if (payloadSize < 980_000) {
+      try {
+        await setDoc(doc(db, FIRESTORE_COLLECTION, officeId), {
+          list: cloudList,
+          updatedAt,
+        });
+      } catch (e) {
+        console.warn('[empresas] dual write legado falhou (ignorado):', e);
+      }
+    }
     emitCloudSync(true);
   } catch (err) {
-    // Os dados continuam no localStorage, mas o utilizador TEM de saber que a
-    // cloud não recebeu (antes falhava em silêncio e os computadores divergiam).
-    console.warn('[empresas] firestore save falhou:', err);
+    console.warn('[empresas] firestore save (chunks) falhou:', err);
     emitCloudSync(false, err instanceof Error ? err.message : String(err));
   }
 }
@@ -335,6 +376,31 @@ export async function loadEmpresasFromFirestore(
   let officeId: string;
   try { officeId = requireUid(); } catch { return null; }
   try {
+    // Tenta chunks primeiro (novo escalável)
+    try {
+      const snap = await getDocs(chunksCollectionRef(officeId));
+      if (!snap.empty) {
+        const chunks: { idx: number; list: EmpresaRecord[]; updatedAt: number }[] = [];
+        let maxUpdatedAt = 0;
+        snap.forEach(d => {
+          const data = d.data() as { list?: EmpresaRecord[]; updatedAt?: number; chunk?: number };
+          if (Array.isArray(data?.list)) {
+            const idx = typeof data.chunk === 'number' ? data.chunk : parseInt(d.id, 10);
+            chunks.push({ idx: Number.isFinite(idx) ? idx : 0, list: data.list as EmpresaRecord[], updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : 0 });
+            if (typeof data.updatedAt === 'number' && data.updatedAt > maxUpdatedAt) maxUpdatedAt = data.updatedAt;
+          }
+        });
+        if (chunks.length > 0) {
+          chunks.sort((a,b)=>a.idx-b.idx);
+          const merged: EmpresaRecord[] = [];
+          for (const c of chunks) merged.push(...c.list);
+          return { list: merged, updatedAt: maxUpdatedAt };
+        }
+      }
+    } catch (e) {
+      console.warn('[empresas] load chunks falhou, a tentar legado:', e);
+    }
+    // Fallback legado doc único
     const snap = await getDoc(doc(db, FIRESTORE_COLLECTION, officeId));
     if (!snap.exists()) return null;
     const data = snap.data();
@@ -365,20 +431,65 @@ export function subscribeEmpresasLive(
   const uid = getCurrentUid();
   if (!uid) return () => {};
   const officeId = uid;
-  return onSnapshot(
-    doc(db, FIRESTORE_COLLECTION, officeId),
-    (snap) => {
-      if (!snap.exists()) return;
-      const data = snap.data();
-      if (!Array.isArray(data?.list)) return;
-      const remoteStamp = typeof data?.updatedAt === 'number' ? data.updatedAt : 0;
-      if (remoteStamp <= getEmpresasStamp()) return; // eco próprio ou mais antigo
+  // Escuta chunks (novo) + legado doc (compat)
+  let cancelled = false;
+  let lastMax = getEmpresasStamp();
+  const handleChunks = async (snap: any) => {
+    if (cancelled) return;
+    if (snap.empty) return; // sem chunks, deixa o fallback legado tratar
+    const chunks: { idx: number; list: EmpresaRecord[]; updatedAt: number }[] = [];
+    let maxUpdatedAt = 0;
+    snap.forEach((d: any) => {
+      const data = d.data() as { list?: EmpresaRecord[]; updatedAt?: number; chunk?: number };
+      if (Array.isArray(data?.list)) {
+        const idx = typeof data.chunk === 'number' ? data.chunk : parseInt(d.id, 10);
+        chunks.push({ idx: Number.isFinite(idx) ? idx : 0, list: data.list as EmpresaRecord[], updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : 0 });
+        if (typeof data.updatedAt === 'number' && data.updatedAt > maxUpdatedAt) maxUpdatedAt = data.updatedAt;
+      }
+    });
+    if (chunks.length === 0) return;
+    if (maxUpdatedAt <= lastMax) return; // eco próprio ou mais antigo
+    lastMax = maxUpdatedAt;
+    chunks.sort((a,b)=>a.idx-b.idx);
+    const merged: EmpresaRecord[] = [];
+    for (const c of chunks) merged.push(...c.list);
+    const deduped = dedupeByNif(merged);
+    // Preserva saftXml local (não vai para cloud)
+    const localById = new Map(listEmpresas().map(e => [e.id, e]));
+    const withSaft = deduped.map(e => {
+      const loc = localById.get(e.id);
+      return !e.saftXml && loc?.saftXml ? { ...e, saftXml: loc.saftXml } : e;
+    });
+    adoptRemoteEmpresas(withSaft, maxUpdatedAt);
+    onRemote(withSaft);
+  };
+  const unsubChunks = onSnapshot(chunksCollectionRef(officeId), handleChunks, (err) => console.warn('[empresas] onSnapshot chunks falhou:', err));
+  // Fallback legado: escuta doc único para migração / clientes antigos
+  const unsubLegacy = onSnapshot(doc(db, FIRESTORE_COLLECTION, officeId), (snap) => {
+    if (cancelled) return;
+    // Se já temos chunks, ignora legado (evita duplicar)
+    // Mas durante migração, o legado pode ter dados mais recentes que os chunks vazios
+    // Verifica se chunks já têm dados: se handleChunks já processou, maxUpdatedAt > 0
+    // Se ainda não, processa legado
+    if (!snap.exists()) return;
+    const data = snap.data() as { list?: EmpresaRecord[]; updatedAt?: number } | undefined;
+    if (!Array.isArray(data?.list)) return;
+    // Se já recebemos chunks com dados, ignora legado para não ressuscitar
+    // Heurística: se getDocs de chunks já retornou algo, lastMax já foi atualizado
+    // Para não complicar, só processa legado se ainda não recebemos chunks válidos
+    // (lastMax ainda é o stamp local inicial e snap de chunks estava vazio)
+    // Aqui não temos como saber se chunks estavam vazios; fazemos check assíncrono
+    getDocs(chunksCollectionRef(officeId)).then(csnap => {
+      if (!csnap.empty) return; // chunks já têm dados, ignora legado
+      const remoteStamp = typeof data.updatedAt === 'number' ? data.updatedAt : 0;
+      if (remoteStamp <= getEmpresasStamp()) return;
       const deduped = dedupeByNif(data.list as EmpresaRecord[]);
       adoptRemoteEmpresas(deduped, remoteStamp);
+      lastMax = remoteStamp;
       onRemote(deduped);
-    },
-    (err) => console.warn('[empresas] onSnapshot falhou:', err),
-  );
+    }).catch(()=>{});
+  }, (err) => console.warn('[empresas] onSnapshot legado falhou:', err));
+  return () => { cancelled = true; unsubChunks(); unsubLegacy(); };
 }
 
 /**
@@ -500,11 +611,36 @@ async function migrateSharedToUserIfNeeded(): Promise<void> {
   }
 }
 
+
+/** Migra o doc legado `empresas/{uid}` com `{list}` para chunks `chunks/{idx}` (1ª vez). */
+async function migrateLegacyDocToChunksIfNeeded(): Promise<void> {
+  const uid = getCurrentUid();
+  if (!uid) return;
+  try {
+    const csnap = await getDocs(chunksCollectionRef(uid));
+    if (!csnap.empty) return; // já migrado
+    const legacySnap = await getDoc(doc(db, FIRESTORE_COLLECTION, uid));
+    if (!legacySnap.exists()) return;
+    const data = legacySnap.data() as { list?: EmpresaRecord[]; updatedAt?: number } | undefined;
+    if (!Array.isArray(data?.list) || data.list.length === 0) return;
+    const chunks = splitIntoChunks(stripSaftXmlForCloud(data.list as EmpresaRecord[]), CHUNK_SIZE);
+    const updatedAt = typeof data.updatedAt === 'number' ? data.updatedAt : Date.now();
+    const writes: Promise<void>[] = [];
+    for (let i = 0; i < chunks.length; i++) {
+      writes.push(setDoc(chunkDocRef(uid, i), { list: chunks[i], updatedAt, chunk: i }));
+    }
+    await Promise.all(writes);
+    console.log(`[empresas] migrado legado doc (${data.list.length} empresas) para ${chunks.length} chunks`);
+  } catch (e) {
+    console.warn('[empresas] migração doc→chunks falhou:', e);
+  }
+}
 export async function syncEmpresasFromFirestore(officeNif: string | undefined): Promise<EmpresaRecord[]> {
   // Migra legado shared → uid na primeira vez que o utilizador entra
   await migrateSharedToUserIfNeeded();
   // Mantém compat legada por segurança (não faz nada se já migrado)
   await migrateLegacyBucketsToShared().catch(()=>{});
+  await migrateLegacyDocToChunksIfNeeded().catch(()=>{});
 
   const remote = await loadEmpresasFromFirestore(officeNif);
   const local = listEmpresas();

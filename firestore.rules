@@ -15,13 +15,23 @@ service cloud.firestore {
     }
 
     // ——— Empresas por utilizador ———
-    // Leitura/escrita estrita por owner. Sem 'shared' gravável.
+    // Legado: doc único empresas/{uid} com {list, updatedAt} — mantido para migração.
     match /empresas/{officeId} {
       allow read: if request.auth != null && request.auth.uid == officeId;
       allow write: if request.auth != null && request.auth.uid == officeId && isValidEmpresasPayload(request.resource.data);
     }
+    // Escalável: subcoleção empresas/{uid}/chunks/{idx} — N docs de ~20 empresas cada, ilimitado.
+    match /empresas/{officeId}/chunks/{chunkId} {
+      allow read: if request.auth != null && request.auth.uid == officeId;
+      allow create, update: if request.auth != null && request.auth.uid == officeId && isValidChunkPayload(request.resource.data);
+      allow delete: if request.auth != null && request.auth.uid == officeId;
+    }
     // Legado shared: só leitura para migração (autenticado), nunca escrita.
     match /empresas/shared {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+    match /empresas/shared/chunks/{docId} {
       allow read: if request.auth != null;
       allow write: if false;
     }
@@ -121,6 +131,17 @@ function isValidEmpresasPayload(data) {
       && data.updatedAt is number
       // Validação leve de conteúdo para mitigar bomb JSON — cada empresa tem nome/nif curtos
       && data.list.size() == 0 || (data.list[0].keys().hasAny(['nome', 'nif', 'profile']));
+}
+
+function isValidEmpresaDoc(data, empresaId) {
+  return data.id is string && data.id == empresaId
+      && data.nome is string && data.nome.size() < 300
+      && data.nif is string && data.nif.size() < 20
+      && data.updatedAt is number
+      && data.profile is map
+      // saftXml nunca deve ir para a cloud (1 MiB limit) — bloqueia se estiver presente e grande
+      && (!('saftXml' in data) || data.saftXml.size() < 5000)
+      && data.keys().hasAny(['nome', 'nif', 'profile']);
 }
 
 function isValidGabineteDoc(data) {
