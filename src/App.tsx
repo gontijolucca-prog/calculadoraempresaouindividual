@@ -374,8 +374,12 @@ function AppContent() {
   });
   const [prevView, setPrevView] = useState<ViewType>('profile');
   // Gabinete: tab ativa dentro do dropdown da sidebar
-  const [gabineteTab, setGabineteTab] = useState<string>(() => loadFromStorage<string>('gabineteTab', 'dashboard') || 'dashboard');
-  useEffect(() => { saveToStorage('gabineteTab', gabineteTab); }, [gabineteTab]);
+  const VALID_GAB_TABS = new Set(['dashboard','agenda','tarefas','obrigacoes','cofre','gallery']);
+  const [gabineteTab, setGabineteTab] = useState<string>(() => {
+    const raw = loadFromStorage<string>('gabineteTab', 'dashboard') || 'dashboard';
+    return VALID_GAB_TABS.has(raw) ? raw : 'gallery';
+  });
+  useEffect(() => { if (VALID_GAB_TABS.has(gabineteTab)) saveToStorage('gabineteTab', gabineteTab); else saveToStorage('gabineteTab', 'gallery'); }, [gabineteTab]);
   // Bump para forçar refresh da Lista de Empresas após mutações (criar/eliminar/SAFT).
   const [empresasRefresh, setEmpresasRefresh] = useState(0);
   const [currentEmpresaId, setCurrentEmpresaIdState] = useState<string | null>(() => getCurrentEmpresaId());

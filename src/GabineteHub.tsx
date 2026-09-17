@@ -159,7 +159,7 @@ export function GabineteGallery({ onOpen }: { onOpen: (tab: GabTab) => void }) {
 }
 
 export function GabineteIntro({ tab, onOpen, onBack }: { tab: GabTab; onOpen: () => void; onBack: () => void }) {
-  const def = GABINET_INTROS[tab];
+  const def = GABINET_INTROS[tab] ?? GABINET_INTROS.dashboard;
   const Icon = def.Icon;
 
   return (

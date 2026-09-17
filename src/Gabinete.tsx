@@ -24,9 +24,11 @@ const GAB_TAB_GUIA: Record<GabTab, ViewKey> = {
 
 // ─── Layout ─────────────────────────────────────────────────────────────────
 
+const VALID_GAB_TABS_SET = new Set<GabineteTab>(['dashboard','agenda','tarefas','obrigacoes','cofre','gallery']);
 export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour, activeEmpresaId, activeEmpresaNome, onGoEmpresas }: { tab?: GabineteTab; onTabChange?: (t: GabineteTab) => void; onStartTour?: (v: ViewKey) => void; activeEmpresaId?: string | null; activeEmpresaNome?: string | null; onGoEmpresas?: () => void }) {
   const [internalTab, setInternalTab] = useState<GabTab>('dashboard');
-  const tab: GabineteTab = controlledTab ?? internalTab;
+  const rawTab: GabineteTab = controlledTab ?? internalTab;
+  const tab: GabineteTab = VALID_GAB_TABS_SET.has(rawTab) ? rawTab : 'gallery';
   const setTab = (onTabChange ?? setInternalTab) as (t: GabineteTab) => void;
   // Cada função abre primeiro o card informativo. O botão "Abrir função"
   // marca apenas a função atual como vista e mostra o ecrã funcional.
