@@ -1,7 +1,16 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Building2, AlertTriangle, Calendar, FileText, Users, Lock, Info, Phone, Mail, MessageCircle, Clock
+  Building2, AlertTriangle, Calendar, FileText, Users, Lock, Info, Phone, Mail, MessageCircle, Clock, Plus, Trash2, X, Pencil
 } from 'lucide-react';
+import {
+  upsertCliente,
+  upsertContactoGabinete, deleteContactoGabinete, newContactoGabineteId,
+  upsertAssuntoGabinete, deleteAssuntoGabinete, newAssuntoGabineteId,
+  upsertAlertaGabinete, deleteAlertaGabinete, newAlertaGabineteId,
+  upsertOcorrencia, deleteOcorrencia, newOcorrenciaId,
+  upsertDocumentoGeral, deleteDocumentoGeral, newDocumentoGeralId,
+  upsertTarefa, deleteTarefa, newTarefaId,
+} from './lib/gabinete';
 import type { GabineteCliente, Tarefa, Obrigacao, CofreEntrada, GabineteDocumento, ContactoGabinete, AssuntoGabinete, AlertaGabinete, OcorrenciaGabinete } from './lib/gabinete';
 
 type Props = {
@@ -61,13 +70,19 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
     'Antes de fechar o mês, confirmar se existem documentos em falta.',
   ].join('\n');
 
-  const situacaoItems = useMemo(() => [
-    { dot: 'bg-[#EF4444]', text: 'Documentação de julho e agosto em falta' },
-    { dot: 'bg-[#10B981]', text: 'IVA tratado até julho' },
-    { dot: 'bg-[#10B981]', text: 'Contabilidade em dia' },
-    { dot: 'bg-[#F59E0B]', text: 'Processo de compensação Segurança Social pendente' },
-    { dot: 'bg-[#10B981]', text: 'Salários atualizados' },
-  ], []);
+  const situacaoItems = useMemo(() => {
+    if (cliente?.situacaoAtual && cliente.situacaoAtual.length > 0) {
+      const dotMap: Record<string, string> = { red: 'bg-[#EF4444]', green: 'bg-[#10B981]', orange: 'bg-[#F59E0B]' };
+      return cliente.situacaoAtual.map(s => ({ dot: dotMap[s.cor] || 'bg-zinc-400', text: s.texto }));
+    }
+    return [
+      { dot: 'bg-[#EF4444]', text: 'Documentação de julho e agosto em falta' },
+      { dot: 'bg-[#10B981]', text: 'IVA tratado até julho' },
+      { dot: 'bg-[#10B981]', text: 'Contabilidade em dia' },
+      { dot: 'bg-[#F59E0B]', text: 'Processo de compensação Segurança Social pendente' },
+      { dot: 'bg-[#10B981]', text: 'Salários atualizados' },
+    ];
+  }, [cliente?.situacaoAtual]);
 
   const proximosPrazos = useMemo(() => {
     const fromObr = obrigacoes
@@ -85,31 +100,13 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
     ];
   }, [obrigacoes]);
 
-  const assuntosExibir: AssuntoGabinete[] = assuntos.length > 0 ? assuntos.slice(0, 3) : [
-    { id: 'mock1', clienteId: cliente?.id || 'mock', titulo: 'Duplicação de contribuições Segurança Social', estado: 'em_curso', updatedAt: new Date('2026-09-16').getTime(), createdAt: Date.now() },
-    { id: 'mock2', clienteId: cliente?.id || 'mock', titulo: 'Viatura da empresa', estado: 'aguard_cliente', updatedAt: new Date('2026-09-08').getTime(), createdAt: Date.now() },
-    { id: 'mock3', clienteId: cliente?.id || 'mock', titulo: 'Documentação em falta (Jul-Ago)', estado: 'pendente', updatedAt: new Date('2026-09-16').getTime(), createdAt: Date.now() },
-  ];
+  const assuntosExibir: AssuntoGabinete[] = assuntos.slice(0, 3);
 
-  const alertasExibir: AlertaGabinete[] = alertas.length > 0 ? alertas.slice(0, 3) : [
-    { id: 'a1', clienteId: cliente?.id || 'mock', texto: 'Cliente tem dificuldade em reunir documentação.', createdAt: Date.now(), updatedAt: Date.now() },
-    { id: 'a2', clienteId: cliente?.id || 'mock', texto: 'Todas as faturas devem ser enviadas por WhatsApp assim que são recebidas.', createdAt: Date.now(), updatedAt: Date.now() },
-    { id: 'a3', clienteId: cliente?.id || 'mock', texto: 'Atenção à dedutibilidade de despesas com viatura.', createdAt: Date.now(), updatedAt: Date.now() },
-  ];
+  const alertasExibir: AlertaGabinete[] = alertas.slice(0, 5);
 
-  const contactosExibir: ContactoGabinete[] = contactos.length > 0 ? contactos.slice(0, 3) : [
-    { id: 'c1', clienteId: cliente?.id || 'mock', nome: 'Mykola Ivanenko', cargo: 'Gerente', telefone: '+351 9XX XXX XXX', email: '', initials: 'MI', createdAt: Date.now(), updatedAt: Date.now() },
-    { id: 'c2', clienteId: cliente?.id || 'mock', nome: 'Vasyl Petrenko', cargo: 'Gerente', telefone: '+351 9XX XXX XXX', email: '', initials: 'VP', createdAt: Date.now(), updatedAt: Date.now() },
-    { id: 'c3', clienteId: cliente?.id || 'mock', nome: 'Iryna (Administrativa)', cargo: 'Envio de faturas', telefone: '+351 9XX XXX XXX', email: '', initials: 'IA', createdAt: Date.now(), updatedAt: Date.now() },
-  ];
+  const contactosExibir: ContactoGabinete[] = contactos.slice(0, 5);
 
-  const docsExibir: GabineteDocumento[] = documentos.length > 0 ? documentos.slice(0, 5) : [
-    { id: 'd1', clienteId: cliente?.id || 'mock', nome: 'Contrato de constituição.pdf', tipo: 'OUTRO', dataUpload: new Date('2025-12-12').getTime() },
-    { id: 'd2', clienteId: cliente?.id || 'mock', nome: 'Certidão permanente.pdf', tipo: 'OUTRO', dataUpload: new Date('2025-12-12').getTime() },
-    { id: 'd3', clienteId: cliente?.id || 'mock', nome: 'Contrato de arrendamento.pdf', tipo: 'OUTRO', dataUpload: new Date('2026-01-03').getTime() },
-    { id: 'd4', clienteId: cliente?.id || 'mock', nome: 'Financiamento viatura.pdf', tipo: 'OUTRO', dataUpload: new Date('2026-02-15').getTime() },
-    { id: 'd5', clienteId: cliente?.id || 'mock', nome: 'Parecer OCC – viatura.pdf', tipo: 'OUTRO', dataUpload: new Date('2026-08-27').getTime() },
-  ];
+  const docsExibir: GabineteDocumento[] = documentos.slice(0, 5);
 
   const cofreFallback = (() => {
     const fromCofre = cofre.filter(c => !cliente || c.clienteId === cliente.id).slice(0, 4);
@@ -122,15 +119,69 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
     ];
   })();
 
-  const ocorrExibir: OcorrenciaGabinete[] = ocorrencias.length > 0 ? ocorrencias.slice(0, 5) : [
-    { id: 'o1', clienteId: cliente?.id || 'mock', data: new Date('2026-09-16').getTime(), autorNome: 'Sandrine Reis', autorInitials: 'SR', descricao: 'Atualização: sem resposta da Segurança Social.', createdAt: Date.now() },
-    { id: 'o2', clienteId: cliente?.id || 'mock', data: new Date('2026-09-08').getTime(), autorNome: 'Ana Margarida', autorInitials: 'AM', descricao: 'Envio do pedido de compensação SS.', createdAt: Date.now() },
-    { id: 'o3', clienteId: cliente?.id || 'mock', data: new Date('2026-09-07').getTime(), autorNome: 'Ana Margarida', autorInitials: 'AM', descricao: 'Pagamento duplicado de €445,18.', createdAt: Date.now() },
-    { id: 'o4', clienteId: cliente?.id || 'mock', data: new Date('2026-05-05').getTime(), autorNome: 'Ana Margarida', autorInitials: 'AM', descricao: 'Pagamento duplicado de €445,18.', createdAt: Date.now() },
-    { id: 'o5', clienteId: cliente?.id || 'mock', data: new Date('2025-12-15').getTime(), autorNome: 'Sandrine Reis', autorInitials: 'SR', descricao: 'Constituição da sociedade.', createdAt: Date.now() },
-  ];
+  const ocorrExibir: OcorrenciaGabinete[] = ocorrencias.slice(0, 7);
 
   const avatarInitials = initialsOf(displayNome).slice(0, 2);
+
+  // ——— Modais funcionais ———
+  const [showEditCliente, setShowEditCliente] = useState(false);
+  const [formCliente, setFormCliente] = useState<Partial<GabineteCliente>>({});
+  const [showAddAlerta, setShowAddAlerta] = useState(false);
+  const [alertaTexto, setAlertaTexto] = useState('');
+  const [showAddAssunto, setShowAddAssunto] = useState(false);
+  const [assuntoTitulo, setAssuntoTitulo] = useState('');
+  const [assuntoEstado, setAssuntoEstado] = useState<AssuntoGabinete['estado']>('em_curso');
+  const [showAddContacto, setShowAddContacto] = useState(false);
+  const [contactoForm, setContactoForm] = useState<Partial<ContactoGabinete>>({});
+  const [showAddDoc, setShowAddDoc] = useState(false);
+  const [docNome, setDocNome] = useState('');
+  const [showAddOcorr, setShowAddOcorr] = useState(false);
+  const [ocorrDesc, setOcorrDesc] = useState('');
+  const [showEditSituacao, setShowEditSituacao] = useState(false);
+  const [showEditOrient, setShowEditOrient] = useState(false);
+  const [orientEdit, setOrientEdit] = useState(orientacoes);
+
+  const handleEditClienteOpen = () => {
+    if (!cliente) return;
+    setFormCliente({ nome: cliente.nome, nif: cliente.nif, caes: cliente.caes, caeDescricao: cliente.caeDescricao, tipoSociedade: cliente.tipoSociedade, gerentes: cliente.gerentes, nrTrabalhadores: cliente.nrTrabalhadores, inicioAtividade: cliente.inicioAtividade });
+    setShowEditCliente(true);
+  };
+  const handleSaveCliente = async () => {
+    if (!cliente) return;
+    const upd: GabineteCliente = { ...cliente, ...formCliente, gerentes: typeof formCliente.gerentes === 'string' ? (formCliente.gerentes as unknown as string).split(',').map(s=>s.trim()).filter(Boolean) : formCliente.gerentes, updatedAt: Date.now() };
+    // Ensure proper types for gerentes string case: form is string input
+    await upsertCliente(upd);
+    await upsertOcorrencia({ id: newOcorrenciaId(), clienteId: cliente.id, clienteNome: upd.nome, data: Date.now(), autorNome: upd.responsavelInterno?.nome || 'Equipa', autorInitials: upd.responsavelInterno?.initials || 'EQ', descricao: 'Ficha atualizada', createdAt: Date.now() });
+    setShowEditCliente(false);
+  };
+  const handleAddAlerta = async () => {
+    if (!cliente || !alertaTexto.trim()) return;
+    await upsertAlertaGabinete({ id: newAlertaGabineteId(), clienteId: cliente.id, clienteNome: cliente.nome, texto: alertaTexto.trim(), createdAt: Date.now(), updatedAt: Date.now() });
+    setAlertaTexto(''); setShowAddAlerta(false);
+  };
+  const handleAddAssunto = async () => {
+    if (!cliente || !assuntoTitulo.trim()) return;
+    const now = Date.now();
+    await upsertAssuntoGabinete({ id: newAssuntoGabineteId(), clienteId: cliente.id, clienteNome: cliente.nome, titulo: assuntoTitulo.trim(), estado: assuntoEstado, updatedAt: now, createdAt: now });
+    // Tarefa espelho — funcional: assuntos são tarefas
+    await upsertTarefa({ id: newTarefaId(), titulo: assuntoTitulo.trim(), tipo: 'tarefa', origem: 'manual', estado: assuntoEstado==='pendente'?'todo':assuntoEstado==='aguard_cliente'?'todo':'doing', prioridade: 'media', clienteId: cliente.id, clienteNome: cliente.nome, createdAt: now, updatedAt: now });
+    setAssuntoTitulo(''); setShowAddAssunto(false);
+  };
+  const handleAddContacto = async () => {
+    if (!cliente || !contactoForm.nome?.trim()) return;
+    await upsertContactoGabinete({ id: newContactoGabineteId(), clienteId: cliente.id, clienteNome: cliente.nome, nome: contactoForm.nome!.trim(), cargo: contactoForm.cargo?.trim(), telefone: contactoForm.telefone?.trim(), email: contactoForm.email?.trim(), initials: initialsOf(contactoForm.nome!.trim()), createdAt: Date.now(), updatedAt: Date.now() });
+    setContactoForm({}); setShowAddContacto(false);
+  };
+  const handleAddDoc = async () => {
+    if (!cliente || !docNome.trim()) return;
+    await upsertDocumentoGeral({ id: newDocumentoGeralId(), clienteId: cliente.id, clienteNome: cliente.nome, nome: docNome.trim().endsWith('.pdf') ? docNome.trim() : docNome.trim()+'.pdf', tipo: 'OUTRO', dataUpload: Date.now() });
+    setDocNome(''); setShowAddDoc(false);
+  };
+  const handleAddOcorr = async () => {
+    if (!cliente || !ocorrDesc.trim()) return;
+    await upsertOcorrencia({ id: newOcorrenciaId(), clienteId: cliente.id, clienteNome: cliente.nome, data: Date.now(), autorNome: cliente.responsavelInterno?.nome || 'Equipa', autorInitials: cliente.responsavelInterno?.initials || 'EQ', descricao: ocorrDesc.trim(), createdAt: Date.now() });
+    setOcorrDesc(''); setShowAddOcorr(false);
+  };
 
   return (
     <div className="space-y-3">
@@ -158,7 +209,7 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
           </div>
           <div className="hidden sm:flex items-center gap-2 shrink-0">
             <button className="px-3.5 py-1.5 rounded-lg bg-white border border-[#E2E8F0] text-[13px] font-[500] text-[#334155] flex items-center gap-1">Ações <span className="text-[10px]">▾</span></button>
-            <button onClick={onEditCliente} className="px-3.5 py-1.5 rounded-lg bg-[#0F172A] text-white text-[13px] font-[600] flex items-center gap-1.5">✎ Editar</button>
+            <button onClick={handleEditClienteOpen} className="px-3.5 py-1.5 rounded-lg bg-[#0F172A] text-white text-[13px] font-[600] flex items-center gap-1.5">✎ Editar</button>
           </div>
         </div>
 
@@ -195,7 +246,7 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
         <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Building2 className="w-4 h-4 text-[#64748B]" /> Resumo da empresa</h3>
-            <button onClick={onEditCliente} className="text-[12px] font-[500] text-[#2563EB]">Editar</button>
+            <button onClick={handleEditClienteOpen} className="text-[12px] font-[500] text-[#2563EB]">Editar</button>
           </div>
           <div className="space-y-2">
             {[
@@ -234,7 +285,7 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
           <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><span className="w-5 h-5 rounded-full bg-[#FFF7ED] border border-[#FED7AA] flex items-center justify-center text-[11px]">◉</span> Situação atual</h3>
-              <button onClick={onEditCliente} className="text-[12px] font-[500] text-[#2563EB]">Editar</button>
+              <button onClick={()=>setShowEditSituacao(true)} className="text-[12px] font-[500] text-[#2563EB]">Editar</button>
             </div>
             <ul className="space-y-2">
               {situacaoItems.map((it, i) => (
@@ -249,19 +300,23 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
           <div className="bg-[#F0FDF4] rounded-xl border border-[#BBF7D0] p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#065F46]"><span className="w-5 h-5 rounded bg-white border border-[#BBF7D0] flex items-center justify-center">▭</span> Assuntos principais</h3>
-              <button onClick={() => onGo?.('tarefas')} className="text-[12px] font-[500] text-[#2563EB]">Ver todos ({assuntosExibir.length})</button>
+              <div className="flex items-center gap-2">
+                <button onClick={()=>setShowAddAssunto(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#BBF7D0] text-[#065F46] hover:bg-emerald-50">+ Novo</button>
+                <button onClick={() => onGo?.('tarefas')} className="text-[12px] font-[500] text-[#2563EB]">Ver todos ({assuntos.length})</button>
+              </div>
             </div>
             <div className="space-y-2">
-              {assuntosExibir.map(a => {
+              {assuntosExibir.length===0 ? <div className="text-[12px] text-[#64748B] border-2 border-dashed rounded-lg p-3 text-center bg-white/60">Sem assuntos</div> : assuntosExibir.map(a => {
                 const cls = estadoBadgeCls[a.estado] || estadoBadgeCls.pendente;
                 const label = estadoLabel[a.estado] || a.estado;
                 return (
-                  <div key={a.id} className="bg-white rounded-lg border border-[#E2E8F0] px-3 py-2.5 flex items-start justify-between gap-2">
-                    <div className="min-w-0">
+                  <div key={a.id} className="bg-white rounded-lg border border-[#E2E8F0] px-3 py-2.5 flex items-start justify-between gap-2 group hover:border-[#10B981]/30">
+                    <button onClick={()=>onGo?.('tarefas')} className="min-w-0 text-left flex-1">
                       <div className="text-[12.5px] font-[600] text-[#0F172A] leading-tight flex items-center gap-1.5"><span className="text-[#10B981] text-[10px]">▶</span> <span className="truncate">{a.titulo}</span></div>
                       <div className="text-[11px] text-[#94A3B8] mt-0.5">Atualizado: {new Date(a.updatedAt).toLocaleDateString('pt-PT')}</div>
-                    </div>
+                    </button>
                     <span className={`shrink-0 text-[11px] font-[600] px-2 py-0.5 rounded-full border ${cls}`}>{label}</span>
+                    <button onClick={async()=>{ if(confirm('Remover assunto e tarefa associada?')){ await deleteAssuntoGabinete(a.id); const tsk = tarefas.find(tt=>tt.titulo===a.titulo && tt.clienteId===cliente?.id); if(tsk) await deleteTarefa(tsk.id); } }} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-zinc-100 rounded"><Trash2 className="w-3 h-3 text-zinc-500" /></button>
                   </div>
                 );
               })}
@@ -274,13 +329,14 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
           <div className="bg-[#FFF1F2] rounded-xl border border-[#FECACA] p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#991B1B]"><AlertTriangle className="w-4 h-4 text-[#DC2626]" /> Alertas</h3>
-              <button className="text-[12px] font-[500] text-[#2563EB]">+ Adicionar</button>
+              <button onClick={()=>setShowAddAlerta(true)} className="text-[12px] font-[500] text-[#2563EB]">+ Adicionar</button>
             </div>
-            <ul className="space-y-2.5">
-              {alertasExibir.map(a => (
-                <li key={a.id} className="flex gap-2.5 text-[12.5px] leading-[17px]">
-                  <span className="mt-1 w-1.5 h-1.5 rounded-full bg-[#DC2626] shrink-0" />
-                  <span className="text-[#7F1D1D]">{a.texto}</span>
+            <ul className="space-y-2">
+              {alertasExibir.length===0 ? <li className="text-[12px] text-[#94A3B8] border-2 border-dashed border-[#FECACA] rounded-lg p-3 text-center">Sem alertas</li> : alertasExibir.map(a => (
+                <li key={a.id} className="flex gap-2 text-[12.5px] leading-[17px] group">
+                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#DC2626] shrink-0" />
+                  <span className="flex-1 text-[#7F1D1D]">{a.texto}</span>
+                  <button onClick={async()=>{ if(confirm('Remover alerta?')) await deleteAlertaGabinete(a.id); }} className="opacity-0 group-hover:opacity-100 text-[#DC2626] hover:bg-white rounded px-1"><Trash2 className="w-3 h-3" /></button>
                 </li>
               ))}
             </ul>
@@ -307,7 +363,7 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
       <div className="bg-[#FFFBEB] rounded-xl border border-[#FDE68A] p-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#92400E]"><Info className="w-4 h-4 text-[#D97706]" /> Orientações à equipa</h3>
-          <button onClick={onEditCliente} className="text-[12px] font-[500] text-[#2563EB]">Editar</button>
+          <button onClick={()=>{ setOrientEdit(orientacoes); setShowEditOrient(true); }} className="text-[12px] font-[500] text-[#2563EB]">Editar</button>
         </div>
         <ul className="list-disc pl-5 space-y-1 text-[12.5px] leading-[18px] text-[#78350F]">
           {orientacoes.split('\n').filter(Boolean).map((line, i) => (
@@ -321,13 +377,16 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
         <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><FileText className="w-4 h-4 text-[#2563EB]" /> Documentos importantes</h3>
-            <button className="text-[12px] font-[500] text-[#2563EB]">Ver todos</button>
+            <button onClick={()=>setShowAddDoc(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#E2E8F0] text-[#2563EB] hover:bg-zinc-50">+ Adicionar</button>
           </div>
-          <ul className="space-y-2">
-            {docsExibir.map(d => (
-              <li key={d.id} className="flex items-center justify-between gap-2 text-[12.5px]">
+          <ul className="space-y-1.5">
+            {docsExibir.length===0 ? <li className="text-[12px] text-[#94A3B8] border-2 border-dashed rounded-lg p-3 text-center">Sem documentos</li> : docsExibir.map(d => (
+              <li key={d.id} className="flex items-center justify-between gap-2 text-[12.5px] group py-1">
                 <span className="flex items-center gap-1.5 truncate"><span className="w-3 h-3 rounded-[2px] bg-[#FEE2E2] border border-[#FECACA] flex items-center justify-center text-[7px] text-[#DC2626]">⧉</span> <span className="truncate text-[#334155]">{d.nome}</span></span>
-                <span className="text-[11px] text-[#94A3B8] shrink-0">{new Date(d.dataUpload).toLocaleDateString('pt-PT')}</span>
+                <span className="flex items-center gap-2 shrink-0">
+                  <span className="text-[11px] text-[#94A3B8]">{new Date(d.dataUpload).toLocaleDateString('pt-PT')}</span>
+                  <button onClick={async()=>{ if(confirm('Remover documento?')) await deleteDocumentoGeral(d.id); }} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-zinc-100 rounded"><Trash2 className="w-3 h-3 text-zinc-500" /></button>
+                </span>
               </li>
             ))}
           </ul>
@@ -336,11 +395,11 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
         <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Users className="w-4 h-4 text-[#2563EB]" /> Contactos</h3>
-            <button className="text-[12px] font-[500] text-[#2563EB]">Ver todos</button>
+            <button onClick={()=>setShowAddContacto(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#E2E8F0] text-[#2563EB] hover:bg-zinc-50">+ Adicionar</button>
           </div>
           <ul className="space-y-3">
-            {contactosExibir.map(c => (
-              <li key={c.id} className="flex items-start justify-between gap-2">
+            {contactosExibir.length===0 ? <li className="text-[12px] text-[#94A3B8] border-2 border-dashed rounded-lg p-3 text-center">Sem contactos</li> : contactosExibir.map(c => (
+              <li key={c.id} className="flex items-start justify-between gap-2 group">
                 <div className="flex gap-2.5 min-w-0">
                   <span className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-[700] text-white shrink-0" style={{ background: c.initials === 'MI' ? '#6366F1' : c.initials === 'VP' ? '#7C3AED' : '#334155' }}>{c.initials || initialsOf(c.nome)}</span>
                   <div className="min-w-0">
@@ -350,9 +409,11 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <span className="w-6 h-6 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-[#2563EB]"><Phone className="w-3 h-3" /></span>
-                  <span className="w-6 h-6 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-[#64748B]"><Mail className="w-3 h-3" /></span>
+                  {c.telefone && <a href={`tel:${c.telefone}`} className="w-6 h-6 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-[#2563EB] hover:bg-zinc-50"><Phone className="w-3 h-3" /></a>}
+                  {c.email && <a href={`mailto:${c.email}`} className="w-6 h-6 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:bg-zinc-50"><Mail className="w-3 h-3" /></a>}
+                  {!c.email && <span className="w-6 h-6 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-zinc-300"><Mail className="w-3 h-3" /></span>}
                   <span className="w-6 h-6 rounded-full bg-[#DCFCE7] border border-[#BBF7D0] flex items-center justify-center text-[#16A34A]"><MessageCircle className="w-3 h-3" /></span>
+                  <button onClick={async()=>{ if(confirm('Remover contacto?')) await deleteContactoGabinete(c.id); }} className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-zinc-500 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="w-3 h-3" /></button>
                 </div>
               </li>
             ))}
@@ -379,23 +440,117 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
       <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Clock className="w-4 h-4 text-[#2563EB]" /> Histórico / Últimas ocorrências</h3>
-          <button className="text-[12px] font-[500] text-[#2563EB]">Ver todo o histórico</button>
+          <div className="flex items-center gap-2"><button onClick={()=>setShowAddOcorr(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#E2E8F0] text-[#2563EB]">+ Ocorrência</button><button className="text-[12px] font-[500] text-[#2563EB]">Ver todo o histórico</button></div>
         </div>
         <div className="relative">
           <div className="absolute left-[42px] top-2 bottom-2 w-px bg-[#E2E8F0] hidden sm:block" />
           <ul className="space-y-2">
-            {ocorrExibir.map(o => (
-              <li key={o.id} className="flex items-center gap-3 text-[12.5px]">
+            {ocorrExibir.length===0 ? <li className="text-[12px] text-[#94A3B8] p-3 text-center">Sem ocorrências</li> : ocorrExibir.map(o => (
+              <li key={o.id} className="flex items-center gap-3 text-[12.5px] group">
                 <span className="w-[78px] shrink-0 text-[12px] text-[#64748B]">{new Date(o.data).toLocaleDateString('pt-PT')}</span>
                 <span className="relative w-2 h-2 rounded-full bg-[#334155] shrink-0 hidden sm:block" />
                 <span className="w-6 h-6 rounded-full bg-[#1E293B] text-white flex items-center justify-center text-[9px] font-[700] shrink-0">{o.autorInitials}</span>
                 <span className="w-[105px] shrink-0 text-[12px] font-[600] text-[#334155] truncate">{o.autorNome}</span>
                 <span className="flex-1 text-[#475569] truncate">{o.descricao}</span>
+                <button onClick={async()=>{ if(confirm('Remover ocorrência?')) await deleteOcorrencia(o.id); }} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-zinc-100 rounded"><Trash2 className="w-3 h-3 text-zinc-500" /></button>
               </li>
             ))}
           </ul>
         </div>
       </div>
+      {/* ——— Modais funcionais ——— */}
+      {showEditCliente && cliente && (
+        <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={()=>setShowEditCliente(false)}>
+          <div className="w-full max-w-[560px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
+            <div className="flex items-center justify-between"><h3 className="font-semibold">Editar cliente</h3><button onClick={()=>setShowEditCliente(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
+            <div className="grid grid-cols-2 gap-3">
+              <input value={formCliente.nome||''} onChange={e=>setFormCliente({...formCliente, nome:e.target.value})} placeholder="Nome" className="col-span-2 px-3 py-2 rounded-xl border text-sm" />
+              <input value={formCliente.nif||''} onChange={e=>setFormCliente({...formCliente, nif:e.target.value.replace(/\D/g,'')})} placeholder="NIF" className="px-3 py-2 rounded-xl border text-sm" />
+              <input value={formCliente.caes||''} onChange={e=>setFormCliente({...formCliente, caes:e.target.value})} placeholder="CAE" className="px-3 py-2 rounded-xl border text-sm" />
+              <input value={formCliente.caeDescricao||''} onChange={e=>setFormCliente({...formCliente, caeDescricao:e.target.value})} placeholder="CAE descricao" className="col-span-2 px-3 py-2 rounded-xl border text-sm" />
+              <input value={Array.isArray(formCliente.gerentes) ? formCliente.gerentes.join(', ') : (formCliente.gerentes as unknown as string) || ''} onChange={e=>setFormCliente({...formCliente, gerentes: e.target.value.split(',').map(s=>s.trim()).filter(Boolean) as unknown as string[]})} placeholder="Gerentes (virgula)" className="col-span-2 px-3 py-2 rounded-xl border text-sm" />
+              <input type="number" value={formCliente.nrTrabalhadores ?? ''} onChange={e=>setFormCliente({...formCliente, nrTrabalhadores: e.target.value? Number(e.target.value): undefined})} placeholder="N trabalhadores" className="px-3 py-2 rounded-xl border text-sm" />
+              <input type="date" value={formCliente.inicioAtividade ? new Date(formCliente.inicioAtividade).toISOString().slice(0,10) : ''} onChange={e=>setFormCliente({...formCliente, inicioAtividade: e.target.value? new Date(e.target.value).getTime(): undefined})} className="px-3 py-2 rounded-xl border text-sm" />
+            </div>
+            <div className="flex justify-end gap-2"><button onClick={()=>setShowEditCliente(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleSaveCliente} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Guardar</button></div>
+          </div>
+        </div>
+      )}
+      {showAddAlerta && (
+        <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddAlerta(false)}>
+          <div className="w-full max-w-[480px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
+            <div className="flex items-center justify-between"><h3 className="font-semibold">Novo alerta</h3><button onClick={()=>setShowAddAlerta(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
+            <textarea value={alertaTexto} onChange={e=>setAlertaTexto(e.target.value)} placeholder="Texto do alerta..." rows={3} className="w-full px-3 py-2 rounded-xl border text-sm" />
+            <div className="flex justify-end gap-2"><button onClick={()=>setShowAddAlerta(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddAlerta} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Adicionar</button></div>
+          </div>
+        </div>
+      )}
+      {showAddAssunto && (
+        <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddAssunto(false)}>
+          <div className="w-full max-w-[480px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
+            <div className="flex items-center justify-between"><h3 className="font-semibold">Novo assunto</h3><button onClick={()=>setShowAddAssunto(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
+            <input value={assuntoTitulo} onChange={e=>setAssuntoTitulo(e.target.value)} placeholder="Titulo do assunto" className="w-full px-3 py-2 rounded-xl border text-sm" />
+            <select value={assuntoEstado} onChange={e=>setAssuntoEstado(e.target.value as AssuntoGabinete['estado'])} className="w-full px-3 py-2 rounded-xl border bg-white text-sm"><option value="em_curso">Em curso</option><option value="aguard_cliente">Aguard. cliente</option><option value="pendente">Pendente</option><option value="concluido">Concluido</option></select>
+            <div className="flex justify-end gap-2"><button onClick={()=>setShowAddAssunto(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddAssunto} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Criar (vai para Tarefas)</button></div>
+          </div>
+        </div>
+      )}
+      {showAddContacto && (
+        <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddContacto(false)}>
+          <div className="w-full max-w-[480px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
+            <div className="flex items-center justify-between"><h3 className="font-semibold">Novo contacto</h3><button onClick={()=>setShowAddContacto(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
+            <input value={contactoForm.nome||''} onChange={e=>setContactoForm({...contactoForm, nome:e.target.value})} placeholder="Nome" className="w-full px-3 py-2 rounded-xl border text-sm" />
+            <div className="grid grid-cols-2 gap-3"><input value={contactoForm.cargo||''} onChange={e=>setContactoForm({...contactoForm, cargo:e.target.value})} placeholder="Cargo" className="px-3 py-2 rounded-xl border text-sm" /><input value={contactoForm.telefone||''} onChange={e=>setContactoForm({...contactoForm, telefone:e.target.value})} placeholder="Telefone" className="px-3 py-2 rounded-xl border text-sm" /></div>
+            <input value={contactoForm.email||''} onChange={e=>setContactoForm({...contactoForm, email:e.target.value})} placeholder="Email" className="w-full px-3 py-2 rounded-xl border text-sm" />
+            <div className="flex justify-end gap-2"><button onClick={()=>setShowAddContacto(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddContacto} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Adicionar</button></div>
+          </div>
+        </div>
+      )}
+      {showAddDoc && (
+        <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddDoc(false)}>
+          <div className="w-full max-w-[480px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
+            <div className="flex items-center justify-between"><h3 className="font-semibold">Novo documento</h3><button onClick={()=>setShowAddDoc(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
+            <input value={docNome} onChange={e=>setDocNome(e.target.value)} placeholder="Nome do ficheiro (ex: Contrato.pdf)" className="w-full px-3 py-2 rounded-xl border text-sm" />
+            <div className="flex justify-end gap-2"><button onClick={()=>setShowAddDoc(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddDoc} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Adicionar</button></div>
+          </div>
+        </div>
+      )}
+      {showAddOcorr && (
+        <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddOcorr(false)}>
+          <div className="w-full max-w-[480px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
+            <div className="flex items-center justify-between"><h3 className="font-semibold">Nova ocorrencia</h3><button onClick={()=>setShowAddOcorr(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
+            <textarea value={ocorrDesc} onChange={e=>setOcorrDesc(e.target.value)} placeholder="Descricao..." rows={3} className="w-full px-3 py-2 rounded-xl border text-sm" />
+            <div className="flex justify-end gap-2"><button onClick={()=>setShowAddOcorr(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddOcorr} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Adicionar</button></div>
+          </div>
+        </div>
+      )}
+      {showEditSituacao && cliente && (
+        <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowEditSituacao(false)}>
+          <div className="w-full max-w-[520px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
+            <div className="flex items-center justify-between"><h3 className="font-semibold">Editar situacao</h3><button onClick={()=>setShowEditSituacao(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
+            <div className="space-y-2">
+              {(cliente.situacaoAtual||[]).map((s, i)=>(
+                <div key={i} className="flex gap-2">
+                  <select value={s.cor} onChange={e=>{ const arr=[...(cliente.situacaoAtual||[])]; arr[i]={...arr[i], cor:e.target.value as 'red'|'green'|'orange'}; upsertCliente({...cliente, situacaoAtual:arr, updatedAt: Date.now()}); }} className="px-2 py-2 rounded-lg border text-xs"><option value="green">Verde</option><option value="orange">Laranja</option><option value="red">Vermelho</option></select>
+                  <input value={s.texto} onChange={e=>{ const arr=[...(cliente.situacaoAtual||[])]; arr[i]={...arr[i], texto:e.target.value}; upsertCliente({...cliente, situacaoAtual:arr, updatedAt: Date.now()}); }} className="flex-1 px-3 py-2 rounded-xl border text-sm" />
+                  <button onClick={async()=>{ const arr=[...(cliente.situacaoAtual||[])]; arr.splice(i,1); await upsertCliente({...cliente, situacaoAtual:arr, updatedAt: Date.now()}); }} className="p-2 hover:bg-rose-50 rounded text-rose-600"><Trash2 className="w-4 h-4" /></button>
+                </div>
+              ))}
+              <button onClick={async()=>{ const arr=[...(cliente.situacaoAtual||[]), {texto:'Novo item', cor:'green' as const}]; await upsertCliente({...cliente, situacaoAtual:arr, updatedAt: Date.now()}); }} className="text-sm text-[#2563EB] flex items-center gap-1"><Plus className="w-3 h-3" /> Adicionar linha</button>
+            </div>
+            <div className="flex justify-end"><button onClick={()=>setShowEditSituacao(false)} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Fechar</button></div>
+          </div>
+        </div>
+      )}
+      {showEditOrient && cliente && (
+        <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowEditOrient(false)}>
+          <div className="w-full max-w-[520px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
+            <div className="flex items-center justify-between"><h3 className="font-semibold">Orientacoes a equipa</h3><button onClick={()=>setShowEditOrient(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
+            <textarea value={orientEdit} onChange={e=>setOrientEdit(e.target.value)} rows={6} className="w-full px-3 py-2 rounded-xl border text-sm" />
+            <div className="flex justify-end gap-2"><button onClick={()=>setShowEditOrient(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={async()=>{ await upsertCliente({...cliente, orientacoes: orientEdit, updatedAt: Date.now()}); setShowEditOrient(false); }} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Guardar</button></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

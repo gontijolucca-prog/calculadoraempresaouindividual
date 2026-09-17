@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Search, Plus, Users, CheckSquare, Calendar, Lock, Building2, Trash2, Eye, EyeOff, Copy, Shield, AlertTriangle, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Clock, Briefcase, MessageSquare, X, Send, Archive, Share2 } from 'lucide-react';
 import { useGabineteClientes, useGabineteTarefas, useGabineteObrigacoes, useGabineteCofre, useGabineteContactosGeral, useGabineteAssuntos, useGabineteAlertas, useGabineteOcorrencias, useGabineteDocumentos } from './lib/useGabinete';
+import { seedMykolaVasylDemo } from './lib/gabinete';
 import {
   upsertTarefa, deleteTarefa, marcarTarefaFeita, newTarefaId,
   upsertObrigacao,
@@ -61,6 +62,7 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
   const alertasF = useMemo(() => activeEmpresaId ? alertasAll.filter(a => a.clienteId === activeEmpresaId) : alertasAll, [alertasAll, activeEmpresaId]);
   const ocorrenciasF = useMemo(() => activeEmpresaId ? ocorrenciasAll.filter(o => o.clienteId === activeEmpresaId) : ocorrenciasAll, [ocorrenciasAll, activeEmpresaId]);
   const documentosF = useMemo(() => activeEmpresaId ? documentosAll.filter(d => d.clienteId === activeEmpresaId) : documentosAll, [documentosAll, activeEmpresaId]);
+  React.useEffect(() => { seedMykolaVasylDemo().catch(()=>{}); }, []);
   const clienteAtivo = useMemo(() => {
     if (!activeEmpresaId) return null;
     const gc = clientes.find(c => c.id === activeEmpresaId);

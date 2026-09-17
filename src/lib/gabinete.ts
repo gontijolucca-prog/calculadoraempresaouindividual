@@ -148,6 +148,7 @@ export interface GabineteCliente {
   apoioAdministrativo?: { nome: string; initials: string };
   supervisor?: { nome: string; initials: string };
   orientacoes?: string;
+  situacaoAtual?: { texto: string; cor: 'red' | 'green' | 'orange' }[];
   faturacaoAnual?: number;
   responsavelId?: string; // colaborador
   estado: ClienteEstado;
@@ -844,6 +845,171 @@ export function gerarObrigacoesParaCliente(cli: GabineteCliente, ano = new Date(
     });
   }
   return novas;
+}
+
+// ——— Seed demo: garante que o cliente do mockup existe com dados completos ———
+export async function seedMykolaVasylDemo(): Promise<string | null> {
+  const TARGET_NIF = '518123456';
+  const TARGET_NOME = 'Mykola & Vasyl, Lda';
+  const existentes = listClientesCache();
+  const byNif = existentes.find(c => (c.nif||'').replace(/\D/g,'') === TARGET_NIF);
+  const byNome = existentes.find(c => c.nome === TARGET_NOME);
+  if (byNif || byNome) {
+    const cli = byNif || byNome;
+    if (!cli) return null;
+    // Se já existe mas falta campos do mockup, completa
+    let needsUpdate = false;
+    if (!cli.caeDescricao) { cli.caeDescricao = 'Instalações elétricas'; cli.caes = '43210'; needsUpdate = true; }
+    if (!cli.regimeIrc) { cli.regimeIrc = 'geral'; needsUpdate = true; }
+    if (!cli.tipoSociedade) { cli.tipoSociedade = 'Sociedade por quotas'; needsUpdate = true; }
+    if (!cli.gerentes || cli.gerentes.length === 0) { cli.gerentes = ['Mykola Ivanenko', 'Vasyl Petrenko']; needsUpdate = true; }
+    if (cli.nrTrabalhadores == null) { cli.nrTrabalhadores = 3; needsUpdate = true; }
+    if (!cli.inicioAtividade) { cli.inicioAtividade = new Date('2025-12-15').getTime(); needsUpdate = true; }
+    if (!cli.responsavelInterno) { cli.responsavelInterno = { nome: 'Ana Margarida', initials: 'AM' }; needsUpdate = true; }
+    if (!cli.apoioAdministrativo) { cli.apoioAdministrativo = { nome: 'Vilma', initials: 'VI' }; needsUpdate = true; }
+    if (!cli.supervisor) { cli.supervisor = { nome: 'Sandrine Reis', initials: 'SR' }; needsUpdate = true; }
+    if (!cli.orientacoes) { cli.orientacoes = 'Todas as faturas devem ser digitalizadas e inseridas no TOCOnline no momento da receção.\nCliente prefere comunicação por WhatsApp.\nConfirmar sempre a afetação de despesas (pessoal vs. empresa).\nValidar dedutibilidade de despesas com viatura, combustível e portagens.\nAntes de fechar o mês, confirmar se existem documentos em falta.'; needsUpdate = true; }
+    if (!cli.situacaoAtual) {
+      cli.situacaoAtual = [
+        { texto: 'Documentação de julho e agosto em falta', cor: 'red' },
+        { texto: 'IVA tratado até julho', cor: 'green' },
+        { texto: 'Contabilidade em dia', cor: 'green' },
+        { texto: 'Processo de compensação Segurança Social pendente', cor: 'orange' },
+        { texto: 'Salários atualizados', cor: 'green' },
+      ];
+      needsUpdate = true;
+    }
+    if (needsUpdate) { cli.updatedAt = Date.now(); await upsertCliente(cli); }
+    // Garante tarefas/assuntos/alertas/contactos/ocorrencias/documentos/cofre
+    await ensureMykolaDependencias(cli.id, cli.nome);
+    return cli.id;
+  }
+  const cli: GabineteCliente = {
+    id: newClienteId(),
+    nome: TARGET_NOME,
+    nif: TARGET_NIF,
+    tipoEntidade: 'LDA',
+    regimeIva: 'trimestral',
+    regimeIrc: 'geral',
+    tipoSociedade: 'Sociedade por quotas',
+    caes: '43210',
+    caeDescricao: 'Instalações elétricas',
+    gerentes: ['Mykola Ivanenko', 'Vasyl Petrenko'],
+    nrTrabalhadores: 3,
+    inicioAtividade: new Date('2025-12-15').getTime(),
+    responsavelInterno: { nome: 'Ana Margarida', initials: 'AM' },
+    apoioAdministrativo: { nome: 'Vilma', initials: 'VI' },
+    supervisor: { nome: 'Sandrine Reis', initials: 'SR' },
+    orientacoes: 'Todas as faturas devem ser digitalizadas e inseridas no TOCOnline no momento da receção.\nCliente prefere comunicação por WhatsApp.\nConfirmar sempre a afetação de despesas (pessoal vs. empresa).\nValidar dedutibilidade de despesas com viatura, combustível e portagens.\nAntes de fechar o mês, confirmar se existem documentos em falta.',
+    situacaoAtual: [
+      { texto: 'Documentação de julho e agosto em falta', cor: 'red' },
+      { texto: 'IVA tratado até julho', cor: 'green' },
+      { texto: 'Contabilidade em dia', cor: 'green' },
+      { texto: 'Processo de compensação Segurança Social pendente', cor: 'orange' },
+      { texto: 'Salários atualizados', cor: 'green' },
+    ],
+    estado: 'ativo',
+    createdAt: new Date('2025-12-15').getTime(),
+    updatedAt: Date.now(),
+  };
+  await upsertCliente(cli);
+  // Cria EmpresaRecord espelho para lista de empresas
+  try {
+    const { upsertEmpresa, listEmpresas: listEmp } = await import('./empresas');
+    const exists = listEmp().find(e => (e.nif||'').replace(/\D/g,'') === TARGET_NIF);
+    if (!exists) {
+      const { newId } = await import('./empresas');
+      const emp = { id: cli.id, nome: TARGET_NOME, nif: TARGET_NIF, createdAt: Date.now(), updatedAt: Date.now(), profile: { nomeCliente: TARGET_NOME } as unknown as import('./empresas').EmpresaRecord['profile'] };
+      upsertEmpresa(emp as import('./empresas').EmpresaRecord);
+    }
+  } catch {}
+  await ensureMykolaDependencias(cli.id, cli.nome);
+  gerarObrigacoesParaCliente(cli, new Date().getFullYear());
+  return cli.id;
+}
+
+async function ensureMykolaDependencias(clienteId: string, clienteNome: string): Promise<void> {
+  // Contactos
+  if (listContactosCache().filter(c=>c.clienteId===clienteId).length === 0) {
+    for (const c of [
+      { nome: 'Mykola Ivanenko', cargo: 'Gerente', telefone: '+351 9XX XXX XXX', initials: 'MI', isGerente: true },
+      { nome: 'Vasyl Petrenko', cargo: 'Gerente', telefone: '+351 9XX XXX XXX', initials: 'VP', isGerente: true },
+      { nome: 'Iryna', cargo: 'Administrativa', telefone: '+351 9XX XXX XXX', initials: 'IA' },
+    ] as const) {
+      await upsertContactoGabinete({ id: newContactoGabineteId(), clienteId, clienteNome, nome: c.nome, cargo: c.cargo, telefone: c.telefone, initials: c.initials, isGerente: (c as unknown as {isGerente?:boolean}).isGerente, createdAt: Date.now(), updatedAt: Date.now() });
+    }
+  }
+  // Alertas
+  if (listAlertasCache().filter(a=>a.clienteId===clienteId).length === 0) {
+    for (const texto of [
+      'Cliente tem dificuldade em reunir documentação.',
+      'Todas as faturas devem ser enviadas por WhatsApp assim que são recebidas.',
+      'Atenção à dedutibilidade de despesas com viatura.',
+    ]) {
+      await upsertAlertaGabinete({ id: newAlertaGabineteId(), clienteId, clienteNome, texto, createdAt: Date.now(), updatedAt: Date.now() });
+    }
+  }
+  // Assuntos = também cria tarefas ligadas (funcional: assuntos são tarefas)
+  if (listAssuntosCache().filter(a=>a.clienteId===clienteId).length === 0) {
+    const now = Date.now();
+    const assuntosSeed: { titulo: string; estado: AssuntoGabinete['estado']; updatedAt: number }[] = [
+      { titulo: 'Duplicação de contribuições Segurança Social', estado: 'em_curso', updatedAt: new Date('2026-09-16').getTime() },
+      { titulo: 'Viatura da empresa', estado: 'aguard_cliente', updatedAt: new Date('2026-09-08').getTime() },
+      { titulo: 'Documentação em falta (Jul-Ago)', estado: 'pendente', updatedAt: new Date('2026-09-16').getTime() },
+    ];
+    for (const s of assuntosSeed) {
+      await upsertAssuntoGabinete({ id: newAssuntoGabineteId(), clienteId, clienteNome, titulo: s.titulo, estado: s.estado, updatedAt: s.updatedAt, createdAt: now });
+      // Tarefa espelho para funcionalidade Tarefas
+      const tid = newTarefaId();
+      const t: Tarefa = { id: tid, titulo: s.titulo, tipo: 'tarefa', origem: 'manual', estado: s.estado === 'pendente' ? 'todo' : s.estado === 'aguard_cliente' ? 'todo' : 'doing', prioridade: 'media' as const, clienteId, clienteNome, createdAt: s.updatedAt, updatedAt: s.updatedAt };
+      await upsertTarefa(t);
+    }
+  } else if (listTarefasCache().filter(t=>t.clienteId===clienteId).length === 0) {
+    // Se assuntos já existem mas sem tarefas, cria tarefas
+    for (const a of listAssuntosCache().filter(x=>x.clienteId===clienteId)) {
+      await upsertTarefa({ id: newTarefaId(), titulo: a.titulo, tipo: 'tarefa', origem: 'manual', estado: a.estado==='pendente'?'todo':'doing', prioridade: 'media', clienteId, clienteNome, createdAt: a.updatedAt, updatedAt: a.updatedAt });
+    }
+  }
+  // Ocorrências
+  if (listOcorrenciasCache().filter(o=>o.clienteId===clienteId).length === 0) {
+    for (const o of [
+      { data: new Date('2026-09-16').getTime(), autorNome: 'Sandrine Reis', autorInitials: 'SR', descricao: 'Atualização: sem resposta da Segurança Social.' },
+      { data: new Date('2026-09-08').getTime(), autorNome: 'Ana Margarida', autorInitials: 'AM', descricao: 'Envio do pedido de compensação SS.' },
+      { data: new Date('2026-09-07').getTime(), autorNome: 'Ana Margarida', autorInitials: 'AM', descricao: 'Pagamento duplicado de €445,18.' },
+      { data: new Date('2026-05-05').getTime(), autorNome: 'Ana Margarida', autorInitials: 'AM', descricao: 'Pagamento duplicado de €445,18.' },
+      { data: new Date('2025-12-15').getTime(), autorNome: 'Sandrine Reis', autorInitials: 'SR', descricao: 'Constituição da sociedade.' },
+    ] as const) {
+      await upsertOcorrencia({ id: newOcorrenciaId(), clienteId, clienteNome, data: o.data, autorNome: o.autorNome, autorInitials: o.autorInitials, descricao: o.descricao, createdAt: o.data });
+    }
+  }
+  // Documentos
+  if (listDocumentosGeralCache().filter(d=>d.clienteId===clienteId).length === 0) {
+    for (const d of [
+      { nome: 'Contrato de constituição.pdf', dataUpload: new Date('2025-12-12').getTime() },
+      { nome: 'Certidão permanente.pdf', dataUpload: new Date('2025-12-12').getTime() },
+      { nome: 'Contrato de arrendamento.pdf', dataUpload: new Date('2026-01-03').getTime() },
+      { nome: 'Financiamento viatura.pdf', dataUpload: new Date('2026-02-15').getTime() },
+      { nome: 'Parecer OCC – viatura.pdf', dataUpload: new Date('2026-08-27').getTime() },
+    ] as const) {
+      await upsertDocumentoGeral({ id: newDocumentoGeralId(), clienteId, clienteNome, nome: d.nome, tipo: 'OUTRO', dataUpload: d.dataUpload });
+    }
+  }
+  // Cofre
+  if (listCofreCache().filter(c=>c.clienteId===clienteId).length === 0) {
+    // Acessos são placeholder sem segredo real - o utilizador coloca a passe depois
+    for (const a of [
+      { categoria: 'AT' as const, titulo: 'Portal das Finanças', username: '518123456' },
+      { categoria: 'SS' as const, titulo: 'Segurança Social Direta', username: '518123456' },
+      { categoria: 'OUTRO' as const, titulo: 'TOConline', username: 'mykola.vasyl' },
+      { categoria: 'OUTRO' as const, titulo: 'Homebanking BPI', username: 'mykola.vasyl' },
+    ] as const) {
+      const { encryptSecret, setCofrePassphrase, getCofrePassphrase } = await import('./cofreCrypto');
+      const pass = getCofrePassphrase() || 'demo-passphrase';
+      if (!getCofrePassphrase()) setCofrePassphrase(pass);
+      const cipher = await encryptSecret('—', pass);
+      await upsertCofre({ id: newCofreId(), titulo: a.titulo, categoria: a.categoria, clienteId, clienteNome, username: a.username, cipher, createdAt: Date.now(), updatedAt: Date.now() });
+    }
+  }
 }
 
 // Migração: cada EmpresaRecord vira GabineteCliente (one-off, idempotente por NIF)
