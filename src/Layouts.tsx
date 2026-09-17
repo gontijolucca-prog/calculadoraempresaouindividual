@@ -283,7 +283,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
               if (active === 'gabinete') {
                 setGabineteOpen(v => !v);
               } else {
-                onGabineteTab?.('gallery');
+                onGabineteTab?.('visao-geral');
                 go('gabinete');
                 setGabineteOpen(true);
               }
