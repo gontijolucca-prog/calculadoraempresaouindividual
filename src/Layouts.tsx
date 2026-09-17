@@ -3,7 +3,7 @@ import {
   UserCircle, Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote, Info,
   ClipboardList, Upload, LogOut, Receipt,
   ChevronDown, ChevronRight, TrendingUp, Settings, UserPlus, Building2,
-  Menu, X, Clock, Briefcase, ListOrdered, Package, History, FileDown, LayoutDashboard,
+  Menu, X, Clock, Briefcase, ListOrdered, Package, History, FileDown, LayoutDashboard, LayoutGrid,
   Users, CheckSquare, Calendar, Lock, Mail, FileText, BarChart3,
 } from 'lucide-react';
 import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
@@ -76,15 +76,9 @@ const NAV_ITEMS = [
 /** Opções de navegação por cliente — mesma semântica dos cartões da Lista. */
 type NavOpts = { openPackage?: boolean; toggleFlow?: boolean; skipIntro?: boolean };
 
-/** Menu do cliente ativo, replicado na sidebar por baixo de "A trabalhar em".
- *  Reaproveita exatamente a navegação dos cartões (navigateClient) para não
- *  divergir do comportamento da Lista de Empresas. */
-// O histórico de simulações vive agora no dropdown de cada cartão da Lista de
-// Empresas — o botão da sidebar foi removido (a view 'historico' mantém-se
-// alcançável programaticamente).
-const CLIENT_MENU: { view: ViewType; label: string; Icon: React.ComponentType<{ className?: string }>; opts?: NavOpts }[] = [
-  { view: 'profile',   label: 'Perfil do Cliente',       Icon: UserCircle },
-];
+// Os 10 simuladores vivem no dropdown do item "Simuladores" da sidebar.
+// O "Perfil do Cliente" saiu da sidebar: abre-se a partir da Lista de
+// Empresas (botão do cartão ou card da grid do cliente).
 const SIM_MENU_SIDEBAR = NAV_ITEMS.filter((i) => i.group === 'sim');
 
 const NAV_TIPS: Record<string, string> = {
@@ -136,8 +130,10 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
   const go = (v: ViewType) => { setView(v); setDrawerOpen(false); };
   const runAction = (fn?: () => void) => { if (fn) fn(); setDrawerOpen(false); };
 
-  // Menu do cliente ativo ("A trabalhar em") é um dropdown que INICIA FECHADO.
-  const [clientMenuOpen, setClientMenuOpen] = useState(false);
+  // Dropdown "Simuladores" — inicia fechado; abre ao navegar para a grid ou um sim.
+  const [simMenuOpen, setSimMenuOpen] = useState(false);
+  const isSimActive = active === 'hub' || SIM_MENU_SIDEBAR.some((s) => s.id === active);
+  useEffect(() => { if (active === 'hub' || SIM_MENU_SIDEBAR.some((s) => s.id === active)) setSimMenuOpen(true); }, [active]);
   // Dropdown "Relatórios" — também inicia fechado.
   const [relatoriosOpen, setRelatoriosOpen] = useState(false);
   // Dropdown "Gabinete" — inicia aberto quando estamos no gabinete
@@ -244,6 +240,33 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
 
       <nav aria-label="Navegação principal" className="flex-1 overflow-y-auto px-2 py-1 pb-16">
         <SectionLabel>Carteira</SectionLabel>
+            {/* Lista de Empresas / Trocar de Empresa: sempre a primeira opção e
+                presa ao topo da navegação (sticky). */}
+            <div className="sticky top-0 z-20 bg-white/95 backdrop-blur -mx-2 px-2 pt-1 pb-2">
+            <div className={cn(activeClientName && "rounded-[12px] border border-[#E2E8F0] bg-[#F8FAFC] p-1")}>
+              <NavItem label={activeClientName ? "Trocar de Empresa" : "Lista de Empresas"} Icon={Briefcase} onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }} current={active === 'empresas'} title={activeClientName ? "Trocar de cliente — volta à lista para escolher outro" : "Carteira de clientes — cada um abre o seu menu (perfil, simuladores, histórico). Aqui também adicionas novas empresas."} />
+              {activeClientName && (
+                <div className="mt-1">
+                  <button
+                    type="button"
+                    onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }}
+                    title="Ir para a Lista de Empresas"
+                    className="group w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-left transition-all hover:brightness-[0.98] focus-visible:outline-none"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(225,29,72,0.09), rgba(225,29,72,0.03))',
+                      boxShadow: 'inset 0 0 0 1px rgba(225,29,72,0.22)',
+                    }}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-[var(--brand-bordeaux-neon)] shrink-0 bordeaux-neon-pulse" style={{ boxShadow: '0 0 0 6px var(--brand-bordeaux-glow)' }} aria-hidden="true" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[9px] font-[800] uppercase tracking-[1px] text-[var(--brand-bordeaux-neon)]">A trabalhar em</span>
+                      <span className="block text-[13px] font-[700] text-[#0B1D2D] truncate">{activeClientName}</span>
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
+            </div>
             <NavItem label="Gabinete" Icon={LayoutDashboard} onClick={() => {
               // Mantém-se o comportamento de dropdown: ao entrar no Gabinete
               // abre a galeria e o submenu; já dentro do Gabinete, o botão
@@ -270,62 +293,23 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                 ))}
               </div>
             )}
-            {/* Lista de Empresas + cliente ativo sempre juntos. Quando há cliente
-                selecionado, a lista vira "Trocar de Empresa" e o "A trabalhar em"
-                fica como dropdown ANINHADO dentro do mesmo bloco — 1 sítio para
-                tudo de carteira. */}
-            <div className={cn(activeClientName && "rounded-[12px] border border-[#E2E8F0] bg-[#F8FAFC] p-1")}>
-              <NavItem label={activeClientName ? "Trocar de Empresa" : "Lista de Empresas"} Icon={Briefcase} onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }} current={active === 'empresas'} title={activeClientName ? "Trocar de cliente — volta à lista para escolher outro" : "Carteira de clientes — cada um abre o seu menu (perfil, simuladores, histórico). Aqui também adicionas novas empresas."} />
-              {activeClientName && (
-                <div className="mt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setClientMenuOpen((v) => !v);
-                      goClient('hub');
-                    }}
-                    aria-expanded={clientMenuOpen}
-                    title={clientMenuOpen ? 'Fechar o menu do cliente' : 'Abrir o menu do cliente (perfil e simuladores)'}
-                    className="group w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-left transition-all hover:brightness-[0.98] focus-visible:outline-none"
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(225,29,72,0.09), rgba(225,29,72,0.03))',
-                      boxShadow: 'inset 0 0 0 1px rgba(225,29,72,0.22)',
-                    }}
-                  >
-                    <span className="w-2 h-2 rounded-full bg-[var(--brand-bordeaux-neon)] shrink-0 bordeaux-neon-pulse" style={{ boxShadow: '0 0 0 6px var(--brand-bordeaux-glow)' }} aria-hidden="true" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[9px] font-[800] uppercase tracking-[1px] text-[var(--brand-bordeaux-neon)]">A trabalhar em</span>
-                      <span className="block text-[13px] font-[700] text-[#0B1D2D] truncate">{activeClientName}</span>
-                    </span>
-                    <ChevronRight className={cn('w-4 h-4 text-[var(--brand-bordeaux-neon)]/50 shrink-0 transition-transform', clientMenuOpen && 'rotate-90')} aria-hidden="true" />
-                  </button>
-                  {clientMenuOpen && (
-                  <div className="mt-1 ml-2.5 pl-2 border-l-2 border-[var(--brand-bordeaux-neon)]/20 space-y-0.5">
-                    {CLIENT_MENU.map((it) => (
-                      <ClientNavItem
-                        key={it.label}
-                        label={it.label}
-                        Icon={it.Icon}
-                        onClick={() => goClient(it.view, it.opts)}
-                        current={!it.opts && active === it.view}
-                      />
-                    ))}
-                    <div className="px-3 pt-2 pb-1 text-[9px] font-[800] uppercase tracking-[1px] text-[#0677FF]/70">Simuladores</div>
-                    {SIM_MENU_SIDEBAR.map((s) => (
-                      <ClientNavItem
-                        key={s.id}
-                        label={s.label}
-                        Icon={s.Icon}
-                        onClick={() => goClient(s.id)}
-                        current={active === s.id}
-                        title={NAV_TIPS[s.id]}
-                      />
-                    ))}
-                  </div>
-                  )}
-                </div>
-              )}
-            </div>
+            {/* Simuladores: abre a grid do cliente + dropdown só com os 10 simuladores.
+                O Perfil do Cliente saiu da sidebar — abre-se na Lista de Empresas. */}
+            <NavItem label="Simuladores" Icon={LayoutGrid} onClick={() => { if (isSimActive) setSimMenuOpen((v) => !v); else { goClient('hub'); setSimMenuOpen(true); } }} current={active === 'hub'} chevronOpen={simMenuOpen} title="Grelha de simuladores do cliente ativo" />
+            {simMenuOpen && (
+              <div className="mt-0.5 ml-2.5 pl-2 border-l-2 border-slate-200 space-y-0.5">
+                {SIM_MENU_SIDEBAR.map((s) => (
+                  <ClientNavItem
+                    key={s.id}
+                    label={s.label}
+                    Icon={s.Icon}
+                    onClick={() => goClient(s.id)}
+                    current={active === s.id}
+                    title={NAV_TIPS[s.id]}
+                  />
+                ))}
+              </div>
+            )}
             <NavItem label="Relatórios" Icon={FileDown} onClick={() => setRelatoriosOpen(v => !v)} current={active === 'exportar'} chevronOpen={relatoriosOpen} title="Demonstrações financeiras, documentos de encerramento de contas e pacote do cliente." />
             {relatoriosOpen && (
               <div className="mt-0.5 ml-2.5 pl-2 border-l-2 border-slate-200 space-y-0.5">

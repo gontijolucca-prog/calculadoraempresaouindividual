@@ -4,6 +4,7 @@ import {
   Plus, Building2, FileUp, Trash2, ChevronDown, Search, FileText, Pencil, X, Download,
   History, RotateCcw,
   Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote, Receipt, TrendingUp,
+  LayoutDashboard, UserCircle,
 } from 'lucide-react';
 import {
   listEmpresas, listSimulacoes, deleteSimulacao,
@@ -402,6 +403,26 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
           >
             <Calculator className="w-3.5 h-3.5" />
             <span>Simuladores</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate(emp.id, 'gabinete')}
+            title={`Abrir o gabinete de ${displayNome}`}
+            aria-label={`Abrir o gabinete de ${displayNome}`}
+            className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] bg-[#0677FF]/10 text-[#0677FF] text-[12px] font-[700] whitespace-nowrap hover:bg-[#0677FF] hover:text-white transition-colors"
+          >
+            <LayoutDashboard className="w-3.5 h-3.5" />
+            <span>Gabinete</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate(emp.id, 'profile')}
+            title={`Abrir o perfil de ${displayNome}`}
+            aria-label={`Abrir o perfil de ${displayNome}`}
+            className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] bg-[#0677FF]/10 text-[#0677FF] text-[12px] font-[700] whitespace-nowrap hover:bg-[#0677FF] hover:text-white transition-colors"
+          >
+            <UserCircle className="w-3.5 h-3.5" />
+            <span>Perfil do Cliente</span>
           </button>
           <button
             type="button"
