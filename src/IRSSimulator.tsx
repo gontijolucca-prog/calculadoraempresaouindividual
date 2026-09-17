@@ -6,6 +6,8 @@ import { intInput } from './lib/inputGuards';
 import { Tip } from './Tip';
 import { Combobox } from './Combobox';
 import { SimulatorPrintButton } from './SimulatorPrint';
+import { SimGateBar, SimGatePlaceholder, RequiredMark } from './components/SimGateBar';
+import { isSimReady } from './lib/simRequired';
 import {
   simular,
   MUNICIPIOS_BM,
@@ -49,6 +51,9 @@ function toSim(s: IRSState): IRSSim {
 
 export default function IRSSimulator({ initialState, onStateChange }: Props) {
   const s = initialState;
+  const [simulated, setSimulated] = React.useState(false);
+  const ready = isSimReady('irs', s);
+  React.useEffect(() => { if (!ready) setSimulated(false); }, [ready]);
   const set = (u: Partial<IRSState>) => onStateChange({ ...s, ...u });
   const setDespesa = (k: keyof IRSState['despesas'], v: number) => onStateChange({ ...s, despesas: { ...s.despesas, [k]: v } });
   const ra0 = { capitais: 0, prediais: 0, maisValiasMobiliarias: 0, maisValiasImobiliarias: 0, englobarCapitais: false, englobarPrediais: false };
@@ -102,7 +107,7 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
               Estimativa do IRS anual (Modelo 3) segundo o CIRS. Atualiza a cada alteração.
             </p>
           </div>
-          <SimulatorPrintButton />
+          {simulated && ready && <SimulatorPrintButton />}
         </div>
 
         {/* Dados do agregado */}
@@ -177,7 +182,7 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
                   <input className={inputCls} value={p.nome} onChange={(e) => setPessoa(i, { nome: e.target.value })} />
                 </div>
                 <div>
-                  <label className={labelCls}>Rend. trabalho bruto (€)</label>
+                  <label className={labelCls}>Rend. trabalho bruto (€) <RequiredMark /></label>
                   <input type="number" step="0.01" className={inputCls} value={p.rendTrabalho || ''} onChange={(e) => setPessoa(i, { rendTrabalho: parseFloat(e.target.value) || 0 })} />
                 </div>
                 <div>
@@ -307,10 +312,12 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
             </div>
           </div>
         </section>
+        <SimGateBar view="irs" state={s} simulated={simulated} onSimulate={() => setSimulated(true)} />
       </div>
 
       {/* ── Resultados ─────────────────────────────────────────── */}
       <div className="p-4 sm:p-5 xl:p-[28px] xl:overflow-y-auto xl:h-full flex flex-col gap-5">
+        {!simulated || !ready ? <SimGatePlaceholder view="irs" state={s} simulated={simulated} /> : <>
         {/* Hero apurado */}
         <motion.div
           key={reembolso ? 'good' : 'bad'}
@@ -450,6 +457,8 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
         <p className="text-[11px] font-[500] text-[#94A3B8] leading-relaxed px-1">
           Estimativa segundo o CIRS 2026 — não substitui a liquidação oficial da Autoridade Tributária.
         </p>
+        </>
+        }
       </div>
     </div>
   );

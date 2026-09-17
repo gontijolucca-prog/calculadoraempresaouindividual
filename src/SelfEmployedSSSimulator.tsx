@@ -9,6 +9,8 @@ import { Tip } from './Tip';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { SimulatorPrintButton } from './SimulatorPrint';
+import { SimGateBar, SimGatePlaceholder, RequiredMark } from './components/SimGateBar';
+import { isSimReady } from './lib/simRequired';
 
 interface SSState {
   income: number;
@@ -24,6 +26,10 @@ interface Props {
 
 export default function SelfEmployedSSSimulator({ initialState, onStateChange }: Props) {
   const { income, tipoRendimento, primeiroAno } = initialState;
+  const sState = initialState as any;
+  const [simulated, setSimulated] = React.useState(false);
+  const ready = isSimReady('selfss', sState);
+  React.useEffect(() => { if (!ready) setSimulated(false); }, [ready]);
 
   const setState = (updates: Partial<SSState>) => {
     onStateChange({ ...initialState, ...updates });
@@ -51,7 +57,7 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
   const steps: FlowStep<SSState>[] = [
     {
       id: 'rendimento',
-      label: 'Rendimento Mensal',
+      label: 'Rendimento Mensal *',
       description: 'Indique o rendimento mensal que serve de base para o cálculo da SS.',
       render: (st, setSt) => (
         <div>
@@ -269,7 +275,7 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
         title="Simulador SS Independente"
         icon={ShieldCheck}
         steps={steps}
-        resultsStep={{ label: 'Resultados da Simulação', description: 'Contribuição à Segurança Social — trabalhador independente.', render: resultsContent }}
+        resultsStep={{ label: 'Resultados da Simulação', description: 'Contribuição à Segurança Social — trabalhador independente.', render: (!simulated || !ready) ? <SimGatePlaceholder view="selfss" state={sState} simulated={simulated} /> : resultsContent }}
         state={initialState}
         setState={setState}
       />
@@ -285,7 +291,7 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
             <h2 className="text-[24px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador SS Independente <Tip>SS Independente = Segurança Social para trabalhadores a recibos verdes ou ENI. Diferente dos trabalhadores por conta de outrem: o próprio paga a sua contribuição trimestralmente.</Tip></h2>
             <p className="text-[14px] text-[#64748B] font-[500] mt-[4px]">Contribuições de trabalhador independente (ENI). <Tip>ENI = Empresário em Nome Individual. É uma forma de trabalhar por conta própria sem criar uma empresa. Paga IRS em Categoria B e SS como independente.</Tip></p>
           </div>
-          <SimulatorPrintButton />
+          {simulated && ready && <SimulatorPrintButton />}
         </div>
 
         <div className="space-y-[24px]">
@@ -355,12 +361,13 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
               </div>
             </div>
           </div>
+        <SimGateBar view="selfss" state={sState} simulated={simulated} onSimulate={() => setSimulated(true)} />
         </div>
       </div>
 
       {/* Right Pane - Results */}
       <div className={rightCls}>
-        {resultsContent}
+        {!simulated || !ready ? <SimGatePlaceholder view="selfss" state={sState} simulated={simulated} /> : resultsContent}
       </div>
     </motion.div>
   );

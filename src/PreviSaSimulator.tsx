@@ -10,6 +10,8 @@ import { useFlowMode } from './AnimatedPage';
 import { downloadPrevisaExcel } from './lib/previsaExcel';
 import { calculate, calcTAVeiculo, getRates, type CalcResult, saldosPorAno, totalSaldoElegivel, reavaliar3PPC, type PPCRecomendacao } from './lib/previsaCalc';
 import { SimulatorPrintButton } from './SimulatorPrint';
+import { SimGateBar, SimGatePlaceholder, RequiredMark } from './components/SimGateBar';
+import { isSimReady } from './lib/simRequired';
 
 export type { PreviSaState } from './previSaState';
 export { defaultPreviSaState } from './previSaState';
@@ -343,6 +345,9 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
     setState(prev => ({ ...prev, viaturas: prev.viaturas.filter(v => v.id !== id) }));
 
   const res = calculate(state);
+  const [simulated, setSimulated] = React.useState(false);
+  const ready = isSimReady('previsa', state as any);
+  React.useEffect(() => { if (!ready) setSimulated(false); }, [ready]);
 
   const [exporting, setExporting] = useState(false);
 
@@ -428,7 +433,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                   <input type="checkbox" checked={st.regimeSimplificado} onChange={e => s('regimeSimplificado', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
                   <span className="text-[13px] font-[600] text-[#0F172A]">Regime simplificado de IRC (art. 86.º-A — exclui TA de representação, ajudas de custo, lucros distribuídos, indemnizações e bónus)</span>
                 </label>
-                <NumInput label="Volume de Negócios (€)" value={st.volumeNegocios} onChange={v => s('volumeNegocios', v)} help="Para PPC/PAC" />
+                <NumInput label="Volume de Negócios (€) *" value={st.volumeNegocios} onChange={v => s('volumeNegocios', v)} help="Para PPC/PAC" />
                 <PctInput label="Taxa Derrama Municipal" value={st.taxaDerramaMunicipal} onChange={v => s('taxaDerramaMunicipal', v)} help="Ex: 1,5%" />
               </div>
             </Section>
@@ -899,7 +904,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
         title="Simulador Previsa"
         icon={Calculator}
         steps={steps}
-        resultsStep={{ label: 'Resumo do Modelo 22', description: 'Resultado da previsão de IRC para o período.', render: resultsContent }}
+        resultsStep={{ label: 'Resumo do Modelo 22', description: 'Resultado da previsão de IRC para o período.', render: (!simulated || !ready) ? <SimGatePlaceholder view="previsa" state={state} simulated={simulated} /> : resultsContent }}
         state={state}
         setState={(u) => {
           setState(prev => {
@@ -920,7 +925,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
           <h1 className="text-[20px] font-[800] text-[#0F172A]">Simulador Previsa</h1>
           <p className="text-[12px] text-slate-500 font-[500] mt-0.5">IRC — Modelo 22 · Previsão de IRC</p>
         </div>
-        <SimulatorPrintButton />
+        {simulated && ready && <SimulatorPrintButton />}
       </div>
 
       {/* Tabs: em mobile fazem wrap (todas visíveis, nada escondido); em >=sm mantêm
@@ -950,6 +955,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
           <div className="lg:col-span-2 flex flex-col gap-4">
 
             <SheetBar tab={tab} />
+            <SimGateBar view="previsa" state={state} simulated={simulated} onSimulate={() => setSimulated(true)} />
 
             {/* ── IDENTIFICAÇÃO ── */}
             {tab === 'Identificação' && (<>
@@ -1311,7 +1317,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
           </div>
 
           {/* ── Right: summary (always visible) ── */}
-          {resultsContent}
+          {!simulated || !ready ? <SimGatePlaceholder view="previsa" state={state} simulated={simulated} /> : resultsContent}
         </div>
       </div>
     </div>

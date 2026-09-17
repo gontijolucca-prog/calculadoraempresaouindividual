@@ -19,6 +19,8 @@ import type { InputEnq2026 } from './lib/enquadramento2026';
 import { seedEnqFromSaft } from './lib/enqSaftSeed';
 import { getCurrentEmpresaId, listEmpresas } from './lib/empresas';
 import { SimulatorPrintButton } from './SimulatorPrint';
+import { SimGateBar, SimGatePlaceholder, RequiredMark } from './components/SimGateBar';
+import { isSimReady } from './lib/simRequired';
 
 interface TaxSimulatorState {
   profSit: string;
@@ -59,6 +61,9 @@ interface Props {
 }
 
 export default function TaxSimulator({ initialState, onStateChange, profile }: Props) {
+  const [simulated, setSimulated] = React.useState(false);
+  const ready = isSimReady('tax', initialState as any);
+  React.useEffect(() => { if (!ready) setSimulated(false); }, [ready]);
   const { simMode } = useTheme();
   const {
     profSit, currentInc, age, isMainAct, monthlyNeed,
@@ -202,7 +207,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           </select>
         </div>
         <div className="col-span-2">
-          <label className={lblCls}>Previsão Faturação (Ano 1) <Tip>O total de faturação anual que espera ter (todas as vendas/serviços). É a base para calcular impostos e regime de IVA.</Tip></label>
+          <label className={lblCls}>Previsão Faturação (Ano 1) <RequiredMark /> <Tip>O total de faturação anual que espera ter (todas as vendas/serviços). É a base para calcular impostos e regime de IVA.</Tip></label>
           <input type="number" value={rev === 0 ? '' : rev} onChange={e=>setState({rev: numInput(e.target.value)})} className={inputCls} />
         </div>
         <div>
@@ -566,10 +571,12 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
 
   const resultsContent = (
     <div className="flex flex-col gap-6 lg:gap-8">
+      {!simulated || !ready ? <SimGatePlaceholder view="tax" state={initialState} simulated={simulated} /> : <>
       {analiseCompletaBanner}{winnerBanner}{irsChips}
       <div className="text-[11px] font-[800] text-[#64748B] uppercase tracking-[1px]">Folha 5 &amp; 6 — Enquadramento Tático (Resultados)</div>
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">{eniCard}{ldaCard}</div>
-      {extras}
+      {extras}</>
+    }
     </div>
   );
 
@@ -615,7 +622,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
         title="Estudo de Negócio"
         icon={Calculator}
         steps={steps}
-        resultsStep={{ label: 'Resultados do Estudo', description: 'Comparação ENI vs Lda com base nos dados introduzidos.', render: resultsContent }}
+        resultsStep={{ label: 'Resultados do Estudo', description: 'Comparação ENI vs Lda com base nos dados introduzidos.', render: (!simulated || !ready) ? <SimGatePlaceholder view="tax" state={initialState} simulated={simulated} /> : resultsContent }}
         state={initialState}
         setState={setState}
       />
@@ -638,12 +645,13 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
               <div className="text-[11px] font-[700] uppercase tracking-[1px] text-[#4F46E5] mt-1">Estudo de Negócio • OE 2026</div>
             </div>
             <div className="flex items-center gap-2">
-              <SimulatorPrintButton />
+              {simulated && ready && <SimulatorPrintButton />}
               <button onClick={resetAll} className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-[8px] transition-colors" title="Repor"><RefreshCw size={18} /></button>
             </div>
           </div>
           <div className="p-6 md:p-8 space-y-10">
             {folha1}{folha2}{folha3}{folha4}
+            <SimGateBar view="tax" state={initialState} simulated={simulated} onSimulate={() => setSimulated(true)} />
           </div>
         </div>
 
@@ -654,16 +662,14 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
               <p className="text-[15px] font-[500] text-[#64748B] mt-1">Cálculo preditivo OE 2026.</p>
             </div>
           </div>
-          {analiseCompletaBanner}{winnerBanner}{irsChips}
-          <div className="text-[11px] font-[800] text-[#64748B] uppercase tracking-[1px]">Folha 5 & 6 — Enquadramento Tático (Resultados)</div>
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">{eniCard}{ldaCard}</div>
-          {extras}
+          {resultsContent}
         </div>
       </div>
     );
   }
 
   /* ════════════════════════════════════════════════
+     MODE 1 — STACKED  /* ════════════════════════════════════════════════
      MODE 1 — STACKED (inputs 2×2 grid, results below)
   ════════════════════════════════════════════════ */
   if (simMode === 'stacked') {
@@ -691,10 +697,11 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           </div>
 
           <h2 className="text-[18px] font-[800] text-[#0F172A] pt-4">Resultados</h2>
+          {!simulated || !ready ? <SimGatePlaceholder view="tax" state={initialState} simulated={simulated} /> : <>
           {analiseCompletaBanner}{winnerBanner}{irsChips}{avisosBanner}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">{eniCard}{eniOrgCard}{ldaCard}</div>
           {extras}
-          {outrosPanel}
+          {outrosPanel}</>}
         </div>
       </div>
     );

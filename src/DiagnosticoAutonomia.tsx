@@ -7,6 +7,8 @@ import { cn } from './lib/utils';
 import { useTheme } from './ThemeContext';
 import { Tip } from './Tip';
 import { SimulatorPrintButton } from './SimulatorPrint';
+import { SimGateBar, SimGatePlaceholder, RequiredMark } from './components/SimGateBar';
+import { isSimReady } from './lib/simRequired';
 
 export interface DiagnosticoState {
   // Pilar 1 — Autonomia Financeira
@@ -163,6 +165,9 @@ function RadarChart({ scores }: { scores: number[] }) {
 
 export default function DiagnosticoAutonomia({ initialState, onStateChange }: Props) {
   const d = initialState;
+  const [simulated, setSimulated] = React.useState(false);
+  const ready = isSimReady('diagnostico', d);
+  React.useEffect(() => { if (!ready) setSimulated(false); }, [ready]);
   const setState = (u: Partial<DiagnosticoState>) => onStateChange({ ...d, ...u });
 
   const scores = useMemo(() => calcScores(d), [d]);
@@ -205,7 +210,7 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
             <input type="number" min="0" value={st.capitaisProprios === 0 ? '' : st.capitaisProprios} onChange={e => setSt({ capitaisProprios: parseFloat(e.target.value) || 0 })} className={inputCls} />
           </div>
           <div>
-            <label className={labelCls}>Ativo Total (€) <Tip>Tudo o que a empresa possui: dinheiro, equipamentos, imóveis, créditos de clientes. O total do lado esquerdo do balanço.</Tip></label>
+            <label className={labelCls}>Ativo Total (€) <RequiredMark /> <Tip>Tudo o que a empresa possui: dinheiro, equipamentos, imóveis, créditos de clientes. O total do lado esquerdo do balanço.</Tip></label>
             <input type="number" min="0" value={st.ativoTotal === 0 ? '' : st.ativoTotal} onChange={e => setSt({ ativoTotal: parseFloat(e.target.value) || 0 })} className={inputCls} />
           </div>
           <div className="col-span-2">
@@ -252,7 +257,7 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
               <input type="number" value={st.resultadoLiquido === 0 ? '' : st.resultadoLiquido} onChange={e => setSt({ resultadoLiquido: parseFloat(e.target.value) || 0 })} className={inputCls} />
             </div>
             <div>
-              <label className={labelCls}>Volume de Negócios (€/ano) <Tip>O total de vendas e serviços faturados durante o ano. É a 'receita total' antes de qualquer desconto ou imposto.</Tip></label>
+              <label className={labelCls}>Volume de Negócios (€/ano) <RequiredMark /> <Tip>O total de vendas e serviços faturados durante o ano. É a 'receita total' antes de qualquer desconto ou imposto.</Tip></label>
               <input type="number" min="0" value={st.volumeNegocios === 0 ? '' : st.volumeNegocios} onChange={e => setSt({ volumeNegocios: parseFloat(e.target.value) || 0 })} className={inputCls} />
             </div>
           </div>
@@ -426,7 +431,7 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
         title="Diagnóstico de Autonomia"
         icon={BarChart2}
         steps={steps}
-        resultsStep={{ label: 'Resultados do Diagnóstico', description: 'Análise completa dos 5 pilares.', render: resultsContent }}
+        resultsStep={{ label: 'Resultados do Diagnóstico', description: 'Análise completa dos 5 pilares.', render: (!simulated || !ready) ? <SimGatePlaceholder view="diagnostico" state={d} simulated={simulated} /> : resultsContent }}
         state={d}
         setState={setState}
       />
@@ -442,7 +447,7 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
             <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Diagnóstico de Autonomia</h2>
             <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Avaliação por 5 pilares — balanço e gestão empresarial.</p>
           </div>
-          <SimulatorPrintButton />
+          {simulated && ready && <SimulatorPrintButton />}
         </div>
 
         {/* P1 — Autonomia Financeira */}
@@ -570,11 +575,12 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
             ))}
           </div>
         </section>
+        <SimGateBar view="diagnostico" state={d} simulated={simulated} onSimulate={() => setSimulated(true)} />
       </div>
 
       {/* Right Pane — Results */}
       <div className={rightCls}>
-        {resultsContent}
+        {!simulated || !ready ? <SimGatePlaceholder view="diagnostico" state={d} simulated={simulated} /> : resultsContent}
       </div>
     </motion.div>
   );

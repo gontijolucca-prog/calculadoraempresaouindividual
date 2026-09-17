@@ -13,6 +13,8 @@ import { Tip } from './Tip';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { SimulatorPrintButton } from './SimulatorPrint';
+import { SimGateBar, SimGatePlaceholder, RequiredMark } from './components/SimGateBar';
+import { isSimReady } from './lib/simRequired';
 
 export type { TipoTicket, TipoSubsidioRefeicao };
 
@@ -84,6 +86,9 @@ const LEGAL_NOTES: Record<TipoTicket, { limitsNote: string; ircNote: string; ref
 
 export default function TicketSimulator({ initialState, onStateChange }: Props) {
   const s = initialState;
+  const [simulated, setSimulated] = React.useState(false);
+  const ready = isSimReady('ticket', s);
+  React.useEffect(() => { if (!ready) setSimulated(false); }, [ready]);
   const setState = (u: Partial<TicketSimulatorState>) => onStateChange({ ...s, ...u });
   const { simMode } = useTheme();
 
@@ -423,7 +428,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
           </div>
           <div>
             <label className={labelCls}>
-              {isCar ? 'Número de viaturas' : isOferta ? 'Número de destinatários' : 'Número de funcionários'}{' '}
+              {isCar ? 'Número de viaturas' : isOferta ? 'Número de destinatários' : 'Número de funcionários'} <RequiredMark />{' '}
               <Tip>{isCar ? 'Número de viaturas da frota que usam o Ticket Car.' : 'Número de pessoas que recebem este benefício.'}</Tip>
             </label>
             <input
@@ -463,7 +468,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
               </div>
               <div>
                 <label className={labelCls}>
-                  Valor Diário (€) <Tip>Valor por dia de trabalho pago a cada funcionário. O excedente ao limite legal fica sujeito a SS e IRS.</Tip>
+                  Valor Diário (€) <RequiredMark /> <Tip>Valor por dia de trabalho pago a cada funcionário. O excedente ao limite legal fica sujeito a SS e IRS.</Tip>
                 </label>
                 <div className="relative">
                   <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
@@ -489,7 +494,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelCls}>Dias úteis/mês <Tip>Dias de trabalho por mês em que o subsídio é pago. Normalmente 22.</Tip></label>
+                  <label className={labelCls}>Dias úteis/mês <RequiredMark /> <Tip>Dias de trabalho por mês em que o subsídio é pago. Normalmente 22.</Tip></label>
                   <input
                     type="number" min="1" max="31"
                     value={s.daysPerMonth === 0 ? '' : s.daysPerMonth}
@@ -498,7 +503,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
                   />
                 </div>
                 <div>
-                  <label className={labelCls}>Meses/ano <Tip>Número de meses por ano em que o benefício é pago.</Tip></label>
+                  <label className={labelCls}>Meses/ano <RequiredMark /> <Tip>Número de meses por ano em que o benefício é pago.</Tip></label>
                   <input
                     type="number" min="1" max="12"
                     value={s.months === 0 ? '' : s.months}
@@ -528,7 +533,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
           {!isRestaurante && (
             <div>
               <label className={labelCls}>
-                {isOferta ? 'Valor por destinatário (€/ano)' : isCar ? 'Custo anual por viatura (€)' : 'Valor anual por funcionário (€)'}{' '}
+                {isOferta ? 'Valor por destinatário (€/ano)' : isCar ? 'Custo anual por viatura (€)' : 'Valor anual por funcionário (€)'} <RequiredMark />{' '}
                 <Tip>{isCar ? 'Custo anual total com combustível e assistência por viatura (inclui IVA).' : 'Montante total anual atribuído a cada beneficiário.'}</Tip>
               </label>
               <div className="relative">
@@ -572,7 +577,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
         resultsStep={{
           label: 'Resultados do Simulador de Tickets',
           description: 'Análise fiscal completa do benefício selecionado.',
-          render: resultsContent,
+          render: (!simulated || !ready) ? <SimGatePlaceholder view="ticket" state={s} simulated={simulated} /> : resultsContent,
         }}
         state={s}
         setState={setState}
@@ -591,7 +596,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
             </h2>
             <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Todos os tipos Ticket.pt — benefícios fiscais 2026</p>
           </div>
-          <SimulatorPrintButton />
+          {simulated && ready && <SimulatorPrintButton />}
         </div>
 
         {/* Type selector */}
@@ -620,7 +625,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
         {/* Employees / Viaturas */}
         <div>
           <label className={labelCls}>
-            {isCar ? 'Número de viaturas' : isOferta ? 'Número de destinatários' : 'Número de funcionários'}{' '}
+            {isCar ? 'Número de viaturas' : isOferta ? 'Número de destinatários' : 'Número de funcionários'} <RequiredMark />{' '}
             <Tip>{isCar ? 'Número de viaturas da frota que usam o Ticket Car.' : 'Número de pessoas que recebem este benefício.'}</Tip>
           </label>
           <input
@@ -650,7 +655,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
 
             <div>
               <label className={labelCls}>
-                Valor Diário (€) <Tip>Valor por dia de trabalho pago a cada funcionário. O excedente ao limite legal fica sujeito a SS e IRS.</Tip>
+                Valor Diário (€) <RequiredMark /> <Tip>Valor por dia de trabalho pago a cada funcionário. O excedente ao limite legal fica sujeito a SS e IRS.</Tip>
               </label>
               <div className="relative">
                 <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
@@ -677,7 +682,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={labelCls}>Dias úteis/mês <Tip>Dias de trabalho por mês em que o subsídio é pago. Normalmente 22.</Tip></label>
+                <label className={labelCls}>Dias úteis/mês <RequiredMark /> <Tip>Dias de trabalho por mês em que o subsídio é pago. Normalmente 22.</Tip></label>
                 <input
                   type="number" min="1" max="31"
                   value={s.daysPerMonth === 0 ? '' : s.daysPerMonth}
@@ -686,7 +691,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
                 />
               </div>
               <div>
-                <label className={labelCls}>Meses/ano <Tip>Número de meses por ano em que o benefício é pago.</Tip></label>
+                <label className={labelCls}>Meses/ano <RequiredMark /> <Tip>Número de meses por ano em que o benefício é pago.</Tip></label>
                 <input
                   type="number" min="1" max="12"
                   value={s.months === 0 ? '' : s.months}
@@ -720,7 +725,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
         {!isRestaurante && (
           <div>
             <label className={labelCls}>
-              {isOferta ? 'Valor por destinatário (€/ano)' : isCar ? 'Custo anual por viatura (€)' : 'Valor anual por funcionário (€)'}{' '}
+              {isOferta ? 'Valor por destinatário (€/ano)' : isCar ? 'Custo anual por viatura (€)' : 'Valor anual por funcionário (€)'} <RequiredMark />{' '}
               <Tip>{isCar ? 'Custo anual total com combustível e assistência por viatura (inclui IVA).' : 'Montante total anual atribuído a cada beneficiário.'}</Tip>
             </label>
             <div className="relative">
@@ -750,11 +755,12 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
             {legal.refs}
           </div>
         </div>
+        <SimGateBar view="ticket" state={s} simulated={simulated} onSimulate={() => setSimulated(true)} />
       </div>
 
       {/* ── Right Pane ── */}
       <div className={rightCls}>
-        {resultsContent}
+        {!simulated || !ready ? <SimGatePlaceholder view="ticket" state={s} simulated={simulated} /> : resultsContent}
       </div>
     </motion.div>
   );

@@ -10,6 +10,8 @@ import { Tip } from './Tip';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { SimulatorPrintButton } from './SimulatorPrint';
+import { SimGateBar, SimGatePlaceholder, RequiredMark } from './components/SimGateBar';
+import { isSimReady } from './lib/simRequired';
 
 export interface ImoveisState {
   valorImovel: number;
@@ -29,6 +31,9 @@ interface Props {
 
 export default function ImoveisEmpresa({ initialState, onStateChange, profile }: Props) {
   const s = initialState;
+  const [simulated, setSimulated] = React.useState(false);
+  const ready = isSimReady('imoveis', s);
+  React.useEffect(() => { if (!ready) setSimulated(false); }, [ready]);
   const setState = (u: Partial<ImoveisState>) => onStateChange({ ...s, ...u });
 
   const isEni = profile.tipoEntidade === 'eni';
@@ -123,7 +128,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
       render: (st, setSt) => (
         <div className="space-y-[18px]">
           <div>
-            <label className={labelCls}>Valor do Imóvel (€) <Tip>O valor atual do imóvel em euros. Serve para estimar o IMT, Imposto de Selo e o impacto no balanço da empresa.</Tip></label>
+            <label className={labelCls}>Valor do Imóvel (€) <RequiredMark /> <Tip>O valor atual do imóvel em euros. Serve para estimar o IMT, Imposto de Selo e o impacto no balanço da empresa.</Tip></label>
             <input type="number" min="0" step="5000" value={st.valorImovel === 0 ? '' : st.valorImovel} onChange={e => setSt({ valorImovel: numInput(e.target.value) })} className={inputCls} placeholder="ex: 250000" />
           </div>
           <div>
@@ -297,7 +302,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
         title="Imóveis na Empresa"
         icon={Home}
         steps={steps}
-        resultsStep={{ label: 'Análise de Decisão', description: 'Comparação entre arrendamento/comodato e entrada em espécie.', render: resultsContent }}
+        resultsStep={{ label: 'Análise de Decisão', description: 'Comparação entre arrendamento/comodato e entrada em espécie.', render: (!simulated || !ready) ? <SimGatePlaceholder view="imoveis" state={s} simulated={simulated} /> : resultsContent }}
         state={s}
         setState={setState}
       />
@@ -313,7 +318,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
             <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Imóveis na Empresa</h2>
             <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Arrendamento/Comodato vs. Entrada em Espécie — guia de decisão.</p>
           </div>
-          <SimulatorPrintButton />
+          {simulated && ready && <SimulatorPrintButton />}
         </div>
 
         <div className="space-y-[18px]">
@@ -382,11 +387,12 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
             </div>
           </div>
         </div>
+        <SimGateBar view="imoveis" state={s} simulated={simulated} onSimulate={() => setSimulated(true)} />
       </div>
 
       {/* Right Pane */}
       <div className={rightCls}>
-        {resultsContent}
+        {!simulated || !ready ? <SimGatePlaceholder view="imoveis" state={s} simulated={simulated} /> : resultsContent}
       </div>
     </motion.div>
   );

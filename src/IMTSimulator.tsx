@@ -9,6 +9,8 @@ import { Tip } from './Tip';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { SimulatorPrintButton } from './SimulatorPrint';
+import { SimGateBar, SimGatePlaceholder, RequiredMark } from './components/SimGateBar';
+import { isSimReady } from './lib/simRequired';
 
 export interface IMTState {
   valor: number;
@@ -33,6 +35,9 @@ const tipoLabels: Record<TipoImovel, string> = {
 
 export default function IMTSimulator({ initialState, onStateChange }: Props) {
   const s = initialState;
+  const [simulated, setSimulated] = React.useState(false);
+  const ready = isSimReady('imt', s);
+  React.useEffect(() => { if (!ready) setSimulated(false); }, [ready]);
   const setState = (u: Partial<IMTState>) => onStateChange({ ...s, ...u });
   const { simMode } = useTheme();
   const outerCls = { split: "overflow-y-auto xl:overflow-hidden xl:h-full xl:grid xl:grid-cols-[380px_1fr] bg-[#F5F7FA] text-[#1E293B]", stacked: "h-full flex flex-col bg-[#F0F4F8] text-[#1E293B] overflow-y-auto", mosaic: "h-full bg-[#F0FDF4] text-[#1E293B] md:grid md:grid-cols-2 gap-4 p-4", compact: "h-full overflow-y-auto bg-white text-[#1E293B]", hero: "h-full flex md:flex-row-reverse overflow-hidden bg-[#F5F5F4] text-[#1E293B]" }[simMode];
@@ -62,7 +67,7 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
       render: (st, setSt) => (
         <div className="space-y-[20px]">
           <div>
-            <label className={labelCls}>Valor de Aquisição (€) <Tip>O preço de compra do imóvel em euros. É a base de cálculo do IMT e do Imposto de Selo.</Tip></label>
+            <label className={labelCls}>Valor de Aquisição (€) <RequiredMark /> <Tip>O preço de compra do imóvel em euros. É a base de cálculo do IMT e do Imposto de Selo.</Tip></label>
             <div className="relative">
               <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
               <input type="number" min="0" step="1000" value={st.valor === 0 ? '' : st.valor} onChange={e => setSt({ valor: numInput(e.target.value) })} className={cn(inputCls, "pl-9")} placeholder="ex: 250000" />
@@ -204,7 +209,7 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
         title="Simulador IMT"
         icon={Building}
         steps={steps}
-        resultsStep={{ label: 'Resultados da Simulação', description: 'Cálculo do IMT e Imposto de Selo para a sua aquisição.', render: resultsContent }}
+        resultsStep={{ label: 'Resultados da Simulação', description: 'Cálculo do IMT e Imposto de Selo para a sua aquisição.', render: (!simulated || !ready) ? <SimGatePlaceholder view="imt" state={s} simulated={simulated} /> : resultsContent }}
         state={s}
         setState={setState}
       />
@@ -220,7 +225,7 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
             <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador IMT <Tip>IMT = Imposto Municipal sobre Transmissões Onerosas de Imóveis. É pago pelo comprador no momento da escritura de compra e venda. Em 2026, jovens até 35 anos na 1ª habitação têm isenção total até €330.539.</Tip></h2>
             <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Imposto Municipal sobre Transmissões + Imposto de Selo (2026). <Tip>Para além do IMT, a compra de imóveis tem sempre Imposto de Selo de 0,8% sobre o valor de transação. Juntos, são o principal custo fiscal da compra.</Tip></p>
           </div>
-          <SimulatorPrintButton />
+          {simulated && ready && <SimulatorPrintButton />}
         </div>
 
         <div className="space-y-[20px]">
@@ -299,6 +304,7 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
           </div>
         </div>
 
+        <SimGateBar view="imt" state={s} simulated={simulated} onSimulate={() => setSimulated(true)} />
         {/* Info box */}
         <div className="bg-[#F5F7FA] border border-[#E2E8F0] rounded-[12px] p-[14px] text-[12px] text-[#64748B] space-y-[4px]">
           <div className="font-[700] text-[#475569] mb-[6px]">Imposto de Selo</div>
@@ -309,7 +315,7 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
 
       {/* Right Pane */}
       <div className={rightCls}>
-        {resultsContent}
+        {!simulated || !ready ? <SimGatePlaceholder view="imt" state={s} simulated={simulated} /> : resultsContent}
       </div>
     </motion.div>
   );

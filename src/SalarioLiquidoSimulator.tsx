@@ -9,6 +9,8 @@ import { Tip } from './Tip';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { SimulatorPrintButton } from './SimulatorPrint';
+import { SimGateBar, SimGatePlaceholder, RequiredMark } from './components/SimGateBar';
+import { isSimReady } from './lib/simRequired';
 
 export interface SalarioState {
   salarioBruto: number;
@@ -33,6 +35,9 @@ interface Props {
 
 export default function SalarioLiquidoSimulator({ initialState, onStateChange }: Props) {
   const s = initialState;
+  const [simulated, setSimulated] = React.useState(false);
+  const ready = isSimReady('salario', s);
+  React.useEffect(() => { if (!ready) setSimulated(false); }, [ready]);
   const setState = (u: Partial<SalarioState>) => onStateChange({ ...s, ...u });
   const { simMode } = useTheme();
   const { flowMode, exitFlow } = useFlowMode();
@@ -74,7 +79,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
       render: (state, setSt) => (
         <div className="space-y-[18px]">
           <div>
-            <label className={labelCls}>Salário Bruto Mensal (€) <Tip>O salário antes de descontos (SS e IRS). É o valor que consta no contrato de trabalho.</Tip></label>
+            <label className={labelCls}>Salário Bruto Mensal (€) <RequiredMark /> <Tip>O salário antes de descontos (SS e IRS). É o valor que consta no contrato de trabalho.</Tip></label>
             <div className="relative">
               <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
               <input
@@ -454,7 +459,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
         resultsStep={{
           label: 'Resultado da simulação',
           description: 'Aqui está o resumo do seu salário líquido e custos para o empregador.',
-          render: (
+          render: (!simulated || !ready) ? <SimGatePlaceholder view="salario" state={s} simulated={simulated} /> : (
             <div className="flex flex-col gap-4 lg:gap-[16px] h-full">
               {resultsContent}
             </div>
@@ -475,7 +480,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
             <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Salário Líquido (TCO)</h2>
             <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Simulador para trabalhadores por conta de outrem — 2026.</p>
           </div>
-          <SimulatorPrintButton />
+          {simulated && ready && <SimulatorPrintButton />}
         </div>
 
         <div className="space-y-[18px]">
@@ -645,9 +650,10 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
         </div>
       </div>
 
-      {/* Right Pane */}
+
+        <SimGateBar view="salario" state={s} simulated={simulated} onSimulate={() => setSimulated(true)} />      {/* Right Pane */}
       <div className={rightCls}>
-        {resultsContent}
+        {!simulated || !ready ? <SimGatePlaceholder view="salario" state={s} simulated={simulated} /> : resultsContent}
       </div>
     </motion.div>
   );

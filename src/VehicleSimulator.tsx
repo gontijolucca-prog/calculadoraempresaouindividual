@@ -9,6 +9,8 @@ import { Tip } from './Tip';
 import { FlowWizard } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { SimulatorPrintButton } from './SimulatorPrint';
+import { SimGateBar, SimGatePlaceholder, RequiredMark } from './components/SimGateBar';
+import { isSimReady } from './lib/simRequired';
 
 interface VehicleSimulatorState {
   category: 'comercial' | 'passageiros';
@@ -233,6 +235,10 @@ function useVehicleResults(state: VehicleSimulatorState) {
 
 export default function VehicleSimulator({ initialState, onStateChange }: Props) {
   const { category, engineType, price, ivaRegime, activity, maintenanceCost, insuranceCost, fuelCost, exemptTA, phevCompliant } = initialState;
+  const sState = initialState as any;
+  const [simulated, setSimulated] = React.useState(false);
+  const ready = isSimReady('vehicle', sState);
+  React.useEffect(() => { if (!ready) setSimulated(false); }, [ready]);
 
   const { flowMode, exitFlow } = useFlowMode();
 
@@ -411,7 +417,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
         title="Simulador Viaturas"
         icon={Car}
         steps={flowSteps}
-        resultsStep={{ label: resultsStepDef.label, description: resultsStepDef.description, render: resultsStepDef.render(initialState, setState) }}
+        resultsStep={{ label: resultsStepDef.label, description: resultsStepDef.description, render: (!simulated || !ready) ? <SimGatePlaceholder view="vehicle" state={sState} simulated={simulated} /> : resultsStepDef.render(initialState, setState) }}
         state={initialState}
         setState={setState}
       />
@@ -437,7 +443,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
             <h2 className="text-[24px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador Viaturas <Tip>Calcula o IVA que a empresa pode recuperar na compra e manutenção do carro, e a Tributação Autónoma sobre encargos com viaturas de passageiros.</Tip></h2>
             <p className="text-[14px] text-[#64748B] font-[500] mt-[4px]">Cálculo IVA e Tributação Autónoma. <Tip>IVA é o Imposto sobre o Valor Acrescentado — as empresas podem recuperar parte do IVA pago se usarem o carro para atividade tributável. Tributação Autónoma é um imposto extra sobre encargos com carros da empresa.</Tip></p>
           </div>
-          <SimulatorPrintButton />
+          {simulated && ready && <SimulatorPrintButton />}
         </div>
 
         <div className="space-y-[24px]">
@@ -469,7 +475,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
           </div>
 
           <div>
-            <label className={labelClass}>Custo Aquisição (Base s/ IVA) <Tip>O preço de compra da viatura (sem IVA). Determina os limites de dedução e amortização permitidos.</Tip></label>
+            <label className={labelClass}>Custo Aquisição (Base s/ IVA) <RequiredMark /> <Tip>O preço de compra da viatura (sem IVA). Determina os limites de dedução e amortização permitidos.</Tip></label>
             <div className="relative">
               <Euro className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
               <input type="number" value={price === 0 ? '' : price} onChange={e=>setState({price: numInput(e.target.value)})} className={cn(inputClass, "pl-[40px]")} />
@@ -533,6 +539,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
               </div>
             </label>
           )}
+        <SimGateBar view="vehicle" state={sState} simulated={simulated} onSimulate={() => setSimulated(true)} />
         </div>
       </motion.div>
 
@@ -548,7 +555,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
           <p className="text-[16px] text-[#64748B] mb-[8px]">Enquadramento da viatura para os exercícios contabilisticos.</p>
         </div>
 
-        <VehicleResults state={initialState} results={results} />
+        {!simulated || !ready ? <SimGatePlaceholder view="vehicle" state={sState} simulated={simulated} /> : <VehicleResults state={initialState} results={results} />}
       </motion.div>
     </motion.div>
   )
