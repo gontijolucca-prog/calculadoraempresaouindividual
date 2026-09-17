@@ -138,6 +138,16 @@ export interface GabineteCliente {
   territorio?: 'continente' | 'madeira' | 'acores';
   municipio?: string;
   caes?: string;
+  caeDescricao?: string;
+  regimeIrc?: 'geral' | 'simplificado' | 'transparencia';
+  tipoSociedade?: string;
+  gerentes?: string[];
+  nrTrabalhadores?: number;
+  inicioAtividade?: number;
+  responsavelInterno?: { nome: string; initials: string };
+  apoioAdministrativo?: { nome: string; initials: string };
+  supervisor?: { nome: string; initials: string };
+  orientacoes?: string;
   faturacaoAnual?: number;
   responsavelId?: string; // colaborador
   estado: ClienteEstado;
@@ -158,6 +168,49 @@ export interface GabineteCliente {
   createdAt: number;
   updatedAt: number;
   createdBy?: string;
+}
+
+// ——— Visão Geral — novas coleções por cliente ———
+export interface ContactoGabinete {
+  id: string;
+  clienteId: string;
+  clienteNome?: string;
+  nome: string;
+  cargo?: string;
+  telefone?: string;
+  email?: string;
+  initials?: string;
+  isGerente?: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+export interface AssuntoGabinete {
+  id: string;
+  clienteId: string;
+  clienteNome?: string;
+  titulo: string;
+  estado: 'em_curso' | 'aguard_cliente' | 'pendente' | 'concluido';
+  updatedAt: number;
+  descricao?: string;
+  createdAt: number;
+}
+export interface AlertaGabinete {
+  id: string;
+  clienteId: string;
+  clienteNome?: string;
+  texto: string;
+  createdAt: number;
+  updatedAt: number;
+}
+export interface OcorrenciaGabinete {
+  id: string;
+  clienteId: string;
+  clienteNome?: string;
+  data: number;
+  autorNome: string;
+  autorInitials: string;
+  descricao: string;
+  createdAt: number;
 }
 
 // Tarefa / Obrigação
@@ -554,6 +607,47 @@ export async function upsertActa(a: Acta): Promise<Acta> {
 export async function deleteActa(id:string):Promise<void>{ const list=listActasCache().filter(x=>x.id!==id); saveActasCache(list); try{ await safeDeleteDoc(colPath('actas'), id);}catch{} }
 export function newActaId():string{ return newId('act'); }
 
+// ——— CRUD — Visão Geral: Contactos/Assuntos/Alertas/Ocorrências/Documentos ———
+export function listContactosCache(): ContactoGabinete[] { return readCache<ContactoGabinete>('contactosGeral', []); }
+export function saveContactosCache(list: ContactoGabinete[]): void { writeCache('contactosGeral', list); }
+export async function upsertContactoGabinete(c: ContactoGabinete): Promise<ContactoGabinete> {
+  const list = listContactosCache(); const idx = list.findIndex(x=>x.id===c.id); const next={...c, updatedAt: Date.now()}; if(idx>=0) list[idx]=next; else list.unshift(next); saveContactosCache(list); try{ await safeSetDoc(colPath('contactosGeral'), c.id, next);}catch{} return next;
+}
+export async function deleteContactoGabinete(id:string):Promise<void>{ const list=listContactosCache().filter(x=>x.id!==id); saveContactosCache(list); try{ await safeDeleteDoc(colPath('contactosGeral'), id);}catch{} }
+export function newContactoGabineteId():string{ return newId('cgc'); }
+
+export function listAssuntosCache(): AssuntoGabinete[] { return readCache<AssuntoGabinete>('assuntosGeral', []); }
+export function saveAssuntosCache(list: AssuntoGabinete[]): void { writeCache('assuntosGeral', list); }
+export async function upsertAssuntoGabinete(a: AssuntoGabinete): Promise<AssuntoGabinete> {
+  const list = listAssuntosCache(); const idx=list.findIndex(x=>x.id===a.id); const next={...a, updatedAt: Date.now()}; if(idx>=0) list[idx]=next; else list.unshift(next); saveAssuntosCache(list); try{ await safeSetDoc(colPath('assuntosGeral'), a.id, next);}catch{} return next;
+}
+export async function deleteAssuntoGabinete(id:string):Promise<void>{ const list=listAssuntosCache().filter(x=>x.id!==id); saveAssuntosCache(list); try{ await safeDeleteDoc(colPath('assuntosGeral'), id);}catch{} }
+export function newAssuntoGabineteId():string{ return newId('ass'); }
+
+export function listAlertasCache(): AlertaGabinete[] { return readCache<AlertaGabinete>('alertasGeral', []); }
+export function saveAlertasCache(list: AlertaGabinete[]): void { writeCache('alertasGeral', list); }
+export async function upsertAlertaGabinete(a: AlertaGabinete): Promise<AlertaGabinete> {
+  const list=listAlertasCache(); const idx=list.findIndex(x=>x.id===a.id); const next={...a, updatedAt: Date.now()}; if(idx>=0) list[idx]=next; else list.unshift(next); saveAlertasCache(list); try{ await safeSetDoc(colPath('alertasGeral'), a.id, next);}catch{} return next;
+}
+export async function deleteAlertaGabinete(id:string):Promise<void>{ const list=listAlertasCache().filter(x=>x.id!==id); saveAlertasCache(list); try{ await safeDeleteDoc(colPath('alertasGeral'), id);}catch{} }
+export function newAlertaGabineteId():string{ return newId('alt'); }
+
+export function listOcorrenciasCache(): OcorrenciaGabinete[] { return readCache<OcorrenciaGabinete>('ocorrencias', []); }
+export function saveOcorrenciasCache(list: OcorrenciaGabinete[]): void { writeCache('ocorrencias', list); }
+export async function upsertOcorrencia(o: OcorrenciaGabinete): Promise<OcorrenciaGabinete> {
+  const list=listOcorrenciasCache(); const idx=list.findIndex(x=>x.id===o.id); if(idx>=0) list[idx]=o; else list.unshift(o); saveOcorrenciasCache(list); try{ await safeSetDoc(colPath('ocorrencias'), o.id, o);}catch{} return o;
+}
+export async function deleteOcorrencia(id:string):Promise<void>{ const list=listOcorrenciasCache().filter(x=>x.id!==id); saveOcorrenciasCache(list); try{ await safeDeleteDoc(colPath('ocorrencias'), id);}catch{} }
+export function newOcorrenciaId():string{ return newId('oco'); }
+
+export function listDocumentosGeralCache(): GabineteDocumento[] { return readCache<GabineteDocumento>('documentos', []); }
+export function saveDocumentosGeralCache(list: GabineteDocumento[]): void { writeCache('documentos', list); }
+export async function upsertDocumentoGeral(d: GabineteDocumento): Promise<GabineteDocumento> {
+  const list=listDocumentosGeralCache(); const idx=list.findIndex(x=>x.id===d.id); if(idx>=0) list[idx]=d; else list.unshift(d); saveDocumentosGeralCache(list); try{ await safeSetDoc(colPath('documentos'), d.id, d as unknown as Record<string,unknown>);}catch{} return d;
+}
+export async function deleteDocumentoGeral(id:string):Promise<void>{ const list=listDocumentosGeralCache().filter(x=>x.id!==id); saveDocumentosGeralCache(list); try{ await safeDeleteDoc(colPath('documentos'), id);}catch{} }
+export function newDocumentoGeralId():string{ return newId('doc'); }
+
 // Fase 3 — avença já no GabineteCliente acima
 
 // ─── Alertas — helpers Fase 1 ────────────────────────────────────────────────
@@ -607,6 +701,11 @@ export const subscribeTarefas = makeSubscriber<Tarefa>('tarefas');
 export const subscribeObrigacoes = makeSubscriber<Obrigacao>('obrigacoes');
 export const subscribeCofre = makeSubscriber<CofreEntrada>('cofre');
 export const subscribeColaboradores = makeSubscriber<Colaborador>('colaboradores');
+export const subscribeContactosGeral = makeSubscriber<ContactoGabinete>('contactosGeral');
+export const subscribeAssuntosGeral = makeSubscriber<AssuntoGabinete>('assuntosGeral');
+export const subscribeAlertasGeral = makeSubscriber<AlertaGabinete>('alertasGeral');
+export const subscribeOcorrencias = makeSubscriber<OcorrenciaGabinete>('ocorrencias');
+export const subscribeDocumentosGeral = makeSubscriber<GabineteDocumento>('documentos');
 export const subscribeConversas = makeSubscriber<Conversa>('conversas');
 export const subscribeModelos = makeSubscriber<ModeloComunicacao>('modelos');
 export const subscribeEnvios = makeSubscriber<EnvioComunicacao>('envios');

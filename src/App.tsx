@@ -374,7 +374,7 @@ function AppContent() {
   });
   const [prevView, setPrevView] = useState<ViewType>('profile');
   // Gabinete: tab ativa dentro do dropdown da sidebar
-  const VALID_GAB_TABS = new Set(['dashboard','agenda','tarefas','obrigacoes','cofre','gallery']);
+  const VALID_GAB_TABS = new Set(['dashboard','visao-geral','agenda','tarefas','obrigacoes','cofre','gallery']);
   const [gabineteTab, setGabineteTab] = useState<string>(() => {
     const raw = loadFromStorage<string>('gabineteTab', 'dashboard') || 'dashboard';
     return VALID_GAB_TABS.has(raw) ? raw : 'gallery';
@@ -783,6 +783,7 @@ function AppContent() {
   const navigateClient = (empId: string, view: string, opts?: { openPackage?: boolean; toggleFlow?: boolean; skipIntro?: boolean }) => {
     if (!selectEmpresa(empId)) return;
     setMode('empresa');
+    if (view === 'gabinete') setGabineteTab('visao-geral');
     if (opts?.openPackage) requestOpenPackage();
     if (opts?.toggleFlow) requestFlowToggle();
     // Simulador escolhido no menu → mostra primeiro o ecrã-intro ("Simular" entra).

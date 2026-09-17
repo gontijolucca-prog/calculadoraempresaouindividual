@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
-  subscribeClientes, subscribeTarefas, subscribeObrigacoes, subscribeCofre, subscribeColaboradores, subscribeConversas, subscribeModelos, subscribeEnvios, subscribeTempos, subscribeActas,
-  listClientesCache, listTarefasCache, listObrigacoesCache, listCofreCache, listColaboradoresCache, listConversasCache, listModelosCache, listEnviosCache, listTemposCache, listActasCache,
+  subscribeClientes, subscribeTarefas, subscribeObrigacoes, subscribeCofre, subscribeColaboradores, subscribeContactosGeral, subscribeAssuntosGeral, subscribeAlertasGeral, subscribeOcorrencias, subscribeDocumentosGeral, subscribeConversas, subscribeModelos, subscribeEnvios, subscribeTempos, subscribeActas,
+  listClientesCache, listTarefasCache, listObrigacoesCache, listCofreCache, listColaboradoresCache, listContactosCache, listAssuntosCache, listAlertasCache, listOcorrenciasCache, listDocumentosGeralCache, listConversasCache, listModelosCache, listEnviosCache, listTemposCache, listActasCache,
   seedCalendarioFiscal2026,
-  type GabineteCliente, type Tarefa, type Obrigacao, type CofreEntrada, type Colaborador, type Conversa, type ModeloComunicacao, type EnvioComunicacao, type Tempo, type Acta,
+  type GabineteCliente, type Tarefa, type Obrigacao, type CofreEntrada, type Colaborador, type ContactoGabinete, type AssuntoGabinete, type AlertaGabinete, type OcorrenciaGabinete, type GabineteDocumento, type Conversa, type ModeloComunicacao, type EnvioComunicacao, type Tempo, type Acta,
 } from './gabinete';
 
 export function useGabineteClientes(): GabineteCliente[] {
@@ -61,6 +61,32 @@ export function useGabineteEnvios(): EnvioComunicacao[] {
 export function useGabineteTempos(): Tempo[] {
   const [items, setItems] = useState<Tempo[]>(() => listTemposCache());
   useEffect(() => subscribeTempos(setItems), []);
+  return items;
+}
+
+export function useGabineteContactosGeral(): ContactoGabinete[] {
+  const [items, setItems] = useState<ContactoGabinete[]>(() => listContactosCache());
+  useEffect(() => subscribeContactosGeral(setItems), []);
+  return items;
+}
+export function useGabineteAssuntos(): AssuntoGabinete[] {
+  const [items, setItems] = useState<AssuntoGabinete[]>(() => listAssuntosCache());
+  useEffect(() => subscribeAssuntosGeral(setItems), []);
+  return items;
+}
+export function useGabineteAlertas(): AlertaGabinete[] {
+  const [items, setItems] = useState<AlertaGabinete[]>(() => listAlertasCache());
+  useEffect(() => subscribeAlertasGeral(setItems), []);
+  return items;
+}
+export function useGabineteOcorrencias(): OcorrenciaGabinete[] {
+  const [items, setItems] = useState<OcorrenciaGabinete[]>(() => listOcorrenciasCache());
+  useEffect(() => subscribeOcorrencias(setItems), []);
+  return items;
+}
+export function useGabineteDocumentos(): GabineteDocumento[] {
+  const [items, setItems] = useState<GabineteDocumento[]>(() => listDocumentosGeralCache());
+  useEffect(() => subscribeDocumentosGeral(setItems), []);
   return items;
 }
 export function useGabineteActas(): Acta[] {

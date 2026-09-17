@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Search, Plus, Users, CheckSquare, Calendar, Lock, Building2, Trash2, Eye, EyeOff, Copy, Shield, AlertTriangle, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Clock, Briefcase, MessageSquare, X, Send, Archive, Share2 } from 'lucide-react';
-import { useGabineteClientes, useGabineteTarefas, useGabineteObrigacoes, useGabineteCofre } from './lib/useGabinete';
+import { useGabineteClientes, useGabineteTarefas, useGabineteObrigacoes, useGabineteCofre, useGabineteContactosGeral, useGabineteAssuntos, useGabineteAlertas, useGabineteOcorrencias, useGabineteDocumentos } from './lib/useGabinete';
 import {
   upsertTarefa, deleteTarefa, marcarTarefaFeita, newTarefaId,
   upsertObrigacao,
@@ -12,10 +12,12 @@ import { encryptSecret, decryptSecret, setCofrePassphrase, getCofrePassphrase, c
 import GuiaSugestao from './components/GuiaSugestao';
 import type { ViewKey } from './lib/guias';
 import { GabineteGallery, GabineteIntro, GABINET_FUNCTIONS, type GabTab, type GabineteTab } from './GabineteHub';
+import VisaoGeralView from './VisaoGeralView';
 
 // Guia por tab interna do Gabinete (a sugestão muda conforme a tab ativa)
 const GAB_TAB_GUIA: Record<GabTab, ViewKey> = {
   dashboard: 'gabinete',
+  'visao-geral': 'gab-visao-geral',
   agenda: 'gab-agenda',
   tarefas: 'gab-tarefas',
   obrigacoes: 'gab-obrigacoes',
@@ -24,7 +26,7 @@ const GAB_TAB_GUIA: Record<GabTab, ViewKey> = {
 
 // ─── Layout ─────────────────────────────────────────────────────────────────
 
-const VALID_GAB_TABS_SET = new Set<GabineteTab>(['dashboard','agenda','tarefas','obrigacoes','cofre','gallery']);
+const VALID_GAB_TABS_SET = new Set<GabineteTab>(['dashboard','visao-geral','agenda','tarefas','obrigacoes','cofre','gallery']);
 export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour, activeEmpresaId, activeEmpresaNome, onGoEmpresas }: { tab?: GabineteTab; onTabChange?: (t: GabineteTab) => void; onStartTour?: (v: ViewKey) => void; activeEmpresaId?: string | null; activeEmpresaNome?: string | null; onGoEmpresas?: () => void }) {
   const [internalTab, setInternalTab] = useState<GabTab>('dashboard');
   const rawTab: GabineteTab = controlledTab ?? internalTab;
@@ -47,8 +49,37 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
   const tarefasRaw = useGabineteTarefas();
   const obrigacoesRaw = useGabineteObrigacoes();
   const cofre = useGabineteCofre();
+  const contactosAll = useGabineteContactosGeral();
+  const assuntosAll = useGabineteAssuntos();
+  const alertasAll = useGabineteAlertas();
+  const ocorrenciasAll = useGabineteOcorrencias();
+  const documentosAll = useGabineteDocumentos();
   const tarefas = useMemo(() => activeEmpresaId ? tarefasRaw.filter(t => !t.clienteId || t.clienteId === activeEmpresaId) : tarefasRaw, [tarefasRaw, activeEmpresaId]);
   const obrigacoes = useMemo(() => activeEmpresaId ? obrigacoesRaw.filter(o => !o.clienteId || o.clienteId === activeEmpresaId) : obrigacoesRaw, [obrigacoesRaw, activeEmpresaId]);
+  const contactosF = useMemo(() => activeEmpresaId ? contactosAll.filter(c => c.clienteId === activeEmpresaId) : contactosAll, [contactosAll, activeEmpresaId]);
+  const assuntosF = useMemo(() => activeEmpresaId ? assuntosAll.filter(a => a.clienteId === activeEmpresaId) : assuntosAll, [assuntosAll, activeEmpresaId]);
+  const alertasF = useMemo(() => activeEmpresaId ? alertasAll.filter(a => a.clienteId === activeEmpresaId) : alertasAll, [alertasAll, activeEmpresaId]);
+  const ocorrenciasF = useMemo(() => activeEmpresaId ? ocorrenciasAll.filter(o => o.clienteId === activeEmpresaId) : ocorrenciasAll, [ocorrenciasAll, activeEmpresaId]);
+  const documentosF = useMemo(() => activeEmpresaId ? documentosAll.filter(d => d.clienteId === activeEmpresaId) : documentosAll, [documentosAll, activeEmpresaId]);
+  const clienteAtivo = useMemo(() => {
+    if (!activeEmpresaId) return null;
+    const gc = clientes.find(c => c.id === activeEmpresaId);
+    if (gc) return gc;
+    // Fallback: tenta EmpresaRecord
+    try {
+      const er = listEmpresas().find(e => e.id === activeEmpresaId);
+      if (er) {
+        const parts = (er.nome || '').trim().split(/\s+/);
+        const ini = parts.slice(0,2).map(s=>s[0]?.toUpperCase()||'').join('') || 'CL';
+        return {
+          id: er.id, nome: er.nome || 'Empresa', nif: er.nif || '', tipoEntidade: 'LDA' as const,
+          regimeIva: 'trimestral' as const, estado: 'ativo' as const,
+          createdAt: Date.now(), updatedAt: Date.now(), empresaId: er.id,
+        } as unknown as GabineteCliente;
+      }
+    } catch {}
+    return null;
+  }, [clientes, activeEmpresaId]);
 
   // Por defeito, se o App não passar callback, navega para o dashboard (no-op)
   const startTour = (v: ViewKey) => onStartTour?.(v);
@@ -102,6 +133,7 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
         )}
         {tab !== 'gallery' && !showIntro && (
           <>
+            {tab === 'visao-geral' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolhe um cliente na lista para ver a visão geral.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <VisaoGeralView cliente={clienteAtivo} contactos={contactosF} assuntos={assuntosF} alertas={alertasF} ocorrencias={ocorrenciasF} tarefas={tarefas} obrigacoes={obrigacoes} cofre={cofre} documentos={documentosF} onEditCliente={()=>{}} onGo={(tab)=>setTab(tab as GabineteTab)} onOpenCofre={()=>setTab('cofre')} />)}
             {tab === 'dashboard' && <Dashboard clientes={clientes} tarefas={tarefasRaw} obrigacoes={obrigacoesRaw} cofre={cofre} onGo={goFunction} />}
             {tab === 'agenda' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolhe um cliente na lista para ver a agenda.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <AgendaView tarefas={tarefas} obrigacoes={obrigacoes} clientes={clientes} />)}
             {tab === 'tarefas' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolhe um cliente na lista para ver as tarefas.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <TarefasView tarefas={tarefas} clientes={clientes} obrigacoes={obrigacoes} activeEmpresaId={activeEmpresaId} activeEmpresaNome={activeEmpresaNome} />)}

@@ -13,6 +13,7 @@ import {
 /** Tabs funcionais do Gabinete. `gallery` é apenas a porta de entrada visual. */
 export type GabTab =
   | 'dashboard'
+  | 'visao-geral'
   | 'agenda'
   | 'tarefas'
   | 'obrigacoes'
@@ -38,6 +39,7 @@ export interface GabineteIntroDef {
 /** Ordem e texto partilhados pela galeria, pelo header e pela navegação. */
 export const GABINET_FUNCTIONS: GabineteFunction[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Visão geral do escritório' },
+  { id: 'visao-geral', label: 'Visão geral', icon: LayoutDashboard, desc: 'Ficha 360 do cliente' },
   { id: 'agenda', label: 'Agenda', icon: Calendar, desc: 'Calendário de tarefas e obrigações' },
   { id: 'tarefas', label: 'Tarefas', icon: CheckSquare, desc: 'Kanban e lista de trabalho' },
   { id: 'obrigacoes', label: 'Obrigações', icon: Calendar, desc: 'Calendário fiscal' },
@@ -56,6 +58,13 @@ export const GABINET_INTROS: Record<GabTab, GabineteIntroDef> = {
     resumo: 'Vê num só lugar o estado do escritório: tarefas para hoje, atrasos, obrigações vencidas, clientes em risco e os próximos 7 dias.',
     dados: ['Clientes e tarefas guardados', 'Datas de vencimento', 'Obrigações fiscais'],
     resultado: 'Uma visão rápida do que precisa de atenção primeiro, com atalhos para criar clientes, tarefas e acessos.',
+  },
+  'visao-geral': {
+    titulo: 'Visão geral do cliente',
+    Icon: LayoutDashboard,
+    resumo: 'Ficha completa do cliente: dados, situação, alertas, assuntos, documentos, contactos e histórico.',
+    dados: ['NIF e CAE', 'Gerentes e trabalhadores', 'Contactos e acessos'],
+    resultado: 'Painel 360 com tudo o que precisas para trabalhar o cliente.',
   },
   agenda: {
     titulo: 'Agenda',
