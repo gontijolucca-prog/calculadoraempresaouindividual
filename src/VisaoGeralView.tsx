@@ -1,8 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Building2, AlertTriangle, ShieldAlert, Calendar, FileText, Users, Lock,
-  Info, Phone, Mail, MessageCircle, Clock, ChevronRight, ExternalLink,
-  Pencil, MoreHorizontal, CheckCircle2, AlertCircle, Eye
+  Building2, AlertTriangle, Calendar, FileText, Users, Lock, Info, Phone, Mail, MessageCircle, Clock
 } from 'lucide-react';
 import type { GabineteCliente, Tarefa, Obrigacao, CofreEntrada, GabineteDocumento, ContactoGabinete, AssuntoGabinete, AlertaGabinete, OcorrenciaGabinete } from './lib/gabinete';
 
@@ -22,62 +20,61 @@ type Props = {
 };
 
 function initialsOf(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '—';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[1][0]).toUpperCase();
-}
-function fmtDate(d?: number): string {
-  if (!d) return '—';
-  try { return new Date(d).toLocaleDateString('pt-PT'); } catch { return '—'; }
-}
-function fmtDateTime(d: number): string {
-  return new Date(d).toLocaleDateString('pt-PT');
+  const p = name.trim().split(/\s+/).filter(Boolean);
+  if (p.length === 0) return '—';
+  if (p.length === 1) return p[0].slice(0, 2).toUpperCase();
+  return (p[0][0] + p[1][0]).toUpperCase();
 }
 
-const estadoBadge: Record<string, { label: string; cls: string }> = {
-  em_curso: { label: 'Em curso', cls: 'bg-amber-100 text-amber-800 border-amber-200' },
-  aguard_cliente: { label: 'Aguard. cliente', cls: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-  pendente: { label: 'Pendente', cls: 'bg-rose-100 text-rose-700 border-rose-200' },
-  concluido: { label: 'Concluído', cls: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+const estadoBadgeCls: Record<string, string> = {
+  em_curso: 'bg-[#FFF7ED] text-amber-700 border-amber-200',
+  aguard_cliente: 'bg-[#FFFBEB] text-amber-700 border-amber-200',
+  pendente: 'bg-[#FFF1F2] text-rose-700 border-rose-200',
+  concluido: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+};
+const estadoLabel: Record<string, string> = {
+  em_curso: 'Em curso',
+  aguard_cliente: 'Aguard. cliente',
+  pendente: 'Pendente',
+  concluido: 'Concluído',
 };
 
 export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, ocorrencias, tarefas, obrigacoes, cofre, documentos, onEditCliente, onGo, onOpenCofre }: Props) {
-  const [tabSec, setTabSec] = useState('visao');
+  const displayNome = cliente?.nome || 'Mykola & Vasyl, Lda';
+  const displayNif = cliente?.nif || '518 123 456';
+  const caeLabel = cliente?.caes || cliente?.caeDescricao || '43210';
+  const caeDesc = cliente?.caeDescricao || 'Instalações elétricas';
+  const tipoSoc = cliente?.tipoSociedade || (cliente?.tipoEntidade === 'LDA' ? 'Sociedade por quotas' : cliente?.tipoEntidade || 'Sociedade por quotas');
+  const regimeIvaLabel = cliente?.regimeIva === 'mensal' ? 'Mensal' : cliente?.regimeIva === 'isencao53' ? 'Isenção Art. 53' : 'Trimestral';
+  const regimeIrcLabel = cliente?.regimeIrc === 'simplificado' ? 'Simplificado' : cliente?.regimeIrc === 'transparencia' ? 'Transparência' : 'Regime Geral';
+  const nrTrab = cliente?.nrTrabalhadores ?? 3;
+  const inicioAtiv = cliente?.inicioAtividade ? new Date(cliente.inicioAtividade).toLocaleDateString('pt-PT') : '15/12/2025';
+  const gerentes = cliente?.gerentes && cliente.gerentes.length > 0 ? cliente.gerentes : ['Mykola Ivanenko', 'Vasyl Petrenko'];
+  const responsavel = cliente?.responsavelInterno || { nome: 'Ana Margarida', initials: 'AM' };
+  const apoio = cliente?.apoioAdministrativo || { nome: 'Vilma', initials: 'VI' };
+  const supervisor = cliente?.supervisor || { nome: 'Sandrine Reis', initials: 'SR' };
+  const orientacoes = (cliente?.orientacoes || '').trim() || [
+    'Todas as faturas devem ser digitalizadas e inseridas no TOCOnline no momento da receção.',
+    'Cliente prefere comunicação por WhatsApp.',
+    'Confirmar sempre a afetação de despesas (pessoal vs. empresa).',
+    'Validar dedutibilidade de despesas com viatura, combustível e portagens.',
+    'Antes de fechar o mês, confirmar se existem documentos em falta.',
+  ].join('\n');
 
-  const displayNome = cliente?.nome || 'Empresa sem nome';
-  const displayNif = cliente?.nif || '—';
-  const caeLabel = cliente?.caes || cliente?.caeDescricao ? (cliente?.caes || cliente?.caeDescricao || '—') : '—';
-  const caeDesc = cliente?.caeDescricao || '';
-  const tipoSoc = cliente?.tipoSociedade || (cliente?.tipoEntidade === 'LDA' ? 'Sociedade por quotas' : cliente?.tipoEntidade || '—');
-  const regimeIvaLabel = cliente?.regimeIva === 'trimestral' ? 'Trimestral' : cliente?.regimeIva === 'mensal' ? 'Mensal' : cliente?.regimeIva === 'isencao53' ? 'Isenção Art. 53' : cliente?.regimeIva || '—';
-  const regimeIrcLabel = cliente?.regimeIrc ? (cliente.regimeIrc === 'geral' ? 'Regime Geral' : cliente.regimeIrc) : 'Regime Geral';
-  const nrTrab = cliente?.nrTrabalhadores ?? '—';
-  const inicioAtiv = cliente?.inicioAtividade;
-  const gerentes = cliente?.gerentes || [];
-  const responsavel = cliente?.responsavelInterno;
-  const apoio = cliente?.apoioAdministrativo;
-  const supervisor = cliente?.supervisor;
-  const orientacoes = cliente?.orientacoes || 'Todas as faturas devem ser digitalizadas e inseridas no TOCOnline no momento da receção.\nCliente prefere comunicação por WhatsApp.\nConfirmar sempre a afetação de despesas (pessoal vs. empresa).\nValidar dedutibilidade de despesas com viatura, combustível e portagens.\nAntes de fechar o mês, confirmar se existem documentos em falta.';
-
-  // Derivações
-  const situacaoItems = useMemo(() => {
-    // Se houver tarefas/obrigacões reais, poderia calcular, mas para MVP usa fixo do mockup (cores iguais)
-    return [
-      { dot: 'bg-red-500', text: 'Documentação de julho e agosto em falta' },
-      { dot: 'bg-emerald-500', text: 'IVA tratado até julho' },
-      { dot: 'bg-emerald-500', text: 'Contabilidade em dia' },
-      { dot: 'bg-amber-500', text: 'Processo de compensação Segurança Social pendente' },
-      { dot: 'bg-emerald-500', text: 'Salários atualizados' },
-    ];
-  }, []);
+  const situacaoItems = useMemo(() => [
+    { dot: 'bg-[#EF4444]', text: 'Documentação de julho e agosto em falta' },
+    { dot: 'bg-[#10B981]', text: 'IVA tratado até julho' },
+    { dot: 'bg-[#10B981]', text: 'Contabilidade em dia' },
+    { dot: 'bg-[#F59E0B]', text: 'Processo de compensação Segurança Social pendente' },
+    { dot: 'bg-[#10B981]', text: 'Salários atualizados' },
+  ], []);
 
   const proximosPrazos = useMemo(() => {
     const fromObr = obrigacoes
-      .filter(o => o.vencimento >= Date.now() && o.vencimento <= Date.now() + 90 * 86400000)
+      .filter(o => o.vencimento >= Date.now())
       .sort((a, b) => a.vencimento - b.vencimento)
       .slice(0, 5)
-      .map(o => ({ label: new Date(o.vencimento).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' }).replace('.', ''), title: o.titulo }));
+      .map(o => ({ label: new Date(o.vencimento).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' }).replace('.', '').replace(' ', ' '), title: o.titulo }));
     if (fromObr.length >= 3) return fromObr;
     return [
       { label: '10 set', title: 'Envio IVA (2.º trimestre)' },
@@ -88,87 +85,93 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
     ];
   }, [obrigacoes]);
 
-  const assuntosExibir = assuntos.length > 0 ? assuntos.slice(0, 3) : [
-    { id: 'mock1', clienteId: cliente?.id || 'mock', titulo: 'Duplicação de contribuições Segurança Social', estado: 'em_curso' as const, updatedAt: Date.now() - 86400000, descricao: 'Atualizado: 16/09/2026' },
-    { id: 'mock2', clienteId: cliente?.id || 'mock', titulo: 'Viatura da empresa', estado: 'aguard_cliente' as const, updatedAt: Date.now() - 9 * 86400000, descricao: 'Atualizado: 08/09/2026' },
-    { id: 'mock3', clienteId: cliente?.id || 'mock', titulo: 'Documentação em falta (Jul-Ago)', estado: 'pendente' as const, updatedAt: Date.now() - 86400000, descricao: 'Atualizado: 16/09/2026' },
+  const assuntosExibir: AssuntoGabinete[] = assuntos.length > 0 ? assuntos.slice(0, 3) : [
+    { id: 'mock1', clienteId: cliente?.id || 'mock', titulo: 'Duplicação de contribuições Segurança Social', estado: 'em_curso', updatedAt: new Date('2026-09-16').getTime(), createdAt: Date.now() },
+    { id: 'mock2', clienteId: cliente?.id || 'mock', titulo: 'Viatura da empresa', estado: 'aguard_cliente', updatedAt: new Date('2026-09-08').getTime(), createdAt: Date.now() },
+    { id: 'mock3', clienteId: cliente?.id || 'mock', titulo: 'Documentação em falta (Jul-Ago)', estado: 'pendente', updatedAt: new Date('2026-09-16').getTime(), createdAt: Date.now() },
   ];
 
-  const alertasExibir = alertas.length > 0 ? alertas.slice(0, 4) : [
+  const alertasExibir: AlertaGabinete[] = alertas.length > 0 ? alertas.slice(0, 3) : [
     { id: 'a1', clienteId: cliente?.id || 'mock', texto: 'Cliente tem dificuldade em reunir documentação.', createdAt: Date.now(), updatedAt: Date.now() },
     { id: 'a2', clienteId: cliente?.id || 'mock', texto: 'Todas as faturas devem ser enviadas por WhatsApp assim que são recebidas.', createdAt: Date.now(), updatedAt: Date.now() },
     { id: 'a3', clienteId: cliente?.id || 'mock', texto: 'Atenção à dedutibilidade de despesas com viatura.', createdAt: Date.now(), updatedAt: Date.now() },
   ];
 
-  const contactosExibir = contactos.length > 0 ? contactos.slice(0, 3) : ([
-    { id: 'c1', clienteId: cliente?.id || 'mock', nome: gerentes[0] || 'Gerente 1', cargo: 'Gerente', telefone: '+351 9XX XXX XXX', email: '', initials: gerentes[0] ? initialsOf(gerentes[0]) : 'G1', createdAt: Date.now(), updatedAt: Date.now() },
-    { id: 'c2', clienteId: cliente?.id || 'mock', nome: gerentes[1] || 'Gerente 2', cargo: 'Gerente', telefone: '+351 9XX XXX XXX', email: '', initials: gerentes[1] ? initialsOf(gerentes[1]) : 'G2', createdAt: Date.now(), updatedAt: Date.now() },
-  ] as ContactoGabinete[]);
-
-  const docsExibir = documentos.length > 0 ? documentos.slice(0, 5) : [
-    { id: 'd1', clienteId: cliente?.id || 'mock', nome: 'Contrato de constituição.pdf', tipo: 'OUTRO' as const, dataUpload: new Date('2025-12-12').getTime() },
-    { id: 'd2', clienteId: cliente?.id || 'mock', nome: 'Certidão permanente.pdf', tipo: 'OUTRO' as const, dataUpload: new Date('2025-12-12').getTime() },
-    { id: 'd3', clienteId: cliente?.id || 'mock', nome: 'Contrato de arrendamento.pdf', tipo: 'OUTRO' as const, dataUpload: new Date('2026-01-03').getTime() },
-    { id: 'd4', clienteId: cliente?.id || 'mock', nome: 'Financiamento viatura.pdf', tipo: 'OUTRO' as const, dataUpload: new Date('2026-02-15').getTime() },
-    { id: 'd5', clienteId: cliente?.id || 'mock', nome: 'Parecer OCC – viatura.pdf', tipo: 'OUTRO' as const, dataUpload: new Date('2026-08-27').getTime() },
-  ] as GabineteDocumento[];
-
-  const cofreExibir = cofre.filter(c => !cliente || c.clienteId === cliente.id).slice(0, 4);
-  const cofreFallback = cofreExibir.length > 0 ? cofreExibir.map(c => ({ label: c.categoria, title: c.titulo, id: c.id })) : [
-    { label: 'AT', title: 'Portal das Finanças' },
-    { label: 'SS', title: 'Segurança Social Direta' },
-    { label: 'TOC', title: 'TOConline' },
-    { label: 'BPI', title: 'Homebanking' },
+  const contactosExibir: ContactoGabinete[] = contactos.length > 0 ? contactos.slice(0, 3) : [
+    { id: 'c1', clienteId: cliente?.id || 'mock', nome: 'Mykola Ivanenko', cargo: 'Gerente', telefone: '+351 9XX XXX XXX', email: '', initials: 'MI', createdAt: Date.now(), updatedAt: Date.now() },
+    { id: 'c2', clienteId: cliente?.id || 'mock', nome: 'Vasyl Petrenko', cargo: 'Gerente', telefone: '+351 9XX XXX XXX', email: '', initials: 'VP', createdAt: Date.now(), updatedAt: Date.now() },
+    { id: 'c3', clienteId: cliente?.id || 'mock', nome: 'Iryna (Administrativa)', cargo: 'Envio de faturas', telefone: '+351 9XX XXX XXX', email: '', initials: 'IA', createdAt: Date.now(), updatedAt: Date.now() },
   ];
 
-  const ocorrExibir = ocorrencias.length > 0 ? ocorrencias.slice(0, 5) : [
-    { id: 'o1', clienteId: cliente?.id || 'mock', data: new Date('2026-09-16').getTime(), autorNome: responsavel?.nome || 'Equipa', autorInitials: responsavel?.initials || 'EQ', descricao: 'Atualização: sem resposta da Segurança Social.', createdAt: Date.now() },
-    { id: 'o2', clienteId: cliente?.id || 'mock', data: new Date('2026-09-08').getTime(), autorNome: responsavel?.nome || 'Equipa', autorInitials: responsavel?.initials || 'EQ', descricao: 'Envio do pedido de compensação SS.', createdAt: Date.now() },
-    { id: 'o3', clienteId: cliente?.id || 'mock', data: new Date('2026-09-07').getTime(), autorNome: responsavel?.nome || 'Equipa', autorInitials: responsavel?.initials || 'EQ', descricao: 'Pagamento duplicado de €445,18.', createdAt: Date.now() },
-    { id: 'o4', clienteId: cliente?.id || 'mock', data: new Date('2026-09-05').getTime(), autorNome: responsavel?.nome || 'Equipa', autorInitials: responsavel?.initials || 'EQ', descricao: 'Pagamento duplicado de €445,18.', createdAt: Date.now() },
-    { id: 'o5', clienteId: cliente?.id || 'mock', data: new Date('2025-12-15').getTime(), autorNome: responsavel?.nome || 'Equipa', autorInitials: responsavel?.initials || 'EQ', descricao: 'Constituição da sociedade.', createdAt: Date.now() },
+  const docsExibir: GabineteDocumento[] = documentos.length > 0 ? documentos.slice(0, 5) : [
+    { id: 'd1', clienteId: cliente?.id || 'mock', nome: 'Contrato de constituição.pdf', tipo: 'OUTRO', dataUpload: new Date('2025-12-12').getTime() },
+    { id: 'd2', clienteId: cliente?.id || 'mock', nome: 'Certidão permanente.pdf', tipo: 'OUTRO', dataUpload: new Date('2025-12-12').getTime() },
+    { id: 'd3', clienteId: cliente?.id || 'mock', nome: 'Contrato de arrendamento.pdf', tipo: 'OUTRO', dataUpload: new Date('2026-01-03').getTime() },
+    { id: 'd4', clienteId: cliente?.id || 'mock', nome: 'Financiamento viatura.pdf', tipo: 'OUTRO', dataUpload: new Date('2026-02-15').getTime() },
+    { id: 'd5', clienteId: cliente?.id || 'mock', nome: 'Parecer OCC – viatura.pdf', tipo: 'OUTRO', dataUpload: new Date('2026-08-27').getTime() },
+  ];
+
+  const cofreFallback = (() => {
+    const fromCofre = cofre.filter(c => !cliente || c.clienteId === cliente.id).slice(0, 4);
+    if (fromCofre.length > 0) return fromCofre.map(c => ({ label: c.categoria, title: c.titulo }));
+    return [
+      { label: 'AT', title: 'Portal das Finanças' },
+      { label: 'SS', title: 'Segurança Social Direta' },
+      { label: 'TOC', title: 'TOConline' },
+      { label: 'BPI', title: 'Homebanking' },
+    ];
+  })();
+
+  const ocorrExibir: OcorrenciaGabinete[] = ocorrencias.length > 0 ? ocorrencias.slice(0, 5) : [
+    { id: 'o1', clienteId: cliente?.id || 'mock', data: new Date('2026-09-16').getTime(), autorNome: 'Sandrine Reis', autorInitials: 'SR', descricao: 'Atualização: sem resposta da Segurança Social.', createdAt: Date.now() },
+    { id: 'o2', clienteId: cliente?.id || 'mock', data: new Date('2026-09-08').getTime(), autorNome: 'Ana Margarida', autorInitials: 'AM', descricao: 'Envio do pedido de compensação SS.', createdAt: Date.now() },
+    { id: 'o3', clienteId: cliente?.id || 'mock', data: new Date('2026-09-07').getTime(), autorNome: 'Ana Margarida', autorInitials: 'AM', descricao: 'Pagamento duplicado de €445,18.', createdAt: Date.now() },
+    { id: 'o4', clienteId: cliente?.id || 'mock', data: new Date('2026-05-05').getTime(), autorNome: 'Ana Margarida', autorInitials: 'AM', descricao: 'Pagamento duplicado de €445,18.', createdAt: Date.now() },
+    { id: 'o5', clienteId: cliente?.id || 'mock', data: new Date('2025-12-15').getTime(), autorNome: 'Sandrine Reis', autorInitials: 'SR', descricao: 'Constituição da sociedade.', createdAt: Date.now() },
   ];
 
   const avatarInitials = initialsOf(displayNome).slice(0, 2);
 
   return (
-    <div className="space-y-4">
-      {/* Header empresa */}
-      <div className="bg-white rounded-2xl border border-zinc-200 p-4 sm:p-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex gap-4 min-w-0">
-            <div className="w-14 h-14 rounded-2xl bg-[#E8EDF3] text-[#334155] flex items-center justify-center text-[16px] font-[800] shrink-0">{avatarInitials}</div>
+    <div className="space-y-3">
+      {/* Header empresa - exatamente como print */}
+      <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex gap-3.5 min-w-0">
+            <div className="w-[52px] h-[52px] rounded-xl bg-[#DDE6F3] text-[#5B6B8A] flex items-center justify-center text-[15px] font-[800] tracking-[0.5px] shrink-0">{avatarInitials}</div>
             <div className="min-w-0">
-              <h1 className="text-[20px] font-[800] leading-tight text-[#0B1D2D] truncate">{displayNome}</h1>
-              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-zinc-600">
-                <span>NIF <span className="font-semibold text-zinc-800">{displayNif}</span></span>
-                {caeLabel !== '—' && <span>CAE <span className="font-medium">{caeLabel}{caeDesc ? ` – ${caeDesc}` : ''}</span></span>}
+              <h1 className="text-[19px] font-[800] leading-none tracking-[-0.3px] text-[#0B1D2D]">{displayNome}</h1>
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[12px] text-[#64748B]">
+                <span>NIF <span className="font-[600] text-[#334155]">{displayNif}</span></span>
+                <span className="text-[#CBD5E1]">|</span>
+                <span>CAE <span className="font-[600] text-[#334155]">{caeLabel} – {caeDesc}</span></span>
+                <span className="text-[#CBD5E1]">|</span>
                 <span>{tipoSoc}</span>
               </div>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-semibold text-emerald-700"><CheckCircle2 className="w-3 h-3" /> Ativo</span>
-                <span className="px-2.5 py-1 rounded-full bg-white border border-zinc-200 text-[11px] font-medium">IVA {regimeIvaLabel}</span>
-                <span className="px-2.5 py-1 rounded-full bg-white border border-zinc-200 text-[11px] font-medium">IRC ({regimeIrcLabel})</span>
-                <span className="px-2.5 py-1 rounded-full bg-white border border-zinc-200 text-[11px] font-medium">Contabilidade + Salários</span>
+              <div className="mt-2.5 flex flex-wrap gap-1.5">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#DCFCE7] border border-[#86EFAC] px-2.5 py-1 text-[11px] font-[700] text-[#166534]"><span className="w-3.5 h-3.5 rounded-full bg-[#16A34A] text-white flex items-center justify-center text-[9px]">✓</span> Ativo</span>
+                <span className="rounded-full bg-white border border-[#E2E8F0] px-2.5 py-1 text-[11px] font-[500] text-[#475569]">IVA {regimeIvaLabel}</span>
+                <span className="rounded-full bg-white border border-[#E2E8F0] px-2.5 py-1 text-[11px] font-[500] text-[#475569]">IRC ({regimeIrcLabel})</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-white border border-[#E2E8F0] px-2.5 py-1 text-[11px] font-[500] text-[#475569]"><span className="w-3 h-3 rounded bg-[#E0E7FF] flex items-center justify-center text-[7px]">◈</span> Contabilidade + Salários</span>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button className="px-4 py-2 rounded-xl bg-white border border-zinc-200 text-sm font-medium flex items-center gap-1.5">Ações <ChevronRight className="w-4 h-4 rotate-90" /></button>
-            <button onClick={onEditCliente} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm font-medium flex items-center gap-1.5"><Pencil className="w-3.5 h-3.5" /> Editar</button>
+          <div className="hidden sm:flex items-center gap-2 shrink-0">
+            <button className="px-3.5 py-1.5 rounded-lg bg-white border border-[#E2E8F0] text-[13px] font-[500] text-[#334155] flex items-center gap-1">Ações <span className="text-[10px]">▾</span></button>
+            <button onClick={onEditCliente} className="px-3.5 py-1.5 rounded-lg bg-[#0F172A] text-white text-[13px] font-[600] flex items-center gap-1.5">✎ Editar</button>
           </div>
         </div>
 
-        {/* Secondary tabs */}
-        <div className="mt-4 -mb-5 border-t border-zinc-100">
-          <div className="flex gap-1 overflow-x-auto scrollbar-none">
+        {/* Tabs secundárias */}
+        <div className="mt-4 -mb-4 border-t border-[#F1F5F9] -mx-4 px-4">
+          <div className="flex gap-5 overflow-x-auto scrollbar-none text-[13px]">
             {[
-              { id: 'visao', label: 'Visão geral' },
-              { id: 'tarefas', label: `Tarefas (${tarefas.length})`, go: 'tarefas' },
+              { id: 'visao', label: 'Visão geral', active: true },
+              { id: 'tarefas', label: `Tarefas (${tarefas.length || 4})`, go: 'tarefas' },
               { id: 'assuntos', label: `Assuntos (${assuntos.length || 3})` },
               { id: 'docs', label: 'Documentos' },
               { id: 'contatos', label: 'Contatos' },
-              { id: 'acessos', label: 'Acessos' },
+              { id: 'acessos', label: 'Acessos', go: 'cofre' },
               { id: 'obrig', label: 'Obrigações', go: 'obrigacoes' },
               { id: 'hist', label: 'Histórico' },
               { id: 'equipa', label: 'Equipa' },
@@ -176,8 +179,8 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
             ].map(t => (
               <button
                 key={t.id}
-                onClick={() => t.go ? onGo?.(t.go) : setTabSec(t.id)}
-                className={`whitespace-nowrap px-3 py-2.5 text-sm font-medium border-b-2 ${tabSec === t.id ? 'border-[#0F172A] text-[#0B1D2D]' : 'border-transparent text-zinc-500 hover:text-zinc-800'}`}
+                onClick={() => t.go && onGo?.(t.go)}
+                className={`whitespace-nowrap py-3 border-b-2 font-[600] ${t.active ? 'border-[#0F172A] text-[#0F172A]' : 'border-transparent text-[#64748B] hover:text-[#334155] font-[500]'}`}
               >
                 {t.label}
               </button>
@@ -186,118 +189,113 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
         </div>
       </div>
 
-      {/* Row 1: 3 cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Resumo */}
-        <div className="bg-white rounded-2xl border border-zinc-200 p-4">
+      {/* Grid principal 3 colunas */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        {/* Resumo da empresa */}
+        <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold flex items-center gap-2"><Building2 className="w-4 h-4 text-[#0F172A]" /> Resumo da empresa</h3>
-            <button onClick={onEditCliente} className="text-xs text-[#1A73E8] font-medium">Editar</button>
+            <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Building2 className="w-4 h-4 text-[#64748B]" /> Resumo da empresa</h3>
+            <button onClick={onEditCliente} className="text-[12px] font-[500] text-[#2563EB]">Editar</button>
           </div>
-          <dl className="space-y-1.5 text-sm">
+          <div className="space-y-2">
             {[
               ['Nome', displayNome],
               ['NIF', displayNif],
-              ['CAE principal', caeLabel !== '—' ? `${caeLabel}${caeDesc ? ` – ${caeDesc}` : ''}` : '—'],
+              ['CAE principal', `${caeLabel} – ${caeDesc}`],
               ['Regime IVA', regimeIvaLabel],
               ['IRC', regimeIrcLabel],
-              ['Gerentes', gerentes.length ? gerentes.join(', ') : '—'],
+              ['Gerentes', gerentes.join(', ')],
               ['N.º trabalhadores', String(nrTrab)],
-              ['Início de atividade', inicioAtiv ? fmtDate(inicioAtiv) : '—'],
+              ['Início de atividade', inicioAtiv],
             ].map(([k, v]) => (
-              <div key={k} className="flex gap-3">
-                <dt className="w-[140px] shrink-0 text-xs text-zinc-500">{k}</dt>
-                <dd className="flex-1 text-sm font-medium text-zinc-800 truncate">{v}</dd>
+              <div key={k} className="flex gap-2 text-[12.5px] leading-[18px]">
+                <span className="w-[125px] shrink-0 text-[#64748B]">{k}</span>
+                <span className="flex-1 font-[500] text-[#0F172A] truncate">{v}</span>
               </div>
             ))}
-            <div className="pt-2 mt-2 border-t border-zinc-100 space-y-2">
+            <div className="pt-3 mt-3 border-t border-[#F1F5F9] space-y-2.5">
               {[
-                ['Responsável interno', responsavel],
-                ['Apoio administrativo', apoio],
-                ['Supervisor', supervisor],
-              ].map(([label, person]) => {
-                const p = person as { nome: string; initials: string } | undefined;
-                return (
-                  <div key={label as string} className="flex items-center gap-3">
-                    <dt className="w-[140px] text-xs text-zinc-500">{label as string}</dt>
-                    <dd className="flex items-center gap-2 text-sm">
-                      {p ? (
-                        <>
-                          <span className="w-6 h-6 rounded-full bg-[#E0E7FF] text-[#3730A3] flex items-center justify-center text-[11px] font-bold">{p.initials}</span>
-                          <span className="font-medium">{p.nome}</span>
-                        </>
-                      ) : <span className="text-zinc-400">—</span>}
-                    </dd>
-                  </div>
-                );
-              })}
-            </div>
-          </dl>
-        </div>
-
-        {/* Situação atual */}
-        <div className="bg-white rounded-2xl border border-zinc-200 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold flex items-center gap-2"><ShieldAlert className="w-4 h-4 text-amber-600" /> Situação atual</h3>
-            <button onClick={onEditCliente} className="text-xs text-[#1A73E8] font-medium">Editar</button>
-          </div>
-          <ul className="space-y-2.5">
-            {situacaoItems.map((it, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-sm">
-                <span className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${it.dot}`} />
-                <span className="text-zinc-700 leading-tight">{it.text}</span>
-              </li>
-            ))}
-          </ul>
-          {/* Assuntos dentro de situação? No mockup assuntos é verde separado, mas aqui já temos. Vamos incluir Assuntos principais dentro deste card? Para fidelidade, vamos deixar separado abaixo. */}
-          <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50/40 p-3">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-bold text-emerald-900 flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> Assuntos principais</h4>
-              <button onClick={() => onGo?.('tarefas')} className="text-[11px] text-[#1A73E8] font-medium">Ver todos ({assuntosExibir.length})</button>
-            </div>
-            <div className="space-y-2">
-              {assuntosExibir.map(a => {
-                const b = estadoBadge[a.estado] || estadoBadge.pendente;
-                return (
-                  <div key={a.id} className="bg-white rounded-xl border border-zinc-200 p-2.5 flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium leading-tight truncate flex items-center gap-1.5"><span className="w-0 h-0 border-l-[5px] border-l-emerald-500 border-y-[4px] border-y-transparent" /> {a.titulo}</div>
-                      <div className="text-[11px] text-zinc-500">Atualizado: {fmtDate(a.updatedAt)}</div>
-                    </div>
-                    <span className={`shrink-0 text-[11px] px-2 py-0.5 rounded-full border font-medium ${b.cls}`}>{b.label}</span>
-                  </div>
-                );
-              })}
+                { label: 'Responsável interno', person: responsavel, bg: 'bg-[#E0E7FF] text-[#4338CA]' },
+                { label: 'Apoio administrativo', person: apoio, bg: 'bg-[#F3E8FF] text-[#7C3AED]' },
+                { label: 'Supervisor', person: supervisor, bg: 'bg-[#1E293B] text-white' },
+              ].map(row => (
+                <div key={row.label} className="flex items-center gap-2 text-[12.5px]">
+                  <span className="w-[125px] shrink-0 text-[#64748B]">{row.label}</span>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-[700] shrink-0 ${row.bg}`}>{row.person.initials}</span>
+                  <span className="font-[500] text-[#0F172A]">{row.person.nome}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Alertas + Próximos prazos stacked */}
-        <div className="space-y-4">
-          <div className="bg-red-50/60 border border-red-200 rounded-2xl p-4">
+        {/* Coluna do meio: Situação + Assuntos empilhados */}
+        <div className="space-y-3">
+          <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold flex items-center gap-2 text-red-800"><AlertTriangle className="w-4 h-4" /> Alertas</h3>
-              <button className="text-xs text-[#1A73E8] font-medium">+ Adicionar</button>
+              <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><span className="w-5 h-5 rounded-full bg-[#FFF7ED] border border-[#FED7AA] flex items-center justify-center text-[11px]">◉</span> Situação atual</h3>
+              <button onClick={onEditCliente} className="text-[12px] font-[500] text-[#2563EB]">Editar</button>
             </div>
-            <ul className="space-y-2.5">
-              {alertasExibir.map(a => (
-                <li key={a.id} className="flex gap-2.5 text-sm">
-                  <span className="mt-1.5 w-2.5 h-2.5 rounded-full bg-red-500 shrink-0" />
-                  <span className="text-zinc-700 leading-tight">{a.texto}</span>
+            <ul className="space-y-2">
+              {situacaoItems.map((it, i) => (
+                <li key={i} className="flex items-center gap-2.5 text-[12.5px] leading-tight">
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${it.dot}`} />
+                  <span className="text-[#334155]">{it.text}</span>
                 </li>
               ))}
             </ul>
           </div>
-          <div className="bg-blue-50/30 border border-blue-100 rounded-2xl p-4">
+
+          <div className="bg-[#F0FDF4] rounded-xl border border-[#BBF7D0] p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold flex items-center gap-2 text-[#0F172A]"><Calendar className="w-4 h-4 text-[#0677FF]" /> Próximos prazos</h3>
-              <button onClick={() => onGo?.('obrigacoes')} className="text-xs text-[#1A73E8] font-medium">Ver todos</button>
+              <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#065F46]"><span className="w-5 h-5 rounded bg-white border border-[#BBF7D0] flex items-center justify-center">▭</span> Assuntos principais</h3>
+              <button onClick={() => onGo?.('tarefas')} className="text-[12px] font-[500] text-[#2563EB]">Ver todos ({assuntosExibir.length})</button>
+            </div>
+            <div className="space-y-2">
+              {assuntosExibir.map(a => {
+                const cls = estadoBadgeCls[a.estado] || estadoBadgeCls.pendente;
+                const label = estadoLabel[a.estado] || a.estado;
+                return (
+                  <div key={a.id} className="bg-white rounded-lg border border-[#E2E8F0] px-3 py-2.5 flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-[12.5px] font-[600] text-[#0F172A] leading-tight flex items-center gap-1.5"><span className="text-[#10B981] text-[10px]">▶</span> <span className="truncate">{a.titulo}</span></div>
+                      <div className="text-[11px] text-[#94A3B8] mt-0.5">Atualizado: {new Date(a.updatedAt).toLocaleDateString('pt-PT')}</div>
+                    </div>
+                    <span className={`shrink-0 text-[11px] font-[600] px-2 py-0.5 rounded-full border ${cls}`}>{label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Coluna direita: Alertas + Próximos prazos */}
+        <div className="space-y-3">
+          <div className="bg-[#FFF1F2] rounded-xl border border-[#FECACA] p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#991B1B]"><AlertTriangle className="w-4 h-4 text-[#DC2626]" /> Alertas</h3>
+              <button className="text-[12px] font-[500] text-[#2563EB]">+ Adicionar</button>
+            </div>
+            <ul className="space-y-2.5">
+              {alertasExibir.map(a => (
+                <li key={a.id} className="flex gap-2.5 text-[12.5px] leading-[17px]">
+                  <span className="mt-1 w-1.5 h-1.5 rounded-full bg-[#DC2626] shrink-0" />
+                  <span className="text-[#7F1D1D]">{a.texto}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bg-[#EFF6FF] rounded-xl border border-[#BFDBFE] p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#1E40AF]"><Calendar className="w-4 h-4" /> Próximos prazos</h3>
+              <button onClick={() => onGo?.('obrigacoes')} className="text-[12px] font-[500] text-[#2563EB]">Ver todos</button>
             </div>
             <ul className="space-y-2">
               {proximosPrazos.map((p, i) => (
-                <li key={i} className="flex gap-3 text-sm">
-                  <span className="w-[50px] shrink-0 text-xs font-bold text-zinc-700">{p.label}</span>
-                  <span className="flex-1 text-zinc-700 truncate">{p.title}</span>
+                <li key={i} className="flex gap-3 text-[12.5px]">
+                  <span className="w-[48px] shrink-0 font-[700] text-[#334155]">{p.label}</span>
+                  <span className="flex-1 text-[#475569] truncate">{p.title}</span>
                 </li>
               ))}
             </ul>
@@ -306,71 +304,71 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
       </div>
 
       {/* Orientações */}
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+      <div className="bg-[#FFFBEB] rounded-xl border border-[#FDE68A] p-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-bold flex items-center gap-2 text-amber-900"><Info className="w-4 h-4" /> Orientações à equipa</h3>
-          <button onClick={onEditCliente} className="text-xs text-[#1A73E8] font-medium">Editar</button>
+          <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#92400E]"><Info className="w-4 h-4 text-[#D97706]" /> Orientações à equipa</h3>
+          <button onClick={onEditCliente} className="text-[12px] font-[500] text-[#2563EB]">Editar</button>
         </div>
-        <ul className="list-disc pl-5 space-y-1 text-sm text-zinc-700">
+        <ul className="list-disc pl-5 space-y-1 text-[12.5px] leading-[18px] text-[#78350F]">
           {orientacoes.split('\n').filter(Boolean).map((line, i) => (
-            <li key={i}>{line.replace(/^•\s*/, '')}</li>
+            <li key={i}>{line}</li>
           ))}
         </ul>
       </div>
 
-      {/* Docs / Contactos / Acessos */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-zinc-200 p-4">
+      {/* Bottom 3 cols */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold flex items-center gap-2 text-[#0F172A]"><FileText className="w-4 h-4 text-[#0677FF]" /> Documentos importantes</h3>
-            <button className="text-xs text-[#1A73E8]">Ver todos</button>
+            <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><FileText className="w-4 h-4 text-[#2563EB]" /> Documentos importantes</h3>
+            <button className="text-[12px] font-[500] text-[#2563EB]">Ver todos</button>
           </div>
           <ul className="space-y-2">
             {docsExibir.map(d => (
-              <li key={d.id} className="flex items-center justify-between gap-3 text-sm">
-                <span className="flex items-center gap-2 truncate"><FileText className="w-3.5 h-3.5 text-red-500 shrink-0" /> <span className="truncate">{d.nome}</span></span>
-                <span className="text-xs text-zinc-500 shrink-0">{fmtDate(d.dataUpload)}</span>
+              <li key={d.id} className="flex items-center justify-between gap-2 text-[12.5px]">
+                <span className="flex items-center gap-1.5 truncate"><span className="w-3 h-3 rounded-[2px] bg-[#FEE2E2] border border-[#FECACA] flex items-center justify-center text-[7px] text-[#DC2626]">⧉</span> <span className="truncate text-[#334155]">{d.nome}</span></span>
+                <span className="text-[11px] text-[#94A3B8] shrink-0">{new Date(d.dataUpload).toLocaleDateString('pt-PT')}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="bg-white rounded-2xl border border-zinc-200 p-4">
+        <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold flex items-center gap-2 text-[#0F172A]"><Users className="w-4 h-4 text-[#0677FF]" /> Contactos</h3>
-            <button className="text-xs text-[#1A73E8]">Ver todos</button>
+            <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Users className="w-4 h-4 text-[#2563EB]" /> Contactos</h3>
+            <button className="text-[12px] font-[500] text-[#2563EB]">Ver todos</button>
           </div>
           <ul className="space-y-3">
             {contactosExibir.map(c => (
-              <li key={c.id} className="flex items-start justify-between gap-3">
-                <div className="flex gap-3 min-w-0">
-                  <span className="w-8 h-8 rounded-full bg-[#4F46E5] text-white flex items-center justify-center text-xs font-bold shrink-0" style={{ background: c.id === 'c1' ? '#4F46E5' : c.id === 'c2' ? '#7C3AED' : '#334155' }}>{c.initials || initialsOf(c.nome)}</span>
+              <li key={c.id} className="flex items-start justify-between gap-2">
+                <div className="flex gap-2.5 min-w-0">
+                  <span className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-[700] text-white shrink-0" style={{ background: c.initials === 'MI' ? '#6366F1' : c.initials === 'VP' ? '#7C3AED' : '#334155' }}>{c.initials || initialsOf(c.nome)}</span>
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold truncate">{c.nome}</div>
-                    <div className="text-xs text-zinc-500">{c.cargo || '—'}</div>
-                    <div className="text-xs text-zinc-600">{c.telefone || ''}</div>
+                    <div className="text-[12.5px] font-[700] text-[#0F172A] leading-none truncate">{c.nome}</div>
+                    <div className="text-[11px] text-[#64748B]">{c.cargo || '—'}</div>
+                    <div className="text-[11px] text-[#64748B]">{c.telefone || ''}</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <a href={c.telefone ? `tel:${c.telefone}` : undefined} className="p-1 rounded hover:bg-zinc-100 text-[#0677FF]"><Phone className="w-3.5 h-3.5" /></a>
-                  <a href={c.email ? `mailto:${c.email}` : undefined} className="p-1 rounded hover:bg-zinc-100 text-zinc-600"><Mail className="w-3.5 h-3.5" /></a>
-                  <span className="p-1 text-emerald-600"><MessageCircle className="w-3.5 h-3.5" /></span>
+                <div className="flex items-center gap-1 shrink-0">
+                  <span className="w-6 h-6 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-[#2563EB]"><Phone className="w-3 h-3" /></span>
+                  <span className="w-6 h-6 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-[#64748B]"><Mail className="w-3 h-3" /></span>
+                  <span className="w-6 h-6 rounded-full bg-[#DCFCE7] border border-[#BBF7D0] flex items-center justify-center text-[#16A34A]"><MessageCircle className="w-3 h-3" /></span>
                 </div>
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="bg-white rounded-2xl border border-zinc-200 p-4">
+        <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold flex items-center gap-2 text-[#0F172A]"><Lock className="w-4 h-4 text-[#0677FF]" /> Acessos</h3>
-            <button onClick={onOpenCofre} className="text-xs text-[#1A73E8] flex items-center gap-1"><Eye className="w-3 h-3" /> Abrir cofre</button>
+            <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Lock className="w-4 h-4 text-[#2563EB]" /> Acessos</h3>
+            <button onClick={onOpenCofre} className="text-[12px] font-[500] text-[#2563EB] flex items-center gap-1">◎ Abrir cofre</button>
           </div>
-          <ul className="space-y-2">
+          <ul className="space-y-2.5">
             {cofreFallback.map((a, i) => (
-              <li key={i} className="flex items-center justify-between text-sm py-1">
-                <span className="flex items-center gap-2"><span className="w-10 text-[11px] font-bold px-1.5 py-1 rounded bg-zinc-100 border text-zinc-700 text-center">{a.label}</span> <span>{a.title}</span></span>
-                <button onClick={onOpenCofre} className="text-xs text-[#1A73E8]">ver no cofre</button>
+              <li key={i} className="flex items-center justify-between text-[12.5px] py-1">
+                <span className="flex items-center gap-2"><span className="w-9 text-center text-[10px] font-[700] px-1 py-1 rounded bg-[#F1F5F9] border border-[#E2E8F0] text-[#475569]">{a.label}</span> <span className="text-[#334155]">{a.title}</span></span>
+                <button onClick={onOpenCofre} className="text-[11px] font-[500] text-[#2563EB]">ver no cofre</button>
               </li>
             ))}
           </ul>
@@ -378,21 +376,25 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
       </div>
 
       {/* Histórico */}
-      <div className="bg-white rounded-2xl border border-zinc-200 p-4">
+      <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold flex items-center gap-2 text-[#0F172A]"><Clock className="w-4 h-4 text-[#0677FF]" /> Histórico / Últimas ocorrências</h3>
-          <button className="text-xs text-[#1A73E8]">Ver todo o histórico</button>
+          <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Clock className="w-4 h-4 text-[#2563EB]" /> Histórico / Últimas ocorrências</h3>
+          <button className="text-[12px] font-[500] text-[#2563EB]">Ver todo o histórico</button>
         </div>
-        <ul className="space-y-2">
-          {ocorrExibir.map(o => (
-            <li key={o.id} className="flex items-start gap-3 text-sm">
-              <span className="w-[85px] shrink-0 text-xs text-zinc-600">{fmtDate(o.data)}</span>
-              <span className="w-6 h-6 rounded-full bg-[#1E293B] text-white flex items-center justify-center text-[10px] font-bold shrink-0">{o.autorInitials}</span>
-              <span className="w-[110px] shrink-0 text-xs font-medium text-zinc-700 truncate">{o.autorNome}</span>
-              <span className="flex-1 text-zinc-700 truncate">{o.descricao}</span>
-            </li>
-          ))}
-        </ul>
+        <div className="relative">
+          <div className="absolute left-[42px] top-2 bottom-2 w-px bg-[#E2E8F0] hidden sm:block" />
+          <ul className="space-y-2">
+            {ocorrExibir.map(o => (
+              <li key={o.id} className="flex items-center gap-3 text-[12.5px]">
+                <span className="w-[78px] shrink-0 text-[12px] text-[#64748B]">{new Date(o.data).toLocaleDateString('pt-PT')}</span>
+                <span className="relative w-2 h-2 rounded-full bg-[#334155] shrink-0 hidden sm:block" />
+                <span className="w-6 h-6 rounded-full bg-[#1E293B] text-white flex items-center justify-center text-[9px] font-[700] shrink-0">{o.autorInitials}</span>
+                <span className="w-[105px] shrink-0 text-[12px] font-[600] text-[#334155] truncate">{o.autorNome}</span>
+                <span className="flex-1 text-[#475569] truncate">{o.descricao}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );
