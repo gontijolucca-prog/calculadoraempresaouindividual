@@ -153,8 +153,8 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
   }, [gabineteOpen, simMenuOpen, relatoriosOpen, active]);
 
   const GAB_TABS = [
-    { id: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard, desc: 'Visão do dia' },
     { id: 'visao-geral', label: 'Visão geral', Icon: LayoutDashboard, desc: 'Ficha 360' },
+    { id: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard, desc: 'Visão do dia' },
     { id: 'agenda', label: 'Agenda', Icon: Calendar, desc: 'Calendário' },
     { id: 'tarefas', label: 'Tarefas', Icon: CheckSquare, desc: 'Kanban' },
     { id: 'obrigacoes', label: 'Obrigações', Icon: Calendar, desc: 'Fiscal' },

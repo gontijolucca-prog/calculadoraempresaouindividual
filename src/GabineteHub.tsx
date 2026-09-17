@@ -38,8 +38,8 @@ export interface GabineteIntroDef {
 
 /** Ordem e texto partilhados pela galeria, pelo header e pela navegação. */
 export const GABINET_FUNCTIONS: GabineteFunction[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Visão geral do escritório' },
   { id: 'visao-geral', label: 'Visão geral', icon: LayoutDashboard, desc: 'Ficha 360 do cliente' },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Visão geral do escritório' },
   { id: 'agenda', label: 'Agenda', icon: Calendar, desc: 'Calendário de tarefas e obrigações' },
   { id: 'tarefas', label: 'Tarefas', icon: CheckSquare, desc: 'Kanban e lista de trabalho' },
   { id: 'obrigacoes', label: 'Obrigações', icon: Calendar, desc: 'Calendário fiscal' },
