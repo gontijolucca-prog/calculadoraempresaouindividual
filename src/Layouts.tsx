@@ -139,6 +139,18 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
   // Dropdown "Gabinete" — inicia aberto quando estamos no gabinete
   const [gabineteOpen, setGabineteOpen] = useState(active === 'gabinete');
   useEffect(() => { if (active === 'gabinete') setGabineteOpen(true); }, [active]);
+  // Auto-fechar: qualquer dropdown aberto fecha sozinho após 7s, com animação
+  // suave (o contentor anima grid-rows 1fr→0fr). O temporizador recomeça a cada
+  // navegação (active), para não fechar enquanto o utilizador está a escolher.
+  useEffect(() => {
+    if (!gabineteOpen && !simMenuOpen && !relatoriosOpen) return;
+    const t = setTimeout(() => {
+      setGabineteOpen(false);
+      setSimMenuOpen(false);
+      setRelatoriosOpen(false);
+    }, 7000);
+    return () => clearTimeout(t);
+  }, [gabineteOpen, simMenuOpen, relatoriosOpen, active]);
 
   const GAB_TABS = [
     { id: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard, desc: 'Visão do dia' },
@@ -279,7 +291,8 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                 setGabineteOpen(true);
               }
             }} current={active === 'gabinete'} chevronOpen={gabineteOpen} title="Gabinete — abrir/fechar ferramentas e galeria de funções" />
-            {gabineteOpen && (
+            <div className={cn("grid transition-all duration-300 ease-in-out motion-reduce:transition-none", gabineteOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
+              <div className="overflow-hidden">
               <div className="mt-0.5 ml-2.5 space-y-0.5 border-l-2 border-slate-200 pl-2">
                 <ClientNavItem
                   label="Galeria do Gabinete"
@@ -292,11 +305,13 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                   <ClientNavItem key={t.id} label={t.label} Icon={t.Icon} onClick={() => goGabinete(t.id)} current={active==='gabinete' && gabineteTab===t.id} title={t.desc} />
                 ))}
               </div>
-            )}
+              </div>
+            </div>
             {/* Simuladores: abre a grid do cliente + dropdown só com os 10 simuladores.
                 O Perfil do Cliente saiu da sidebar — abre-se na Lista de Empresas. */}
             <NavItem label="Simuladores" Icon={LayoutGrid} onClick={() => { if (isSimActive) setSimMenuOpen((v) => !v); else { goClient('hub'); setSimMenuOpen(true); } }} current={active === 'hub'} chevronOpen={simMenuOpen} title="Grelha de simuladores do cliente ativo" />
-            {simMenuOpen && (
+            <div className={cn("grid transition-all duration-300 ease-in-out motion-reduce:transition-none", simMenuOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
+              <div className="overflow-hidden">
               <div className="mt-0.5 ml-2.5 pl-2 border-l-2 border-slate-200 space-y-0.5">
                 {SIM_MENU_SIDEBAR.map((s) => (
                   <ClientNavItem
@@ -309,9 +324,11 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                   />
                 ))}
               </div>
-            )}
+              </div>
+            </div>
             <NavItem label="Relatórios" Icon={FileDown} onClick={() => setRelatoriosOpen(v => !v)} current={active === 'exportar'} chevronOpen={relatoriosOpen} title="Demonstrações financeiras, documentos de encerramento de contas e pacote do cliente." />
-            {relatoriosOpen && (
+            <div className={cn("grid transition-all duration-300 ease-in-out motion-reduce:transition-none", relatoriosOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
+              <div className="overflow-hidden">
               <div className="mt-0.5 ml-2.5 pl-2 border-l-2 border-slate-200 space-y-0.5">
                 <ClientNavItem label="Demonstrações financeiras" Icon={FileDown}
                   onClick={() => { onOpenRelatorios?.('balanco'); setDrawerOpen(false); }}
@@ -323,7 +340,8 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                   onClick={() => { onOpenRelatorios?.('simulacao'); setDrawerOpen(false); }}
                   title="Simulação Fiscal, Proposta de Honorários e Minuta de Contrato." />
               </div>
-            )}
+              </div>
+            </div>
 
         <SectionLabel>Ferramentas</SectionLabel>
         {onSAFTUpload && (
