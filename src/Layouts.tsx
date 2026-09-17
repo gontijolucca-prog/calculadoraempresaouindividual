@@ -148,7 +148,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
       setGabineteOpen(false);
       setSimMenuOpen(false);
       setRelatoriosOpen(false);
-    }, 7000);
+    }, 12000);
     return () => clearTimeout(t);
   }, [gabineteOpen, simMenuOpen, relatoriosOpen, active]);
 
@@ -291,7 +291,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                 setGabineteOpen(true);
               }
             }} current={active === 'gabinete'} chevronOpen={gabineteOpen} title="Gabinete — abrir/fechar ferramentas e galeria de funções" />
-            <div className={cn("grid transition-all duration-300 ease-in-out motion-reduce:transition-none", gabineteOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
+            <div className={cn("grid transition-all duration-700 ease-in-out motion-reduce:transition-none", gabineteOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
               <div className="overflow-hidden">
               <div className="mt-0.5 ml-2.5 space-y-0.5 border-l-2 border-slate-200 pl-2">
                 <ClientNavItem
@@ -310,7 +310,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
             {/* Simuladores: abre a grid do cliente + dropdown só com os 10 simuladores.
                 O Perfil do Cliente saiu da sidebar — abre-se na Lista de Empresas. */}
             <NavItem label="Simuladores" Icon={LayoutGrid} onClick={() => { if (isSimActive) setSimMenuOpen((v) => !v); else { goClient('hub'); setSimMenuOpen(true); } }} current={active === 'hub'} chevronOpen={simMenuOpen} title="Grelha de simuladores do cliente ativo" />
-            <div className={cn("grid transition-all duration-300 ease-in-out motion-reduce:transition-none", simMenuOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
+            <div className={cn("grid transition-all duration-700 ease-in-out motion-reduce:transition-none", simMenuOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
               <div className="overflow-hidden">
               <div className="mt-0.5 ml-2.5 pl-2 border-l-2 border-slate-200 space-y-0.5">
                 {SIM_MENU_SIDEBAR.map((s) => (
@@ -327,7 +327,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
               </div>
             </div>
             <NavItem label="Relatórios" Icon={FileDown} onClick={() => setRelatoriosOpen(v => !v)} current={active === 'exportar'} chevronOpen={relatoriosOpen} title="Demonstrações financeiras, documentos de encerramento de contas e pacote do cliente." />
-            <div className={cn("grid transition-all duration-300 ease-in-out motion-reduce:transition-none", relatoriosOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
+            <div className={cn("grid transition-all duration-700 ease-in-out motion-reduce:transition-none", relatoriosOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
               <div className="overflow-hidden">
               <div className="mt-0.5 ml-2.5 pl-2 border-l-2 border-slate-200 space-y-0.5">
                 <ClientNavItem label="Demonstrações financeiras" Icon={FileDown}
