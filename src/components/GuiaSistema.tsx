@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Ban } from 'lucide-react';
-import { GUIAS, marcarGuiaDesativado, ViewKey } from '../lib/guias';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { GUIAS, ViewKey } from '../lib/guias';
 
 /**
  * Motor de visitas guiadas do Estudo 360 — controlado pelo AI Contabilista.
@@ -68,7 +68,7 @@ export default function GuiaSistema({
 }: {
   view: ViewKey;
   iniciar?: { view: ViewKey; nonce: number } | null;
-  /** Chamado quando o tour fecha (concluir/saltar/Esc). */
+  /** Chamado quando o tour fecha (concluir/Esc). */
   onEnd?: (v: ViewKey) => void;
 }) {
   const [tourView, setTourView] = useState<ViewKey | null>(null);
@@ -268,16 +268,6 @@ export default function GuiaSistema({
             <ChevronLeft className="w-4 h-4" /> Anterior
           </button>
           <div className="flex-1" />
-          <button type="button"
-            onClick={() => { if (tourView) marcarGuiaDesativado(tourView); fechar(); }}
-            title="Deixar de sugerir este guia nesta página"
-            className="inline-flex items-center gap-1 text-[13px] font-[700] text-slate-500 hover:text-red-600 px-2.5 py-2 rounded-[10px] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0677FF]">
-            <Ban className="w-4 h-4" /> Não mostrar novamente
-          </button>
-          <button type="button" onClick={fechar}
-            className="text-[13px] font-[700] text-slate-500 hover:text-slate-700 px-2.5 py-2 rounded-[10px] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0677FF]">
-            Saltar
-          </button>
           <button type="button"
             onClick={() => isLast ? fechar() : setPasso((p) => p + 1)}
             className="inline-flex items-center gap-1 rounded-[10px] bg-[#0677FF] text-white text-[13px] font-[800] px-4 py-2 hover:bg-blue-600 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0456C0] transition-all">

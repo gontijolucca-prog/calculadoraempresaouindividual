@@ -1,9 +1,8 @@
 /**
  * Guias interativos do Estudo 360 — conteúdo por ferramenta.
  *
- * Cada guia é opcional: pergunta ao abrir a ferramenta, pode ser saltado,
- * e pode ser desativado com "não perguntar novamente". O botão "Ativar guias"
- * (canto superior direito) volta a ativar tudo e abre o guia da ferramenta atual.
+ * Cada guia é opcional: abre-se pela pill "Aprender esta página" e percorre-se
+ * com Anterior / Seguinte até Concluir (ou Esc para fechar).
  *
  * Conteúdo validado contra os textos reais da app (agosto 2026, OE 2026).
  */
