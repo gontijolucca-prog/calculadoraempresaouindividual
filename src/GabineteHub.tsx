@@ -3,27 +3,19 @@ import { motion } from 'motion/react';
 import {
   ArrowLeft,
   ArrowRight,
-  BarChart3,
   Calendar,
   CheckSquare,
-  FileText,
   LayoutDashboard,
   Lock,
-  Mail,
   Play,
-  Users,
 } from 'lucide-react';
 
 /** Tabs funcionais do Gabinete. `gallery` é apenas a porta de entrada visual. */
 export type GabTab =
   | 'dashboard'
   | 'agenda'
-  | 'clientes'
   | 'tarefas'
   | 'obrigacoes'
-  | 'comunicacao'
-  | 'rentabilidade'
-  | 'actas'
   | 'cofre';
 
 export type GabineteTab = GabTab | 'gallery';
@@ -47,12 +39,8 @@ export interface GabineteIntroDef {
 export const GABINET_FUNCTIONS: GabineteFunction[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Visão geral do escritório' },
   { id: 'agenda', label: 'Agenda', icon: Calendar, desc: 'Calendário de tarefas e obrigações' },
-  { id: 'clientes', label: 'Clientes 360', icon: Users, desc: 'Ficha centralizada dos clientes' },
   { id: 'tarefas', label: 'Tarefas', icon: CheckSquare, desc: 'Kanban e lista de trabalho' },
   { id: 'obrigacoes', label: 'Obrigações', icon: Calendar, desc: 'Calendário fiscal' },
-  { id: 'comunicacao', label: 'Comunicação', icon: Mail, desc: 'Modelos, email e SMS' },
-  { id: 'rentabilidade', label: 'Rentabilidade', icon: BarChart3, desc: 'Tempos, custo e avença' },
-  { id: 'actas', label: 'Actas', icon: FileText, desc: 'Livro de actas' },
   { id: 'cofre', label: 'Cofre', icon: Lock, desc: 'Acessos protegidos' },
 ];
 
@@ -76,13 +64,6 @@ export const GABINET_INTROS: Record<GabTab, GabineteIntroDef> = {
     dados: ['Tarefas com vencimento', 'Obrigações fiscais', 'Clientes associados'],
     resultado: 'Calendário mensal com o trabalho diário e a lista do dia selecionado, sem perder prazos importantes.',
   },
-  clientes: {
-    titulo: 'Clientes 360',
-    Icon: Users,
-    resumo: 'Mantém a ficha operacional de cada cliente num único lugar: contactos, regime fiscal, responsável, alertas e notas.',
-    dados: ['Nome e NIF do cliente', 'Contactos e responsável', 'Regimes e alertas'],
-    resultado: 'Uma carteira centralizada e pesquisável, pronta para alimentar tarefas, obrigações e comunicação.',
-  },
   tarefas: {
     titulo: 'Tarefas',
     Icon: CheckSquare,
@@ -96,27 +77,6 @@ export const GABINET_INTROS: Record<GabTab, GabineteIntroDef> = {
     resumo: 'Consulta os prazos fiscais dos clientes e acompanha o estado de cada obrigação para reduzir esquecimentos e atrasos.',
     dados: ['Clientes ativos', 'Regimes de IVA', 'Mês e ano de trabalho'],
     resultado: 'Tabela de vencimentos com obrigação, cliente, tipo e estado, atualizada a partir da carteira.',
-  },
-  comunicacao: {
-    titulo: 'Comunicação',
-    Icon: Mail,
-    resumo: 'Cria modelos reutilizáveis e prepara comunicações para os clientes, com variáveis automáticas para nome e NIF.',
-    dados: ['Modelos de mensagem', 'Destinatário e assunto', 'Corpo do email ou SMS'],
-    resultado: 'Biblioteca de modelos, pré-visualização e histórico dos envios realizados.',
-  },
-  rentabilidade: {
-    titulo: 'Rentabilidade',
-    Icon: BarChart3,
-    resumo: 'Percebe quanto tempo e custo cada cliente consome e compara esse esforço com a avença ou receita prevista.',
-    dados: ['Tempo dedicado', 'Cliente e colaborador', 'Avença ou receita mensal'],
-    resultado: 'Resumo de horas, custo interno, receita e margem estimada por cliente.',
-  },
-  actas: {
-    titulo: 'Livro de Actas',
-    Icon: FileText,
-    resumo: 'Regista e organiza as actas do escritório e dos clientes, mantendo o histórico documental acessível e pesquisável.',
-    dados: ['Cliente e tipo de acta', 'Data e título', 'Texto e participantes'],
-    resultado: 'Livro de actas digital com consulta, edição e eliminação controlada dos registos.',
   },
   cofre: {
     titulo: 'Cofre de Acessos',
