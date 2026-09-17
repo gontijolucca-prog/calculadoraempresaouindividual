@@ -4,7 +4,7 @@ import {
   ClipboardList, Upload, LogOut, Receipt,
   ChevronDown, ChevronRight, TrendingUp, Settings, UserPlus, Building2,
   Menu, X, Clock, Briefcase, ListOrdered, Package, History, FileDown, LayoutDashboard, LayoutGrid,
-  Users, CheckSquare, Calendar, Lock, Mail, FileText, BarChart3,
+  CheckSquare, Calendar, Lock,
 } from 'lucide-react';
 import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
 import { cn } from './lib/utils';
@@ -155,12 +155,8 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
   const GAB_TABS = [
     { id: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard, desc: 'Visão do dia' },
     { id: 'agenda', label: 'Agenda', Icon: Calendar, desc: 'Calendário' },
-    { id: 'clientes', label: 'Clientes 360', Icon: Users, desc: 'Ficha' },
     { id: 'tarefas', label: 'Tarefas', Icon: CheckSquare, desc: 'Kanban' },
     { id: 'obrigacoes', label: 'Obrigações', Icon: Calendar, desc: 'Fiscal' },
-    { id: 'comunicacao', label: 'Comunicação', Icon: Mail, desc: 'Email/SMS' },
-    { id: 'rentabilidade', label: 'Rentabilidade', Icon: BarChart3, desc: 'Tempos & Custo' },
-    { id: 'actas', label: 'Actas', Icon: FileText, desc: 'Livro de Actas' },
     { id: 'cofre', label: 'Cofre', Icon: Lock, desc: 'Zero-knowledge' },
   ] as const;
   const goGabinete = (tab: string) => {
