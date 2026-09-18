@@ -9,11 +9,14 @@ import {
   Lock,
   Play,
   Users,
+  Table2,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 /** Tabs funcionais do Gabinete. `gallery` é apenas a porta de entrada visual. */
 export type GabTab =
   | 'dashboard'
+  | 'mapa-controlo'
   | 'visao-geral'
   | 'equipa'
   | 'agenda'
@@ -40,8 +43,9 @@ export interface GabineteIntroDef {
 
 /** Ordem e texto partilhados pela galeria, pelo header e pela navegação. */
 export const GABINET_FUNCTIONS: GabineteFunction[] = [
-  { id: 'visao-geral', label: 'Visão geral', icon: LayoutDashboard, desc: 'Ficha 360 do cliente' },
   { id: 'dashboard', label: 'Quadro resumo obrigações', icon: Calendar, desc: 'JAN–DEZ por cliente: ✓ Concluído · ● Não aplicável · ∅ Inexistente · ✕ Não concluído' },
+  { id: 'mapa-controlo', label: 'Mapa de controlo', icon: Table2, desc: '7 fases · JAN–DEZ colorido — Doc. Falta → Balancete' },
+  { id: 'visao-geral', label: 'Visão geral', icon: LayoutDashboard, desc: 'Ficha 360 do cliente' },
   { id: 'equipa', label: 'Equipa', icon: Users, desc: 'Funcionários e convites' },
   { id: 'agenda', label: 'Agenda', icon: Calendar, desc: 'Calendário de tarefas e obrigações' },
   { id: 'tarefas', label: 'Tarefas', icon: CheckSquare, desc: 'Kanban e lista de trabalho' },
@@ -55,6 +59,13 @@ export const GABINET_FUNCTIONS: GabineteFunction[] = [
  * pela primeira vez, em vez de aterrar diretamente num ecrã vazio.
  */
 export const GABINET_INTROS: Record<GabTab, GabineteIntroDef> = {
+  'mapa-controlo': {
+    titulo: 'Mapa de controlo contabilidade',
+    Icon: Table2,
+    resumo: '7 fases da contabilidade por cliente e por mês/trimestre: Gestão Doc., Vendas/Receb., Compras/Pagam., Salários, AFT, Rec. Bancária e Balancete. Cores vivas por fase; clica para alternar estado.',
+    dados: ['Cliente + NIF', 'Ano e trimestre', '7 fases com 4 estados (✓ ● ∅ ✕)'],
+    resultado: 'Controlo mensal/trim. com filtros, exportação e cores por fase — sincronizado por gabinete.',
+  },
   dashboard: {
     titulo: 'Quadro resumo obrigações',
     Icon: Calendar,

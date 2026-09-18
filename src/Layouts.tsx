@@ -3,7 +3,7 @@ import {
   UserCircle, Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote, Info,
   ClipboardList, Upload, LogOut, Receipt,
   ChevronDown, ChevronRight, TrendingUp, Settings, UserPlus, Building2,
-  Menu, X, Clock, Briefcase, ListOrdered, Package, History, FileDown, LayoutDashboard, LayoutGrid,
+  Menu, X, Clock, Briefcase, ListOrdered, Package, History, FileDown, LayoutDashboard, LayoutGrid, Table2,
   CheckSquare, Calendar, Lock, Users,
 } from 'lucide-react';
 import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
@@ -154,6 +154,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
 
   const GAB_TABS = [
     { id: 'dashboard', label: 'Quadro resumo obrigações', Icon: Calendar, desc: 'JAN–DEZ: ✓ ✓ ✕ ●' },
+    { id: 'mapa-controlo', label: 'Mapa de controlo', Icon: Table2, desc: '7 fases · JAN–DEZ colorido — Doc. Falta → Balancete' },
     { id: 'visao-geral', label: 'Visão geral', Icon: LayoutDashboard, desc: 'Ficha 360' },
     { id: 'equipa', label: 'Equipa', Icon: Users, desc: 'Funcionários' },
     { id: 'agenda', label: 'Agenda', Icon: Calendar, desc: 'Calendário' },
