@@ -41,7 +41,7 @@ export interface GabineteIntroDef {
 /** Ordem e texto partilhados pela galeria, pelo header e pela navegação. */
 export const GABINET_FUNCTIONS: GabineteFunction[] = [
   { id: 'visao-geral', label: 'Visão geral', icon: LayoutDashboard, desc: 'Ficha 360 do cliente' },
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Visão geral do escritório' },
+  { id: 'dashboard', label: 'Quadro resumo obrigações', icon: Calendar, desc: 'JAN–DEZ por cliente: ✓ Concluído · ● Não aplicável · ∅ Inexistente · ✕ Não concluído' },
   { id: 'equipa', label: 'Equipa', icon: Users, desc: 'Funcionários e convites' },
   { id: 'agenda', label: 'Agenda', icon: Calendar, desc: 'Calendário de tarefas e obrigações' },
   { id: 'tarefas', label: 'Tarefas', icon: CheckSquare, desc: 'Kanban e lista de trabalho' },
@@ -56,11 +56,11 @@ export const GABINET_FUNCTIONS: GabineteFunction[] = [
  */
 export const GABINET_INTROS: Record<GabTab, GabineteIntroDef> = {
   dashboard: {
-    titulo: 'Dashboard do Escritório',
-    Icon: LayoutDashboard,
-    resumo: 'Vê num só lugar o estado do escritório: tarefas para hoje, atrasos, obrigações vencidas, clientes em risco e os próximos 7 dias.',
-    dados: ['Clientes e tarefas guardados', 'Datas de vencimento', 'Obrigações fiscais'],
-    resultado: 'Uma visão rápida do que precisa de atenção primeiro, com atalhos para criar clientes, tarefas e acessos.',
+    titulo: 'Quadro resumo obrigações',
+    Icon: Calendar,
+    resumo: 'Quadro cliente × mês (JAN–DEZ): clica na célula para alternar ✓ Concluído / ✕ Não concluído / ● Não aplicável / ∅ Inexistente. Filtra por cliente, gestor, ano e obrigação; expande/colapsa e exporta para Excel.',
+    dados: ['Cliente + tipo de obrigação', 'Mês e ano', 'Estado (4 níveis)'],
+    resultado: 'Visão completa do cumprimento por cliente e mês, com filtros e exportação — guarda automaticamente em Firestore.',
   },
   equipa: {
     titulo: 'Equipa do gabinete',

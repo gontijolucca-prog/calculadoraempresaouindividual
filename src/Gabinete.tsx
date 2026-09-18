@@ -9,7 +9,8 @@ import {
   type GabineteCliente, type Tarefa, type Obrigacao, type ObrigacaoTipo, type ObrigacaoEstado, type CofreEntrada,
 } from './lib/gabinete';
 import { listEmpresas } from './lib/empresas';
-import { getActiveGabineteId, clearActiveGabineteId } from './lib/gabinetes';
+import { getActiveGabineteId, clearActiveGabineteId, getGabineteMeta } from './lib/gabinetes';
+import { loadOfficeSettings } from './lib/officeSettings';
 // Cofre simples (sem cifra) — Firestore só visível pela própria conta (gabinete/{uid}/cofre/*)
 import GuiaSugestao from './components/GuiaSugestao';
 import type { ViewKey } from './lib/guias';
@@ -93,7 +94,26 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
     try { const v = getActiveGabineteId(); return v; } catch { return null; }
   })();
   const activeGabineteIdForHeader = activeGabineteLabel;
-  const activeGabineteNome: string | null = null; // nome bonito opcional via cache
+  const [activeGabineteNome, setActiveGabineteNome] = useState<string | null>(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const id = activeGabineteIdForHeader;
+      if (!id) { if (!cancelled) setActiveGabineteNome(null); return; }
+      // 1) tenta GabineteMeta (nome do gabinete)
+      try {
+        const meta = await getGabineteMeta(id);
+        if (!cancelled && meta?.nome) { setActiveGabineteNome(meta.nome); return; }
+      } catch {}
+      // 2) fallback para Definições do Escritório (nome do escritório/branding)
+      try {
+        const off = loadOfficeSettings();
+        if (!cancelled && off?.nome?.trim()) { setActiveGabineteNome(off.nome.trim()); return; }
+      } catch {}
+      if (!cancelled) setActiveGabineteNome(null);
+    })();
+    return () => { cancelled = true; };
+  }, [activeGabineteIdForHeader]);
   const guideView = tab === 'gallery' ? null : GAB_TAB_GUIA[tab];
   const clearGabineteAndReload = () => {
     try { clearActiveGabineteId(); } catch {
@@ -373,11 +393,11 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
     await upsertObrigacao(payload);
   };
 
-  const renderIcon = (s: CellStatus) => {
-    if (s === 'concluido') return <span title="Concluído" className="inline-flex w-5 h-5 items-center justify-center text-emerald-600 font-bold text-[16px] leading-none">✓</span>;
-    if (s === 'nao_aplicavel') return <span title="Não Aplicável" className="inline-flex w-5 h-5 items-center justify-center text-zinc-900 text-[14px] leading-none">●</span>;
-    if (s === 'nao_concluido') return <span title="Não Concluído" className="inline-flex w-5 h-5 items-center justify-center text-red-600 font-bold text-[16px] leading-none">✕</span>;
-    return <span title="Inexistente" className="inline-flex w-5 h-5 items-center justify-center text-zinc-600 text-[14px] leading-none">∅</span>;
+  const renderIcon = (s: CellStatus, withBg = false) => {
+    if (s === 'concluido') return <span title="Concluído" className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] leading-none rounded ${withBg ? 'bg-emerald-600 text-white' : 'text-emerald-600'}`}>✓</span>;
+    if (s === 'nao_aplicavel') return <span title="Não Aplicável" className="inline-flex w-6 h-6 items-center justify-center text-zinc-900 text-[12px] leading-none rounded bg-zinc-100 border border-zinc-200">●</span>;
+    if (s === 'nao_concluido') return <span title="Não Concluído" className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] leading-none rounded ${withBg ? 'bg-red-600 text-white' : 'text-red-600'}`}>✕</span>;
+    return <span title="Inexistente" className="inline-flex w-6 h-6 items-center justify-center text-zinc-500 text-[13px] leading-none rounded bg-zinc-50 border border-zinc-200">∅</span>;
   };
 
   const handleImprimir = () => window.print();
@@ -482,10 +502,11 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
                         {meses.map((_, idx) => {
                           const mesNum = idx + 1;
                           const st = getCellStatus(cli, linha, mesNum, ano);
+                          const cellBg = st==='concluido' ? 'bg-emerald-50' : st==='nao_concluido' ? 'bg-red-50' : '';
                           return (
-                            <td key={idx} className="text-center border-l border-zinc-200 py-1">
-                              <button onClick={()=>toggleCell(cli, linha, mesNum)} className="w-full h-full flex items-center justify-center hover:bg-zinc-100 rounded py-0.5">
-                                {renderIcon(st)}
+                            <td key={idx} className={`text-center border-l border-zinc-200 py-0.5 ${cellBg}`}>
+                              <button onClick={()=>toggleCell(cli, linha, mesNum)} className="w-full h-full flex items-center justify-center hover:brightness-95 rounded py-1">
+                                {renderIcon(st, true)}
                               </button>
                             </td>
                           );
@@ -906,13 +927,11 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
 
   const selected = useMemo(()=> filtered.find(c=>c.id===selectedId) || null, [filtered, selectedId]);
 
-  // auto-seleciona primeiro quando nada selecionado e não está a editar/criar
   React.useEffect(()=> {
     if (!editing && !selectedId && filtered.length) setSelectedId(filtered[0].id);
     if (selectedId && !filtered.some(c=>c.id===selectedId)) setSelectedId(filtered[0]?.id || null);
   }, [filtered]);
 
-  // limpa reveal ao trocar de entrada
   React.useEffect(()=> { setPlain(null); setShowSecret(false); }, [selectedId]);
 
   const getSegredo = (e: CofreEntrada) => (e as unknown as { segredo?: string }).segredo || '';
@@ -941,33 +960,20 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
     } catch {}
   };
 
-  const startCreate = () => {
-    setForm({ categoria:'AT' });
-    setEditing(true);
-    setSelectedId(null);
-    setPlain(null);
-  };
-
+  const startCreate = () => { setForm({ categoria:'AT' }); setEditing(true); setSelectedId(null); setPlain(null); };
   const startEdit = () => {
     if (!selected) return;
     setForm({ ...selected, secretPlain: getSegredo(selected) } as any);
     setEditing(true);
     setPlain(null);
   };
-
-  const cancelEdit = () => {
-    setEditing(false);
-    setShowSecret(false);
-    if (!selectedId) setForm({ categoria:'AT' });
-  };
-
+  const cancelEdit = () => { setEditing(false); setShowSecret(false); if (!selectedId) setForm({ categoria:'AT' }); };
   const handleSave = async () => {
     if (!form.titulo?.trim()) return alert('Título é obrigatório');
     const atual = (form as unknown as { segredo?: string }).segredo?.trim() || '';
     const novo = (form as unknown as { secretPlain?: string }).secretPlain?.trim() || '';
-    // se está a editar, mantém atual se novo vazio; se está a criar exige novo
     const finalSeg = novo || atual;
-    if (!finalSeg) return alert('Senha é obrigatória');
+    if (!finalSeg) return alert('Password é obrigatória');
     const entry: CofreEntrada = {
       id: (form.id as string) || newCofreId(),
       titulo: form.titulo!.trim(),
@@ -983,30 +989,12 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
       createdBy: 'local',
     } as unknown as CofreEntrada;
     await upsertCofre(entry);
-    setEditing(false);
-    setShowSecret(false);
-    setSelectedId(entry.id);
-    setForm({ categoria:'AT' });
+    setEditing(false); setShowSecret(false); setSelectedId(entry.id); setForm({ categoria:'AT' });
   };
-
   const handleDelete = async (id: string) => {
     if (!confirm('Apagar esta entrada do cofre?')) return;
     await deleteCofre(id);
     if (selectedId === id) setSelectedId(filtered.find(c=>c.id!==id)?.id || null);
-  };
-
-  const catIcon = (cat: string) => {
-    switch(cat) {
-      case 'AT': return 'AT';
-      case 'SS': return 'SS';
-      case 'BANCO': return '€';
-      case 'EMAIL': return '@';
-      case 'EFATURA': return 'EF';
-      default: return '•';
-    }
-  };
-  const catColor: Record<string,string> = {
-    AT: 'bg-amber-500', SS: 'bg-sky-600', BANCO: 'bg-emerald-600', EMAIL: 'bg-violet-600', EFATURA: 'bg-orange-500', OUTRO: 'bg-zinc-500'
   };
 
   // vazio total
@@ -1017,15 +1005,15 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
           <div className="px-4 py-3 border-b border-zinc-200 flex items-center gap-3 bg-zinc-50">
             <div className="relative flex-1 max-w-[360px]">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-              <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search passwords" className="w-full pl-9 pr-3 py-2 rounded-full border border-zinc-200 bg-white text-sm placeholder:text-zinc-400" />
+              <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Pesquisar passwords" className="w-full pl-9 pr-3 py-2 rounded-full border border-zinc-200 bg-white text-sm placeholder:text-zinc-400" />
             </div>
             <button onClick={startCreate} className="ml-auto px-4 py-2 rounded-full bg-[#0677FF] text-white text-sm font-medium flex items-center gap-2"><Plus className="w-4 h-4" /> Adicionar</button>
           </div>
           <div className="py-16 text-center">
             <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center mx-auto"><Lock className="w-6 h-6 text-zinc-400" /></div>
             <h3 className="mt-3 font-semibold text-zinc-900">Cofre vazio</h3>
-            <p className="mt-1 text-sm text-zinc-500 max-w-md mx-auto">Guarda acessos de AT, SS, bancos e e-fatura. Só a tua conta vê — cada gabinete tem cofre isolado.</p>
-            <button onClick={startCreate} className="mt-4 px-5 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-medium">Guardar primeiro acesso</button>
+            <p className="mt-1 text-sm text-zinc-500 max-w-md mx-auto">Guarda acessos — só a tua conta vê.</p>
+            <button onClick={startCreate} className="mt-4 px-5 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-medium">Guardar primeiro</button>
           </div>
         </div>
       </div>
@@ -1034,42 +1022,31 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
 
   return (
     <div className="max-w-5xl mx-auto bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden flex flex-col min-h-[520px] max-h-[72vh]">
-      {/* Header pesquisa estilo Chrome */}
       <div className="px-3 sm:px-4 py-3 border-b border-zinc-200 bg-white flex items-center gap-3 shrink-0">
         <div className="relative flex-1 max-w-[560px]">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-          <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search passwords" className="w-full pl-9 pr-3 py-2 rounded-full bg-zinc-100 border border-transparent focus:bg-white focus:border-zinc-300 focus:outline-none text-sm placeholder:text-zinc-500" />
+          <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Pesquisar passwords" className="w-full pl-9 pr-3 py-2 rounded-full bg-zinc-100 border border-transparent focus:bg-white focus:border-zinc-300 focus:outline-none text-sm placeholder:text-zinc-500" />
         </div>
         <button onClick={startCreate} className="hidden sm:inline-flex px-4 py-2 rounded-full bg-[#0B57D0] text-white text-sm font-medium hover:bg-[#0B4BBA]"><Plus className="w-4 h-4 mr-1.5" /> Adicionar</button>
         <button onClick={startCreate} className="sm:hidden w-9 h-9 rounded-full bg-[#0B57D0] text-white flex items-center justify-center"><Plus className="w-4 h-4" /></button>
       </div>
 
       <div className="flex flex-1 min-h-0">
-        {/* Lista esquerda */}
-        <div className="w-full sm:w-[380px] border-r border-zinc-200 bg-[#F8F9FA] flex flex-col min-h-0">
-          <div className="px-3 py-2 text-[11px] font-semibold tracking-wide uppercase text-zinc-500 flex items-center justify-between">
-            <span>{filtered.length} {filtered.length===1 ? 'password' : 'passwords'}</span>
-            {editing && <span className="text-[11px] text-[#0B57D0] normal-case tracking-normal">a editar</span>}
-          </div>
-          <div className="flex-1 overflow-auto divide-y divide-zinc-200/60">
+        {/* Lista minimalista — só site */}
+        <div className="w-full sm:w-[380px] border-r border-zinc-200 bg-white flex flex-col min-h-0">
+          <div className="flex-1 overflow-auto">
             {filtered.length===0 ? (
-              <div className="p-6 text-center text-sm text-zinc-500">Sem resultados para “{q}”.</div>
+              <div className="p-6 text-center text-sm text-zinc-500">Sem resultados para "{q}".</div>
             ) : filtered.map(entry => {
               const isSel = entry.id === selectedId && !editing;
               const isEditingThis = editing && form.id === entry.id;
-              const initial = (entry.titulo?.[0] || entry.categoria?.[0] || '?').toUpperCase();
-              const sub = entry.username ? entry.username : (entry.clienteNome || entry.categoria);
               return (
                 <button
                   key={entry.id}
                   onClick={()=>{ setSelectedId(entry.id); setEditing(false); }}
-                  className={`w-full text-left px-3 py-3 flex items-center gap-3 hover:bg-white transition-colors ${isSel ? 'bg-[#D3E3FD]' : isEditingThis ? 'bg-amber-50' : 'bg-transparent'}`}
+                  className={`w-full text-left px-4 py-3 flex items-center justify-between gap-3 border-b border-zinc-100 last:border-0 hover:bg-zinc-50 ${isSel ? 'bg-[#E8F0FE]' : isEditingThis ? 'bg-amber-50' : ''}`}
                 >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 ${catColor[entry.categoria] || catColor.OUTRO}`}>{catIcon(entry.categoria)}</div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-zinc-900 truncate leading-none">{entry.titulo}</div>
-                    <div className="text-xs text-zinc-600 truncate mt-1">{sub}{entry.url ? ` · ${entry.url.replace(/^https?:\/\//,'').slice(0,22)}` : ''}</div>
-                  </div>
+                  <span className="text-sm text-zinc-800 truncate">{entry.titulo}</span>
                   <ChevronRight className={`w-4 h-4 shrink-0 ${isSel ? 'text-[#0B57D0]' : 'text-zinc-400'}`} />
                 </button>
               );
@@ -1077,139 +1054,94 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
           </div>
         </div>
 
-        {/* Detalhe direita */}
-        <div className="hidden sm:flex flex-1 bg-white flex-col min-h-0 overflow-auto">
+        {/* Detalhe direita — card centrado como na mensagem anterior */}
+        <div className="hidden sm:flex flex-1 bg-[#F8F9FA] flex-col min-h-0 overflow-auto p-6 items-center">
           {editing ? (
-            <div className="p-6 max-w-[560px]">
+            <div className="w-full max-w-[560px] bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-zinc-900">{form.id ? 'Editar acesso' : 'Novo acesso'}</h3>
+                <h3 className="text-base font-semibold text-zinc-900">{form.id ? 'Editar acesso' : 'Novo acesso'}</h3>
                 <button onClick={cancelEdit} className="p-2 rounded-full hover:bg-zinc-100"><X className="w-5 h-5 text-zinc-600" /></button>
               </div>
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 mb-1">Título *</label>
-                  <input value={form.titulo||''} onChange={e=>setForm({...form, titulo:e.target.value})} placeholder="ex: Portal das Finanças — Mykola & Vasyl" className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 bg-white text-sm focus:outline-none focus:border-[#0B57D0] focus:ring-1 focus:ring-[#0B57D0]" />
+                  <input value={form.titulo||''} onChange={e=>setForm({...form, titulo:e.target.value})} placeholder="ex: Portal das Finanças" className="w-full px-3 py-2.5 rounded-xl border border-zinc-300 bg-white text-sm" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-700 mb-1">Categoria</label>
-                    <select value={form.categoria as string} onChange={e=>setForm({...form, categoria:e.target.value as any})} className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 bg-white text-sm">
-                      <option value="AT">AT</option><option value="SS">SS</option><option value="BANCO">Banco</option><option value="EMAIL">Email</option><option value="EFATURA">E-fatura</option><option value="OUTRO">Outro</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-700 mb-1">Cliente</label>
-                    <select value={(form.clienteId as string)||''} onChange={e=>setForm({...form, clienteId:e.target.value||undefined})} className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 bg-white text-sm">
-                      <option value="">Sem cliente (gabinete)</option>
-                      {clientes.map(c=> <option key={c.id} value={c.id}>{c.nome}</option>)}
-                    </select>
-                  </div>
+                  <select value={form.categoria as string} onChange={e=>setForm({...form, categoria:e.target.value as any})} className="w-full px-3 py-2.5 rounded-xl border border-zinc-300 bg-white text-sm"><option value="AT">AT</option><option value="SS">SS</option><option value="BANCO">Banco</option><option value="EMAIL">Email</option><option value="EFATURA">E-fatura</option><option value="OUTRO">Outro</option></select>
+                  <select value={(form.clienteId as string)||''} onChange={e=>setForm({...form, clienteId:e.target.value||undefined})} className="w-full px-3 py-2.5 rounded-xl border border-zinc-300 bg-white text-sm"><option value="">Sem cliente</option>{clientes.map(c=> <option key={c.id} value={c.id}>{c.nome}</option>)}</select>
                 </div>
+                <div><label className="block text-xs font-semibold text-zinc-700 mb-1">Utilizador</label><input value={form.username||''} onChange={e=>setForm({...form, username:e.target.value})} placeholder="NIF ou utilizador" className="w-full px-3 py-2.5 rounded-xl border border-zinc-300 bg-white text-sm" /></div>
+                <div><label className="block text-xs font-semibold text-zinc-700 mb-1">Site / URL</label><input value={form.url||''} onChange={e=>setForm({...form, url:e.target.value})} placeholder="https://..." className="w-full px-3 py-2.5 rounded-xl border border-zinc-300 bg-white text-sm" /></div>
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 mb-1">Utilizador / NIF</label>
-                  <input value={form.username||''} onChange={e=>setForm({...form, username:e.target.value})} placeholder="NIF ou utilizador" className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 bg-white text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 mb-1">URL</label>
-                  <input value={form.url||''} onChange={e=>setForm({...form, url:e.target.value})} placeholder="https://..." className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 bg-white text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 mb-1">Password / segredo *</label>
+                  <label className="block text-xs font-semibold text-zinc-700 mb-1">Password *</label>
                   <div className="relative">
-                    <input value={(form as any).secretPlain||''} onChange={e=>setForm({...form, secretPlain:e.target.value} as any)} placeholder="••••••••" type={showSecret ? 'text' : 'password'} className="w-full pr-10 pl-3 py-2.5 rounded-lg border border-zinc-300 bg-white text-sm font-mono" />
+                    <input value={(form as any).secretPlain||''} onChange={e=>setForm({...form, secretPlain:e.target.value} as any)} placeholder="••••••••" type={showSecret ? 'text' : 'password'} className="w-full pr-10 pl-3 py-2.5 rounded-xl border border-zinc-300 bg-white text-sm font-mono" />
                     <button type="button" onClick={()=>setShowSecret(v=>!v)} className="absolute right-1 top-1/2 -translate-y-1/2 p-2 rounded-md hover:bg-zinc-100 text-zinc-500">{showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
                   </div>
-                  {form.id && !(form as any).secretPlain && (form as any).segredo && <p className="text-xs text-zinc-500 mt-1">A manter o segredo atual. Escreve para trocar.</p>}
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 mb-1">Nota</label>
-                  <textarea value={form.notas||''} onChange={e=>setForm({...form, notas:e.target.value})} placeholder="Notas (opcional)" rows={3} className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 bg-white text-sm" />
-                </div>
+                <div><label className="block text-xs font-semibold text-zinc-700 mb-1">Nota</label><textarea value={form.notas||''} onChange={e=>setForm({...form, notas:e.target.value})} placeholder="Notas (opcional)" rows={3} className="w-full px-3 py-2.5 rounded-xl border border-zinc-300 bg-white text-sm" /></div>
                 <div className="flex justify-end gap-2 pt-2">
                   <button onClick={cancelEdit} className="px-5 py-2.5 rounded-full border border-zinc-300 bg-white text-sm font-medium">Cancelar</button>
-                  <button onClick={handleSave} className="px-6 py-2.5 rounded-full bg-[#0B57D0] text-white text-sm font-medium hover:bg-[#0B4BBA]">Guardar</button>
+                  <button onClick={handleSave} className="px-6 py-2.5 rounded-full bg-[#0B57D0] text-white text-sm font-medium">Guardar</button>
                 </div>
               </div>
             </div>
           ) : !selected ? (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-              <div className="w-16 h-16 rounded-full bg-zinc-100 flex items-center justify-center"><Lock className="w-7 h-7 text-zinc-400" /></div>
+              <div className="w-16 h-16 rounded-full bg-white border border-zinc-200 flex items-center justify-center"><Lock className="w-7 h-7 text-zinc-400" /></div>
               <p className="mt-3 text-sm font-medium text-zinc-900">Selecione uma password</p>
-              <p className="mt-1 text-sm text-zinc-500 max-w-sm">Escolhe na lista à esquerda para ver e copiar. Ou adiciona um novo acesso.</p>
-              <button onClick={startCreate} className="mt-4 px-5 py-2 rounded-full bg-[#0B57D0] text-white text-sm font-medium">Adicionar</button>
+              <p className="mt-1 text-sm text-zinc-500">Escolha na lista à esquerda.</p>
             </div>
           ) : (
-            <div className="flex-1">
-              <div className="px-6 py-5 border-b border-zinc-200 flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${catColor[selected.categoria] || catColor.OUTRO}`}>{catIcon(selected.categoria)}</div>
-                  <div className="min-w-0">
-                    <div className="text-base font-semibold text-zinc-900 truncate">{selected.titulo}</div>
-                    <div className="text-xs text-zinc-600 truncate">{selected.clienteNome || selected.categoria}{selected.url ? ` · ${selected.url}` : ''}</div>
+            <div className="w-full max-w-[640px] bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 p-5">
+                <div>
+                  <div className="text-[11px] font-semibold text-zinc-500 mb-1.5">Nome de utilizador</div>
+                  <div className="bg-[#ECEEF1] rounded-full px-4 py-2.5 flex items-center justify-between gap-2">
+                    <span className="text-sm truncate">{selected.username || selected.titulo}</span>
+                    {selected.username && <button onClick={()=>handleCopy(selected.username!)} className="shrink-0 p-1 hover:bg-black/5 rounded-full"><Copy className="w-4 h-4 text-zinc-600" /></button>}
                   </div>
                 </div>
-                <button onClick={handleShare} className="p-2 rounded-full hover:bg-zinc-100"><Share2 className="w-5 h-5 text-zinc-600" /></button>
+                <div>
+                  <div className="text-[11px] font-semibold text-zinc-500 mb-1.5">Site</div>
+                  {selected.url ? <a href={selected.url} target="_blank" rel="noreferrer" className="text-sm text-[#0B57D0] break-all block px-4 py-2.5 bg-[#ECEEF1] rounded-full truncate hover:underline" title={selected.url}>{selected.titulo}</a> : <div className="text-sm text-[#0F172A] break-all block px-4 py-2.5 bg-[#ECEEF1] rounded-full truncate">{selected.titulo}</div>}
+                </div>
+                <div>
+                  <div className="text-[11px] font-semibold text-zinc-500 mb-1.5">Palavra-passe</div>
+                  <div className="bg-[#ECEEF1] rounded-full px-4 py-2.5 flex items-center justify-between gap-2">
+                    <span className="text-sm font-mono tracking-widest truncate">{plain ? plain : '••••••••••••'}</span>
+                    <span className="flex items-center gap-1 shrink-0">
+                      <button onClick={handleReveal} className="p-1 hover:bg-black/5 rounded-full">{plain ? <EyeOff className="w-4 h-4 text-zinc-600" /> : <Eye className="w-4 h-4 text-zinc-600" />}</button>
+                      {plain && <button onClick={()=>handleCopy(plain)} className="p-1 hover:bg-black/5 rounded-full"><Copy className="w-4 h-4 text-zinc-600" /></button>}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[11px] font-semibold text-zinc-500 mb-1.5">Nota</div>
+                  <div className={`rounded-full px-4 py-2.5 text-sm truncate ${selected.notas ? 'bg-[#ECEEF1]' : 'bg-[#ECEEF1] text-zinc-400 italic'}`}>{selected.notas || 'Nenhuma nota adicionada'}</div>
+                </div>
               </div>
-
-              <div className="px-6 py-6 space-y-5 max-w-[560px]">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between py-3 border-b border-zinc-100">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">Utilizador</div>
-                      <div className="mt-1 text-sm text-zinc-900 truncate">{selected.username || '—'}</div>
-                    </div>
-                    {selected.username && <button onClick={()=>handleCopy(selected.username!)} className="ml-3 p-2 rounded-full hover:bg-zinc-100"><Copy className="w-4 h-4 text-zinc-600" /></button>}
-                  </div>
-
-                  <div className="flex items-center justify-between py-3 border-b border-zinc-100">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">Password</div>
-                      <div className="mt-1 text-sm font-mono tracking-widest truncate">{plain ? plain : '••••••••••••'}</div>
-                    </div>
-                    <div className="flex items-center gap-1 ml-3 shrink-0">
-                      <button onClick={handleReveal} className="p-2 rounded-full hover:bg-zinc-100" title={plain ? 'Ocultar' : 'Mostrar'}>{plain ? <EyeOff className="w-4 h-4 text-zinc-600" /> : <Eye className="w-4 h-4 text-zinc-600" />}</button>
-                      {plain && <button onClick={()=>handleCopy(plain)} className="p-2 rounded-full hover:bg-zinc-100" title="Copiar"><Copy className="w-4 h-4 text-zinc-600" /></button>}
-                    </div>
-                  </div>
-
-                  {selected.url && (
-                    <div className="flex items-center justify-between py-3 border-b border-zinc-100">
-                      <div className="min-w-0 flex-1">
-                        <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">Site</div>
-                        <a href={selected.url} target="_blank" rel="noreferrer" className="mt-1 text-sm text-[#0B57D0] hover:underline break-all">{selected.url}</a>
-                      </div>
-                      <button onClick={()=>handleCopy(selected.url!)} className="ml-3 p-2 rounded-full hover:bg-zinc-100"><Copy className="w-4 h-4 text-zinc-600" /></button>
-                    </div>
-                  )}
-
-                  <div className="py-3 border-b border-zinc-100">
-                    <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">Nota</div>
-                    <div className={`mt-1 text-sm ${selected.notas ? 'text-zinc-800' : 'text-zinc-400 italic'}`}>{selected.notas || 'Nenhuma nota adicionada'}</div>
-                  </div>
-
-                  {(selected.clienteNome || selected.categoria) && (
-                    <div className="text-xs text-zinc-500">{selected.clienteNome ? `${selected.clienteNome} · ` : ''}{selected.categoria}</div>
-                  )}
+              {selected.clienteNome && <div className="px-5 pb-2 text-[11px] text-zinc-500">{selected.clienteNome} • {selected.categoria}</div>}
+              <div className="border-t border-zinc-100 px-4 py-3 flex items-center justify-between">
+                <div className="flex gap-2">
+                  <button onClick={startEdit} className="px-5 py-2 rounded-full border border-zinc-300 text-sm font-semibold text-[#1A73E8] hover:bg-zinc-50">Editar</button>
+                  <button onClick={()=>handleDelete(selected.id)} className="px-5 py-2 rounded-full border border-zinc-300 text-sm font-semibold text-[#1A73E8] hover:bg-zinc-50">Eliminar</button>
                 </div>
-
-                <div className="flex gap-2 pt-2">
-                  <button onClick={startEdit} className="flex-1 py-2.5 rounded-full bg-[#0B57D0] text-white text-sm font-medium hover:bg-[#0B4BBA]">Editar</button>
-                  <button onClick={()=>handleDelete(selected.id)} className="px-5 py-2.5 rounded-full border border-zinc-300 bg-white text-sm font-medium text-zinc-700 hover:bg-zinc-50">Eliminar</button>
-                </div>
+                <button onClick={handleShare} className="px-5 py-2 rounded-full border border-zinc-300 text-sm font-semibold text-[#1A73E8] hover:bg-zinc-50 flex items-center gap-1.5"><Share2 className="w-3.5 h-3.5" />Partilhar</button>
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Mobile: mostra detalhe por baixo da lista quando selecionado */}
       <div className="sm:hidden border-t border-zinc-200 bg-white p-4">
         {editing ? (
           <div className="space-y-3">
-            <div className="flex items-center justify-between"><h3 className="font-semibold">{form.id ? 'Editar' : 'Novo'} </h3><button onClick={cancelEdit} className="p-2"><X className="w-5 h-5" /></button></div>
-            <input value={form.titulo||''} onChange={e=>setForm({...form, titulo:e.target.value})} placeholder="Título *" className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 text-sm" />
-            <input value={form.username||''} onChange={e=>setForm({...form, username:e.target.value})} placeholder="Utilizador" className="w-full px-3 py-2.5 rounded-lg border border-zinc-300 text-sm" />
-            <div className="relative"><input value={(form as any).secretPlain||''} onChange={e=>setForm({...form, secretPlain:e.target.value} as any)} placeholder="Password *" type={showSecret?'text':'password'} className="w-full pr-10 pl-3 py-2.5 rounded-lg border border-zinc-300 text-sm font-mono" /><button onClick={()=>setShowSecret(v=>!v)} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5">{showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div>
+            <div className="flex items-center justify-between"><h3 className="font-semibold">{form.id ? 'Editar' : 'Novo'}</h3><button onClick={cancelEdit} className="p-2"><X className="w-5 h-5" /></button></div>
+            <input value={form.titulo||''} onChange={e=>setForm({...form, titulo:e.target.value})} placeholder="Título *" className="w-full px-3 py-2.5 rounded-xl border border-zinc-300 text-sm" />
+            <input value={form.username||''} onChange={e=>setForm({...form, username:e.target.value})} placeholder="Utilizador" className="w-full px-3 py-2.5 rounded-xl border border-zinc-300 text-sm" />
+            <div className="relative"><input value={(form as any).secretPlain||''} onChange={e=>setForm({...form, secretPlain:e.target.value} as any)} placeholder="Password *" type={showSecret?'text':'password'} className="w-full pr-10 pl-3 py-2.5 rounded-xl border border-zinc-300 text-sm font-mono" /><button onClick={()=>setShowSecret(v=>!v)} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5">{showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div>
             <div className="flex gap-2"><button onClick={cancelEdit} className="flex-1 py-2.5 rounded-full border border-zinc-300">Cancelar</button><button onClick={handleSave} className="flex-1 py-2.5 rounded-full bg-[#0B57D0] text-white">Guardar</button></div>
           </div>
         ) : selected ? (
