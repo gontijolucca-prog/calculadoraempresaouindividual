@@ -682,7 +682,11 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
     return cofre.filter(c=> [c.titulo,c.username,c.clienteNome,c.categoria].join(' ').toLowerCase().includes(s));
   }, [cofre,q]);
   const handleSave = async () => {
-    if (!form.titulo?.trim() || !form.secretPlain?.trim()) return alert('Título e segredo obrigatórios');
+    if (!form.titulo?.trim()) return alert('Título é obrigatório');
+    const segredoAtual = (form as unknown as { segredo?: string }).segredo?.trim() || '';
+    const segredoNovo = form.secretPlain?.trim() || '';
+    const segredoFinal = segredoNovo || segredoAtual;
+    if (!segredoFinal) return alert('Segredo é obrigatório — preenche a senha / token');
     const entry: CofreEntrada = {
       id: (form.id as string) || newCofreId(),
       titulo: form.titulo!.trim(),
@@ -692,8 +696,7 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
       username: form.username?.trim(),
       url: form.url?.trim(),
       notas: form.notas?.trim(),
-      // Cofre simples: guarda em claro (só a tua conta lê em gabinete/{uid}/cofre/*)
-      segredo: form.secretPlain!.trim(),
+      segredo: segredoFinal,
       createdAt: (form.createdAt as number) || Date.now(),
       updatedAt: Date.now(),
       createdBy: 'local',
@@ -702,7 +705,8 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
     setShowNew(false); setForm({ categoria:'AT' });
   };
   const handleEdit = (e: CofreEntrada) => {
-    setForm({ ...e, secretPlain: '' } as unknown as Partial<CofreEntrada & { secretPlain?: string }>);
+    const plain = (e as unknown as { segredo?: string }).segredo || '';
+    setForm({ ...e, secretPlain: plain } as unknown as Partial<CofreEntrada & { secretPlain?: string }>);
     setShowNew(true);
   };
   const handleDelete = async (id: string) => { if (confirm('Apagar entrada do cofre?')) await deleteCofre(id); };
@@ -724,18 +728,27 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
         <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={()=>setShowNew(false)}>
           <div className="w-full max-w-[560px] bg-white rounded-2xl p-6 border border-zinc-200 shadow-xl" onClick={e=>e.stopPropagation()}>
             <h3 className="font-semibold">Guardar no cofre</h3>
-            <p className="text-sm text-zinc-500">Guardado no cofre — só a tua conta vê.</p>
+            <p className="text-sm text-zinc-500">Guardado no cofre — só a tua conta vê. Campos com <span className="text-red-500">*</span> são obrigatórios.</p>
             <div className="grid grid-cols-1 gap-3 mt-4">
-              <input value={form.titulo||''} onChange={e=>setForm({...form, titulo:e.target.value})} placeholder="Título — ex: AT - Recofatima" className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
+              <div>
+                <label className="block text-[11px] font-[700] uppercase tracking-[1px] text-zinc-500 mb-1">Título <span className="text-red-500">*</span></label>
+                <input value={form.titulo||''} onChange={e=>setForm({...form, titulo:e.target.value})} placeholder="ex: AT - Recofatima" className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <select value={form.categoria} onChange={e=>setForm({...form, categoria:e.target.value as never})} className="px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm"><option value="AT">AT</option><option value="SS">SS</option><option value="BANCO">Banco</option><option value="EMAIL">Email</option><option value="EFATURA">E-fatura</option><option value="OUTRO">Outro</option></select>
                 <select value={form.clienteId||''} onChange={e=>setForm({...form, clienteId:e.target.value||undefined})} className="px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm"><option value="">Sem cliente (gabinete)</option>{clientes.map(c=> <option key={c.id} value={c.id}>{c.nome}</option>)}</select>
               </div>
               <input value={form.username||''} onChange={e=>setForm({...form, username:e.target.value})} placeholder="Username / NIF" className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
               <input value={form.url||''} onChange={e=>setForm({...form, url:e.target.value})} placeholder="URL (https://...)" className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
-              <div className="relative">
-                <input value={(form as unknown as { secretPlain?: string }).secretPlain||''} onChange={e=>setForm({...form, secretPlain:e.target.value} as never)} placeholder="Segredo — senha / token" type={showSecret ? 'text' : 'password'} className="w-full pr-10 pl-3 py-2.5 rounded-xl border border-zinc-200 text-sm font-mono" />
-                <button type="button" onClick={()=>setShowSecret(v=>!v)} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-500">{showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
+              <div>
+                <label className="block text-[11px] font-[700] uppercase tracking-[1px] text-zinc-500 mb-1">Segredo — senha / token <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <input value={(form as unknown as { secretPlain?: string }).secretPlain||''} onChange={e=>setForm({...form, secretPlain:e.target.value} as never)} placeholder="senha / token" type={showSecret ? 'text' : 'password'} className="w-full pr-10 pl-3 py-2.5 rounded-xl border border-zinc-200 text-sm font-mono" />
+                  <button type="button" onClick={()=>setShowSecret(v=>!v)} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-500">{showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
+                </div>
+                {!(form as unknown as { secretPlain?: string }).secretPlain && (form as unknown as { segredo?: string }).segredo && (
+                  <p className="text-[11px] text-zinc-500 mt-1">A manter o segredo atual. Altera se quiseres trocar.</p>
+                )}
               </div>
               <textarea value={form.notas||''} onChange={e=>setForm({...form, notas:e.target.value})} placeholder="Notas (opcional)" rows={2} className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
             </div>
