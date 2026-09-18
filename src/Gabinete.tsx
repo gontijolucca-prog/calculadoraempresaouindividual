@@ -9,7 +9,7 @@ import {
   type GabineteCliente, type Tarefa, type Obrigacao, type CofreEntrada,
 } from './lib/gabinete';
 import { listEmpresas } from './lib/empresas';
-import { encryptSecret, decryptSecret, setCofrePassphrase, getCofrePassphrase, cofreIsUnlocked } from './lib/cofreCrypto';
+// Cofre simples (sem cifra) — Firestore só visível pela própria conta (gabinete/{uid}/cofre/*)
 import GuiaSugestao from './components/GuiaSugestao';
 import type { ViewKey } from './lib/guias';
 import { GabineteGallery, GabineteIntro, GABINET_FUNCTIONS, type GabTab, type GabineteTab } from './GabineteHub';
@@ -269,7 +269,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
             <ul className="text-sm text-zinc-600 space-y-1.5 list-disc pl-5">
               <li><b>Firestore live</b> + <b>IndexedDB offline</b> — tudo fica guardado, mesmo sem net</li>
               <li><b>onSnapshot</b> — outra colaboradora vê a tarefa assim que crias</li>
-              <li><b>Cofre zero-knowledge</b> — AES-GCM no browser, nunca em plain na cloud</li>
+              <li><b>Cofre</b> — senhas só visíveis pela tua conta</li>
               <li><b>Audit</b> — quem viu que senha e quando</li>
             </ul>
           </div>
@@ -608,15 +608,19 @@ function ObrigacoesView({ obrigacoes, clientes, activeEmpresaId }: { obrigacoes:
 // ─── Cofre ───────────────────────────────────────────────────────────────────
 function CofreCard({ entry, onEdit, onDelete }: { entry: CofreEntrada; onEdit: (e: CofreEntrada)=>void; onDelete: (id:string)=>void; key?: string | number }) {
   const [plain, setPlain] = useState<string|null>(null);
-  const passphrase = getCofrePassphrase() || '';
+  const segredo = (entry as unknown as { segredo?: string; secretPlain?: string }).segredo || (entry as unknown as { secretPlain?: string }).secretPlain || '';
+  // Compat: se for entrada antiga cifrada sem segredo, tenta mostrar nota (sem revelar)
+  const hasLegacyCipher = !!(entry as unknown as { cipher?: unknown }).cipher && !segredo;
   const username = entry.username || entry.titulo;
   const site = entry.url || '';
   const nota = entry.notas || '';
   const handleCopy = async (text: string) => { try { await navigator.clipboard.writeText(text); } catch {} };
   const handleReveal = async () => {
     if (plain) { setPlain(null); return; }
-    if (!passphrase) { alert('Define a passphrase do cofre no topo'); return; }
-    try { const p = await decryptSecret(entry.cipher, passphrase); setPlain(p); registarVistaCofre(entry.id).catch(()=>{}); } catch { alert('Passphrase errada'); }
+    if (hasLegacyCipher) { alert('Entrada antiga cifrada. Edita e volta a guardar para migrar para o novo cofre simples.'); return; }
+    if (!segredo) { alert('Sem segredo guardado'); return; }
+    setPlain(segredo);
+    registarVistaCofre(entry.id).catch(()=>{});
   };
   const handleShare = async () => {
     const text = `${username}\n${site || '—'}\n${nota || 'Nenhuma nota adicionada'}`;
@@ -671,8 +675,6 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
   const [q, setQ] = useState('');
   const [showNew, setShowNew] = useState(false);
   const [form, setForm] = useState<Partial<CofreEntrada & { secretPlain?: string }>>({ categoria:'AT' });
-  const [passphrase, setPassphrase] = useState(()=> getCofrePassphrase() || '');
-  const [showPass, setShowPass] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
   const filtered = useMemo(()=> {
     const s=q.toLowerCase();
@@ -681,9 +683,6 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
   }, [cofre,q]);
   const handleSave = async () => {
     if (!form.titulo?.trim() || !form.secretPlain?.trim()) return alert('Título e segredo obrigatórios');
-    if (!passphrase || passphrase.length<6) return alert('Define uma passphrase do cofre (min 6) no topo');
-    setCofrePassphrase(passphrase);
-    const cipher = await encryptSecret(form.secretPlain!, passphrase);
     const entry: CofreEntrada = {
       id: (form.id as string) || newCofreId(),
       titulo: form.titulo!.trim(),
@@ -693,11 +692,12 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
       username: form.username?.trim(),
       url: form.url?.trim(),
       notas: form.notas?.trim(),
-      cipher,
+      // Cofre simples: guarda em claro (só a tua conta lê em gabinete/{uid}/cofre/*)
+      segredo: form.secretPlain!.trim(),
       createdAt: (form.createdAt as number) || Date.now(),
       updatedAt: Date.now(),
       createdBy: 'local',
-    };
+    } as unknown as CofreEntrada;
     await upsertCofre(entry);
     setShowNew(false); setForm({ categoria:'AT' });
   };
@@ -708,20 +708,7 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
   const handleDelete = async (id: string) => { if (confirm('Apagar entrada do cofre?')) await deleteCofre(id); };
   return (
     <div className="space-y-4">
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3">
-        <Shield className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-        <div className="flex-1">
-          <div className="text-sm font-medium text-amber-900">Cofre zero-knowledge</div>
-          <div className="text-xs text-amber-800">A passphrase NUNCA sai do browser. No Firestore só vai cifrado (AES-GCM).</div>
-          <div className="mt-3 flex flex-wrap gap-2 items-center">
-            <div className="relative flex-1 min-w-[220px] max-w-[380px]">
-              <input type={showPass ? 'text' : 'password'} value={passphrase} onChange={e=>{ setPassphrase(e.target.value); setCofrePassphrase(e.target.value || null); }} placeholder="Passphrase do cofre" className="w-full pr-9 pl-3 py-2 rounded-xl border border-amber-300 bg-white text-sm" />
-              <button onClick={()=>setShowPass(v=>!v)} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-zinc-100">{showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
-            </div>
-            <span className={`text-xs px-2 py-1 rounded-full border ${cofreIsUnlocked() ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-white text-zinc-600 border-zinc-200'}`}>{cofreIsUnlocked() ? 'Desbloqueado' : 'Bloqueado'}</span>
-          </div>
-        </div>
-      </div>
+
       <div className="flex gap-3">
         <div className="relative flex-1">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
@@ -737,7 +724,7 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
         <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={()=>setShowNew(false)}>
           <div className="w-full max-w-[560px] bg-white rounded-2xl p-6 border border-zinc-200 shadow-xl" onClick={e=>e.stopPropagation()}>
             <h3 className="font-semibold">Guardar no cofre</h3>
-            <p className="text-sm text-zinc-500">Cifrado no browser antes de ir para Firestore.</p>
+            <p className="text-sm text-zinc-500">Guardado no cofre — só a tua conta vê.</p>
             <div className="grid grid-cols-1 gap-3 mt-4">
               <input value={form.titulo||''} onChange={e=>setForm({...form, titulo:e.target.value})} placeholder="Título — ex: AT - Recofatima" className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
               <div className="grid grid-cols-2 gap-3">
@@ -752,7 +739,7 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
               </div>
               <textarea value={form.notas||''} onChange={e=>setForm({...form, notas:e.target.value})} placeholder="Notas (opcional)" rows={2} className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
             </div>
-            <div className="flex justify-end gap-2 mt-6"><button onClick={()=>setShowNew(false)} className="px-4 py-2.5 rounded-xl border border-zinc-200 text-sm">Cancelar</button><button onClick={handleSave} className="px-4 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-medium">Cifrar e guardar</button></div>
+            <div className="flex justify-end gap-2 mt-6"><button onClick={()=>setShowNew(false)} className="px-4 py-2.5 rounded-xl border border-zinc-200 text-sm">Cancelar</button><button onClick={handleSave} className="px-4 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-medium">Guardar no cofre</button></div>
           </div>
         </div>
       )}

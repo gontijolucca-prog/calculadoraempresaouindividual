@@ -318,12 +318,11 @@ export const GUIAS: Record<ViewKey, Guia> = {
 
   'gab-cofre': {
     titulo: 'Cofre',
-    intro: 'Senhas e acessos do escritório cifrados no browser (AES-GCM) — ninguém, nem mesmo a plataforma, vê os segredos em texto limpo.',
-    acao: 'Define uma passphrase do cofre e guarda o primeiro acesso.',
+    intro: 'Senhas e acessos do escritório — só a tua conta vê. Guarda sem passphrase e revela com um clique.',
+    acao: 'Guarda o primeiro acesso.',
     passos: [
-      { titulo: 'Passphrase', corpo: 'A chave do cofre. Sem ela não consegues revelar nada — guarda-a no gestor de senhas do escritório (perdê-la = perder o cofre).', alvo: { texto: 'Passphrase do cofre' } },
-      { titulo: 'Guardar acesso', corpo: 'Título, categoria (AT/SS/Banco/…), cliente opcional, username e o segredo. Tudo cifrado antes de ir para a base de dados.', alvo: { texto: 'Guardar acesso' } },
-      { titulo: 'Revelar', corpo: 'Clica em "Revelar" com a passphrase para ver a senha, copiar e registar a vista (audit: quem viu e quando).', alvo: { texto: 'Revelar (re-auth)' } },
+      { titulo: 'Guardar acesso', corpo: 'Título, categoria (AT/SS/Banco/…), cliente opcional, username e segredo. Só a tua conta vê.', alvo: { texto: 'Guardar acesso' } },
+      { titulo: 'Revelar', corpo: 'Clica em "Revelar" para ver a senha, copiar e registar a vista (audit: quem viu e quando).', alvo: { texto: 'Revelar' } },
     ],
   },
 };

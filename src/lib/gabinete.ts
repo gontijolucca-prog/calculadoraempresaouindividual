@@ -276,8 +276,10 @@ export interface CofreEntrada {
   username?: string;
   url?: string;
   notas?: string;
-  // segredo cifrado — NUNCA plain no Firestore
-  cipher: CofreCipher;
+  // segredo — guardado em claro, visível só pela tua conta (gabinete/{uid}/cofre/*)
+  segredo?: string;
+  // legado: entradas antigas cifradas (antes do cofre simples)
+  cipher?: CofreCipher;
   // audit sem expor segredo
   createdAt: number;
   updatedAt: number;
@@ -1040,20 +1042,15 @@ async function ensureMykolaDependencias(clienteId: string, clienteNome: string):
       await upsertColaborador({ id: newColaboradorId(), nome: col.nome, email: col.email, role: col.role, status: col.status, initials: getColaboradorInitials(col.nome), createdAt: Date.now(), updatedAt: Date.now() });
     }
   }
-  // Cofre
+  // Cofre — entradas placeholder (o utilizador completa depois)
   if (listCofreCache().filter(c=>c.clienteId===clienteId).length === 0) {
-    // Acessos são placeholder sem segredo real - o utilizador coloca a passe depois
     for (const a of [
       { categoria: 'AT' as const, titulo: 'Portal das Finanças', username: '518123456' },
       { categoria: 'SS' as const, titulo: 'Segurança Social Direta', username: '518123456' },
       { categoria: 'OUTRO' as const, titulo: 'TOConline', username: 'mykola.vasyl' },
       { categoria: 'OUTRO' as const, titulo: 'Homebanking BPI', username: 'mykola.vasyl' },
     ] as const) {
-      const { encryptSecret, setCofrePassphrase, getCofrePassphrase } = await import('./cofreCrypto');
-      const pass = getCofrePassphrase() || 'demo-passphrase';
-      if (!getCofrePassphrase()) setCofrePassphrase(pass);
-      const cipher = await encryptSecret('—', pass);
-      await upsertCofre({ id: newCofreId(), titulo: a.titulo, categoria: a.categoria, clienteId, clienteNome, username: a.username, cipher, createdAt: Date.now(), updatedAt: Date.now() });
+      await upsertCofre({ id: newCofreId(), titulo: a.titulo, categoria: a.categoria, clienteId, clienteNome, username: a.username, segredo: '—', createdAt: Date.now(), updatedAt: Date.now() } as unknown as CofreEntrada);
     }
   }
 }
