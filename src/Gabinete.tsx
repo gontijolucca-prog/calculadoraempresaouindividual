@@ -612,7 +612,8 @@ function CofreCard({ entry, onEdit, onDelete }: { entry: CofreEntrada; onEdit: (
   // Compat: se for entrada antiga cifrada sem segredo, tenta mostrar nota (sem revelar)
   const hasLegacyCipher = !!(entry as unknown as { cipher?: unknown }).cipher && !segredo;
   const username = entry.username || entry.titulo;
-  const site = entry.url || '';
+  const siteTitulo = entry.titulo || '';
+  const siteUrl = entry.url || '';
   const nota = entry.notas || '';
   const handleCopy = async (text: string) => { try { await navigator.clipboard.writeText(text); } catch {} };
   const handleReveal = async () => {
@@ -623,7 +624,7 @@ function CofreCard({ entry, onEdit, onDelete }: { entry: CofreEntrada; onEdit: (
     registarVistaCofre(entry.id).catch(()=>{});
   };
   const handleShare = async () => {
-    const text = `${username}\n${site || '—'}\n${nota || 'Nenhuma nota adicionada'}`;
+    const text = `${username}\n${siteTitulo || siteUrl || '—'}${siteUrl && siteUrl !== siteTitulo ? ` (${siteUrl})` : ''}\n${nota || 'Nenhuma nota adicionada'}`;
     try {
       const nav = navigator as unknown as { share?: (d: { title: string; text: string }) => Promise<void> };
       if (nav.share) await nav.share({ title: entry.titulo, text });
@@ -641,8 +642,8 @@ function CofreCard({ entry, onEdit, onDelete }: { entry: CofreEntrada; onEdit: (
           </div>
         </div>
         <div>
-          <div className="text-[12px] font-semibold text-zinc-500 mb-1.5">Sites</div>
-          {site ? <a href={site.startsWith('http') ? site : `https://${site}`} target="_blank" rel="noreferrer" className="text-sm text-[#1A73E8] underline break-all block px-4 py-2.5">{site}</a> : <div className="text-sm text-zinc-400 px-4 py-2.5">—</div>}
+          <div className="text-[12px] font-semibold text-zinc-500 mb-1.5">Site</div>
+          {siteTitulo ? <div className="text-sm text-[#0F172A] break-all block px-4 py-2.5 bg-[#ECEEF1] rounded-full truncate" title={siteTitulo}>{siteTitulo}</div> : <div className="text-sm text-zinc-400 px-4 py-2.5">—</div>}
         </div>
         <div>
           <div className="text-[12px] font-semibold text-zinc-500 mb-1.5">Palavra-passe</div>
