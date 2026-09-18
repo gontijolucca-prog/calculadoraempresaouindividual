@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Search, Plus, Users, CheckSquare, Calendar, Lock, Building2, Trash2, Eye, EyeOff, Copy, Shield, AlertTriangle, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Clock, Briefcase, MessageSquare, X, Send, Archive, Share2 } from 'lucide-react';
+import { Search, Plus, Users, CheckSquare, Calendar, Lock, Building2, Trash2, Eye, EyeOff, Copy, Shield, AlertTriangle, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Clock, Briefcase, MessageSquare, X, Send, Archive, Share2, Pencil } from 'lucide-react';
 import { useGabineteClientes, useGabineteTarefas, useGabineteObrigacoes, useGabineteCofre, useGabineteContactosGeral, useGabineteAssuntos, useGabineteAlertas, useGabineteOcorrencias, useGabineteDocumentos, useGabineteColaboradores } from './lib/useGabinete';
 import { seedMykolaVasylDemo, ensureAllClientesDefaults, linkColaboradorPorEmail } from './lib/gabinete';
 import {
@@ -20,19 +20,18 @@ import GabineteEquipa from './GabineteEquipa';
 
 // Guia por tab interna do Gabinete (a sugestão muda conforme a tab ativa)
 const GAB_TAB_GUIA: Record<GabTab, ViewKey> = {
+  'mapa-rh': 'gabinete',
   'mapa-controlo': 'gabinete',
   dashboard: 'gabinete',
   'visao-geral': 'gab-visao-geral',
   equipa: 'gab-equipa',
-  agenda: 'gab-agenda',
   tarefas: 'gab-tarefas',
-  obrigacoes: 'gab-obrigacoes',
   cofre: 'gab-cofre',
 };
 
 // ─── Layout ─────────────────────────────────────────────────────────────────
 
-const VALID_GAB_TABS_SET = new Set<GabineteTab>(['dashboard','mapa-controlo','visao-geral','equipa','agenda','tarefas','obrigacoes','cofre','gallery']);
+const VALID_GAB_TABS_SET = new Set<GabineteTab>(['dashboard','mapa-controlo','mapa-rh','visao-geral','equipa','tarefas','cofre','gallery']);
 export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour, activeEmpresaId, activeEmpresaNome, onGoEmpresas }: { tab?: GabineteTab; onTabChange?: (t: GabineteTab) => void; onStartTour?: (v: ViewKey) => void; activeEmpresaId?: string | null; activeEmpresaNome?: string | null; onGoEmpresas?: () => void }) {
   const [internalTab, setInternalTab] = useState<GabTab>('dashboard');
   const rawTab: GabineteTab = controlledTab ?? internalTab;
@@ -177,10 +176,9 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
           <>
             {tab === 'visao-geral' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolhe um cliente na lista para ver a visão geral.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <VisaoGeralView cliente={clienteAtivo} contactos={contactosF} assuntos={assuntosF} alertas={alertasF} ocorrencias={ocorrenciasF} tarefas={tarefas} obrigacoes={obrigacoes} cofre={cofre} documentos={documentosF} colaboradores={colaboradores} onEditCliente={()=>{}} onGo={(tab)=>setTab(tab as GabineteTab)} onOpenCofre={()=>setTab('cofre')} />)}
             {tab === 'dashboard' && <Dashboard clientes={clientes} tarefas={tarefasRaw} obrigacoes={obrigacoesRaw} cofre={cofre} onGo={goFunction} />}
+            {tab === 'mapa-rh' && <MapaRHView clientes={clientes} obrigacoes={obrigacoesRaw} />}
             {tab === 'mapa-controlo' && <MapaControloView clientes={clientes} obrigacoes={obrigacoesRaw} />}
-            {tab === 'agenda' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolhe um cliente na lista para ver a agenda.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <AgendaView tarefas={tarefas} obrigacoes={obrigacoes} clientes={clientes} />)}
             {tab === 'tarefas' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolhe um cliente na lista para ver as tarefas.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <TarefasView tarefas={tarefas} clientes={clientes} obrigacoes={obrigacoes} activeEmpresaId={activeEmpresaId} activeEmpresaNome={activeEmpresaNome} />)}
-            {tab === 'obrigacoes' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolhe um cliente na lista para ver as obrigações.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <ObrigacoesView obrigacoes={obrigacoes} clientes={clientes} activeEmpresaId={activeEmpresaId} />)}
             {tab === 'equipa' && <GabineteEquipa />}
             {tab === 'cofre' && <CofreView cofre={cofre} clientes={clientes} />}
           </>
@@ -294,82 +292,50 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
   const hasAlgumaObrigacao = obrigacoes.length > 0;
 
   // —— Estado da célula ——
-  type CellStatus = 'concluido' | 'nao_aplicavel' | 'inexistente' | 'nao_concluido';
+  type CellStatus = 'concluido' | 'nao_concluido';
   const getStatusExemplo = (linhaId: string, mes: number): CellStatus => {
-    // replica o screenshot 2017 para quando não há dados reais
     switch(linhaId) {
-      case 'modelo44': return mes === 1 ? 'concluido' : 'inexistente';
-      case 'saft': if (mes <= 2) return 'nao_aplicavel'; if (mes <= 8) return 'concluido'; return 'nao_concluido';
-      case 'iva': if ([2,5,8].includes(mes)) return 'concluido'; if (mes === 11) return 'nao_concluido'; return 'inexistente';
-      case 'ies': return mes === 7 ? 'concluido' : 'inexistente';
-      case 'pec': if (mes === 3) return 'concluido'; if (mes === 11) return 'nao_concluido'; return 'inexistente';
-      case 'modelo10': return mes === 2 ? 'concluido' : 'inexistente';
+      case 'modelo44': return mes === 1 ? 'concluido' : 'nao_concluido';
+      case 'saft': if (mes <= 8) return 'concluido'; return 'nao_concluido';
+      case 'iva': if ([2,5,8].includes(mes)) return 'concluido'; return 'nao_concluido';
+      case 'ies': return mes === 7 ? 'concluido' : 'nao_concluido';
+      case 'pec': if (mes === 3) return 'concluido'; return 'nao_concluido';
+      case 'modelo10': return mes === 2 ? 'concluido' : 'nao_concluido';
       case 'dmr': return mes <= 8 ? 'concluido' : 'nao_concluido';
       case 'ss': return mes <= 8 ? 'concluido' : 'nao_concluido';
-      default: return 'inexistente';
+      default: return 'nao_concluido';
     }
   };
 
   const getCellStatus = (cli: GabineteCliente, linha: LinhaDef, mes: number, anoNum: number): CellStatus => {
-    // Procura obrigação real para este cliente/mês/tipo
-    // match por vencimento mês/ano e tipo
     const hits = obrigacoes.filter(o => {
       if (o.clienteId !== cli.id) return false;
       const d = new Date(o.vencimento);
       if (d.getFullYear() !== anoNum) return false;
       if (d.getMonth() + 1 !== mes) return false;
-      // tipo mapping: linha.tipos inclui o.tipo
-      // para IVA/mensal vs trimestral, aceita qualquer iva
       return linha.tipos.includes(o.tipo as ObrigacaoTipo) || linha.tipos.includes(o.tipo as any);
     });
-    // se houver mais de uma, prioriza entregue > dispensada > atrasada > pendente
     let best: Obrigacao | undefined;
     for (const o of hits) {
       if (!best) { best = o; continue; }
-      const prio = (s: ObrigacaoEstado) => s === 'entregue' ? 0 : s === 'dispensada' ? 1 : s === 'atrasada' ? 2 : 3;
+      const prio = (s: ObrigacaoEstado) => s === 'entregue' ? 0 : s === 'atrasada' ? 1 : 2;
       if (prio(o.estado) < prio(best.estado)) best = o;
     }
     if (best) {
       if (best.estado === 'entregue') return 'concluido';
-      if (best.estado === 'dispensada') return 'nao_aplicavel';
-      if (best.estado === 'atrasada') return 'nao_concluido';
-      // pendente
-      // se vencimento < hoje => não concluído, senão inexistente? mas para futuro marca como não concluído para bater com print
-      if (best.vencimento < Date.now()) return 'nao_concluido';
       return 'nao_concluido';
     }
-    // Nenhum registo real -> se não há qualquer obrigação no sistema, mostra exemplo
     if (!hasAlgumaObrigacao) {
       return getStatusExemplo(linha.id, mes);
     }
-    // Marca Não Aplicável por regime: IVA isento
-    if (linha.id === 'iva' && cli.regimeIva === 'isencao53') return 'nao_aplicavel';
-    // Se cliente não tem obrigação desse tipo naquele mês, é Inexistente
-    return 'inexistente';
+    return 'nao_concluido';
   };
 
   const toggleCell = async (cli: GabineteCliente, linha: LinhaDef, mes: number) => {
     const status = getCellStatus(cli, linha, mes, ano);
-    // ciclo: inexistente -> concluido -> nao_concluido -> nao_aplicavel -> inexistente
+    const nextStatus: CellStatus = status === 'concluido' ? 'nao_concluido' : 'concluido';
     let nextEstado: ObrigacaoEstado | null = null;
-    let nextStatus: CellStatus;
-    if (status === 'inexistente') nextStatus = 'concluido';
-    else if (status === 'concluido') nextStatus = 'nao_concluido';
-    else if (status === 'nao_concluido') nextStatus = 'nao_aplicavel';
-    else nextStatus = 'inexistente';
-
-    if (nextStatus === 'inexistente') {
-      // remove obrigação desse mês/tipo se existir
-      const hits = obrigacoes.filter(o => o.clienteId === cli.id && new Date(o.vencimento).getMonth()+1 === mes && new Date(o.vencimento).getFullYear() === ano && linha.tipos.includes(o.tipo as any));
-      for (const h of hits) {
-        const { deleteObrigacao } = await import('./lib/gabinete');
-        // também apaga tarefa espelho? não necessário
-        try { await deleteObrigacao(h.id); } catch {}
-      }
-      return;
-    }
     if (nextStatus === 'concluido') nextEstado = 'entregue';
-    else if (nextStatus === 'nao_aplicavel') nextEstado = 'dispensada';
     else if (nextStatus === 'nao_concluido') nextEstado = 'atrasada';
 
     // cria ou atualiza
@@ -395,10 +361,8 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
   };
 
   const renderIcon = (s: CellStatus, withBg = false) => {
-    if (s === 'concluido') return <span title="Concluído" className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] leading-none rounded ${withBg ? 'bg-emerald-600 text-white' : 'text-emerald-600'}`}>✓</span>;
-    if (s === 'nao_aplicavel') return <span title="Não Aplicável" className="inline-flex w-6 h-6 items-center justify-center text-zinc-900 text-[12px] leading-none rounded bg-zinc-100 border border-zinc-200">●</span>;
-    if (s === 'nao_concluido') return <span title="Não Concluído" className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] leading-none rounded ${withBg ? 'bg-red-600 text-white' : 'text-red-600'}`}>✕</span>;
-    return <span title="Inexistente" className="inline-flex w-6 h-6 items-center justify-center text-zinc-500 text-[13px] leading-none rounded bg-zinc-50 border border-zinc-200">∅</span>;
+    if (s === 'concluido') return <span title="Concluído" className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] leading-none rounded ${withBg ? 'bg-emerald-600 text-white' : 'text-emerald-600 bg-emerald-50 border border-emerald-200'}`}>✓</span>;
+    return <span title="Não Concluído" className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] leading-none rounded ${withBg ? 'bg-red-600 text-white' : 'text-red-600 bg-red-50 border border-red-200'}`}>✕</span>;
   };
 
   const handleImprimir = () => window.print();
@@ -410,7 +374,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
       for (const linha of linhasFiltradas) {
         const cells = meses.map((_, i) => {
           const st = getCellStatus(cli, linha, i+1, ano);
-          const map: Record<CellStatus,string> = { concluido:'Concluído', nao_aplicavel:'Não Aplicável', inexistente:'Inexistente', nao_concluido:'Não Concluído' };
+          const map: Record<CellStatus,string> = { concluido:'Concluído', nao_concluido:'Não Concluído' } as Record<CellStatus,string>;
           return map[st];
         });
         rows.push([cli.nome, linha.label, ...cells].join(';'));
@@ -571,6 +535,10 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
   const [filtroCliente, setFiltroCliente] = useState('');
   const [gestor, setGestor] = useState<string>('');
   const [grupo, setGrupo] = useState<string>(''); // tag cliente
+  const [filtroPilar, setFiltroPilar] = useState<string>(''); // tipo de tarefa = pilar
+  const [filtroEstado, setFiltroEstado] = useState<string>(''); // '' todos | 'concluido' | 'nao_concluido'
+  const [filtroRegime, setFiltroRegime] = useState<string>(''); // '' todos | 'isencao53'|'trimestral'|'mensal'
+  const pilaresVisiveis = filtroPilar ? pilares.filter(p=>p.key===filtroPilar) : pilares;
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   const toggle = (id: string) => setCollapsed(prev => { const n=new Set(prev); if(n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -589,35 +557,37 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
     if(t) list=list.filter(c=> (c.nome+' '+c.nif+' '+(c.tags||[]).join(' ')).toLowerCase().includes(t));
     if(gestor){ const g=gestor.toLowerCase(); list=list.filter(c=> { const ri=(c.responsavelInterno?.nome||'').toLowerCase(); const sup=(c.supervisor?.nome||'').toLowerCase(); const rid=(c as any).responsavelId||''; const sid=(c as any).supervisorId||''; return rid===gestor || sid===gestor || ri.includes(g) || sup.includes(g); }); }
     if(grupo){ list=list.filter(c=> (c.tags||[]).includes(grupo)); }
+    if(filtroRegime){ list=list.filter(c=> c.regimeIva===filtroRegime); }
+    if(filtroEstado){
+      list=list.filter(c=> {
+        for(const pi of (filtroPilar ? pilares.filter(p=>p.key===filtroPilar) : pilares)){
+          for(const mi of visMeses){
+            const mes=mi+1; const st=getStatus(c,pi,mes);
+            if(st===filtroEstado) return true;
+          }
+        }
+        return false;
+      });
+    }
     return list;
   })();
 
-  const getStatus = (cli:GabineteCliente, pilar:Pilar, mes:number): 'concluido'|'nao_aplicavel'|'inexistente'|'nao_concluido' => {
+  const getStatus = (cli:GabineteCliente, pilar:Pilar, mes:number): 'concluido'|'nao_concluido' => {
     const hits = obrigacoes.filter(o=> o.clienteId===cli.id && new Date(o.vencimento).getFullYear()===ano && new Date(o.vencimento).getMonth()+1===mes && pilar.tipos.includes(o.tipo as any));
     let best: Obrigacao | undefined;
-    for(const o of hits){ if(!best) best=o; else { const prio=(s:ObrigacaoEstado)=> s==='entregue'?0:s==='dispensada'?1:s==='atrasada'?2:3; if(prio(o.estado)<prio(best.estado)) best=o; } }
-    if(best){ if(best.estado==='entregue') return 'concluido'; if(best.estado==='dispensada') return 'nao_aplicavel'; if(best.estado==='atrasada') return 'nao_concluido'; return best.vencimento < Date.now() ? 'nao_concluido' : 'nao_concluido'; }
-    // fallback demo quando vazio
+    for(const o of hits){ if(!best) best=o; else { const prio=(s:ObrigacaoEstado)=> s==='entregue'?0:s==='atrasada'?1:2; if(prio(o.estado)<prio(best.estado)) best=o; } }
+    if(best){ if(best.estado==='entregue') return 'concluido'; return 'nao_concluido'; }
     if(obrigacoes.length===0){
-      const h=(cli.id.charCodeAt(0)+mes*7)%4;
-      return (['concluido','nao_aplicavel','inexistente','nao_concluido'] as const)[h];
+      const h=(cli.id.charCodeAt(0)+mes*7)%2;
+      return (['concluido','nao_concluido'] as const)[h];
     }
-    return 'inexistente';
+    return 'nao_concluido';
   };
 
   const toggleCell = async (cli:GabineteCliente, pilar:Pilar, mes:number) => {
     const cur=getStatus(cli,pilar,mes);
-    let next: 'concluido'|'nao_aplicavel'|'inexistente'|'nao_concluido';
-    if(cur==='inexistente') next='concluido';
-    else if(cur==='concluido') next='nao_concluido';
-    else if(cur==='nao_concluido') next='nao_aplicavel';
-    else next='inexistente';
-    if(next==='inexistente'){
-      const hits=obrigacoes.filter(o=> o.clienteId===cli.id && new Date(o.vencimento).getMonth()+1===mes && new Date(o.vencimento).getFullYear()===ano && pilar.tipos.includes(o.tipo as any));
-      for(const h of hits){ try{ const {deleteObrigacao}=await import('./lib/gabinete'); await deleteObrigacao(h.id);}catch{} }
-      return;
-    }
-    const estado: ObrigacaoEstado = next==='concluido'?'entregue': next==='nao_aplicavel'?'dispensada':'atrasada';
+    const next: 'concluido'|'nao_concluido' = cur==='concluido' ? 'nao_concluido' : 'concluido';
+    const estado: ObrigacaoEstado = next==='concluido'?'entregue':'atrasada';
     const venc=new Date(ano,mes-1,20).getTime();
     const existing=obrigacoes.find(o=> o.clienteId===cli.id && new Date(o.vencimento).getMonth()+1===mes && new Date(o.vencimento).getFullYear()===ano && pilar.tipos.includes(o.tipo as any));
     const payload: Obrigacao = {
@@ -633,15 +603,13 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
   };
 
   const renderIcon = (st:string, withBg=false) => {
-    if(st==='concluido') return <span className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] rounded ${withBg?'bg-emerald-600 text-white':'text-emerald-600'}`}>✓</span>;
-    if(st==='nao_aplicavel') return <span className="inline-flex w-6 h-6 items-center justify-center text-zinc-900 text-[11px] rounded bg-zinc-100 border border-zinc-200">●</span>;
-    if(st==='nao_concluido') return <span className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] rounded ${withBg?'bg-red-600 text-white':'text-red-600'}`}>✕</span>;
-    return <span className="inline-flex w-6 h-6 items-center justify-center text-zinc-500 text-[11px] rounded bg-zinc-50 border border-zinc-200">∅</span>;
+    if(st==='concluido') return <span className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] rounded ${withBg?'bg-emerald-600 text-white':'text-emerald-600 bg-emerald-50 border border-emerald-200'}`}>✓</span>;
+    return <span className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] rounded ${withBg?'bg-red-600 text-white':'text-red-600 bg-red-50 border border-red-200'}`}>✕</span>;
   };
 
   const exportCSV = () => {
-    const rows:string[]=[]; const header=['Cliente','Nº',...pilares.flatMap(pi=> meses.filter((_,i)=>visMeses.includes(i)).map(m=> `${pi.labelShort} ${m}`))].join(';'); rows.push(header);
-    for(const cli of clientesFiltrados){ const cells=pilares.flatMap(pi=> meses.filter((_,i)=>visMeses.includes(i)).map((_,idx)=>{ const mes=visMeses[idx]+1; const st=getStatus(cli,pi,mes); const map:any={concluido:'Concluído',nao_aplicavel:'Não Aplicável',inexistente:'Inexistente',nao_concluido:'Não Concluído'}; return map[st]; })); rows.push([cli.nome, cli.nif||'', ...cells].join(';')); }
+    const rows:string[]=[]; const header=['Cliente','Nº',...pilaresVisiveis.flatMap(pi=> meses.filter((_,i)=>visMeses.includes(i)).map(m=> `${pi.labelShort} ${m}`))].join(';'); rows.push(header);
+    for(const cli of clientesFiltrados){ const cells=pilaresVisiveis.flatMap(pi=> meses.filter((_,i)=>visMeses.includes(i)).map((_,idx)=>{ const mes=visMeses[idx]+1; const st=getStatus(cli,pi,mes); const map:any={concluido:'Concluído',nao_concluido:'Não Concluído'}; return map[st]; })); rows.push([cli.nome, cli.nif||'', ...cells].join(';')); }
     const csv=rows.join('\n'); const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`Mapa_Controlo_${ano}${trim?'_T'+trim:''}.csv`; a.click(); URL.revokeObjectURL(url);
   };
 
@@ -687,21 +655,38 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
               <option value="">(todos)</option>
               {grupos.map(g=> <option key={g} value={g}>{g}</option>)}
             </select>
-            <button onClick={()=>{ setFiltroCliente(''); setGestor(''); setGrupo(''); setTrim(''); }} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs">Limpar</button>
+            <button onClick={()=>{ setFiltroCliente(''); setGestor(''); setGrupo(''); setTrim(''); setFiltroPilar(''); setFiltroEstado(''); setFiltroRegime(''); }} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs">Limpar</button>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-zinc-600 whitespace-nowrap">Tipo de tarefa</span>
+            <select value={filtroPilar} onChange={e=>setFiltroPilar(e.target.value)} className="flex-1 px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm">
+              <option value="">(todos os tipos)</option>
+              {pilares.map(p=> <option key={p.key} value={p.key}>{p.labelFull}</option>)}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-zinc-600">Estado</span>
+            <select value={filtroEstado} onChange={e=>setFiltroEstado(e.target.value)} className="flex-1 px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm">
+              <option value="">(todos)</option>
+              <option value="concluido">✓ Concluído</option>
+              <option value="nao_concluido">✕ Não Concluído</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-zinc-600">Regime IVA</span>
+            <select value={filtroRegime} onChange={e=>setFiltroRegime(e.target.value)} className="flex-1 px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm">
+              <option value="">(todos)</option>
+              <option value="isencao53">Isenção 53</option>
+              <option value="trimestral">Trimestral</option>
+              <option value="mensal">Mensal</option>
+            </select>
           </div>
         </div>
       </div>
 
-      {/* Header 7 pilares — faixa verde da imagem 1 com cores distintas por pilar */}
-      <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
-        <div className="grid" style={{gridTemplateColumns: `repeat(${pilares.length}, minmax(0,1fr))`}}>
-          {pilares.map(pi=> (
-            <div key={pi.key} className={`px-3 py-3 text-center border-r last:border-0 border-zinc-200 ${pi.bgHeader}`} style={{borderTop:`4px solid ${pi.color}`}}>
-              <div className="text-[12px] font-extrabold leading-tight" style={{color: pi.color}}>{pi.labelFull}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+
 
       {/* Tabela principal — clientes agrupados por trimestre/mês */}
       <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
@@ -710,19 +695,19 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
             <thead className="sticky top-0 z-10">
               <tr className="bg-[#3D5A73] text-white text-[11px]">
                 <th className="text-left px-2 py-2 sticky left-0 bg-[#3D5A73] z-20 border-r border-[#2F455C] min-w-[180px]">Nº / Cliente</th>
-                {pilares.map(pi=> (
-                  <th key={pi.key} colSpan={visMeses.length} className="text-center px-1 py-2 border-l border-[#2F455C]" style={{background: pi.color}}>{pi.labelShort}</th>
+                {pilaresVisiveis.map(pi=> (
+                  <th key={pi.key} colSpan={visMeses.length} className="text-center px-1 py-2 border-l border-[#2F455C]" style={{background: pi.color}}>{pi.labelFull}</th>
                 ))}
               </tr>
               <tr className="bg-[#E8EEF3] text-[11px] font-bold text-zinc-700">
                 <th className="sticky left-0 bg-[#E8EEF3] z-10 border-r border-zinc-300 px-2 py-1.5"></th>
-                {pilares.map(pi=> visMeses.map(mi=> <th key={pi.key+'-'+mi} className="text-center px-1 py-1.5 border-l border-zinc-300 min-w-[44px]">{meses[mi]}</th>))}
+                {pilaresVisiveis.map(pi=> visMeses.map(mi=> <th key={pi.key+'-'+mi} className="text-center px-1 py-1.5 border-l border-zinc-300 min-w-[44px]">{meses[mi]}</th>))}
               </tr>
               {/* segunda linha de colunas curtas como no screenshot (Rec./Arq./Lang./Conf.) — aqui simplificado por mês */}
             </thead>
             <tbody>
               {clientesFiltrados.length===0 ? (
-                <tr><td colSpan={1+pilares.length*visMeses.length} className="px-4 py-12 text-center text-sm text-zinc-500">Sem clientes para os filtros. Cria clientes ou limpa filtros.</td></tr>
+                <tr><td colSpan={1+pilaresVisiveis.length*visMeses.length} className="px-4 py-12 text-center text-sm text-zinc-500">Sem clientes para os filtros. Cria clientes ou limpa filtros.</td></tr>
               ) : clientesFiltrados.map((cli, idx)=> (
                 <React.Fragment key={cli.id}>
                   <tr className={`border-t ${idx%2===0?'bg-[#F8F9FA]':'bg-white'}`}>
@@ -733,7 +718,7 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
                         <span className="text-[12px] font-semibold text-[#1A3A5A] truncate">{cli.nome}</span>
                       </button>
                     </td>
-                    {pilares.map(pi=> visMeses.map(mi=> {
+                    {pilaresVisiveis.map(pi=> visMeses.map(mi=> {
                       const mes=mi+1; const st=getStatus(cli,pi,mes); const withBg = st==='concluido' || st==='nao_concluido';
                       const cellBg = st==='concluido' ? 'bg-emerald-50' : st==='nao_concluido' ? 'bg-red-50' : '';
                       return (
@@ -760,8 +745,6 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
           </div>
           <div className="flex flex-wrap items-center gap-4 text-[11px] text-zinc-700">
             <span className="inline-flex items-center gap-1.5"><span className="inline-flex w-5 h-5 items-center justify-center rounded bg-emerald-600 text-white font-bold text-[11px]">✓</span> Concluído</span>
-            <span className="inline-flex items-center gap-1.5"><span className="inline-flex w-5 h-5 items-center justify-center rounded bg-zinc-100 border border-zinc-300 text-[10px]">●</span> Não Aplicável</span>
-            <span className="inline-flex items-center gap-1.5"><span className="inline-flex w-5 h-5 items-center justify-center rounded bg-zinc-50 border border-zinc-200 text-zinc-500 text-[10px]">∅</span> Inexistente</span>
             <span className="inline-flex items-center gap-1.5"><span className="inline-flex w-5 h-5 items-center justify-center rounded bg-red-600 text-white font-bold text-[11px]">✕</span> Não Concluído</span>
           </div>
         </div>
@@ -771,6 +754,248 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
     </div>
   );
 }
+
+function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obrigacoes:Obrigacao[] }) {
+  const colabs = useGabineteColaboradores();
+  const meses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'] as const;
+
+  // 7 colunas do screenshot 1 (cores distintas)
+  type Pilar = { key: string; labelShort: string; labelFull: string; color: string; bgHeader: string; tipos: ObrigacaoTipo[] };
+  const pilares: Pilar[] = [
+    { key:'salarios',   labelShort:'Salários',    labelFull:'Salários',                         color:'#7C4DFF', bgHeader:'bg-[#F3E8FD]', tipos:['retencao','ss'] },
+    { key:'ticket',     labelShort:'Ticket',      labelFull:'Carregamento Ticket',              color:'#F29900', bgHeader:'bg-[#FEF7E0]', tipos:['dossier','outro'] },
+    { key:'irs_guia',   labelShort:'Guia IRS',    labelFull:'Guia de IRS/Retenções (Pessoal, indep, rendas)', color:'#0B57D0', bgHeader:'bg-[#E8F0FE]', tipos:['retencao','dossier'] },
+    { key:'dmr_at',     labelShort:'DMR-AT',      labelFull:'DMR - AT',                         color:'#0F9D58', bgHeader:'bg-[#E6F4EA]', tipos:['retencao'] },
+    { key:'dmr_ss',     labelShort:'DMR-SS',      labelFull:'DMR - SS',                         color:'#0097A7', bgHeader:'bg-[#E0F7FA]', tipos:['ss'] },
+    { key:'pagamentos', labelShort:'Pagamentos',  labelFull:'Pagamentos Encargos Mensais SS + Retenções', color:'#EF6C00', bgHeader:'bg-[#FFF3E0]', tipos:['ss','retencao'] },
+  ];
+
+  const [ano, setAno] = useState<number>(new Date().getFullYear());
+  const [trim, setTrim] = useState<string>(''); // '' = todos, '1'..'4'
+  const [filtroCliente, setFiltroCliente] = useState('');
+  const [gestor, setGestor] = useState<string>('');
+  const [grupo, setGrupo] = useState<string>(''); // tag cliente
+  const [filtroPilar, setFiltroPilar] = useState<string>(''); // tipo de tarefa = pilar
+  const [filtroEstado, setFiltroEstado] = useState<string>(''); // '' todos | 'concluido' | 'nao_concluido'
+  const [filtroRegime, setFiltroRegime] = useState<string>(''); // '' todos | 'isencao53'|'trimestral'|'mensal'
+  const pilaresVisiveis = filtroPilar ? pilares.filter(p=>p.key===filtroPilar) : pilares;
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+
+  const toggle = (id: string) => setCollapsed(prev => { const n=new Set(prev); if(n.has(id)) n.delete(id); else n.add(id); return n; });
+
+  const visMeses = (() => {
+    if (trim==='1') return [0,1,2];
+    if (trim==='2') return [3,4,5];
+    if (trim==='3') return [6,7,8];
+    if (trim==='4') return [9,10,11];
+    return [0,1,2,3,4,5,6,7,8,9,10,11];
+  })();
+
+  const clientesFiltrados = (() => {
+    let list=[...clientes];
+    const t=filtroCliente.trim().toLowerCase();
+    if(t) list=list.filter(c=> (c.nome+' '+c.nif+' '+(c.tags||[]).join(' ')).toLowerCase().includes(t));
+    if(gestor){ const g=gestor.toLowerCase(); list=list.filter(c=> { const ri=(c.responsavelInterno?.nome||'').toLowerCase(); const sup=(c.supervisor?.nome||'').toLowerCase(); const rid=(c as any).responsavelId||''; const sid=(c as any).supervisorId||''; return rid===gestor || sid===gestor || ri.includes(g) || sup.includes(g); }); }
+    if(grupo){ list=list.filter(c=> (c.tags||[]).includes(grupo)); }
+    if(filtroRegime){ list=list.filter(c=> c.regimeIva===filtroRegime); }
+    if(filtroEstado){
+      list=list.filter(c=> {
+        for(const pi of (filtroPilar ? pilares.filter(p=>p.key===filtroPilar) : pilares)){
+          for(const mi of visMeses){
+            const mes=mi+1; const st=getStatus(c,pi,mes);
+            if(st===filtroEstado) return true;
+          }
+        }
+        return false;
+      });
+    }
+    return list;
+  })();
+
+  const getStatus = (cli:GabineteCliente, pilar:Pilar, mes:number): 'concluido'|'nao_concluido' => {
+    const hits = obrigacoes.filter(o=> o.clienteId===cli.id && new Date(o.vencimento).getFullYear()===ano && new Date(o.vencimento).getMonth()+1===mes && pilar.tipos.includes(o.tipo as any));
+    let best: Obrigacao | undefined;
+    for(const o of hits){ if(!best) best=o; else { const prio=(s:ObrigacaoEstado)=> s==='entregue'?0:s==='atrasada'?1:2; if(prio(o.estado)<prio(best.estado)) best=o; } }
+    if(best){ if(best.estado==='entregue') return 'concluido'; return 'nao_concluido'; }
+    if(obrigacoes.length===0){
+      const h=(cli.id.charCodeAt(0)+mes*7)%2;
+      return (['concluido','nao_concluido'] as const)[h];
+    }
+    return 'nao_concluido';
+  };
+
+  const toggleCell = async (cli:GabineteCliente, pilar:Pilar, mes:number) => {
+    const cur=getStatus(cli,pilar,mes);
+    const next: 'concluido'|'nao_concluido' = cur==='concluido' ? 'nao_concluido' : 'concluido';
+    const estado: ObrigacaoEstado = next==='concluido'?'entregue':'atrasada';
+    const venc=new Date(ano,mes-1,20).getTime();
+    const existing=obrigacoes.find(o=> o.clienteId===cli.id && new Date(o.vencimento).getMonth()+1===mes && new Date(o.vencimento).getFullYear()===ano && pilar.tipos.includes(o.tipo as any));
+    const payload: Obrigacao = {
+      id: existing?.id || ('obr_'+Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4)),
+      tipo: pilar.tipos[0] as any || 'outro',
+      titulo: `${pilar.labelFull} ${String(mes).padStart(2,'0')}/${ano} — ${cli.nome}`,
+      clienteId: cli.id, clienteNome: cli.nome,
+      periodo: `${ano}-${String(mes).padStart(2,'0')}`,
+      vencimento: venc, estado, origem:'cliente',
+      createdAt: existing?.createdAt || Date.now(), updatedAt: Date.now(),
+    };
+    await upsertObrigacao(payload);
+  };
+
+  const renderIcon = (st:string, withBg=false) => {
+    if(st==='concluido') return <span className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] rounded ${withBg?'bg-emerald-600 text-white':'text-emerald-600 bg-emerald-50 border border-emerald-200'}`}>✓</span>;
+    return <span className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] rounded ${withBg?'bg-red-600 text-white':'text-red-600 bg-red-50 border border-red-200'}`}>✕</span>;
+  };
+
+  const exportCSV = () => {
+    const rows:string[]=[]; const header=['Cliente','Nº',...pilaresVisiveis.flatMap(pi=> meses.filter((_,i)=>visMeses.includes(i)).map(m=> `${pi.labelShort} ${m}`))].join(';'); rows.push(header);
+    for(const cli of clientesFiltrados){ const cells=pilaresVisiveis.flatMap(pi=> meses.filter((_,i)=>visMeses.includes(i)).map((_,idx)=>{ const mes=visMeses[idx]+1; const st=getStatus(cli,pi,mes); const map:any={concluido:'Concluído',nao_concluido:'Não Concluído'}; return map[st]; })); rows.push([cli.nome, cli.nif||'', ...cells].join(';')); }
+    const csv=rows.join('\n'); const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`Mapa_Controlo_${ano}${trim?'_T'+trim:''}.csv`; a.click(); URL.revokeObjectURL(url);
+  };
+
+  const grupos = Array.from(new Set(clientes.flatMap(c=> c.tags||[])));
+
+  return (
+    <div className="space-y-3">
+      {/* Filtros — réplica imagem 2 (Nº Mapa, Ano, Trimestre, Cliente, Gestor, Grupo) + ano local */}
+      <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-3 space-y-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-zinc-600">Nº Mapa</span>
+          <input value="5" readOnly className="w-[70px] px-2 py-1.5 rounded border border-zinc-300 bg-zinc-50 text-sm text-center" />
+          <span className="text-sm text-zinc-600">Ano</span>
+          <select value={String(ano)} onChange={e=>setAno(parseInt(e.target.value)||new Date().getFullYear())} className="px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm">
+            {[ano-2,ano-1,ano,ano+1,ano+2].map(a=> <option key={a} value={String(a)}>{a}</option>)}
+          </select>
+          <span className="text-sm text-zinc-600">Trimestre</span>
+          <select value={trim} onChange={e=>setTrim(e.target.value)} className="px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm min-w-[140px]">
+            <option value="">—</option>
+            <option value="1">1º Trimestre</option><option value="2">2º Trimestre</option><option value="3">3º Trimestre</option><option value="4">4º Trimestre</option>
+          </select>
+          <button onClick={()=>{}} className="px-4 py-1.5 rounded border-2 border-[#3B82F6] text-[#2563EB] font-semibold text-sm bg-white">Ok</button>
+          <div className="ml-auto flex gap-1.5">
+            <button onClick={()=>window.print()} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Imprimir</button>
+            <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Exportar XLS</button>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-zinc-600 whitespace-nowrap">Pesquisa Cliente</span>
+            <input value={filtroCliente} onChange={e=>setFiltroCliente(e.target.value)} placeholder="nome ou NIF…" className="flex-1 px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm" />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-zinc-600">Gestor</span>
+            <select value={gestor} onChange={e=>setGestor(e.target.value)} className="flex-1 px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm">
+              <option value="">(todos)</option>
+              {colabs.map(c=> <option key={c.id} value={c.id}>{c.nome}</option>)}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-zinc-600">Grupo</span>
+            <select value={grupo} onChange={e=>setGrupo(e.target.value)} className="flex-1 px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm">
+              <option value="">(todos)</option>
+              {grupos.map(g=> <option key={g} value={g}>{g}</option>)}
+            </select>
+            <button onClick={()=>{ setFiltroCliente(''); setGestor(''); setGrupo(''); setTrim(''); setFiltroPilar(''); setFiltroEstado(''); setFiltroRegime(''); }} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs">Limpar</button>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-zinc-600 whitespace-nowrap">Tipo de tarefa</span>
+            <select value={filtroPilar} onChange={e=>setFiltroPilar(e.target.value)} className="flex-1 px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm">
+              <option value="">(todos os tipos)</option>
+              {pilares.map(p=> <option key={p.key} value={p.key}>{p.labelFull}</option>)}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-zinc-600">Estado</span>
+            <select value={filtroEstado} onChange={e=>setFiltroEstado(e.target.value)} className="flex-1 px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm">
+              <option value="">(todos)</option>
+              <option value="concluido">✓ Concluído</option>
+              <option value="nao_concluido">✕ Não Concluído</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-zinc-600">Regime IVA</span>
+            <select value={filtroRegime} onChange={e=>setFiltroRegime(e.target.value)} className="flex-1 px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm">
+              <option value="">(todos)</option>
+              <option value="isencao53">Isenção 53</option>
+              <option value="trimestral">Trimestral</option>
+              <option value="mensal">Mensal</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+
+
+      {/* Tabela principal — clientes agrupados por trimestre/mês */}
+      <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
+        <div className="overflow-auto max-h-[62vh]">
+          <table className="w-full text-xs border-collapse">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-[#3D5A73] text-white text-[11px]">
+                <th className="text-left px-2 py-2 sticky left-0 bg-[#3D5A73] z-20 border-r border-[#2F455C] min-w-[180px]">Nº / Cliente</th>
+                {pilaresVisiveis.map(pi=> (
+                  <th key={pi.key} colSpan={visMeses.length} className="text-center px-1 py-2 border-l border-[#2F455C]" style={{background: pi.color}}>{pi.labelFull}</th>
+                ))}
+              </tr>
+              <tr className="bg-[#E8EEF3] text-[11px] font-bold text-zinc-700">
+                <th className="sticky left-0 bg-[#E8EEF3] z-10 border-r border-zinc-300 px-2 py-1.5"></th>
+                {pilaresVisiveis.map(pi=> visMeses.map(mi=> <th key={pi.key+'-'+mi} className="text-center px-1 py-1.5 border-l border-zinc-300 min-w-[44px]">{meses[mi]}</th>))}
+              </tr>
+              {/* segunda linha de colunas curtas como no screenshot (Rec./Arq./Lang./Conf.) — aqui simplificado por mês */}
+            </thead>
+            <tbody>
+              {clientesFiltrados.length===0 ? (
+                <tr><td colSpan={1+pilaresVisiveis.length*visMeses.length} className="px-4 py-12 text-center text-sm text-zinc-500">Sem clientes para os filtros. Cria clientes ou limpa filtros.</td></tr>
+              ) : clientesFiltrados.map((cli, idx)=> (
+                <React.Fragment key={cli.id}>
+                  <tr className={`border-t ${idx%2===0?'bg-[#F8F9FA]':'bg-white'}`}>
+                    <td className={`px-2 py-2 sticky left-0 z-[5] border-r border-zinc-200 font-medium ${idx%2===0?'bg-[#F8F9FA]':'bg-white'}`}>
+                      <button onClick={()=>toggle(cli.id)} className="flex items-center gap-1.5 w-full text-left">
+                        <span className="text-zinc-500 text-[11px]">{collapsed.has(cli.id) ? '▶' : '▼'}</span>
+                        <span className="text-[11px] text-zinc-500">SW{String(idx+1).padStart(3,'0')}</span>
+                        <span className="text-[12px] font-semibold text-[#1A3A5A] truncate">{cli.nome}</span>
+                      </button>
+                    </td>
+                    {pilaresVisiveis.map(pi=> visMeses.map(mi=> {
+                      const mes=mi+1; const st=getStatus(cli,pi,mes); const withBg = st==='concluido' || st==='nao_concluido';
+                      const cellBg = st==='concluido' ? 'bg-emerald-50' : st==='nao_concluido' ? 'bg-red-50' : '';
+                      return (
+                        <td key={pi.key+'-'+mi} className={`text-center border-l border-zinc-200 py-1 ${cellBg}`}>
+                          <button onClick={()=>toggleCell(cli,pi,mes)} className="w-full flex items-center justify-center py-0.5">
+                            {renderIcon(st, withBg)}
+                          </button>
+                        </td>
+                      );
+                    }))}
+                  </tr>
+                  {!collapsed.has(cli.id) && null /* reserva para detalhe expandido se precisares */}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 bg-[#F1F1F1] border-t border-zinc-300 text-xs">
+          <div className="flex gap-1.5">
+            <button onClick={()=>window.print()} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Imprimir</button>
+            <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Exportar XLS</button>
+            <button onClick={()=>{ const s=new Set<string>(); clientesFiltrados.forEach(c=>s.add(c.id)); setCollapsed(new Set()); }} className="hidden sm:inline-flex px-3 py-1.5 rounded border border-zinc-400 bg-white">Expandir todos</button>
+            <button onClick={()=>setCollapsed(new Set(clientesFiltrados.map(c=>c.id)))} className="hidden sm:inline-flex px-3 py-1.5 rounded border border-zinc-400 bg-white">Colapsar todos</button>
+          </div>
+          <div className="flex flex-wrap items-center gap-4 text-[11px] text-zinc-700">
+            <span className="inline-flex items-center gap-1.5"><span className="inline-flex w-5 h-5 items-center justify-center rounded bg-emerald-600 text-white font-bold text-[11px]">✓</span> Concluído</span>
+            <span className="inline-flex items-center gap-1.5"><span className="inline-flex w-5 h-5 items-center justify-center rounded bg-red-600 text-white font-bold text-[11px]">✕</span> Não Concluído</span>
+          </div>
+        </div>
+      </div>
+
+      <p className="text-[11px] text-zinc-500 px-1">Mapa de controlo por gabinete isolado: cada célula guarda uma obrigação (clica para alternar: ∅ → ✓ → ✕ → ●). Filtros por cliente, gestor, grupo e trimestre. Cores vivas por fase da contabilidade.</p>
+    </div>
+  );
+}
+
+
 
 
 // ─── Agenda — Fase 1 ────────────────────────────────────────────────────────
@@ -862,19 +1087,18 @@ function AgendaView({ tarefas, obrigacoes, clientes }: { tarefas: Tarefa[]; obri
   );
 }
 
-// ─── Tarefas (Kanban) ─────────────────────────────────────────────────────────
+// ─── Tarefas (Lista) ──────────────────────────────────────────────────────────
 function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmpresaNome }: { tarefas:Tarefa[]; clientes:GabineteCliente[]; obrigacoes:Obrigacao[]; activeEmpresaId?: string|null; activeEmpresaNome?: string|null }) {
   const [q, setQ] = useState('');
   const [filtroCli, setFiltroCli] = useState<string>('todos');
+  const [filtroEstado, setFiltroEstado] = useState<string>('todos');
+  const [filtroPrioridade, setFiltroPrioridade] = useState<string>('todos');
   const [showNew, setShowNew] = useState(false);
   const [form, setForm] = useState<Partial<Tarefa>>({ tipo:'tarefa', prioridade:'media', estado:'todo' });
-  // Arquivo: tarefas feitas saem do kanban; podem ser vistas e restauradas.
   const [verArquivadas, setVerArquivadas] = useState(false);
 
   const arquivadas = useMemo(()=> tarefas.filter(t=> t.arquivada), [tarefas]);
 
-  // Obrigações fiscais nacionais do MÊS ATUAL aparecem como tarefas no kanban
-  // (pendente → A fazer, vencida → Atrasada, entregue → Feito).
   const obrigacoesMes = useMemo(()=> {
     const agora = new Date();
     return obrigacoes
@@ -888,31 +1112,40 @@ function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmp
         estado: o.estado === 'entregue' ? 'done' : o.estado === 'atrasada' ? 'atrasada' : 'todo',
         clienteNome: o.clienteNome || 'Calendário fiscal',
         dataVencimento: o.vencimento,
+        prioridade: 'media' as const,
       }));
   }, [obrigacoes]);
 
-  const filtered = useMemo(()=> {
+  const listaFiltrada = useMemo(()=> {
     const s=q.toLowerCase();
-    return tarefas.filter(t=> {
-      if (t.arquivada) return false; // arquivadas vivem na secção própria
+    let list = tarefas.filter(t=> {
+      if (t.arquivada) return false;
       if (filtroCli!=='todos' && t.clienteId!==filtroCli) return false;
-      if (!s) return true;
-      return (t.titulo + ' ' + (t.clienteNome||'')).toLowerCase().includes(s);
+      if (filtroEstado!=='todos' && t.estado!==filtroEstado) return false;
+      if (filtroPrioridade!=='todos' && t.prioridade!==filtroPrioridade) return false;
+      if (s && !(t.titulo + ' ' + (t.clienteNome||'') + ' ' + (t.descricao||'')).toLowerCase().includes(s)) return false;
+      return true;
     });
-  }, [tarefas,q,filtroCli]);
-
-  const cols: { id: Tarefa['estado']; label:string }[] = [
-    { id:'todo', label:'A fazer' },
-    { id:'doing', label:'Em curso' },
-    { id:'done', label:'Feito' },
-    { id:'atrasada', label:'Atrasada' },
-  ];
-
-  const colItems = (colId: Tarefa['estado']) => {
-    const t = filtered.filter(x=> x.estado===colId);
-    const o = obrigacoesMes.filter(x=> x.estado===colId);
-    return [...t, ...o];
-  };
+    // inclui obrigações fiscais se não estiver filtrada por prioridade específica? mostra sempre
+    const fiscais = obrigacoesMes.filter(o=> {
+      if (filtroEstado!=='todos' && o.estado!==filtroEstado) return false;
+      if (s && !o.titulo.toLowerCase().includes(s)) return false;
+      if (filtroCli!=='todos' && o.registo.clienteId && o.registo.clienteId!==filtroCli) return false;
+      return true;
+    });
+    const merged: any[] = [...list, ...fiscais];
+    const prioOrder: Record<string,number> = { urgente:0, alta:1, media:2, baixa:3 };
+    merged.sort((a,b)=>{
+      const pa = prioOrder[(a.prioridade as string)||'media'] ?? 2;
+      const pb = prioOrder[(b.prioridade as string)||'media'] ?? 2;
+      if (pa!==pb) return pa-pb;
+      const ea = (a.estado==='atrasada'?0:a.estado==='todo'?1:a.estado==='doing'?2:3);
+      const eb = (b.estado==='atrasada'?0:b.estado==='todo'?1:b.estado==='doing'?2:3);
+      if (ea!==eb) return ea-eb;
+      return (a.dataVencimento||Infinity) - (b.dataVencimento||Infinity);
+    });
+    return merged;
+  }, [tarefas,q,filtroCli,filtroEstado,filtroPrioridade,obrigacoesMes]);
 
   const handleSave = async () => {
     if (!form.titulo?.trim()) return alert('Título obrigatório');
@@ -936,21 +1169,54 @@ function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmp
 
   const mesLabel = new Intl.DateTimeFormat('pt-PT', { month: 'long', year: 'numeric' }).format(new Date());
 
+  const estadoBadge = (estado:string)=>{
+    if(estado==='done') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    if(estado==='doing') return 'bg-blue-50 text-blue-700 border-blue-200';
+    if(estado==='atrasada') return 'bg-rose-50 text-rose-700 border-rose-200';
+    return 'bg-amber-50 text-amber-700 border-amber-200';
+  };
+  const prioBadge = (p:string)=>{
+    if(p==='urgente') return 'bg-rose-600 text-white border-rose-600';
+    if(p==='alta') return 'bg-amber-500 text-white border-amber-500';
+    if(p==='media') return 'bg-zinc-100 text-zinc-700 border-zinc-200';
+    return 'bg-white text-zinc-500 border-zinc-200';
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[220px]">
+      <div className="flex flex-wrap gap-2 items-center">
+        <div className="relative flex-1 min-w-[180px]">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-          <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Pesquisar tarefa..." className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm" />
+          <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Pesquisar tarefa ou cliente..." className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm" />
         </div>
         <select value={filtroCli} onChange={e=>setFiltroCli(e.target.value)} disabled={!!activeEmpresaId} className={`px-3 py-2.5 rounded-xl border text-sm ${activeEmpresaId ? "bg-zinc-100 text-zinc-500" : "bg-white border-zinc-200"}`}>
           <option value="todos">Todos clientes</option>
           {clientes.map(c=> <option key={c.id} value={c.id}>{c.nome}</option>)}
         </select>
-        <button onClick={()=>setVerArquivadas(v=>!v)} className={`px-4 py-2.5 rounded-xl border text-sm font-medium flex items-center gap-2 transition-colors ${verArquivadas ? 'bg-[#0F172A] text-white border-[#0F172A]' : 'bg-white border-zinc-200 hover:bg-zinc-50'}`}>
-          <Archive className="w-4 h-4" /> Ver arquivadas ({arquivadas.length})
+        <select value={filtroEstado} onChange={e=>setFiltroEstado(e.target.value)} className="px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm">
+          <option value="todos">Todos estados</option>
+          <option value="todo">A fazer</option>
+          <option value="doing">Em curso</option>
+          <option value="done">Feito</option>
+          <option value="atrasada">Atrasada</option>
+        </select>
+        <select value={filtroPrioridade} onChange={e=>setFiltroPrioridade(e.target.value)} className="px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm">
+          <option value="todos">Todas prioridades</option>
+          <option value="urgente">Urgente</option>
+          <option value="alta">Alta</option>
+          <option value="media">Média</option>
+          <option value="baixa">Baixa</option>
+        </select>
+        <button onClick={()=>setVerArquivadas(v=>!v)} className={`px-3 py-2.5 rounded-xl border text-sm font-medium flex items-center gap-1.5 ${verArquivadas ? 'bg-[#0F172A] text-white border-[#0F172A]' : 'bg-white border-zinc-200 hover:bg-zinc-50'}`}>
+          <Archive className="w-4 h-4" /> {verArquivadas ? 'Ver ativas' : `Arquivadas (${arquivadas.length})`}
         </button>
         <button onClick={()=>{ setForm({ tipo:'tarefa', prioridade:'media', estado:'todo' }); setShowNew(true); }} className="px-4 py-2.5 rounded-xl bg-[#0677FF] text-white text-sm font-medium flex items-center gap-2"><Plus className="w-4 h-4" /> Nova tarefa</button>
+      </div>
+
+      <div className="flex items-center gap-2 text-xs text-zinc-500 px-1">
+        <Calendar className="w-3.5 h-3.5 text-[#0677FF]" />
+        <span><strong className="text-zinc-700 capitalize">{mesLabel}</strong> — {listaFiltrada.length} itens • ordenado por urgência e estado</span>
+        <span className="ml-auto hidden sm:inline text-zinc-400">Filtros por cliente, estado e prioridade • clica para mudar estado</span>
       </div>
 
       {verArquivadas ? (
@@ -960,89 +1226,85 @@ function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmp
             <span className="text-xs px-2 py-1 rounded-full bg-zinc-100 border border-zinc-200">{arquivadas.length}</span>
           </div>
           {arquivadas.length === 0 ? <div className="py-10 text-center text-sm text-zinc-400 border-2 border-dashed border-zinc-200 rounded-xl">Nenhuma tarefa arquivada.</div> : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+            <div className="divide-y divide-zinc-100">
               {arquivadas.map(t=> (
-                <div key={t.id} className="p-3 rounded-xl border border-zinc-200 bg-zinc-50/50">
-                  <div className="text-sm font-medium leading-tight line-clamp-2">{t.titulo}</div>
-                  <div className="text-xs text-zinc-500 mt-1">{t.clienteNome || '—'} • {t.dataVencimento ? new Date(t.dataVencimento).toLocaleDateString('pt-PT') : 'sem prazo'}</div>
-                  <div className="flex gap-1 mt-2">
-                    <button onClick={()=>upsertTarefa({...t, arquivada:false})} className="flex-1 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs">Restaurar</button>
-                    <button onClick={()=>deleteTarefa(t.id)} className="p-1.5 rounded-lg hover:bg-white border border-transparent hover:border-zinc-200"><Trash2 className="w-3.5 h-3.5 text-zinc-500" /></button>
+                <div key={t.id} className="flex items-center gap-3 py-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium leading-tight truncate">{t.titulo}</div>
+                    <div className="text-xs text-zinc-500 truncate">{t.clienteNome || '—'} • {t.dataVencimento ? new Date(t.dataVencimento).toLocaleDateString('pt-PT') : 'sem prazo'}</div>
                   </div>
+                  <button onClick={()=>upsertTarefa({...t, arquivada:false})} className="px-3 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs">Restaurar</button>
+                  <button onClick={()=>deleteTarefa(t.id)} className="p-1.5 rounded-lg hover:bg-zinc-50 border border-transparent hover:border-zinc-200"><Trash2 className="w-3.5 h-3.5 text-zinc-500" /></button>
                 </div>
               ))}
             </div>
           )}
         </div>
       ) : (
-        <>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500 px-1">
-            <Calendar className="w-3.5 h-3.5 text-[#0677FF]" />
-            <span><strong className="text-zinc-700 capitalize">{mesLabel}</strong> — {obrigacoesMes.length} obrigação(ões) fiscais no calendário</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-            {cols.map(col=> {
-              const items = colItems(col.id);
-              return (
-                <div key={col.id} className="bg-white rounded-2xl border border-zinc-200 p-3 min-h-[360px]">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-semibold text-sm">{col.label}</h4>
-                    <span className="text-xs px-2 py-1 rounded-full bg-zinc-100 border border-zinc-200">{items.length}</span>
-                  </div>
-                  <div className="space-y-2">
-                    {items.length===0 ? <div className="py-8 text-center text-xs text-zinc-400 border-2 border-dashed border-zinc-200 rounded-xl">Vazio</div> :
-                    items.map(item=> {
-                      // Obrigação fiscal do calendário → cartão com badge Fiscal
-                      if ('fiscal' in item && item.fiscal) {
-                        const o = item.registo;
-                        return (
-                          <div key={item.id} className="p-3 rounded-xl border border-blue-200 bg-blue-50/40">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#0677FF] text-white font-bold uppercase">Fiscal</span>
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white border border-blue-200">{o.tipo}</span>
-                            </div>
-                            <div className="text-sm font-medium leading-tight line-clamp-2 mt-1.5">{item.titulo}</div>
-                            <div className="text-xs text-zinc-500 mt-1">{item.dataVencimento ? new Date(item.dataVencimento).toLocaleDateString('pt-PT') : ''}</div>
-                            <div className="flex gap-1 mt-2">
-                              {o.estado !== 'entregue' && <button onClick={()=>upsertObrigacao({...o, estado:'entregue'})} className="flex-1 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium">Entregue</button>}
-                              {o.estado !== 'pendente' && o.estado !== 'dispensada' && <button onClick={()=>upsertObrigacao({...o, estado:'pendente'})} className="flex-1 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs">Repor</button>}
-                              {o.estado === 'entregue' && <span className="flex-1 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs text-center">✓ Entregue</span>}
-                            </div>
+        <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-zinc-50 text-zinc-600 text-xs"><tr><th className="text-left px-4 py-2.5 font-semibold">Tarefa</th><th className="text-left px-3 py-2.5 font-semibold">Cliente</th><th className="text-left px-3 py-2.5 font-semibold">Prioridade</th><th className="text-left px-3 py-2.5 font-semibold">Estado</th><th className="text-left px-3 py-2.5 font-semibold">Vencimento</th><th className="text-right px-4 py-2.5 font-semibold">Ação</th></tr></thead>
+              <tbody className="divide-y divide-zinc-200">
+                {listaFiltrada.length===0 ? <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-zinc-500">Nada para os filtros. Cria uma nova tarefa ou limpa filtros.</td></tr> :
+                listaFiltrada.map((item:any)=> {
+                  const isFiscal = 'fiscal' in item && item.fiscal;
+                  const t = item as Tarefa;
+                  if (isFiscal) {
+                    const o = item.registo as any;
+                    return (
+                      <tr key={item.id} className="hover:bg-blue-50/40">
+                        <td className="px-4 py-3">
+                          <div className="font-medium leading-tight line-clamp-1 flex items-center gap-2"><span className="text-[10px] px-2 py-0.5 rounded-full bg-[#0677FF] text-white font-bold uppercase">Fiscal</span> {item.titulo}</div>
+                          <div className="text-xs text-zinc-500">{o.tipo}</div>
+                        </td>
+                        <td className="px-3 py-3 text-zinc-600 text-xs">{item.clienteNome}</td>
+                        <td className="px-3 py-3"><span className="text-[11px] px-2 py-1 rounded-full border bg-zinc-100 text-zinc-600 border-zinc-200">—</span></td>
+                        <td className="px-3 py-3"><span className={`text-[11px] px-2 py-1 rounded-full border ${estadoBadge(item.estado)}`}>{item.estado}</span></td>
+                        <td className="px-3 py-3 text-xs text-zinc-600">{item.dataVencimento ? new Date(item.dataVencimento).toLocaleDateString('pt-PT') : '—'}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-end gap-1">
+                            {o.estado !== 'entregue' && <button onClick={()=>upsertObrigacao({...o, estado:'entregue'})} className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs">Entregue</button>}
+                            {o.estado === 'entregue' && <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs">✓ Entregue</span>}
                           </div>
-                        );
-                      }
-                      const t = item as Tarefa;
-                      return (
-                        <div key={t.id} className="p-3 rounded-xl border border-zinc-200 hover:border-zinc-300 bg-zinc-50/50">
-                          <div className="text-sm font-medium leading-tight line-clamp-2">{t.titulo}</div>
-                          <div className="text-xs text-zinc-500 mt-1">{t.clienteNome || '—'} • {t.dataVencimento ? new Date(t.dataVencimento).toLocaleDateString('pt-PT') : 'sem prazo'}</div>
-                          <div className="flex items-center gap-1 mt-2 flex-wrap">
-                            <span className={`text-[11px] px-2 py-1 rounded-full border ${t.prioridade==='urgente' ? 'bg-rose-50 text-rose-700 border-rose-200' : t.prioridade==='alta' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-white text-zinc-600 border-zinc-200'}`}>{t.prioridade}</span>
-                            <span className="text-[11px] px-2 py-1 rounded-full bg-white border border-zinc-200">{t.tipo}</span>
-                          </div>
-                          <div className="flex gap-1 mt-2">
-                            {col.id!=='done' && <button onClick={()=>marcarTarefaFeita(t.id,true)} className="flex-1 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium">Feito</button>}
-                            {col.id!=='todo' && col.id!=='done' && <button onClick={()=>upsertTarefa({...t, estado:'todo'})} className="flex-1 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs">A fazer</button>}
-                            {col.id==='todo' && <button onClick={()=>upsertTarefa({...t, estado:'doing'})} className="flex-1 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs">Em curso</button>}
-                            {col.id==='done' && <button onClick={()=>upsertTarefa({...t, arquivada:true})} className="flex-1 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs flex items-center justify-center gap-1"><Archive className="w-3 h-3" /> Arquivar</button>}
-                            <button onClick={()=>deleteTarefa(t.id)} className="p-1.5 rounded-lg hover:bg-white border border-transparent hover:border-zinc-200"><Trash2 className="w-3.5 h-3.5 text-zinc-500" /></button>
-                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }
+                  return (
+                    <tr key={t.id} className="hover:bg-zinc-50">
+                      <td className="px-4 py-3">
+                        <div className="font-medium leading-tight line-clamp-1">{t.titulo}</div>
+                        {t.descricao && <div className="text-xs text-zinc-500 line-clamp-1">{t.descricao}</div>}
+                      </td>
+                      <td className="px-3 py-3 text-zinc-600 text-xs max-w-[160px] truncate">{t.clienteNome || '—'}</td>
+                      <td className="px-3 py-3"><span className={`text-[11px] px-2 py-1 rounded-full border ${prioBadge(t.prioridade)}`}>{t.prioridade}</span></td>
+                      <td className="px-3 py-3"><span className={`text-[11px] px-2 py-1 rounded-full border ${estadoBadge(t.estado)}`}>{t.estado}</span></td>
+                      <td className="px-3 py-3 text-xs text-zinc-600">{t.dataVencimento ? new Date(t.dataVencimento).toLocaleDateString('pt-PT') : '—'}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-1">
+                          {t.estado!=='done' && <button onClick={()=>upsertTarefa({...t, estado:'done'})} className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs">Feito</button>}
+                          {t.estado==='done' && <button onClick={()=>upsertTarefa({...t, arquivada:true})} className="px-2.5 py-1 rounded-lg bg-white border border-zinc-200 text-xs flex items-center gap-1"><Archive className="w-3 h-3" /> Arquivar</button>}
+                          {t.estado!=='todo' && t.estado!=='done' && <button onClick={()=>upsertTarefa({...t, estado:'todo'})} className="px-2 py-1 rounded-lg bg-white border border-zinc-200 text-xs">A fazer</button>}
+                          {t.estado==='todo' && <button onClick={()=>upsertTarefa({...t, estado:'doing'})} className="px-2 py-1 rounded-lg bg-white border border-zinc-200 text-xs">Em curso</button>}
+                          <button onClick={()=>{ setForm({...t}); setShowNew(true); }} className="p-1.5 rounded-lg hover:bg-zinc-100 border border-transparent hover:border-zinc-200"><Pencil className="w-3.5 h-3.5 text-zinc-500" /></button>
+                          <button onClick={()=>deleteTarefa(t.id)} className="p-1.5 rounded-lg hover:bg-zinc-100 border border-transparent hover:border-zinc-200"><Trash2 className="w-3.5 h-3.5 text-zinc-500" /></button>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        </>
+        </div>
       )}
 
       {showNew && (
         <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={()=>setShowNew(false)}>
           <div className="w-full max-w-[560px] bg-white rounded-2xl p-6 border border-zinc-200 shadow-xl" onClick={e=>e.stopPropagation()}>
             <h3 className="font-semibold">{form.id ? 'Editar tarefa' : 'Nova tarefa'}</h3>
-            <p className="text-sm text-zinc-500">Preenche os campos. Fica guardada no gabinete e aparece no Kanban.</p>
+            <p className="text-sm text-zinc-500">Preenche os campos. Fica guardada no gabinete e aparece na lista.</p>
             <div className="grid grid-cols-1 gap-3 mt-4">
               <div>
                 <label className="block text-[11px] font-[700] uppercase tracking-[1px] text-zinc-500 mb-1">Título <span className="text-red-500">*</span></label>

@@ -153,15 +153,14 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
   }, [gabineteOpen, simMenuOpen, relatoriosOpen, active]);
 
   const GAB_TABS = [
-    { id: 'dashboard', label: 'Quadro resumo obrigações', Icon: Calendar, desc: 'JAN–DEZ: ✓ ✓ ✕ ●' },
-    { id: 'mapa-controlo', label: 'Mapa de controlo', Icon: Table2, desc: '7 fases · JAN–DEZ colorido — Doc. Falta → Balancete' },
-    { id: 'visao-geral', label: 'Visão geral', Icon: LayoutDashboard, desc: 'Ficha 360' },
-    { id: 'equipa', label: 'Equipa', Icon: Users, desc: 'Funcionários' },
-    { id: 'agenda', label: 'Agenda', Icon: Calendar, desc: 'Calendário' },
-    { id: 'tarefas', label: 'Tarefas', Icon: CheckSquare, desc: 'Kanban' },
-    { id: 'obrigacoes', label: 'Obrigações', Icon: Calendar, desc: 'Fiscal' },
-    { id: 'cofre', label: 'Cofre', Icon: Lock, desc: 'Zero-knowledge' },
-  ] as const;
+  { id: 'dashboard', label: 'Quadro resumo obrigações', Icon: Calendar, desc: 'JAN-DEZ: v Concluído · ✕ Não concluído' },
+  { id: 'mapa-controlo', label: 'Mapa de controlo', Icon: Table2, desc: '7 fases · JAN-DEZ colorido - Doc. Falta -> Balancete' },
+  { id: 'mapa-rh', label: 'Mapa RH', Icon: Users, desc: '6 colunas RH - Salários, Ticket, IRS, DMR-AT/SS, Encargos' },
+  { id: 'visao-geral', label: 'Visão geral', Icon: LayoutDashboard, desc: 'Ficha 360' },
+  { id: 'equipa', label: 'Equipa', Icon: Users, desc: 'Funcionários' },
+  { id: 'tarefas', label: 'Tarefas', Icon: CheckSquare, desc: 'Lista por urgência e estado' },
+  { id: 'cofre', label: 'Cofre', Icon: Lock, desc: 'Acessos protegidos' },
+] as const;
   const goGabinete = (tab: string) => {
     onGabineteTab?.(tab);
     if (active !== 'gabinete') setView('gabinete');
@@ -302,13 +301,6 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                     </button>
                   ) : null;
                 })()}
-                <ClientNavItem
-                  label="Galeria do Gabinete"
-                  Icon={LayoutDashboard}
-                  onClick={() => goGabinete('gallery')}
-                  current={active === 'gabinete' && gabineteTab === 'gallery'}
-                  title="Voltar à galeria de funções do Gabinete"
-                />
                 {GAB_TABS.filter(t => t.id !== 'dashboard').map(t => (
                   <ClientNavItem key={t.id} label={t.label} Icon={t.Icon} onClick={() => goGabinete(t.id)} current={active==='gabinete' && gabineteTab===t.id} title={t.desc} />
                 ))}

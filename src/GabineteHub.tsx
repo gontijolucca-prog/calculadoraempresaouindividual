@@ -14,15 +14,7 @@ import {
 } from 'lucide-react';
 
 /** Tabs funcionais do Gabinete. `gallery` é apenas a porta de entrada visual. */
-export type GabTab =
-  | 'dashboard'
-  | 'mapa-controlo'
-  | 'visao-geral'
-  | 'equipa'
-  | 'agenda'
-  | 'tarefas'
-  | 'obrigacoes'
-  | 'cofre';
+export type GabTab = 'dashboard' | 'mapa-controlo' | 'mapa-rh' | 'visao-geral' | 'equipa' | 'tarefas' | 'cofre';
 
 export type GabineteTab = GabTab | 'gallery';
 
@@ -43,13 +35,12 @@ export interface GabineteIntroDef {
 
 /** Ordem e texto partilhados pela galeria, pelo header e pela navegação. */
 export const GABINET_FUNCTIONS: GabineteFunction[] = [
-  { id: 'dashboard', label: 'Quadro resumo obrigações', icon: Calendar, desc: 'JAN–DEZ por cliente: ✓ Concluído · ● Não aplicável · ∅ Inexistente · ✕ Não concluído' },
-  { id: 'mapa-controlo', label: 'Mapa de controlo', icon: Table2, desc: '7 fases · JAN–DEZ colorido — Doc. Falta → Balancete' },
-  { id: 'visao-geral', label: 'Visão geral', icon: LayoutDashboard, desc: 'Ficha 360 do cliente' },
-  { id: 'equipa', label: 'Equipa', icon: Users, desc: 'Funcionários e convites' },
-  { id: 'agenda', label: 'Agenda', icon: Calendar, desc: 'Calendário de tarefas e obrigações' },
-  { id: 'tarefas', label: 'Tarefas', icon: CheckSquare, desc: 'Kanban e lista de trabalho' },
-  { id: 'obrigacoes', label: 'Obrigações', icon: Calendar, desc: 'Calendário fiscal' },
+  { id: 'dashboard', label: 'Quadro resumo obrigações', icon: Calendar, desc: 'JAN-DEZ por cliente: v Concluído · * Não concluído' },
+  { id: 'mapa-controlo', label: 'Mapa de controlo', icon: Table2, desc: '7 fases · JAN-DEZ colorido - Doc. Falta -> Balancete' },
+  { id: 'mapa-rh', label: 'Mapa RH', icon: Users, desc: '6 colunas RH - Salários, Ticket, IRS, DMR-AT/SS, Encargos' },
+  { id: 'visao-geral', label: 'Visão geral', icon: LayoutDashboard, desc: 'Ficha 360' },
+  { id: 'equipa', label: 'Equipa', icon: Users, desc: 'Funcionários' },
+  { id: 'tarefas', label: 'Tarefas', icon: CheckSquare, desc: 'Lista por urgência e estado' },
   { id: 'cofre', label: 'Cofre', icon: Lock, desc: 'Acessos protegidos' },
 ];
 
@@ -59,26 +50,26 @@ export const GABINET_FUNCTIONS: GabineteFunction[] = [
  * pela primeira vez, em vez de aterrar diretamente num ecrã vazio.
  */
 export const GABINET_INTROS: Record<GabTab, GabineteIntroDef> = {
+  'mapa-rh': {
+    titulo: 'Mapa RH',
+    Icon: Users,
+    resumo: '6 colunas de RH por mês: Salários, Ticket, Guia IRS/Retenções, DMR-AT, DMR-SS e Pagamentos Encargos (SS+Retenções). v/✕ com fundos verde/vermelho.',
+    dados: ['Cliente + NIF', 'Mês e ano', '6 tipos RH com 2 estados (v/✕)'],
+    resultado: 'Controlo mensal RH com filtros e exportação - por gabinete.',
+  },
   'mapa-controlo': {
     titulo: 'Mapa de controlo contabilidade',
     Icon: Table2,
     resumo: '7 fases da contabilidade por cliente e por mês/trimestre: Gestão Doc., Vendas/Receb., Compras/Pagam., Salários, AFT, Rec. Bancária e Balancete. Cores vivas por fase; clica para alternar estado.',
-    dados: ['Cliente + NIF', 'Ano e trimestre', '7 fases com 4 estados (✓ ● ∅ ✕)'],
-    resultado: 'Controlo mensal/trim. com filtros, exportação e cores por fase — sincronizado por gabinete.',
+    dados: ['Cliente + NIF', 'Ano e trimestre', '7 fases com 4 estados (v ✕)'],
+    resultado: 'Controlo mensal/trim. com filtros, exportação e cores por fase - sincronizado por gabinete.',
   },
   dashboard: {
     titulo: 'Quadro resumo obrigações',
     Icon: Calendar,
-    resumo: 'Quadro cliente × mês (JAN–DEZ): clica na célula para alternar ✓ Concluído / ✕ Não concluído / ● Não aplicável / ∅ Inexistente. Filtra por cliente, gestor, ano e obrigação; expande/colapsa e exporta para Excel.',
-    dados: ['Cliente + tipo de obrigação', 'Mês e ano', 'Estado (4 níveis)'],
-    resultado: 'Visão completa do cumprimento por cliente e mês, com filtros e exportação — guarda automaticamente em Firestore.',
-  },
-  equipa: {
-    titulo: 'Equipa do gabinete',
-    Icon: Users,
-    resumo: 'Gere quem trabalha no gabinete: adiciona por email, define cargo e vê quem já tem acesso.',
-    dados: ['Nome e email', 'Cargo', 'Estado do convite'],
-    resultado: 'Equipa organizada pronta a associar a clientes.',
+    resumo: 'Quadro cliente × mês (JAN-DEZ): clica na célula para alternar v Concluído / ✕ Não concluído com fundo verde/vermelho. Filtra por cliente, gestor, ano e obrigação; expande/colapsa e exporta para Excel.',
+    dados: ['Cliente + tipo de obrigação', 'Mês e ano', 'Estado (v/✕)'],
+    resultado: 'Visão completa do cumprimento por cliente e mês, com filtros e exportação - guarda automaticamente em Firestore.',
   },
   'visao-geral': {
     titulo: 'Visão geral do cliente',
@@ -87,33 +78,26 @@ export const GABINET_INTROS: Record<GabTab, GabineteIntroDef> = {
     dados: ['NIF e CAE', 'Gerentes e trabalhadores', 'Contactos e acessos'],
     resultado: 'Painel 360 com tudo o que precisas para trabalhar o cliente.',
   },
-  agenda: {
-    titulo: 'Agenda',
-    Icon: Calendar,
-    resumo: 'Organiza o trabalho do escritório num calendário único, com tarefas e obrigações fiscais associadas a cada dia.',
-    dados: ['Tarefas com vencimento', 'Obrigações fiscais', 'Clientes associados'],
-    resultado: 'Calendário mensal com o trabalho diário e a lista do dia selecionado, sem perder prazos importantes.',
+  equipa: {
+    titulo: 'Equipa do gabinete',
+    Icon: Users,
+    resumo: 'Gere quem trabalha no gabinete: adiciona por email, define cargo e vê quem já tem acesso.',
+    dados: ['Nome e email', 'Cargo', 'Estado do convite'],
+    resultado: 'Equipa organizada pronta a associar a clientes.',
   },
   tarefas: {
     titulo: 'Tarefas',
     Icon: CheckSquare,
     resumo: 'Transforma o trabalho do escritório numa lista clara: cria tarefas, atribui responsáveis, define prazos e acompanha o estado.',
-    dados: ['Descrição e cliente', 'Prazo e prioridade', 'Responsável e categoria'],
-    resultado: 'Kanban operacional com tarefas por fazer, em curso, concluídas ou atrasadas.',
-  },
-  obrigacoes: {
-    titulo: 'Obrigações Fiscais',
-    Icon: Calendar,
-    resumo: 'Consulta os prazos fiscais dos clientes e acompanha o estado de cada obrigação para reduzir esquecimentos e atrasos.',
-    dados: ['Clientes ativos', 'Regimes de IVA', 'Mês e ano de trabalho'],
-    resultado: 'Tabela de vencimentos com obrigação, cliente, tipo e estado, atualizada a partir da carteira.',
+    dados: ['Título e cliente associado', 'Estado (por fazer/em curso/feito/concluído)', 'Prioridade (baixa/normal/alta/urgente)'],
+    resultado: 'Lista operacional filtrável - sem Kanban, direta e sincronizada.',
   },
   cofre: {
     titulo: 'Cofre de Acessos',
     Icon: Lock,
     resumo: 'Guarda referências de acessos do cliente com proteção local e registo de quem consultou cada entrada.',
     dados: ['Serviço ou entidade', 'Utilizador e segredo', 'Cliente associado'],
-    resultado: 'Cofre protegido, com desbloqueio por palavra-passe e auditoria de visualizações.',
+    resultado: 'Cofre protegido com desbloqueio por palavra-passe e auditoria de visualizações.',
   },
 };
 
