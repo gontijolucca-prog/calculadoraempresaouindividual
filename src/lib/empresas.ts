@@ -366,6 +366,19 @@ export async function saveEmpresasToFirestore(
     emitCloudSync(true);
   } catch (err) {
     console.warn('[empresas] firestore save (chunks) falhou:', err);
+    // Fallback: tenta gravar no doc legado se falhar nos chunks (ex: rule ainda a propagar ou payload pequeno)
+    try {
+      const cloudList = stripSaftXmlForCloud(list);
+      await setDoc(doc(db, FIRESTORE_COLLECTION, officeId), {
+        list: cloudList,
+        updatedAt: stamp ?? getEmpresasStamp() ?? Date.now(),
+      });
+      console.warn('[empresas] fallback legado OK após falha chunks');
+      emitCloudSync(true);
+      return;
+    } catch (e2) {
+      console.warn('[empresas] fallback legado também falhou:', e2);
+    }
     emitCloudSync(false, err instanceof Error ? err.message : String(err));
   }
 }

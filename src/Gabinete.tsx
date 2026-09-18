@@ -38,7 +38,7 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
   // Cada função abre primeiro o card informativo. O botão "Abrir função"
   // marca apenas a função atual como vista e mostra o ecrã funcional.
   const [introDismissedFor, setIntroDismissedFor] = useState<GabTab | null>(null);
-  const showIntro = tab !== 'gallery' && introDismissedFor !== tab;
+  const showIntro = tab !== 'gallery' && tab !== 'visao-geral' && tab !== 'cofre' && introDismissedFor !== tab;
   const openFunction = (target: GabTab) => setTab(target);
   const openCurrentFunction = () => {
     if (tab !== 'gallery') setIntroDismissedFor(tab);
@@ -103,7 +103,7 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
       <div className="sticky top-0 z-20 border-b border-zinc-200 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0677FF] text-sm font-bold text-white">E3</div>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0677FF] text-sm font-bold text-white">360</div>
             <div>
               <div className="font-semibold leading-none">Gabinete</div>
               <div className="hidden text-xs text-zinc-500 sm:block">{functionLabel} · {functionDesc}</div>
@@ -631,7 +631,7 @@ function CofreCard({ entry, onEdit, onDelete }: { entry: CofreEntrada; onEdit: (
     } catch {}
   };
   return (
-    <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden max-w-[640px]">
+    <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden max-w-[640px] mx-auto">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 p-5">
         <div>
           <div className="text-[12px] font-semibold text-zinc-500 mb-1.5">Nome de utilizador</div>
@@ -711,7 +711,7 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
   };
   const handleDelete = async (id: string) => { if (confirm('Apagar entrada do cofre?')) await deleteCofre(id); };
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-3xl mx-auto">
 
       <div className="flex gap-3">
         <div className="relative flex-1">
@@ -720,7 +720,7 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
         </div>
         <button onClick={()=>{ setForm({ categoria:'AT' }); setShowNew(true); }} className="px-4 py-2.5 rounded-xl bg-[#0677FF] text-white text-sm font-medium flex items-center gap-2"><Plus className="w-4 h-4" /> Guardar acesso</button>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-4 max-w-2xl mx-auto">
         {filtered.length===0 ? <div className="py-12 text-center text-zinc-500 border-2 border-dashed border-zinc-200 rounded-2xl">Cofre vazio. Guarda o primeiro acesso (AT/SS/Banco).</div> :
         filtered.map(e=> <CofreCard key={e.id} entry={e} onEdit={handleEdit} onDelete={handleDelete} />)}
       </div>
