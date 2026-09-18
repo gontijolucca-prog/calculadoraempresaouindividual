@@ -806,7 +806,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
   ];
 
   const resultsContent = (
-    <div className="flex flex-col gap-3 lg:sticky lg:top-6 self-start">
+    <div data-sim-results data-sim-title="Previsa" className="flex flex-col gap-3 lg:sticky lg:top-6 self-start">
       <div className="bg-white border border-slate-200 rounded-[16px] overflow-hidden">
         <div className="h-1 bg-gradient-to-r from-[#0677FF] to-[#b83030]" />
         <div className="p-4">

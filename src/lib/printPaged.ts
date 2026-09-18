@@ -130,15 +130,27 @@ export function printViaPaged(printRoot: HTMLElement, opts: PagedOpts): void {
   // Remove dicas de edição e qualquer elemento marcado para não imprimir.
   clone.querySelectorAll('.no-print').forEach(n => n.remove());
 
-  // Extrai e limpa o CSS scoped do componente (tira os @media print/zoom, que
-  // forçavam margin:0 e position:absolute e estragavam a paginação do paged.js).
+  // Recolher TODO o CSS da página (Tailwind + scoped) para preservar bg-*, gradient, rounded, etc
   let css = '';
+  try {
+    for (const ss of Array.from(document.styleSheets) as CSSStyleSheet[]) {
+      try {
+        const rules = ss.cssRules;
+        if (!rules) continue;
+        for (const r of Array.from(rules)) {
+          // Ignorar @media print do documento (será tratado pelo paged.js) — mas manter bg
+          const txt = (r as CSSRule).cssText || '';
+          if (!txt) continue;
+          // Evitar duplicar @font-face já injetado via fontLink
+          css += txt + '\n';
+        }
+      } catch {}
+    }
+  } catch {}
   clone.querySelectorAll('style').forEach(s => { css += (s.textContent || '') + '\n'; s.remove(); });
   css = stripAtMedia(css, 'print');
-  css = stripAtMedia(css, 'screen');
-  css = stripAtMedia(css, 'max-width');
-  // O paged.js tem de ser o ÚNICO dono do @page (margens + margin-boxes). Tira
-  // qualquer @page que tenha sobrado do componente (ex.: `@page{margin:0}`).
+  // Manter screen/max-width: os bg do Tailwind vivem aí dentro; só retiramos print para não conflitar
+  // (antes tirava screen/max-width e perdia cores). Agora mantemos.
   css = stripAtPage(css);
 
   const footerLeft = cssStr(opts.footerLeft || '');
@@ -146,34 +158,21 @@ export function printViaPaged(printRoot: HTMLElement, opts: PagedOpts): void {
   const footerLeftRaw = opts.footerLeft || '';
   const footerRightRaw = opts.footerRight || '';
 
-  // Achata a caixa A4 fixa para o conteúdo fluir; o paged.js + @page tratam das
-  // margens/quebras. Margin-boxes dão o rodapé repetido e a numeração.
+  // Forçar impressão de backgrounds (Chrome tem opção "Background graphics" desligada por defeito)
   const pageCss = `
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .pp-page, .mc-page, .pdf-page {
       width: auto !important; min-height: 0 !important; box-shadow: none !important;
       margin: 0 !important; padding: 0 !important; overflow: visible !important;
     }
     .pdf-page { break-after: page; }
     .pdf-page:last-child { break-after: auto; }
-    /* Bands decorativas do topo de cada folha: com as folhas achatadas, a margem
-       negativa (-16/-22mm, que no ecrã cola a band à borda da folha) puxava a band
-       E o texto seguinte por cima do conteúdo anterior — texto atropelado + barra
-       azul a tapar cláusulas. Na Proposta a 1ª band fica (margens zeradas) como
-       topo de marca; as seguintes saem. Na Minuta (contrato formal) não se
-       imprime band nenhuma. */
     .pp-band { margin: 0 0 12mm 0 !important; }
     .pp-page ~ .pp-page .pp-band { display: none !important; }
     .mc-band { display: none !important; }
-    /* O rodapé interno do documento duplica o rodapé das margin-boxes do paged.js
-       (nome do escritório + numeração) e empurrava as assinaturas para uma página
-       quase vazia no fim — escondido na impressão paginada. */
     .pp-foot { display: none !important; }
     [contenteditable] { outline: none !important; }
-    /* O CSS @media print dos componentes é removido acima (stripAtMedia) — as
-       normalizações de impressão que lá viviam têm de ser repostas AQUI:
-       1) campos por preencher da Minuta sem o destaque amarelo de ecrã; */
     .mc-fill { background: transparent !important; color: inherit !important; padding: 0 !important; font-weight: inherit !important; border-radius: 0 !important; }
-    /* 2) inputs editáveis (Proposta) imprimem como texto limpo, sem caixa nem setas. */
     input { border: none !important; padding: 0 !important; background: transparent !important; -webkit-appearance: none; appearance: none; }
     input[type="number"] { text-align: right; }
     input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }

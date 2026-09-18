@@ -62,16 +62,18 @@ export function SimTwoStep({ title, subtitle, view, state, simulated, ready, onS
       className="min-h-full bg-[#F5F7FA] py-8 px-4 sm:px-6"
     >
       <div className="max-w-[760px] mx-auto">
-        <div className="text-center mb-6">
-          <h2 className="text-[28px] md:text-[32px] font-[800] tracking-tight text-[#0F172A]">Resultados</h2>
-          <p className="text-[14px] font-[500] text-[#64748B] mt-1">{title} — simulação concluída</p>
+        <div data-sim-results data-sim-title={title} className="space-y-5">
+          <div className="text-center mb-6">
+            <h2 className="text-[28px] md:text-[32px] font-[800] tracking-tight text-[#0F172A]">Resultados</h2>
+            <p className="text-[14px] font-[500] text-[#64748B] mt-1">{title} — simulação concluída</p>
+          </div>
+
+          <div className="space-y-5">
+            {results}
+          </div>
         </div>
 
-        <div className="space-y-5">
-          {results}
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
+        <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8 no-print">
           <button
             type="button"
             onClick={onBack}
@@ -87,7 +89,7 @@ export function SimTwoStep({ title, subtitle, view, state, simulated, ready, onS
           )}
         </div>
 
-        <p className="text-center text-[11px] text-[#94A3B8] mt-4">
+        <p className="text-center text-[11px] text-[#94A3B8] mt-4 no-print">
           Podes ajustar os dados e voltar a simular a qualquer momento.
         </p>
       </div>

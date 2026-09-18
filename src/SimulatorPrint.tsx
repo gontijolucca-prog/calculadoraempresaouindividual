@@ -1,6 +1,6 @@
 import React, { createContext, useContext } from 'react';
 import { Printer } from 'lucide-react';
-import { printHtmlViaPaged } from './lib/printPaged';
+import { printViaPaged, printHtmlViaPaged } from './lib/printPaged';
 import { detailSimulacao, type SimView } from './lib/simSummary';
 import { resultSimulacao } from './lib/simResults';
 import { calcViatura } from './lib/viaturas';
@@ -229,6 +229,55 @@ export function SimulatorPrintButton({ compact = false }: { compact?: boolean })
   const ctx = useContext(PrintContext);
   if (!ctx?.view) return null;
   const onPrint = () => {
+    // Preferir impressão fiel ao que o utilizador vê: clonar o nó dos resultados (mesmas cores/cards/gradientes)
+    try {
+      const node = document.querySelector('[data-sim-results]') as HTMLElement | null;
+      if (node) {
+        // Marca o relatório com o branding do escritório para header do print
+        const title = PRINT_TITLES[ctx.view];
+        // Inject temporary header into clone via CSS variable: the node already contains the results; we wrap it
+        // printViaPaged will preserve bg-* Tailwind colors via extracted <style> + inline computed bg if needed
+        // Envolve com header A4 (mesmo que buildReport) mas mantendo o DOM dos cards:
+        // Criamos um container temporário com o header + clone
+        const tmp = document.createElement('div');
+        tmp.style.position='absolute'; tmp.style.left='-9999px'; tmp.style.top='0';
+        tmp.setAttribute('data-print','sim-report-live');
+        const officeName = (ctx.office as unknown as { nome?: string })?.nome?.trim() || 'Estudo 360';
+        const clientName = (ctx.profile as unknown as { nomeCliente?: string })?.nomeCliente?.trim() || '—';
+        const clientNif = (ctx.profile as unknown as { nif?: string })?.nif?.trim() || '—';
+        const date = new Intl.DateTimeFormat('pt-PT', { dateStyle: 'long' }).format(new Date());
+        const color = /^#[0-9A-Fa-f]{6}$/.test((ctx.office as unknown as { corPrimaria?: string })?.corPrimaria || '') ? (ctx.office as unknown as { corPrimaria: string }).corPrimaria : '#0677FF';
+        const logo = (ctx.office as unknown as { logoDataUrl?: string })?.logoDataUrl
+          ? `<img class="logo" src="${esc((ctx.office as unknown as { logoDataUrl: string }).logoDataUrl)}" alt="${esc(officeName)}">`
+          : `<div class="logo-fallback" style="background:${esc(color)}">360</div>`;
+        // Clone the results node (deep)
+        const clone = node.cloneNode(true) as HTMLElement;
+        // Extract branding header HTML (same as buildReport but reusing live results DOM)
+        tmp.innerHTML = `
+          <div class="sim-report-live" style="font-family: Montserrat, Arial, sans-serif; color: #0B1D2D;">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16mm;padding:0 0 6mm;border-bottom:2px solid ${esc(color)};margin-bottom:6mm;">
+              <div style="display:flex;align-items:center;gap:4mm;">
+                ${logo}
+                <div><div style="font-weight:800">${esc(officeName)}</div><div style="font-size:8pt;color:#64748B">Estudo 360 · Análise · Estratégia · Decisão</div></div>
+              </div>
+              <div style="text-align:right;color:#64748B;font-size:8pt">RELATÓRIO<br>${esc(date)}</div>
+            </div>
+            <h1 style="font-size:18pt;line-height:1.15;margin:2mm 0 1mm;font-weight:800;letter-spacing:-0.3px">${esc(title)}</h1>
+            <div style="display:grid;grid-template-columns:1fr 42mm;gap:4mm;background:#F5F7FA;border:1px solid #E2E8F0;border-radius:4mm;padding:3mm 4mm;margin-bottom:6mm;font-size:9pt;">
+              <div><div style="font-size:7.5pt;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#64748B">Cliente / Empresa</div><div style="font-weight:700;margin-top:1mm">${esc(clientName)}</div></div>
+              <div><div style="font-size:7.5pt;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#64748B">NIF</div><div style="font-weight:700;margin-top:1mm">${esc(clientNif)}</div></div>
+            </div>
+          </div>`;
+        const wrapper = tmp.firstElementChild as HTMLElement;
+        // Append the live results clone after header
+        wrapper.appendChild(clone);
+        document.body.appendChild(tmp);
+        printViaPaged(tmp, { title, footerLeft: officeName, footerRight: '' });
+        setTimeout(()=> tmp.remove(), 1500);
+        return;
+      }
+    } catch {}
+    // Fallback: relatório listado clássico
     printHtmlViaPaged(buildReport(ctx), {
       title: PRINT_TITLES[ctx.view],
       footerLeft: ctx.office.nome?.trim() || '',
