@@ -6,9 +6,10 @@
  * ⚠ Valores a confirmar por um contabilista — ver docs/AUDITORIA-FISCAL-PENDENTE.md.
  */
 
+export type ViaturaEngineType = 'diesel' | 'gasoline' | 'hybrid' | 'phev' | 'electric' | 'hydrogen' | 'lpg' | 'cng';
 export interface ViaturaInput {
   category: 'comercial' | 'passageiros';
-  engineType: string; // diesel/gasoline/hybrid/phev/electric/lpg/cng
+  engineType: ViaturaEngineType | string; // mantém string para compatibilidade com dados antigos (diesel/gasoline/hybrid/phev/electric/hydrogen/lpg/cng)
   price: number;
   ivaRegime: string;  // normal/second_hand/leasing
   activity: string;   // other/goods/public_transport/rent_a_car/driving_school
@@ -52,11 +53,11 @@ export function calcViatura(s: ViaturaInput): ViaturaResult {
     if (isExemptActivity) {
       ivaAquisicaoDedRate = 1;
     } else if (category === 'passageiros') {
-      if (engineType === 'electric') ivaAquisicaoDedRate = price <= 62500 ? 1 : 0;
+      if (engineType === 'electric' || engineType === 'hydrogen') ivaAquisicaoDedRate = price <= 62500 ? 1 : 0;
       else if (engineType === 'phev' && phevCompliant) ivaAquisicaoDedRate = price <= 50000 ? 1 : 0;
       else if (['lpg', 'cng'].includes(engineType)) ivaAquisicaoDedRate = price <= 37500 ? 0.5 : 0;
     } else if (category === 'comercial') {
-      if (['electric', 'phev', 'lpg', 'cng'].includes(engineType)) ivaAquisicaoDedRate = 1;
+      if (['electric', 'hydrogen', 'phev', 'lpg', 'cng'].includes(engineType)) ivaAquisicaoDedRate = 1;
       else if (engineType === 'diesel') ivaAquisicaoDedRate = 0.5;
     }
   }
@@ -72,7 +73,7 @@ export function calcViatura(s: ViaturaInput): ViaturaResult {
   if (isExemptActivity || (activity === 'goods' && category === 'comercial')) {
     fuelIvaDedRate = 1;
   } else {
-    if (engineType === 'electric') fuelIvaDedRate = 1;
+    if (engineType === 'electric' || engineType === 'hydrogen') fuelIvaDedRate = 1;
     else if (['diesel', 'lpg', 'cng'].includes(engineType)) fuelIvaDedRate = 0.5;
     else if (engineType === 'phev') fuelIvaDedRate = 0;
   }
@@ -83,7 +84,7 @@ export function calcViatura(s: ViaturaInput): ViaturaResult {
   let limit = 25000;
   const phevValid = engineType === 'phev' && phevCompliant;
 
-  if (engineType === 'electric') limit = 62500;
+  if (engineType === 'electric' || engineType === 'hydrogen') limit = 62500;
   else if (phevValid) limit = 50000;
   else if (['lpg', 'cng'].includes(engineType)) limit = 37500;
 
@@ -107,8 +108,8 @@ export function calcViatura(s: ViaturaInput): ViaturaResult {
     } else {
       // Tributação Autónoma — viaturas ligeiras de passageiros (CIRC Art. 88º n.os 3-4, OE 2026).
       // Limites de aquisição €37.500 e €45.000. Convencionais 8/25/32%; PHEV 2,5/7,5/15%;
-      // elétricos isentos até €62.500 e 10% acima.
-      if (engineType === 'electric') {
+      // elétricos/hidrogénio isentos até €62.500 e 10% acima.
+      if (engineType === 'electric' || engineType === 'hydrogen') {
         taRate = price >= 62500 ? 0.10 : 0;
       } else if (phevValid) {
         taRate = price < 37500 ? 0.025 : (price < 45000 ? 0.075 : 0.15);
@@ -131,6 +132,6 @@ export function calcViatura(s: ViaturaInput): ViaturaResult {
     depNaoAceite,
     limit,
     totalEncsTA,
-    isElecTaxed: engineType === 'electric' && price >= 62500 && !exemptTA,
+    isElecTaxed: (engineType === 'electric' || engineType === 'hydrogen') && price >= 62500 && !exemptTA,
   };
 }

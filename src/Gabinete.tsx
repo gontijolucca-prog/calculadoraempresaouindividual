@@ -6,9 +6,10 @@ import {
   upsertTarefa, deleteTarefa, marcarTarefaFeita, newTarefaId,
   upsertObrigacao,
   upsertCofre, deleteCofre, registarVistaCofre, newCofreId,
-  type GabineteCliente, type Tarefa, type Obrigacao, type CofreEntrada,
+  type GabineteCliente, type Tarefa, type Obrigacao, type ObrigacaoTipo, type ObrigacaoEstado, type CofreEntrada,
 } from './lib/gabinete';
 import { listEmpresas } from './lib/empresas';
+import { getActiveGabineteId, clearActiveGabineteId } from './lib/gabinetes';
 // Cofre simples (sem cifra) — Firestore só visível pela própria conta (gabinete/{uid}/cofre/*)
 import GuiaSugestao from './components/GuiaSugestao';
 import type { ViewKey } from './lib/guias';
@@ -88,7 +89,19 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
 
   // Por defeito, se o App não passar callback, navega para o dashboard (no-op)
   const startTour = (v: ViewKey) => onStartTour?.(v);
+  const activeGabineteLabel = (() => {
+    try { const v = getActiveGabineteId(); return v; } catch { return null; }
+  })();
+  const activeGabineteIdForHeader = activeGabineteLabel;
+  const activeGabineteNome: string | null = null; // nome bonito opcional via cache
   const guideView = tab === 'gallery' ? null : GAB_TAB_GUIA[tab];
+  const clearGabineteAndReload = () => {
+    try { clearActiveGabineteId(); } catch {
+      try { localStorage.removeItem('estudo360:v1:gabinete:activeId'); localStorage.removeItem('estudo360:v1:gabinete:officeId'); } catch {}
+    }
+    window.dispatchEvent(new CustomEvent('estudo360:gabinete-switch', { detail: { id: null } } as any));
+    window.location.reload();
+  };
   const functionLabel = activeFunction?.label ?? 'Centro de operação';
   const functionDesc = activeFunction?.desc ?? 'Escolhe uma função para começar';
   const goFunction = (target: GabTab) => setTab(target);
@@ -109,6 +122,9 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
               <div className="hidden text-xs text-zinc-500 sm:block">{functionLabel} · {functionDesc}</div>
             </div>
           </div>
+          <button onClick={clearGabineteAndReload} className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">
+              {activeGabineteNome ? activeGabineteNome.slice(0, 22) : (activeGabineteIdForHeader ? activeGabineteIdForHeader.slice(0, 8) + '…' : 'Gabinete')} · Trocar
+            </button>
           <div className="hidden sm:flex items-center gap-2 text-right text-xs text-zinc-500">
             <span>{clientes.length} clientes</span>
             <span className="opacity-30">•</span>
@@ -116,6 +132,7 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
             <span className="opacity-30">•</span>
             <span>{cofre.length} acessos</span>
           </div>
+          <button onClick={clearGabineteAndReload} className="sm:hidden inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-700">Trocar</button>
           <div className="sm:hidden text-right text-[11px] leading-tight text-zinc-500">
             <div>{clientes.length} clientes</div>
             <div>{tarefas.filter(t=>t.estado!=='done').length} abertas</div>
@@ -176,104 +193,335 @@ function Kpi({ label, value, sub, icon: Icon, tone = 'blue' }: { label:string; v
 }
 
 function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:GabineteCliente[]; tarefas:Tarefa[]; obrigacoes:Obrigacao[]; cofre:CofreEntrada[]; onGo:(t:GabTab)=>void }) {
-  const hoje = new Date(); hoje.setHours(0,0,0,0);
-  const em7dias = hoje.getTime() + 7*86400000;
-  const tarefasHoje = tarefas.filter(t=> t.dataVencimento && t.dataVencimento >= hoje.getTime() && t.dataVencimento < hoje.getTime()+86400000 && t.estado!=='done').length;
-  const atrasadas = tarefas.filter(t=> t.estado==='atrasada' || (t.dataVencimento && t.dataVencimento < hoje.getTime() && t.estado!=='done')).length;
-  // O catálogo nacional é referência de calendário, não uma obrigação de um
-  // cliente concreto: não deve inflacionar o KPI de atrasos do escritório.
-  const vencidasObr = obrigacoes.filter(o=> o.origem !== 'calendario_fiscal' && o.vencimento < Date.now() && o.estado!=='entregue' && o.estado!=='dispensada').length;
-  const semTarefa30d = clientes.filter(c=> !tarefas.some(t=> t.clienteId===c.id && t.createdAt > Date.now()-30*86400000)).length;
-  const proximos = [...tarefas, ...obrigacoes.map(o=> ({ id:o.id, titulo:o.titulo, dataVencimento:o.vencimento, estado:o.estado, tipo:'obrigacao' as const } as unknown as Tarefa))]
-    .filter(x=> x.dataVencimento && x.dataVencimento >= hoje.getTime() && x.dataVencimento <= em7dias)
-    .sort((a,b)=> (a.dataVencimento! - b.dataVencimento!)).slice(0,7);
-  const alertas = useMemo(()=> {
-    const out: { cliente: GabineteCliente; tipo: string; venc: number; dias: number }[] = [];
-    const now = Date.now();
-    clientes.forEach(c=> {
-      if(!c.alertas) return;
-      (['iuc','imi','seguros','certidaoPermanente'] as const).forEach(k=> {
-        const v = (c.alertas as unknown as Record<string, unknown>)[k] as number | undefined;
-        if(!v) return;
-        const dias = Math.ceil((v - now)/86400000);
-        if(dias <= 30) out.push({ cliente: c, tipo: k, venc: v, dias });
-      });
+  const colaboradores = useGabineteColaboradores();
+  const meses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'] as const;
+
+  // —— Definição das linhas do quadro (igual ao screenshot) ——
+  type LinhaDef = { id: string; label: string; tipos: ObrigacaoTipo[]; fallback?: string };
+  const linhasDef: LinhaDef[] = [
+    { id: 'modelo44', label: 'Modelo 44', tipos: ['modelo22','dossier'] },
+    { id: 'saft', label: 'Envio SAFT', tipos: ['dossier','outro'] },
+    { id: 'iva', label: 'Iva Trimestral', tipos: ['iva'] },
+    { id: 'ies', label: 'IES', tipos: ['ies'] },
+    { id: 'pec', label: 'PEC', tipos: ['ppc'] },
+    { id: 'modelo10', label: 'Modelo 10', tipos: ['retencao'] },
+    { id: 'dmr', label: 'DMR', tipos: ['retencao','ss'] },
+    { id: 'ss', label: 'Segurança Social', tipos: ['ss'] },
+  ];
+
+  // —— Filtros (como na imagem) ——
+  const [todosClientes, setTodosClientes] = useState(true);
+  const [filtroClienteTexto, setFiltroClienteTexto] = useState('');
+  const [gestorFiltro, setGestorFiltro] = useState<string>(''); // '' = todos
+  const [ano, setAno] = useState<number>(new Date().getFullYear());
+  const [todasObrigacoes, setTodasObrigacoes] = useState(true);
+  const [filtroObrigacao, setFiltroObrigacao] = useState<string>(''); // id da linha
+  const [soNaoConcluido, setSoNaoConcluido] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  // Auto-expandir no primeiro load quando há clientes
+  useMemo(() => {
+    if (clientes.length && expanded.size === 0) {
+      setExpanded(new Set(clientes.slice(0, 4).map(c => c.id)));
+    }
+  }, []);
+
+  const toggleCliente = (id: string) => {
+    setExpanded(prev => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
     });
-    return out.sort((a,b)=> a.venc - b.venc).slice(0,8);
-  }, [clientes]);
+  };
+  const expandirTodos = () => setExpanded(new Set(clientes.map(c => c.id)));
+  const colapsarTodos = () => setExpanded(new Set());
+
+  // Filtragem de clientes
+  const clientesFiltrados = useMemo(() => {
+    let list = [...clientes];
+    if (!todosClientes) {
+      const t = filtroClienteTexto.trim().toLowerCase();
+      if (t) list = list.filter(c => (c.nome + ' ' + c.nif).toLowerCase().includes(t));
+    }
+    if (gestorFiltro) {
+      list = list.filter(c => {
+        const g = gestorFiltro.toLowerCase();
+        const ri = (c.responsavelInterno?.nome || '').toLowerCase();
+        const sup = (c.supervisor?.nome || '').toLowerCase();
+        const adm = (c.apoioAdministrativo?.nome || '').toLowerCase();
+        const rid = (c as any).responsavelId || '';
+        const sid = (c as any).supervisorId || '';
+        // tenta match por id ou nome
+        return rid === gestorFiltro || sid === gestorFiltro || ri.includes(g) || sup.includes(g) || adm.includes(g);
+      });
+    }
+    if (soNaoConcluido) {
+      // só clientes que têm pelo menos um Não Concluído no ano
+      // calcula rápido via obrigacoes
+      // filtrado mais abaixo — por agora mantém todos, filtra na render
+    }
+    return list;
+  }, [clientes, todosClientes, filtroClienteTexto, gestorFiltro]);
+
+  const linhasFiltradas = useMemo(() => {
+    if (todasObrigacoes) return linhasDef;
+    if (!filtroObrigacao) return linhasDef;
+    return linhasDef.filter(l => l.id === filtroObrigacao);
+  }, [todasObrigacoes, filtroObrigacao]);
+
+  const isEmptyGlobal = clientes.length === 0 && tarefas.length === 0 && obrigacoes.length === 0;
+  const hasAlgumaObrigacao = obrigacoes.length > 0;
+
+  // —— Estado da célula ——
+  type CellStatus = 'concluido' | 'nao_aplicavel' | 'inexistente' | 'nao_concluido';
+  const getStatusExemplo = (linhaId: string, mes: number): CellStatus => {
+    // replica o screenshot 2017 para quando não há dados reais
+    switch(linhaId) {
+      case 'modelo44': return mes === 1 ? 'concluido' : 'inexistente';
+      case 'saft': if (mes <= 2) return 'nao_aplicavel'; if (mes <= 8) return 'concluido'; return 'nao_concluido';
+      case 'iva': if ([2,5,8].includes(mes)) return 'concluido'; if (mes === 11) return 'nao_concluido'; return 'inexistente';
+      case 'ies': return mes === 7 ? 'concluido' : 'inexistente';
+      case 'pec': if (mes === 3) return 'concluido'; if (mes === 11) return 'nao_concluido'; return 'inexistente';
+      case 'modelo10': return mes === 2 ? 'concluido' : 'inexistente';
+      case 'dmr': return mes <= 8 ? 'concluido' : 'nao_concluido';
+      case 'ss': return mes <= 8 ? 'concluido' : 'nao_concluido';
+      default: return 'inexistente';
+    }
+  };
+
+  const getCellStatus = (cli: GabineteCliente, linha: LinhaDef, mes: number, anoNum: number): CellStatus => {
+    // Procura obrigação real para este cliente/mês/tipo
+    // match por vencimento mês/ano e tipo
+    const hits = obrigacoes.filter(o => {
+      if (o.clienteId !== cli.id) return false;
+      const d = new Date(o.vencimento);
+      if (d.getFullYear() !== anoNum) return false;
+      if (d.getMonth() + 1 !== mes) return false;
+      // tipo mapping: linha.tipos inclui o.tipo
+      // para IVA/mensal vs trimestral, aceita qualquer iva
+      return linha.tipos.includes(o.tipo as ObrigacaoTipo) || linha.tipos.includes(o.tipo as any);
+    });
+    // se houver mais de uma, prioriza entregue > dispensada > atrasada > pendente
+    let best: Obrigacao | undefined;
+    for (const o of hits) {
+      if (!best) { best = o; continue; }
+      const prio = (s: ObrigacaoEstado) => s === 'entregue' ? 0 : s === 'dispensada' ? 1 : s === 'atrasada' ? 2 : 3;
+      if (prio(o.estado) < prio(best.estado)) best = o;
+    }
+    if (best) {
+      if (best.estado === 'entregue') return 'concluido';
+      if (best.estado === 'dispensada') return 'nao_aplicavel';
+      if (best.estado === 'atrasada') return 'nao_concluido';
+      // pendente
+      // se vencimento < hoje => não concluído, senão inexistente? mas para futuro marca como não concluído para bater com print
+      if (best.vencimento < Date.now()) return 'nao_concluido';
+      return 'nao_concluido';
+    }
+    // Nenhum registo real -> se não há qualquer obrigação no sistema, mostra exemplo
+    if (!hasAlgumaObrigacao) {
+      return getStatusExemplo(linha.id, mes);
+    }
+    // Marca Não Aplicável por regime: IVA isento
+    if (linha.id === 'iva' && cli.regimeIva === 'isencao53') return 'nao_aplicavel';
+    // Se cliente não tem obrigação desse tipo naquele mês, é Inexistente
+    return 'inexistente';
+  };
+
+  const toggleCell = async (cli: GabineteCliente, linha: LinhaDef, mes: number) => {
+    const status = getCellStatus(cli, linha, mes, ano);
+    // ciclo: inexistente -> concluido -> nao_concluido -> nao_aplicavel -> inexistente
+    let nextEstado: ObrigacaoEstado | null = null;
+    let nextStatus: CellStatus;
+    if (status === 'inexistente') nextStatus = 'concluido';
+    else if (status === 'concluido') nextStatus = 'nao_concluido';
+    else if (status === 'nao_concluido') nextStatus = 'nao_aplicavel';
+    else nextStatus = 'inexistente';
+
+    if (nextStatus === 'inexistente') {
+      // remove obrigação desse mês/tipo se existir
+      const hits = obrigacoes.filter(o => o.clienteId === cli.id && new Date(o.vencimento).getMonth()+1 === mes && new Date(o.vencimento).getFullYear() === ano && linha.tipos.includes(o.tipo as any));
+      for (const h of hits) {
+        const { deleteObrigacao } = await import('./lib/gabinete');
+        // também apaga tarefa espelho? não necessário
+        try { await deleteObrigacao(h.id); } catch {}
+      }
+      return;
+    }
+    if (nextStatus === 'concluido') nextEstado = 'entregue';
+    else if (nextStatus === 'nao_aplicavel') nextEstado = 'dispensada';
+    else if (nextStatus === 'nao_concluido') nextEstado = 'atrasada';
+
+    // cria ou atualiza
+    const venc = new Date(ano, mes - 1, 20).getTime();
+    // procura existente para update
+    const existing = obrigacoes.find(o => o.clienteId === cli.id && new Date(o.vencimento).getMonth()+1 === mes && new Date(o.vencimento).getFullYear() === ano && linha.tipos.includes(o.tipo as any));
+    const tituloMap: Record<string,string> = { modelo44:'Modelo 44', saft:'Envio SAFT', iva: cli.regimeIva === 'mensal' ? 'IVA Mensal' : 'Iva Trimestral', ies:'IES', pec:'PEC', modelo10:'Modelo 10', dmr:'DMR', ss:'Segurança Social' };
+    const titulo = `${tituloMap[linha.id] || linha.label} ${String(mes).padStart(2,'0')}/${ano} — ${cli.nome}`;
+    const payload: Obrigacao = {
+      id: existing?.id || ('obr_' + Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-4)),
+      tipo: (linha.tipos[0] as ObrigacaoTipo) || 'outro',
+      titulo,
+      clienteId: cli.id,
+      clienteNome: cli.nome,
+      periodo: `${ano}-${String(mes).padStart(2,'0')}`,
+      vencimento: venc,
+      estado: nextEstado!,
+      origem: 'cliente',
+      createdAt: existing?.createdAt || Date.now(),
+      updatedAt: Date.now(),
+    };
+    await upsertObrigacao(payload);
+  };
+
+  const renderIcon = (s: CellStatus) => {
+    if (s === 'concluido') return <span title="Concluído" className="inline-flex w-5 h-5 items-center justify-center text-emerald-600 font-bold text-[16px] leading-none">✓</span>;
+    if (s === 'nao_aplicavel') return <span title="Não Aplicável" className="inline-flex w-5 h-5 items-center justify-center text-zinc-900 text-[14px] leading-none">●</span>;
+    if (s === 'nao_concluido') return <span title="Não Concluído" className="inline-flex w-5 h-5 items-center justify-center text-red-600 font-bold text-[16px] leading-none">✕</span>;
+    return <span title="Inexistente" className="inline-flex w-5 h-5 items-center justify-center text-zinc-600 text-[14px] leading-none">∅</span>;
+  };
+
+  const handleImprimir = () => window.print();
+  const handleExportExcel = () => {
+    const rows: string[] = [];
+    const header = ['Cliente','Obrigação',...meses].join(';');
+    rows.push(header);
+    for (const cli of clientesFiltrados) {
+      for (const linha of linhasFiltradas) {
+        const cells = meses.map((_, i) => {
+          const st = getCellStatus(cli, linha, i+1, ano);
+          const map: Record<CellStatus,string> = { concluido:'Concluído', nao_aplicavel:'Não Aplicável', inexistente:'Inexistente', nao_concluido:'Não Concluído' };
+          return map[st];
+        });
+        rows.push([cli.nome, linha.label, ...cells].join(';'));
+      }
+    }
+    const csv = rows.join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Quadro_Resumo_Obrigacoes_${ano}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const showVazio = clientesFiltrados.length === 0;
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Kpi label="Tarefas hoje" value={tarefasHoje} sub="vencem hoje" icon={CheckSquare} tone="blue" />
-        <Kpi label="Atrasadas" value={atrasadas} sub="precisam atenção" icon={AlertTriangle} tone={atrasadas? 'rose':'emerald'} />
-        <Kpi label="Obrigações vencidas" value={vencidasObr} sub="IVA/PPC/IES" icon={Calendar} tone={vencidasObr? 'amber':'zinc'} />
-        <Kpi label="Clientes sem tarefa 30d" value={semTarefa30d} sub="risco de esquecimento" icon={Users} tone="zinc" />
-      </div>
-      {alertas.length>0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-          <h3 className="font-semibold flex items-center gap-2 text-amber-900"><AlertTriangle className="w-4 h-4" /> Alertas IUC / IMI / Seguros / Certidão (30 dias)</h3>
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-            {alertas.map((a,i)=> (
-              <div key={i} className="p-3 rounded-xl bg-white border border-amber-200">
-                <div className="text-sm font-medium truncate">{a.cliente.nome}</div>
-                <div className="text-xs text-zinc-600">{a.tipo.toUpperCase()} • {new Date(a.venc).toLocaleDateString('pt-PT')} • {a.dias<=0 ? `${Math.abs(a.dias)} dias em atraso` : `${a.dias} dias`}</div>
-              </div>
-            ))}
+    <div className="space-y-3 print:space-y-2">
+      {/* Barra de filtros — replica a imagem */}
+      <div className="bg-white rounded-[10px] border border-zinc-300 shadow-sm overflow-hidden print:shadow-none">
+        <div className="px-3 py-2.5 border-b border-zinc-200 bg-[#F8FAFC] flex flex-wrap items-center gap-2.5">
+          <label className="inline-flex items-center gap-1.5 text-[13px] font-medium">
+            <input type="checkbox" checked={todosClientes} onChange={e=>setTodosClientes(e.target.checked)} className="w-4 h-4 rounded border-zinc-400 text-[#0677FF] focus:ring-[#0677FF]" />
+            Todos os Clientes
+          </label>
+          <div className="flex items-center gap-1">
+            <input value={filtroClienteTexto} onChange={e=>setFiltroClienteTexto(e.target.value)} disabled={todosClientes} placeholder={todosClientes ? '' : 'pesquisar cliente…'} className={`w-[160px] px-2 py-1.5 rounded border text-sm ${todosClientes ? 'bg-zinc-100 border-zinc-200 text-zinc-400' : 'bg-white border-zinc-300'}`} />
+            <button disabled={todosClientes} className="px-2 py-1.5 rounded border border-zinc-300 bg-zinc-50 text-xs disabled:opacity-50">…</button>
           </div>
+          <input value={filtroClienteTexto} onChange={e=>setFiltroClienteTexto(e.target.value)} disabled={todosClientes} placeholder={todosClientes ? '' : 'filtrar por nome/NIF…'} className={`flex-1 min-w-[180px] px-2 py-1.5 rounded border text-sm ${todosClientes ? 'bg-zinc-100 border-zinc-200' : 'bg-white border-zinc-300'}`} />
+          <span className="text-sm text-zinc-600">Gestor</span>
+          <select value={gestorFiltro} onChange={e=>setGestorFiltro(e.target.value)} className="min-w-[160px] px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm">
+            <option value="">(todos)</option>
+            {colaboradores.map(c=> <option key={c.id} value={c.id}>{c.nome}</option>)}
+          </select>
+          <span className="text-sm text-zinc-600">Ano</span>
+          <input type="number" value={ano} onChange={e=>setAno(parseInt(e.target.value)|| new Date().getFullYear())} className="w-[78px] px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm" />
+          <button onClick={()=>{ /* filtros já são live */ }} className="ml-auto px-6 py-1.5 rounded border-2 border-[#0677FF] bg-white text-[#0677FF] font-semibold text-sm hover:bg-blue-50">Ok</button>
+        </div>
+        <div className="px-3 py-2 flex items-center gap-2">
+          <label className="inline-flex items-center gap-1.5 text-[13px] font-medium">
+            <input type="checkbox" checked={todasObrigacoes} onChange={e=>setTodasObrigacoes(e.target.checked)} className="w-4 h-4 rounded border-zinc-400 text-[#0677FF] focus:ring-[#0677FF]" />
+            Todas as Obrigações
+          </label>
+          <select value={filtroObrigacao} onChange={e=>setFiltroObrigacao(e.target.value)} disabled={todasObrigacoes} className={`flex-1 px-2 py-1.5 rounded border text-sm ${todasObrigacoes ? 'bg-zinc-100 border-zinc-200 text-zinc-400' : 'bg-white border-zinc-300'}`}>
+            <option value="">(todas)</option>
+            {linhasDef.map(l=> <option key={l.id} value={l.id}>{l.label}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* Tabela */}
+      <div className="bg-white rounded-[10px] border border-zinc-300 shadow-sm overflow-hidden print:border-zinc-400">
+        <div className="overflow-auto max-h-[62vh] print:max-h-none print:overflow-visible">
+          <table className="w-full text-[13px] border-collapse">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-[#4A4A4A] text-white text-[11px] tracking-wide">
+                <th className="text-left font-semibold px-2 py-2 w-[280px] min-w-[220px] sticky left-0 bg-[#4A4A4A] z-20 border-r border-[#606060]">Cliente</th>
+                {meses.map(m=> <th key={m} className="text-center font-semibold px-1 py-2 w-[56px] min-w-[48px] border-l border-[#606060]">{m}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {showVazio ? (
+                <tr><td colSpan={13} className="px-4 py-16 text-center">
+                  <div className="text-zinc-500 text-sm">Nenhum cliente corresponde aos filtros.</div>
+                  <div className="text-zinc-400 text-xs mt-1">Cria clientes na carteira ou limpa os filtros.</div>
+                </td></tr>
+              ) : clientesFiltrados.map(cli => {
+                const isExpanded = expanded.has(cli.id);
+                return (
+                  <React.Fragment key={cli.id}>
+                    <tr className="bg-[#ECECEC] border-t border-zinc-300">
+                      <td className="px-1 py-1.5 sticky left-0 bg-[#ECECEC] z-[5] border-r border-zinc-300">
+                        <button onClick={()=>toggleCliente(cli.id)} className="inline-flex items-center gap-1.5 w-full text-left">
+                          <span className="w-4 h-4 rounded-[3px] border border-zinc-400 bg-white flex items-center justify-center text-[11px] leading-none shrink-0">{isExpanded ? '−' : '+'}</span>
+                          <span className="font-semibold text-[#0F172A] truncate">{cli.nome}</span>
+                        </button>
+                      </td>
+                      {meses.map((_, i)=> <td key={i} className="border-l border-zinc-200 bg-[#ECECEC]"></td>)}
+                    </tr>
+                    {isExpanded && linhasFiltradas.map(linha => (
+                      <tr key={linha.id} className="border-t border-zinc-200 hover:bg-zinc-50/70">
+                        <td className="px-2 py-1.5 pl-7 flex items-center gap-1.5 sticky left-0 bg-white z-[5] border-r border-zinc-200">
+                          <span className="w-4 h-4 rounded-[3px] border border-amber-400 bg-amber-50 flex items-center justify-center shrink-0">
+                            <span className="w-2 h-2 rounded-[1px] bg-amber-500 block" />
+                          </span>
+                          <span className="text-amber-700 font-medium truncate">{linha.label}</span>
+                        </td>
+                        {meses.map((_, idx) => {
+                          const mesNum = idx + 1;
+                          const st = getCellStatus(cli, linha, mesNum, ano);
+                          return (
+                            <td key={idx} className="text-center border-l border-zinc-200 py-1">
+                              <button onClick={()=>toggleCell(cli, linha, mesNum)} className="w-full h-full flex items-center justify-center hover:bg-zinc-100 rounded py-0.5">
+                                {renderIcon(st)}
+                              </button>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Rodapé — botões + legenda (igual à imagem) */}
+        <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 bg-[#F1F1F1] border-t border-zinc-300 text-xs print:bg-white">
+          <button onClick={handleImprimir} className="px-3 py-1.5 rounded border border-zinc-400 bg-gradient-to-b from-white to-zinc-100 hover:from-zinc-50 hover:to-zinc-200 text-zinc-800 font-medium shadow-sm">Imprimir</button>
+          <button onClick={handleExportExcel} className="px-3 py-1.5 rounded border border-zinc-400 bg-gradient-to-b from-white to-zinc-100 hover:from-zinc-50 hover:to-zinc-200 text-zinc-800 font-medium shadow-sm">Exportar Excel</button>
+          <button onClick={expandirTodos} className="px-3 py-1.5 rounded border border-zinc-400 bg-gradient-to-b from-white to-zinc-100 hover:from-zinc-50 hover:to-zinc-200 text-zinc-800 font-medium shadow-sm">Expandir todos</button>
+          <button onClick={colapsarTodos} className="px-3 py-1.5 rounded border border-zinc-400 bg-gradient-to-b from-white to-zinc-100 hover:from-zinc-50 hover:to-zinc-200 text-zinc-800 font-medium shadow-sm">Colapsar todos</button>
+          <div className="ml-auto flex flex-wrap items-center gap-4 text-[12px] text-zinc-700">
+            <span className="inline-flex items-center gap-1.5"><span className="text-emerald-600 font-bold">✓</span> Concluído</span>
+            <span className="inline-flex items-center gap-1.5"><span className="text-zinc-900">●</span> Não Aplicável</span>
+            <span className="inline-flex items-center gap-1.5"><span className="text-zinc-600">∅</span> Inexistente</span>
+            <span className="inline-flex items-center gap-1.5"><span className="text-red-600 font-bold">✕</span> Não Concluído</span>
+          </div>
+        </div>
+      </div>
+
+      {isEmptyGlobal && (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs text-blue-900 flex gap-2">
+          <span className="font-bold">Exemplo:</span>
+          <span>Sem clientes ainda — a mostrar como fica com dados. Cria clientes e as obrigações ganham estado real (clica numa célula para alternar: ✓ → ✕ → ● → ∅).</span>
         </div>
       )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-zinc-200 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold">Próximos 7 dias</h3>
-            <button onClick={()=>onGo('tarefas')} className="text-sm text-[#0677FF] hover:underline flex items-center gap-1">Ver tudo <ArrowRight className="w-4 h-4" /></button>
-          </div>
-          {proximos.length===0 ? (
-            <div className="py-12 text-center text-zinc-500 text-sm border-2 border-dashed border-zinc-200 rounded-xl">Nada nos próximos 7 dias. Cria a primeira tarefa.</div>
-          ) : (
-            <div className="space-y-2">
-              {proximos.map(p=> (
-                <div key={p.id} className="flex items-center justify-between p-3 rounded-xl border border-zinc-200 hover:bg-zinc-50">
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium truncate">{p.titulo}</div>
-                    <div className="text-xs text-zinc-500">{p.dataVencimento ? new Date(p.dataVencimento).toLocaleDateString('pt-PT') : '—'} • {p.estado}</div>
-                  </div>
-                  <span className={`text-xs px-2 py-1 rounded-full border ${p.estado==='atrasada' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-zinc-50 text-zinc-600 border-zinc-200'}`}>{p.estado}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        <div className="space-y-4">
-          <div className="bg-white rounded-2xl border border-zinc-200 p-5">
-            <h3 className="font-semibold mb-3 flex items-center gap-2"><Sparkles className="w-4 h-4 text-[#0677FF]" /> Atalhos</h3>
-            <div className="grid grid-cols-1 gap-2">
-              <button onClick={()=>onGo('tarefas')} className="w-full text-left p-3 rounded-xl border border-zinc-200 hover:bg-zinc-50 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><Plus className="w-4 h-4" /></div>
-                <div><div className="text-sm font-medium">Novo cliente</div><div className="text-xs text-zinc-500">Cria ficha 360</div></div>
-              </button>
-              <button onClick={()=>onGo('tarefas')} className="w-full text-left p-3 rounded-xl border border-zinc-200 hover:bg-zinc-50 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center"><CheckSquare className="w-4 h-4" /></div>
-                <div><div className="text-sm font-medium">Nova tarefa</div><div className="text-xs text-zinc-500">Atribui a colaboradora</div></div>
-              </button>
-              <button onClick={()=>onGo('cofre')} className="w-full text-left p-3 rounded-xl border border-zinc-200 hover:bg-zinc-50 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center"><Lock className="w-4 h-4" /></div>
-                <div><div className="text-sm font-medium">Guardar acesso</div><div className="text-xs text-zinc-500">AT / SS / Banco</div></div>
-              </button>
-            </div>
-          </div>
-          <div className="bg-white rounded-2xl border border-zinc-200 p-5">
-            <h3 className="font-semibold mb-2">Memória reliable</h3>
-            <ul className="text-sm text-zinc-600 space-y-1.5 list-disc pl-5">
-              <li><b>Firestore live</b> + <b>IndexedDB offline</b> — tudo fica guardado, mesmo sem net</li>
-              <li><b>onSnapshot</b> — outra colaboradora vê a tarefa assim que crias</li>
-              <li><b>Cofre</b> — senhas só visíveis pela tua conta</li>
-              <li><b>Audit</b> — quem viu que senha e quando</li>
-            </ul>
-          </div>
-        </div>
+      <div className="text-[11px] text-zinc-500 px-1">
+        Clica numa célula para alternar o estado. Filtros: cliente / gestor / ano / obrigação. O quadro guarda em Firestore e atualiza live para toda a equipa.
       </div>
     </div>
   );
@@ -431,7 +679,7 @@ function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmp
       prioridade: (form.prioridade as Tarefa['prioridade']) || 'media',
       clienteId: (form.clienteId as string) || activeEmpresaId || undefined,
       clienteNome: clientes.find(c=>c.id=== (form.clienteId || activeEmpresaId))?.nome || activeEmpresaNome || undefined,
-      dataVencimento: form.dataVencimento ? new Date(form.dataVencimento as unknown as string).getTime() : undefined,
+      dataVencimento: form.dataVencimento ? (typeof form.dataVencimento === 'number' ? form.dataVencimento : new Date(form.dataVencimento as unknown as string).getTime()) : undefined,
       origem: 'manual',
       createdAt: (form.createdAt as number) || Date.now(),
       updatedAt: Date.now(),
@@ -542,6 +790,41 @@ function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmp
             })}
           </div>
         </>
+      )}
+
+      {showNew && (
+        <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={()=>setShowNew(false)}>
+          <div className="w-full max-w-[560px] bg-white rounded-2xl p-6 border border-zinc-200 shadow-xl" onClick={e=>e.stopPropagation()}>
+            <h3 className="font-semibold">{form.id ? 'Editar tarefa' : 'Nova tarefa'}</h3>
+            <p className="text-sm text-zinc-500">Preenche os campos. Fica guardada no gabinete e aparece no Kanban.</p>
+            <div className="grid grid-cols-1 gap-3 mt-4">
+              <div>
+                <label className="block text-[11px] font-[700] uppercase tracking-[1px] text-zinc-500 mb-1">Título <span className="text-red-500">*</span></label>
+                <input value={form.titulo||''} onChange={e=>setForm({...form, titulo:e.target.value})} placeholder="ex: Pedir documentos em falta" className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
+              </div>
+              <textarea value={form.descricao||''} onChange={e=>setForm({...form, descricao:e.target.value})} placeholder="Descrição (opcional)" rows={2} className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-[700] uppercase tracking-[1px] text-zinc-500 mb-1">Cliente</label>
+                  <select value={(form.clienteId as string) || activeEmpresaId || ''} onChange={e=>setForm({...form, clienteId:e.target.value||undefined})} className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm">
+                    <option value="">Sem cliente (gabinete)</option>
+                    {clientes.map(c=> <option key={c.id} value={c.id}>{c.nome}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-[700] uppercase tracking-[1px] text-zinc-500 mb-1">Vencimento</label>
+                  <input type="date" value={form.dataVencimento ? new Date(form.dataVencimento as unknown as number).toISOString().slice(0,10) : ''} onChange={e=>setForm({...form, dataVencimento: e.target.value ? new Date(e.target.value).getTime() as unknown as typeof form.dataVencimento : undefined})} className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <select value={form.tipo} onChange={e=>setForm({...form, tipo:e.target.value as never})} className="px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm"><option value="tarefa">Tarefa</option><option value="obrigacao">Obrigação</option><option value="lembrete">Lembrete</option></select>
+                <select value={form.prioridade} onChange={e=>setForm({...form, prioridade:e.target.value as never})} className="px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm"><option value="baixa">Baixa</option><option value="media">Média</option><option value="alta">Alta</option><option value="urgente">Urgente</option></select>
+                <select value={form.estado} onChange={e=>setForm({...form, estado:e.target.value as never})} className="px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm"><option value="todo">A fazer</option><option value="doing">Em curso</option><option value="done">Feito</option><option value="atrasada">Atrasada</option></select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6"><button onClick={()=>{ setShowNew(false); setForm({ tipo:'tarefa', prioridade:'media', estado:'todo' }); }} className="px-4 py-2.5 rounded-xl border border-zinc-200 text-sm">Cancelar</button><button onClick={handleSave} className="px-4 py-2.5 rounded-xl bg-[#0677FF] text-white text-sm font-medium">Guardar tarefa</button></div>
+          </div>
+        </div>
       )}
     </div>
   );

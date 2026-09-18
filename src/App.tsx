@@ -72,6 +72,7 @@ const IRSSimulator = lazy(() => import('./IRSSimulator'));
 const PreviSaSimulator = lazy(() => import('./PreviSaSimulator'));
 const OfficeSettingsView = lazy(() => import('./OfficeSettingsView'));
 const Gabinete = lazy(() => import('./Gabinete'));
+const GabineteSelector = lazy(() => import('./GabineteSelector'));
 import { defaultPreviSaState } from './previSaState';
 import type { PreviSaState } from './previSaState';
 import { SIM_LABELS, isSimView, summarizeSimulacao, simHasData, detailSimulacao, type SimView } from './lib/simSummary';
@@ -392,6 +393,20 @@ function AppContent() {
   } | null>(null);
   const [saftData, setSaftData] = useState<SAFTParseResult | null>(null);
   const [showSaftViewer, setShowSaftViewer] = useState(false);
+  // —— Multi-gabinete: gabinete ativo (hooks têm de estar ANTES de qualquer early return) ——
+  const [gabineteNonce, setGabineteNonce] = useState(0);
+  useEffect(() => {
+    const onSwitch = () => {
+      setGabineteNonce(n => n + 1);
+      setEmpresasRefresh(n => n + 1);
+    };
+    window.addEventListener('estudo360:gabinete-switch', onSwitch as any);
+    return () => window.removeEventListener('estudo360:gabinete-switch', onSwitch as any);
+  }, []);
+  // Ouve mudanças de auth para limpar/actualizar nonce
+  useEffect(() => {
+    setGabineteNonce(n => n + 1);
+  }, [user?.uid]);
   const [previSaState, setPreviSaState] = useState<PreviSaState>(() => {
     // Arranca com o Previsa da empresa ativa (se houver) — senão, limpo.
     const empId = getCurrentEmpresaId();
@@ -735,6 +750,39 @@ function AppContent() {
         onLogout={async () => { await logout(); }}
       />
     );
+  }
+
+
+  // —— Gate multi-gabinete: pergunta SEMPRE em que gabinete trabalhar ——
+  {
+    let _activeGabineteId: string | null = null;
+    try {
+      const uid = user.uid;
+      const v = localStorage.getItem('estudo360:v1:gabinete:activeId:' + uid);
+      if (v) { try { const parsed = JSON.parse(v); if (parsed?.data) _activeGabineteId = String(parsed.data); } catch {} }
+      if (!_activeGabineteId) {
+        const g = localStorage.getItem('estudo360:v1:gabinete:activeId');
+        if (g) { try { const parsed = JSON.parse(g); if (parsed?.data) _activeGabineteId = String(parsed.data); } catch {} }
+      }
+      if (!_activeGabineteId) {
+        const leg = localStorage.getItem('estudo360:v1:gabinete:officeId');
+        if (leg) { try { const parsed = JSON.parse(leg); if (parsed?.data) _activeGabineteId = String(parsed.data); } catch {} }
+      }
+    } catch {}
+    const _needsChoice = isAuthenticated && !_activeGabineteId;
+    if (_needsChoice) {
+      return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#F5F7FA]"><Loader2 className="w-8 h-8 text-[#0677FF] animate-spin" /></div>}>
+          <GabineteSelector
+            key={gabineteNonce}
+            onChosen={() => {
+              setGabineteNonce(n => n + 1);
+              setEmpresasRefresh(n => n + 1);
+            }}
+          />
+        </Suspense>
+      );
+    }
   }
 
   // O selector "Como queres trabalhar hoje?" foi removido: após login vai-se directo

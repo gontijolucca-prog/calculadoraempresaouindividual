@@ -425,28 +425,118 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
   );
 
   const twoStepInputs = (
-    <div className="space-y-[8px]">
-            {[
-              { key: 'processosDefinidos', label: 'Processos e procedimentos documentados', tip: 'Se a empresa tem procedimentos escritos e organizados para as tarefas principais. Reduz a dependência de pessoas específicas.' },
-              { key: 'softwareGestao', label: 'Software de gestão/ERP implementado', tip: 'Se usa software para gerir stock, faturação, contabilidade. Melhora o controlo e a eficiência.' },
-              { key: 'equipaAutonoma', label: 'Equipa capaz de operar sem o gerente', tip: 'Se a equipa consegue trabalhar sem depender constantemente do gerente/dono para decisões do dia a dia.' },
-              { key: 'baixaDependenciaGerente', label: 'Baixa dependência pessoal do gerente/sócio', tip: 'Se a empresa funcionaria bem durante algum tempo sem a presença do gerente. Sinal de maturidade operacional.' },
-              { key: 'controlFinanceiro', label: 'Controlo financeiro e reporting mensal', tip: 'Se existe controlo regular de tesouraria, margem e resultados (relatórios mensais, orçamentos). Essencial para tomar decisões.' },
-            ].map(({ key, label, tip }) => (
-              <label key={key} className="flex items-center gap-3 cursor-pointer group">
-                <div
-                  onClick={() => setState({ [key]: !d[key as keyof DiagnosticoState] } as Partial<DiagnosticoState>)}
-                  className={cn(
-                    "w-5 h-5 rounded-[4px] border-2 flex items-center justify-center transition-colors shrink-0",
-                    d[key as keyof DiagnosticoState] ? "bg-[#0677FF] border-[#0677FF]" : "border-[#E2E8F0] bg-white"
-                  )}
-                >
-                  {d[key as keyof DiagnosticoState] && <CheckCircle className="w-3 h-3 text-white" />}
-                </div>
-                <span className="text-[13px] text-[#475569] font-[500] group-hover:text-[#0F172A] transition-colors">{label} <Tip>{tip}</Tip></span>
-              </label>
-            ))}
+    <div className="space-y-[22px]">
+      {/* Pilar 1 — Autonomia Financeira */}
+      <div className="space-y-[10px]">
+        <h3 className="text-[11px] font-[800] uppercase tracking-[1px] text-[#0F172A] flex items-center gap-2"><Building className="w-3.5 h-3.5 text-slate-400" /> Autonomia Financeira</h3>
+        <div className="grid grid-cols-2 gap-[10px]">
+          <div>
+            <label className={labelCls}>Capitais Próprios (€) <Tip>O valor do capital investido pelos sócios mais os lucros acumulados.</Tip></label>
+            <input type="number" min="0" value={d.capitaisProprios === 0 ? '' : d.capitaisProprios} onChange={e => setState({ capitaisProprios: parseFloat(e.target.value) || 0 })} className={inputCls} />
           </div>
+          <div>
+            <label className={labelCls}>Ativo Total (€) <RequiredMark /> <Tip>Tudo o que a empresa possui: dinheiro, equipamentos, imóveis, créditos de clientes.</Tip></label>
+            <input type="number" min="0" value={d.ativoTotal === 0 ? '' : d.ativoTotal} onChange={e => setState({ ativoTotal: parseFloat(e.target.value) || 0 })} className={inputCls} />
+          </div>
+          <div className="col-span-2">
+            <label className={labelCls}>Passivo Total (€) <Tip>Tudo o que a empresa deve: empréstimos, dívidas a fornecedores, impostos.</Tip></label>
+            <input type="number" min="0" value={d.passivoTotal === 0 ? '' : d.passivoTotal} onChange={e => setState({ passivoTotal: parseFloat(e.target.value) || 0 })} className={inputCls} />
+          </div>
+        </div>
+      </div>
+
+      {/* Pilar 2 — Tesouraria */}
+      <div className="space-y-[10px]">
+        <h3 className="text-[11px] font-[800] uppercase tracking-[1px] text-[#0F172A] flex items-center gap-2"><Wallet className="w-3.5 h-3.5 text-slate-400" /> Tesouraria</h3>
+        <div className="grid grid-cols-2 gap-[10px]">
+          <div>
+            <label className={labelCls}>Ativo Corrente (€) <Tip>Bens e direitos que se convertem em dinheiro em menos de 1 ano.</Tip></label>
+            <input type="number" min="0" value={d.ativoCorrente === 0 ? '' : d.ativoCorrente} onChange={e => setState({ ativoCorrente: parseFloat(e.target.value) || 0 })} className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Passivo Corrente (€) <Tip>Dívidas a pagar em menos de 1 ano.</Tip></label>
+            <input type="number" min="0" value={d.passivoCorrente === 0 ? '' : d.passivoCorrente} onChange={e => setState({ passivoCorrente: parseFloat(e.target.value) || 0 })} className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Disponibilidades (€) <Tip>Dinheiro em caixa e contas bancárias.</Tip></label>
+            <input type="number" min="0" value={d.disponibilidades === 0 ? '' : d.disponibilidades} onChange={e => setState({ disponibilidades: parseFloat(e.target.value) || 0 })} className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Custo Fixo Mensal (€) <Tip>Despesas mensais fixas (rendas, salários, seguros).</Tip></label>
+            <input type="number" min="0" value={d.custoFixoMensal === 0 ? '' : d.custoFixoMensal} onChange={e => setState({ custoFixoMensal: parseFloat(e.target.value) || 0 })} className={inputCls} />
+          </div>
+        </div>
+      </div>
+
+      {/* Pilar 3 — Rentabilidade */}
+      <div className="space-y-[10px]">
+        <h3 className="text-[11px] font-[800] uppercase tracking-[1px] text-[#0F172A] flex items-center gap-2"><TrendingUp className="w-3.5 h-3.5 text-slate-400" /> Rentabilidade</h3>
+        <div className="grid grid-cols-2 gap-[10px]">
+          <div>
+            <label className={labelCls}>Resultado Líquido (€/ano) <Tip>Lucro ou prejuízo depois de impostos.</Tip></label>
+            <input type="number" value={d.resultadoLiquido === 0 ? '' : d.resultadoLiquido} onChange={e => setState({ resultadoLiquido: parseFloat(e.target.value) || 0 })} className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Volume de Negócios (€/ano) <RequiredMark /> <Tip>Total de vendas e serviços faturados no ano.</Tip></label>
+            <input type="number" min="0" value={d.volumeNegocios === 0 ? '' : d.volumeNegocios} onChange={e => setState({ volumeNegocios: parseFloat(e.target.value) || 0 })} className={inputCls} />
+          </div>
+        </div>
+        <div>
+          <label className={labelCls}>EBITDA <Tip>Resultado operacional antes de juros, impostos e depreciações.</Tip></label>
+          <select value={d.ebitda} onChange={e => setState({ ebitda: e.target.value as DiagnosticoState['ebitda'] })} className={inputCls}>
+            <option value="positivo">Positivo e crescente</option>
+            <option value="marginal">Marginal / estável</option>
+            <option value="negativo">Negativo ou decrescente</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Pilar 4 — Dependência */}
+      <div className="space-y-[10px]">
+        <h3 className="text-[11px] font-[800] uppercase tracking-[1px] text-[#0F172A] flex items-center gap-2"><Users className="w-3.5 h-3.5 text-slate-400" /> Dependência</h3>
+        <div className="grid grid-cols-2 gap-[10px]">
+          <div>
+            <label className={labelCls}>Faturação maior cliente (€/ano) <Tip>Quanto representa o maior cliente.</Tip></label>
+            <input type="number" min="0" value={d.faturacaoMaiorCliente === 0 ? '' : d.faturacaoMaiorCliente} onChange={e => setState({ faturacaoMaiorCliente: parseFloat(e.target.value) || 0 })} className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Financiamento externo (€) <Tip>Empréstimos bancários atuais.</Tip></label>
+            <input type="number" min="0" value={d.financiamentoExterno === 0 ? '' : d.financiamentoExterno} onChange={e => setState({ financiamentoExterno: parseFloat(e.target.value) || 0 })} className={inputCls} />
+          </div>
+          <div className="col-span-2">
+            <label className={labelCls}>Total de fontes de financiamento (€) <Tip>Total de financiamentos (externos + capitais próprios).</Tip></label>
+            <input type="number" min="0" value={d.totalFinanciamento === 0 ? '' : d.totalFinanciamento} onChange={e => setState({ totalFinanciamento: parseFloat(e.target.value) || 0 })} className={inputCls} />
+          </div>
+        </div>
+      </div>
+
+      {/* Pilar 5 — Operacional */}
+      <div className="space-y-[10px]">
+        <h3 className="text-[11px] font-[800] uppercase tracking-[1px] text-[#0F172A] flex items-center gap-2"><Settings className="w-3.5 h-3.5 text-slate-400" /> Maturidade Operacional</h3>
+        <div className="space-y-[8px]">
+          {[
+            { key: 'processosDefinidos', label: 'Processos e procedimentos documentados', tip: 'Procedimentos escritos que reduzem dependência de pessoas.' },
+            { key: 'softwareGestao', label: 'Software de gestão/ERP implementado', tip: 'Stock, faturação e contabilidade controlados por software.' },
+            { key: 'equipaAutonoma', label: 'Equipa capaz de operar sem o gerente', tip: 'Equipa autónoma no dia a dia.' },
+            { key: 'baixaDependenciaGerente', label: 'Baixa dependência pessoal do gerente/sócio', tip: 'Empresa funciona sem o gerente por algum tempo.' },
+            { key: 'controlFinanceiro', label: 'Controlo financeiro e reporting mensal', tip: 'Relatórios mensais de tesouraria e resultados.' },
+          ].map(({ key, label, tip }) => (
+            <label key={key} className="flex items-center gap-3 cursor-pointer group">
+              <div
+                onClick={() => setState({ [key]: !d[key as keyof DiagnosticoState] } as Partial<DiagnosticoState>)}
+                className={cn(
+                  "w-5 h-5 rounded-[4px] border-2 flex items-center justify-center transition-colors shrink-0",
+                  d[key as keyof DiagnosticoState] ? "bg-[#0677FF] border-[#0677FF]" : "border-[#E2E8F0] bg-white"
+                )}
+              >
+                {d[key as keyof DiagnosticoState] && <CheckCircle className="w-3 h-3 text-white" />}
+              </div>
+              <span className="text-[13px] text-[#475569] font-[500] group-hover:text-[#0F172A] transition-colors">{label} <Tip>{tip}</Tip></span>
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 
   if (flowMode) {

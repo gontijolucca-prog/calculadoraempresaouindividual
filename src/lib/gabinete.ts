@@ -15,17 +15,32 @@ import { CALENDARIO_FISCAL_2026 } from './calendarioFiscal2026';
 
 // ─── OfficeId (tenant) ───────────────────────────────────────────────────────
 export const GABINETE_SHARED_ID = 'shared';
-/** Retorna o officeId isolado por conta. Nunca cai para 'shared' em uso normal —
- *  cada conta vê só os seus dados. O 'shared' só é lido uma vez para migração. */
+/** Retorna o gabineteId ativo (multi-gabinete) ou o uid legado.
+ *  Lê de `gabinetes.ts:ACTIVE_KEY` (por utilizador). Fallback = uid para não quebrar
+ *  quem ainda não tem gabinete ativo (legado gabinete/{uid}). */
 export function getGabineteOfficeId(): string {
   const uid = auth.currentUser?.uid;
   if (!uid) throw new Error('Não autenticado — inicia sessão para aceder ao Gabinete.');
+  try {
+    const v = loadFromStorage<string | null>('gabinete:activeId:' + uid, null)
+           ?? loadFromStorage<string | null>('gabinete:activeId', null)
+           ?? loadFromStorage<string | null>('gabinete:officeId', null);
+    if (v && typeof v === 'string' && v.length >= 3) return v;
+  } catch {}
   return uid;
 }
-/** Usado só na migração legada shared → uid */
+/** Usado só na migração legada shared → uid/gabinete */
 export function getGabineteOfficeIdOrShared(): string {
   const uid = auth.currentUser?.uid;
-  if (uid) return uid;
+  if (uid) {
+    try {
+      const v = loadFromStorage<string | null>('gabinete:activeId:' + uid, null)
+             ?? loadFromStorage<string | null>('gabinete:activeId', null)
+             ?? loadFromStorage<string | null>('gabinete:officeId', null);
+      if (v && typeof v === 'string' && v.length >= 3) return v;
+    } catch {}
+    return uid;
+  }
   return (loadFromStorage<string>('gabinete:officeId', GABINETE_SHARED_ID) as string) || GABINETE_SHARED_ID;
 }
 export function setGabineteOfficeId(id: string) { saveToStorage('gabinete:officeId', id); }

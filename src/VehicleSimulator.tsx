@@ -207,7 +207,7 @@ function VehicleResults({ state, results, flow = false }: { state: VehicleSimula
         {category === 'passageiros' ? (
           <div className="flex-1 space-y-0">
             <div className="flex justify-between py-[14px] border-b border-[#F1F5F9] text-[14px] items-center">
-              <span className="text-[#64748B] font-[600]">Lmt. Depreciação (Fiscal) <Tip>O limite máximo sobre o qual a empresa calcula depreciações aceites fiscalmente. Gasolina/Diesel: €25.000; GPL/GNV: €37.500; PHEV: €50.000; Elétrico: €62.500.</Tip></span>
+              <span className="text-[#64748B] font-[600]">Lmt. Depreciação (Fiscal) <Tip>O limite máximo sobre o qual a empresa calcula depreciações aceites fiscalmente. Gasolina/Diesel: €25.000; GPL/GNV: €37.500; PHEV: €50.000; Elétrico/Hidrogénio: €62.500.</Tip></span>
               <span className="font-[700] font-mono text-[#0F172A]">{results.limit === Infinity ? 'Ilimitado' : ptEur(results.limit)}</span>
             </div>
             <div className="flex justify-between py-[14px] border-b border-[#F1F5F9] text-[14px] items-center">
@@ -296,6 +296,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
           <option value="electric">100% Elétrico</option>
           <option value="lpg">GPL</option>
           <option value="cng">GNV</option>
+          <option value="hydrogen">Hidrogénio</option>
         </select>
       ),
     },
@@ -429,6 +430,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
               <option value="electric">100% Elétrico</option>
               <option value="lpg">GPL</option>
               <option value="cng">GNV</option>
+              <option value="hydrogen">Hidrogénio</option>
             </select>
             {engineType === 'phev' && (
               <label className="flex items-start gap-2 mt-4 p-3 bg-amber-50/50 border border-amber-200 text-amber-900 rounded-[8px] cursor-pointer">
