@@ -6,7 +6,8 @@ import { intInput } from './lib/inputGuards';
 import { Tip } from './Tip';
 import { Combobox } from './Combobox';
 import { SimulatorPrintButton } from './SimulatorPrint';
-import { SimGateBar, SimGatePlaceholder, RequiredMark } from './components/SimGateBar';
+import { RequiredMark } from './components/SimGateBar';
+import { SimTwoStep } from './components/SimTwoStep';
 import { isSimReady } from './lib/simRequired';
 import {
   simular,
@@ -92,12 +93,9 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
   const totalBar = result.rendGlobal || 1;
   const pct = (n: number) => ((n / totalBar) * 100).toFixed(1);
 
-  return (
-    // Split só a partir de xl (1280px) — em tablet os painéis ficavam ~300px
-    // (valores "0,00 €" cortados e coluna Modelo 3 esmagada pela de 300px).
-    <div className="overflow-y-auto xl:overflow-hidden xl:h-full xl:grid xl:grid-cols-[440px_1fr] bg-[#F5F7FA] text-[#1E293B]">
-      {/* ── Formulário ─────────────────────────────────────────── */}
-      <div data-print="form" className="bg-white border-b border-[#E2E8F0] xl:border-b-0 xl:border-r xl:overflow-y-auto p-4 sm:p-5 xl:p-[28px] flex flex-col gap-6 xl:h-full">
+  const irsInputs = (
+    <div className="space-y-6">
+
         <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="text-[22px] font-[800] text-[#0F172A] leading-tight tracking-[-0.4px] flex items-center gap-2">
@@ -312,12 +310,13 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
             </div>
           </div>
         </section>
-        <SimGateBar view="irs" state={s} simulated={simulated} onSimulate={() => setSimulated(true)} />
-      </div>
+      
+    </div>
+  );
 
-      {/* ── Resultados ─────────────────────────────────────────── */}
-      <div className="p-4 sm:p-5 xl:p-[28px] xl:overflow-y-auto xl:h-full flex flex-col gap-5">
-        {!simulated || !ready ? <SimGatePlaceholder view="irs" state={s} simulated={simulated} /> : <>
+  const irsResults = (
+    <div className="space-y-5">
+
         {/* Hero apurado */}
         <motion.div
           key={reembolso ? 'good' : 'bad'}
@@ -457,9 +456,22 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
         <p className="text-[11px] font-[500] text-[#94A3B8] leading-relaxed px-1">
           Estimativa segundo o CIRS 2026 — não substitui a liquidação oficial da Autoridade Tributária.
         </p>
-        </>
-        }
-      </div>
+        
     </div>
+  );
+
+  return (
+    <SimTwoStep
+      title="Simulador de IRS"
+      subtitle="Estimativa do IRS anual (Modelo 3) segundo o CIRS — 2026"
+      view="irs"
+      state={s}
+      simulated={simulated}
+      ready={ready}
+      onSimulate={() => setSimulated(true)}
+      onBack={() => setSimulated(false)}
+      inputs={irsInputs}
+      results={irsResults}
+    />
   );
 }

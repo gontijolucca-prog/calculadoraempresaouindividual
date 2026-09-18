@@ -20,6 +20,7 @@ import { seedEnqFromSaft } from './lib/enqSaftSeed';
 import { getCurrentEmpresaId, listEmpresas } from './lib/empresas';
 import { SimulatorPrintButton } from './SimulatorPrint';
 import { SimGateBar, SimGatePlaceholder, RequiredMark } from './components/SimGateBar';
+import { SimTwoStep } from './components/SimTwoStep';
 import { isSimReady } from './lib/simRequired';
 
 interface TaxSimulatorState {
@@ -580,6 +581,19 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
     </div>
   );
 
+const taxInputs = (
+    <div className="space-y-6">
+      {folha1}
+      {folha2}
+      {folha3}
+      {folha4}
+    </div>
+  );
+
+  const taxResults = resultsContent;
+
+
+
   // ── Análise completa 2026 (desenho da contabilista): validação jurídica +
   //    comparação económica por cenários elegíveis. Vista própria, persistida. ──
   if (vistaCompleta) {
@@ -625,6 +639,23 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
         resultsStep={{ label: 'Resultados do Estudo', description: 'Comparação ENI vs Lda com base nos dados introduzidos.', render: (!simulated || !ready) ? <SimGatePlaceholder view="tax" state={initialState} simulated={simulated} /> : resultsContent }}
         state={initialState}
         setState={setState}
+      />
+    );
+  }
+
+  if (!vistaCompleta && !flowMode) {
+    return (
+      <SimTwoStep
+        title="Estudo de Negócio"
+        subtitle="Enquadramento fiscal ENI vs Sociedade — OE 2026"
+        view="tax"
+        state={initialState}
+        simulated={simulated}
+        ready={ready}
+        onSimulate={() => setSimulated(true)}
+        onBack={() => setSimulated(false)}
+        inputs={taxInputs}
+        results={taxResults}
       />
     );
   }

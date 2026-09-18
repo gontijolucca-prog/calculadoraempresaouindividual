@@ -10,7 +10,8 @@ import { Tip } from './Tip';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { SimulatorPrintButton } from './SimulatorPrint';
-import { SimGateBar, SimGatePlaceholder, RequiredMark } from './components/SimGateBar';
+import { RequiredMark, SimGatePlaceholder } from './components/SimGateBar';
+import { SimTwoStep } from './components/SimTwoStep';
 import { isSimReady } from './lib/simRequired';
 
 export interface ImoveisState {
@@ -294,34 +295,8 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
     </>
   );
 
-  if (flowMode) {
-    return (
-      <FlowWizard
-        open={flowMode}
-        onClose={exitFlow}
-        title="Imóveis na Empresa"
-        icon={Home}
-        steps={steps}
-        resultsStep={{ label: 'Análise de Decisão', description: 'Comparação entre arrendamento/comodato e entrada em espécie.', render: (!simulated || !ready) ? <SimGatePlaceholder view="imoveis" state={s} simulated={simulated} /> : resultsContent }}
-        state={s}
-        setState={setState}
-      />
-    );
-  }
-
-  return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }} className={outerCls}>
-      {/* Left Pane */}
-      <div data-print="form" className={leftCls}>
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Imóveis na Empresa</h2>
-            <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Arrendamento/Comodato vs. Entrada em Espécie — guia de decisão.</p>
-          </div>
-          {simulated && ready && <SimulatorPrintButton />}
-        </div>
-
-        <div className="space-y-[18px]">
+  const twoStepInputs = (
+    <div className="space-y-[18px]">
           <div>
             <label className={labelCls}>Valor do Imóvel (€) <Tip>O valor atual do imóvel em euros. Serve para estimar o IMT, Imposto de Selo e o impacto no balanço da empresa.</Tip></label>
             <input
@@ -387,13 +362,35 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
             </div>
           </div>
         </div>
-        <SimGateBar view="imoveis" state={s} simulated={simulated} onSimulate={() => setSimulated(true)} />
-      </div>
+  );
 
-      {/* Right Pane */}
-      <div className={rightCls}>
-        {!simulated || !ready ? <SimGatePlaceholder view="imoveis" state={s} simulated={simulated} /> : resultsContent}
-      </div>
-    </motion.div>
+  if (flowMode) {
+    return (
+      <FlowWizard
+        open={flowMode}
+        onClose={exitFlow}
+        title="Imóveis na Empresa"
+        icon={Home}
+        steps={steps}
+        resultsStep={{ label: 'Análise de Decisão', description: 'Comparação entre arrendamento/comodato e entrada em espécie.', render: (!simulated || !ready) ? <SimGatePlaceholder view="imoveis" state={s} simulated={simulated} /> : resultsContent }}
+        state={s}
+        setState={setState}
+      />
+    );
+  }
+
+  return (
+    <SimTwoStep
+      title="Imóveis na Empresa"
+      subtitle="Arrendamento/Comodato vs. Entrada em Espécie — guia de decisão"
+      view="imoveis"
+      state={s}
+      simulated={simulated}
+      ready={ready}
+      onSimulate={() => setSimulated(true)}
+      onBack={() => setSimulated(false)}
+      inputs={twoStepInputs}
+      results={resultsContent}
+    />
   );
 }

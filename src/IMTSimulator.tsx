@@ -9,7 +9,8 @@ import { Tip } from './Tip';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { SimulatorPrintButton } from './SimulatorPrint';
-import { SimGateBar, SimGatePlaceholder, RequiredMark } from './components/SimGateBar';
+import { RequiredMark, SimGatePlaceholder } from './components/SimGateBar';
+import { SimTwoStep } from './components/SimTwoStep';
 import { isSimReady } from './lib/simRequired';
 
 export interface IMTState {
@@ -201,34 +202,8 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
     </>
   );
 
-  if (flowMode) {
-    return (
-      <FlowWizard
-        open={flowMode}
-        onClose={exitFlow}
-        title="Simulador IMT"
-        icon={Building}
-        steps={steps}
-        resultsStep={{ label: 'Resultados da Simulação', description: 'Cálculo do IMT e Imposto de Selo para a sua aquisição.', render: (!simulated || !ready) ? <SimGatePlaceholder view="imt" state={s} simulated={simulated} /> : resultsContent }}
-        state={s}
-        setState={setState}
-      />
-    );
-  }
-
-  return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }} className={outerCls}>
-      {/* Left Pane */}
-      <div data-print="form" className={leftCls}>
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador IMT <Tip>IMT = Imposto Municipal sobre Transmissões Onerosas de Imóveis. É pago pelo comprador no momento da escritura de compra e venda. Em 2026, jovens até 35 anos na 1ª habitação têm isenção total até €330.539.</Tip></h2>
-            <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Imposto Municipal sobre Transmissões + Imposto de Selo (2026). <Tip>Para além do IMT, a compra de imóveis tem sempre Imposto de Selo de 0,8% sobre o valor de transação. Juntos, são o principal custo fiscal da compra.</Tip></p>
-          </div>
-          {simulated && ready && <SimulatorPrintButton />}
-        </div>
-
-        <div className="space-y-[20px]">
+  const twoStepInputs = (
+    <div className="space-y-[20px]">
           {/* Valor */}
           <div>
             <label className={labelCls}>Valor de Aquisição (€) <Tip>O preço de compra do imóvel em euros. É a base de cálculo do IMT e do Imposto de Selo.</Tip></label>
@@ -303,20 +278,35 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
             )}
           </div>
         </div>
+  );
 
-        <SimGateBar view="imt" state={s} simulated={simulated} onSimulate={() => setSimulated(true)} />
-        {/* Info box */}
-        <div className="bg-[#F5F7FA] border border-[#E2E8F0] rounded-[12px] p-[14px] text-[12px] text-[#64748B] space-y-[4px]">
-          <div className="font-[700] text-[#475569] mb-[6px]">Imposto de Selo</div>
-          <div>Taxa: 0,8% sobre o valor de transação (TGIS verba 1.1)</div>
-          <div>Isento no IMT Jovem até ao tecto de isenção total (€330.539 no Continente)</div>
-        </div>
-      </div>
+  if (flowMode) {
+    return (
+      <FlowWizard
+        open={flowMode}
+        onClose={exitFlow}
+        title="Simulador IMT"
+        icon={Building}
+        steps={steps}
+        resultsStep={{ label: 'Resultados da Simulação', description: 'Cálculo do IMT e Imposto de Selo para a sua aquisição.', render: (!simulated || !ready) ? <SimGatePlaceholder view="imt" state={s} simulated={simulated} /> : resultsContent }}
+        state={s}
+        setState={setState}
+      />
+    );
+  }
 
-      {/* Right Pane */}
-      <div className={rightCls}>
-        {!simulated || !ready ? <SimGatePlaceholder view="imt" state={s} simulated={simulated} /> : resultsContent}
-      </div>
-    </motion.div>
+  return (
+    <SimTwoStep
+      title="Simulador IMT"
+      subtitle="Imposto Municipal sobre Transmissões + Imposto de Selo — 2026"
+      view="imt"
+      state={s}
+      simulated={simulated}
+      ready={ready}
+      onSimulate={() => setSimulated(true)}
+      onBack={() => setSimulated(false)}
+      inputs={twoStepInputs}
+      results={resultsContent}
+    />
   );
 }

@@ -7,7 +7,8 @@ import { cn } from './lib/utils';
 import { useTheme } from './ThemeContext';
 import { Tip } from './Tip';
 import { SimulatorPrintButton } from './SimulatorPrint';
-import { SimGateBar, SimGatePlaceholder, RequiredMark } from './components/SimGateBar';
+import { RequiredMark, SimGatePlaceholder } from './components/SimGateBar';
+import { SimTwoStep } from './components/SimTwoStep';
 import { isSimReady } from './lib/simRequired';
 
 export interface DiagnosticoState {
@@ -423,136 +424,8 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
     </>
   );
 
-  if (flowMode) {
-    return (
-      <FlowWizard
-        open={flowMode}
-        onClose={exitFlow}
-        title="Diagnóstico de Autonomia"
-        icon={BarChart2}
-        steps={steps}
-        resultsStep={{ label: 'Resultados do Diagnóstico', description: 'Análise completa dos 5 pilares.', render: (!simulated || !ready) ? <SimGatePlaceholder view="diagnostico" state={d} simulated={simulated} /> : resultsContent }}
-        state={d}
-        setState={setState}
-      />
-    );
-  }
-
-  return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }} className={outerCls}>
-      {/* Left Pane */}
-      <div data-print="form" className={leftCls}>
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Diagnóstico de Autonomia</h2>
-            <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Avaliação por 5 pilares — balanço e gestão empresarial.</p>
-          </div>
-          {simulated && ready && <SimulatorPrintButton />}
-        </div>
-
-        {/* P1 — Autonomia Financeira */}
-        <section className="space-y-[14px]">
-          <div className="flex items-center gap-2">
-            <Building className="w-4 h-4 text-[#0677FF]" />
-            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#0677FF]">Pilar 1 — Autonomia Financeira</span>
-          </div>
-          <div className="grid grid-cols-2 gap-[10px]">
-            <div>
-              <label className={labelCls}>Capitais Próprios (€) <Tip>O valor do capital investido pelos sócios mais os lucros acumulados. É o dinheiro 'da empresa' sem considerar dívidas.</Tip></label>
-              <input type="number" min="0" value={d.capitaisProprios === 0 ? '' : d.capitaisProprios} onChange={e => setState({ capitaisProprios: parseFloat(e.target.value) || 0 })} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Ativo Total (€) <Tip>Tudo o que a empresa possui: dinheiro, equipamentos, imóveis, créditos de clientes. O total do lado esquerdo do balanço.</Tip></label>
-              <input type="number" min="0" value={d.ativoTotal === 0 ? '' : d.ativoTotal} onChange={e => setState({ ativoTotal: parseFloat(e.target.value) || 0 })} className={inputCls} />
-            </div>
-            <div className="col-span-2">
-              <label className={labelCls}>Passivo Total (€) <Tip>Tudo o que a empresa deve: empréstimos, dívidas a fornecedores, impostos em atraso. O total das dívidas.</Tip></label>
-              <input type="number" min="0" value={d.passivoTotal === 0 ? '' : d.passivoTotal} onChange={e => setState({ passivoTotal: parseFloat(e.target.value) || 0 })} className={inputCls} />
-            </div>
-          </div>
-        </section>
-
-        {/* P2 — Tesouraria */}
-        <section className="space-y-[14px]">
-          <div className="flex items-center gap-2">
-            <Wallet className="w-4 h-4 text-[#0677FF]" />
-            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#0677FF]">Pilar 2 — Tesouraria</span>
-          </div>
-          <div className="grid grid-cols-2 gap-[10px]">
-            <div>
-              <label className={labelCls}>Ativo Corrente (€) <Tip>Os bens e direitos que se convertem em dinheiro em menos de 1 ano: stock, créditos de clientes, dinheiro em caixa.</Tip></label>
-              <input type="number" min="0" value={d.ativoCorrente === 0 ? '' : d.ativoCorrente} onChange={e => setState({ ativoCorrente: parseFloat(e.target.value) || 0 })} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Passivo Corrente (€) <Tip>As dívidas a pagar em menos de 1 ano: faturas de fornecedores, impostos correntes, prestações de empréstimos de curto prazo.</Tip></label>
-              <input type="number" min="0" value={d.passivoCorrente === 0 ? '' : d.passivoCorrente} onChange={e => setState({ passivoCorrente: parseFloat(e.target.value) || 0 })} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Disponibilidades (€) <Tip>O dinheiro em caixa e nas contas bancárias da empresa, disponível imediatamente.</Tip></label>
-              <input type="number" min="0" value={d.disponibilidades === 0 ? '' : d.disponibilidades} onChange={e => setState({ disponibilidades: parseFloat(e.target.value) || 0 })} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Custo Fixo Mensal (€) <Tip>O total de despesas mensais que a empresa tem independentemente de faturar (rendas, salários, seguros, internet).</Tip></label>
-              <input type="number" min="0" value={d.custoFixoMensal === 0 ? '' : d.custoFixoMensal} onChange={e => setState({ custoFixoMensal: parseFloat(e.target.value) || 0 })} className={inputCls} />
-            </div>
-          </div>
-        </section>
-
-        {/* P3 — Rentabilidade */}
-        <section className="space-y-[14px]">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-[#0677FF]" />
-            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#0677FF]">Pilar 3 — Rentabilidade</span>
-          </div>
-          <div className="grid grid-cols-2 gap-[10px]">
-            <div>
-              <label className={labelCls}>Resultado Líquido (€/ano) <Tip>O lucro ou prejuízo da empresa depois de todos os impostos e gastos. Um número positivo é lucro; negativo é prejuízo.</Tip></label>
-              <input type="number" value={d.resultadoLiquido === 0 ? '' : d.resultadoLiquido} onChange={e => setState({ resultadoLiquido: parseFloat(e.target.value) || 0 })} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Volume de Negócios (€/ano) <Tip>O total de vendas e serviços faturados durante o ano. É a 'receita total' antes de qualquer desconto ou imposto.</Tip></label>
-              <input type="number" min="0" value={d.volumeNegocios === 0 ? '' : d.volumeNegocios} onChange={e => setState({ volumeNegocios: parseFloat(e.target.value) || 0 })} className={inputCls} />
-            </div>
-          </div>
-          <div>
-            <label className={labelCls}>EBITDA <Tip>EBITDA é o resultado operacional antes de juros, impostos, depreciações e amortizações. Indica a capacidade de gerar dinheiro com a operação.</Tip></label>
-            <select value={d.ebitda} onChange={e => setState({ ebitda: e.target.value as DiagnosticoState['ebitda'] })} className={inputCls}>
-              <option value="positivo">Positivo e crescente</option>
-              <option value="marginal">Marginal / estável</option>
-              <option value="negativo">Negativo ou decrescente</option>
-            </select>
-          </div>
-        </section>
-
-        {/* P4 — Dependência */}
-        <section className="space-y-[14px]">
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-[#0677FF]" />
-            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#0677FF]">Pilar 4 — Dependência</span>
-          </div>
-          <div className="grid grid-cols-2 gap-[10px]">
-            <div>
-              <label className={labelCls}>Faturação maior cliente (€/ano) <Tip>Quanto representa o cliente mais importante da empresa, em euros anuais. Dependência excessiva de um cliente é um risco.</Tip></label>
-              <input type="number" min="0" value={d.faturacaoMaiorCliente === 0 ? '' : d.faturacaoMaiorCliente} onChange={e => setState({ faturacaoMaiorCliente: parseFloat(e.target.value) || 0 })} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Financiamento externo (€) <Tip>O valor de empréstimos bancários ou outros financiamentos externos que a empresa tem neste momento.</Tip></label>
-              <input type="number" min="0" value={d.financiamentoExterno === 0 ? '' : d.financiamentoExterno} onChange={e => setState({ financiamentoExterno: parseFloat(e.target.value) || 0 })} className={inputCls} />
-            </div>
-            <div className="col-span-2">
-              <label className={labelCls}>Total de fontes de financiamento (€) <Tip>O valor total de todos os financiamentos, incluindo externos e dos sócios (capital social).</Tip></label>
-              <input type="number" min="0" value={d.totalFinanciamento === 0 ? '' : d.totalFinanciamento} onChange={e => setState({ totalFinanciamento: parseFloat(e.target.value) || 0 })} className={inputCls} />
-            </div>
-          </div>
-        </section>
-
-        {/* P5 — Operacional */}
-        <section className="space-y-[14px]">
-          <div className="flex items-center gap-2">
-            <Settings className="w-4 h-4 text-[#0677FF]" />
-            <span className="text-[12px] font-[700] uppercase tracking-[1px] text-[#0677FF]">Pilar 5 — Maturidade Operacional</span>
-          </div>
-          <div className="space-y-[8px]">
+  const twoStepInputs = (
+    <div className="space-y-[8px]">
             {[
               { key: 'processosDefinidos', label: 'Processos e procedimentos documentados', tip: 'Se a empresa tem procedimentos escritos e organizados para as tarefas principais. Reduz a dependência de pessoas específicas.' },
               { key: 'softwareGestao', label: 'Software de gestão/ERP implementado', tip: 'Se usa software para gerir stock, faturação, contabilidade. Melhora o controlo e a eficiência.' },
@@ -574,14 +447,35 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
               </label>
             ))}
           </div>
-        </section>
-        <SimGateBar view="diagnostico" state={d} simulated={simulated} onSimulate={() => setSimulated(true)} />
-      </div>
+  );
 
-      {/* Right Pane — Results */}
-      <div className={rightCls}>
-        {!simulated || !ready ? <SimGatePlaceholder view="diagnostico" state={d} simulated={simulated} /> : resultsContent}
-      </div>
-    </motion.div>
+  if (flowMode) {
+    return (
+      <FlowWizard
+        open={flowMode}
+        onClose={exitFlow}
+        title="Diagnóstico de Autonomia"
+        icon={BarChart2}
+        steps={steps}
+        resultsStep={{ label: 'Resultados do Diagnóstico', description: 'Análise completa dos 5 pilares.', render: (!simulated || !ready) ? <SimGatePlaceholder view="diagnostico" state={d} simulated={simulated} /> : resultsContent }}
+        state={d}
+        setState={setState}
+      />
+    );
+  }
+
+  return (
+    <SimTwoStep
+      title="Diagnóstico de Autonomia"
+      subtitle="Avaliação por 5 pilares — balanço e gestão empresarial"
+      view="diagnostico"
+      state={d}
+      simulated={simulated}
+      ready={ready}
+      onSimulate={() => setSimulated(true)}
+      onBack={() => setSimulated(false)}
+      inputs={twoStepInputs}
+      results={resultsContent}
+    />
   );
 }

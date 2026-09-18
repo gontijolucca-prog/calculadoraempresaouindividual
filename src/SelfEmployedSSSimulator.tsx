@@ -9,7 +9,8 @@ import { Tip } from './Tip';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { SimulatorPrintButton } from './SimulatorPrint';
-import { SimGateBar, SimGatePlaceholder, RequiredMark } from './components/SimGateBar';
+import { RequiredMark, SimGatePlaceholder } from './components/SimGateBar';
+import { SimTwoStep } from './components/SimTwoStep';
 import { isSimReady } from './lib/simRequired';
 
 interface SSState {
@@ -267,6 +268,52 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
     </>
   );
 
+  const twoStepInputs = (
+    <div className="space-y-[24px]">
+          <div>
+            <label className={labelClass}>Rendimento Mensal (€) <RequiredMark /> <Tip>O rendimento que serve de base para calcular a contribuição de SS. Para prestadores de serviços, são os honorários mensais. Para comerciantes, é o lucro.</Tip></label>
+            <div className="relative">
+              <Wallet className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
+              <input type="number" min="0" step="0.01" value={income === 0 ? '' : income} onChange={e => setState({ income: numInput(e.target.value) })} className={cn(inputClass, "pl-[40px]")} required />
+            </div>
+          </div>
+          <div>
+            <label className={labelClass}>Tipo de Rendimento <Tip>Se vende serviços (consultor, designer, advogado) ou bens/produtos. A taxa de SS pode variar conforme o tipo.</Tip></label>
+            <select value={tipoRendimento} onChange={e => setState({ tipoRendimento: e.target.value as 'servicos' | 'bens' })} className={inputClass}>
+              <option value="servicos">Prestação de Serviços (base 70%)</option>
+              <option value="bens">Venda de Bens (base 20%)</option>
+            </select>
+          </div>
+          <label className={cn("flex items-start gap-4 p-5 border-2 rounded-[16px] cursor-pointer transition-colors", primeiroAno ? "border-emerald-400 bg-emerald-50" : "border-[#E2E8F0] hover:border-[#CBD5E1]")}>
+            <input type="checkbox" checked={primeiroAno} onChange={e => setState({ primeiroAno: e.target.checked })} className="mt-1 w-5 h-5 accent-emerald-600" />
+            <div>
+              <span className="text-[14px] font-[700] text-[#0F172A] block">Primeiro Ano de Atividade <Tip>No primeiro ano como independente, pode haver isenção de SS durante alguns meses.</Tip></span>
+              <span className="text-[12px] text-[#64748B] font-[500] leading-snug mt-1 block">Isenção total de contribuições no 1.º ano (Art. 164.º CRCSPSS). Aplica-se a novos inscritos na SS como trabalhadores independentes.</span>
+            </div>
+          </label>
+          <div className="p-5 border-2 border-[#E2E8F0] rounded-[16px] bg-[#F5F7FA]">
+            <h3 className="text-[12px] font-[800] text-[#0F172A] mb-4">REGRAS 2026 (CRCSPSS)</h3>
+            <ul className="text-[13px] text-[#64748B] font-[500] leading-relaxed space-y-2">
+              <li>• <strong>Serviços:</strong> 70% do rendimento × 21,4%</li>
+              <li>• <strong>Bens:</strong> 20% do rendimento × 21,4%</li>
+              <li>• <strong>Mínimo:</strong> €20/mês (se rendimento &gt; IAS)</li>
+              <li>• <strong>Teto da base:</strong> 12 × IAS por mês (€6.445,56 em 2026)</li>
+              <li>• <strong>Pagamento:</strong> Trimestral (jan, abr, jul, out)</li>
+              <li>• <strong>1.º ano:</strong> Isenção total — Art. 164.º CRCSPSS</li>
+            </ul>
+          </div>
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-[12px]">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-[13px] font-[700] text-amber-900 mb-1">Nota Importante</h4>
+                <p className="text-[12px] text-amber-800 font-[500] leading-snug">Estes valores são uma estimativa. Na prática, a SS calcula a base trimestralmente com base na média dos 3 meses anteriores. Consulte o Portal da Segurança Social para valores exatos.</p>
+              </div>
+            </div>
+          </div>
+    </div>
+  );
+
   if (flowMode) {
     return (
       <FlowWizard
@@ -283,92 +330,17 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
   }
 
   return (
-    <motion.div className={outerCls} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}>
-      {/* Left Pane - Form */}
-      <div data-print="form" className={leftCls}>
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-[24px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador SS Independente <Tip>SS Independente = Segurança Social para trabalhadores a recibos verdes ou ENI. Diferente dos trabalhadores por conta de outrem: o próprio paga a sua contribuição trimestralmente.</Tip></h2>
-            <p className="text-[14px] text-[#64748B] font-[500] mt-[4px]">Contribuições de trabalhador independente (ENI). <Tip>ENI = Empresário em Nome Individual. É uma forma de trabalhar por conta própria sem criar uma empresa. Paga IRS em Categoria B e SS como independente.</Tip></p>
-          </div>
-          {simulated && ready && <SimulatorPrintButton />}
-        </div>
-
-        <div className="space-y-[24px]">
-          <div>
-            <label className={labelClass}>Rendimento Mensal (€) <Tip>O rendimento que serve de base para calcular a contribuição de SS. Para prestadores de serviços, são os honorários mensais. Para comerciantes, é o lucro.</Tip></label>
-            <div className="relative">
-              <Wallet className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={income === 0 ? '' : income}
-                onChange={e => setState({ income: numInput(e.target.value) })}
-                className={cn(inputClass, "pl-[40px]")}
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className={labelClass}>Tipo de Rendimento <Tip>Se vende serviços (consultor, designer, advogado) ou bens/produtos. A taxa de SS pode variar conforme o tipo.</Tip></label>
-            <select value={tipoRendimento} onChange={e => setState({ tipoRendimento: e.target.value as 'servicos' | 'bens' })} className={inputClass}>
-              <option value="servicos">Prestação de Serviços (base 70%)</option>
-              <option value="bens">Venda de Bens (base 20%)</option>
-            </select>
-          </div>
-
-          {/* 1º Ano de Atividade */}
-          <label className={cn(
-            "flex items-start gap-4 p-5 border-2 rounded-[16px] cursor-pointer transition-colors",
-            primeiroAno ? "border-emerald-400 bg-emerald-50" : "border-[#E2E8F0] hover:border-[#CBD5E1]"
-          )}>
-            <input
-              type="checkbox"
-              checked={primeiroAno}
-              onChange={e => setState({ primeiroAno: e.target.checked })}
-              className="mt-1 w-5 h-5 accent-emerald-600"
-            />
-            <div>
-              <span className="text-[14px] font-[700] text-[#0F172A] block">Primeiro Ano de Atividade <Tip>No primeiro ano como independente, pode haver isenção de SS durante alguns meses.</Tip></span>
-              <span className="text-[12px] text-[#64748B] font-[500] leading-snug mt-1 block">
-                Isenção total de contribuições no 1.º ano (Art. 164.º CRCSPSS). Aplica-se a novos inscritos na SS como trabalhadores independentes.
-              </span>
-            </div>
-          </label>
-
-          <div className="p-5 border-2 border-[#E2E8F0] rounded-[16px] bg-[#F5F7FA]">
-            <h3 className="text-[12px] font-[800] text-[#0F172A] mb-4">REGRAS 2026 (CRCSPSS)</h3>
-            <ul className="text-[13px] text-[#64748B] font-[500] leading-relaxed space-y-2">
-              <li>• <strong>Serviços:</strong> 70% do rendimento × 21,4%</li>
-              <li>• <strong>Bens:</strong> 20% do rendimento × 21,4%</li>
-              <li>• <strong>Mínimo:</strong> €20/mês (se rendimento &gt; IAS)</li>
-              <li>• <strong>Teto da base:</strong> 12 × IAS por mês (€6.445,56 em 2026)</li>
-              <li>• <strong>Pagamento:</strong> Trimestral (jan, abr, jul, out)</li>
-              <li>• <strong>1.º ano:</strong> Isenção total — Art. 164.º CRCSPSS</li>
-            </ul>
-          </div>
-
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-[12px]">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <h4 className="text-[13px] font-[700] text-amber-900 mb-1">Nota Importante</h4>
-                <p className="text-[12px] text-amber-800 font-[500] leading-snug">
-                  Estes valores são uma estimativa. Na prática, a SS calcula a base trimestralmente com base na média dos 3 meses anteriores. Consulte o Portal da Segurança Social para valores exatos.
-                </p>
-              </div>
-            </div>
-          </div>
-        <SimGateBar view="selfss" state={sState} simulated={simulated} onSimulate={() => setSimulated(true)} />
-        </div>
-      </div>
-
-      {/* Right Pane - Results */}
-      <div className={rightCls}>
-        {!simulated || !ready ? <SimGatePlaceholder view="selfss" state={sState} simulated={simulated} /> : resultsContent}
-      </div>
-    </motion.div>
+    <SimTwoStep
+      title="Simulador SS Independente"
+      subtitle="Contribuições de trabalhador independente (ENI) — 21,4% em 2026"
+      view="selfss"
+      state={sState}
+      simulated={simulated}
+      ready={ready}
+      onSimulate={() => setSimulated(true)}
+      onBack={() => setSimulated(false)}
+      inputs={twoStepInputs}
+      results={resultsContent}
+    />
   );
 }

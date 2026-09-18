@@ -9,7 +9,8 @@ import { Tip } from './Tip';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { SimulatorPrintButton } from './SimulatorPrint';
-import { SimGateBar, SimGatePlaceholder, RequiredMark } from './components/SimGateBar';
+import { RequiredMark } from './components/SimGateBar';
+import { SimTwoStep } from './components/SimTwoStep';
 import { isSimReady } from './lib/simRequired';
 
 export interface SalarioState {
@@ -448,42 +449,8 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
     </>
   );
 
-  if (flowMode) {
-    return (
-      <FlowWizard
-        open={true}
-        onClose={exitFlow}
-        title="Salário Líquido"
-        icon={Banknote}
-        steps={steps}
-        resultsStep={{
-          label: 'Resultado da simulação',
-          description: 'Aqui está o resumo do seu salário líquido e custos para o empregador.',
-          render: (!simulated || !ready) ? <SimGatePlaceholder view="salario" state={s} simulated={simulated} /> : (
-            <div className="flex flex-col gap-4 lg:gap-[16px] h-full">
-              {resultsContent}
-            </div>
-          ),
-        }}
-        state={s}
-        setState={setState}
-      />
-    );
-  }
-
-  return (
-    <motion.div className={outerCls} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}>
-      {/* Left Pane */}
-      <div data-print="form" className={leftCls}>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">Salário Líquido (TCO)</h2>
-            <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Simulador para trabalhadores por conta de outrem — 2026.</p>
-          </div>
-          {simulated && ready && <SimulatorPrintButton />}
-        </div>
-
-        <div className="space-y-[18px]">
+  const salarioInputs = (
+    <div className="space-y-[18px]">
           {/* Salário bruto */}
           <div>
             <label className={labelCls}>Salário Bruto Mensal (€) <Tip>O salário antes de descontos (SS e IRS). É o valor que consta no contrato de trabalho.</Tip></label>
@@ -648,13 +615,43 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
             <span className="text-[13px] font-[600] text-[#475569]">Pessoa com deficiência <Tip>Titular com grau de incapacidade fiscalmente relevante (≥60%). Aplica as tabelas oficiais IV–VII, com limites de isenção mais elevados.</Tip></span>
           </label>
         </div>
-      </div>
+  );
 
+  if (flowMode) {
+    return (
+      <FlowWizard
+        open={true}
+        onClose={exitFlow}
+        title="Salário Líquido"
+        icon={Banknote}
+        steps={steps}
+        resultsStep={{
+          label: 'Resultado da simulação',
+          description: 'Aqui está o resumo do seu salário líquido e custos para o empregador.',
+          render: (!simulated || !ready) ? <div className="p-6 text-center text-slate-500">Completa os dados e carrega em Simular.</div> : (
+            <div className="flex flex-col gap-4 lg:gap-[16px] h-full">
+              {resultsContent}
+            </div>
+          ),
+        }}
+        state={s}
+        setState={setState}
+      />
+    );
+  }
 
-        <SimGateBar view="salario" state={s} simulated={simulated} onSimulate={() => setSimulated(true)} />      {/* Right Pane */}
-      <div className={rightCls}>
-        {!simulated || !ready ? <SimGatePlaceholder view="salario" state={s} simulated={simulated} /> : resultsContent}
-      </div>
-    </motion.div>
+  return (
+    <SimTwoStep
+      title="Salário Líquido"
+      subtitle="Simulador para trabalhadores por conta de outrem — retenção na fonte 2026, SS 11% e subsídio de alimentação."
+      view="salario"
+      state={s}
+      simulated={simulated}
+      ready={ready}
+      onSimulate={() => setSimulated(true)}
+      onBack={() => setSimulated(false)}
+      inputs={salarioInputs}
+      results={resultsContent}
+    />
   );
 }

@@ -13,7 +13,8 @@ import { Tip } from './Tip';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { SimulatorPrintButton } from './SimulatorPrint';
-import { SimGateBar, SimGatePlaceholder, RequiredMark } from './components/SimGateBar';
+import { RequiredMark, SimGatePlaceholder } from './components/SimGateBar';
+import { SimTwoStep } from './components/SimTwoStep';
 import { isSimReady } from './lib/simRequired';
 
 export type { TipoTicket, TipoSubsidioRefeicao };
@@ -566,6 +567,79 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
     },
   ];
 
+  const ticketInputs = (
+    <div className="space-y-6">
+        <div>
+          <label className={labelCls}>Tipo de Ticket</label>
+          <div className="flex flex-wrap gap-2">
+            {(Object.entries(TICKET_META) as [TipoTicket, typeof TICKET_META[TipoTicket]][]).map(([id, { shortLabel, Icon }]) => (
+              <button key={id} type="button" onClick={() => setState({ tipoTicket: id })} className={cn("flex items-center gap-1.5 px-3 py-2 rounded-[8px] text-[12px] font-[700] border-2 transition-colors", tipo === id ? "bg-[#0F172A] text-white border-[#0F172A]" : "bg-[#F5F7FA] text-[#64748B] border-[#E2E8F0] hover:border-[#94A3B8]")}>
+                <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+                {shortLabel}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className={labelCls}>{isCar ? 'Número de viaturas' : isOferta ? 'Número de destinatários' : 'Número de funcionários'} <RequiredMark />{' '}<Tip>{isCar ? 'Número de viaturas da frota que usam o Ticket Car.' : 'Número de pessoas que recebem este benefício.'}</Tip></label>
+          <input type="number" min="1" value={s.employees === 0 ? '' : s.employees} onChange={e => setState({ employees: intInput(e.target.value) })} className={inputCls} />
+        </div>
+        {isRestaurante && (
+          <>
+            <div>
+              <label className={labelCls}>Modalidade de Pagamento <Tip>Cada modalidade tem um limite de isenção diferente. Cartão eletrónico tem o limite mais alto.</Tip></label>
+              <select value={s.tipoSubsidio} onChange={e => setState({ tipoSubsidio: e.target.value as TipoSubsidioRefeicao })} className={inputCls}>
+                <option value="cartao">Cartão eletrónico — limite isento €10,46/dia</option>
+                <option value="dinheiro">Dinheiro / transferência — limite isento €6,15/dia</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Valor Diário (€) <RequiredMark /> <Tip>Valor por dia de trabalho pago a cada funcionário. O excedente ao limite legal fica sujeito a SS e IRS.</Tip></label>
+              <div className="relative">
+                <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
+                <input type="number" min="0" step="0.01" value={s.ticketValue === 0 ? '' : s.ticketValue} onChange={e => setState({ ticketValue: numInput(e.target.value) })} className={cn(inputCls, "pl-9", calc?.excedeNorma && "border-amber-400 bg-amber-50/30")} />
+              </div>
+              {calc && (
+                <div className={cn("mt-2 flex items-center gap-2 text-[12px] font-[600] px-3 py-1.5 rounded-[8px]", calc.excedeNorma ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200")}>
+                  {calc.excedeNorma ? <AlertTriangle size={12} /> : <ShieldCheck size={12} />}
+                  Limite legal: {ptEur(calc.limiteDiario)}/dia
+                  {calc.excedeNorma && ' — excedente ' + ptEur(s.ticketValue - calc.limiteDiario) + '/dia tributável'}
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className={labelCls}>Dias úteis/mês <RequiredMark /> <Tip>Dias de trabalho por mês em que o subsídio é pago. Normalmente 22.</Tip></label><input type="number" min="1" max="31" value={s.daysPerMonth === 0 ? '' : s.daysPerMonth} onChange={e => setState({ daysPerMonth: intInput(e.target.value) })} className={inputCls} /></div>
+              <div><label className={labelCls}>Meses/ano <RequiredMark /> <Tip>Número de meses por ano em que o benefício é pago.</Tip></label><input type="number" min="1" max="12" value={s.months === 0 ? '' : s.months} onChange={e => setState({ months: intInput(e.target.value) })} className={inputCls} /></div>
+            </div>
+          </>
+        )}
+        {isCar && (
+          <div>
+            <label className={labelCls}>Tipo de Viatura <Tip>Determina a percentagem de IVA recuperável em combustível e manutenção (CIVA Art. 21.º).</Tip></label>
+            <select value={s.tipoVeiculo} onChange={e => setState({ tipoVeiculo: e.target.value as TicketSimulatorState['tipoVeiculo'] })} className={inputCls}>
+              <option value="passageiros">Ligeiro de passageiros — IVA combustível: 0%</option>
+              <option value="misto">Ligeiro misto / pick-up — IVA combustível: 50%</option>
+              <option value="comercial">Comercial / mercadorias — IVA combustível: 100%</option>
+            </select>
+          </div>
+        )}
+        {!isRestaurante && (
+          <div>
+            <label className={labelCls}>{isOferta ? 'Valor por destinatário (€/ano)' : isCar ? 'Custo anual por viatura (€)' : 'Valor anual por funcionário (€)'} <RequiredMark />{' '}<Tip>{isCar ? 'Custo anual total com combustível e assistência por viatura (inclui IVA).' : 'Montante total anual atribuído a cada beneficiário.'}</Tip></label>
+            <div className="relative">
+              <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
+              <input type="number" min="0" step="50" value={s.valorAnualPorPessoa === 0 ? '' : s.valorAnualPorPessoa} onChange={e => setState({ valorAnualPorPessoa: numInput(e.target.value) })} className={cn(inputCls, "pl-9")} placeholder={tipo === 'infancia' ? 'ex: 3 600' : tipo === 'saude' ? 'ex: 1 200' : tipo === 'educacao' ? 'ex: 2 400' : tipo === 'car' ? 'ex: 3 600' : 'ex: 150'} />
+            </div>
+          </div>
+        )}
+        <div className="p-4 rounded-[12px] bg-[#F5F7FA] border border-[#E2E8F0] text-[12px] text-[#64748B] font-[500] leading-relaxed space-y-2">
+          <div className="flex items-start gap-2"><Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-[#94A3B8]" aria-hidden="true" /><span>{legal.limitsNote}</span></div>
+          <div className="flex items-start gap-2"><Calculator className="w-3.5 h-3.5 mt-0.5 shrink-0 text-[#94A3B8]" aria-hidden="true" /><span>{legal.ircNote}</span></div>
+          <div className="text-[10px] text-[#94A3B8] font-[600] uppercase tracking-[0.5px] pt-1 border-t border-[#E2E8F0] mt-2">{legal.refs}</div>
+        </div>
+    </div>
+  );
+
   if (flowMode) {
     return (
       <FlowWizard
@@ -586,182 +660,17 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }} className={outerCls}>
-      {/* ── Left Pane ── */}
-      <div data-print="form" className={leftCls}>
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-[22px] font-[800] tracking-[-0.5px] text-[#0F172A]">
-              Simulador de Tickets <Tip>Calcula os benefícios fiscais dos tickets Ticket.pt — isenções de IRS e SS para o trabalhador e dedutibilidade em IRC para a empresa.</Tip>
-            </h2>
-            <p className="text-[13px] text-[#64748B] font-[500] mt-[4px]">Todos os tipos Ticket.pt — benefícios fiscais 2026</p>
-          </div>
-          {simulated && ready && <SimulatorPrintButton />}
-        </div>
-
-        {/* Type selector */}
-        <div>
-          <label className={labelCls}>Tipo de Ticket</label>
-          <div className="flex flex-wrap gap-2">
-            {(Object.entries(TICKET_META) as [TipoTicket, typeof TICKET_META[TipoTicket]][]).map(([id, { shortLabel, Icon }]) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setState({ tipoTicket: id })}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 rounded-[8px] text-[12px] font-[700] border-2 transition-colors",
-                  tipo === id
-                    ? "bg-[#0F172A] text-white border-[#0F172A]"
-                    : "bg-[#F5F7FA] text-[#64748B] border-[#E2E8F0] hover:border-[#94A3B8]"
-                )}
-              >
-                <Icon className="w-3.5 h-3.5" aria-hidden="true" />
-                {shortLabel}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Employees / Viaturas */}
-        <div>
-          <label className={labelCls}>
-            {isCar ? 'Número de viaturas' : isOferta ? 'Número de destinatários' : 'Número de funcionários'} <RequiredMark />{' '}
-            <Tip>{isCar ? 'Número de viaturas da frota que usam o Ticket Car.' : 'Número de pessoas que recebem este benefício.'}</Tip>
-          </label>
-          <input
-            type="number" min="1"
-            value={s.employees === 0 ? '' : s.employees}
-            onChange={e => setState({ employees: intInput(e.target.value) })}
-            className={inputCls}
-          />
-        </div>
-
-        {/* Restaurante inputs */}
-        {isRestaurante && (
-          <>
-            <div>
-              <label className={labelCls}>
-                Modalidade de Pagamento <Tip>Cada modalidade tem um limite de isenção diferente. Cartão eletrónico tem o limite mais alto.</Tip>
-              </label>
-              <select
-                value={s.tipoSubsidio}
-                onChange={e => setState({ tipoSubsidio: e.target.value as TipoSubsidioRefeicao })}
-                className={inputCls}
-              >
-                <option value="cartao">Cartão eletrónico — limite isento €10,46/dia</option>
-                <option value="dinheiro">Dinheiro / transferência — limite isento €6,15/dia</option>
-              </select>
-            </div>
-
-            <div>
-              <label className={labelCls}>
-                Valor Diário (€) <RequiredMark /> <Tip>Valor por dia de trabalho pago a cada funcionário. O excedente ao limite legal fica sujeito a SS e IRS.</Tip>
-              </label>
-              <div className="relative">
-                <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
-                <input
-                  type="number" min="0" step="0.01"
-                  value={s.ticketValue === 0 ? '' : s.ticketValue}
-                  onChange={e => setState({ ticketValue: numInput(e.target.value) })}
-                  className={cn(inputCls, "pl-9", calc?.excedeNorma && "border-amber-400 bg-amber-50/30")}
-                />
-              </div>
-              {calc && (
-                <div className={cn(
-                  "mt-2 flex items-center gap-2 text-[12px] font-[600] px-3 py-1.5 rounded-[8px]",
-                  calc.excedeNorma
-                    ? "bg-amber-50 text-amber-700 border border-amber-200"
-                    : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                )}>
-                  {calc.excedeNorma ? <AlertTriangle size={12} /> : <ShieldCheck size={12} />}
-                  Limite legal: {ptEur(calc.limiteDiario)}/dia
-                  {calc.excedeNorma && ` — excedente ${ptEur(s.ticketValue - calc.limiteDiario)}/dia tributável`}
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={labelCls}>Dias úteis/mês <RequiredMark /> <Tip>Dias de trabalho por mês em que o subsídio é pago. Normalmente 22.</Tip></label>
-                <input
-                  type="number" min="1" max="31"
-                  value={s.daysPerMonth === 0 ? '' : s.daysPerMonth}
-                  onChange={e => setState({ daysPerMonth: intInput(e.target.value) })}
-                  className={inputCls}
-                />
-              </div>
-              <div>
-                <label className={labelCls}>Meses/ano <RequiredMark /> <Tip>Número de meses por ano em que o benefício é pago.</Tip></label>
-                <input
-                  type="number" min="1" max="12"
-                  value={s.months === 0 ? '' : s.months}
-                  onChange={e => setState({ months: intInput(e.target.value) })}
-                  className={inputCls}
-                />
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Ticket Car: tipo de viatura */}
-        {isCar && (
-          <div>
-            <label className={labelCls}>
-              Tipo de Viatura <Tip>Determina a percentagem de IVA recuperável em combustível e manutenção (CIVA Art. 21.º).</Tip>
-            </label>
-            <select
-              value={s.tipoVeiculo}
-              onChange={e => setState({ tipoVeiculo: e.target.value as TicketSimulatorState['tipoVeiculo'] })}
-              className={inputCls}
-            >
-              <option value="passageiros">Ligeiro de passageiros — IVA combustível: 0%</option>
-              <option value="misto">Ligeiro misto / pick-up — IVA combustível: 50%</option>
-              <option value="comercial">Comercial / mercadorias — IVA combustível: 100%</option>
-            </select>
-          </div>
-        )}
-
-        {/* Non-restaurante inputs */}
-        {!isRestaurante && (
-          <div>
-            <label className={labelCls}>
-              {isOferta ? 'Valor por destinatário (€/ano)' : isCar ? 'Custo anual por viatura (€)' : 'Valor anual por funcionário (€)'} <RequiredMark />{' '}
-              <Tip>{isCar ? 'Custo anual total com combustível e assistência por viatura (inclui IVA).' : 'Montante total anual atribuído a cada beneficiário.'}</Tip>
-            </label>
-            <div className="relative">
-              <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
-              <input
-                type="number" min="0" step="50"
-                value={s.valorAnualPorPessoa === 0 ? '' : s.valorAnualPorPessoa}
-                onChange={e => setState({ valorAnualPorPessoa: numInput(e.target.value) })}
-                className={cn(inputCls, "pl-9")}
-                placeholder={tipo === 'infancia' ? 'ex: 3 600' : tipo === 'saude' ? 'ex: 1 200' : tipo === 'educacao' ? 'ex: 2 400' : tipo === 'car' ? 'ex: 3 600' : 'ex: 150'}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Legal notes */}
-        <div className="p-4 rounded-[12px] bg-[#F5F7FA] border border-[#E2E8F0] text-[12px] text-[#64748B] font-[500] leading-relaxed space-y-2">
-          <div className="flex items-start gap-2">
-            <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-[#94A3B8]" aria-hidden="true" />
-            <span>{legal.limitsNote}</span>
-          </div>
-          <div className="flex items-start gap-2">
-            <Calculator className="w-3.5 h-3.5 mt-0.5 shrink-0 text-[#94A3B8]" aria-hidden="true" />
-            <span>{legal.ircNote}</span>
-          </div>
-          <div className="text-[10px] text-[#94A3B8] font-[600] uppercase tracking-[0.5px] pt-1 border-t border-[#E2E8F0] mt-2">
-            {legal.refs}
-          </div>
-        </div>
-        <SimGateBar view="ticket" state={s} simulated={simulated} onSimulate={() => setSimulated(true)} />
-      </div>
-
-      {/* ── Right Pane ── */}
-      <div className={rightCls}>
-        {!simulated || !ready ? <SimGatePlaceholder view="ticket" state={s} simulated={simulated} /> : resultsContent}
-      </div>
-    </motion.div>
+    <SimTwoStep
+      title="Simulador de Tickets"
+      subtitle="Todos os tipos Ticket.pt — benefícios fiscais 2026"
+      view="ticket"
+      state={s}
+      simulated={simulated}
+      ready={ready}
+      onSimulate={() => setSimulated(true)}
+      onBack={() => setSimulated(false)}
+      inputs={ticketInputs}
+      results={resultsContent}
+    />
   );
 }

@@ -9,7 +9,8 @@ import { Tip } from './Tip';
 import { FlowWizard } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { SimulatorPrintButton } from './SimulatorPrint';
-import { SimGateBar, SimGatePlaceholder, RequiredMark } from './components/SimGateBar';
+import { RequiredMark, SimGatePlaceholder } from './components/SimGateBar';
+import { SimTwoStep } from './components/SimTwoStep';
 import { isSimReady } from './lib/simRequired';
 
 interface VehicleSimulatorState {
@@ -409,44 +410,8 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
   const flowSteps = steps.filter(s => s.id !== 'results');
   const resultsStepDef = steps.find(s => s.id === 'results')!;
 
-  if (flowMode) {
-    return (
-      <FlowWizard
-        open={flowMode}
-        onClose={exitFlow}
-        title="Simulador Viaturas"
-        icon={Car}
-        steps={flowSteps}
-        resultsStep={{ label: resultsStepDef.label, description: resultsStepDef.description, render: (!simulated || !ready) ? <SimGatePlaceholder view="vehicle" state={sState} simulated={simulated} /> : resultsStepDef.render(initialState, setState) }}
-        state={initialState}
-        setState={setState}
-      />
-    );
-  }
-
-  return (
-    <motion.div
-      className={outerCls}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-    >
-      {/* Left Pane - Form */}
-      <motion.div
-        className={leftCls}
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.35, delay: 0.05, ease: [0.32, 0.72, 0, 1] }}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-[24px] font-[800] tracking-[-0.5px] text-[#0F172A]">Simulador Viaturas <Tip>Calcula o IVA que a empresa pode recuperar na compra e manutenção do carro, e a Tributação Autónoma sobre encargos com viaturas de passageiros.</Tip></h2>
-            <p className="text-[14px] text-[#64748B] font-[500] mt-[4px]">Cálculo IVA e Tributação Autónoma. <Tip>IVA é o Imposto sobre o Valor Acrescentado — as empresas podem recuperar parte do IVA pago se usarem o carro para atividade tributável. Tributação Autónoma é um imposto extra sobre encargos com carros da empresa.</Tip></p>
-          </div>
-          {simulated && ready && <SimulatorPrintButton />}
-        </div>
-
-        <div className="space-y-[24px]">
+  const vehicleInputs = (
+    <div className="space-y-[24px]">
           <div>
             <label className={labelClass}>Categoria do Veículo <Tip>Veículos comerciais (carrinhas, camionetas) têm tratamento fiscal mais favorável. Veículos de passageiros têm mais restrições fiscais.</Tip></label>
             <select value={category} onChange={e=>setState({category: e.target.value as any})} className={inputClass}>
@@ -454,7 +419,6 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
               <option value="comercial">Comercial (2/3 lugares)</option>
             </select>
           </div>
-
           <div>
             <label className={labelClass}>Motor / Combustível <Tip>O tipo de combustível do carro: diesel, gasolina, elétrico ou híbrido. Afeta os limites de dedução de IVA e a isenção de Imposto Automóvel.</Tip></label>
             <select value={engineType} onChange={e=>setState({engineType: e.target.value})} className={inputClass}>
@@ -473,7 +437,6 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
               </label>
             )}
           </div>
-
           <div>
             <label className={labelClass}>Custo Aquisição (Base s/ IVA) <RequiredMark /> <Tip>O preço de compra da viatura (sem IVA). Determina os limites de dedução e amortização permitidos.</Tip></label>
             <div className="relative">
@@ -481,7 +444,6 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
               <input type="number" value={price === 0 ? '' : price} onChange={e=>setState({price: numInput(e.target.value)})} className={cn(inputClass, "pl-[40px]")} />
             </div>
           </div>
-
           <div>
             <label className={labelClass}>Regime Fiscal da Aquisição <Tip>Se a empresa está no regime normal de IVA, pode recuperar parte do IVA pago na compra e manutenção do carro.</Tip></label>
             <select value={ivaRegime} onChange={e=>setState({ivaRegime: e.target.value})} className={inputClass}>
@@ -490,7 +452,6 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
               <option value="leasing">Locação / Leasing / Renting</option>
             </select>
           </div>
-
           <div>
             <label className={labelClass}>Serviço ou Atividade Associada <Tip>A atividade para que serve a viatura: escolas de condução, rent-a-car e transportes públicos têm deduções de IVA a 100%.</Tip></label>
             <select value={activity} onChange={e=>setState({activity: e.target.value as any})} className={inputClass}>
@@ -501,7 +462,6 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
               <option value="driving_school">Escola de Condução</option>
             </select>
           </div>
-
           <div className="p-5 border-2 border-[#E2E8F0] rounded-[16px] bg-[#F5F7FA]">
             <h3 className="text-[12px] font-[800] text-[#0F172A] mb-4">ENCARGOS ANUAIS (COM IVA) <Tip>Os custos anuais de operação da viatura (manutenção, seguro e combustível) com IVA incluído. São usados para calcular a base da Tributação Autónoma.</Tip></h3>
             <div className="space-y-[16px]">
@@ -519,7 +479,6 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
               </div>
             </div>
           </div>
-
           {category === 'passageiros' && (
             <label className="flex items-start gap-4 p-5 border-2 border-[#E2E8F0] rounded-[16px] cursor-pointer transition-colors hover:border-[#CBD5E1]">
               <input type="checkbox" checked={exemptTA} onChange={e=>setState({exemptTA: e.target.checked})} className="mt-1 w-5 h-5 rounded border-[#E2E8F0] text-[#0F172A] focus:ring-[#0F172A]" />
@@ -529,7 +488,6 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
               </div>
             </label>
           )}
-
           {category === 'passageiros' && !exemptTA && (
             <label className="flex items-start gap-4 p-5 border-2 border-[#E2E8F0] rounded-[16px] cursor-pointer transition-colors hover:border-[#CBD5E1]">
               <input type="checkbox" checked={!!initialState.agravamentoTA} onChange={e=>setState({agravamentoTA: e.target.checked})} className="mt-1 w-5 h-5 rounded border-[#E2E8F0] text-[#0F172A] focus:ring-[#0F172A]" />
@@ -539,24 +497,36 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
               </div>
             </label>
           )}
-        <SimGateBar view="vehicle" state={sState} simulated={simulated} onSimulate={() => setSimulated(true)} />
         </div>
-      </motion.div>
+  );
 
-      {/* Right Pane - Results */}
-      <motion.div
-        className={rightCls}
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.35, delay: 0.15, ease: [0.32, 0.72, 0, 1] }}
-      >
-        <div>
-          <h1 className="text-[32px] md:text-[40px] font-[800] leading-[1] md:tracking-[-1.5px] mb-[8px] text-[#0F172A]">Resultados Apurados</h1>
-          <p className="text-[16px] text-[#64748B] mb-[8px]">Enquadramento da viatura para os exercícios contabilisticos.</p>
-        </div>
+  if (flowMode) {
+    return (
+      <FlowWizard
+        open={flowMode}
+        onClose={exitFlow}
+        title="Simulador Viaturas"
+        icon={Car}
+        steps={flowSteps}
+        resultsStep={{ label: resultsStepDef.label, description: resultsStepDef.description, render: (!simulated || !ready) ? <SimGatePlaceholder view="vehicle" state={sState} simulated={simulated} /> : resultsStepDef.render(initialState, setState) }}
+        state={initialState}
+        setState={setState}
+      />
+    );
+  }
 
-        {!simulated || !ready ? <SimGatePlaceholder view="vehicle" state={sState} simulated={simulated} /> : <VehicleResults state={initialState} results={results} />}
-      </motion.div>
-    </motion.div>
-  )
+  return (
+    <SimTwoStep
+      title="Simulador Viaturas"
+      subtitle="Cálculo IVA e Tributação Autónoma — CIRC Art. 88.º"
+      view="vehicle"
+      state={sState}
+      simulated={simulated}
+      ready={ready}
+      onSimulate={() => setSimulated(true)}
+      onBack={() => setSimulated(false)}
+      inputs={vehicleInputs}
+      results={<VehicleResults state={initialState} results={results} />}
+    />
+  );
 }
