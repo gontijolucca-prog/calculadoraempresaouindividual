@@ -250,6 +250,17 @@ function EscritorioForm({ office, onChange }: { office: OfficeSettings; onChange
         </div>
       </section>
 
+      {/* Integrações */}
+      <section className="bg-white rounded-[16px] border border-[#E2E8F0] p-6">
+        <h2 className={sectionTitleCls}>Integrações</h2>
+        <p className="text-[12px] text-[#64748B] font-[500] mb-4">Opcional. Usada para gerar apresentações no Gama a partir da Proposta e do Pacote do Cliente. Fica guardada apenas neste navegador (localStorage).</p>
+        <div>
+          <label className={labelCls}>Gama API Key <span className="font-[400] normal-case tracking-normal text-[#94A3B8]">(opcional)</span></label>
+          <input type="password" value={(office as unknown as { gammaApiKey?: string }).gammaApiKey || ''} onChange={e => (set as unknown as (k: string, v: string) => void)('gammaApiKey' as unknown as never, e.target.value)} className={inputCls + ' font-mono'} placeholder="sk-gamma-..." autoComplete="off" />
+          <p className="text-[11px] text-[#94A3B8] mt-1">Cria em <a href="https://gamma.app" target="_blank" rel="noreferrer" className="text-[#0677FF] hover:underline">gamma.app</a> (plano Pro com API) ou define <code className="px-1 py-0.5 bg-slate-100 rounded text-[10px]">VITE_GAMMA_API_KEY</code> no ambiente.</p>
+        </div>
+      </section>
+
       {/* Pagamentos & Jurídico */}
       <section className="bg-white rounded-[16px] border border-[#E2E8F0] p-6">
         <h2 className={sectionTitleCls}>Pagamentos & Jurídico</h2>

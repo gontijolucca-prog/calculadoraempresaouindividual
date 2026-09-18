@@ -55,6 +55,9 @@ export interface OfficeSettings {
 
   /** Cor primária do branding (hex). Usada em PDFs e cabeçalhos. */
   corPrimaria: string;
+
+  /** Gama API key (opcional) — para gerar apresentações via Gamma API. Guarda-se em localStorage (não vai para Firestore). */
+  gammaApiKey?: string;
 }
 
 export const defaultOfficeSettings: OfficeSettings = {
@@ -75,12 +78,15 @@ export const defaultOfficeSettings: OfficeSettings = {
   foroComarca: 'Lisboa',
   logoDataUrl: '',
   corPrimaria: '#0677FF',
+  gammaApiKey: '',
 };
 
 const STORAGE_KEY = 'officeSettings';
 
 export function loadOfficeSettings(): OfficeSettings {
-  return loadFromStorage<OfficeSettings>(STORAGE_KEY, defaultOfficeSettings);
+  const s = loadFromStorage<OfficeSettings>(STORAGE_KEY, defaultOfficeSettings);
+  // Merge defaults para campos novos (ex: gammaApiKey) quando o storage antigo não tem o campo
+  return { ...defaultOfficeSettings, ...s } as OfficeSettings;
 }
 
 export function saveOfficeSettings(s: OfficeSettings): void {

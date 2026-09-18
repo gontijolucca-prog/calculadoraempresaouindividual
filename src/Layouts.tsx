@@ -292,6 +292,15 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
             <div className={cn("grid transition-all duration-700 ease-in-out motion-reduce:transition-none", gabineteOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
               <div className="overflow-hidden">
               <div className="mt-0.5 ml-2.5 space-y-0.5 border-l-2 border-slate-200 pl-2">
+                {(() => {
+                  const vg = GAB_TABS.find(t => t.id === 'visao-geral');
+                  return vg ? (
+                    <button key={vg.id} type="button" onClick={() => goGabinete(vg.id)} title={vg.desc} aria-current={active==='gabinete' && gabineteTab===vg.id ? 'page' : undefined} className={`w-full flex items-center gap-2.5 px-3 py-[7px] rounded-[10px] text-[12.5px] font-[700] transition-colors text-left border-2 ${active==='gabinete' && gabineteTab===vg.id ? 'bg-[#0677FF] text-white border-[#0677FF] shadow-sm' : 'bg-[#0677FF]/6 text-[#0677FF] border-[#0677FF]/25 hover:bg-[#0677FF]/10 hover:border-[#0677FF]/40'}`}>
+                      <vg.Icon className="w-[15px] h-[15px] shrink-0" />
+                      <span className="truncate">{vg.label}</span>
+                    </button>
+                  ) : null;
+                })()}
                 <ClientNavItem
                   label="Galeria do Gabinete"
                   Icon={LayoutDashboard}
@@ -299,12 +308,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                   current={active === 'gabinete' && gabineteTab === 'gallery'}
                   title="Voltar à galeria de funções do Gabinete"
                 />
-                {GAB_TABS.map(t => t.id === 'visao-geral' ? (
-                  <button key={t.id} type="button" onClick={() => goGabinete(t.id)} title={t.desc} aria-current={active==='gabinete' && gabineteTab===t.id ? 'page' : undefined} className={`w-full flex items-center gap-2.5 px-3 py-[7px] rounded-[10px] text-[12.5px] font-[700] transition-colors text-left border-2 ${active==='gabinete' && gabineteTab===t.id ? 'bg-[#0677FF] text-white border-[#0677FF] shadow-sm' : 'bg-[#0677FF]/6 text-[#0677FF] border-[#0677FF]/25 hover:bg-[#0677FF]/10 hover:border-[#0677FF]/40'}`}>
-                    <t.Icon className="w-[15px] h-[15px] shrink-0" />
-                    <span className="truncate">{t.label}</span>
-                  </button>
-                ) : (
+                {GAB_TABS.filter(t => t.id !== 'visao-geral').map(t => (
                   <ClientNavItem key={t.id} label={t.label} Icon={t.Icon} onClick={() => goGabinete(t.id)} current={active==='gabinete' && gabineteTab===t.id} title={t.desc} />
                 ))}
               </div>

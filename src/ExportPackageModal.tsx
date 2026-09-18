@@ -5,6 +5,7 @@ import type { ClientProfile } from './ClientProfile';
 import type { OfficeSettings } from './lib/officeSettings';
 import type { HonorariosConfig } from './lib/honorarios';
 import { officeSettingsAreComplete } from './lib/officeSettings';
+import GamaExportButton from './components/GamaExportButton';
 import PDFPreviewEditor from './PDFPreviewEditor';
 import Proposta from './Proposta';
 import MinutaContrato from './MinutaContrato';
@@ -225,6 +226,11 @@ export default function ExportPackageModal({
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Gama — apresentação em slides (não imprime) */}
+        <div className="shrink-0 px-4 md:px-6 py-3 bg-white border-b border-slate-100 no-print">
+          <GamaExportButton office={office} honorarios={honorarios} cliente={{ nome: profile.nomeCliente, nif: profile.nif }} onGoToSettings={onGoToOfficeSettings} />
         </div>
 
         {/* Tab content area */}
