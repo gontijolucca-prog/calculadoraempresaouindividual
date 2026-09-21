@@ -504,10 +504,17 @@ function AppContent() {
   // — recarrega sozinho (senão fica o botão "Recarregar agora"). Assim ninguém
   // fica preso numa versão antiga. getHasUnsavedEdits tem identidade estável.
   useEffect(() => {
-    const onFlushAudit = () => { try { void flushAuditQueue(); } catch {} };
+    const onFlushAudit = () => {
+      try { void flushAuditQueue(); } catch {}
+      try { if (user?.uid && (listEmpresas().length > 0 || getEmpresasStamp() !== 0)) void saveEmpresasToFirestore(officeSettings.nif, listEmpresas()); } catch {}
+    };
+    const onPageHide = () => { try { void flushAuditQueue(); } catch {}; try { if (user?.uid) void saveEmpresasToFirestore(officeSettings.nif, listEmpresas()); } catch {} };
     window.addEventListener('estudo360:flush-audit', onFlushAudit as any);
-    return () => window.removeEventListener('estudo360:flush-audit', onFlushAudit as any);
-  }, []);
+    window.addEventListener('pagehide', onPageHide);
+    window.addEventListener('beforeunload', onPageHide);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') onPageHide(); });
+    return () => { window.removeEventListener('estudo360:flush-audit', onFlushAudit as any); window.removeEventListener('pagehide', onPageHide); window.removeEventListener('beforeunload', onPageHide); };
+  }, [user?.uid, officeSettings.nif]);
   useEffect(() => {
     initVersionChecker({
       pollIntervalMs: 20000,
@@ -579,6 +586,14 @@ function AppContent() {
     }, 1200);
     return () => window.clearTimeout(t);
   }, [currentEmpresaId, view, taxState, vehicleState, ticketState, ssState, diagnosticoState, imoveisState, imtState, salarioState, irsState, previSaState]);
+  // Prova de auditoria dos inputs de perfil (nome/NIF/volume) — 2s debounced, leve
+  useEffect(() => {
+    if (!currentEmpresaId || !clientProfile?.nomeCliente) return;
+    const t = window.setTimeout(() => {
+      logAudit('edit_perfil', clientProfile.nomeCliente?.slice(0,60) || 'perfil', { nif: clientProfile.nif?.slice(0,9) || '', empresaId: currentEmpresaId } as any, currentEmpresaId);
+    }, 2000);
+    return () => window.clearTimeout(t);
+  }, [currentEmpresaId, clientProfile.nomeCliente, clientProfile.nif, clientProfile.faturaçaoAnualPrevista]);
 
   // ── Persistência permanente em Firestore (por CONTA) ───────────────────────
   // Isolamento total: cada uid tem o seu doc empresas/{uid} e gabinete/{uid}/*.
