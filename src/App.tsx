@@ -6,6 +6,7 @@ import ClientProfile, { defaultProfile } from './ClientProfile';
 import { UpdateNotification } from './components/UpdateNotification';
 import { useUnsavedEdits } from './hooks/useUnsavedEdits';
 import { initVersionChecker, stopVersionChecker } from './lib/version-checker';
+import { logAudit, flushAuditQueue } from './lib/audit';
 import LegalInfo from './LegalInfo';
 import LandingPage from './LandingPage';
 import AuthView, { VerifyEmailGate } from './AuthView';
@@ -503,6 +504,11 @@ function AppContent() {
   // — recarrega sozinho (senão fica o botão "Recarregar agora"). Assim ninguém
   // fica preso numa versão antiga. getHasUnsavedEdits tem identidade estável.
   useEffect(() => {
+    const onFlushAudit = () => { try { void flushAuditQueue(); } catch {} };
+    window.addEventListener('estudo360:flush-audit', onFlushAudit as any);
+    return () => window.removeEventListener('estudo360:flush-audit', onFlushAudit as any);
+  }, []);
+  useEffect(() => {
     initVersionChecker({
       pollIntervalMs: 20000,
       onUpdateAvailable: () => setVersionUpdate(true),
@@ -557,6 +563,7 @@ function AppContent() {
     const state = byView[view];
     if (!simHasData(view, state)) return;
     const t = window.setTimeout(() => {
+      logAudit('save_simulacao', view, { empresaId: currentEmpresaId, tipo: view } as any, currentEmpresaId);
       upsertAutoSimulacao(currentEmpresaId, {
         tipo: view,
         label: SIM_LABELS[view],
@@ -860,6 +867,7 @@ function AppContent() {
    *  Sem isto, o merge de arranque (união por id) ressuscitava a empresa apagada
    *  a partir da cloud ("Hydra"). Também limpa o currentEmpresaId em memória. */
   const handleDeleteEmpresa = (id: string) => {
+    logAudit('delete_empresa', id, undefined, id);
     deleteEmpresa(id);
     if (currentEmpresaId === id) {
       setCurrentEmpresaIdState(null);
@@ -888,6 +896,7 @@ function AppContent() {
   const handleSaveNewClient = () => {
     const id = newEmpresaId();
     const now = Date.now();
+    logAudit('create_empresa', clientProfile.nomeCliente?.trim() || 'Cliente sem nome', { nif: clientProfile.nif?.trim() || '', criadoEm: now }, id);
     upsertEmpresa({
       id,
       nome: clientProfile.nomeCliente?.trim() || 'Cliente sem nome',
@@ -984,6 +993,7 @@ function AppContent() {
           // vendas) — marca como processado na revisão atual para o re-parse
           // silencioso do Exportar não correr (e para um REimport não ficar
           // bloqueado por uma marca antiga).
+          logAudit('import_saft', file.name, { empresa: emp?.nome, saftWarnings: ((result as any)?.warnings?.length ?? 0) }, empId);
           if (emp) upsertEmpresa({ ...emp, saftXml: normalizeXmlEncodingToUtf8(text), saftFileName: file.name, saftImportedAt: Date.now(), saftReprocessadoEm: Date.now(), saftReparseRev: SAFT_REPARSE_REV, previsa: newPrevisa });
         }
 

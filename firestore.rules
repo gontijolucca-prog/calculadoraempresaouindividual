@@ -106,6 +106,19 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+
+    match /audit_events/{eventId} {
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.ts is number
+        && request.resource.data.type is string
+        && request.resource.data.type.size() > 0
+        && request.resource.data.type.size() < 80;
+      allow read: if request.auth != null
+        && (request.auth.token.email == 'admin@estudo360.pt' || request.auth.uid == resource.data.uid);
+      allow update, delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

@@ -3,6 +3,7 @@ import { Sparkles, X, Send, Trash2, Check, RotateCcw, Lightbulb, FileUp } from '
 import { parseReply, type BotAction, type FillField, type ViewId } from './actions';
 import { registerSuggestion } from './suggestions';
 import { GUIAS, reativarGuias, type ViewKey } from '../lib/guias';
+import { triageQuestion } from '../lib/layaGate';
 import { useHideOnScroll } from '../lib/useHideOnScroll';
 
 // Bridge fornecida pelo App: dá ao bot poderes de navegação e preenchimento,
@@ -311,6 +312,15 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
     const history = [...msgs, { role: 'user' as const, content: trimmed }];
     setMsgs(history);
     setBusy(true);
+    // Laya triage — bloqueia off-topic antes de gastar LLM (falha aberto)
+    try {
+      const tri = await triageQuestion(trimmed);
+      if (!tri.ok) {
+        setMsgs((prev) => [...prev, { role: 'assistant' as const, content: tri.localReply ?? 'Fora do âmbito do AI Contabilista.' }]);
+        setBusy(false);
+        return;
+      }
+    } catch { /* triage falhou → deixa passar */ }
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',

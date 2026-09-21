@@ -91,10 +91,13 @@ async function fetchAndCheckVersion() {
       // Check if we can reload safely
       if (!checkUnsavedEditsFn || !checkUnsavedEditsFn()) {
         // No unsaved edits — safe to reload automatically after brief delay
-        // (gives user time to see the toast)
-        setTimeout(() => {
+        // (gives user time to see the toast + flush audit queue)
+        setTimeout(async () => {
           if (import.meta.env.DEV) console.log('[Version Checker] Reloading to new version...');
           reloadNeededCallback?.();
+          try { window.dispatchEvent(new CustomEvent('estudo360:flush-audit')); } catch {}
+          // Dá 900ms para o flush da queue de audit ir para Firestore antes do reload
+          await new Promise(r => setTimeout(r, 900));
           // Hard reload: bypasses cache, fetches fresh index.html + all assets
           window.location.replace(window.location.href);
         }, 2000);
