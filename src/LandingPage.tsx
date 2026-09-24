@@ -128,7 +128,7 @@ function StepsTimeline() {
   const steps = [
     { k:'01', t:'Reúna os dados', d:'Nome e NIF. O resto é só escolher.' },
     { k:'02', t:'Veja as contas', d:'Quanto se paga e o que compensa, logo à frente.' },
-    { k:'03', t:'Entrega pronto', d:'Documento com a sua marca. É imprimir.' },
+    { k:'03', t:'Entregue pronto', d:'Documento com a sua marca. Basta imprimir.' },
   ];
   return (
     <section id="como" className="max-w-[1220px] mx-auto px-5 md:px-6 py-14 md:py-18">
