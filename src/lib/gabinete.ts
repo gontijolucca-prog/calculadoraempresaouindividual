@@ -1065,7 +1065,7 @@ async function ensureMykolaDependencias(clienteId: string, clienteNome: string):
       { categoria: 'OUTRO' as const, titulo: 'TOConline', username: 'mykola.vasyl' },
       { categoria: 'OUTRO' as const, titulo: 'Homebanking BPI', username: 'mykola.vasyl' },
     ] as const) {
-      await upsertCofre({ id: newCofreId(), titulo: a.titulo, categoria: a.categoria, clienteId, clienteNome, username: a.username, segredo: '—', createdAt: Date.now(), updatedAt: Date.now() } as unknown as CofreEntrada);
+      await upsertCofre({ id: newCofreId(), titulo: a.titulo, categoria: a.categoria, clienteId, clienteNome, username: a.username, segredo: '', createdAt: Date.now(), updatedAt: Date.now() } as unknown as CofreEntrada);
     }
   }
 }

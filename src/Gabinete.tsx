@@ -1421,17 +1421,33 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
 
   React.useEffect(()=> { setPlain(null); setShowSecret(false); }, [selectedId]);
 
-  const getSegredo = (e: CofreEntrada) => (e as unknown as { segredo?: string }).segredo || '';
+  const getSegredo = (e: CofreEntrada) => {
+    const raw = (e as unknown as Record<string, unknown>).segredo as string | undefined;
+    const s = (raw ?? '').trim();
+    if (!s || s === '—' || s === '-' || s === '...') return '';
+    return s;
+  };
+  // fallback para docs antigos que possam ter gravado noutro campo (password/secret)
+  const getSegredoCompat = (e: CofreEntrada) => {
+    const direct = getSegredo(e);
+    if (direct) return direct;
+    const o = e as unknown as Record<string, unknown>;
+    for (const k of ['password','pass','secret','segredoPlain','valor']) {
+      const v = (o[k] as string | undefined)?.trim();
+      if (v && v !== '—' && v !== '-') return v;
+    }
+    return '';
+  };
 
   const handleCopy = async (text: string) => { try { await navigator.clipboard.writeText(text); } catch {} };
 
   const handleReveal = async () => {
     if (!selected) return;
     if (plain) { setPlain(null); return; }
-    const seg = getSegredo(selected);
-    if (!seg) { alert('Sem segredo guardado'); return; }
+    const seg = getSegredoCompat(selected);
     const hasLegacy = !!(selected as unknown as { cipher?: unknown }).cipher && !seg;
-    if (hasLegacy) { alert('Entrada antiga cifrada. Edita e volta a guardar.'); return; }
+    if (hasLegacy) { alert('Entrada antiga cifrada. Edita e volta a guardar a password.'); return; }
+    if (!seg) { alert('Sem segredo guardado — clica em Editar e guarda a password.'); return; }
     setPlain(seg);
     registarVistaCofre(selected.id).catch(()=>{});
   };
@@ -1450,7 +1466,18 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
   const startCreate = () => { setForm({ categoria:'AT' }); setEditing(true); setSelectedId(null); setPlain(null); };
   const startEdit = () => {
     if (!selected) return;
-    setForm({ ...selected, secretPlain: getSegredo(selected) } as any);
+    const compat = (() => {
+      const o = selected as unknown as Record<string, unknown>;
+      const s = (o.segredo as string | undefined)?.trim();
+      if (s && s !== '—' && s !== '-') return s;
+      for (const k of ['password','pass','secret','segredoPlain','valor']) {
+        const v = (o[k] as string | undefined)?.trim();
+        if (v && v !== '—' && v !== '-') return v;
+      }
+      return '';
+    })();
+    // se for placeholder '—', deixa vazio para o utilizador preencher
+    setForm({ ...selected, secretPlain: compat } as any);
     setEditing(true);
     setPlain(null);
   };
