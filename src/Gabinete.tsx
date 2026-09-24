@@ -616,7 +616,7 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
       <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-3 space-y-2.5">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm text-zinc-600">Nº Mapa</span>
-          <input value="5" readOnly className="w-[70px] px-2 py-1.5 rounded border border-zinc-300 bg-zinc-50 text-sm text-center" />
+          <input value="5" readOnly className="w-[70px] px-2 py-1.5 rounded border border-zinc-300 bg-zinc-50 text-sm text-center transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" />
           <span className="text-sm text-zinc-600">Ano</span>
           <select value={String(ano)} onChange={e=>setAno(parseInt(e.target.value)||new Date().getFullYear())} className="px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
             {[ano-2,ano-1,ano,ano+1,ano+2].map(a=> <option key={a} value={String(a)}>{a}</option>)}
@@ -854,7 +854,7 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
       <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-3 space-y-2.5">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm text-zinc-600">Nº Mapa</span>
-          <input value="5" readOnly className="w-[70px] px-2 py-1.5 rounded border border-zinc-300 bg-zinc-50 text-sm text-center" />
+          <input value="5" readOnly className="w-[70px] px-2 py-1.5 rounded border border-zinc-300 bg-zinc-50 text-sm text-center transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" />
           <span className="text-sm text-zinc-600">Ano</span>
           <select value={String(ano)} onChange={e=>setAno(parseInt(e.target.value)||new Date().getFullYear())} className="px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
             {[ano-2,ano-1,ano,ano+1,ano+2].map(a=> <option key={a} value={String(a)}>{a}</option>)}
