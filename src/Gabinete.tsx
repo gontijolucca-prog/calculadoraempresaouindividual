@@ -518,7 +518,7 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
   const colabs = useGabineteColaboradores();
   const meses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'] as const;
 
-  // 7 colunas do screenshot 1 (cores distintas)
+  // 7 pilares — agora linhas (estilo Quadro), dropdown filtra linhas em vez de multiplicar colunas
   type Pilar = { key: string; labelShort: string; labelFull: string; color: string; bgHeader: string; tipos: ObrigacaoTipo[] };
   const pilares: Pilar[] = [
     { key:'docfalta',  labelShort:'Gestão Doc.',  labelFull:'Gestão Doc. em Falta',     color:'#0B57D0', bgHeader:'bg-[#E8F0FE]', tipos:['dossier','outro'] },
@@ -543,13 +543,8 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
 
   const toggle = (id: string) => setCollapsed(prev => { const n=new Set(prev); if(n.has(id)) n.delete(id); else n.add(id); return n; });
 
-  const visMeses = (() => {
-    if (trim==='1') return [0,1,2];
-    if (trim==='2') return [3,4,5];
-    if (trim==='3') return [6,7,8];
-    if (trim==='4') return [9,10,11];
-    return [0,1,2,3,4,5,6,7,8,9,10,11];
-  })();
+  // Quadro-style: 12 meses fixos no header, dropdown filtra linhas (pilares) — sem multiplicação 7×12
+  const visMeses = [0,1,2,3,4,5,6,7,8,9,10,11] as const;
 
   const clientesFiltrados = (() => {
     let list=[...clientes];
@@ -608,8 +603,8 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
   };
 
   const exportCSV = () => {
-    const rows:string[]=[]; const header=['Cliente','Nº',...pilaresVisiveis.flatMap(pi=> meses.filter((_,i)=>visMeses.includes(i)).map(m=> `${pi.labelShort} ${m}`))].join(';'); rows.push(header);
-    for(const cli of clientesFiltrados){ const cells=pilaresVisiveis.flatMap(pi=> meses.filter((_,i)=>visMeses.includes(i)).map((_,idx)=>{ const mes=visMeses[idx]+1; const st=getStatus(cli,pi,mes); const map:any={concluido:'Concluído',nao_concluido:'Não Concluído'}; return map[st]; })); rows.push([cli.nome, cli.nif||'', ...cells].join(';')); }
+    const rows:string[]=[]; const header=['Cliente','Nº','Pilar',...meses].join(';'); rows.push(header);
+    for(const cli of clientesFiltrados){ for(const pi of pilaresVisiveis){ const cells=meses.map((_,idx)=>{ const mes=idx+1; const st=getStatus(cli,pi,mes); const map:any={concluido:'Concluído',nao_concluido:'Não Concluído'}; return map[st]; }); rows.push([cli.nome, cli.nif||'', pi.labelFull, ...cells].join(';')); } }
     const csv=rows.join('\n'); const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`Mapa_Controlo_${ano}${trim?'_T'+trim:''}.csv`; a.click(); URL.revokeObjectURL(url);
   };
 
@@ -688,51 +683,53 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
 
 
 
-      {/* Tabela principal — clientes agrupados por trimestre/mês */}
-      <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
+      {/* Tabela — estilo Quadro Resumo: colunas JAN-DEZ fixas, linhas por pilar (dropdown filtra) */}
+      <div className="bg-white rounded-[10px] border border-zinc-300 shadow-sm overflow-hidden">
         <div className="overflow-auto max-h-[62vh]">
-          <table className="w-full text-xs border-collapse">
+          <table className="w-full text-[13px] border-collapse">
             <thead className="sticky top-0 z-10">
-              <tr className="bg-[#3D5A73] text-white text-[11px]">
-                <th className="text-left px-2 py-2 sticky left-0 bg-[#3D5A73] z-20 border-r border-[#2F455C] min-w-[180px]">Nº / Cliente</th>
-                {pilaresVisiveis.map(pi=> (
-                  <th key={pi.key} colSpan={visMeses.length} className="text-center px-1 py-2 border-l border-[#2F455C]" style={{background: pi.color}}>{pi.labelFull}</th>
-                ))}
+              <tr className="bg-[#4A4A4A] text-white text-[11px] tracking-wide">
+                <th className="text-left font-semibold px-2 py-2 w-[280px] min-w-[220px] sticky left-0 bg-[#4A4A4A] z-20 border-r border-[#606060]">Cliente</th>
+                {meses.map(m=> <th key={m} className="text-center font-semibold px-1 py-2 w-[56px] min-w-[48px] border-l border-[#606060]">{m}</th>)}
               </tr>
-              <tr className="bg-[#E8EEF3] text-[11px] font-bold text-zinc-700">
-                <th className="sticky left-0 bg-[#E8EEF3] z-10 border-r border-zinc-300 px-2 py-1.5"></th>
-                {pilaresVisiveis.map(pi=> visMeses.map(mi=> <th key={pi.key+'-'+mi} className="text-center px-1 py-1.5 border-l border-zinc-300 min-w-[44px]">{meses[mi]}</th>))}
-              </tr>
-              {/* segunda linha de colunas curtas como no screenshot (Rec./Arq./Lang./Conf.) — aqui simplificado por mês */}
             </thead>
             <tbody>
               {clientesFiltrados.length===0 ? (
-                <tr><td colSpan={1+pilaresVisiveis.length*visMeses.length} className="px-4 py-12 text-center text-sm text-zinc-500">Sem clientes para os filtros. Cria clientes ou limpa filtros.</td></tr>
-              ) : clientesFiltrados.map((cli, idx)=> (
-                <React.Fragment key={cli.id}>
-                  <tr className={`border-t ${idx%2===0?'bg-[#F8F9FA]':'bg-white'}`}>
-                    <td className={`px-2 py-2 sticky left-0 z-[5] border-r border-zinc-200 font-medium ${idx%2===0?'bg-[#F8F9FA]':'bg-white'}`}>
-                      <button onClick={()=>toggle(cli.id)} className="flex items-center gap-1.5 w-full text-left">
-                        <span className="text-zinc-500 text-[11px]">{collapsed.has(cli.id) ? '▶' : '▼'}</span>
-                        <span className="text-[11px] text-zinc-500">SW{String(idx+1).padStart(3,'0')}</span>
-                        <span className="text-[12px] font-semibold text-[#1A3A5A] truncate">{cli.nome}</span>
-                      </button>
-                    </td>
-                    {pilaresVisiveis.map(pi=> visMeses.map(mi=> {
-                      const mes=mi+1; const st=getStatus(cli,pi,mes); const withBg = st==='concluido' || st==='nao_concluido';
-                      const cellBg = st==='concluido' ? 'bg-emerald-50' : st==='nao_concluido' ? 'bg-red-50' : '';
-                      return (
-                        <td key={pi.key+'-'+mi} className={`text-center border-l border-zinc-200 py-1 ${cellBg}`}>
-                          <button onClick={()=>toggleCell(cli,pi,mes)} className="w-full flex items-center justify-center py-0.5">
-                            {renderIcon(st, withBg)}
-                          </button>
+                <tr><td colSpan={13} className="px-4 py-12 text-center text-sm text-zinc-500">Sem clientes para os filtros. Cria clientes ou limpa filtros.</td></tr>
+              ) : clientesFiltrados.map((cli, idx)=> {
+                const isExpanded = !collapsed.has(cli.id);
+                return (
+                  <React.Fragment key={cli.id}>
+                    <tr className="bg-[#ECECEC] border-t border-zinc-300">
+                      <td className="px-1 py-1.5 sticky left-0 bg-[#ECECEC] z-[5] border-r border-zinc-300">
+                        <button onClick={()=>toggle(cli.id)} className="inline-flex items-center gap-1.5 w-full text-left">
+                          <span className="w-4 h-4 rounded-[3px] border border-zinc-400 bg-white flex items-center justify-center text-[11px] leading-none shrink-0">{isExpanded ? '−' : '+'}</span>
+                          <span className="text-[11px] text-zinc-500">SW{String(idx+1).padStart(3,'0')}</span>
+                          <span className="font-semibold text-[#0F172A] truncate">{cli.nome}</span>
+                        </button>
+                      </td>
+                      {meses.map((_, i)=> <td key={i} className="border-l border-zinc-200 bg-[#ECECEC]"></td>)}
+                    </tr>
+                    {isExpanded && pilaresVisiveis.map(pi=> (
+                      <tr key={pi.key} className="border-t border-zinc-200 hover:bg-zinc-50/70">
+                        <td className="px-2 py-1.5 pl-7 flex items-center gap-1.5 sticky left-0 bg-white z-[5] border-r border-zinc-200">
+                          <span className="w-4 h-4 rounded-[3px] border flex items-center justify-center shrink-0" style={{borderColor: pi.color, background: pi.color+'18'}}><span className="w-2 h-2 rounded-[1px] block" style={{background: pi.color}} /></span>
+                          <span className="font-medium truncate" style={{color: pi.color}}>{pi.labelShort}</span>
                         </td>
-                      );
-                    }))}
-                  </tr>
-                  {!collapsed.has(cli.id) && null /* reserva para detalhe expandido se precisares */}
-                </React.Fragment>
-              ))}
+                        {meses.map((_, mi)=> {
+                          const mes=mi+1; const st=getStatus(cli,pi,mes);
+                          const cellBg = st==='concluido' ? 'bg-emerald-50' : st==='nao_concluido' ? 'bg-red-50' : '';
+                          return (
+                            <td key={mi} className={`text-center border-l border-zinc-200 py-0.5 ${cellBg}`}>
+                              <button onClick={()=>toggleCell(cli,pi,mes)} className="w-full h-full flex items-center justify-center hover:brightness-95 rounded py-1">{renderIcon(st, true)}</button>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -783,13 +780,8 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
 
   const toggle = (id: string) => setCollapsed(prev => { const n=new Set(prev); if(n.has(id)) n.delete(id); else n.add(id); return n; });
 
-  const visMeses = (() => {
-    if (trim==='1') return [0,1,2];
-    if (trim==='2') return [3,4,5];
-    if (trim==='3') return [6,7,8];
-    if (trim==='4') return [9,10,11];
-    return [0,1,2,3,4,5,6,7,8,9,10,11];
-  })();
+  // Quadro-style: 12 meses fixos no header, dropdown filtra linhas (pilares) — sem multiplicação 7×12
+  const visMeses = [0,1,2,3,4,5,6,7,8,9,10,11] as const;
 
   const clientesFiltrados = (() => {
     let list=[...clientes];
@@ -848,9 +840,9 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
   };
 
   const exportCSV = () => {
-    const rows:string[]=[]; const header=['Cliente','Nº',...pilaresVisiveis.flatMap(pi=> meses.filter((_,i)=>visMeses.includes(i)).map(m=> `${pi.labelShort} ${m}`))].join(';'); rows.push(header);
-    for(const cli of clientesFiltrados){ const cells=pilaresVisiveis.flatMap(pi=> meses.filter((_,i)=>visMeses.includes(i)).map((_,idx)=>{ const mes=visMeses[idx]+1; const st=getStatus(cli,pi,mes); const map:any={concluido:'Concluído',nao_concluido:'Não Concluído'}; return map[st]; })); rows.push([cli.nome, cli.nif||'', ...cells].join(';')); }
-    const csv=rows.join('\n'); const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`Mapa_Controlo_${ano}${trim?'_T'+trim:''}.csv`; a.click(); URL.revokeObjectURL(url);
+    const rows:string[]=[]; const header=['Cliente','Nº','Pilar',...meses].join(';'); rows.push(header);
+    for(const cli of clientesFiltrados){ for(const pi of pilaresVisiveis){ const cells=meses.map((_,idx)=>{ const mes=idx+1; const st=getStatus(cli,pi,mes); const map:any={concluido:'Concluído',nao_concluido:'Não Concluído'}; return map[st]; }); rows.push([cli.nome, cli.nif||'', pi.labelFull, ...cells].join(';')); } }
+    const csv=rows.join('\n'); const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`Mapa_RH_${ano}${trim?'_T'+trim:''}.csv`; a.click(); URL.revokeObjectURL(url);
   };
 
   const grupos = Array.from(new Set(clientes.flatMap(c=> c.tags||[])));
@@ -928,51 +920,53 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
 
 
 
-      {/* Tabela principal — clientes agrupados por trimestre/mês */}
-      <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
+      {/* Tabela — estilo Quadro Resumo: colunas JAN-DEZ fixas, linhas por pilar (dropdown filtra) */}
+      <div className="bg-white rounded-[10px] border border-zinc-300 shadow-sm overflow-hidden">
         <div className="overflow-auto max-h-[62vh]">
-          <table className="w-full text-xs border-collapse">
+          <table className="w-full text-[13px] border-collapse">
             <thead className="sticky top-0 z-10">
-              <tr className="bg-[#3D5A73] text-white text-[11px]">
-                <th className="text-left px-2 py-2 sticky left-0 bg-[#3D5A73] z-20 border-r border-[#2F455C] min-w-[180px]">Nº / Cliente</th>
-                {pilaresVisiveis.map(pi=> (
-                  <th key={pi.key} colSpan={visMeses.length} className="text-center px-1 py-2 border-l border-[#2F455C]" style={{background: pi.color}}>{pi.labelFull}</th>
-                ))}
+              <tr className="bg-[#4A4A4A] text-white text-[11px] tracking-wide">
+                <th className="text-left font-semibold px-2 py-2 w-[280px] min-w-[220px] sticky left-0 bg-[#4A4A4A] z-20 border-r border-[#606060]">Cliente</th>
+                {meses.map(m=> <th key={m} className="text-center font-semibold px-1 py-2 w-[56px] min-w-[48px] border-l border-[#606060]">{m}</th>)}
               </tr>
-              <tr className="bg-[#E8EEF3] text-[11px] font-bold text-zinc-700">
-                <th className="sticky left-0 bg-[#E8EEF3] z-10 border-r border-zinc-300 px-2 py-1.5"></th>
-                {pilaresVisiveis.map(pi=> visMeses.map(mi=> <th key={pi.key+'-'+mi} className="text-center px-1 py-1.5 border-l border-zinc-300 min-w-[44px]">{meses[mi]}</th>))}
-              </tr>
-              {/* segunda linha de colunas curtas como no screenshot (Rec./Arq./Lang./Conf.) — aqui simplificado por mês */}
             </thead>
             <tbody>
               {clientesFiltrados.length===0 ? (
-                <tr><td colSpan={1+pilaresVisiveis.length*visMeses.length} className="px-4 py-12 text-center text-sm text-zinc-500">Sem clientes para os filtros. Cria clientes ou limpa filtros.</td></tr>
-              ) : clientesFiltrados.map((cli, idx)=> (
-                <React.Fragment key={cli.id}>
-                  <tr className={`border-t ${idx%2===0?'bg-[#F8F9FA]':'bg-white'}`}>
-                    <td className={`px-2 py-2 sticky left-0 z-[5] border-r border-zinc-200 font-medium ${idx%2===0?'bg-[#F8F9FA]':'bg-white'}`}>
-                      <button onClick={()=>toggle(cli.id)} className="flex items-center gap-1.5 w-full text-left">
-                        <span className="text-zinc-500 text-[11px]">{collapsed.has(cli.id) ? '▶' : '▼'}</span>
-                        <span className="text-[11px] text-zinc-500">SW{String(idx+1).padStart(3,'0')}</span>
-                        <span className="text-[12px] font-semibold text-[#1A3A5A] truncate">{cli.nome}</span>
-                      </button>
-                    </td>
-                    {pilaresVisiveis.map(pi=> visMeses.map(mi=> {
-                      const mes=mi+1; const st=getStatus(cli,pi,mes); const withBg = st==='concluido' || st==='nao_concluido';
-                      const cellBg = st==='concluido' ? 'bg-emerald-50' : st==='nao_concluido' ? 'bg-red-50' : '';
-                      return (
-                        <td key={pi.key+'-'+mi} className={`text-center border-l border-zinc-200 py-1 ${cellBg}`}>
-                          <button onClick={()=>toggleCell(cli,pi,mes)} className="w-full flex items-center justify-center py-0.5">
-                            {renderIcon(st, withBg)}
-                          </button>
+                <tr><td colSpan={13} className="px-4 py-12 text-center text-sm text-zinc-500">Sem clientes para os filtros. Cria clientes ou limpa filtros.</td></tr>
+              ) : clientesFiltrados.map((cli, idx)=> {
+                const isExpanded = !collapsed.has(cli.id);
+                return (
+                  <React.Fragment key={cli.id}>
+                    <tr className="bg-[#ECECEC] border-t border-zinc-300">
+                      <td className="px-1 py-1.5 sticky left-0 bg-[#ECECEC] z-[5] border-r border-zinc-300">
+                        <button onClick={()=>toggle(cli.id)} className="inline-flex items-center gap-1.5 w-full text-left">
+                          <span className="w-4 h-4 rounded-[3px] border border-zinc-400 bg-white flex items-center justify-center text-[11px] leading-none shrink-0">{isExpanded ? '−' : '+'}</span>
+                          <span className="text-[11px] text-zinc-500">SW{String(idx+1).padStart(3,'0')}</span>
+                          <span className="font-semibold text-[#0F172A] truncate">{cli.nome}</span>
+                        </button>
+                      </td>
+                      {meses.map((_, i)=> <td key={i} className="border-l border-zinc-200 bg-[#ECECEC]"></td>)}
+                    </tr>
+                    {isExpanded && pilaresVisiveis.map(pi=> (
+                      <tr key={pi.key} className="border-t border-zinc-200 hover:bg-zinc-50/70">
+                        <td className="px-2 py-1.5 pl-7 flex items-center gap-1.5 sticky left-0 bg-white z-[5] border-r border-zinc-200">
+                          <span className="w-4 h-4 rounded-[3px] border flex items-center justify-center shrink-0" style={{borderColor: pi.color, background: pi.color+'18'}}><span className="w-2 h-2 rounded-[1px] block" style={{background: pi.color}} /></span>
+                          <span className="font-medium truncate" style={{color: pi.color}}>{pi.labelShort}</span>
                         </td>
-                      );
-                    }))}
-                  </tr>
-                  {!collapsed.has(cli.id) && null /* reserva para detalhe expandido se precisares */}
-                </React.Fragment>
-              ))}
+                        {meses.map((_, mi)=> {
+                          const mes=mi+1; const st=getStatus(cli,pi,mes);
+                          const cellBg = st==='concluido' ? 'bg-emerald-50' : st==='nao_concluido' ? 'bg-red-50' : '';
+                          return (
+                            <td key={mi} className={`text-center border-l border-zinc-200 py-0.5 ${cellBg}`}>
+                              <button onClick={()=>toggleCell(cli,pi,mes)} className="w-full h-full flex items-center justify-center hover:brightness-95 rounded py-1">{renderIcon(st, true)}</button>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
