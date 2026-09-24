@@ -50,7 +50,7 @@ import { MotionProvider, PageTransition } from './AnimatedPage';
 import { parseSAFT, decodeSaftText, normalizeXmlEncodingToUtf8, type SAFTParseResult } from './lib/saft';
 import { enforceProfileRules } from './lib/profileRules';
 import { DOC_TYPES, downloadAsWord } from './lib/wordDocs';
-import { downloadPrevisaExcel } from './lib/previsaExcel';
+import { downloadPrevisaPdf } from './lib/previsaPdf';
 import GuiaSistema from './components/GuiaSistema';
 import GuiaSugestao from './components/GuiaSugestao';
 import type { ViewKey } from './lib/guias';
@@ -1295,8 +1295,8 @@ function AppContent() {
       if (!emp) return { ok: false, reason: 'sem-cliente' };
       try {
         if (docId === 'previsa') {
-          await downloadPrevisaExcel(previSaState, emp.nome || emp.profile?.nomeCliente || '');
-          return { ok: true, label: 'Previsa (Excel Modelo 22)' };
+          await downloadPrevisaPdf(previSaState, emp.nome || emp.profile?.nomeCliente || '');
+          return { ok: true, label: 'Previsa (PDF Modelo 22)' };
         }
         const def = DOC_TYPES.find((d) => d.id === docId);
         if (!def) return { ok: false, reason: 'desconhecido' };
