@@ -5,7 +5,7 @@ import { seedMykolaVasylDemo, ensureAllClientesDefaults, linkColaboradorPorEmail
 import {
   upsertTarefa, deleteTarefa, marcarTarefaFeita, newTarefaId,
   upsertObrigacao,
-  upsertCofre, deleteCofre, registarVistaCofre, newCofreId,
+  upsertCofre, deleteCofre, registarVistaCofre, newCofreId, listCofreVazias, purgeCofreVazias,
   type GabineteCliente, type Tarefa, type Obrigacao, type ObrigacaoTipo, type ObrigacaoEstado, type CofreEntrada,
 } from './lib/gabinete';
 import { listEmpresas } from './lib/empresas';
@@ -1411,6 +1411,8 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
     return cofre.filter(c=> [c.titulo,c.username,c.clienteNome,c.categoria,c.url].join(' ').toLowerCase().includes(s))
       .sort((a,b)=> (a.titulo||'').localeCompare(b.titulo||''));
   }, [cofre,q]);
+  const vaziasCount = useMemo(()=> listCofreVazias().length, [cofre]);
+  const [purging, setPurging] = useState(false);
 
   const selected = useMemo(()=> filtered.find(c=>c.id===selectedId) || null, [filtered, selectedId]);
 
@@ -1541,6 +1543,19 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
           <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Pesquisar passwords" className="w-full pl-9 pr-3 py-2 rounded-full bg-zinc-100 border border-transparent focus:bg-white focus:border-zinc-300 focus:outline-none text-sm placeholder:text-zinc-500" />
         </div>
+        {vaziasCount > 0 && !editing && (
+          <button
+            disabled={purging}
+            onClick={async()=>{
+              if (!confirm(`Apagar ${vaziasCount} acesso(s) vazios sem segredo? Esta ação não pode ser desfeita.`)) return;
+              if (!confirm(`Confirma: ${vaziasCount} entradas vazias serão apagadas permanentemente.`)) return;
+              setPurging(true);
+              try { const n = await purgeCofreVazias(); alert(`${n} entradas vazias apagadas.`); } catch (e) { alert('Falha ao limpar: ' + String(e)); } finally { setPurging(false); }
+            }}
+            className="hidden sm:inline-flex px-3 py-2 rounded-full border border-amber-300 bg-amber-50 text-amber-800 text-xs font-semibold hover:bg-amber-100 disabled:opacity-50"
+            title="Apaga só entradas sem segredo e sem cipher"
+          ><Trash2 className="w-3.5 h-3.5 mr-1" />{purging ? 'A limpar...' : `Limpar ${vaziasCount} vazias`}</button>
+        )}
         <button onClick={startCreate} className="hidden sm:inline-flex px-4 py-2 rounded-full bg-[#0B57D0] text-white text-sm font-medium hover:bg-[#0B4BBA]"><Plus className="w-4 h-4 mr-1.5" /> Adicionar</button>
         <button onClick={startCreate} className="sm:hidden w-9 h-9 rounded-full bg-[#0B57D0] text-white flex items-center justify-center"><Plus className="w-4 h-4" /></button>
       </div>

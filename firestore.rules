@@ -197,5 +197,9 @@ function isValidGabineteDoc(data) {
       && (!('_updatedAt' in data) || data._updatedAt is number)
       // Limita strings longas para evitar bomb de storage e XSS persistido
       && (!('titulo' in data) || (data.titulo is string && data.titulo.size() < 300))
-      && (!('nome' in data) || (data.nome is string && data.nome.size() < 200));
+      && (!('nome' in data) || (data.nome is string && data.nome.size() < 200))
+      && (!('segredo' in data) || (data.segredo is string && data.segredo.size() < 500))
+      && (!('cipher' in data) || data.cipher.size() < 800)
+      && (!('username' in data) || (data.username is string && data.username.size() < 300))
+      && (!('url' in data) || (data.url is string && data.url.size() < 500));
 }

@@ -518,6 +518,29 @@ export async function registarVistaCofre(id: string): Promise<void> {
 }
 export function newCofreId(): string { return newId('cof'); }
 
+// ─── Cofre — limpeza de vazias (migração secret→segredo) ─────────────────────
+function isCofreVazia(e: CofreEntrada): boolean {
+  const raw = ((e as unknown as Record<string, unknown>).segredo as string | undefined)?.trim() ?? '';
+  const vazia = !raw || raw === '—' || raw === '-' || raw === '...';
+  const hasCipher = !!(e as unknown as { cipher?: unknown }).cipher;
+  return vazia && !hasCipher;
+}
+export function listCofreVazias(): CofreEntrada[] {
+  return listCofreCache().filter(isCofreVazia);
+}
+export async function purgeCofreVazias(): Promise<number> {
+  const vazias = listCofreVazias();
+  if (vazias.length === 0) return 0;
+  // atualiza cache primeiro (optimistic)
+  const ids = new Set(vazias.map(v => v.id));
+  saveCofreCache(listCofreCache().filter(c => !ids.has(c.id)));
+  let ok = 0;
+  for (const v of vazias) {
+    try { await safeDeleteDoc(colPath('cofre'), v.id); ok++; } catch (e) { console.warn('[gabinete] purgeCofreVazias falhou', v.id, e); }
+  }
+  return ok;
+}
+
 // ─── Colaboradores ───────────────────────────────────────────────────────────
 export function listColaboradoresCache(): Colaborador[] { return readCache<Colaborador>('colaboradores', []); }
 export function saveColaboradoresCache(list: Colaborador[]): void { writeCache('colaboradores', list); }
