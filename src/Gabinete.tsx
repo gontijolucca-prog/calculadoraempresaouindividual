@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Search, Plus, Users, CheckSquare, Calendar, Lock, Building2, Trash2, Eye, EyeOff, Copy, Shield, AlertTriangle, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Clock, Briefcase, MessageSquare, X, Send, Archive, Share2, Pencil } from 'lucide-react';
 import { useGabineteClientes, useGabineteTarefas, useGabineteObrigacoes, useGabineteCofre, useGabineteContactosGeral, useGabineteAssuntos, useGabineteAlertas, useGabineteOcorrencias, useGabineteDocumentos, useGabineteColaboradores } from './lib/useGabinete';
 import { seedMykolaVasylDemo, ensureAllClientesDefaults, linkColaboradorPorEmail } from './lib/gabinete';
@@ -456,8 +457,9 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
                       </td>
                       {meses.map((_, i)=> <td key={i} className="border-l border-zinc-200 bg-[#ECECEC]"></td>)}
                     </tr>
+                    <AnimatePresence initial={false}>
                     {isExpanded && linhasFiltradas.map(linha => (
-                      <tr key={linha.id} className="border-t border-zinc-200 hover:bg-zinc-50/70">
+                      <motion.tr key={linha.id} initial={{opacity:0, y:-6}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-6}} transition={{duration:0.28, ease:[0.4,0,0.2,1]}} className="border-t border-zinc-200 hover:bg-zinc-50/70">
                         <td className="px-2 py-1.5 pl-7 flex items-center gap-1.5 sticky left-0 bg-white z-[5] border-r border-zinc-200">
                           <span className="w-4 h-4 rounded-[3px] border border-amber-400 bg-amber-50 flex items-center justify-center shrink-0">
                             <span className="w-2 h-2 rounded-[1px] bg-amber-500 block" />
@@ -476,8 +478,9 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
                             </td>
                           );
                         })}
-                      </tr>
+                      </motion.tr>
                     ))}
+                    </AnimatePresence>
                   </React.Fragment>
                 );
               })}
@@ -711,8 +714,9 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
                       {meses.map((_, i)=> <td key={i} className="border-l border-zinc-200 bg-[#ECECEC]"></td>)}
                     </tr>
                     
+                    <AnimatePresence initial={false}>
                     {isExpanded && pilaresVisiveis.map(pi=> (
-                      <tr key={pi.key} className="border-t border-zinc-200 hover:bg-zinc-50/70 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
+                      <motion.tr key={pi.key} initial={{opacity:0, y:-6}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-6}} transition={{duration:0.28, ease:[0.4,0,0.2,1]}} className="border-t border-zinc-200 hover:bg-zinc-50/70 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
                         <td className="px-2 py-1.5 pl-7 flex items-center gap-1.5 sticky left-0 bg-white z-[5] border-r border-zinc-200">
                           <span className="w-4 h-4 rounded-[3px] border flex items-center justify-center shrink-0" style={{borderColor: pi.color, background: pi.color+'18'}}><span className="w-2 h-2 rounded-[1px] block" style={{background: pi.color}} /></span>
                           <span className="font-medium truncate" style={{color: pi.color}}>{pi.labelShort}</span>
@@ -726,8 +730,9 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
                             </td>
                           );
                         })}
-                      </tr>
+                      </motion.tr>
                     ))}
+                    </AnimatePresence>
                   </React.Fragment>
                 );
               })}
@@ -949,8 +954,9 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
                       {meses.map((_, i)=> <td key={i} className="border-l border-zinc-200 bg-[#ECECEC]"></td>)}
                     </tr>
                     
+                    <AnimatePresence initial={false}>
                     {isExpanded && pilaresVisiveis.map(pi=> (
-                      <tr key={pi.key} className="border-t border-zinc-200 hover:bg-zinc-50/70 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
+                      <motion.tr key={pi.key} initial={{opacity:0, y:-6}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-6}} transition={{duration:0.28, ease:[0.4,0,0.2,1]}} className="border-t border-zinc-200 hover:bg-zinc-50/70 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
                         <td className="px-2 py-1.5 pl-7 flex items-center gap-1.5 sticky left-0 bg-white z-[5] border-r border-zinc-200">
                           <span className="w-4 h-4 rounded-[3px] border flex items-center justify-center shrink-0" style={{borderColor: pi.color, background: pi.color+'18'}}><span className="w-2 h-2 rounded-[1px] block" style={{background: pi.color}} /></span>
                           <span className="font-medium truncate" style={{color: pi.color}}>{pi.labelShort}</span>
@@ -964,8 +970,9 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
                             </td>
                           );
                         })}
-                      </tr>
+                      </motion.tr>
                     ))}
+                    </AnimatePresence>
                   </React.Fragment>
                 );
               })}
