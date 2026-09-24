@@ -618,11 +618,11 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
           <span className="text-sm text-zinc-600">Nº Mapa</span>
           <input value="5" readOnly className="w-[70px] px-2 py-1.5 rounded border border-zinc-300 bg-zinc-50 text-sm text-center" />
           <span className="text-sm text-zinc-600">Ano</span>
-          <select value={String(ano)} onChange={e=>setAno(parseInt(e.target.value)||new Date().getFullYear())} className="px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm">
+          <select value={String(ano)} onChange={e=>setAno(parseInt(e.target.value)||new Date().getFullYear())} className="px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
             {[ano-2,ano-1,ano,ano+1,ano+2].map(a=> <option key={a} value={String(a)}>{a}</option>)}
           </select>
           <span className="text-sm text-zinc-600">Trimestre</span>
-          <select value={trim} onChange={e=>setTrim(e.target.value)} className="px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm min-w-[140px]">
+          <select value={trim} onChange={e=>setTrim(e.target.value)} className="px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm min-w-[140px] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
             <option value="">—</option>
             <option value="1">1º Trimestre</option><option value="2">2º Trimestre</option><option value="3">3º Trimestre</option><option value="4">4º Trimestre</option>
           </select>
@@ -656,7 +656,7 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-zinc-600 whitespace-nowrap">Tipo de tarefa</span>
-            <select value={filtroPilar} onChange={e=>setFiltroPilar(e.target.value)} className="flex-1 px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm">
+            <select value={filtroPilar} onChange={e=>setFiltroPilar(e.target.value)} className="flex-1 px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] focus:ring-2 focus:ring-[#0677FF]/20 focus:border-[#0677FF]">
               <option value="">(todos os tipos)</option>
               {pilares.map(p=> <option key={p.key} value={p.key}>{p.labelFull}</option>)}
             </select>
@@ -702,7 +702,7 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
                   <React.Fragment key={cli.id}>
                     <tr className="bg-[#ECECEC] border-t border-zinc-300">
                       <td className="px-1 py-1.5 sticky left-0 bg-[#ECECEC] z-[5] border-r border-zinc-300">
-                        <button onClick={()=>toggle(cli.id)} className="inline-flex items-center gap-1.5 w-full text-left">
+                        <button onClick={()=>toggle(cli.id)} className="inline-flex items-center gap-1.5 w-full text-left transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
                           <span className="w-4 h-4 rounded-[3px] border border-zinc-400 bg-white flex items-center justify-center text-[11px] leading-none shrink-0">{isExpanded ? '−' : '+'}</span>
                           <span className="text-[11px] text-zinc-500">SW{String(idx+1).padStart(3,'0')}</span>
                           <span className="font-semibold text-[#0F172A] truncate">{cli.nome}</span>
@@ -710,8 +710,9 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
                       </td>
                       {meses.map((_, i)=> <td key={i} className="border-l border-zinc-200 bg-[#ECECEC]"></td>)}
                     </tr>
+                    
                     {isExpanded && pilaresVisiveis.map(pi=> (
-                      <tr key={pi.key} className="border-t border-zinc-200 hover:bg-zinc-50/70">
+                      <tr key={pi.key} className="border-t border-zinc-200 hover:bg-zinc-50/70 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
                         <td className="px-2 py-1.5 pl-7 flex items-center gap-1.5 sticky left-0 bg-white z-[5] border-r border-zinc-200">
                           <span className="w-4 h-4 rounded-[3px] border flex items-center justify-center shrink-0" style={{borderColor: pi.color, background: pi.color+'18'}}><span className="w-2 h-2 rounded-[1px] block" style={{background: pi.color}} /></span>
                           <span className="font-medium truncate" style={{color: pi.color}}>{pi.labelShort}</span>
@@ -855,11 +856,11 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
           <span className="text-sm text-zinc-600">Nº Mapa</span>
           <input value="5" readOnly className="w-[70px] px-2 py-1.5 rounded border border-zinc-300 bg-zinc-50 text-sm text-center" />
           <span className="text-sm text-zinc-600">Ano</span>
-          <select value={String(ano)} onChange={e=>setAno(parseInt(e.target.value)||new Date().getFullYear())} className="px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm">
+          <select value={String(ano)} onChange={e=>setAno(parseInt(e.target.value)||new Date().getFullYear())} className="px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
             {[ano-2,ano-1,ano,ano+1,ano+2].map(a=> <option key={a} value={String(a)}>{a}</option>)}
           </select>
           <span className="text-sm text-zinc-600">Trimestre</span>
-          <select value={trim} onChange={e=>setTrim(e.target.value)} className="px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm min-w-[140px]">
+          <select value={trim} onChange={e=>setTrim(e.target.value)} className="px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm min-w-[140px] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
             <option value="">—</option>
             <option value="1">1º Trimestre</option><option value="2">2º Trimestre</option><option value="3">3º Trimestre</option><option value="4">4º Trimestre</option>
           </select>
@@ -893,7 +894,7 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-zinc-600 whitespace-nowrap">Tipo de tarefa</span>
-            <select value={filtroPilar} onChange={e=>setFiltroPilar(e.target.value)} className="flex-1 px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm">
+            <select value={filtroPilar} onChange={e=>setFiltroPilar(e.target.value)} className="flex-1 px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] focus:ring-2 focus:ring-[#0677FF]/20 focus:border-[#0677FF]">
               <option value="">(todos os tipos)</option>
               {pilares.map(p=> <option key={p.key} value={p.key}>{p.labelFull}</option>)}
             </select>
@@ -939,7 +940,7 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
                   <React.Fragment key={cli.id}>
                     <tr className="bg-[#ECECEC] border-t border-zinc-300">
                       <td className="px-1 py-1.5 sticky left-0 bg-[#ECECEC] z-[5] border-r border-zinc-300">
-                        <button onClick={()=>toggle(cli.id)} className="inline-flex items-center gap-1.5 w-full text-left">
+                        <button onClick={()=>toggle(cli.id)} className="inline-flex items-center gap-1.5 w-full text-left transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
                           <span className="w-4 h-4 rounded-[3px] border border-zinc-400 bg-white flex items-center justify-center text-[11px] leading-none shrink-0">{isExpanded ? '−' : '+'}</span>
                           <span className="text-[11px] text-zinc-500">SW{String(idx+1).padStart(3,'0')}</span>
                           <span className="font-semibold text-[#0F172A] truncate">{cli.nome}</span>
@@ -947,8 +948,9 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
                       </td>
                       {meses.map((_, i)=> <td key={i} className="border-l border-zinc-200 bg-[#ECECEC]"></td>)}
                     </tr>
+                    
                     {isExpanded && pilaresVisiveis.map(pi=> (
-                      <tr key={pi.key} className="border-t border-zinc-200 hover:bg-zinc-50/70">
+                      <tr key={pi.key} className="border-t border-zinc-200 hover:bg-zinc-50/70 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
                         <td className="px-2 py-1.5 pl-7 flex items-center gap-1.5 sticky left-0 bg-white z-[5] border-r border-zinc-200">
                           <span className="w-4 h-4 rounded-[3px] border flex items-center justify-center shrink-0" style={{borderColor: pi.color, background: pi.color+'18'}}><span className="w-2 h-2 rounded-[1px] block" style={{background: pi.color}} /></span>
                           <span className="font-medium truncate" style={{color: pi.color}}>{pi.labelShort}</span>
