@@ -14,7 +14,7 @@ import { SimTwoStep } from './components/SimTwoStep';
 import { isSimReady } from './lib/simRequired';
 
 interface VehicleSimulatorState {
-  category: 'comercial' | 'passageiros';
+  category: 'comercial' | 'comercial_n1' | 'passageiros' | 'moto';
   engineType: string;
   price: number;
   ivaRegime: string;
@@ -30,6 +30,9 @@ interface VehicleSimulatorState {
   cilindrada?: number;
   usoPercentagem?: number;
   anoAquisicao?: number;
+  euro6eBis?: boolean;
+  rentingDiscriminada?: boolean;
+  regimeTributario?: 'irc' | 'irs';
 }
 
 interface Props {
@@ -282,7 +285,9 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
       render: (s, setS) => (
         <select value={s.category} onChange={e => setS({ category: e.target.value as any })} className={inputClass}>
           <option value="passageiros">Ligeiro de Passageiros</option>
-          <option value="comercial">Comercial (2/3 lugares)</option>
+          <option value="comercial">Comercial isento (2-3 lugares, caixa fechada)</option>
+          <option value="comercial_n1">Comercial N1 (4-5 lugares, sujeito a TA)</option>
+          <option value="moto">Mota / Motociclo</option>
         </select>
       ),
     },
@@ -334,6 +339,15 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
       isVisible: s => ['phev','electric','hydrogen'].includes(s.engineType),
       render: (s, setS) => (
         <input type="number" value={s.autonomiaEletrica ?? ''} onChange={e=>setS({autonomiaEletrica: e.target.value==='' ? undefined : intInput(e.target.value)})} placeholder="ex: 60" className={inputClass} />
+      ),
+    },
+    {
+      id: 'euro6e',
+      label: 'Homologação Euro 6e-bis',
+      description: 'Só para PHEV 2026: tem norma Euro 6e-bis e emissões &lt;80g? Dá direito à taxa reduzida mesmo com 50-79g.',
+      isVisible: s => s.engineType === 'phev',
+      render: (s, setS) => (
+        <label className="flex items-center gap-3 p-4 bg-sky-50 border border-sky-200 rounded-[8px] cursor-pointer"><input type="checkbox" checked={!!s.euro6eBis} onChange={e=>setS({euro6eBis: e.target.checked})} className="w-5 h-5" /><span className="text-[13px] font-[600]">Sim, é Euro 6e-bis</span></label>
       ),
     },
     {
@@ -397,11 +411,33 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
       render: (s, setS) => (
         <select value={s.activity} onChange={e => setS({ activity: e.target.value as any })} className={inputClass}>
           <option value="other">Geral / Serviços / Comércio</option>
-          {s.category === 'comercial' && <option value="goods">Transporte Mercadorias (Alvará)</option>}
-          <option value="public_transport">Transporte Público / Táxi / TVDE</option>
+          {(s.category === 'comercial' || s.category === 'comercial_n1') && <option value="goods">Transporte Mercadorias (Alvará)</option>}
+          <option value="public_transport">Transporte Público / Táxi</option>
+          <option value="tvde">TVDE (Uber/Bolt) — regras próprias de combustível</option>
           <option value="rent_a_car">Rent-a-car / Comércio Automóvel</option>
           <option value="driving_school">Escola de Condução</option>
         </select>
+      ),
+    },
+    {
+      id: 'regimeTrib',
+      label: 'Regime tributário',
+      description: 'Empresa (IRC) ou recibos verdes (IRS categoria B)? As taxas são diferentes.',
+      isVisible: () => true,
+      render: (s, setS) => (
+        <select value={(s as any).regimeTributario || 'irc'} onChange={e=>setS({regimeTributario: e.target.value as any} as any)} className={inputClass}>
+          <option value="irc">Empresa — IRC (8%/25%/32%)</option>
+          <option value="irs">Recibos verdes — IRS (10%/20%, elétrico isento)</option>
+        </select>
+      ),
+    },
+    {
+      id: 'rentingDisc',
+      label: 'Fatura de renting discriminada?',
+      description: 'No renting, a fatura separa locação de manutenção/seguro? Se não, perde o IVA.',
+      isVisible: s => s.ivaRegime === 'leasing',
+      render: (s, setS) => (
+        <label className="flex items-center gap-3 p-4 bg-white border border-[#E2E8F0] rounded-[8px] cursor-pointer"><input type="checkbox" checked={s.rentingDiscriminada ?? true} onChange={e=>setS({rentingDiscriminada: e.target.checked} as any)} className="w-5 h-5" /><span className="text-[13px] font-[600]">Sim, fatura vem separada</span></label>
       ),
     },
     {
@@ -466,7 +502,9 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
             <label className={labelClass}>Categoria do Veículo <Tip>Veículos comerciais (carrinhas, camionetas) têm tratamento fiscal mais favorável. Veículos de passageiros têm mais restrições fiscais.</Tip></label>
             <select value={category} onChange={e=>setState({category: e.target.value as any})} className={inputClass}>
               <option value="passageiros">Ligeiro de Passageiros</option>
-              <option value="comercial">Comercial (2/3 lugares)</option>
+              <option value="comercial">Comercial isento (2-3 lugares)</option>
+              <option value="comercial_n1">Comercial N1 (4-5 lugares, sujeito a TA)</option>
+              <option value="moto">Mota / Motociclo</option>
             </select>
           </div>
           <div>
@@ -515,13 +553,21 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
               <option value="second_hand">Regime Bens em 2ª Mão</option>
               <option value="leasing">Locação / Leasing / Renting</option>
             </select>
+            {ivaRegime === 'leasing' && (
+              <label className="flex items-center gap-2 mt-2 text-[12px]"><input type="checkbox" checked={initialState.rentingDiscriminada ?? true} onChange={e=>onStateChange({...initialState, rentingDiscriminada: e.target.checked})} /> Fatura separada (locação vs manutenção/seguro)</label>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className={labelClass}>Regime tributário</label><select value={(initialState as any).regimeTributario || 'irc'} onChange={e=>onStateChange({...initialState, regimeTributario: e.target.value as any})} className={inputClass}><option value="irc">Empresa — IRC</option><option value="irs">Recibos verdes — IRS</option></select></div>
+            {engineType === 'phev' && (<div className="flex items-end"><label className="flex items-center gap-2 text-[12px] font-[600]"><input type="checkbox" checked={!!initialState.euro6eBis} onChange={e=>onStateChange({...initialState, euro6eBis: e.target.checked})} /> Euro 6e-bis (&lt;80g)</label></div>)}
           </div>
           <div>
             <label className={labelClass}>Serviço ou Atividade Associada <Tip>A atividade para que serve a viatura: escolas de condução, rent-a-car e transportes públicos têm deduções de IVA a 100%.</Tip></label>
             <select value={activity} onChange={e=>setState({activity: e.target.value as any})} className={inputClass}>
               <option value="other">Geral / Serviços / Comércio</option>
-              {category === 'comercial' && <option value="goods">Transporte Mercadorias (Alvará)</option>}
-              <option value="public_transport">Transporte Público / Táxi / TVDE</option>
+              {(category === 'comercial' || category === 'comercial_n1') && <option value="goods">Transporte Mercadorias (Alvará)</option>}
+              <option value="public_transport">Transporte Público / Táxi</option>
+              <option value="tvde">TVDE (Uber/Bolt)</option>
               <option value="rent_a_car">Rent-a-car / Comércio Automóvel</option>
               <option value="driving_school">Escola de Condução</option>
             </select>
