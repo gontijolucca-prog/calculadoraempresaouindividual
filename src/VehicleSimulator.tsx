@@ -24,8 +24,12 @@ interface VehicleSimulatorState {
   fuelCost: number;
   exemptTA: boolean;
   phevCompliant: boolean;
-  /** Empresa com prejuízo fiscal → TA agravada +10 p.p. (CIRC art.88 n.14). */
   agravamentoTA?: boolean;
+  co2Emissions?: number;
+  autonomiaEletrica?: number;
+  cilindrada?: number;
+  usoPercentagem?: number;
+  anoAquisicao?: number;
 }
 
 interface Props {
@@ -303,16 +307,61 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
     {
       id: 'phevCompliant',
       label: 'PHEV — Cumpre requisitos?',
-      description: 'O veículo tem autonomia elétrica ≥50 km e emissões <50 gCO₂/km?',
+      description: 'Se souber, indique CO₂ e autonomia abaixo — o sistema calcula sozinho. Senão, assinale aqui.',
       isVisible: s => s.engineType === 'phev',
       render: (s, setS) => (
         <label className="flex items-start gap-3 p-4 bg-amber-50/50 border border-amber-200 text-amber-900 rounded-[8px] cursor-pointer">
           <input type="checkbox" checked={s.phevCompliant} onChange={e => setS({ phevCompliant: e.target.checked })} className="mt-[2px] accent-amber-600 w-5 h-5" />
-          <span className="text-[14px] font-[600]">Sim, cumpre os requisitos legais para PHEV.</span>
+          <span className="text-[14px] font-[600]">Sim, cumpre os requisitos legais (≥50 km e &lt;50 gCO₂/km).</span>
         </label>
       ),
       skipValue: false,
       skipLabel: 'Não cumpre',
+    },
+    {
+      id: 'co2',
+      label: 'Emissões CO₂',
+      description: 'Valor em gCO₂/km na ficha. Para PHEV, abaixo de 50 g conta para benefício.',
+      isVisible: s => ['phev','hybrid','diesel','gasoline','lpg','cng'].includes(s.engineType),
+      render: (s, setS) => (
+        <input type="number" value={s.co2Emissions ?? ''} onChange={e=>setS({co2Emissions: e.target.value==='' ? undefined : intInput(e.target.value)})} placeholder="ex: 32" className={inputClass} />
+      ),
+    },
+    {
+      id: 'autonomia',
+      label: 'Autonomia elétrica',
+      description: 'Apenas para elétrico e PHEV — quilómetros em modo elétrico.',
+      isVisible: s => ['phev','electric','hydrogen'].includes(s.engineType),
+      render: (s, setS) => (
+        <input type="number" value={s.autonomiaEletrica ?? ''} onChange={e=>setS({autonomiaEletrica: e.target.value==='' ? undefined : intInput(e.target.value)})} placeholder="ex: 60" className={inputClass} />
+      ),
+    },
+    {
+      id: 'cilindrada',
+      label: 'Cilindrada',
+      description: 'Capacidade do motor em cm³. Ajuda a confirmar escalão.',
+      isVisible: s => ['diesel','gasoline','hybrid','lpg','cng'].includes(s.engineType),
+      render: (s, setS) => (
+        <input type="number" value={s.cilindrada ?? ''} onChange={e=>setS({cilindrada: e.target.value==='' ? undefined : intInput(e.target.value)})} placeholder="ex: 1498" className={inputClass} />
+      ),
+    },
+    {
+      id: 'uso',
+      label: 'Uso profissional',
+      description: 'Percentagem de uso para a empresa (0–100%).',
+      isVisible: () => true,
+      render: (s, setS) => (
+        <div className="flex items-center gap-3"><input type="range" min={0} max={100} value={s.usoPercentagem ?? 100} onChange={e=>setS({usoPercentagem: intInput(e.target.value)})} className="flex-1" /><span className="text-[14px] font-[700] w-12 text-right">{s.usoPercentagem ?? 100}%</span></div>
+      ),
+    },
+    {
+      id: 'ano',
+      label: 'Ano de aquisição',
+      description: 'Ano em que vai comprar. Afeta limites de 2026.',
+      isVisible: () => true,
+      render: (s, setS) => (
+        <input type="number" value={s.anoAquisicao ?? ''} onChange={e=>setS({anoAquisicao: e.target.value==='' ? undefined : intInput(e.target.value)})} placeholder="ex: 2026" className={inputClass} />
+      ),
     },
     {
       id: 'price',
@@ -438,6 +487,19 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
                 <span className="text-[12px] font-[500] leading-tight">Autonomia elétrica é ≥50 km e emissões são &lt;50 gCO₂/km. <Tip>PHEV é um veículo híbrido plug-in. Se cumpre os requisitos de emissões, pode ter limites de dedução mais favoráveis.</Tip></span>
               </label>
             )}
+            {(initialState.co2Emissions != null || ['phev','hybrid','diesel','gasoline','lpg','cng'].includes(engineType)) && (
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <div><label className={labelClass}>CO₂ (g/km)</label><input type="number" value={initialState.co2Emissions ?? ''} onChange={e=>onStateChange({...initialState, co2Emissions: e.target.value==='' ? undefined : intInput(e.target.value)})} placeholder="ex: 32" className={inputClass} /></div>
+                <div><label className={labelClass}>Cilindrada (cc)</label><input type="number" value={initialState.cilindrada ?? ''} onChange={e=>onStateChange({...initialState, cilindrada: e.target.value==='' ? undefined : intInput(e.target.value)})} placeholder="ex: 1498" className={inputClass} /></div>
+              </div>
+            )}
+            {['phev','electric','hydrogen'].includes(engineType) && (
+              <div className="mt-3"><label className={labelClass}>Autonomia elétrica (km)</label><input type="number" value={initialState.autonomiaEletrica ?? ''} onChange={e=>onStateChange({...initialState, autonomiaEletrica: e.target.value==='' ? undefined : intInput(e.target.value)})} placeholder="ex: 60" className={inputClass} /></div>
+            )}
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <div><label className={labelClass}>Uso profissional %</label><div className="flex items-center gap-2"><input type="range" min={0} max={100} value={initialState.usoPercentagem ?? 100} onChange={e=>onStateChange({...initialState, usoPercentagem: intInput(e.target.value)})} className="flex-1" /><span className="text-[13px] font-[700] w-10 text-right">{initialState.usoPercentagem ?? 100}%</span></div></div>
+              <div><label className={labelClass}>Ano aquisição</label><input type="number" value={initialState.anoAquisicao ?? ''} onChange={e=>onStateChange({...initialState, anoAquisicao: e.target.value==='' ? undefined : intInput(e.target.value)})} placeholder="2026" className={inputClass} /></div>
+            </div>
           </div>
           <div>
             <label className={labelClass}>Custo Aquisição (Base s/ IVA) <RequiredMark /> <Tip>O preço de compra da viatura (sem IVA). Determina os limites de dedução e amortização permitidos.</Tip></label>

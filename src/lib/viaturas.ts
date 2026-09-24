@@ -9,17 +9,24 @@
 export type ViaturaEngineType = 'diesel' | 'gasoline' | 'hybrid' | 'phev' | 'electric' | 'hydrogen' | 'lpg' | 'cng';
 export interface ViaturaInput {
   category: 'comercial' | 'passageiros';
-  engineType: ViaturaEngineType | string; // mantém string para compatibilidade com dados antigos (diesel/gasoline/hybrid/phev/electric/hydrogen/lpg/cng)
+  engineType: ViaturaEngineType | string;
   price: number;
-  ivaRegime: string;  // normal/second_hand/leasing
-  activity: string;   // other/goods/public_transport/rent_a_car/driving_school
+  ivaRegime: string;
+  activity: string;
   maintenanceCost: number;
   insuranceCost: number;
   fuelCost: number;
   exemptTA: boolean;
   phevCompliant: boolean;
-  /** Empresa com prejuízo fiscal → TA agravada em +10 p.p. (CIRC art.88 n.14). */
   agravamentoTA?: boolean;
+  // --- novas opções (opcionais, mantém compatibilidade) ---
+  co2Emissions?: number; // gCO2/km
+  autonomiaEletrica?: number; // km
+  cilindrada?: number; // cc
+  usoPercentagem?: number; // 0-100 uso profissional
+  duracaoMeses?: number; // duração leasing/renting
+  valorResidual?: number;
+  anoAquisicao?: number;
 }
 
 export interface ViaturaResult {
@@ -36,7 +43,10 @@ export interface ViaturaResult {
 }
 
 export function calcViatura(s: ViaturaInput): ViaturaResult {
-  const { category, engineType, price, ivaRegime, activity, maintenanceCost, insuranceCost, fuelCost, exemptTA, phevCompliant } = s;
+  const { category, engineType, price, ivaRegime, activity, maintenanceCost, insuranceCost, fuelCost, exemptTA, phevCompliant: phevCompliantRaw, co2Emissions, autonomiaEletrica } = s;
+  // PHEV: se preencher CO2 e autonomia, calcula automaticamente; senão usa checkbox
+  const phevAuto = co2Emissions != null && autonomiaEletrica != null ? (co2Emissions < 50 && autonomiaEletrica >= 50) : undefined;
+  const phevCompliant = phevAuto ?? phevCompliantRaw;
 
   const maintBase = maintenanceCost / 1.23;
   const maintIva = maintenanceCost - maintBase;
