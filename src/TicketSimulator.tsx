@@ -157,13 +157,16 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
     const majoracaoExtra = tipo === 'infancia' ? custoIsento * 0.40 : 0;
 
     const equivalenteSalarial = custoIsento > 0 ? (custoIsento / 0.89) * (1 + SS_RATE_EMPLOYER) : 0;
-    const poupancaVsSalario = Math.max(0, equivalenteSalarial - custoAnual);
+    // O excedente tributa como salário em ambos os cenários — só a parte isenta gera poupança.
+    // (Antes subtraía o custo TOTAL, o que anulava a poupança sempre que havia excedente.)
+    const poupancaVsSalario = Math.max(0, equivalenteSalarial - custoIsento);
+    const custoExcedenteSS = custoExcedente * (SS_RATE_EMPLOYER + 0.11);
     const poupancaMajoracao = majoracaoExtra * 0.19;
     const poupancaTotal = poupancaVsSalario + poupancaMajoracao;
 
     return {
       custoAnual, custoIsento, custoExcedente, excedeNorma, limiteDiario,
-      poupancaSSPatronal, poupancaSSTrab,
+      poupancaSSPatronal, poupancaSSTrab, custoExcedenteSS,
       dedutivelIRC, majoracaoExtra, ircFactor,
       equivalenteSalarial, poupancaVsSalario, poupancaTotal,
       poupancaPorTrabalhador: s.employees > 0 ? poupancaTotal / s.employees : 0,
@@ -346,6 +349,18 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
                       <span className="text-[#64748B]">Custo equivalente como salário (c/ SS)</span>
                       <span className="font-[700] text-[#64748B]">{ptEur(calc.equivalenteSalarial)}</span>
                     </div>
+                    {calc.custoExcedente > 0 && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-[#64748B]">Excedente tributável (IRS + SS)</span>
+                          <span className="font-[700] text-amber-700">{ptEur(calc.custoExcedente)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[#64748B]">SS sobre o excedente (34,75%)</span>
+                          <span className="font-[700] text-amber-700">{ptEur(calc.custoExcedenteSS)}</span>
+                        </div>
+                      </>
+                    )}
                     <div className="h-px bg-[#F1F5F9]" />
                     <div className="flex justify-between text-[15px]">
                       <span className="font-[800] text-[#0F172A]">Poupança vs. salário</span>

@@ -127,6 +127,16 @@ interface PagedOpts {
 
 export function printViaPaged(printRoot: HTMLElement, opts: PagedOpts): void {
   const clone = printRoot.cloneNode(true) as HTMLElement;
+  // O nó de origem pode viver off-screen (ex.: contentor temporário com
+  // left:-9999px para a captura fiel). Se esse posicionamento fosse clonado para
+  // o iframe, o conteúdo renderizava fora da página → PDF em branco.
+  // Repõe-se só o posicionamento (mantém zoom e outros estilos inline).
+  clone.style.position = 'static';
+  clone.style.left = 'auto';
+  clone.style.top = 'auto';
+  clone.style.right = 'auto';
+  clone.style.bottom = 'auto';
+  clone.style.transform = 'none';
   // Remove dicas de edição e qualquer elemento marcado para não imprimir.
   clone.querySelectorAll('.no-print').forEach(n => n.remove());
 
