@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, Link2, Unlink, Download, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { X, Link2, Unlink, Download, Loader2, CheckCircle, AlertTriangle, Copy, Check } from 'lucide-react';
 import {
   getTocConfig, saveTocConfig, clearTocConfig, isTocConnected,
   buildTocAuthUrl, setTocPending, getTocDraft, clearTocDraft,
@@ -113,8 +113,11 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
 
           {step === 'config' && done === null && (
             <div className="mt-4 space-y-3">
-              <div className="bg-[#F5F7FA] border border-[#E2E8F0] rounded-xl p-3.5 text-[12.5px] text-[#475569] leading-relaxed">
-                <strong className="text-[#0B1D2D]">Onde buscar:</strong> no TOConline, entre na empresa com conta de Empresário → <strong>Empresa › Configurações › Dados API</strong> → indique o seu email → abra o link de 72h que recebe.
+              <div className="bg-[#F5F7FA] border border-[#E2E8F0] rounded-xl p-3.5 text-[12.5px] text-[#475569] leading-relaxed space-y-2">
+                <div><strong className="text-[#0B1D2D]">Passo 1 —</strong> no TOConline, entre na empresa com conta de Empresário → <strong>Empresa › Configurações › Dados API</strong> → indique o seu email → abra o link de 72h que recebe.</div>
+                <div><strong className="text-[#0B1D2D]">Passo 2 —</strong> nessa página, ponha este endereço de retorno:</div>
+                <CopyRow value={typeof window !== 'undefined' ? window.location.origin + '/' : 'https://estudo360.pt/'} />
+                <div><strong className="text-[#0B1D2D]">Passo 3 —</strong> cole abaixo os 4 dados e carregue em <strong>Entrar com TOConline</strong>. Vai entrar no site deles e voltar sozinho.</div>
               </div>
               <label className="block"><span className="text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B]">Endereço OAuth</span><input value={cfg.oauthUrl} onChange={e => setCfg({ ...cfg, oauthUrl: e.target.value })} placeholder="https://…" className={inputCls + ' mt-1'} /></label>
               <label className="block"><span className="text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B]">Endereço da API</span><input value={cfg.apiUrl} onChange={e => setCfg({ ...cfg, apiUrl: e.target.value })} placeholder="https://…" className={inputCls + ' mt-1'} /></label>
@@ -125,7 +128,7 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
               <div className="flex flex-wrap gap-2 pt-1">
                 {!connected ? (
                   <button onClick={handleConnect} disabled={!validCfg} className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#0B1D2D] text-white text-[14px] font-[700] hover:bg-black disabled:opacity-40">
-                    <Link2 className="w-4 h-4" /> Ligar conta TOConline
+                    <Link2 className="w-4 h-4" /> Entrar com TOConline
                   </button>
                 ) : (
                   <>
@@ -173,6 +176,23 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function CopyRow({ value }: { value: string }) {
+  const [ok, setOk] = useState(false);
+  return (
+    <div className="flex items-center gap-2 bg-white border border-[#E2E8F0] rounded-lg px-2.5 py-2">
+      <code className="flex-1 min-w-0 truncate text-[12px] font-mono text-[#0B1D2D]">{value}</code>
+      <button
+        type="button"
+        onClick={async () => { try { await navigator.clipboard.writeText(value); setOk(true); setTimeout(() => setOk(false), 1500); } catch {} }}
+        className="shrink-0 p-1.5 rounded-md hover:bg-zinc-100 text-[#64748B]"
+        aria-label="Copiar endereço"
+      >
+        {ok ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+      </button>
     </div>
   );
 }
