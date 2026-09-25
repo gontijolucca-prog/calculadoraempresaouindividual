@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import { loadFromStorage, saveToStorage } from './storage';
+import { logAudit } from './audit';
 import type { CofreCipher } from './cofreCrypto';
 import { CALENDARIO_FISCAL_2026 } from './calendarioFiscal2026';
 
@@ -376,6 +377,23 @@ export interface Conversa {
   updatedAt: number;
 }
 
+// ─── Auditoria SVAT (G1/G2/G3) ───────────────────────────────────────────────
+// G3: carimbo de autor em cada escrita. G1: rasto em audit_events.
+// G2: antes de apagar, grava-se retrato (sem segredos) — a eliminação deixa prova.
+function actor(): string {
+  try { return auth.currentUser?.email ?? auth.currentUser?.uid ?? 'local'; } catch { return 'local'; }
+}
+function stamp<T extends object>(o: T): T {
+  return { ...o, updatedAt: Date.now(), updatedBy: actor() } as T;
+}
+function auditDelete(tipo: string, id: string, retrato: unknown, clienteId?: string): void {
+  try {
+    const safe = JSON.parse(JSON.stringify(retrato ?? { id }, (_k, v) =>
+      /segredo|cipher|password|secret/i.test(_k) ? '[oculto]' : v));
+    logAudit(tipo, id, safe, clienteId);
+  } catch { try { logAudit(tipo, id); } catch {} }
+}
+
 // ─── CRUD — Clientes ─────────────────────────────────────────────────────────
 export function listClientesCache(): GabineteCliente[] { return readCache<GabineteCliente>('clientes', []); }
 export function saveClientesCache(list: GabineteCliente[]): void { writeCache('clientes', list); }
@@ -383,13 +401,16 @@ export function saveClientesCache(list: GabineteCliente[]): void { writeCache('c
 export async function upsertCliente(c: GabineteCliente): Promise<GabineteCliente> {
   const list = listClientesCache();
   const idx = list.findIndex(x => x.id === c.id);
-  const next = { ...c, updatedAt: Date.now() };
+  const next = stamp({ ...c });
   if (idx >= 0) list[idx] = next; else list.push(next);
   saveClientesCache(list);
   try { await safeSetDoc(colPath('clientes'), c.id, next); } catch { /* cache já tem */ }
+  logAudit(idx >= 0 ? 'edit_cliente' : 'create_cliente', c.nome || c.id, { nif: (c.nif || '').slice(0, 9) }, c.id);
   return next;
 }
 export async function deleteCliente(id: string): Promise<void> {
+  const alvo = listClientesCache().find(x => x.id === id);
+  auditDelete('delete_cliente', id, alvo && { nome: alvo.nome, nif: alvo.nif }, id);
   const list = listClientesCache().filter(x => x.id !== id);
   saveClientesCache(list);
   try { await safeDeleteDoc(colPath('clientes'), id); } catch {}
@@ -403,7 +424,7 @@ export function saveTarefasCache(list: Tarefa[]): void { writeCache('tarefas', l
 export async function upsertTarefa(t: Tarefa): Promise<Tarefa> {
   const list = listTarefasCache();
   const idx = list.findIndex(x => x.id === t.id);
-  const next = { ...t, updatedAt: Date.now() };
+  const next = stamp({ ...t });
   // auto-atrasada
   if (next.estado !== 'done' && next.dataVencimento && next.dataVencimento < Date.now() - 1000 * 60 * 60 * 24) {
     // só marca atrasada se já passou 1 dia e não foi concluída
@@ -412,9 +433,12 @@ export async function upsertTarefa(t: Tarefa): Promise<Tarefa> {
   if (idx >= 0) list[idx] = next; else list.unshift(next);
   saveTarefasCache(list);
   try { await safeSetDoc(colPath('tarefas'), t.id, next); } catch {}
+  logAudit('save_tarefa', t.titulo?.slice(0, 80) || t.id, { estado: (next as Tarefa).estado }, t.clienteId);
   return next;
 }
 export async function deleteTarefa(id: string): Promise<void> {
+  const alvo = listTarefasCache().find(x => x.id === id);
+  auditDelete('delete_tarefa', id, alvo && { titulo: alvo.titulo }, alvo?.clienteId);
   const list = listTarefasCache().filter(x => x.id !== id);
   saveTarefasCache(list);
   try { await safeDeleteDoc(colPath('tarefas'), id); } catch {}
@@ -433,13 +457,16 @@ export function saveObrigacoesCache(list: Obrigacao[]): void { writeCache('obrig
 export async function upsertObrigacao(o: Obrigacao): Promise<Obrigacao> {
   const list = listObrigacoesCache();
   const idx = list.findIndex(x => x.id === o.id);
-  const next = { ...o, updatedAt: Date.now() };
+  const next = stamp({ ...o });
   if (idx >= 0) list[idx] = next; else list.push(next);
   saveObrigacoesCache(list);
   try { await safeSetDoc(colPath('obrigacoes'), o.id, next); } catch {}
+  logAudit('save_obrigacao', o.titulo?.slice(0, 80) || o.id, { estado: (next as Obrigacao).estado }, o.clienteId);
   return next;
 }
 export async function deleteObrigacao(id: string): Promise<void> {
+  const alvo = listObrigacoesCache().find(x => x.id === id);
+  auditDelete('delete_obrigacao', id, alvo && { titulo: alvo.titulo }, alvo?.clienteId);
   const list = listObrigacoesCache().filter(x => x.id !== id);
   saveObrigacoesCache(list);
   try { await safeDeleteDoc(colPath('obrigacoes'), id); } catch {}
@@ -514,13 +541,16 @@ export function saveCofreCache(list: CofreEntrada[]): void { writeCache('cofre',
 export async function upsertCofre(e: CofreEntrada): Promise<CofreEntrada> {
   const list = listCofreCache();
   const idx = list.findIndex(x => x.id === e.id);
-  const next = { ...e, updatedAt: Date.now() };
+  const next = stamp({ ...e });
   if (idx >= 0) list[idx] = next; else list.unshift(next);
   saveCofreCache(list);
   try { await safeSetDoc(colPath('cofre'), e.id, next); } catch {}
+  logAudit(idx >= 0 ? 'edit_cofre' : 'create_cofre', e.titulo || e.id, { categoria: (next as CofreEntrada).categoria }, e.clienteId);
   return next;
 }
 export async function deleteCofre(id: string): Promise<void> {
+  const alvo = listCofreCache().find(x => x.id === id);
+  auditDelete('delete_cofre', id, alvo && { titulo: alvo.titulo, categoria: alvo.categoria }, alvo?.clienteId);
   const list = listCofreCache().filter(x => x.id !== id);
   saveCofreCache(list);
   try { await safeDeleteDoc(colPath('cofre'), id); } catch {}
@@ -560,6 +590,7 @@ export async function purgeCofreVazias(): Promise<number> {
   // atualiza cache primeiro (optimistic)
   const ids = new Set(vazias.map(v => v.id));
   saveCofreCache(listCofreCache().filter(c => !ids.has(c.id)));
+  auditDelete('purge_cofre_vazias', `${vazias.length} entradas`, vazias.map(v => ({ id: v.id, titulo: v.titulo })));
   let ok = 0;
   for (const v of vazias) {
     try { await safeDeleteDoc(colPath('cofre'), v.id); ok++; } catch (e) { console.warn('[gabinete] purgeCofreVazias falhou', v.id, e); }
@@ -574,12 +605,15 @@ export async function upsertColaborador(c: Colaborador): Promise<void> {
   const list = listColaboradoresCache();
   const idx = list.findIndex(x => x.id === c.id);
   const now = Date.now();
-  const withTs = { ...c, updatedAt: now, initials: c.initials || getColaboradorInitials(c.nome), status: c.status || 'ativo' as const };
+  const withTs = { ...c, updatedAt: now, updatedBy: actor(), initials: c.initials || getColaboradorInitials(c.nome), status: c.status || 'ativo' as const };
   if (idx >= 0) list[idx] = withTs as Colaborador; else list.push(withTs as Colaborador);
   saveColaboradoresCache(list);
   try { await safeSetDoc(colPath('colaboradores'), c.id, withTs); } catch {}
+  logAudit('save_colaborador', c.nome || c.id);
 }
 export async function deleteColaborador(id: string): Promise<void> {
+  const alvo = listColaboradoresCache().find(x => x.id === id);
+  auditDelete('delete_colaborador', id, alvo && { nome: alvo.nome });
   const list = listColaboradoresCache().filter(x => x.id !== id);
   saveColaboradoresCache(list);
   try { await safeDeleteDoc(colPath('colaboradores'), id); } catch {}
@@ -613,13 +647,16 @@ export function saveConversasCache(list: Conversa[]): void { writeCache('convers
 export async function upsertConversa(c: Conversa): Promise<Conversa> {
   const list = listConversasCache();
   const idx = list.findIndex(x => x.id === c.id);
-  const next = { ...c, updatedAt: Date.now() };
+  const next = stamp({ ...c });
   if (idx >= 0) list[idx] = next; else list.unshift(next);
   saveConversasCache(list);
   try { await safeSetDoc(colPath('conversas'), c.id, next); } catch {}
+  logAudit('save_conversa', c.titulo?.slice(0, 80) || c.id, undefined, c.clienteId);
   return next;
 }
 export async function deleteConversa(id: string): Promise<void> {
+  const alvo = listConversasCache().find(x => x.id === id);
+  auditDelete('delete_conversa', id, alvo && { titulo: alvo.titulo }, alvo?.clienteId);
   const list = listConversasCache().filter(x => x.id !== id);
   saveConversasCache(list);
   try { await safeDeleteDoc(colPath('conversas'), id); } catch {}
@@ -655,15 +692,15 @@ export interface EnvioComunicacao {
 export function listModelosCache(): ModeloComunicacao[] { return readCache<ModeloComunicacao>('modelos', []); }
 export function saveModelosCache(list: ModeloComunicacao[]): void { writeCache('modelos', list); }
 export async function upsertModelo(m: ModeloComunicacao): Promise<ModeloComunicacao> {
-  const list = listModelosCache(); const idx=list.findIndex(x=>x.id===m.id); const next={...m, updatedAt: Date.now()}; if(idx>=0) list[idx]=next; else list.unshift(next); saveModelosCache(list); try{ await safeSetDoc(colPath('modelos'), m.id, next);}catch{}
+  const list = listModelosCache(); const idx=list.findIndex(x=>x.id===m.id); const next=stamp({...m}); if(idx>=0) list[idx]=next; else list.unshift(next); saveModelosCache(list); try{ await safeSetDoc(colPath('modelos'), m.id, next);}catch{} logAudit('save_modelo', m.titulo?.slice(0,80) || m.id);
   return next;
 }
-export async function deleteModelo(id:string):Promise<void>{ const list=listModelosCache().filter(x=>x.id!==id); saveModelosCache(list); try{ await safeDeleteDoc(colPath('modelos'), id);}catch{} }
+export async function deleteModelo(id:string):Promise<void>{ const alvo=listModelosCache().find(x=>(x as {id:string}).id===id); auditDelete('delete_modelo', id, alvo && { titulo: (alvo as {titulo?:string;nome?:string}).titulo ?? (alvo as {titulo?:string;nome?:string}).nome }); const list=listModelosCache().filter(x=>x.id!==id); saveModelosCache(list); try{ await safeDeleteDoc(colPath('modelos'), id);}catch{} }
 export function newModeloId():string{ return newId('mdl'); }
 export function listEnviosCache(): EnvioComunicacao[] { return readCache<EnvioComunicacao>('envios', []); }
 export function saveEnviosCache(list: EnvioComunicacao[]): void { writeCache('envios', list); }
 export async function upsertEnvio(e: EnvioComunicacao): Promise<EnvioComunicacao> {
-  const list=listEnviosCache(); const idx=list.findIndex(x=>x.id===e.id); if(idx>=0) list[idx]=e; else list.unshift(e); saveEnviosCache(list); try{ await safeSetDoc(colPath('envios'), e.id, e);}catch{} return e;
+  const list=listEnviosCache(); const idx=list.findIndex(x=>x.id===e.id); const ee=stamp({...e}); if(idx>=0) list[idx]=ee; else list.unshift(ee); saveEnviosCache(list); try{ await safeSetDoc(colPath('envios'), e.id, ee);}catch{} logAudit('save_envio', e.assunto?.slice(0,80) || e.id, undefined, e.clienteId); return ee;
 }
 export function newEnvioId():string{ return newId('env'); }
 
@@ -685,9 +722,9 @@ export interface Tempo {
 export function listTemposCache(): Tempo[] { return readCache<Tempo>('tempos', []); }
 export function saveTemposCache(list: Tempo[]): void { writeCache('tempos', list); }
 export async function upsertTempo(t: Tempo): Promise<Tempo> {
-  const list=listTemposCache(); const idx=list.findIndex(x=>x.id===t.id); const next={...t, updatedAt: Date.now()}; if(idx>=0) list[idx]=next; else list.unshift(next); saveTemposCache(list); try{ await safeSetDoc(colPath('tempos'), t.id, next);}catch{} return next;
+  const list=listTemposCache(); const idx=list.findIndex(x=>x.id===t.id); const next=stamp({...t}); if(idx>=0) list[idx]=next; else list.unshift(next); saveTemposCache(list); try{ await safeSetDoc(colPath('tempos'), t.id, next);}catch{} logAudit('save_tempo', t.descricao?.slice(0,80) || t.id, undefined, t.clienteId); return next;
 }
-export async function deleteTempo(id:string):Promise<void>{ const list=listTemposCache().filter(x=>x.id!==id); saveTemposCache(list); try{ await safeDeleteDoc(colPath('tempos'), id);}catch{} }
+export async function deleteTempo(id:string):Promise<void>{ const alvo=listTemposCache().find(x=>(x as {id:string}).id===id); auditDelete('delete_tempo', id, alvo && { titulo: (alvo as {titulo?:string;nome?:string}).titulo ?? (alvo as {titulo?:string;nome?:string}).nome }); const list=listTemposCache().filter(x=>x.id!==id); saveTemposCache(list); try{ await safeDeleteDoc(colPath('tempos'), id);}catch{} }
 export function newTempoId():string{ return newId('tmp'); }
 
 // ─── Actas & Guias — Fase 4 ──────────────────────────────────────────────────
@@ -705,50 +742,50 @@ export interface Acta {
 export function listActasCache(): Acta[] { return readCache<Acta>('actas', []); }
 export function saveActasCache(list: Acta[]): void { writeCache('actas', list); }
 export async function upsertActa(a: Acta): Promise<Acta> {
-  const list=listActasCache(); const idx=list.findIndex(x=>x.id===a.id); const next={...a, updatedAt: Date.now()}; if(idx>=0) list[idx]=next; else list.unshift(next); saveActasCache(list); try{ await safeSetDoc(colPath('actas'), a.id, next);}catch{} return next;
+  const list=listActasCache(); const idx=list.findIndex(x=>x.id===a.id); const next=stamp({...a}); if(idx>=0) list[idx]=next; else list.unshift(next); saveActasCache(list); try{ await safeSetDoc(colPath('actas'), a.id, next);}catch{} logAudit('save_acta', a.titulo?.slice(0,80) || a.id, undefined, a.clienteId); return next;
 }
-export async function deleteActa(id:string):Promise<void>{ const list=listActasCache().filter(x=>x.id!==id); saveActasCache(list); try{ await safeDeleteDoc(colPath('actas'), id);}catch{} }
+export async function deleteActa(id:string):Promise<void>{ const alvo=listActasCache().find(x=>(x as {id:string}).id===id); auditDelete('delete_acta', id, alvo && { titulo: (alvo as {titulo?:string;nome?:string}).titulo ?? (alvo as {titulo?:string;nome?:string}).nome }); const list=listActasCache().filter(x=>x.id!==id); saveActasCache(list); try{ await safeDeleteDoc(colPath('actas'), id);}catch{} }
 export function newActaId():string{ return newId('act'); }
 
 // ——— CRUD — Visão Geral: Contactos/Assuntos/Alertas/Ocorrências/Documentos ———
 export function listContactosCache(): ContactoGabinete[] { return readCache<ContactoGabinete>('contactosGeral', []); }
 export function saveContactosCache(list: ContactoGabinete[]): void { writeCache('contactosGeral', list); }
 export async function upsertContactoGabinete(c: ContactoGabinete): Promise<ContactoGabinete> {
-  const list = listContactosCache(); const idx = list.findIndex(x=>x.id===c.id); const next={...c, updatedAt: Date.now()}; if(idx>=0) list[idx]=next; else list.unshift(next); saveContactosCache(list); try{ await safeSetDoc(colPath('contactosGeral'), c.id, next);}catch{} return next;
+  const list = listContactosCache(); const idx = list.findIndex(x=>x.id===c.id); const next=stamp({...c}); if(idx>=0) list[idx]=next; else list.unshift(next); saveContactosCache(list); try{ await safeSetDoc(colPath('contactosGeral'), c.id, next);}catch{} logAudit('save_contacto', c.nome?.slice(0,80) || c.id, undefined, c.clienteId); return next;
 }
-export async function deleteContactoGabinete(id:string):Promise<void>{ const list=listContactosCache().filter(x=>x.id!==id); saveContactosCache(list); try{ await safeDeleteDoc(colPath('contactosGeral'), id);}catch{} }
+export async function deleteContactoGabinete(id:string):Promise<void>{ const alvo=listContactosCache().find(x=>(x as {id:string}).id===id); auditDelete('delete_contacto', id, alvo && { titulo: (alvo as {titulo?:string;nome?:string}).titulo ?? (alvo as {titulo?:string;nome?:string}).nome }); const list=listContactosCache().filter(x=>x.id!==id); saveContactosCache(list); try{ await safeDeleteDoc(colPath('contactosGeral'), id);}catch{} }
 export function newContactoGabineteId():string{ return newId('cgc'); }
 
 export function listAssuntosCache(): AssuntoGabinete[] { return readCache<AssuntoGabinete>('assuntosGeral', []); }
 export function saveAssuntosCache(list: AssuntoGabinete[]): void { writeCache('assuntosGeral', list); }
 export async function upsertAssuntoGabinete(a: AssuntoGabinete): Promise<AssuntoGabinete> {
-  const list = listAssuntosCache(); const idx=list.findIndex(x=>x.id===a.id); const next={...a, updatedAt: Date.now()}; if(idx>=0) list[idx]=next; else list.unshift(next); saveAssuntosCache(list); try{ await safeSetDoc(colPath('assuntosGeral'), a.id, next);}catch{} return next;
+  const list = listAssuntosCache(); const idx=list.findIndex(x=>x.id===a.id); const next=stamp({...a}); if(idx>=0) list[idx]=next; else list.unshift(next); saveAssuntosCache(list); try{ await safeSetDoc(colPath('assuntosGeral'), a.id, next);}catch{} logAudit('save_assunto', a.titulo?.slice(0,80) || a.id, undefined, a.clienteId); return next;
 }
-export async function deleteAssuntoGabinete(id:string):Promise<void>{ const list=listAssuntosCache().filter(x=>x.id!==id); saveAssuntosCache(list); try{ await safeDeleteDoc(colPath('assuntosGeral'), id);}catch{} }
+export async function deleteAssuntoGabinete(id:string):Promise<void>{ const alvo=listAssuntosCache().find(x=>(x as {id:string}).id===id); auditDelete('delete_assunto', id, alvo && { titulo: (alvo as {titulo?:string;nome?:string}).titulo ?? (alvo as {titulo?:string;nome?:string}).nome }); const list=listAssuntosCache().filter(x=>x.id!==id); saveAssuntosCache(list); try{ await safeDeleteDoc(colPath('assuntosGeral'), id);}catch{} }
 export function newAssuntoGabineteId():string{ return newId('ass'); }
 
 export function listAlertasCache(): AlertaGabinete[] { return readCache<AlertaGabinete>('alertasGeral', []); }
 export function saveAlertasCache(list: AlertaGabinete[]): void { writeCache('alertasGeral', list); }
 export async function upsertAlertaGabinete(a: AlertaGabinete): Promise<AlertaGabinete> {
-  const list=listAlertasCache(); const idx=list.findIndex(x=>x.id===a.id); const next={...a, updatedAt: Date.now()}; if(idx>=0) list[idx]=next; else list.unshift(next); saveAlertasCache(list); try{ await safeSetDoc(colPath('alertasGeral'), a.id, next);}catch{} return next;
+  const list=listAlertasCache(); const idx=list.findIndex(x=>x.id===a.id); const next=stamp({...a}); if(idx>=0) list[idx]=next; else list.unshift(next); saveAlertasCache(list); try{ await safeSetDoc(colPath('alertasGeral'), a.id, next);}catch{} logAudit('save_alerta', a.texto?.slice(0,80) || a.id, undefined, a.clienteId); return next;
 }
-export async function deleteAlertaGabinete(id:string):Promise<void>{ const list=listAlertasCache().filter(x=>x.id!==id); saveAlertasCache(list); try{ await safeDeleteDoc(colPath('alertasGeral'), id);}catch{} }
+export async function deleteAlertaGabinete(id:string):Promise<void>{ const alvo=listAlertasCache().find(x=>(x as {id:string}).id===id); auditDelete('delete_alerta', id, alvo && { titulo: (alvo as {titulo?:string;nome?:string}).titulo ?? (alvo as {titulo?:string;nome?:string}).nome }); const list=listAlertasCache().filter(x=>x.id!==id); saveAlertasCache(list); try{ await safeDeleteDoc(colPath('alertasGeral'), id);}catch{} }
 export function newAlertaGabineteId():string{ return newId('alt'); }
 
 export function listOcorrenciasCache(): OcorrenciaGabinete[] { return readCache<OcorrenciaGabinete>('ocorrencias', []); }
 export function saveOcorrenciasCache(list: OcorrenciaGabinete[]): void { writeCache('ocorrencias', list); }
 export async function upsertOcorrencia(o: OcorrenciaGabinete): Promise<OcorrenciaGabinete> {
-  const list=listOcorrenciasCache(); const idx=list.findIndex(x=>x.id===o.id); if(idx>=0) list[idx]=o; else list.unshift(o); saveOcorrenciasCache(list); try{ await safeSetDoc(colPath('ocorrencias'), o.id, o);}catch{} return o;
+  const list=listOcorrenciasCache(); const idx=list.findIndex(x=>x.id===o.id); const oo=stamp({...o}); if(idx>=0) list[idx]=oo; else list.unshift(oo); saveOcorrenciasCache(list); try{ await safeSetDoc(colPath('ocorrencias'), o.id, oo);}catch{} logAudit('save_ocorrencia', o.descricao?.slice(0,80) || o.id, undefined, o.clienteId); return oo;
 }
-export async function deleteOcorrencia(id:string):Promise<void>{ const list=listOcorrenciasCache().filter(x=>x.id!==id); saveOcorrenciasCache(list); try{ await safeDeleteDoc(colPath('ocorrencias'), id);}catch{} }
+export async function deleteOcorrencia(id:string):Promise<void>{ const alvo=listOcorrenciasCache().find(x=>(x as {id:string}).id===id); auditDelete('delete_ocorrencia', id, alvo && { titulo: (alvo as {titulo?:string;nome?:string}).titulo ?? (alvo as {titulo?:string;nome?:string}).nome }); const list=listOcorrenciasCache().filter(x=>x.id!==id); saveOcorrenciasCache(list); try{ await safeDeleteDoc(colPath('ocorrencias'), id);}catch{} }
 export function newOcorrenciaId():string{ return newId('oco'); }
 
 export function listDocumentosGeralCache(): GabineteDocumento[] { return readCache<GabineteDocumento>('documentos', []); }
 export function saveDocumentosGeralCache(list: GabineteDocumento[]): void { writeCache('documentos', list); }
 export async function upsertDocumentoGeral(d: GabineteDocumento): Promise<GabineteDocumento> {
-  const list=listDocumentosGeralCache(); const idx=list.findIndex(x=>x.id===d.id); if(idx>=0) list[idx]=d; else list.unshift(d); saveDocumentosGeralCache(list); try{ await safeSetDoc(colPath('documentos'), d.id, d as unknown as Record<string,unknown>);}catch{} return d;
+  const list=listDocumentosGeralCache(); const idx=list.findIndex(x=>x.id===d.id); const dd=stamp({...d}); if(idx>=0) list[idx]=dd; else list.unshift(dd); saveDocumentosGeralCache(list); try{ await safeSetDoc(colPath('documentos'), d.id, dd as unknown as Record<string,unknown>);}catch{} logAudit('save_documento', d.nome?.slice(0,80) || d.id, undefined, d.clienteId); return dd;
 }
-export async function deleteDocumentoGeral(id:string):Promise<void>{ const list=listDocumentosGeralCache().filter(x=>x.id!==id); saveDocumentosGeralCache(list); try{ await safeDeleteDoc(colPath('documentos'), id);}catch{} }
+export async function deleteDocumentoGeral(id:string):Promise<void>{ const alvo=listDocumentosGeralCache().find(x=>(x as {id:string}).id===id); auditDelete('delete_documento', id, alvo && { titulo: (alvo as {titulo?:string;nome?:string}).titulo ?? (alvo as {titulo?:string;nome?:string}).nome }); const list=listDocumentosGeralCache().filter(x=>x.id!==id); saveDocumentosGeralCache(list); try{ await safeDeleteDoc(colPath('documentos'), id);}catch{} }
 export function newDocumentoGeralId():string{ return newId('doc'); }
 
 // Fase 3 — avença já no GabineteCliente acima
