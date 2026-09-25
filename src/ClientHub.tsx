@@ -23,7 +23,7 @@ export default function ClientHub({ clientName, onNavigate }: {
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
           <p className="text-[10px] font-[800] uppercase tracking-[2px] text-[#0677FF]">A trabalhar em</p>
           <h1 className="mt-1 text-[26px] font-[800] text-[#0B1D2D] tracking-[-0.5px] leading-tight">{clientName}</h1>
-          <p className="mt-1.5 text-[13.5px] text-slate-500 font-[500]">Escolhe por onde começar — tudo o que fizeres fica guardado neste cliente.</p>
+          <p className="mt-1.5 text-[13.5px] text-slate-500 font-[500]">Escolha por onde começar — tudo o que fizer fica guardado neste cliente.</p>
         </motion.div>
 
         {/* Row 1 — o cliente */}

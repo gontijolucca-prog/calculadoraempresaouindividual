@@ -121,7 +121,7 @@ export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual
             </button>
           </div>
           <p className="text-[13px] text-[#6B7280] font-[500] mt-1 max-w-xl">
-            A tua carteira de clientes. Cada empresa tem perfil próprio, SAF-T associado
+            A sua carteira de clientes. Cada empresa tem perfil próprio, SAF-T associado
             e histórico de simulações — tudo sincronizado na nuvem, acessível em qualquer computador.
           </p>
         </header>
@@ -207,7 +207,7 @@ export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual
                 </button>
               </div>
               <p className="text-[13px] text-[#6B7280] font-[500] mb-5">
-                Como queres adicionar esta empresa à tua carteira?
+                Como pretende adicionar esta empresa à sua carteira?
               </p>
 
               <div className="grid sm:grid-cols-2 gap-3">
@@ -515,9 +515,9 @@ function EmptyState({ onNova, hasQuery }: { onNova: () => void; hasQuery: boolea
       <div className="w-14 h-14 rounded-full bg-[#0677FF]/10 text-[#0677FF] flex items-center justify-center mx-auto mb-4">
         <Building2 className="w-6 h-6" />
       </div>
-      <h2 className="text-[18px] font-[800] text-[#0B1D2D] mb-1">Ainda não tens empresas guardadas</h2>
+      <h2 className="text-[18px] font-[800] text-[#0B1D2D] mb-1">Ainda não tem empresas guardadas</h2>
       <p className="text-[13px] text-[#6B7280] font-[500] max-w-md mx-auto mb-5">
-        Cria a primeira empresa da tua carteira. Vais poder importar o SAF-T e gerar simulações associadas.
+        Crie a primeira empresa da sua carteira. Vai poder importar o SAF-T e gerar simulações associadas.
       </p>
       <button
         type="button"

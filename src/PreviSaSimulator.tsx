@@ -361,7 +361,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
       await downloadPrevisaExcel(state);
     } catch (e) {
       console.error('Falha ao exportar o Previsa:', e);
-      alert('Não foi possível gerar o Excel do Previsa. Tenta novamente.');
+      alert('Não foi possível gerar o Excel do Previsa. Tente novamente.');
     } finally {
       setExporting(false);
     }

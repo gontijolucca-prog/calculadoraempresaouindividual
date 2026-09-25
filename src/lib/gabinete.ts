@@ -291,7 +291,7 @@ export interface CofreEntrada {
   username?: string;
   url?: string;
   notas?: string;
-  // segredo — guardado em claro, visível só pela tua conta (gabinete/{uid}/cofre/*)
+  // segredo — guardado em claro, visível só pela sua conta (gabinete/{uid}/cofre/*)
   segredo?: string;
   // legado: entradas antigas cifradas (antes do cofre simples)
   cipher?: CofreCipher;

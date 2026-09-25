@@ -335,7 +335,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
       await downloadPrevisaPdf(previsaState, emp.nome || emp.profile?.nomeCliente || '');
     } catch (e) {
       console.error('Falha ao gerar o Excel do Previsa:', e);
-      alert('Não foi possível gerar o Excel do Previsa. Tenta novamente.');
+      alert('Não foi possível gerar o Excel do Previsa. Tente novamente.');
     } finally {
       setDownloadingPrevisa(false);
     }
@@ -418,7 +418,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
       downloadAsWord(html, def.filename(emp));
     } catch (e) {
       console.error('Falha ao gerar o documento:', e);
-      alert('Não foi possível gerar o documento. Tenta novamente.');
+      alert('Não foi possível gerar o documento. Tente novamente.');
     }
   };
 
@@ -476,7 +476,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
           </div>
           <div>
             <h1 className="text-[22px] font-[800] text-[#0B1D2D] leading-tight tracking-[-0.4px]">Relatórios — {CATEGORIAS.find(c => c.id === categoria)?.label}</h1>
-            <p className="text-[13px] text-slate-500 font-[500]">Escolhe a empresa e o documento, edita na folha e descarrega ou imprime.</p>
+            <p className="text-[13px] text-slate-500 font-[500]">Escolha a empresa e o documento, edite na folha e descarregue ou imprima.</p>
           </div>
         </div>
 
@@ -486,7 +486,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
           <div className="mt-4 flex items-start gap-2.5 rounded-[12px] border border-amber-200 bg-amber-50 px-4 py-3 no-print">
             <Building2 className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-[12.5px] text-amber-800 font-[500] leading-relaxed">
-              Os dados do escritório estão incompletos — os documentos saem com o branding genérico em vez do teu nome e logo.{' '}
+              Os dados do escritório estão incompletos — os documentos saem com o branding genérico em vez do seu nome e logo.{' '}
               {onGoToOfficeSettings && (
                 <button type="button" onClick={onGoToOfficeSettings} className="font-[700] underline hover:text-amber-900">
                   Preencher Definições do Escritório →
@@ -503,7 +503,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
             </div>
             <p className="text-[15px] font-[700] text-[#0B1D2D]">Ainda não há empresas</p>
             <p className="mt-1.5 text-[13px] text-slate-500 font-[500] max-w-md mx-auto text-balance">
-              Cria uma empresa na Lista de Empresas para a poderes exportar aqui.
+              Crie uma empresa na Lista de Empresas para a poder exportar aqui.
             </p>
           </div>
         ) : (
@@ -713,7 +713,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                   ? 'Sai o Excel original do Previsa (13 folhas) com os dados desta empresa; as fórmulas recalculam ao abrir.'
                   : pkg
                     ? 'Edita o documento na folha e imprime ou guarda como PDF.'
-                    : 'Descarrega o que vês na folha — com as tuas edições. O Word abre o .doc editável.'}
+                    : 'Descarregue o que vê na folha — com as suas edições. O Word abre o .doc editável.'}
               </p>
             </div>
 

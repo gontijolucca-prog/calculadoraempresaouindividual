@@ -123,7 +123,7 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
     window.location.reload();
   };
   const functionLabel = activeFunction?.label ?? 'Centro de operação';
-  const functionDesc = activeFunction?.desc ?? 'Escolhe uma função para começar';
+  const functionDesc = activeFunction?.desc ?? 'Escolha uma função para começar';
   const goFunction = (target: GabTab) => setTab(target);
 
   return (
@@ -175,11 +175,11 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
         )}
         {tab !== 'gallery' && !showIntro && (
           <>
-            {tab === 'visao-geral' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolhe um cliente na lista para ver a visão geral.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <VisaoGeralView cliente={clienteAtivo} contactos={contactosF} assuntos={assuntosF} alertas={alertasF} ocorrencias={ocorrenciasF} tarefas={tarefas} obrigacoes={obrigacoes} cofre={cofre} documentos={documentosF} colaboradores={colaboradores} onEditCliente={()=>{}} onGo={(tab)=>setTab(tab as GabineteTab)} onOpenCofre={()=>setTab('cofre')} />)}
+            {tab === 'visao-geral' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolha um cliente na lista para ver a visão geral.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <VisaoGeralView cliente={clienteAtivo} contactos={contactosF} assuntos={assuntosF} alertas={alertasF} ocorrencias={ocorrenciasF} tarefas={tarefas} obrigacoes={obrigacoes} cofre={cofre} documentos={documentosF} colaboradores={colaboradores} onEditCliente={()=>{}} onGo={(tab)=>setTab(tab as GabineteTab)} onOpenCofre={()=>setTab('cofre')} />)}
             {tab === 'dashboard' && <Dashboard clientes={clientes} tarefas={tarefasRaw} obrigacoes={obrigacoesRaw} cofre={cofre} onGo={goFunction} />}
             {tab === 'mapa-rh' && <MapaRHView clientes={clientes} obrigacoes={obrigacoesRaw} />}
             {tab === 'mapa-controlo' && <MapaControloView clientes={clientes} obrigacoes={obrigacoesRaw} />}
-            {tab === 'tarefas' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolhe um cliente na lista para ver as tarefas.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <TarefasView tarefas={tarefas} clientes={clientes} obrigacoes={obrigacoes} activeEmpresaId={activeEmpresaId} activeEmpresaNome={activeEmpresaNome} />)}
+            {tab === 'tarefas' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolha um cliente na lista para ver as tarefas.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <TarefasView tarefas={tarefas} clientes={clientes} obrigacoes={obrigacoes} activeEmpresaId={activeEmpresaId} activeEmpresaNome={activeEmpresaNome} />)}
             {tab === 'equipa' && <GabineteEquipa />}
             {tab === 'cofre' && <CofreView cofre={cofre} clientes={clientes} />}
           </>
@@ -442,7 +442,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
               {showVazio ? (
                 <tr><td colSpan={13} className="px-4 py-16 text-center">
                   <div className="text-zinc-500 text-sm">Nenhum cliente corresponde aos filtros.</div>
-                  <div className="text-zinc-400 text-xs mt-1">Cria clientes na carteira ou limpa os filtros.</div>
+                  <div className="text-zinc-400 text-xs mt-1">Crie clientes na carteira ou limpe os filtros.</div>
                 </td></tr>
               ) : clientesFiltrados.map(cli => {
                 const isExpanded = expanded.has(cli.id);
@@ -506,7 +506,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
       {isEmptyGlobal && (
         <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs text-blue-900 flex gap-2">
           <span className="font-bold">Exemplo:</span>
-          <span>Sem clientes ainda — a mostrar como fica com dados. Cria clientes e as obrigações ganham estado real (clica numa célula para alternar: ✓ → ✕ → ● → ∅).</span>
+          <span>Sem clientes ainda — a mostrar como fica com dados. Crie clientes e as obrigações ganham estado real (clique numa célula para alternar: ✓ → ✕ → ● → ∅).</span>
         </div>
       )}
       <div className="text-[11px] text-zinc-500 px-1">
@@ -698,7 +698,7 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
             </thead>
             <tbody>
               {clientesFiltrados.length===0 ? (
-                <tr><td colSpan={13} className="px-4 py-12 text-center text-sm text-zinc-500">Sem clientes para os filtros. Cria clientes ou limpa filtros.</td></tr>
+                <tr><td colSpan={13} className="px-4 py-12 text-center text-sm text-zinc-500">Sem clientes para os filtros. Crie clientes ou limpe os filtros.</td></tr>
               ) : clientesFiltrados.map((cli, idx)=> {
                 const isExpanded = !collapsed.has(cli.id);
                 return (
@@ -938,7 +938,7 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
             </thead>
             <tbody>
               {clientesFiltrados.length===0 ? (
-                <tr><td colSpan={13} className="px-4 py-12 text-center text-sm text-zinc-500">Sem clientes para os filtros. Cria clientes ou limpa filtros.</td></tr>
+                <tr><td colSpan={13} className="px-4 py-12 text-center text-sm text-zinc-500">Sem clientes para os filtros. Crie clientes ou limpe os filtros.</td></tr>
               ) : clientesFiltrados.map((cli, idx)=> {
                 const isExpanded = !collapsed.has(cli.id);
                 return (
@@ -1064,7 +1064,7 @@ function AgendaView({ tarefas, obrigacoes, clientes }: { tarefas: Tarefa[]; obri
         </div>
         <div className="bg-white rounded-2xl border border-zinc-200 p-4">
           <h3 className="font-semibold flex items-center gap-2">{sel ? `${sel} de ${mesLabel}` : 'Seleciona um dia'} {sel && <span className="text-xs font-normal text-zinc-500">({(selEvents.tarefas.length+selEvents.obrs.length)} itens)</span>}</h3>
-          {!sel ? <div className="py-12 text-center text-sm text-zinc-500">Clica num dia do calendário</div> : (selEvents.tarefas.length+selEvents.obrs.length===0 ? <div className="py-12 text-center text-sm text-zinc-500 border-2 border-dashed border-zinc-200 rounded-xl mt-3">Nada para este dia. Cria uma tarefa para {sel}/{cur.getMonth()+1}</div> : (
+          {!sel ? <div className="py-12 text-center text-sm text-zinc-500">Clique num dia do calendário</div> : (selEvents.tarefas.length+selEvents.obrs.length===0 ? <div className="py-12 text-center text-sm text-zinc-500 border-2 border-dashed border-zinc-200 rounded-xl mt-3">Nada para este dia. Cria uma tarefa para {sel}/{cur.getMonth()+1}</div> : (
             <div className="space-y-2 mt-3">
               {selEvents.tarefas.map(t=> (
                 <div key={t.id} className="p-3 rounded-xl border border-zinc-200 hover:bg-zinc-50">
@@ -1249,7 +1249,7 @@ function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmp
             <table className="w-full text-sm">
               <thead className="bg-zinc-50 text-zinc-600 text-xs"><tr><th className="text-left px-4 py-2.5 font-semibold">Tarefa</th><th className="text-left px-3 py-2.5 font-semibold">Cliente</th><th className="text-left px-3 py-2.5 font-semibold">Prioridade</th><th className="text-left px-3 py-2.5 font-semibold">Estado</th><th className="text-left px-3 py-2.5 font-semibold">Vencimento</th><th className="text-right px-4 py-2.5 font-semibold">Ação</th></tr></thead>
               <tbody className="divide-y divide-zinc-200">
-                {listaFiltrada.length===0 ? <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-zinc-500">Nada para os filtros. Cria uma nova tarefa ou limpa filtros.</td></tr> :
+                {listaFiltrada.length===0 ? <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-zinc-500">Nada para os filtros. Crie uma nova tarefa ou limpa filtros.</td></tr> :
                 listaFiltrada.map((item:any)=> {
                   const isFiscal = 'fiscal' in item && item.fiscal;
                   const t = item as Tarefa;
@@ -1531,7 +1531,7 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
           <div className="py-16 text-center">
             <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center mx-auto"><Lock className="w-6 h-6 text-zinc-400" /></div>
             <h3 className="mt-3 font-semibold text-zinc-900">Cofre vazio</h3>
-            <p className="mt-1 text-sm text-zinc-500 max-w-md mx-auto">Guarda acessos — só a tua conta vê.</p>
+            <p className="mt-1 text-sm text-zinc-500 max-w-md mx-auto">Guarde acessos — só a sua conta vê.</p>
             <button onClick={startCreate} className="mt-4 px-5 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-medium">Guardar primeiro</button>
           </div>
         </div>
@@ -1551,7 +1551,7 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
             disabled={purging}
             onClick={async()=>{
               if (!confirm(`Apagar ${vaziasCount} acesso(s) vazios sem segredo? Esta ação não pode ser desfeita.`)) return;
-              if (!confirm(`Confirma: ${vaziasCount} entradas vazias serão apagadas permanentemente.`)) return;
+              if (!confirm(`Confirme: ${vaziasCount} entradas vazias serão apagadas permanentemente.`)) return;
               setPurging(true);
               try { const n = await purgeCofreVazias(); alert(`${n} entradas vazias apagadas.`); } catch (e) { alert('Falha ao limpar: ' + String(e)); } finally { setPurging(false); }
             }}

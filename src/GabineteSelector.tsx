@@ -75,7 +75,7 @@ export default function GabineteSelector({ onChosen }: Props) {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newNome.trim()) { setError('Indica o nome do gabinete.'); return; }
+    if (!newNome.trim()) { setError('Indique o nome do gabinete.'); return; }
     setBusyId('create');
     setError(null);
     try {
@@ -110,8 +110,8 @@ export default function GabineteSelector({ onChosen }: Props) {
           {/* Esquerda — lista */}
           <div className="space-y-6">
             <div>
-              <h1 className="text-[30px] font-[800] tracking-[-1px] text-[#0B1D2D] leading-none">Em que gabinete queres trabalhar?</h1>
-              <p className="mt-2 text-[14px] text-[#64748B]">Escolhe um dos teus gabinetes ou aceita um convite. Perguntamos sempre ao entrar — podes trocar a qualquer momento.</p>
+              <h1 className="text-[30px] font-[800] tracking-[-1px] text-[#0B1D2D] leading-none">Em que gabinete pretende trabalhar?</h1>
+              <p className="mt-2 text-[14px] text-[#64748B]">Escolha um dos seus gabinetes ou aceite um convite. Perguntamos sempre ao entrar — pode trocar a qualquer momento.</p>
             </div>
 
             {error && (
@@ -129,7 +129,7 @@ export default function GabineteSelector({ onChosen }: Props) {
                   <div className="bg-white rounded-[20px] border border-amber-200 shadow-sm overflow-hidden">
                     <div className="px-5 py-3 bg-amber-50 border-b border-amber-100 flex items-center gap-2">
                       <Mail className="w-4 h-4 text-amber-600" />
-                      <span className="text-[11px] font-[800] tracking-[1px] uppercase text-amber-800">Convites para ti ({convites.length})</span>
+                      <span className="text-[11px] font-[800] tracking-[1px] uppercase text-amber-800">Convites para si ({convites.length})</span>
                     </div>
                     <div className="divide-y divide-[#F1F5F9]">
                       {convites.map(g => (
@@ -153,14 +153,14 @@ export default function GabineteSelector({ onChosen }: Props) {
                 <div className="bg-white rounded-[20px] border border-[#E2E8F0] shadow-sm overflow-hidden">
                   <div className="px-5 py-3 bg-[#F5F7FA] border-b border-[#E2E8F0] flex items-center gap-2">
                     <Building2 className="w-4 h-4 text-[#0677FF]" />
-                    <span className="text-[11px] font-[800] tracking-[1px] uppercase text-[#0F172A]">Os teus gabinetes</span>
+                    <span className="text-[11px] font-[800] tracking-[1px] uppercase text-[#0F172A]">Os seus gabinetes</span>
                     <span className="ml-auto text-[11px] font-[700] text-[#94A3B8]">{meus.length}</span>
                   </div>
                   {meus.length === 0 ? (
                     <div className="p-8 text-center">
                       <Briefcase className="w-8 h-8 text-[#94A3B8] mx-auto" />
-                      <p className="mt-2 text-[14px] font-[600] text-[#475569]">Ainda não tens gabinetes</p>
-                      <p className="text-[13px] text-[#94A3B8]">Cria o primeiro abaixo.</p>
+                      <p className="mt-2 text-[14px] font-[600] text-[#475569]">Ainda não tem gabinetes</p>
+                      <p className="text-[13px] text-[#94A3B8]">Crie o primeiro abaixo.</p>
                     </div>
                   ) : (
                     <div className="divide-y divide-[#F1F5F9]">

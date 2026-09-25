@@ -280,7 +280,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
     {
       id: 'category',
       label: 'Categoria do Veículo',
-      description: 'Escolhe o tipo de viatura que vais simular.',
+      description: 'Escolha o tipo de viatura que vai simular.',
       isVisible: () => true,
       render: (s, setS) => (
         <select value={s.category} onChange={e => setS({ category: e.target.value as any })} className={inputClass}>

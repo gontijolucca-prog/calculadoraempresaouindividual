@@ -60,7 +60,7 @@ const STORE_KEY = 'estudo360:ai_chat_session_v1';
 const LEGACY_STORE_KEY = 'estudo360:ai_chat_v1'; // localStorage antigo (persistente) — a apagar
 const GREETING: ChatMsg = {
   role: 'assistant',
-  content: 'Olá! Sou o **AI Contabilista**, o teu assistente aqui no Estudo 360. Posso explicar qualquer função, abrir os simuladores por ti, ajudar a preencher um cliente e registar sugestões de melhoria. Em que te ajudo?',
+  content: 'Olá! Sou o **AI Contabilista**, o seu assistente aqui no Estudo 360. Posso explicar qualquer função, abrir os simuladores por si, ajudar a preencher um cliente e registar sugestões de melhoria. Em que o posso ajudar?',
 };
 // (Removida a saudação proativa — o bot fica quieto até o utilizador interagir.)
 
@@ -302,7 +302,7 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
         ...prev,
         { role: 'user', content: trimmed },
         ...(g
-          ? [{ role: 'assistant' as const, content: 'Claro! Aqui tens a visita guiada desta página 👇', tourOffer: { titulo: g.titulo, intro: g.intro } }]
+          ? [{ role: 'assistant' as const, content: 'Claro! Aqui tem a visita guiada desta página 👇', tourOffer: { titulo: g.titulo, intro: g.intro } }]
           : [{ role: 'assistant' as const, content: 'Esta página não tem visita guiada — mas posso explicar-te o que ela faz!' }]),
       ]);
       if (g) notificarGuia();
@@ -331,7 +331,7 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
         }),
       });
       const data = await res.json().catch(() => ({ reply: '' }));
-      const reply: string = data?.reply || 'Não consegui responder agora. Tenta de novo daqui a pouco.';
+      const reply: string = data?.reply || 'Não consegui responder agora. Tente de novo daqui a pouco.';
       const { text: visible, actions } = parseReply(reply);
 
       const fillAction = actions.find((a) => a.type === 'fill') as Extract<BotAction, { type: 'fill' }> | undefined;
@@ -353,7 +353,7 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
         downloadPicker: wantsDownloadPicker || undefined,
       }]);
     } catch {
-      setMsgs((prev) => [...prev, { role: 'assistant', content: 'Tive um problema de ligação. Verifica a internet e tenta de novo.' }]);
+      setMsgs((prev) => [...prev, { role: 'assistant', content: 'Tive um problema de ligação. Verifique a internet e tente de novo.' }]);
     } finally {
       setBusy(false);
     }
@@ -625,7 +625,7 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
                     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); }
                   }}
                   rows={1}
-                  placeholder="Escreve a tua pergunta…"
+                  placeholder="Escreva a sua pergunta…"
                   className="flex-1 resize-none max-h-28 px-3 py-2.5 rounded-[12px] bg-[#F5F7FA] border border-slate-200 text-[14px] font-[500] text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0677FF] focus:ring-2 focus:ring-[#0677FF]/15 transition-all"
                   style={{ fontSize: 16 }}
                 />

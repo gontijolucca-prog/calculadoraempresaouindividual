@@ -54,7 +54,7 @@ export const GUIAS: Record<ViewKey, Guia> = {
   empresas: {
     titulo: 'Lista de Empresas',
     intro: 'A carteira de clientes do escritório. Cada empresa guarda o seu perfil fiscal, os simuladores, o SAF-T e o histórico de simulações.',
-    acao: 'Cria o primeiro cliente à mão ou importa um SAF-T — leva menos de 1 minuto.',
+    acao: 'Crie o primeiro cliente à mão ou importe um SAF-T — leva menos de 1 minuto.',
     passos: [
       { titulo: 'A carteira de clientes', corpo: 'Aqui estão todas as empresas do escritório. Cada uma tem o seu perfil e os seus dados — não há mistura entre clientes.', alvo: { texto: 'CRM · Carteira' } },
       { titulo: 'Criar cliente à mão', corpo: 'Regista um cliente novo sem ficheiros: preenche o perfil (nome, NIF, atividade) e os simuladores ficam prontos a trabalhar.', alvo: { texto: 'Inserir à mão' } },
@@ -71,7 +71,7 @@ export const GUIAS: Record<ViewKey, Guia> = {
     passos: [
       { titulo: 'Notas internas', corpo: 'Zona reservada ao contabilista: observações, pendências ou contexto do cliente. Não entra nos cálculos.', alvo: { texto: 'Análise Interna (notas do contabilista)' } },
       { titulo: 'Subsídio de refeição', corpo: 'Limites 2026 já pré-preenchidos: €10,46/dia em cartão e €6,15/dia em dinheiro. Usado no simulador de salários e nos custos da empresa.', alvo: { texto: 'Subsídio refeição 2026' } },
-      { titulo: 'IRS Jovem', corpo: 'Indica se o cliente é elegível (Art. 12.º-B CIRS) e há quantos anos de atividade. Afeta o simulador de IRS e o salário líquido.', alvo: { texto: 'IRS Jovem (Art. 12º-B CIRS)' } },
+      { titulo: 'IRS Jovem', corpo: 'Indique se o cliente é elegível (Art. 12.º-B CIRS) e há quantos anos de atividade. Afeta o simulador de IRS e o salário líquido.', alvo: { texto: 'IRS Jovem (Art. 12º-B CIRS)' } },
       { titulo: 'Enquadramento de IVA', corpo: 'Regra do Art. 53.º CIVA (isenção até €15.000 de volume de negócios) ou regime normal. Os simuladores respeitam o regime escolhido.', alvo: { texto: 'Regra IVA (Art. 53º CIVA)' } },
       { titulo: 'Segurança Social', corpo: 'Regime de SS do cliente (independente/empresa) — usado no cálculo de custos e de salário líquido.', alvo: { texto: 'SS Independente' } },
     ],
@@ -91,9 +91,9 @@ export const GUIAS: Record<ViewKey, Guia> = {
   vehicle: {
     titulo: 'Simulador de Viaturas',
     intro: 'Tributação autónoma (TA) e deduções de IVA de viaturas da empresa. As regras mudam consoante o tipo de viatura, o valor e o combustível.',
-    acao: 'Escolhe o tipo de viatura e vê a tributação autónoma na hora.',
+    acao: 'Escolha o tipo de viatura e veja a tributação autónoma na hora.',
     passos: [
-      { titulo: 'Tipo de viatura', corpo: 'Escolhe a viatura (ligeira, elétrica, PHEV, comercial…) — a taxa de tributação autónoma e o limite de dedução de IVA dependem disto.', alvo: { texto: 'Como foi adquirida a viatura?' } },
+      { titulo: 'Tipo de viatura', corpo: 'Escolha a viatura (ligeira, elétrica, PHEV, comercial…) — a taxa de tributação autónoma e o limite de dedução de IVA dependem disto.', alvo: { texto: 'Como foi adquirida a viatura?' } },
       { titulo: 'Motor e combustível', corpo: 'Gasolina, gasóleo, elétrico ou híbrido: cada um tem tratamento diferente na TA e na dedução do IVA do combustível (o gasóleo tem limites próprios).', alvo: { texto: 'Motor / Combustível' } },
       { titulo: 'Custos anuais', corpo: 'Seguro, portagens, manutenção e combustível com IVA — o simulador separa o que é dedutível e aplica a TA sobre o valor de aquisição.', alvo: { texto: 'Seguro & Portagens (anual c/ IVA)' } },
       { titulo: 'Resultados', corpo: 'Vês a TA devida, o IVA dedutível e o custo fiscal real da viatura — incluindo limites de depreciação (ex: €25.000/€50.000 consoante o tipo).', alvo: { texto: 'Combustível / Carga (anual c/ IVA)' } },
@@ -103,9 +103,9 @@ export const GUIAS: Record<ViewKey, Guia> = {
   ticket: {
     titulo: 'Simulador de Tickets',
     intro: 'Compara o custo de atribuir tickets de refeição/educação/saúde aos colaboradores com o equivalente em salário. O ticket é isento de IRS e SS (dentro dos limites).',
-    acao: 'Indica o número de funcionários e compara ticket vs salário.',
+    acao: 'Indique o número de funcionários e compare ticket vs salário.',
     passos: [
-      { titulo: 'Equipa', corpo: 'Indica o número de funcionários e o número de viaturas (para o caso de optares por outra forma de compensação).', alvo: { texto: 'Número de funcionários' } },
+      { titulo: 'Equipa', corpo: 'Indique o número de funcionários e o número de viaturas (para o caso de optar por outra forma de compensação).', alvo: { texto: 'Número de funcionários' } },
       { titulo: 'Tipo de ticket', corpo: 'Ticket Restaurant, Educação, Infância, Saúde, Oferta ou Car — cada um tem regras próprias de isenção e beneficiários.', alvo: { texto: 'Tipo de Ticket e Beneficiários' } },
       { titulo: 'Comparação salarial', corpo: 'A grande mais-valia: o custo para a empresa do ticket vs. o custo de dar o mesmo valor em salário (com IRS e SS).', alvo: { texto: 'Ticket vs. Equivalente Salarial' } },
       { titulo: 'Resultados', corpo: 'Vês o custo anual total e a poupança por colaborador. Os valores respeitam os limites 2026 (ex: €10,46/dia em cartão).', alvo: { texto: 'Resultados do Simulador de Tickets' } },
@@ -115,7 +115,7 @@ export const GUIAS: Record<ViewKey, Guia> = {
   selfss: {
     titulo: 'Simulador de SS de Independente',
     intro: 'Segurança Social dos trabalhadores independentes: escalões, taxa (21,4% em 2026) e o benefício do primeiro ano de atividade.',
-    acao: 'Indica o rendimento mensal para ver o escalão de SS a pagar.',
+    acao: 'Indique o rendimento mensal para ver o escalão de SS a pagar.',
     passos: [
       { titulo: 'Primeiro ano', corpo: 'No primeiro ano de atividade há redução: o rendimento relevante é calculado sobre metade do valor (ou isenção nos primeiros 12 meses, conforme o caso).', alvo: { texto: 'Primeiro Ano de Atividade' } },
       { titulo: 'Rendimento relevante', corpo: 'A SS incide sobre o rendimento relevante (70% do rendimento, com regras para prestação de serviços e para quem tem atividade comercial).', alvo: { sel: '[data-view="selfss"]' } },
@@ -150,7 +150,7 @@ export const GUIAS: Record<ViewKey, Guia> = {
     intro: 'Calcula o IMT e o Imposto de Selo na compra de imóveis, incluindo isenções (habitação própria e permanente, IMT Jovem) e prédios urbanos.',
     acao: 'Introduz o valor e a finalidade para ver o IMT e o imposto de selo.',
     passos: [
-      { titulo: 'Valor e tipo de imóvel', corpo: 'Escolhe o valor e a finalidade (habitação, comércio, terrenos…). As taxas de IMT são progressivas e por escalões.', alvo: { texto: 'Valor e Tipo de Imóvel' } },
+      { titulo: 'Valor e tipo de imóvel', corpo: 'Escolha o valor e a finalidade (habitação, comércio, terrenos…). As taxas de IMT são progressivas e por escalões.', alvo: { texto: 'Valor e Tipo de Imóvel' } },
       { titulo: 'Isenções', corpo: 'Isenção de IMT e selo na compra de habitação própria e permanente (com limites de valor) e reduções do IMT Jovem.', alvo: { texto: 'Isento de IMT e Imposto de Selo' } },
       { titulo: 'Resultado', corpo: 'O simulador devolve o IMT, o imposto de selo (0,8% + taxas adicionais conforme o caso) e o custo total da aquisição.', alvo: { texto: 'IMT Jovem — Redução parcial' } },
     ],
@@ -200,7 +200,7 @@ export const GUIAS: Record<ViewKey, Guia> = {
     acao: 'Procura o artigo que quiseres confirmar (CIRS, CIRC, CIVA).',
     passos: [
       { titulo: 'Enquadramentos e contabilidade organizada', corpo: 'Art. 28.º CIRS / Art. 86.º-A CIRC — limiar dos €200.000 que obriga a contabilidade organizada (ENI ou sociedade).', alvo: { texto: 'Art. 28.º CIRS / Art. 86.º-A CIRC' } },
-      { titulo: 'Isenção de IVA', corpo: 'Art. 53.º CIVA — isenção até €15.000 de volume de negócios no ano anterior. Confirma se o cliente se enquadra.', alvo: { texto: 'Art. 53.º CIVA' } },
+      { titulo: 'Isenção de IVA', corpo: 'Art. 53.º CIVA — isenção até €15.000 de volume de negócios no ano anterior. Confirme se o cliente se enquadra.', alvo: { texto: 'Art. 53.º CIVA' } },
       { titulo: 'IRC', corpo: 'Art. 6.º CIRC — incidência e territorialidade do IRC, base de todo o PreviSa.', alvo: { texto: 'Art. 6.º CIRC' } },
     ],
   },
@@ -208,7 +208,7 @@ export const GUIAS: Record<ViewKey, Guia> = {
   'office-settings': {
     titulo: 'Definições do Escritório',
     intro: 'A identidade e os custos do escritório: dados da empresa, contabilista responsável, funcionários e honorários. Usados nos documentos e propostas.',
-    acao: 'Confirma os dados do escritório — entram automaticamente nos documentos.',
+    acao: 'Confirme os dados do escritório — entram automaticamente nos documentos.',
     passos: [
       { titulo: 'Dados do escritório', corpo: 'Nome, NIF, contactos e morada — aparecem automaticamente nos documentos e propostas gerados.', alvo: { texto: 'Dados do Escritório' } },
       { titulo: 'Contabilista responsável', corpo: 'Diretor técnico/contabilista certificado que assina — incluído na declaração de responsabilidade.', alvo: { texto: 'Contabilista Responsável (Diretor Técnico)' } },
@@ -232,7 +232,7 @@ export const GUIAS: Record<ViewKey, Guia> = {
     intro: 'Geração de documentos do cliente: escolhe a empresa, depois o documento (balanço, DR, fluxos, declaração, ata…) e exporta em Word/PDF ou Excel.',
     acao: 'Gera o primeiro documento — por exemplo, o Balanço ou a Demonstração de Resultados.',
     passos: [
-      { titulo: '1 · Empresa', corpo: 'Escolhe o cliente a que o documento diz respeito — os dados vêm do perfil e do PreviSa dele.', alvo: { texto: '1 · Empresa' } },
+      { titulo: '1 · Empresa', corpo: 'Escolha o cliente a que o documento diz respeito — os dados vêm do perfil e do PreviSa dele.', alvo: { texto: '1 · Empresa' } },
       { titulo: '2 · Documento', corpo: 'Seleciona o documento (Demonstração de Resultados, Balanço, Fluxos de Caixa, Ata de AG, Declaração de Responsabilidade…) e exporta.', alvo: { texto: '2 · Documento' } },
       { titulo: 'Modelo 22 em Excel', corpo: 'O PreviSa também exporta a previsão do Modelo 22 para Excel — pronto a enviar para o cliente ou para a AT.', alvo: { texto: 'Previsa — Modelo 22 (Excel)' } },
     ],
@@ -241,7 +241,7 @@ export const GUIAS: Record<ViewKey, Guia> = {
   hub: {
     titulo: 'Menu do Cliente',
     intro: 'O ponto de entrada do cliente ativo: acesso rápido ao perfil, simuladores, documentos e histórico.',
-    acao: 'Escolhe uma ferramenta e começa a trabalhar no cliente.',
+    acao: 'Escolha uma ferramenta e comece a trabalhar com o cliente.',
     passos: [
       { titulo: 'Navegação do cliente', corpo: 'A partir daqui saltas diretamente para qualquer ferramenta do cliente ativo — perfil, simuladores, histórico e documentos.', alvo: { sel: '[data-view="hub"]' } },
       { titulo: 'Voltar à lista', corpo: 'A lista de empresas continua a um clique — o menu do cliente é só um atalho, nunca uma página à parte.', alvo: { sel: '[data-view="hub"]' } },
@@ -251,7 +251,7 @@ export const GUIAS: Record<ViewKey, Guia> = {
   gabinete: {
     titulo: 'Gabinete',
     intro: 'A gestão do dia do escritório: tarefas, obrigações dos clientes, cofre de senhas e visão do que está atrasado — tudo num só sítio, sempre atualizado.',
-    acao: 'Cria a primeira tarefa ou guarda o primeiro acesso no cofre.',
+    acao: 'Crie a primeira tarefa ou guarde o primeiro acesso no cofre.',
     passos: [
       { titulo: 'Visão do dia', corpo: 'KPIs no topo: tarefas que vencem hoje, atrasadas, obrigações vencidas e clientes sem tarefa há 30 dias — o que precisa de atenção hoje.', alvo: { texto: 'Tarefas hoje' } },
       { titulo: 'Próximos 7 dias', corpo: 'Lista do que vence na semana: obrigações e tarefas juntas, por data. Clica em "Ver tudo" para ir às tarefas.', alvo: { texto: 'Próximos 7 dias' } },
@@ -261,7 +261,7 @@ export const GUIAS: Record<ViewKey, Guia> = {
 
   'gab-visao-geral': {
     titulo: 'Visão geral do cliente',
-    intro: 'Ficha 360 do cliente: dados, situação, alertas, assuntos e histórico — tudo o que precisas para trabalhar o cliente.',
+    intro: 'Ficha 360 do cliente: dados, situação, alertas, assuntos e histórico — tudo o que precisa para trabalhar com o cliente.',
     acao: 'Completa a ficha e acompanha os assuntos.',
     passos: [
       { titulo: 'Resumo', corpo: 'Dados do cliente, NIF, CAE, regime e equipa responsável.', alvo: { texto: 'Resumo da empresa' } },
@@ -276,7 +276,7 @@ export const GUIAS: Record<ViewKey, Guia> = {
     passos: [
       { titulo: 'Equipa', corpo: 'Vês todos os colaboradores do gabinete com nome, email e cargo.', alvo: { texto: 'Equipa do gabinete' } },
       { titulo: 'Convidar', corpo: 'Adiciona por email — o convidado depois cria conta com esse email e fica ativo.', alvo: { texto: 'Adicionar funcionário' } },
-      { titulo: 'Associar a cliente', corpo: 'Escolhe responsável, apoio e supervisor por cliente a partir da equipa.', alvo: { texto: 'Associações por cliente' } },
+      { titulo: 'Associar a cliente', corpo: 'Escolha responsável, apoio e supervisor por cliente a partir da equipa.', alvo: { texto: 'Associações por cliente' } },
     ],
   },
   'gab-agenda': {
@@ -285,7 +285,7 @@ export const GUIAS: Record<ViewKey, Guia> = {
     acao: 'Navega no calendário e clica num dia com eventos para ver os detalhes.',
     passos: [
       { titulo: 'Calendário mensal', corpo: 'Vês o mês inteiro com os dias que têm tarefas (âmbar) e obrigações (verde). O dia de hoje fica destacado.', alvo: { texto: 'Agenda' } },
-      { titulo: 'Detalhe do dia', corpo: 'Ao clicares num dia, vês à direita todas as tarefas e obrigações desse dia — com cliente, prioridade e estado.', alvo: { texto: 'Seleciona um dia' } },
+      { titulo: 'Detalhe do dia', corpo: 'Ao clicar num dia, vê à direita todas as tarefas e obrigações desse dia — com cliente, prioridade e estado.', alvo: { texto: 'Seleciona um dia' } },
       { titulo: 'Navegação', corpo: 'Muda de mês com as setas ou volta a "Hoje" num clique. A agenda é live — outra colaboradora vê logo o que criares.', alvo: { texto: 'Hoje' } },
     ],
   },
@@ -294,11 +294,11 @@ export const GUIAS: Record<ViewKey, Guia> = {
   'gab-tarefas': {
     titulo: 'Tarefas',
     intro: 'O quadro Kanban do gabinete: A fazer / Em curso / Feito / Atrasada. Cada tarefa pode ter cliente, prazo, prioridade e responsável.',
-    acao: 'Cria uma tarefa com prazo e muda-a de coluna — vê como fica instantâneo.',
+    acao: 'Crie uma tarefa com prazo e mude-a de coluna — veja como fica instantâneo.',
     passos: [
       { titulo: 'Colunas do Kanban', corpo: 'Arrasta o trabalho pela vida útil: A fazer → Em curso → Feito. A coluna Atrasada marca o que passou do prazo.', alvo: { texto: 'A fazer' } },
       { titulo: 'Criar tarefa', corpo: 'Título, cliente (opcional), prazo, prioridade e tipo. O botão "Feito" fecha a tarefa com registo de data.', alvo: { texto: 'Nova tarefa' } },
-      { titulo: 'Obrigações automáticas', corpo: 'As obrigações fiscais geradas dos clientes aparecem aqui como tarefas do tipo obrigação — não precisas de as criar à mão.', alvo: { texto: 'obrigacao' } },
+      { titulo: 'Obrigações automáticas', corpo: 'As obrigações fiscais geradas dos clientes aparecem aqui como tarefas do tipo obrigação — não precisa de as criar à mão.', alvo: { texto: 'obrigacao' } },
     ],
   },
 
@@ -307,7 +307,7 @@ export const GUIAS: Record<ViewKey, Guia> = {
     intro: 'O calendário fiscal do gabinete: IVA, PPC, IES e Modelo 22 por cliente e por mês — para nunca falhar uma entrega.',
     acao: 'Navega nos meses e marca uma obrigação como entregue.',
     passos: [
-      { titulo: 'Mês e cliente', corpo: 'Escolhe o mês (YYYY-MM) e filtra por cliente. As obrigações listam vencimento, tipo e estado.', alvo: { texto: 'Todos clientes' } },
+      { titulo: 'Mês e cliente', corpo: 'Escolha o mês (YYYY-MM) e filtre por cliente. As obrigações listam vencimento, tipo e estado.', alvo: { texto: 'Todos clientes' } },
       { titulo: 'Estados', corpo: 'Pendente (âmbar), Entregue (verde), Atrasada (vermelho) ou Dispensada — atualizas com um clique.', alvo: { texto: 'Entregue' } },
       { titulo: 'Geração automática', corpo: 'Cada cliente em Clientes 360 gera IVA mensal/trimestral + 3 PPC (jul/set/15 dez) + Modelo 22 e IES — com prazos reais.', alvo: { texto: 'Obrigações são geradas automaticamente' } },
     ],
@@ -318,10 +318,10 @@ export const GUIAS: Record<ViewKey, Guia> = {
 
   'gab-cofre': {
     titulo: 'Cofre',
-    intro: 'Senhas e acessos do escritório — só a tua conta vê. Guarda sem passphrase e revela com um clique.',
+    intro: 'Senhas e acessos do escritório — só a sua conta vê. Guarde sem passphrase e revela com um clique.',
     acao: 'Guarda o primeiro acesso.',
     passos: [
-      { titulo: 'Guardar acesso', corpo: 'Título, categoria (AT/SS/Banco/…), cliente opcional, username e segredo. Só a tua conta vê.', alvo: { texto: 'Guardar acesso' } },
+      { titulo: 'Guardar acesso', corpo: 'Título, categoria (AT/SS/Banco/…), cliente opcional, username e segredo. Só a sua conta vê.', alvo: { texto: 'Guardar acesso' } },
       { titulo: 'Revelar', corpo: 'Clica em "Revelar" para ver a senha, copiar e registar a vista (audit: quem viu e quando).', alvo: { texto: 'Revelar' } },
     ],
   },

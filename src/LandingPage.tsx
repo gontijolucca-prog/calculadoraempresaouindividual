@@ -245,7 +245,7 @@ function PackageBento() {
 
 function PricingSimple({ onSignup, onLogin }: { onSignup: () => void; onLogin: () => void }) {
   const tiers = [
-    { name:'Sozinho', price:'49', note:'só para ti', feats:['Tudo para simular','Gabinete simples','Documento pronto'], hi:false },
+    { name:'Sozinho', price:'49', note:'só para si', feats:['Tudo para simular','Gabinete simples','Documento pronto'], hi:false },
     { name:'Equipa pequena', price:'129', note:'até 5', feats:['Gabinete completo','Trabalham juntos','Cofre privado'], hi:true },
     { name:'Equipa grande', price:'249', note:'até 15', feats:['Várias equipas','Mais clientes','Ajuda a começar'], hi:false },
   ];

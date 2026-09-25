@@ -257,7 +257,7 @@ function EscritorioForm({ office, onChange }: { office: OfficeSettings; onChange
         <div>
           <label className={labelCls}>Gama API Key <span className="font-[400] normal-case tracking-normal text-[#94A3B8]">(opcional)</span></label>
           <input type="password" value={(office as unknown as { gammaApiKey?: string }).gammaApiKey || ''} onChange={e => (set as unknown as (k: string, v: string) => void)('gammaApiKey' as unknown as never, e.target.value)} className={inputCls + ' font-mono'} placeholder="sk-gamma-..." autoComplete="off" />
-          <p className="text-[11px] text-[#94A3B8] mt-1">Cria em <a href="https://gamma.app" target="_blank" rel="noreferrer" className="text-[#0677FF] hover:underline">gamma.app</a> (plano Pro com API) ou define <code className="px-1 py-0.5 bg-slate-100 rounded text-[10px]">VITE_GAMMA_API_KEY</code> no ambiente.</p>
+          <p className="text-[11px] text-[#94A3B8] mt-1">Crie em <a href="https://gamma.app" target="_blank" rel="noreferrer" className="text-[#0677FF] hover:underline">gamma.app</a> (plano Pro com API) ou define <code className="px-1 py-0.5 bg-slate-100 rounded text-[10px]">VITE_GAMMA_API_KEY</code> no ambiente.</p>
         </div>
       </section>
 
@@ -400,7 +400,7 @@ function HonorariosForm({ config, onChange }: { config: HonorariosConfig; onChan
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className={sectionTitleCls}>Exportar Tabela de Honorários</h2>
-            <p className="text-[12px] text-[#64748B]">Descarrega um Excel (.xlsx) com a tabela atual + exemplos por tipo de entidade, para enviar ao cliente.</p>
+            <p className="text-[12px] text-[#64748B]">Descarregue um Excel (.xlsx) com a tabela atual + exemplos por tipo de entidade, para enviar ao cliente.</p>
           </div>
           <button
             type="button"

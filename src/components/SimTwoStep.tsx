@@ -47,7 +47,7 @@ export function SimTwoStep({ title, subtitle, view, state, simulated, ready, onS
           </div>
 
           <p className="text-center text-[11px] text-[#94A3B8] mt-4">
-            Cálculos indicativos — confirma com o teu CC.
+            Cálculos indicativos — confirme com o seu CC.
           </p>
         </div>
       </motion.div>

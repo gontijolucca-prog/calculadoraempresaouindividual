@@ -76,7 +76,7 @@ export const GABINET_INTROS: Record<GabTab, GabineteIntroDef> = {
     Icon: LayoutDashboard,
     resumo: 'Ficha completa do cliente: dados, situação, alertas, assuntos, documentos, contactos e histórico.',
     dados: ['NIF e CAE', 'Gerentes e trabalhadores', 'Contactos e acessos'],
-    resultado: 'Painel 360 com tudo o que precisas para trabalhar o cliente.',
+    resultado: 'Painel 360 com tudo o que precisa para trabalhar com o cliente.',
   },
   equipa: {
     titulo: 'Equipa do gabinete',
@@ -117,7 +117,7 @@ export function GabineteGallery({ onOpen }: { onOpen: (tab: GabTab) => void }) {
           <p className="text-[10px] font-[800] uppercase tracking-[2px] text-[#0677FF]">Centro de operação</p>
           <h1 className="mt-1 text-[28px] font-[800] tracking-[-0.6px] text-[#0B1D2D] sm:text-[34px]">Gabinete</h1>
           <p className="mt-1.5 max-w-2xl text-[13.5px] font-[500] leading-relaxed text-slate-500">
-            Escolhe por onde começar — cada função ajuda a organizar o escritório e fica sincronizada para toda a equipa.
+            Escolha por onde começar — cada função ajuda a organizar o escritório e fica sincronizada para toda a equipa.
           </p>
         </motion.div>
 

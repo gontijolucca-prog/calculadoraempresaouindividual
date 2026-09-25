@@ -329,7 +329,7 @@ function NoEmpresaGate({ onGo }: { onGo: () => void }) {
         <div className="w-16 h-16 rounded-full bg-[#0677FF]/10 flex items-center justify-center mx-auto mb-4">
           <Loader2 className="w-7 h-7 text-[#0677FF]" aria-hidden="true" style={{ animation: 'none' }} />
         </div>
-        <h2 className="text-[18px] font-[800] text-[#0F172A]">Escolhe primeiro um cliente</h2>
+        <h2 className="text-[18px] font-[800] text-[#0F172A]">Escolha primeiro um cliente</h2>
         <p className="text-[13px] text-[#64748B] font-[500] mt-2 leading-relaxed">
           Os simuladores trabalham sempre sobre uma empresa, para que cada simulação
           fique guardada no histórico do cliente certo.
@@ -1476,7 +1476,7 @@ function AppContent() {
       {/* Banner de verificação de email — não bloqueia, mas alerta e limita Cofre */}
       {needsVerification && (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[13px]">
-          <span className="flex items-center gap-2 text-amber-800"><AlertTriangle className="w-4 h-4 shrink-0" /> Verifica o teu email <strong>{user?.email}</strong> — o cofre fica bloqueado até confirmares.</span>
+          <span className="flex items-center gap-2 text-amber-800"><AlertTriangle className="w-4 h-4 shrink-0" /> Verifique o seu email <strong>{user?.email}</strong> — o cofre fica bloqueado até confirmar.</span>
           <span className="flex gap-2 shrink-0">
             <button onClick={async()=>{ try{ await sendVerificationEmail(); }catch{} }} className="px-3 py-1.5 rounded-lg bg-white border border-amber-200 text-amber-800 text-xs font-[700] hover:bg-amber-100">Reenviar email</button>
             <button onClick={async()=>{ try{ await reloadUser(); }catch{} }} className="px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-[700] hover:bg-amber-700">Já verifiquei</button>
@@ -1725,7 +1725,7 @@ function AppContent() {
           <span className="text-[16px] leading-none mt-0.5">⚠</span>
           <div className="text-[13px] font-[600] leading-snug">
             A sincronização com a cloud falhou — as alterações estão guardadas <u>só neste computador</u>.
-            Verifica a ligação à internet; a app volta a tentar automaticamente na próxima alteração.
+            Verifique a ligação à internet; a app volta a tentar automaticamente na próxima alteração.
           </div>
           <button type="button" onClick={() => setCloudSyncError(null)} className="ml-auto text-white/80 hover:text-white text-[16px] leading-none" aria-label="Fechar aviso">×</button>
         </div>

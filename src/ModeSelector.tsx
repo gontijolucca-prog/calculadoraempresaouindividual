@@ -142,11 +142,11 @@ export default function ModeSelector({ onSelect, onLogout }: Props) {
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 mb-6 shadow-sm">
             <span className="w-1.5 h-1.5 rounded-full bg-[#0677FF] animate-pulse" aria-hidden="true" />
             <span className="text-[10px] font-[800] uppercase tracking-[2px] text-[#64748B]">
-              Escolhe uma área
+              Escolha uma área
             </span>
           </div>
           <h1 className="text-[44px] sm:text-[56px] font-[200] text-[#0F172A] leading-[0.95] tracking-[-1.5px]">
-            Como queres
+            Como pretende
             <br />
             <span className="font-[800] text-[#0B1D2D]">
               trabalhar <span className="italic font-[700] text-[#0677FF]">hoje?</span>

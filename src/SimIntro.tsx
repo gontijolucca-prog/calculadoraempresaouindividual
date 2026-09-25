@@ -28,7 +28,7 @@ export const SIM_INTROS: Record<string, SimIntroDef> = {
     titulo: 'Enquadramento Fiscal',
     Icon: Calculator,
     resumo: 'Compara quanto sobra ao final do ano como ENI (recibos verdes) ou como sociedade (Lda/Unipessoal), com os impostos e contribuições de cada caminho.',
-    dados: ['Faturação anual prevista', 'Custos fixos e variáveis', 'Quanto precisas de levantar por mês', 'Situação profissional atual'],
+    dados: ['Faturação anual prevista', 'Custos fixos e variáveis', 'Quanto precisa de levantar por mês', 'Situação profissional atual'],
     resultado: 'Rendimento líquido lado a lado (ENI vs sociedade), com IRS, IRC, Segurança Social e ponto de equilíbrio de cada opção.',
   },
   vehicle: {

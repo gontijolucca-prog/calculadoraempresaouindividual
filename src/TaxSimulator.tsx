@@ -167,7 +167,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           <input type="number" value={age === 0 ? '' : age} onChange={e=>setState({age: numInput(e.target.value)})} className={inputCls} />
         </div>
         <label className="flex flex-col justify-end gap-2 p-3 bg-slate-50 border border-slate-200 rounded-[8px] cursor-pointer hover:bg-slate-100 transition-colors">
-          <span className={lblCls}>Atividade <Tip>Indica se a atividade empresarial é a sua principal fonte de rendimento. Afeta a taxa de Segurança Social aplicável.</Tip></span>
+          <span className={lblCls}>Atividade <Tip>Indique se a atividade empresarial é a sua principal fonte de rendimento. Afeta a taxa de Segurança Social aplicável.</Tip></span>
           <div className="flex items-center gap-2"><input type="checkbox" checked={isMainAct} onChange={e=>setState({isMainAct: e.target.checked})} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Principal</span></div>
         </label>
         <div>
@@ -444,7 +444,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           </div>
         )}
         <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-          <span className="text-[13px] font-[600] text-slate-600 flex items-center gap-1">TSU (23,75% + 11%) <Tip>Taxa Social Única sobre a remuneração do gerente: 23,75% a cargo da empresa + 11% a cargo do gerente (art.º 53.º CRCSPSS). A remuneração bruta é calculada a partir do que precisas de receber por mês.</Tip></span>
+          <span className="text-[13px] font-[600] text-slate-600 flex items-center gap-1">TSU (23,75% + 11%) <Tip>Taxa Social Única sobre a remuneração do gerente: 23,75% a cargo da empresa + 11% a cargo do gerente (art.º 53.º CRCSPSS). A remuneração bruta é calculada a partir do que precisa de receber por mês.</Tip></span>
           <span className="text-[15px] font-[700] text-slate-800 font-mono">{ptEur(results.lda.ssComp + results.lda.ssEmp)}</span>
         </div>
         <div className="flex justify-between items-center border-b border-slate-100 pb-2">
