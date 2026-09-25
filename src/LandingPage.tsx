@@ -256,7 +256,7 @@ function PricingSimple({ onSignup, onLogin }: { onSignup: () => void; onLogin: (
         {tiers.map(t=>(
           <div key={t.name} className={`rounded-[20px] border p-6 flex flex-col ${t.hi ? 'bg-[#1A1A18] text-[#FDFBF7] border-[#1A1A18]' : 'bg-white border-[#1A1A18]/[0.06]'}`}>
             <div className="text-[11px] tracking-[1.3px] uppercase font-[700] opacity-40" style={{fontFamily:'Geist'}}>{t.name} · {t.note}</div>
-            <div className="mt-2 flex items-baseline gap-1"><span className="text-[34px] font-[300]" style={{fontFamily:'Cormorant Garamond, serif'}}>€{t.price}</span><span className="text-[12px] opacity-40" style={{fontFamily:'Geist'}}>/mês</span></div>
+            <div className="mt-2 flex items-baseline gap-1"><span className="text-[34px] font-[700] tabular-nums" style={{fontFamily:'Geist'}}>€{t.price}</span><span className="text-[12px] opacity-40" style={{fontFamily:'Geist'}}>/mês</span></div>
             <ul className="mt-4 space-y-2 flex-1">
               {t.feats.map(f=>(<li key={f} className="flex gap-2 text-[13px]" style={{fontFamily:'Geist'}}><Check className={`w-4 h-4 mt-0.5 ${t.hi ? 'text-[#FDFBF7]' : 'text-[#B06D35]'}`} /><span className={t.hi ? 'opacity-80' : 'text-[#1A1A18]/60'}>{f}</span></li>))}
             </ul>
