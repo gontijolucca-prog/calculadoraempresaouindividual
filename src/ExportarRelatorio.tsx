@@ -11,11 +11,6 @@ import type { HonorariosConfig } from './lib/honorarios';
 import {
   DOC_TYPES, downloadAsWord, makeEditableHtml, serializeEditedDoc, fillStatusFor, hasPrevisaData,
 } from './lib/wordDocs';
-import {
-  getInitialTaxState, getInitialVehicleState, getInitialTicketState, getInitialSSState,
-  type TaxSimulatorState, type VehicleSimulatorState, type TicketSimulatorState, type SSState,
-} from './lib/simDefaults';
-import PDFPreviewEditor from './PDFPreviewEditor';
 import Proposta from './Proposta';
 import MinutaContrato from './MinutaContrato';
 import { defaultProfile, type ClientProfile } from './ClientProfile';
@@ -37,24 +32,24 @@ import { calculate } from './lib/previsaCalc';
  */
 
 // ─── Pacote do cliente (documentos React, impressão/PDF) ──────────────────────
-type PkgId = 'simulacao' | 'proposta' | 'minuta';
+// A Simulação Fiscal sai da página de Relatórios — imprime-se na página do
+// próprio simulador. Aqui ficam só Proposta e Minuta.
+type PkgId = 'proposta' | 'minuta';
 const PACKAGE_DOCS: { id: PkgId; label: string; descricao: string; Icon: typeof Calculator }[] = [
-  { id: 'simulacao', label: 'Simulação Fiscal',      descricao: 'ENI vs Lda + cenários (Pacote do Cliente).',  Icon: Calculator },
   { id: 'proposta',  label: 'Proposta de Honorários', descricao: 'Carta de honorários (Pacote do Cliente).',    Icon: FileText },
   { id: 'minuta',    label: 'Minuta de Contrato',     descricao: 'Modelo OCC preenchido (Pacote do Cliente).',  Icon: FileSignature },
 ];
-const PKG_IDS: PkgId[] = ['simulacao', 'proposta', 'minuta'];
+const PKG_IDS: PkgId[] = ['proposta', 'minuta'];
 const isPkg = (id: string): id is PkgId => (PKG_IDS as string[]).includes(id);
 // id do elemento printRoot de cada documento do pacote (para o paged.js).
 const PKG_ROOT_ID: Record<PkgId, string> = {
-  simulacao: 'pdf-editor-root',
   proposta: 'proposta-print-root',
   minuta: 'minuta-print-root',
 };
 
 // Junta `over` em cima de `base`, recursivamente para objetos simples (arrays e
 // primitivos substituem). Usado para completar perfis legados/parciais com os
-// valores por defeito — os documentos do pacote (PDFPreviewEditor, Proposta,
+// valores por defeito — os documentos do pacote (Proposta,
 // Minuta) assumem um perfil completo e rebentam com campos em falta.
 function deepMerge<T>(base: T, over: Partial<T> | undefined): T {
   if (!over) return base;
@@ -80,7 +75,7 @@ const FECHO_GROUP = ['acta', 'declaracao'];
 const CATEGORIAS: { id: RelCategoria; label: string; Icon: typeof FileText; primeiro: string }[] = [
   { id: 'df',     label: 'Demonstrações financeiras', Icon: FileText,        primeiro: 'balanco' },
   { id: 'fecho',  label: 'Encerramento de contas',    Icon: FileText, primeiro: 'acta' },
-  { id: 'pacote', label: 'Pacote cliente',            Icon: Package,         primeiro: 'simulacao' },
+  { id: 'pacote', label: 'Pacote cliente',            Icon: Package,         primeiro: 'proposta' },
 ];
 function categoriaOf(id: string): RelCategoria {
   if (DF_GROUP.includes(id)) return 'df';
@@ -124,13 +119,13 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
   const [docId, setDocId] = useState<string>(() => {
     if (validDocId(initialDocId)) return initialDocId;
     const saved = loadFromStorage<string | null>('exportarDocId', null);
-    return validDocId(saved) ? saved : 'simulacao';
+    return validDocId(saved) ? saved : 'proposta';
   });
   // Os 3 menus do dropdown "Relatórios" são vistas SEPARADAS: cada categoria só
   // mostra os seus documentos. A categoria ativa segue o documento selecionado
   // (que vem da sidebar via initialDocId) e pode mudar-se nas tabs do ecrã.
   const [categoria, setCategoria] = useState<RelCategoria>(() => categoriaOf(
-    validDocId(initialDocId) ? initialDocId : (loadFromStorage<string | null>('exportarDocId', null) ?? 'simulacao'),
+    validDocId(initialDocId) ? initialDocId : (loadFromStorage<string | null>('exportarDocId', null) ?? 'proposta'),
   ));
   // Pedido novo da sidebar com o ecrã já aberto → muda a seleção e a categoria.
   useEffect(() => {
@@ -345,12 +340,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
   // lê o que está guardado na empresa, com fallback aos valores iniciais do perfil.
   // O perfil é normalizado (completado com os defaults) para os documentos do
   // pacote não rebentarem com empresas de perfil parcial/legado.
-  const sims = useMemo(() => (emp?.sims ?? {}) as Record<string, unknown>, [emp]);
   const profile = useMemo(() => normalizeProfile(emp?.profile), [emp]);
-  const taxState = (sims.tax as TaxSimulatorState) ?? (profile ? getInitialTaxState(profile) : undefined);
-  const vehicleState = (sims.vehicle as VehicleSimulatorState) ?? getInitialVehicleState(profile);
-  const ticketState = (sims.ticket as TicketSimulatorState) ?? (profile ? getInitialTicketState(profile) : undefined);
-  const ssState = (sims.selfss as SSState) ?? (profile ? getInitialSSState(profile) : undefined);
 
   // HTML base do documento Word (só para docs da contabilista).
   const docHtml = useMemo(
@@ -753,18 +743,6 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                 <div ref={pkgWrapRef} className="rounded-[14px] border border-slate-200 bg-[#E2E8F0] p-3 shadow-[0_2px_14px_-8px_rgba(15,23,42,0.25)]">
                   {emp && profile && (
                     <div style={{ zoom: pkgScale }}>
-                      {docId === 'simulacao' && (
-                        <PDFPreviewEditor
-                          profile={profile}
-                          taxState={taxState}
-                          vehicleState={vehicleState}
-                          ticketState={ticketState}
-                          ssState={ssState}
-                          onClose={() => { /* sem modal aqui */ }}
-                          embedded
-                          office={office}
-                        />
-                      )}
                       {docId === 'proposta' && (
                         <Proposta profile={profile} office={office} honorarios={honorarios} />
                       )}
