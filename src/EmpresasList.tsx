@@ -12,6 +12,8 @@ import {
 } from './lib/empresas';
 import { SIM_LABELS, type SimView } from './lib/simSummary';
 import { cn } from './lib/utils';
+import TOCOnlineImport from './components/TOCOnlineImport';
+import { consumeTocOpen, type TocCustomerDraft } from './lib/toconline';
 
 type NavOpts = { openPackage?: boolean; toggleFlow?: boolean };
 
@@ -40,16 +42,20 @@ interface Props {
   onRestoreSimulacao: (empId: string, rec: SimulationRecord) => void;
   /** Avisa o App que o histórico mudou (propagar ao Firestore). */
   onHistoricoChanged: () => void;
+  /** Importa rascunhos vindos do TOConline; devolve quantos criou. */
+  onImportTOCOnline?: (drafts: TocCustomerDraft[]) => number;
   refreshKey?: number;
   /** Cliente ativo — cartão fica destacado. */
   currentEmpresaId?: string | null;
 }
 
-export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual, onNovaEmpresaFromSAFT, onSAFTUpload, onDeleteEmpresa, onRestoreSimulacao, onHistoricoChanged, refreshKey, currentEmpresaId }: Props) {
+export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual, onNovaEmpresaFromSAFT, onSAFTUpload, onDeleteEmpresa, onRestoreSimulacao, onHistoricoChanged, onImportTOCOnline, refreshKey, currentEmpresaId }: Props) {
   const [empresas, setEmpresas] = useState<EmpresaRecord[]>(() => listEmpresas());
   const [query, setQuery] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<EmpresaRecord | null>(null);
   const [showNovaModal, setShowNovaModal] = useState(false);
+  const [showTOC, setShowTOC] = useState(false);
+  useEffect(() => { if (consumeTocOpen()) setShowTOC(true); }, []);
   // Acordeão: um cartão expandido de cada vez. Inicia sempre FECHADO.
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const novaSaftInputRef = useRef<HTMLInputElement>(null);
@@ -112,13 +118,24 @@ export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual
             <h1 className="text-[34px] sm:text-[40px] font-[800] text-[#0B1D2D] tracking-[-1px] leading-none">
               Lista de Empresas
             </h1>
-            <button
-              type="button"
-              onClick={startNova}
-              className="inline-flex items-center gap-2 bg-[#0677FF] text-white px-4 py-2.5 rounded-[10px] text-[13px] font-[700] hover:bg-[#0556CC] active:scale-[0.98] transition-all shadow-md shadow-[#0677FF]/25"
-            >
-              <Plus className="w-4 h-4" /> Nova Empresa
-            </button>
+            <div className="flex gap-2">
+              {onImportTOCOnline && (
+                <button
+                  type="button"
+                  onClick={() => setShowTOC(true)}
+                  className="inline-flex items-center gap-2 bg-white border border-[#E2E8F0] text-[#0B1D2D] px-4 py-2.5 rounded-[10px] text-[13px] font-[700] hover:bg-zinc-50 active:scale-[0.98] transition-all"
+                >
+                  <Download className="w-4 h-4" /> TOConline
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={startNova}
+                className="inline-flex items-center gap-2 bg-[#0677FF] text-white px-4 py-2.5 rounded-[10px] text-[13px] font-[700] hover:bg-[#0556CC] active:scale-[0.98] transition-all shadow-md shadow-[#0677FF]/25"
+              >
+                <Plus className="w-4 h-4" /> Nova Empresa
+              </button>
+            </div>
           </div>
           <p className="text-[13px] text-[#6B7280] font-[500] mt-1 max-w-xl">
             A sua carteira de clientes. Cada empresa tem perfil próprio, SAF-T associado
@@ -173,6 +190,15 @@ export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual
           name={confirmDelete.nome || 'esta empresa'}
           onConfirm={() => handleDelete(confirmDelete)}
           onCancel={() => setConfirmDelete(null)}
+        />
+      )}
+
+      {/* Importar do TOConline (OAuth da conta do gabinete) */}
+      {showTOC && onImportTOCOnline && (
+        <TOCOnlineImport
+          onClose={() => { setShowTOC(false); setEmpresas(listEmpresas()); }}
+          onImport={(drafts) => { const n = onImportTOCOnline(drafts); setEmpresas(listEmpresas()); return n; }}
+          existingNifs={new Set(empresas.map(e => (e.nif || '').replace(/\D/g, '')) )}
         />
       )}
 

@@ -48,6 +48,7 @@ import type { ClientProfile as ClientProfileType } from './ClientProfile';
 import { ThemeProvider } from './ThemeContext';
 import { MotionProvider, PageTransition } from './AnimatedPage';
 import { parseSAFT, decodeSaftText, normalizeXmlEncodingToUtf8, type SAFTParseResult } from './lib/saft';
+import { migrarEmpresasParaGabinete } from './lib/gabinete';
 import { enforceProfileRules } from './lib/profileRules';
 import { DOC_TYPES, downloadAsWord } from './lib/wordDocs';
 import { downloadPrevisaPdf } from './lib/previsaPdf';
@@ -408,6 +409,33 @@ function AppContent() {
   useEffect(() => {
     setGabineteNonce(n => n + 1);
   }, [user?.uid]);
+  // Regresso do OAuth TOConline (?code=&state=): troca pelo token, busca
+  // clientes e deixa o rascunho pronto a abrir na Lista de Empresas.
+  useEffect(() => {
+    (async () => {
+      try {
+        const q = new URLSearchParams(window.location.search);
+        const code = q.get('code');
+        const state = q.get('state');
+        if (!code || !state) return;
+        const { getTocConfig, pendingState, setTocPending, exchangeTocCode, fetchTocCustomers, saveTocDraft, requestTocOpen } = await import('./lib/toconline');
+        if (pendingState() !== state) return;
+        setTocPending(false);
+        const cfg = getTocConfig();
+        if (!cfg) return;
+        await exchangeTocCode(cfg, code);
+        const items = await fetchTocCustomers(cfg);
+        saveTocDraft(items);
+        requestTocOpen();
+        window.history.replaceState({}, '', window.location.pathname);
+        setMode('empresa');
+        setView('empresas');
+      } catch (e) {
+        console.warn('[toc] callback falhou:', e);
+        try { window.history.replaceState({}, '', window.location.pathname); } catch {}
+      }
+    })();
+  }, []);
   const [previSaState, setPreviSaState] = useState<PreviSaState>(() => {
     // Arranca com o Previsa da empresa ativa (se houver) — senão, limpo.
     const empId = getCurrentEmpresaId();
@@ -896,6 +924,36 @@ function AppContent() {
 
   // "Inserir à mão": NÃO cria já a empresa. Abre um rascunho limpo no modo
   // "Novo Cliente" para o utilizador preencher; só entra na lista ao "Guardar".
+  // Importação em lote do TOConline: cria registos (ignora NIFs já existentes).
+  const handleImportTOCOnline = (drafts: { nome: string; nif: string; email?: string; telefone?: string; morada?: string; localidade?: string; codigoPostal?: string }[]) => {
+    const existentes = new Set(listEmpresas().map(e => (e.nif || '').replace(/\D/g, '')));
+    const now = Date.now();
+    let n = 0;
+    for (const d of drafts) {
+      const nif = (d.nif || '').replace(/\D/g, '');
+      if (!nif || existentes.has(nif)) continue;
+      existentes.add(nif);
+      const id = newEmpresaId();
+      const profile = {
+        ...defaultProfile,
+        nomeCliente: d.nome || 'Cliente sem nome',
+        nif,
+        email: d.email || '',
+        telefone: d.telefone || '',
+        morada: d.morada || '',
+        localidade: d.localidade || '',
+        codigoPostal: d.codigoPostal || '',
+      };
+      upsertEmpresa({ id, nome: profile.nomeCliente, nif, createdAt: now, updatedAt: now, profile });
+      logAudit('import_toconline', profile.nomeCliente, { nif }, id);
+      n++;
+    }
+    // Espelha no gabinete (migração por NIF já evita duplicados)
+    void migrarEmpresasParaGabinete(listEmpresas().map(e => ({ id: e.id, nome: e.nome, nif: e.nif })));
+    setEmpresasRefresh(x => x + 1);
+    return n;
+  };
+
   const handleNovaEmpresaManual = () => {
     setCurrentEmpresaId(null);
     setCurrentEmpresaIdState(null);
@@ -1388,6 +1446,7 @@ function AppContent() {
             onNovaEmpresaFromSAFT={handleNovaEmpresaFromSAFT}
             onSAFTUpload={handleEmpresaSAFT}
             onDeleteEmpresa={handleDeleteEmpresa}
+            onImportTOCOnline={handleImportTOCOnline}
           />
         )}
         {view === 'profile' && (
