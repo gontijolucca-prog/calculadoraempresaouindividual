@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Plus, Users, CheckSquare, Calendar, Lock, Building2, Trash2, Eye, EyeOff, Copy, Shield, AlertTriangle, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Clock, Briefcase, MessageSquare, X, Send, Archive, Share2, Pencil } from 'lucide-react';
+import { Search, Plus, Users, CheckSquare, Calendar, Lock, Building2, Trash2, Eye, EyeOff, Copy, Shield, AlertTriangle, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Clock, Briefcase, MessageSquare, X, Send, Archive, Share2, Pencil, ListChecks } from 'lucide-react';
 import { useGabineteClientes, useGabineteTarefas, useGabineteObrigacoes, useGabineteCofre, useGabineteContactosGeral, useGabineteAssuntos, useGabineteAlertas, useGabineteOcorrencias, useGabineteDocumentos, useGabineteColaboradores } from './lib/useGabinete';
 import { seedMykolaVasylDemo, ensureAllClientesDefaults, linkColaboradorPorEmail } from './lib/gabinete';
 import {
   upsertTarefa, deleteTarefa, marcarTarefaFeita, newTarefaId,
   upsertObrigacao,
   upsertCofre, deleteCofre, registarVistaCofre, newCofreId, listCofreVazias, purgeCofreVazias,
+  OBRIGACOES_CATALOGO, getObrigacoesAtivas, setObrigacoesAtivas,
   type GabineteCliente, type Tarefa, type Obrigacao, type ObrigacaoTipo, type ObrigacaoEstado, type CofreEntrada,
 } from './lib/gabinete';
 import { listEmpresas } from './lib/empresas';
@@ -216,18 +217,14 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
   const colaboradores = useGabineteColaboradores();
   const meses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'] as const;
 
-  // —— Definição das linhas do quadro (igual ao screenshot) ——
+  // —— Linhas do quadro: catálogo único (gabinete.ts) — PEC abolido ——
   type LinhaDef = { id: string; label: string; tipos: ObrigacaoTipo[]; fallback?: string };
-  const linhasDef: LinhaDef[] = [
-    { id: 'modelo44', label: 'Modelo 44', tipos: ['modelo22','dossier'] },
-    { id: 'saft', label: 'Envio SAFT', tipos: ['dossier','outro'] },
-    { id: 'iva', label: 'Iva Trimestral', tipos: ['iva'] },
-    { id: 'ies', label: 'IES', tipos: ['ies'] },
-    { id: 'pec', label: 'PEC', tipos: ['ppc'] },
-    { id: 'modelo10', label: 'Modelo 10', tipos: ['retencao'] },
-    { id: 'dmr', label: 'DMR', tipos: ['retencao','ss'] },
-    { id: 'ss', label: 'Segurança Social', tipos: ['ss'] },
-  ];
+  const linhasDef: LinhaDef[] = OBRIGACOES_CATALOGO;
+  // linhas ativas por cliente (checkboxes na ficha e no cabeçalho do cliente)
+  const linhasDoCliente = (cli: GabineteCliente): LinhaDef[] => {
+    const ativas = new Set(getObrigacoesAtivas(cli));
+    return linhasDef.filter(l => ativas.has(l.id));
+  };
 
   // —— Filtros (como na imagem) ——
   const [todosClientes, setTodosClientes] = useState(true);
@@ -238,6 +235,13 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
   const [filtroObrigacao, setFiltroObrigacao] = useState<string>(''); // id da linha
   const [soNaoConcluido, setSoNaoConcluido] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [obrEditingId, setObrEditingId] = useState<string | null>(null);
+  const toggleObrigacaoCliente = async (cli: GabineteCliente, defId: string) => {
+    const ativas = getObrigacoesAtivas(cli);
+    const next = ativas.includes(defId) ? ativas.filter(id => id !== defId) : [...ativas, defId];
+    if (next.length === 0) { alert('O cliente tem de ter pelo menos uma obrigação.'); return; }
+    await setObrigacoesAtivas(cli, next);
+  };
 
   // Auto-expandir no primeiro load quando há clientes
   useMemo(() => {
@@ -300,7 +304,6 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
       case 'saft': if (mes <= 8) return 'concluido'; return 'nao_concluido';
       case 'iva': if ([2,5,8].includes(mes)) return 'concluido'; return 'nao_concluido';
       case 'ies': return mes === 7 ? 'concluido' : 'nao_concluido';
-      case 'pec': if (mes === 3) return 'concluido'; return 'nao_concluido';
       case 'modelo10': return mes === 2 ? 'concluido' : 'nao_concluido';
       case 'dmr': return mes <= 8 ? 'concluido' : 'nao_concluido';
       case 'ss': return mes <= 8 ? 'concluido' : 'nao_concluido';
@@ -343,7 +346,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
     const venc = new Date(ano, mes - 1, 20).getTime();
     // procura existente para update
     const existing = obrigacoes.find(o => o.clienteId === cli.id && new Date(o.vencimento).getMonth()+1 === mes && new Date(o.vencimento).getFullYear() === ano && linha.tipos.includes(o.tipo as any));
-    const tituloMap: Record<string,string> = { modelo44:'Modelo 44', saft:'Envio SAFT', iva: cli.regimeIva === 'mensal' ? 'IVA Mensal' : 'Iva Trimestral', ies:'IES', pec:'PEC', modelo10:'Modelo 10', dmr:'DMR', ss:'Segurança Social' };
+    const tituloMap: Record<string,string> = { modelo44:'Modelo 44', saft:'Envio SAFT', iva: cli.regimeIva === 'mensal' ? 'IVA Mensal' : 'IVA Trimestral', ies:'IES', modelo10:'Modelo 10', dmr:'DMR', ss:'Segurança Social' };
     const titulo = `${tituloMap[linha.id] || linha.label} ${String(mes).padStart(2,'0')}/${ano} — ${cli.nome}`;
     const payload: Obrigacao = {
       id: existing?.id || ('obr_' + Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-4)),
@@ -372,7 +375,8 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
     const header = ['Cliente','Obrigação',...meses].join(';');
     rows.push(header);
     for (const cli of clientesFiltrados) {
-      for (const linha of linhasFiltradas) {
+      const ativasExp = new Set(getObrigacoesAtivas(cli));
+      for (const linha of linhasFiltradas.filter(l => ativasExp.has(l.id))) {
         const cells = meses.map((_, i) => {
           const st = getCellStatus(cli, linha, i+1, ano);
           const map: Record<CellStatus,string> = { concluido:'Concluído', nao_concluido:'Não Concluído' } as Record<CellStatus,string>;
@@ -446,19 +450,39 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
                 </td></tr>
               ) : clientesFiltrados.map(cli => {
                 const isExpanded = expanded.has(cli.id);
+                const ativasCli = getObrigacoesAtivas(cli);
+                const linhasCli = linhasFiltradas.filter(l => ativasCli.includes(l.id));
+                const editingObr = obrEditingId === cli.id;
                 return (
                   <React.Fragment key={cli.id}>
                     <tr className="bg-[#ECECEC] border-t border-zinc-300">
                       <td className="px-1 py-1.5 sticky left-0 bg-[#ECECEC] z-[5] border-r border-zinc-300">
-                        <button onClick={()=>toggleCliente(cli.id)} className="inline-flex items-center gap-1.5 w-full text-left">
-                          <span className="w-4 h-4 rounded-[3px] border border-zinc-400 bg-white flex items-center justify-center text-[11px] leading-none shrink-0">{isExpanded ? '−' : '+'}</span>
-                          <span className="font-semibold text-[#0F172A] truncate">{cli.nome}</span>
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button onClick={()=>toggleCliente(cli.id)} className="inline-flex items-center gap-1.5 flex-1 min-w-0 text-left">
+                            <span className="w-4 h-4 rounded-[3px] border border-zinc-400 bg-white flex items-center justify-center text-[11px] leading-none shrink-0">{isExpanded ? '−' : '+'}</span>
+                            <span className="font-semibold text-[#0F172A] truncate">{cli.nome}</span>
+                          </button>
+                          <span className="text-[10px] text-zinc-500 shrink-0">{ativasCli.length}/{linhasDef.length}</span>
+                          <button onClick={()=>setObrEditingId(editingObr ? null : cli.id)} title="Escolher obrigações deste cliente" className={`shrink-0 p-1 rounded hover:bg-zinc-300 ${editingObr ? 'bg-zinc-300' : ''}`}><ListChecks className="w-3.5 h-3.5 text-zinc-600" /></button>
+                        </div>
+                        {editingObr && (
+                          <div className="mt-1.5 mb-1 flex flex-wrap gap-1.5 bg-white rounded-lg border border-zinc-300 p-2">
+                            {linhasDef.map(def => {
+                              const on = ativasCli.includes(def.id);
+                              return (
+                                <label key={def.id} className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full border text-[11px] cursor-pointer transition-all duration-200 ${on ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-zinc-50 border-zinc-200 text-zinc-400'}`}>
+                                  <input type="checkbox" checked={on} onChange={()=>toggleObrigacaoCliente(cli, def.id)} className="w-3.5 h-3.5 accent-emerald-600" />
+                                  {def.label}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
                       </td>
                       {meses.map((_, i)=> <td key={i} className="border-l border-zinc-200 bg-[#ECECEC]"></td>)}
                     </tr>
                     <AnimatePresence initial={false}>
-                    {isExpanded && linhasFiltradas.map(linha => (
+                    {isExpanded && linhasCli.map(linha => (
                       <motion.tr key={linha.id} initial={{opacity:0, y:-6}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-6}} transition={{duration:0.28, ease:[0.4,0,0.2,1]}} className="border-t border-zinc-200 hover:bg-zinc-50/70">
                         <td className="px-2 py-1.5 pl-7 flex items-center gap-1.5 sticky left-0 bg-white z-[5] border-r border-zinc-200">
                           <span className="w-4 h-4 rounded-[3px] border border-amber-400 bg-amber-50 flex items-center justify-center shrink-0">

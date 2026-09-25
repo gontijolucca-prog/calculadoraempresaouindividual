@@ -183,6 +183,8 @@ export interface GabineteCliente {
   projectos?: string[];
   avencaMensal?: number;
   avencaPeriodicidade?: 'mensal' | 'trimestral' | 'anual';
+  /** Obrigações fiscais ativas deste cliente (ids do OBRIGACOES_CATALOGO). Ausente = todas. */
+  obrigacoesAtivas?: string[];
   createdAt: number;
   updatedAt: number;
   createdBy?: string;
@@ -262,6 +264,30 @@ export interface Tarefa {
 // Obrigação fiscal — catálogo + instância por cliente/periodo
 export type ObrigacaoEstado = 'pendente' | 'entregue' | 'atrasada' | 'dispensada';
 export type ObrigacaoTipo = 'iva' | 'ppc' | 'ies' | 'modelo22' | 'ss' | 'retencao' | 'dossier' | 'outro';
+
+// Catálogo único de obrigações fiscais do Quadro Resumo (PEC abolido — sem entrada 'pec').
+// Usado pelo Quadro, pela ficha do cliente e pela geração automática — uma só fonte.
+export interface ObrigacaoDef { id: string; label: string; tipos: ObrigacaoTipo[] }
+export const OBRIGACOES_CATALOGO: ObrigacaoDef[] = [
+  { id: 'modelo44', label: 'Modelo 44', tipos: ['modelo22', 'dossier'] },
+  { id: 'saft', label: 'Envio SAFT', tipos: ['dossier', 'outro'] },
+  { id: 'iva', label: 'IVA', tipos: ['iva'] },
+  { id: 'ies', label: 'IES', tipos: ['ies'] },
+  { id: 'modelo10', label: 'Modelo 10', tipos: ['retencao'] },
+  { id: 'dmr', label: 'DMR', tipos: ['retencao', 'ss'] },
+  { id: 'ss', label: 'Segurança Social', tipos: ['ss'] },
+];
+/** Obrigações ativas do cliente; clientes antigos (sem campo) têm todas. */
+export function getObrigacoesAtivas(cli: GabineteCliente): string[] {
+  if (!cli.obrigacoesAtivas) return OBRIGACOES_CATALOGO.map(o => o.id);
+  const valid = new Set(OBRIGACOES_CATALOGO.map(o => o.id));
+  return cli.obrigacoesAtivas.filter(id => valid.has(id));
+}
+export async function setObrigacoesAtivas(cli: GabineteCliente, ids: string[]): Promise<GabineteCliente> {
+  const valid = new Set(OBRIGACOES_CATALOGO.map(o => o.id));
+  const clean = [...new Set(ids)].filter(id => valid.has(id));
+  return upsertCliente({ ...cli, obrigacoesAtivas: clean });
+}
 export interface Obrigacao {
   id: string;
   tipo: ObrigacaoTipo;
@@ -817,8 +843,10 @@ export function gerarObrigacoesParaCliente(cli: GabineteCliente, ano = new Date(
     novas.push({ ...o, id: newObrigacaoId(), createdAt: Date.now(), updatedAt: Date.now() });
   };
 
+  // Obrigações ativas na ficha do cliente (sincroniza Quadro, mapas e geração)
+  const ativas = new Set(getObrigacoesAtivas(cli));
   // IVA
-  if (cli.regimeIva === 'mensal') {
+  if (ativas.has('iva') && cli.regimeIva === 'mensal') {
     for (let m = 1; m <= 12; m++) {
       const mm = String(m).padStart(2, '0');
       // Vencimento ~ dia 20 do 2º mês seguinte? Simplificado: 20 do mês seguinte para mensal
@@ -835,7 +863,7 @@ export function gerarObrigacoesParaCliente(cli: GabineteCliente, ano = new Date(
         estado: venc < Date.now() ? 'atrasada' : 'pendente',
       });
     }
-  } else if (cli.regimeIva === 'trimestral') {
+  } else if (ativas.has('iva') && cli.regimeIva === 'trimestral') {
     const trimestres = [3, 6, 9, 12]; // meses de fecho
     const vencMeses = [5, 8, 11, 2]; // venc 20 do 2º mês seguinte (março→maio, junho→agosto, set→nov, dez→fev ano+1)
     trimestres.forEach((mesFim, i) => {
@@ -854,27 +882,9 @@ export function gerarObrigacoesParaCliente(cli: GabineteCliente, ano = new Date(
       });
     });
   }
-  // PPC — 3 prestações jul/set/dez (se não for isento simplificado sem coleta)
-  // Sempre cria as 3 do ano; marcar dispensada manualmente se coleta <200€
-  [
-    { m: 7, label: '1.º PPC' },
-    { m: 9, label: '2.º PPC' },
-    { m: 12, label: '3.º PPC' },
-  ].forEach(({ m, label }) => {
-    const dia = m === 12 ? 15 : 31; // 15 dez
-    const venc = new Date(ano, m - 1, dia).getTime();
-    push({
-      tipo: 'ppc',
-      titulo: `${label} IRC ${ano} — ${cli.nome}`,
-      clienteId: cli.id,
-      clienteNome: cli.nome,
-      periodo: `${ano}-PPC${m}`,
-      vencimento: venc,
-      estado: venc < Date.now() ? 'atrasada' : 'pendente',
-    });
-  });
-  // Modelo 22 / IES (anuais)
-  push({
+  // PEC (Pagamento Especial por Conta) abolido — sem geração de PPC.
+  // Modelo 22 / IES (anuais) — só se ativos na ficha do cliente
+  if (ativas.has('modelo44')) push({
     tipo: 'modelo22',
     titulo: `Modelo 22 ${ano - 1} — ${cli.nome}`,
     clienteId: cli.id,
@@ -883,7 +893,7 @@ export function gerarObrigacoesParaCliente(cli: GabineteCliente, ano = new Date(
     vencimento: new Date(ano, 4, 31).getTime(), // 31 maio
     estado: new Date(ano, 4, 31).getTime() < Date.now() ? 'atrasada' : 'pendente',
   });
-  push({
+  if (ativas.has('ies')) push({
     tipo: 'ies',
     titulo: `IES ${ano - 1} — ${cli.nome}`,
     clienteId: cli.id,

@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import {
   upsertCliente,
+  OBRIGACOES_CATALOGO, getObrigacoesAtivas, setObrigacoesAtivas,
   upsertContactoGabinete, deleteContactoGabinete, newContactoGabineteId,
   upsertAssuntoGabinete, deleteAssuntoGabinete, newAssuntoGabineteId,
   upsertAlertaGabinete, deleteAlertaGabinete, newAlertaGabineteId,
@@ -144,7 +145,7 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
 
   const handleEditClienteOpen = () => {
     if (!cliente) return;
-    setFormCliente({ nome: cliente.nome, nif: cliente.nif, caes: cliente.caes, caeDescricao: cliente.caeDescricao, tipoSociedade: cliente.tipoSociedade, gerentes: cliente.gerentes, nrTrabalhadores: cliente.nrTrabalhadores, inicioAtividade: cliente.inicioAtividade, responsavelId: cliente.responsavelId, responsavelInterno: cliente.responsavelInterno, apoioId: cliente.apoioId, apoioAdministrativo: cliente.apoioAdministrativo, supervisorId: cliente.supervisorId, supervisor: cliente.supervisor });
+    setFormCliente({ nome: cliente.nome, nif: cliente.nif, caes: cliente.caes, caeDescricao: cliente.caeDescricao, tipoSociedade: cliente.tipoSociedade, gerentes: cliente.gerentes, nrTrabalhadores: cliente.nrTrabalhadores, inicioAtividade: cliente.inicioAtividade, responsavelId: cliente.responsavelId, responsavelInterno: cliente.responsavelInterno, apoioId: cliente.apoioId, apoioAdministrativo: cliente.apoioAdministrativo, supervisorId: cliente.supervisorId, supervisor: cliente.supervisor, obrigacoesAtivas: getObrigacoesAtivas(cliente) });
     setShowEditCliente(true);
   };
   const handleSaveCliente = async () => {
@@ -281,8 +282,9 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
           </div>
         </div>
 
-        {/* Coluna do meio: Situação + Assuntos empilhados */}
+        {/* Coluna do meio: Obrigações + Situação + Assuntos empilhados */}
         <div className="space-y-3">
+          {cliente && <ObrigacoesCard cliente={cliente} />}
           <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><span className="w-5 h-5 rounded-full bg-[#FFF7ED] border border-[#FED7AA] flex items-center justify-center text-[11px]">◉</span> Situação atual</h3>
@@ -476,6 +478,25 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
               <select value={formCliente.apoioId||''} onChange={e=>{ const col=(colaboradores||[]).find(c=>c.id===e.target.value); setFormCliente({...formCliente, apoioId: e.target.value||undefined, apoioAdministrativo: col? {nome:col.nome, initials:col.initials||col.nome.slice(0,2).toUpperCase()}: undefined}); }} className="col-span-2 px-3 py-2 rounded-xl border bg-white text-sm"><option value="">Apoio administrativo — nenhum</option>{(colaboradores||[]).map(c=><option key={c.id} value={c.id}>{c.nome} ({c.role})</option>)}</select>
               <select value={formCliente.supervisorId||''} onChange={e=>{ const col=(colaboradores||[]).find(c=>c.id===e.target.value); setFormCliente({...formCliente, supervisorId: e.target.value||undefined, supervisor: col? {nome:col.nome, initials:col.initials||col.nome.slice(0,2).toUpperCase()}: undefined}); }} className="col-span-2 px-3 py-2 rounded-xl border bg-white text-sm"><option value="">Supervisor — nenhum</option>{(colaboradores||[]).map(c=><option key={c.id} value={c.id}>{c.nome} ({c.role})</option>)}</select>
             </div>
+            <div>
+              <div className="text-[11px] font-[700] uppercase tracking-[1px] text-zinc-500 mb-1.5">Obrigações deste cliente</div>
+              <div className="flex flex-wrap gap-1.5">
+                {OBRIGACOES_CATALOGO.map(def => {
+                  const cur = formCliente.obrigacoesAtivas ?? getObrigacoesAtivas(cliente);
+                  const on = cur.includes(def.id);
+                  return (
+                    <label key={def.id} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-[12px] cursor-pointer transition-all ${on ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-zinc-50 border-zinc-200 text-zinc-400'}`}>
+                      <input type="checkbox" checked={on} onChange={()=>{
+                        const next = on ? cur.filter(x=>x!==def.id) : [...cur, def.id];
+                        if (next.length === 0) { alert('O cliente tem de ter pelo menos uma obrigação.'); return; }
+                        setFormCliente({...formCliente, obrigacoesAtivas: next});
+                      }} className="w-3.5 h-3.5 accent-emerald-600" />
+                      {def.label}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
             <div className="flex justify-end gap-2"><button onClick={()=>setShowEditCliente(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleSaveCliente} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Guardar</button></div>
           </div>
         </div>
@@ -555,6 +576,38 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Obrigações do cliente — checkboxes sincronizadas com o Quadro ──────────
+function ObrigacoesCard({ cliente }: { cliente: GabineteCliente }) {
+  const [saving, setSaving] = useState<string | null>(null);
+  const ativas = getObrigacoesAtivas(cliente);
+  const toggle = async (id: string) => {
+    const next = ativas.includes(id) ? ativas.filter(x => x !== id) : [...ativas, id];
+    if (next.length === 0) { alert('O cliente tem de ter pelo menos uma obrigação.'); return; }
+    setSaving(id);
+    try { await setObrigacoesAtivas(cliente, next); } finally { setSaving(null); }
+  };
+  return (
+    <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Calendar className="w-4 h-4 text-[#64748B]" /> Obrigações</h3>
+        <span className="text-[11px] text-[#64748B]">{ativas.length}/{OBRIGACOES_CATALOGO.length} ativas</span>
+      </div>
+      <p className="text-[11px] text-[#94A3B8] mb-2.5">O que está marcado aparece no Quadro e nos mapas.</p>
+      <div className="flex flex-wrap gap-1.5">
+        {OBRIGACOES_CATALOGO.map(def => {
+          const on = ativas.includes(def.id);
+          return (
+            <label key={def.id} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-[12px] font-[500] cursor-pointer transition-all duration-200 ${on ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-zinc-50 border-zinc-200 text-zinc-400'}`}>
+              <input type="checkbox" checked={on} disabled={saving === def.id} onChange={() => toggle(def.id)} className="w-3.5 h-3.5 accent-emerald-600" />
+              {def.label}
+            </label>
+          );
+        })}
+      </div>
     </div>
   );
 }
