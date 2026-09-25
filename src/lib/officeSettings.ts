@@ -58,6 +58,12 @@ export interface OfficeSettings {
 
   /** Gama API key (opcional) — para gerar apresentações via Gamma API. Guarda-se em localStorage (não vai para Firestore). */
   gammaApiKey?: string;
+
+  /** Ano de fundação do escritório (para a apresentação/onboarding). */
+  anoFundacao?: number;
+
+  /** História do escritório — 2-4 frases na sua voz. Usada na abertura da proposta (onboarding no Gama). */
+  historia?: string;
 }
 
 export const defaultOfficeSettings: OfficeSettings = {
@@ -79,6 +85,8 @@ export const defaultOfficeSettings: OfficeSettings = {
   logoDataUrl: '',
   corPrimaria: '#0677FF',
   gammaApiKey: '',
+  anoFundacao: undefined,
+  historia: '',
 };
 
 const STORAGE_KEY = 'officeSettings';

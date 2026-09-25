@@ -163,6 +163,23 @@ function EscritorioForm({ office, onChange }: { office: OfficeSettings; onChange
         </div>
       </section>
 
+      {/* Apresentação do Escritório — usada na abertura da proposta (onboarding) */}
+      <section className="bg-white rounded-[16px] border border-[#E2E8F0] p-6">
+        <h2 className={sectionTitleCls}>Apresentação do Escritório</h2>
+        <p className="text-[12px] text-[#64748B] mb-4">Estes dados abrem a proposta antes do preço — uma breve apresentação que prepara o cliente (onboarding).</p>
+        <div className="grid grid-cols-1 gap-4">
+          <div className="max-w-[220px]">
+            <label className={labelCls}>Ano de fundação</label>
+            <input type="number" min={1900} max={2100} value={office.anoFundacao ?? ''} onChange={e => set('anoFundacao', e.target.value === '' ? undefined : Math.max(1900, Math.min(2100, parseInt(e.target.value) || 0)))} className={inputCls} placeholder="ex: 2009" />
+          </div>
+          <div>
+            <label className={labelCls}>A sua história (2–4 frases)</label>
+            <textarea value={office.historia || ''} onChange={e => set('historia', e.target.value)} rows={4} maxLength={800} className={inputCls + ' resize-y'} placeholder="ex: Somos um escritório familiar em Fátima desde 2009. Começámos com 10 clientes e hoje acompanhamos mais de 120 empresas da região. Tratamos cada cliente pelo nome — e atendemos o telefone à primeira." />
+            <p className="text-[11px] text-[#94A3B8] mt-1">Escreva na sua voz — é este texto que abre a apresentação. {(office.historia || '').length}/800</p>
+          </div>
+        </div>
+      </section>
+
       {/* Identificação Legal */}
       <section className="bg-white rounded-[16px] border border-[#E2E8F0] p-6">
         <h2 className={sectionTitleCls}>Identificação Legal</h2>
