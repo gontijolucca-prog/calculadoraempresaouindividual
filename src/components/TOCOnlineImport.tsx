@@ -58,6 +58,7 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
     const c = getTocConfig();
     if (!c) { setError('Configure primeiro.'); return; }
     setLoading(true);
+    setStep('fetching');
     try {
       await getValidTocToken(c);
       const items = await fetchTocCustomers(c);
@@ -67,6 +68,7 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
       setConnected(isTocConnected());
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Falha ao buscar clientes.');
+      setStep('config');
     } finally {
       setLoading(false);
     }
