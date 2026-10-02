@@ -230,7 +230,7 @@ export default function ExportPackageModal({
 
         {/* Gama — apresentação em slides (não imprime) */}
         <div className="shrink-0 px-4 md:px-6 py-3 bg-white border-b border-slate-100 no-print">
-          <GamaExportButton office={office} honorarios={honorarios} cliente={{ nome: profile.nomeCliente, nif: profile.nif }} onGoToSettings={onGoToOfficeSettings} />
+          <GamaExportButton office={office} honorarios={honorarios} cliente={{ nome: profile.nomeCliente, nif: profile.nif }} />
         </div>
 
         {/* Tab content area */}

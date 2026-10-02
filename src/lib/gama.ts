@@ -35,62 +35,78 @@ export function isGamaConfigured(explicit?: string): boolean {
   return !!resolveApiKey(explicit);
 }
 
+export type GamaPromptSections = {
+  equipa?: boolean;
+  valores?: boolean;
+  beneficios?: boolean;
+  observacoes?: string;
+};
+
 export function buildGamaPrompt(
-  office: { nome?: string; nif?: string; morada?: string; localidade?: string; codigoPostal?: string; email?: string; telefone?: string; website?: string; cedulaProfissional?: string; numeroInscricaoOCC?: string; tipo?: string; anoFundacao?: number; historia?: string },
-  honorarios?: { baseMensal?: Record<string, number>; taxaIVA?: number },
+  office: { nome?: string; nif?: string; morada?: string; localidade?: string; codigoPostal?: string; email?: string; telefone?: string; website?: string; cedulaProfissional?: string; numeroInscricaoOCC?: string; tipo?: string; anoFundacao?: number; historia?: string; equipaTexto?: string; valoresTexto?: string },
+  honorarios?: { baseMensal?: Record<string, number>; taxaIVA?: number; mensalExemplo?: number; contratoMeses?: number },
   cliente?: { nome?: string; nif?: string },
+  sections?: GamaPromptSections,
 ): string {
   const o = office || {};
   const h = honorarios || {};
+  const s = sections || {};
   const lines: string[] = [];
-  // Estrutura de onboarding: apresentação e história primeiro, preço só no fim.
-  // Tom formal (você), simples, sem jargão.
+  // Estrutura Ativiwise: capa → Sobre nós → Equipa → Valores → Digital → Âmbito → Benefícios → Investimento → Fecho
   const paraQuem = cliente?.nome ? `, ${cliente.nome}` : '';
-  lines.push(`# Bem-vindo${paraQuem} — ${o.nome || 'o nosso escritório'}`);
+  lines.push(`# Proposta de Serviços de Contabilidade — ${o.nome || 'o nosso escritório'}${paraQuem}`);
   lines.push('');
-  lines.push(`Uma breve apresentação de quem somos, como trabalhamos e o que propomos para si.`);
+  lines.push(`${o.nome || 'O nosso escritório'} · Ao seu lado na gestão do negócio.`);
   lines.push('');
-  lines.push('## Quem somos');
-  if (o.historia?.trim()) {
-    lines.push(o.historia.trim());
-  } else {
-    lines.push(`${o.nome || 'O nosso escritório'} é um escritório de contabilidade certificado em Portugal. Acompanhamos empresas e empresários em nome individual com proximidade e rigor — da contabilidade do dia a dia ao planeamento fiscal.`);
-  }
+  lines.push('## Sobre nós');
+  if (o.historia?.trim()) lines.push(o.historia.trim());
+  else lines.push(`${o.nome || 'O nosso escritório'} é um escritório de contabilidade certificado em Portugal. Trabalhamos com proximidade, rigor e ferramentas digitais — da contabilidade do dia a dia ao apoio à decisão.`);
   if (o.anoFundacao) lines.push(`A acompanhar clientes desde ${o.anoFundacao}.`);
   lines.push('');
-  lines.push('## Como trabalhamos');
-  lines.push('- Cada cliente tem um responsável dedicado — fala sempre com a mesma pessoa.');
-  lines.push('- Avisamos antes dos prazos, para nunca pagar multas por esquecimento.');
-  lines.push('- Explicamos tudo por palavras simples, sem termos complicados.');
-  lines.push('- Vê todos os meses o que já está feito e o que ainda falta.');
-  lines.push('');
-  lines.push('## O que fazemos por si');
-  lines.push('- Contabilidade organizada e simplificada');
-  lines.push('- Salários e Segurança Social');
-  lines.push('- IVA e obrigações fiscais');
-  lines.push('- Ajudamos a decidir: recibos verdes ou empresa (ENI vs Lda)');
-  lines.push('- Relatórios claros e encerramento de contas');
-  lines.push('');
-  if (cliente?.nome) {
-    lines.push(`## A nossa proposta para si${cliente.nif ? ` (${cliente.nome}, NIF ${cliente.nif})` : ''}`);
-    lines.push('Inclui enquadramento fiscal, calendário de obrigações e acompanhamento contínuo ao longo do ano.');
+  if (s.equipa !== false) {
+    lines.push('## A nossa equipa');
+    lines.push(o.equipaTexto?.trim() || 'Equipa qualificada e certificada ao seu serviço — cada cliente com responsável dedicado.');
     lines.push('');
   }
-  lines.push('## Honorários');
-  lines.push('Só agora, no fim: quanto custa. Sem surpresas.');
-  if (h.baseMensal && Object.keys(h.baseMensal).length) {
-    const ivaPct = h.taxaIVA != null ? ` (IVA ${Math.round((h.taxaIVA as number)*100)}% não incluído)` : '';
-    lines.push(`Valores mensais por tipo de entidade${ivaPct}:`);
-    for (const [k, v] of Object.entries(h.baseMensal)) {
-      if (typeof v === 'number' && v > 0) lines.push(`- ${k}: ${new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'}).format(v as number)}/mês`);
-    }
-  } else {
-    lines.push('Proposta personalizada — ver valores detalhados no dossiê do cliente.');
+  if (s.valores !== false) {
+    lines.push('## Os nossos valores');
+    lines.push(o.valoresTexto?.trim() || 'Integridade · Compromisso · Proatividade · Confidencialidade · Proximidade');
+    lines.push('');
+  }
+  lines.push('## Mais do que um parceiro — contabilidade digital');
+  lines.push('- Digitalização instantânea: envia documentos com uma foto.');
+  lines.push('- Equipa multidisciplinar e ferramentas de gestão.');
+  lines.push('- Contacto direto — grupo privado quando necessário.');
+  lines.push('');
+  lines.push('## Âmbito da proposta — Serviços incluídos');
+  lines.push('- Contabilidade e impostos: processamento, conciliações mensais, IVA/IRS/SS, demonstrações financeiras, IES e declarações anuais.');
+  lines.push('- Assessoria: fiscal (IRS/IVA), gestão de ativos e depreciações, reunião de reporte trimestral.');
+  // Prova viva: proposta do cliente
+  const mensal = (h as { mensalExemplo?: number }).mensalExemplo ?? Object.values(h.baseMensal || {})[0] as number | undefined;
+  const ivaPct = h.taxaIVA != null ? ` (IVA ${Math.round((h.taxaIVA as number)*100)}% não incluído)` : '';
+  if (s.beneficios !== false) {
+    lines.push('');
+    lines.push('## Benefícios exclusivos');
+    lines.push('- Equipa multidisciplinar · Rede de parceiros · Drive partilhada · Comunidade privada e formações.');
+  }
+  if (cliente?.nome) {
+    lines.push('');
+    lines.push(`## A nossa proposta para si${cliente.nif ? ` (${cliente.nome}, NIF ${cliente.nif})` : ''}`);
+    lines.push('Inclui enquadramento fiscal, calendário de obrigações e acompanhamento contínuo.');
   }
   lines.push('');
-  lines.push('## Próximos passos');
-  lines.push('1. Responda a esta proposta — basta um email ou telefonema.');
-  lines.push('2. Envia-nos o NIF e tratamos de tudo a partir daí.');
+  lines.push('## Investimento — Honorários');
+  if (mensal) lines.push(`Honorário mensal: ${new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'}).format(mensal)}/mês${ivaPct}.`);
+  else if (h.baseMensal && Object.keys(h.baseMensal).length) {
+    lines.push(`Valores mensais por tipo de entidade${ivaPct}:`);
+    for (const [k,v] of Object.entries(h.baseMensal)) if (typeof v === 'number' && v>0) lines.push(`- ${k}: ${new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'}).format(v)}/mês`);
+  } else lines.push('Proposta personalizada — ver valores detalhados no dossiê do cliente.');
+  const contrato = (h as { contratoMeses?: number }).contratoMeses;
+  if (contrato) lines.push(`${Math.round(contrato/12)} ano(s) de contrato, renovável. 60 dias de aviso prévio.`);
+  if (s.observacoes?.trim()) { lines.push(''); lines.push(s.observacoes.trim()); }
+  lines.push('');
+  lines.push('## Agradecemos a oportunidade');
+  lines.push('Ficamos ao dispor para qualquer questão — responda a esta proposta por email ou telefone.');
   const contacto = [o.email, o.telefone].filter(Boolean).join(' · ') || '—';
   lines.push(`Contacto: ${contacto}${o.website ? ` · ${o.website}` : ''}`);
   lines.push(`Sede: ${[o.morada, o.codigoPostal, o.localidade].filter(Boolean).join(', ') || '—'}`);
