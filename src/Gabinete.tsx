@@ -16,7 +16,7 @@ import { loadOfficeSettings } from './lib/officeSettings';
 // Cofre simples (sem cifra) — Firestore só visível pela própria conta (gabinete/{uid}/cofre/*)
 import GuiaSugestao from './components/GuiaSugestao';
 import type { ViewKey } from './lib/guias';
-import { GabineteGallery, GabineteIntro, GABINET_FUNCTIONS, type GabTab, type GabineteTab } from './GabineteHub';
+import { GabineteGallery, GABINET_FUNCTIONS, type GabTab, type GabineteTab } from './GabineteHub';
 import VisaoGeralView from './VisaoGeralView';
 import GabineteEquipa from './GabineteEquipa';
 
@@ -39,18 +39,6 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
   const rawTab: GabineteTab = controlledTab ?? internalTab;
   const tab: GabineteTab = VALID_GAB_TABS_SET.has(rawTab) ? rawTab : 'gallery';
   const setTab = (onTabChange ?? setInternalTab) as (t: GabineteTab) => void;
-  // Cada função abre primeiro o card informativo. O botão "Abrir função"
-  // marca apenas a função atual como vista e mostra o ecrã funcional.
-  const [introDismissedFor, setIntroDismissedFor] = useState<GabTab | null>(null);
-  const showIntro = tab !== 'gallery' && tab !== 'visao-geral' && tab !== 'cofre' && introDismissedFor !== tab;
-  const openFunction = (target: GabTab) => setTab(target);
-  const openCurrentFunction = () => {
-    if (tab !== 'gallery') setIntroDismissedFor(tab);
-  };
-  const backToGallery = () => {
-    setIntroDismissedFor(null);
-    setTab('gallery');
-  };
   const activeFunction = tab === 'gallery' ? null : GABINET_FUNCTIONS.find((item) => item.id === tab);
   const clientes = useGabineteClientes();
   const tarefasRaw = useGabineteTarefas();
@@ -170,11 +158,8 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
       )}
 
       <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6">
-        {tab === 'gallery' && <GabineteGallery onOpen={openFunction} />}
-        {tab !== 'gallery' && showIntro && (
-          <GabineteIntro tab={tab} onOpen={openCurrentFunction} onBack={backToGallery} />
-        )}
-        {tab !== 'gallery' && !showIntro && (
+        {tab === 'gallery' && <GabineteGallery onOpen={goFunction} />}
+        {tab !== 'gallery' && (
           <>
             {tab === 'visao-geral' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolha um cliente na lista para ver a visão geral.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <VisaoGeralView cliente={clienteAtivo} contactos={contactosF} assuntos={assuntosF} alertas={alertasF} ocorrencias={ocorrenciasF} tarefas={tarefas} obrigacoes={obrigacoes} cofre={cofre} documentos={documentosF} colaboradores={colaboradores} onEditCliente={()=>{}} onGo={(tab)=>setTab(tab as GabineteTab)} onOpenCofre={()=>setTab('cofre')} />)}
             {tab === 'dashboard' && <Dashboard clientes={clientes} tarefas={tarefasRaw} obrigacoes={obrigacoesRaw} cofre={cofre} onGo={goFunction} />}
