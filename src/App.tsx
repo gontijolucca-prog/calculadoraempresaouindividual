@@ -1854,7 +1854,7 @@ function AppContent() {
       />
       {/* Mini dock: bola 50% com estrelas — abre AI + Guia */}
       <style>{`.hidden-dock-triggers [aria-label="Abrir o AI Contabilista"], .hidden-dock-triggers [aria-label="Aprender esta página — guia"]{display:none !important}`}</style>
-      <MiniDock lift={draftNewClient} showGuia={view!=='gabinete' && view!=='office-settings'} onAi={()=> (document.querySelector('[aria-label="Abrir o AI Contabilista"]') as HTMLButtonElement|null)?.click()} onGuia={()=> (document.querySelector('[aria-label="Aprender esta página — guia"]') as HTMLButtonElement|null)?.click()} />
+      <MiniDock lift={draftNewClient} showGuia={true} onAi={()=> (document.querySelector('[aria-label="Abrir o AI Contabilista"]') as HTMLButtonElement|null)?.click()} onGuia={()=> { const btn=document.querySelector('[aria-label="Aprender esta página — guia"]') as HTMLButtonElement|null; if(btn) btn.click(); else { const ev=new CustomEvent('estudo360:open-guia'); window.dispatchEvent(ev); } }} />
       <div className="hidden-dock-triggers">
       <Suspense fallback={null}>
         <AIContabilista ref={botApiRef} bridge={botBridge} liftBottom={draftNewClient} view={view} viewTitle={VIEW_TITLES[view]} />
