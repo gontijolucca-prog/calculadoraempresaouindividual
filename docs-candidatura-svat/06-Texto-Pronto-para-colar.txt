@@ -1,0 +1,37 @@
+Assunto: Pedido de Selo de Validação AT (SVAT) — Portaria n.º 293/2017 — Estudo360.pt
+
+Exmos. Senhores,
+
+Na qualidade de produtores do software Estudo360.pt, vimos solicitar o Selo de Validação AT (SVAT) previsto na Portaria n.º 293/2017, de 2 de outubro.
+
+1. Identificação do produtor
+- Denominação: Recofatima — [substituir pela razão social completa]
+- NIF: [NIF da Recofatima]
+- Contacto: [email + telefone]
+- Software: Estudo360.pt — https://estudo360.pt
+- Versão candidata: 02/10/2026 (commit f846c07) — React + Firebase, alojamento Cloudflare Pages
+
+2. Objeto do software
+Plataforma web de simulação fiscal (10 simuladores) e gestão de gabinete (clientes, tarefas, obrigações, cofre de acessos, documentos, demonstrações financeiras). Lê ficheiros SAF-T para análise; não emite faturas nem documentos de transporte e não efetua escrituração contabilística (sem diário, sem contas SNC, sem exportação de SAF-T de contabilidade). Por esse motivo, os requisitos de lançamentos, numeração sequencial e contas agregadoras não têm objeto — conforme detalhado na Matriz de Conformidade anexa.
+
+3. Conformidade evidenciada
+- Gestão de utilizadores com controlo de acesso por gabinete (Firebase Auth + Firestore rules por gabinete/{id})
+- Rasto de auditoria completo e imutável (coleção audit_events) em todas as criações, edições e eliminações, com retrato prévio nas eliminações e carimbo de autor/data em cada escrita (G1+G2+G3 implementados)
+- Eventos de acesso imutáveis (auth_events) e cofre com registo de consulta (quem e quando, sem expor segredo)
+- Regras Firestore com update/delete bloqueados em audit_events/auth_events (imutabilidade verificada)
+
+4. Anexos
+- 01-Memoria-Descritiva.pdf
+- 02-Matriz-Conformidade.pdf (9 requisitos com evidência no código)
+- 03-Dicionario-Dados.pdf
+- 04-Checklist-Submissao.pdf
+- 07-Declaracao-Produtor.pdf (declaração do produtor)
+- 09-Anexos-Tecnicos.pdf (excerto de firestore.rules + exemplo audit_events)
+
+5. Disponibilidade para testes
+Facultamos acesso de demonstração à AT (utilizador demo a criar sob pedido) e toda a documentação técnica para testes de conformidade. Ficamos a aguardar indicação de diligências adicionais.
+
+Com os melhores cumprimentos,
+[Nome do representante legal]
+Recofatima — [cargo]
+[Assinatura + carimbo]

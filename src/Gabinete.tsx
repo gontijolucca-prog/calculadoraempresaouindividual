@@ -1455,14 +1455,16 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
 
   const handleCopy = async (text: string) => { try { await navigator.clipboard.writeText(text); } catch {} };
 
-  const handleReveal = async () => {
+  const [passModal,setPassModal]=useState(false);
+  const [passInput,setPassInput]=useState('');
+  const handleReveal = async (cipherOverride?: import('./lib/cofreCrypto').CofreCipher) => {
     if (!selected) return;
     if (plain) { setPlain(null); return; }
-    const cipher = (selected as unknown as { cipher?: unknown }).cipher as import('./lib/cofreCrypto').CofreCipher | undefined;
+    const cipher = cipherOverride || (selected as unknown as { cipher?: unknown }).cipher as import('./lib/cofreCrypto').CofreCipher | undefined;
     if (cipher?.ciphertext) {
       const { getCofrePassphrase, decryptSecret } = await import('./lib/cofreCrypto');
       let pass = getCofrePassphrase();
-      if (!pass) { const p = prompt('Passphrase do cofre:'); if (!p) return; const { setCofrePassphrase } = await import('./lib/cofreCrypto'); setCofrePassphrase(p); pass=p; }
+      if (!pass) { setPassModal(true); return; }
       try { const pt = await decryptSecret(cipher, pass!); setPlain(pt); registarVistaCofre(selected.id).catch(()=>{}); return; } catch { alert('Passphrase errada.'); return; }
     }
     const seg = getSegredoCompat(selected);
@@ -1700,6 +1702,9 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
           </div>
         ) : null}
       </div>
+      {passModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={()=>setPassModal(false)}><div onClick={e=>e.stopPropagation()} className="bg-white rounded-2xl p-6 w-full max-w-sm"><h3 className="font-semibold">Desbloquear cofre</h3><p className="text-xs text-zinc-600 mt-1">Sem esta passphrase ninguém lê. Se a perder, perde o cofre.</p><input autoFocus type="password" value={passInput} onChange={e=>setPassInput(e.target.value)} placeholder="Passphrase" className="w-full mt-3 px-3 py-2.5 rounded-xl border text-sm"/><div className="flex justify-end gap-2 mt-4"><button onClick={()=>setPassModal(false)} className="px-4 py-2 rounded-full border text-sm">Cancelar</button><button onClick={async()=>{ const { setCofrePassphrase, decryptSecret }=await import('./lib/cofreCrypto'); setCofrePassphrase(passInput); const c=(selected as unknown as {cipher:never}).cipher as never; try{ const pt=await decryptSecret(c as never, passInput); setPlain(pt); setPassModal(false); setPassInput(''); }catch{ alert('Passphrase errada.'); } }} className="px-4 py-2 rounded-full bg-[#0B57D0] text-white text-sm">Desbloquear</button></div></div></div>
+      )}
     </div>
   );
 }
