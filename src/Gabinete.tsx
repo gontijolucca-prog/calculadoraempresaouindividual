@@ -1473,6 +1473,13 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
   const handleReveal = async () => {
     if (!selected) return;
     if (plain) { setPlain(null); return; }
+    const cipher = (selected as unknown as { cipher?: unknown }).cipher as import('./lib/cofreCrypto').CofreCipher | undefined;
+    if (cipher?.ciphertext) {
+      const { getCofrePassphrase, decryptSecret } = await import('./lib/cofreCrypto');
+      let pass = getCofrePassphrase();
+      if (!pass) { const p = prompt('Passphrase do cofre:'); if (!p) return; const { setCofrePassphrase } = await import('./lib/cofreCrypto'); setCofrePassphrase(p); pass=p; }
+      try { const pt = await decryptSecret(cipher, pass!); setPlain(pt); registarVistaCofre(selected.id).catch(()=>{}); return; } catch { alert('Passphrase errada.'); return; }
+    }
     const seg = getSegredoCompat(selected);
     const hasLegacy = !!(selected as unknown as { cipher?: unknown }).cipher && !seg;
     if (hasLegacy) { alert('Entrada antiga cifrada. Edita e volta a guardar a password.'); return; }

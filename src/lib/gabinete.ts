@@ -539,9 +539,16 @@ export async function seedCalendarioFiscal2026(): Promise<void> {
 export function listCofreCache(): CofreEntrada[] { return readCache<CofreEntrada>('cofre', []); }
 export function saveCofreCache(list: CofreEntrada[]): void { writeCache('cofre', list); }
 export async function upsertCofre(e: CofreEntrada): Promise<CofreEntrada> {
+  const { getCofrePassphrase, encryptSecret } = await import('./cofreCrypto');
+  const pass = getCofrePassphrase();
+  let toSave: CofreEntrada = { ...e } as CofreEntrada;
+  const plain = (e as unknown as { segredo?: string }).segredo?.trim();
+  if (plain && pass) {
+    try { const cipher = await encryptSecret(plain, pass); (toSave as unknown as Record<string,unknown>).segredo = ''; (toSave as unknown as Record<string,unknown>).cipher = cipher; } catch {}
+  }
   const list = listCofreCache();
   const idx = list.findIndex(x => x.id === e.id);
-  const next = stamp({ ...e });
+  const next = stamp({ ...toSave });
   if (idx >= 0) list[idx] = next; else list.unshift(next);
   saveCofreCache(list);
   try { await safeSetDoc(colPath('cofre'), e.id, next); } catch {}
