@@ -548,13 +548,13 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
   // 7 pilares — agora linhas (estilo Quadro), dropdown filtra linhas em vez de multiplicar colunas
   type Pilar = { key: string; labelShort: string; labelFull: string; color: string; bgHeader: string; tipos: ObrigacaoTipo[] };
   const pilares: Pilar[] = [
-    { key:'docfalta',  labelShort:'Gestão Doc.',  labelFull:'Gestão Doc. em Falta',     color:'#0B57D0', bgHeader:'bg-[#E8F0FE]', tipos:['dossier','outro'] },
-    { key:'vendas',    labelShort:'Vendas',       labelFull:'Vendas/Recebimentos',      color:'#0F9D58', bgHeader:'bg-[#E6F4EA]', tipos:['iva','dossier'] },
-    { key:'compras',   labelShort:'Compras',      labelFull:'Compras/Pagamentos',       color:'#F29900', bgHeader:'bg-[#FEF7E0]', tipos:['iva','dossier'] },
-    { key:'salarios',  labelShort:'Salários',     labelFull:'Interface Salários',       color:'#7C4DFF', bgHeader:'bg-[#F3E8FD]', tipos:['retencao','ss'] },
-    { key:'aft',       labelShort:'AFT',          labelFull:'AFT - Aquisição/Alienação',color:'#E91E63', bgHeader:'bg-[#FCE8EF]', tipos:['dossier','outro'] },
-    { key:'banco',     labelShort:'Banco',        labelFull:'Rec. Bancária',            color:'#0097A7', bgHeader:'bg-[#E0F7FA]', tipos:['dossier','outro'] },
-    { key:'balancete', labelShort:'Balancete',    labelFull:'Verificação do Balancete Analítico', color:'#EF6C00', bgHeader:'bg-[#FFF3E0]', tipos:['ies','modelo22','dossier'] },
+    { key:'docfalta',  labelShort:'Gestão Doc.',  labelFull:'Gestão Doc. em Falta',     color:'#374151', bgHeader:'bg-white', tipos:['dossier','outro'] },
+    { key:'vendas',    labelShort:'Vendas',       labelFull:'Vendas/Recebimentos',      color:'#374151', bgHeader:'bg-white', tipos:['iva','dossier'] },
+    { key:'compras',   labelShort:'Compras',      labelFull:'Compras/Pagamentos',       color:'#374151', bgHeader:'bg-white', tipos:['iva','dossier'] },
+    { key:'salarios',  labelShort:'Salários',     labelFull:'Interface Salários',       color:'#374151', bgHeader:'bg-white', tipos:['retencao','ss'] },
+    { key:'aft',       labelShort:'AFT',          labelFull:'AFT - Aquisição/Alienação',color:'#374151', bgHeader:'bg-white', tipos:['dossier','outro'] },
+    { key:'banco',     labelShort:'Banco',        labelFull:'Rec. Bancária',            color:'#374151', bgHeader:'bg-white', tipos:['dossier','outro'] },
+    { key:'balancete', labelShort:'Balancete',    labelFull:'Verificação do Balancete Analítico', color:'#374151', bgHeader:'bg-white', tipos:['ies','modelo22','dossier'] },
   ];
 
   const [ano, setAno] = useState<number>(new Date().getFullYear());
@@ -793,8 +793,8 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
     { key:'ticket',     labelShort:'Ticket',      labelFull:'Carregamento Ticket',              color:'#F29900', bgHeader:'bg-[#FEF7E0]', tipos:['dossier','outro'] },
     { key:'irs_guia',   labelShort:'Guia IRS',    labelFull:'Guia de IRS/Retenções (Pessoal, indep, rendas)', color:'#0B57D0', bgHeader:'bg-[#E8F0FE]', tipos:['retencao','dossier'] },
     { key:'dmr_at',     labelShort:'DMR-AT',      labelFull:'DMR - AT',                         color:'#0F9D58', bgHeader:'bg-[#E6F4EA]', tipos:['retencao'] },
-    { key:'dmr_ss',     labelShort:'DMR-SS',      labelFull:'DMR - SS',                         color:'#0097A7', bgHeader:'bg-[#E0F7FA]', tipos:['ss'] },
-    { key:'pagamentos', labelShort:'Pagamentos',  labelFull:'Pagamentos Encargos Mensais SS + Retenções', color:'#EF6C00', bgHeader:'bg-[#FFF3E0]', tipos:['ss','retencao'] },
+    { key:'dmr_ss',     labelShort:'DMR-SS',      labelFull:'DMR - SS',                         color:'#374151', bgHeader:'bg-white', tipos:['ss'] },
+    { key:'pagamentos', labelShort:'Pagamentos',  labelFull:'Pagamentos Encargos Mensais SS + Retenções', color:'#374151', bgHeader:'bg-white', tipos:['ss','retencao'] },
   ];
 
   const [ano, setAno] = useState<number>(new Date().getFullYear());

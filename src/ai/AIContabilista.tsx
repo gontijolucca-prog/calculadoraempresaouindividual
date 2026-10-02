@@ -225,8 +225,8 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
 
   const notificarGuia = useCallback(() => {
     setDestaque(true);
-    window.clearTimeout(destaqueTimer.current);
-    destaqueTimer.current = window.setTimeout(() => setDestaque(false), 3400);
+    // destaque só a pedido (não permanente)
+    setDestaque(false);
     tocarSino();
   }, [tocarSino]);
 
