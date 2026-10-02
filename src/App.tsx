@@ -54,6 +54,7 @@ import { DOC_TYPES, downloadAsWord } from './lib/wordDocs';
 import { downloadPrevisaPdf } from './lib/previsaPdf';
 import GuiaSistema from './components/GuiaSistema';
 import GuiaSugestao from './components/GuiaSugestao';
+import MiniDock from './components/MiniDock';
 import type { ViewKey } from './lib/guias';
 import { marcarGuiaDesativado } from './lib/guias';
 import { LAYOUTS } from './Layouts';
@@ -1851,16 +1852,16 @@ function AppContent() {
           e.target.value = '';
         }}
       />
-      {/* AI Contabilista — assistente flutuante: fica quieto até o utilizador interagir */}
+      {/* Mini dock: bola 50% com estrelas — abre AI + Guia */}
+      <MiniDock lift={draftNewClient} showGuia={view!=='gabinete' && view!=='office-settings'} onAi={()=> (document.querySelector('[aria-label="Abrir o AI Contabilista"]') as HTMLButtonElement|null)?.click()} onGuia={()=> (document.querySelector('[aria-label="Aprender esta página — guia"]') as HTMLButtonElement|null)?.click()} />
+      <div className="hidden">
       <Suspense fallback={null}>
         <AIContabilista ref={botApiRef} bridge={botBridge} liftBottom={draftNewClient} view={view} viewTitle={VIEW_TITLES[view]} />
       </Suspense>
-
-      {/* Sugestão de guia por página — sempre visível excepto no Gabinete (tem o seu) e em office-settings (form longo).
-          `lift` levanta a pill acima da barra "Guardar cliente" quando esta está visível. */}
       {view !== 'gabinete' && view !== 'office-settings' && (
         <GuiaSugestao view={view as ViewKey} lift={draftNewClient} onStart={(v) => setTourRequest({ view: v, nonce: Date.now() })} />
       )}
+      </div>
 
       {/* Visitas guiadas — motor de tour (iniciadas pela sugestão da página ou pelo bot a pedido) */}
       <GuiaSistema
