@@ -110,7 +110,7 @@ export function saveEmpresas(list: EmpresaRecord[]): void {
 // remoto, para que sincronizações seguintes não pensem que o local é mais novo.
 // O saftXml NÃO viaja na cloud (limite de 1 MiB/documento do Firestore) — se a
 // empresa local tiver o XML original, preserva-o ao adotar a versão remota.
-function adoptRemoteEmpresas(list: EmpresaRecord[], remoteStamp: number): void {
+export function adoptRemoteEmpresas(list: EmpresaRecord[], remoteStamp: number): void {
   const localById = new Map(listEmpresas().map(e => [e.id, e]));
   const merged = list.map(e => {
     const loc = localById.get(e.id);
@@ -308,12 +308,12 @@ function emitCloudSync(ok: boolean, reason?: string): void {
 // nada (nem o balanço). Os dados DERIVADOS (perfil/contabilidade/fluxos/
 // simulações) continuam todos a sincronizar; o ficheiro original fica
 // disponível para re-exportar no computador onde foi importado.
-function stripSaftXmlForCloudSingle(e: EmpresaRecord): EmpresaRecord {
+export function stripSaftXmlForCloudSingle(e: EmpresaRecord): EmpresaRecord {
   if (!e.saftXml) return e;
   const { saftXml: _omit, ...rest } = e;
   return rest as EmpresaRecord;
 }
-function stripSaftXmlForCloud(list: EmpresaRecord[]): EmpresaRecord[] {
+export function stripSaftXmlForCloud(list: EmpresaRecord[]): EmpresaRecord[] {
   return list.map(e => {
     if (!e.saftXml) return e;
     const { saftXml: _omit, ...rest } = e;
@@ -695,7 +695,7 @@ export async function syncEmpresasFromFirestore(officeNif: string | undefined): 
  * que juntar baldes diferentes (NIF do escritório + 'default') não duplica nem
  * perde registos.
  */
-function mergeEmpresasUnion(lists: EmpresaRecord[][]): EmpresaRecord[] {
+export function mergeEmpresasUnion(lists: EmpresaRecord[][]): EmpresaRecord[] {
   const byId = new Map<string, EmpresaRecord>();
   for (const list of lists) {
     if (!Array.isArray(list)) continue;
@@ -739,7 +739,7 @@ async function migrateLegacyBucketsToShared(): Promise<void> {
   }
 }
 
-function dedupeByNif(list: EmpresaRecord[]): EmpresaRecord[] {
+export function dedupeByNif(list: EmpresaRecord[]): EmpresaRecord[] {
   const byNif = new Map<string, EmpresaRecord>();
   const noNif: EmpresaRecord[] = [];
   for (const e of list) {
