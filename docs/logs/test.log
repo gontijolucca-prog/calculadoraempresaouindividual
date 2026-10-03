@@ -7,132 +7,132 @@ TAP version 13
     # Subtest: decifra o que cifrou (inclui acentos e emoji)
     ok 1 - decifra o que cifrou (inclui acentos e emoji)
       ---
-      duration_ms: 32.826917
+      duration_ms: 32.772041
       type: 'test'
       ...
     # Subtest: duas cifrações do mesmo texto dão saídas diferentes (salt/iv aleatórios)
     ok 2 - duas cifrações do mesmo texto dão saídas diferentes (salt/iv aleatórios)
       ---
-      duration_ms: 60.799042
+      duration_ms: 59.930875
       type: 'test'
       ...
     # Subtest: guarda metadados esperados (iter 120k, v1)
     ok 3 - guarda metadados esperados (iter 120k, v1)
       ---
-      duration_ms: 15.022708
+      duration_ms: 15.601209
       type: 'test'
       ...
     1..3
 ok 1 - cofre round-trip
   ---
-  duration_ms: 109.27925
+  duration_ms: 108.98425
   type: 'suite'
   ...
 # Subtest: zero-knowledge (nada em claro)
     # Subtest: o payload não contém o segredo nem a passphrase
     ok 1 - o payload não contém o segredo nem a passphrase
       ---
-      duration_ms: 15.322167
+      duration_ms: 15.963
       type: 'test'
       ...
     1..1
 ok 2 - zero-knowledge (nada em claro)
   ---
-  duration_ms: 15.407458
+  duration_ms: 16.065584
   type: 'suite'
   ...
 # Subtest: falhas de autenticação
     # Subtest: passphrase errada falha (não devolve lixo)
     ok 1 - passphrase errada falha (não devolve lixo)
       ---
-      duration_ms: 31.768917
+      duration_ms: 31.37575
       type: 'test'
       ...
     # Subtest: ciphertext adulterado falha (GCM autentica)
     ok 2 - ciphertext adulterado falha (GCM autentica)
       ---
-      duration_ms: 29.891167
+      duration_ms: 29.848167
       type: 'test'
       ...
     # Subtest: iv adulterado falha
     ok 3 - iv adulterado falha
       ---
-      duration_ms: 30.396416
+      duration_ms: 30.640208
       type: 'test'
       ...
     1..3
 ok 3 - falhas de autenticação
   ---
-  duration_ms: 92.258375
+  duration_ms: 92.048875
   type: 'suite'
   ...
 # Subtest: validações
     # Subtest: texto vazio rejeita
     ok 1 - texto vazio rejeita
       ---
-      duration_ms: 0.250459
+      duration_ms: 0.23975
       type: 'test'
       ...
     # Subtest: passphrase curta (<6) rejeita
     ok 2 - passphrase curta (<6) rejeita
       ---
-      duration_ms: 0.108792
+      duration_ms: 0.112958
       type: 'test'
       ...
     # Subtest: cipher incompleto rejeita
     ok 3 - cipher incompleto rejeita
       ---
-      duration_ms: 0.179417
+      duration_ms: 0.176583
       type: 'test'
       ...
     1..3
 ok 4 - validações
   ---
-  duration_ms: 0.613708
+  duration_ms: 0.6065
   type: 'suite'
   ...
 # Subtest: passphrase de sessão
     # Subtest: bloqueado por omissão; desbloqueia e volta a bloquear
     ok 1 - bloqueado por omissão; desbloqueia e volta a bloquear
       ---
-      duration_ms: 0.062458
+      duration_ms: 0.066583
       type: 'test'
       ...
     1..1
 ok 5 - passphrase de sessão
   ---
-  duration_ms: 0.12575
+  duration_ms: 0.13175
   type: 'suite'
   ...
 # Subtest: estimatePassphraseStrength
     # Subtest: curta = fraca
     ok 1 - curta = fraca
       ---
-      duration_ms: 0.06025
+      duration_ms: 0.071084
       type: 'test'
       ...
     # Subtest: 8-11 chars = ok
     ok 2 - 8-11 chars = ok
       ---
-      duration_ms: 0.031083
+      duration_ms: 0.030042
       type: 'test'
       ...
     # Subtest: 12+ completa = forte
     ok 3 - 12+ completa = forte
       ---
-      duration_ms: 0.0635
+      duration_ms: 0.06225
       type: 'test'
       ...
     # Subtest: 12+ simples = ok
     ok 4 - 12+ simples = ok
       ---
-      duration_ms: 0.066042
+      duration_ms: 0.068041
       type: 'test'
       ...
     1..4
 ok 6 - estimatePassphraseStrength
   ---
-  duration_ms: 0.265583
+  duration_ms: 0.2865
   type: 'suite'
   ...
 1..6
@@ -143,15 +143,1229 @@ ok 6 - estimatePassphraseStrength
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 223.789125
-/Volumes/Extreme SSD/Dev/GitHub/estudo360/src/lib/empresas.test.ts:37
-  adoptRemoteEmpresas,
-  ^
-SyntaxError: The requested module './empresas' does not provide an export named 'adoptRemoteEmpresas'
-    at ModuleJob._instantiate (node:internal/modules/esm/module_job:226:21)
-    at async ModuleJob.run (node:internal/modules/esm/module_job:335:5)
-    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+# duration_ms 223.636666
+TAP version 13
+# Subtest: newId
+    # Subtest: prefixo emp_ e únicos
+    ok 1 - prefixo emp_ e únicos
+      ---
+      duration_ms: 0.548917
+      type: 'test'
+      ...
+    1..1
+ok 1 - newId
+  ---
+  duration_ms: 0.918458
+  type: 'suite'
+  ...
+# Subtest: registry local (LWW)
+    # Subtest: save→list round-trip
+    ok 1 - save→list round-trip
+      ---
+      duration_ms: 0.545375
+      type: 'test'
+      ...
+    # Subtest: stamp é monotónico mesmo no mesmo milissegundo
+    ok 2 - stamp é monotónico mesmo no mesmo milissegundo
+      ---
+      duration_ms: 0.090375
+      type: 'test'
+      ...
+    # Subtest: upsert insere e atualiza
+    ok 3 - upsert insere e atualiza
+      ---
+      duration_ms: 0.29775
+      type: 'test'
+      ...
+    # Subtest: delete remove; se era a atual, limpa a seleção
+    ok 4 - delete remove; se era a atual, limpa a seleção
+      ---
+      duration_ms: 0.299541
+      type: 'test'
+      ...
+    # Subtest: current id set/get/clear
+    ok 5 - current id set/get/clear
+      ---
+      duration_ms: 0.090334
+      type: 'test'
+      ...
+    # Subtest: syncProfileIntoEmpresa atualiza nome/nif; null se não existe
+    ok 6 - syncProfileIntoEmpresa atualiza nome/nif; null se não existe
+      ---
+      duration_ms: 0.089
+      type: 'test'
+      ...
+    1..6
+ok 2 - registry local (LWW)
+  ---
+  duration_ms: 1.697584
+  type: 'suite'
+  ...
+# Subtest: histórico de simulações
+    # Subtest: add em empresa inexistente = null
+    ok 1 - add em empresa inexistente = null
+      ---
+      duration_ms: 0.088584
+      type: 'test'
+      ...
+    # Subtest: adiciona e lista (recentes primeiro); apaga
+    ok 2 - adiciona e lista (recentes primeiro); apaga
+      ---
+      duration_ms: 0.209084
+      type: 'test'
+      ...
+    # Subtest: auto: UM registo por tipo (atualiza, não duplica); manual intacto
+    ok 3 - auto: UM registo por tipo (atualiza, não duplica); manual intacto
+      ---
+      duration_ms: 0.175417
+      type: 'test'
+      ...
+    1..3
+ok 3 - histórico de simulações
+  ---
+  duration_ms: 0.603791
+  type: 'suite'
+  ...
+# Subtest: migrateLegacyProfileIfNeeded
+    # Subtest: perfil vazio não migra
+    ok 1 - perfil vazio não migra
+      ---
+      duration_ms: 0.088833
+      type: 'test'
+      ...
+    # Subtest: migra nome+nif e seleciona a empresa
+    ok 2 - migra nome+nif e seleciona a empresa
+      ---
+      duration_ms: 0.070292
+      type: 'test'
+      ...
+    # Subtest: não corre se já há empresas
+    ok 3 - não corre se já há empresas
+      ---
+      duration_ms: 0.061917
+      type: 'test'
+      ...
+    1..3
+ok 4 - migrateLegacyProfileIfNeeded
+  ---
+  duration_ms: 0.262667
+  type: 'suite'
+  ...
+# Subtest: dedupeByNif
+    # Subtest: mesmo NIF fica o mais recente
+    ok 1 - mesmo NIF fica o mais recente
+      ---
+      duration_ms: 0.168083
+      type: 'test'
+      ...
+    # Subtest: sem NIF válido preserva todas (são distintas)
+    ok 2 - sem NIF válido preserva todas (são distintas)
+      ---
+      duration_ms: 0.053584
+      type: 'test'
+      ...
+    1..2
+ok 5 - dedupeByNif
+  ---
+  duration_ms: 0.252916
+  type: 'suite'
+  ...
+# Subtest: mergeEmpresasUnion
+    # Subtest: junta por id (mais recente vence) e colapsa NIFs
+    ok 1 - junta por id (mais recente vence) e colapsa NIFs
+      ---
+      duration_ms: 0.09225
+      type: 'test'
+      ...
+    1..1
+ok 6 - mergeEmpresasUnion
+  ---
+  duration_ms: 0.117125
+  type: 'suite'
+  ...
+# Subtest: stripSaftXmlForCloud
+    # Subtest: remove saftXml e mantém o resto
+    ok 1 - remove saftXml e mantém o resto
+      ---
+      duration_ms: 0.079167
+      type: 'test'
+      ...
+    1..1
+ok 7 - stripSaftXmlForCloud
+  ---
+  duration_ms: 0.100875
+  type: 'suite'
+  ...
+# Subtest: adoptRemoteEmpresas
+    # Subtest: adota stamp remoto exato e preserva XML local
+    ok 1 - adota stamp remoto exato e preserva XML local
+      ---
+      duration_ms: 0.103584
+      type: 'test'
+      ...
+    1..1
+ok 8 - adoptRemoteEmpresas
+  ---
+  duration_ms: 0.125625
+  type: 'suite'
+  ...
+# Subtest: repairMojibake
+    # Subtest: repara UTF-8 lido como Latin-1 e não toca em texto limpo
+    ok 1 - repara UTF-8 lido como Latin-1 e não toca em texto limpo
+      ---
+      duration_ms: 0.2625
+      type: 'test'
+      ...
+    1..1
+ok 9 - repairMojibake
+  ---
+  duration_ms: 0.285
+  type: 'suite'
+  ...
+1..9
+# tests 19
+# suites 9
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 15.496375
+✓ A: RC simplificado (15/75/35) = 35000.00
+✓ A: RC 1.º ano (0,75/0,35 reduzidos 50%) = 22000.00
+✓ A: RC 2.º ano (reduzidos 25%) = 28500.00
+✓ A: acréscimo regra 15% (sem gastos) = 10412.91
+✓ A: RC com acréscimo = 85412.91
+✓ B: MC IRC simplificado (4/75/10) = 25900.00
+✓ B: MC 1.º ano (vendas+restantes reduzidos 50%) = 24200.00
+✓ B: MC 2.º ano (reduzidos 25%) = 25050.00
+✓ C: SS independente (70% serviços + 20% vendas × 21,4%) = 8560.00
+✓ D: IRS simplificado elegível (90k ≤ 200k)
+✓ D: IRC simplificado elegível (6 condições)
+✓ D: isenção 53.º excluída (90k > 15k)
+✓ D: IVA trimestral elegível (< 650k)
+✓ D: IVA mensal não obrigatório
+✓ D: >200k → IRS simplificado e IRC simplificado excluídos
+✓ D: balanço >500k → IRC simplificado excluído
+✓ D: revisão legal de contas → IRC simplificado excluído
+✓ D: ≥650k → trimestral excluído + mensal obrigatório
+✓ D: 1.º ano com estimativa 12k → isenção 53.º elegível
+✓ E: 4 regimes × 2 IVA = 8 cenários elegíveis
+✓ E: isenção 53.º aparece nos excluídos
+✓ E: cenários ordenados por disponível desc
+✓ E: recomendação = 1.º cenário
+✓ E: ENI simplificado — disponível = 42834.84
+✓ E: ENI organizada — disponível = 32124.60
+✓ E: sociedade — SS total MOE (23,75% + 11% de 21k) = 7297.50
+✓ E: sociedade normal — lucro retido (50%) = 13690.31
+✓ E: sociedade normal — imposto s/ dividendos (28%) = 3833.29
+✓ E: IRC simplificado disponibiliza mais que IRC normal (MC 25,9k < lucro 32,2k)
+✓ E: IVA mensal vs trimestral — disponível IGUAL (não é poupança) = 26026.71
+✓ E: saldo IVA anual (23% de 100k − 3k dedutível) = 20000.00
+✓ E: pico tesouraria trimestral (1/4 do saldo) = 5000.00
+✓ E: pico tesouraria mensal (1/12 do saldo) = 1666.67
+✓ E: trimestral tem menos obrigações que mensal
+✓ F: isenção — IVA das compras vira custo (460) = 460.00
+✓ F: trimestral − isenção = exatamente o IVA não deduzido = 460.00
+✓ F: isenção — saldo e pico IVA a zero = 0.00
+✓ F: alerta de proximidade do limite de 15k (14k > 90%)
+✓ G: previsão >18 750 € com isenção → alerta de saída IMEDIATA
+✓ G: gastos >25% da faturação → alerta contabilidade organizada
+✓ G: distribuição quase total → alerta dividendos
+✓ G: TA a zero com gastos → alerta validar tributações autónomas
+✓ G: clientes particulares ≥50% → alerta impacto comercial do IVA
+✓ G: previsão >250k (limite +25%) → alerta organizada obrigatória no seguinte
+✓ H: ENI simplificado + isenção = 5 obrigações (Mod3 + 4×SS) = 5.00
+✓ H: sociedade + IVA mensal = 26 obrigações = 26.00
+✓ I: vendas do SAF-T (711) = 50000.00
+✓ I: prestações 72 → serviços art. 151.º (atividade do perfil) = 30000.00
+✓ I: subsídios à exploração (75) = 1000.00
+✓ I: outros rendimentos (78) = 0.00
+✓ I: faturação ano anterior = total SAF-T = 81000.00
+✓ I: gastos de caixa (sem depreciações 64) = 23000.00
+✓ I: total balanço = ativo do perfil = 50000.00
+✓ I: proveniência lista os campos
+✓ I: atividade não-151.º → 72 vai para outros serviços = 30000.00
+✓ I: sem empresa → seed vazio
 
-Node.js v22.23.2
-test:1
+Todos os casos golden do Enquadramento 2026 passaram.
+✓ A: ENI SS anual = 7490.00
+✓ A: ENI IRS = 9894.27
+✓ A: ENI líquido = 32615.73
+✓ A: Lda IRC (15% sobre 500) = 75.00
+✓ A: Lda líquido (lucro retido) = 24425.00
+✓ A: Lda líquido (lucro distribuído −28%) = 24306.00
+✓ B: IRC (15% até 50k + 19%) = 11395.00
+✓ B: derrama municipal (1,5% × 70 500) = 1057.50
+✓ B: sem derrama = 0 = 0.00
+✓ B: derrama reduz o líquido na exata medida = 1057.50
+✓ C: IRC = 0 (transparência) = 0.00
+✓ C: derrama = 0 (transparência) = 0.00
+✓ D: organizada custos considerados = 0 = 0.00
+✓ D: organizada rend. coletável = faturação (sem custos) = 50000.00
+✓ D: organizada SS = SS do simplificado = 7490.00
+✓ D: sem custos documentados, simplificado bate organizada
+✓ D: simplificado disponível até 200k
+✓ D: 50k sem avisos de elegibilidade
+✓ D: 6 enquadramentos informativos
+✓ D: EIRL listado como extinto
+✓ E: organizada rend. coletável = 50k − 36k = 14000.00
+✓ E: com custos reais altos, organizada bate simplificado
+✓ E: líquido organizada = rev − custos − SS − IRS = 4501.22
+✓ F: >200k → simplificado indisponível
+✓ F: >200k → aviso de contabilidade organizada
+✓ F: art. 151.º + 2 sócios → aviso transparência obrigatória
+✓ F: ≤15k → aviso isenção de IVA art. 53.º
+✓ F: 5+ sócios → nota SA como alternativa real
+✓ G: 200k exactos → simplificado disponível
+✓ G: 200 001 € → simplificado INDISPONÍVEL
+✓ G: >200k tem ENI organizada como alternativa
+✓ H: bens RC (15%) = 15000.00
+✓ H: serviços RC (75% + acréscimo 15%) = 85412.91
+✓ H: bens IRS menor que serviços (RC menor)
+✓ I: RC com acréscimo regra 15% = 40412.91
+✓ I: com custos reais >15%, sem acréscimo
+
+Todos os casos golden de Fiscal passaram.
+✓ existem guias para todas as 17 ferramentas
+✓ [empresas] título não vazio
+✓ [empresas] intro não vazia
+✓ [empresas] tem "próxima ação" (acao)
+✓ [empresas] ≤7 passos no total (intro+passos)
+✓ [empresas] tem ≥2 passos (tem 5)
+✓ [empresas] passo 1 tem título
+✓ [empresas] passo 1 tem corpo (≥40 chars)
+✓ [empresas] passo 1 tem alvo (sel ou texto)
+✓ [empresas] passo 2 tem título
+✓ [empresas] passo 2 tem corpo (≥40 chars)
+✓ [empresas] passo 2 tem alvo (sel ou texto)
+✓ [empresas] passo 3 tem título
+✓ [empresas] passo 3 tem corpo (≥40 chars)
+✓ [empresas] passo 3 tem alvo (sel ou texto)
+✓ [empresas] passo 4 tem título
+✓ [empresas] passo 4 tem corpo (≥40 chars)
+✓ [empresas] passo 4 tem alvo (sel ou texto)
+✓ [empresas] passo 5 tem título
+✓ [empresas] passo 5 tem corpo (≥40 chars)
+✓ [empresas] passo 5 tem alvo (sel ou texto)
+✓ [profile] título não vazio
+✓ [profile] intro não vazia
+✓ [profile] tem "próxima ação" (acao)
+✓ [profile] ≤7 passos no total (intro+passos)
+✓ [profile] tem ≥2 passos (tem 5)
+✓ [profile] passo 1 tem título
+✓ [profile] passo 1 tem corpo (≥40 chars)
+✓ [profile] passo 1 tem alvo (sel ou texto)
+✓ [profile] passo 2 tem título
+✓ [profile] passo 2 tem corpo (≥40 chars)
+✓ [profile] passo 2 tem alvo (sel ou texto)
+✓ [profile] passo 3 tem título
+✓ [profile] passo 3 tem corpo (≥40 chars)
+✓ [profile] passo 3 tem alvo (sel ou texto)
+✓ [profile] passo 4 tem título
+✓ [profile] passo 4 tem corpo (≥40 chars)
+✓ [profile] passo 4 tem alvo (sel ou texto)
+✓ [profile] passo 5 tem título
+✓ [profile] passo 5 tem corpo (≥40 chars)
+✓ [profile] passo 5 tem alvo (sel ou texto)
+✓ [tax] título não vazio
+✓ [tax] intro não vazia
+✓ [tax] tem "próxima ação" (acao)
+✓ [tax] ≤7 passos no total (intro+passos)
+✓ [tax] tem ≥2 passos (tem 3)
+✓ [tax] passo 1 tem título
+✓ [tax] passo 1 tem corpo (≥40 chars)
+✓ [tax] passo 1 tem alvo (sel ou texto)
+✓ [tax] passo 2 tem título
+✓ [tax] passo 2 tem corpo (≥40 chars)
+✓ [tax] passo 2 tem alvo (sel ou texto)
+✓ [tax] passo 3 tem título
+✓ [tax] passo 3 tem corpo (≥40 chars)
+✓ [tax] passo 3 tem alvo (sel ou texto)
+✓ [vehicle] título não vazio
+✓ [vehicle] intro não vazia
+✓ [vehicle] tem "próxima ação" (acao)
+✓ [vehicle] ≤7 passos no total (intro+passos)
+✓ [vehicle] tem ≥2 passos (tem 4)
+✓ [vehicle] passo 1 tem título
+✓ [vehicle] passo 1 tem corpo (≥40 chars)
+✓ [vehicle] passo 1 tem alvo (sel ou texto)
+✓ [vehicle] passo 2 tem título
+✓ [vehicle] passo 2 tem corpo (≥40 chars)
+✓ [vehicle] passo 2 tem alvo (sel ou texto)
+✓ [vehicle] passo 3 tem título
+✓ [vehicle] passo 3 tem corpo (≥40 chars)
+✓ [vehicle] passo 3 tem alvo (sel ou texto)
+✓ [vehicle] passo 4 tem título
+✓ [vehicle] passo 4 tem corpo (≥40 chars)
+✓ [vehicle] passo 4 tem alvo (sel ou texto)
+✓ [ticket] título não vazio
+✓ [ticket] intro não vazia
+✓ [ticket] tem "próxima ação" (acao)
+✓ [ticket] ≤7 passos no total (intro+passos)
+✓ [ticket] tem ≥2 passos (tem 4)
+✓ [ticket] passo 1 tem título
+✓ [ticket] passo 1 tem corpo (≥40 chars)
+✓ [ticket] passo 1 tem alvo (sel ou texto)
+✓ [ticket] passo 2 tem título
+✓ [ticket] passo 2 tem corpo (≥40 chars)
+✓ [ticket] passo 2 tem alvo (sel ou texto)
+✓ [ticket] passo 3 tem título
+✓ [ticket] passo 3 tem corpo (≥40 chars)
+✓ [ticket] passo 3 tem alvo (sel ou texto)
+✓ [ticket] passo 4 tem título
+✓ [ticket] passo 4 tem corpo (≥40 chars)
+✓ [ticket] passo 4 tem alvo (sel ou texto)
+✓ [selfss] título não vazio
+✓ [selfss] intro não vazia
+✓ [selfss] tem "próxima ação" (acao)
+✓ [selfss] ≤7 passos no total (intro+passos)
+✓ [selfss] tem ≥2 passos (tem 3)
+✓ [selfss] passo 1 tem título
+✓ [selfss] passo 1 tem corpo (≥40 chars)
+✓ [selfss] passo 1 tem alvo (sel ou texto)
+✓ [selfss] passo 2 tem título
+✓ [selfss] passo 2 tem corpo (≥40 chars)
+✓ [selfss] passo 2 tem alvo (sel ou texto)
+✓ [selfss] passo 3 tem título
+✓ [selfss] passo 3 tem corpo (≥40 chars)
+✓ [selfss] passo 3 tem alvo (sel ou texto)
+✓ [diagnostico] título não vazio
+✓ [diagnostico] intro não vazia
+✓ [diagnostico] tem "próxima ação" (acao)
+✓ [diagnostico] ≤7 passos no total (intro+passos)
+✓ [diagnostico] tem ≥2 passos (tem 3)
+✓ [diagnostico] passo 1 tem título
+✓ [diagnostico] passo 1 tem corpo (≥40 chars)
+✓ [diagnostico] passo 1 tem alvo (sel ou texto)
+✓ [diagnostico] passo 2 tem título
+✓ [diagnostico] passo 2 tem corpo (≥40 chars)
+✓ [diagnostico] passo 2 tem alvo (sel ou texto)
+✓ [diagnostico] passo 3 tem título
+✓ [diagnostico] passo 3 tem corpo (≥40 chars)
+✓ [diagnostico] passo 3 tem alvo (sel ou texto)
+✓ [imoveis] título não vazio
+✓ [imoveis] intro não vazia
+✓ [imoveis] tem "próxima ação" (acao)
+✓ [imoveis] ≤7 passos no total (intro+passos)
+✓ [imoveis] tem ≥2 passos (tem 3)
+✓ [imoveis] passo 1 tem título
+✓ [imoveis] passo 1 tem corpo (≥40 chars)
+✓ [imoveis] passo 1 tem alvo (sel ou texto)
+✓ [imoveis] passo 2 tem título
+✓ [imoveis] passo 2 tem corpo (≥40 chars)
+✓ [imoveis] passo 2 tem alvo (sel ou texto)
+✓ [imoveis] passo 3 tem título
+✓ [imoveis] passo 3 tem corpo (≥40 chars)
+✓ [imoveis] passo 3 tem alvo (sel ou texto)
+✓ [imt] título não vazio
+✓ [imt] intro não vazia
+✓ [imt] tem "próxima ação" (acao)
+✓ [imt] ≤7 passos no total (intro+passos)
+✓ [imt] tem ≥2 passos (tem 3)
+✓ [imt] passo 1 tem título
+✓ [imt] passo 1 tem corpo (≥40 chars)
+✓ [imt] passo 1 tem alvo (sel ou texto)
+✓ [imt] passo 2 tem título
+✓ [imt] passo 2 tem corpo (≥40 chars)
+✓ [imt] passo 2 tem alvo (sel ou texto)
+✓ [imt] passo 3 tem título
+✓ [imt] passo 3 tem corpo (≥40 chars)
+✓ [imt] passo 3 tem alvo (sel ou texto)
+✓ [salario] título não vazio
+✓ [salario] intro não vazia
+✓ [salario] tem "próxima ação" (acao)
+✓ [salario] ≤7 passos no total (intro+passos)
+✓ [salario] tem ≥2 passos (tem 5)
+✓ [salario] passo 1 tem título
+✓ [salario] passo 1 tem corpo (≥40 chars)
+✓ [salario] passo 1 tem alvo (sel ou texto)
+✓ [salario] passo 2 tem título
+✓ [salario] passo 2 tem corpo (≥40 chars)
+✓ [salario] passo 2 tem alvo (sel ou texto)
+✓ [salario] passo 3 tem título
+✓ [salario] passo 3 tem corpo (≥40 chars)
+✓ [salario] passo 3 tem alvo (sel ou texto)
+✓ [salario] passo 4 tem título
+✓ [salario] passo 4 tem corpo (≥40 chars)
+✓ [salario] passo 4 tem alvo (sel ou texto)
+✓ [salario] passo 5 tem título
+✓ [salario] passo 5 tem corpo (≥40 chars)
+✓ [salario] passo 5 tem alvo (sel ou texto)
+✓ [irs] título não vazio
+✓ [irs] intro não vazia
+✓ [irs] tem "próxima ação" (acao)
+✓ [irs] ≤7 passos no total (intro+passos)
+✓ [irs] tem ≥2 passos (tem 4)
+✓ [irs] passo 1 tem título
+✓ [irs] passo 1 tem corpo (≥40 chars)
+✓ [irs] passo 1 tem alvo (sel ou texto)
+✓ [irs] passo 2 tem título
+✓ [irs] passo 2 tem corpo (≥40 chars)
+✓ [irs] passo 2 tem alvo (sel ou texto)
+✓ [irs] passo 3 tem título
+✓ [irs] passo 3 tem corpo (≥40 chars)
+✓ [irs] passo 3 tem alvo (sel ou texto)
+✓ [irs] passo 4 tem título
+✓ [irs] passo 4 tem corpo (≥40 chars)
+✓ [irs] passo 4 tem alvo (sel ou texto)
+✓ [previsa] título não vazio
+✓ [previsa] intro não vazia
+✓ [previsa] tem "próxima ação" (acao)
+✓ [previsa] ≤7 passos no total (intro+passos)
+✓ [previsa] tem ≥2 passos (tem 5)
+✓ [previsa] passo 1 tem título
+✓ [previsa] passo 1 tem corpo (≥40 chars)
+✓ [previsa] passo 1 tem alvo (sel ou texto)
+✓ [previsa] passo 2 tem título
+✓ [previsa] passo 2 tem corpo (≥40 chars)
+✓ [previsa] passo 2 tem alvo (sel ou texto)
+✓ [previsa] passo 3 tem título
+✓ [previsa] passo 3 tem corpo (≥40 chars)
+✓ [previsa] passo 3 tem alvo (sel ou texto)
+✓ [previsa] passo 4 tem título
+✓ [previsa] passo 4 tem corpo (≥40 chars)
+✓ [previsa] passo 4 tem alvo (sel ou texto)
+✓ [previsa] passo 5 tem título
+✓ [previsa] passo 5 tem corpo (≥40 chars)
+✓ [previsa] passo 5 tem alvo (sel ou texto)
+✓ [legal] título não vazio
+✓ [legal] intro não vazia
+✓ [legal] tem "próxima ação" (acao)
+✓ [legal] ≤7 passos no total (intro+passos)
+✓ [legal] tem ≥2 passos (tem 3)
+✓ [legal] passo 1 tem título
+✓ [legal] passo 1 tem corpo (≥40 chars)
+✓ [legal] passo 1 tem alvo (sel ou texto)
+✓ [legal] passo 2 tem título
+✓ [legal] passo 2 tem corpo (≥40 chars)
+✓ [legal] passo 2 tem alvo (sel ou texto)
+✓ [legal] passo 3 tem título
+✓ [legal] passo 3 tem corpo (≥40 chars)
+✓ [legal] passo 3 tem alvo (sel ou texto)
+✓ [office-settings] título não vazio
+✓ [office-settings] intro não vazia
+✓ [office-settings] tem "próxima ação" (acao)
+✓ [office-settings] ≤7 passos no total (intro+passos)
+✓ [office-settings] tem ≥2 passos (tem 4)
+✓ [office-settings] passo 1 tem título
+✓ [office-settings] passo 1 tem corpo (≥40 chars)
+✓ [office-settings] passo 1 tem alvo (sel ou texto)
+✓ [office-settings] passo 2 tem título
+✓ [office-settings] passo 2 tem corpo (≥40 chars)
+✓ [office-settings] passo 2 tem alvo (sel ou texto)
+✓ [office-settings] passo 3 tem título
+✓ [office-settings] passo 3 tem corpo (≥40 chars)
+✓ [office-settings] passo 3 tem alvo (sel ou texto)
+✓ [office-settings] passo 4 tem título
+✓ [office-settings] passo 4 tem corpo (≥40 chars)
+✓ [office-settings] passo 4 tem alvo (sel ou texto)
+✓ [historico] título não vazio
+✓ [historico] intro não vazia
+✓ [historico] tem "próxima ação" (acao)
+✓ [historico] ≤7 passos no total (intro+passos)
+✓ [historico] tem ≥2 passos (tem 2)
+✓ [historico] passo 1 tem título
+✓ [historico] passo 1 tem corpo (≥40 chars)
+✓ [historico] passo 1 tem alvo (sel ou texto)
+✓ [historico] passo 2 tem título
+✓ [historico] passo 2 tem corpo (≥40 chars)
+✓ [historico] passo 2 tem alvo (sel ou texto)
+✓ [exportar] título não vazio
+✓ [exportar] intro não vazia
+✓ [exportar] tem "próxima ação" (acao)
+✓ [exportar] ≤7 passos no total (intro+passos)
+✓ [exportar] tem ≥2 passos (tem 3)
+✓ [exportar] passo 1 tem título
+✓ [exportar] passo 1 tem corpo (≥40 chars)
+✓ [exportar] passo 1 tem alvo (sel ou texto)
+✓ [exportar] passo 2 tem título
+✓ [exportar] passo 2 tem corpo (≥40 chars)
+✓ [exportar] passo 2 tem alvo (sel ou texto)
+✓ [exportar] passo 3 tem título
+✓ [exportar] passo 3 tem corpo (≥40 chars)
+✓ [exportar] passo 3 tem alvo (sel ou texto)
+✓ [hub] título não vazio
+✓ [hub] intro não vazia
+✓ [hub] tem "próxima ação" (acao)
+✓ [hub] ≤7 passos no total (intro+passos)
+✓ [hub] tem ≥2 passos (tem 2)
+✓ [hub] passo 1 tem título
+✓ [hub] passo 1 tem corpo (≥40 chars)
+✓ [hub] passo 1 tem alvo (sel ou texto)
+✓ [hub] passo 2 tem título
+✓ [hub] passo 2 tem corpo (≥40 chars)
+✓ [hub] passo 2 tem alvo (sel ou texto)
+✓ flag começa desativada
+✓ após marcar, fica desativada
+✓ após reativar, deixa de estar desativada
+✓ reativar limpa TODAS as flags de guias
+✓ [empresas] texto alvo não vazio
+✓ [empresas] texto alvo não vazio
+✓ [empresas] texto alvo não vazio
+✓ [empresas] texto alvo não vazio
+✓ [empresas] texto alvo não vazio
+✓ [profile] texto alvo não vazio
+✓ [profile] texto alvo não vazio
+✓ [profile] texto alvo não vazio
+✓ [profile] texto alvo não vazio
+✓ [profile] texto alvo não vazio
+✓ [tax] texto alvo não vazio
+✓ [tax] texto alvo não vazio
+✓ [tax] texto alvo não vazio
+✓ [vehicle] texto alvo não vazio
+✓ [vehicle] texto alvo não vazio
+✓ [vehicle] texto alvo não vazio
+✓ [vehicle] texto alvo não vazio
+✓ [ticket] texto alvo não vazio
+✓ [ticket] texto alvo não vazio
+✓ [ticket] texto alvo não vazio
+✓ [ticket] texto alvo não vazio
+✓ [selfss] texto alvo não vazio
+✓ [selfss] seletor válido: [data-view="selfss"]
+✓ [selfss] seletor válido: [data-view="selfss"]
+✓ [diagnostico] texto alvo não vazio
+✓ [diagnostico] texto alvo não vazio
+✓ [diagnostico] texto alvo não vazio
+✓ [imoveis] texto alvo não vazio
+✓ [imoveis] texto alvo não vazio
+✓ [imoveis] texto alvo não vazio
+✓ [imt] texto alvo não vazio
+✓ [imt] texto alvo não vazio
+✓ [imt] texto alvo não vazio
+✓ [salario] texto alvo não vazio
+✓ [salario] texto alvo não vazio
+✓ [salario] texto alvo não vazio
+✓ [salario] texto alvo não vazio
+✓ [salario] texto alvo não vazio
+✓ [irs] texto alvo não vazio
+✓ [irs] texto alvo não vazio
+✓ [irs] texto alvo não vazio
+✓ [irs] texto alvo não vazio
+✓ [previsa] texto alvo não vazio
+✓ [previsa] texto alvo não vazio
+✓ [previsa] texto alvo não vazio
+✓ [previsa] texto alvo não vazio
+✓ [previsa] texto alvo não vazio
+✓ [legal] texto alvo não vazio
+✓ [legal] texto alvo não vazio
+✓ [legal] texto alvo não vazio
+✓ [office-settings] texto alvo não vazio
+✓ [office-settings] texto alvo não vazio
+✓ [office-settings] texto alvo não vazio
+✓ [office-settings] texto alvo não vazio
+✓ [historico] seletor válido: [data-view="historico"]
+✓ [historico] seletor válido: [data-view="historico"]
+✓ [exportar] texto alvo não vazio
+✓ [exportar] texto alvo não vazio
+✓ [exportar] texto alvo não vazio
+✓ [hub] seletor válido: [data-view="hub"]
+✓ [hub] seletor válido: [data-view="hub"]
+
+✓ Todos os testes de guias passaram.
+✓ A: mensal sem IVA = 170.00
+✓ A: IVA (23%) = 39.10
+✓ A: mensal com IVA = 209.10
+✓ A: anual com IVA = 2509.20
+✓ B: mensal sem IVA = 360.00
+✓ B: mensal com IVA = 442.80
+✓ C: mensal sem IVA (base + escalão) = 600.00
+
+Todos os casos golden de Honorários passaram.
+✓ A: IMT = 0 = 0.00
+✓ A: Imposto Selo (0,8%) = 800.00
+✓ A: isento = true
+✓ B: IMT = 3542.04
+✓ B: total (IMT + Selo) = 5142.04
+✓ C: IMT = 3542.04
+✓ D: IMT (5%) = 5000.00
+✓ E: IMT (6,5%) = 6500.00
+✓ F: IMT = 0 (isento jovem) = 0.00
+✓ F: Selo = 0 (isento jovem) = 0.00
+✓ F: isentoJovem = true
+✓ G: IMT Jovem (redução parcial) = 5556.88
+✓ G: Selo = 0 = 0.00
+
+Todos os casos golden de IMT passaram.
+TAP version 13
+# Subtest: clamp
+    # Subtest: returns value when within range
+    ok 1 - returns value when within range
+      ---
+      duration_ms: 0.418292
+      type: 'test'
+      ...
+    # Subtest: clamps below min
+    ok 2 - clamps below min
+      ---
+      duration_ms: 0.048459
+      type: 'test'
+      ...
+    # Subtest: clamps above max
+    ok 3 - clamps above max
+      ---
+      duration_ms: 0.099542
+      type: 'test'
+      ...
+    # Subtest: returns 0 for NaN
+    ok 4 - returns 0 for NaN
+      ---
+      duration_ms: 0.04275
+      type: 'test'
+      ...
+    # Subtest: returns 0 for Infinity
+    ok 5 - returns 0 for Infinity
+      ---
+      duration_ms: 0.038208
+      type: 'test'
+      ...
+    # Subtest: handles no bounds
+    ok 6 - handles no bounds
+      ---
+      duration_ms: 0.0325
+      type: 'test'
+      ...
+    # Subtest: handles only min
+    ok 7 - handles only min
+      ---
+      duration_ms: 0.084167
+      type: 'test'
+      ...
+    # Subtest: handles only max
+    ok 8 - handles only max
+      ---
+      duration_ms: 0.129667
+      type: 'test'
+      ...
+    # Subtest: handles negative min
+    ok 9 - handles negative min
+      ---
+      duration_ms: 0.136541
+      type: 'test'
+      ...
+    1..9
+ok 1 - clamp
+  ---
+  duration_ms: 1.725875
+  type: 'suite'
+  ...
+# Subtest: numInput
+    # Subtest: parses valid string
+    ok 1 - parses valid string
+      ---
+      duration_ms: 0.102958
+      type: 'test'
+      ...
+    # Subtest: returns 0 for empty string
+    ok 2 - returns 0 for empty string
+      ---
+      duration_ms: 0.035916
+      type: 'test'
+      ...
+    # Subtest: returns 0 for NaN string
+    ok 3 - returns 0 for NaN string
+      ---
+      duration_ms: 0.030625
+      type: 'test'
+      ...
+    # Subtest: clamps to min
+    ok 4 - clamps to min
+      ---
+      duration_ms: 0.029041
+      type: 'test'
+      ...
+    # Subtest: clamps to max
+    ok 5 - clamps to max
+      ---
+      duration_ms: 0.028167
+      type: 'test'
+      ...
+    # Subtest: preserves decimals
+    ok 6 - preserves decimals
+      ---
+      duration_ms: 0.02825
+      type: 'test'
+      ...
+    1..6
+ok 2 - numInput
+  ---
+  duration_ms: 0.350292
+  type: 'suite'
+  ...
+# Subtest: intInput
+    # Subtest: truncates decimals
+    ok 1 - truncates decimals
+      ---
+      duration_ms: 0.058292
+      type: 'test'
+      ...
+    # Subtest: returns 0 for empty
+    ok 2 - returns 0 for empty
+      ---
+      duration_ms: 0.027792
+      type: 'test'
+      ...
+    # Subtest: clamps to min
+    ok 3 - clamps to min
+      ---
+      duration_ms: 0.030708
+      type: 'test'
+      ...
+    # Subtest: clamps to max
+    ok 4 - clamps to max
+      ---
+      duration_ms: 0.027916
+      type: 'test'
+      ...
+    # Subtest: handles negative values
+    ok 5 - handles negative values
+      ---
+      duration_ms: 0.02725
+      type: 'test'
+      ...
+    1..5
+ok 3 - intInput
+  ---
+  duration_ms: 0.222708
+  type: 'suite'
+  ...
+# Subtest: pctInput
+    # Subtest: parses valid percentage
+    ok 1 - parses valid percentage
+      ---
+      duration_ms: 0.052709
+      type: 'test'
+      ...
+    # Subtest: clamps to 0-100
+    ok 2 - clamps to 0-100
+      ---
+      duration_ms: 0.029292
+      type: 'test'
+      ...
+    # Subtest: clamps negative to 0
+    ok 3 - clamps negative to 0
+      ---
+      duration_ms: 0.027375
+      type: 'test'
+      ...
+    # Subtest: respects custom max
+    ok 4 - respects custom max
+      ---
+      duration_ms: 0.029
+      type: 'test'
+      ...
+    # Subtest: returns 0 for empty
+    ok 5 - returns 0 for empty
+      ---
+      duration_ms: 0.027083
+      type: 'test'
+      ...
+    1..5
+ok 4 - pctInput
+  ---
+  duration_ms: 0.217125
+  type: 'suite'
+  ...
+1..4
+# tests 25
+# suites 4
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10.392916
+✓ A: IRS apurado (20k, solteiro) = 2308.32
+✓ A: coleta líquida = 2308.32
+✓ A: escalão = 3.00
+✓ B: apurado (reembolso negativo) = -191.68
+✓ C: apurado (casal 20k+20k conjunto) = 4616.63
+✓ D: mínimo de existência (10k → 0) = 0.00
+✓ E: IRS Jovem ano 1 (isenção total) coleta = 0.00
+✓ F: capitais 28% (coleta + 2800) = 5108.32
+✓ G: capitais englobados = 4810.66
+✓ H: mais-valias mobiliárias 28% = 3708.32
+✓ I: mais-valias imobiliárias (50% englobado) = 3442.98
+✓ J: Cat B simplificado 20k (sem regra 15%) = 2120.00
+✓ K: Cat B regra dos 15% sem despesas = 6753.27
+✓ L: Cat B com despesas (acréscimo anulado) = 6260.16
+✓ M: IRS Jovem ano 1 sobre Cat B = 0.00
+✓ N: contabilidade organizada (lucro real) = 4682.24
+
+Todos os casos golden de IRS passaram.
+✓ A: matéria coletável = 40000.00
+✓ A: coleta IRC (15%) = 6000.00
+✓ A: c358 IRC liquidado = 6000.00
+✓ B: coleta (7500 + 5700) = 13200.00
+✓ C: coleta (19%) = 19000.00
+✓ D: derrama estadual (15 000) = 15000.00
+✓ D: derrama isenta até 1,5M = 0.00
+✓ E: TA viatura (25%) = 2500.00
+✓ E: TA viatura c/ agravamento (+10 p.p. = 35%) = 3500.00
+✓ F: TA viatura elétrica = 0 = 0.00
+✓ G: taxa PPC 80% (VN ≤ 500k) = 0.80
+✓ G: PPC = (6000 − 1000) × 80% = 4000.00
+✓ G: prestação = PPC/3 = 1333.33
+✓ H: taxa PPC 95% (VN > 500k) = 0.95
+✓ H: PPC = 6000 × 95% = 5700.00
+✓ H: base ≤ 200 € → sem PPC = 0.00
+✓ I: PAC = (2M − 1,5M) × 2,5% = 12500.00
+✓ I: LT 1M → PAC = 0 = 0.00
+
+Todos os casos golden do Previsa passaram.
+✓ PPC 3.º limitado a 600 € (diferença 600)
+✓ PPC 3.º suspenso (pagos ≥ estimado)
+✓ PPC 3.º pago integralmente (diferença ≥ normal)
+✓ Prestação por excesso: 3334 € (10 000 ÷ 3)
+✓ isento permitido até 15.000
+✓ isento bloqueado > 15.000 → trimestral
+✓ opções > 15.000 sem isento
+✓ faixa intermédia mantém trimestral
+✓ faixa intermédia mantém mensal voluntário
+✓ > 650.000 força mensal
+✓ > 650.000 só permite mensal
+✓ ENI simplificado > 200.000 → organizada
+✓ ENI simplificado <= 200.000 mantém
+✓ sociedade simplificada > 200k → organizada (art.86-A)
+✓ sociedade <= 200k mantém simplificado
+✓ sociedade em transparencia fiscal >200k mantém (não simplificado)
+✓ sociedade em retgs >200k mantém (não simplificado)
+✓ enforce corrige isento ilegal
+✓ enforce idempotente
+✓ enforce > 650k → mensal
+✓ enforce ENI grande → organizada
+
+Todos os testes passaram.
+✓ tabela: solteiro s/ dep = I
+✓ tabela: casado 2 tit c/ dep = I
+✓ tabela: solteiro c/ dep = II
+✓ tabela: casado 1 titular = III
+✓ tabela: deficiente solteiro s/ dep = IV
+✓ tabela: deficiente solteiro c/ dep = V
+✓ tabela: deficiente casado 2 tit c/ dep = VI
+✓ tabela: deficiente casado 1 titular = VII
+✓ CONT €1500 solteiro = 168
+✓ CONT €920 (SMN) = 0 = 0
+✓ CONT €1000 (parcela variável) = 35
+✓ CONT €6000 casado 2tit 1dep = 1852
+✓ CONT €1500 solteiro 2dep = 99
+✓ CONT €1500 casado 1tit = 94
+✓ CONT €1100 casado 1tit (variável) = 39
+✓ CONT €2500 deficiente = 214
+✓ CONT €1694 deficiente = 0 = 0
+✓ CONT €1500 jovem 75% isento = 42
+✓ CONT €1500 jovem 100% isento = 0
+✓ MAD €1500 solteiro = 100
+✓ MAD €1000 (parcela variável) = 6
+✓ MAD €3000 casado 1tit 1dep = 177
+✓ MAD oficial = true = true
+✓ AÇO €1500 estimativa (168×0,80) = 134
+✓ AÇO oficial = false = false
+✓ AÇO tabelaId = null = null
+✓ subsídio €1500 = retenção do mês = 168
+✓ duodécimos 2×€1500 = 28
+✓ CONT Tabela I monótona em R = true
+✓ casado 1 titular ≤ solteiro = true
+✓ deficiente ≤ não deficiente = true
+
+Todos os casos golden de Retenção passaram.
+✓ A: SS trabalhador (11% × 1750) = 192.50
+✓ A: retenção IRS mensal (168 + 28 duodécimos) = 196.00
+✓ A: tabela aplicada (I)
+✓ A: retenção oficial (true)
+✓ A: salário líquido mensal = 1493.50
+✓ A: nº recibos/ano (duodécimos) (12)
+✓ A: bruto anual (14×1500) = 21000.00
+✓ A: retenção anual (196×12) = 2352.00
+✓ A: líquido anual = 17790.00
+✓ A: custo total anual = 27649.50
+✓ B: nº recibos/ano (14)
+✓ B: SS do mês (11% × 1500) = 165.00
+✓ B: retenção do mês (tabela oficial) = 168.00
+✓ B: retenção autónoma de cada subsídio = 168.00
+✓ B: líquido mensal = 1299.00
+✓ B: retenção anual (12×168 + 2×168) = 2352.00
+✓ B: líquido anual = caso A = 17790.00
+✓ C: retenção = 0 (jovem ano 1) = 0.00
+✓ C: líquido = cash bruto − SS + subsídio = 1689.50
+✓ D: casado 1 titular usa Tabela III (III)
+✓ D: casado 1 titular retém menos = 109.67
+✓ D: casado 2 titulares s/ dep usa Tabela I (I)
+✓ D: casado 2 titulares = solteiro = 1493.50
+✓ E: Madeira retenção (tabela regional) = 116.67
+✓ E: Madeira é oficial (true)
+✓ E: Açores marcado como estimativa (false)
+✓ E: Açores retenção estimada (134 + 2×134/12) = 156.33
+✓ F: tabela deficiente (IV)
+✓ F: retenção deficiente €2500 = 214.00
+✓ F: retenção não deficiente €2500 = 471.00
+✓ G: subsídio isento (10,46×20) = 209.20
+✓ G: subsídio tributável ((12−10,46)×20) = 30.80
+✓ G: retenção sobre 1530,80 = 175.00
+✓ H: |acerto| < 20% do IRS anual estimado (true)
+✓ H: acerto = estimado − retido = 168.32
+
+Todos os casos golden de Salário passaram.
+✓ A: base (70%) = 1400.00
+✓ A: mensal (21,4%) = 299.60
+✓ A: trimestral = 898.80
+✓ A: anual = 3595.20
+✓ B: base (20%) = 200.00
+✓ B: mensal = 42.80
+✓ C: mensal = mínimo 20 € = 20.00
+✓ D: base limitada a 12×IAS = 6445.56
+✓ D: mensal sobre o teto = 1379.35
+✓ D: baseLimitada = true = true
+✓ E: mensal = 0 (isento) = 0.00
+✓ E: isento = true = true
+
+Todos os casos golden de SS Independente passaram.
+TAP version 13
+# Subtest: resultSimulacao — tipo inválido
+    # Subtest: returns [] for unknown tipo
+    ok 1 - returns [] for unknown tipo
+      ---
+      duration_ms: 2.675792
+      type: 'test'
+      ...
+    # Subtest: returns [] for null state
+    ok 2 - returns [] for null state
+      ---
+      duration_ms: 0.347041
+      type: 'test'
+      ...
+    1..2
+ok 1 - resultSimulacao — tipo inválido
+  ---
+  duration_ms: 4.262416
+  type: 'suite'
+  ...
+# Subtest: resultSimulacao — salário
+    # Subtest: returns [] when salarioBruto <= 0
+    ok 1 - returns [] when salarioBruto <= 0
+      ---
+      duration_ms: 0.093292
+      type: 'test'
+      ...
+    # Subtest: returns 2 items for valid salary
+    ok 2 - returns 2 items for valid salary
+      ---
+      duration_ms: 18.087083
+      type: 'test'
+      ...
+    # Subtest: includes custo empregador
+    ok 3 - includes custo empregador
+      ---
+      duration_ms: 0.253292
+      type: 'test'
+      ...
+    1..3
+ok 2 - resultSimulacao — salário
+  ---
+  duration_ms: 18.869041
+  type: 'suite'
+  ...
+# Subtest: resultSimulacao — selfss
+    # Subtest: returns isento for primeiroAno
+    ok 1 - returns isento for primeiroAno
+      ---
+      duration_ms: 0.171583
+      type: 'test'
+      ...
+    # Subtest: returns mensal for non-primeiroAno
+    ok 2 - returns mensal for non-primeiroAno
+      ---
+      duration_ms: 0.282917
+      type: 'test'
+      ...
+    1..2
+ok 3 - resultSimulacao — selfss
+  ---
+  duration_ms: 0.614583
+  type: 'suite'
+  ...
+# Subtest: resultSimulacao — ticket
+    # Subtest: returns 2 items
+    ok 1 - returns 2 items
+      ---
+      duration_ms: 0.165208
+      type: 'test'
+      ...
+    1..1
+ok 4 - resultSimulacao — ticket
+  ---
+  duration_ms: 0.214875
+  type: 'suite'
+  ...
+# Subtest: resultSimulacao — previsa
+    # Subtest: returns [] when no data
+    ok 1 - returns [] when no data
+      ---
+      duration_ms: 0.125375
+      type: 'test'
+      ...
+    # Subtest: returns items when RAI provided
+    ok 2 - returns items when RAI provided
+      ---
+      duration_ms: 0.2885
+      type: 'test'
+      ...
+    1..2
+ok 5 - resultSimulacao — previsa
+  ---
+  duration_ms: 0.536417
+  type: 'suite'
+  ...
+1..5
+# tests 10
+# suites 5
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 38.339208
+TAP version 13
+# Subtest: SIM_LABELS
+    # Subtest: has labels for all known sim types
+    ok 1 - has labels for all known sim types
+      ---
+      duration_ms: 0.310583
+      type: 'test'
+      ...
+    1..1
+ok 1 - SIM_LABELS
+  ---
+  duration_ms: 0.75175
+  type: 'suite'
+  ...
+# Subtest: summarizeSimulacao
+    # Subtest: returns string for unknown type
+    ok 1 - returns string for unknown type
+      ---
+      duration_ms: 0.170792
+      type: 'test'
+      ...
+    # Subtest: returns string for null state
+    ok 2 - returns string for null state
+      ---
+      duration_ms: 11.696542
+      type: 'test'
+      ...
+    # Subtest: returns non-empty for valid salário
+    ok 3 - returns non-empty for valid salário
+      ---
+      duration_ms: 0.245334
+      type: 'test'
+      ...
+    1..3
+ok 2 - summarizeSimulacao
+  ---
+  duration_ms: 12.229708
+  type: 'suite'
+  ...
+# Subtest: simHasData
+    # Subtest: returns false for empty state
+    ok 1 - returns false for empty state
+      ---
+      duration_ms: 0.174166
+      type: 'test'
+      ...
+    # Subtest: returns true when salary present
+    ok 2 - returns true when salary present
+      ---
+      duration_ms: 0.089958
+      type: 'test'
+      ...
+    # Subtest: returns false when salary is 0
+    ok 3 - returns false when salary is 0
+      ---
+      duration_ms: 0.218125
+      type: 'test'
+      ...
+    1..3
+ok 3 - simHasData
+  ---
+  duration_ms: 0.575125
+  type: 'suite'
+  ...
+1..3
+# tests 7
+# suites 3
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 20.680333
+✓ (a) isento == limite (10.46) = 10.46
+✓ (a) tributável == 0 = 0.00
+✓ (a) custoIsento anual 1×10.46×22×12 = 2761.44
+✓ (a) custoExcedente 0 = 0.00
+✓ (b) isento = limite (10.46) = 10.46
+✓ (b) tributável = 0.01 = 0.01
+✓ (b) isento anual 10.46×22×12 = 2761.44
+✓ (b) excedente anual 0.01×22×12=2.64 = 2.64
+✓ (b) bug check: excedente ≠ custoAnual = true
+✓ (c) isento 10.46 = 10.46
+✓ (c) tributável 4.54 = 4.54
+✓ (c) custoAnual 2×15×264 = 7920.00
+✓ (c) custoIsento 2×10.46×264 = 5522.88
+✓ (c) custoExcedente 2×4.54×264 = 2397.12
+✓ (c) Verification: 10.47 isento anual 2761.44 = 2761.44
+✓ (c) Verification: 10.47 excedente anual 2.64 = 2.64
+✓ (d) isento 5 (< limite) = 5.00
+✓ (d) tributável 0 = 0.00
+✓ (d) custoIsento == custoAnual = 1320.00
+✓ (d) custoExcedente 0 = 0
+✓ (e) dinheiro isento 6.15 = 6.15
+✓ (e) dinheiro tributável 0.01 = 0.01
+
+Todos os casos golden de Tickets passaram.
+✓ A: taxa TA = 0.25
+✓ A: TA = 3211.25
+✓ A: IVA aquisição (diesel passageiros = 0) = 0.00
+✓ A: depreciação não aceite (limite 25k) = 3750.00
+✓ B: taxa TA agravada = 0.35
+✓ B: TA agravada = 4495.75
+✓ C: taxa TA (elétrico ≤62,5k) = 0.00
+✓ C: IVA aquisição 100% = 11500.00
+✓ D: taxa TA (elétrico >62,5k) = 0.10
+✓ D: IVA aquisição 0 (>62,5k) = 0.00
+✓ D: isElecTaxed = true
+✓ E: taxa TA PHEV (37,5k-45k) = 0.07
+✓ E: IVA aquisição PHEV ≤50k = 10349.77
+✓ E: limite depreciação PHEV = 50000.00
+✓ F: IVA aquisição comercial diesel (50%) = 3450.00
+✓ F: TA = 0 (comercial) = 0
+✓ F: combustível IVA 50% = 115.00
+✓ G: taxa TA gasolina <37,5k = 0.08
+✓ G: limite depreciação 25k (gasolina) = 25000.00
+✓ H: TA = 0 (transporte público) = 0
+✓ H: IVA aquisição 100% (actividade isenta) = 18400.00
+✓ H: limite = ∞ (deprecia total) = Infinity
+✓ I: hidrogénio TA 0 (≤62,5k) = 0.00
+✓ I: hidrogénio IVA 100% = 13800.00
+✓ I: hidrogénio limite 62,5k = 62500.00
+✓ I: hidrogénio isElecTaxed=false (≤62,5k) = false
+✓ I: hidrogénio combustível IVA 100% = 230.00
+✓ J: hidrogénio TA 10% (>62,5k) = 0.10
+✓ J: hidrogénio IVA 0 (>62,5k) = 0.00
+✓ J: hidrogénio isElecTaxed=true = true
+✓ J: hidrogénio limite 62,5k = 62500.00
+✓ K: GPL TA 8% (<37,5k) = 0.08
+✓ K: GPL limite 37,5k = 37500.00
+✓ K: GPL IVA aquisição 50% = 3450.00
+✓ K: GPL dep não aceite (30k < 37,5k → 0) = 0.00
+✓ L: GPL TA 25% (37,5k-45k) = 0.25
+✓ L: GPL dep não aceite (40k-37,5k)×25% =625 = 625.00
+✓ L: GPL IVA aquisição 0 (>37,5k) = 0.00
+✓ M: comercial hidrogénio IVA aquisição 100% = 13800.00
+✓ M: comercial hidrogénio fuel IVA 100% = 230.00
+✓ M: TA = 0 (comercial) = 0
+✓ N: hybrid TA 8% = 0.08
+✓ N: hybrid IVA aquisição 0 (passageiros) = 0.00
+✓ N: hybrid combustível 0% = 0.00
+✓ N: hybrid limite 25k = 25000.00
+\nTodos os casos golden de Viaturas passaram.
+test:0

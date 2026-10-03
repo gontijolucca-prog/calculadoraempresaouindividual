@@ -1,5 +1,1 @@
-src/lib/empresas.test.ts(34,3): error TS2459: Module '"./empresas"' declares 'dedupeByNif' locally, but it is not exported.
-src/lib/empresas.test.ts(35,3): error TS2459: Module '"./empresas"' declares 'mergeEmpresasUnion' locally, but it is not exported.
-src/lib/empresas.test.ts(36,3): error TS2459: Module '"./empresas"' declares 'stripSaftXmlForCloud' locally, but it is not exported.
-src/lib/empresas.test.ts(37,3): error TS2459: Module '"./empresas"' declares 'adoptRemoteEmpresas' locally, but it is not exported.
-tsc:2
+tsc:0

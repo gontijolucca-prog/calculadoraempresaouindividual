@@ -18,37 +18,37 @@ rendering chunks...
 [plugin vite:reporter] 
 (!) /Volumes/Extreme SSD/Dev/GitHub/estudo360/src/lib/gabinete.ts is dynamically imported by /Volumes/Extreme SSD/Dev/GitHub/estudo360/src/App.tsx but also statically imported by /Volumes/Extreme SSD/Dev/GitHub/estudo360/src/App.tsx, /Volumes/Extreme SSD/Dev/GitHub/estudo360/src/Gabinete.tsx, /Volumes/Extreme SSD/Dev/GitHub/estudo360/src/GabineteEquipa.tsx, /Volumes/Extreme SSD/Dev/GitHub/estudo360/src/VisaoGeralView.tsx, /Volumes/Extreme SSD/Dev/GitHub/estudo360/src/lib/useGabinete.ts, dynamic import will not move module into another chunk.
 
-[vite-plugin-version] Emitted version.json: buildId=2f30609
+[vite-plugin-version] Emitted version.json: buildId=1231661
 computing gzip size...
 dist/index.html                                      3.12 kB │ gzip:   1.15 kB
 dist/assets/index-BFWHfjT5.css                     117.23 kB │ gzip:  20.34 kB
 dist/assets/inputGuards-zbf3hw0i.js                  0.29 kB │ gzip:   0.18 kB
 dist/assets/vendor-charts-C2G46D5p.js                0.41 kB │ gzip:   0.27 kB
 dist/assets/cofreCrypto-BRXtggDP.js                  1.57 kB │ gzip:   0.76 kB
-dist/assets/SimTwoStep-DxbiJa_M.js                   2.72 kB │ gzip:   1.04 kB
+dist/assets/SimTwoStep-m-yZ_cHl.js                   2.72 kB │ gzip:   1.04 kB
 dist/assets/vendor-react-BLe3gwQE.js                 3.90 kB │ gzip:   1.52 kB
-dist/assets/gabinetes-CzAcuAyJ.js                    3.91 kB │ gzip:   1.45 kB
-dist/assets/SimGateBar-Dj3_EHPe.js                   3.97 kB │ gzip:   1.65 kB
-dist/assets/SimulacoesHistory-CHPUdOxu.js            5.86 kB │ gzip:   2.02 kB
-dist/assets/GabineteSelector-CJsrh5ju.js            10.23 kB │ gzip:   3.01 kB
-dist/assets/IMTSimulator-CvFM7DOS.js                13.62 kB │ gzip:   3.68 kB
-dist/assets/SelfEmployedSSSimulator-BESoUfLG.js     17.24 kB │ gzip:   4.24 kB
-dist/assets/ImoveisEmpresa-D95cLWDP.js              18.34 kB │ gzip:   4.68 kB
-dist/assets/AIContabilista-DSzz4b6F.js              21.98 kB │ gzip:   7.18 kB
-dist/assets/DiagnosticoAutonomia-OTPORwsk.js        24.47 kB │ gzip:   6.03 kB
-dist/assets/IRSSimulator-DrCWRZha.js                25.76 kB │ gzip:   7.08 kB
+dist/assets/gabinetes-DiNNCSvv.js                    3.91 kB │ gzip:   1.45 kB
+dist/assets/SimGateBar-Dvek041n.js                   3.97 kB │ gzip:   1.65 kB
+dist/assets/SimulacoesHistory-CIJ42skt.js            5.86 kB │ gzip:   2.02 kB
+dist/assets/GabineteSelector-Cclc39XQ.js            10.23 kB │ gzip:   3.01 kB
+dist/assets/IMTSimulator-BXJ96Jlj.js                13.62 kB │ gzip:   3.68 kB
+dist/assets/SelfEmployedSSSimulator-B4XyPPFs.js     17.24 kB │ gzip:   4.24 kB
+dist/assets/ImoveisEmpresa-CTgcdRSc.js              18.34 kB │ gzip:   4.68 kB
+dist/assets/AIContabilista--3QuKHOq.js              21.98 kB │ gzip:   7.18 kB
+dist/assets/DiagnosticoAutonomia-DAd4h8xQ.js        24.47 kB │ gzip:   6.03 kB
+dist/assets/IRSSimulator-BWHXBrDf.js                25.76 kB │ gzip:   7.08 kB
 dist/assets/purify.es-Csrj9YNg.js                   28.14 kB │ gzip:  10.69 kB
-dist/assets/TicketSimulator-5vT8gBMf.js             28.30 kB │ gzip:   6.24 kB
-dist/assets/SalarioLiquidoSimulator-BwkMfiDZ.js     28.40 kB │ gzip:   5.35 kB
-dist/assets/OfficeSettingsView-Zvgb0M7x.js          29.42 kB │ gzip:   8.60 kB
-dist/assets/VehicleSimulator-CapBoS8V.js            30.62 kB │ gzip:   6.87 kB
+dist/assets/TicketSimulator-BgE3ugta.js             28.30 kB │ gzip:   6.24 kB
+dist/assets/SalarioLiquidoSimulator-CRL5M2ox.js     28.40 kB │ gzip:   5.35 kB
+dist/assets/OfficeSettingsView-Da_E3pgA.js          29.42 kB │ gzip:   8.60 kB
+dist/assets/VehicleSimulator-CROa1ctB.js            30.62 kB │ gzip:   6.87 kB
 dist/assets/vendor-icons-DwWvALeS.js                55.58 kB │ gzip:  12.89 kB
-dist/assets/TaxSimulator-CtgcyAYp.js                81.23 kB │ gzip:  19.80 kB
-dist/assets/PreviSaSimulator-DxtKial3.js            84.12 kB │ gzip:  18.27 kB
-dist/assets/Gabinete-CkB07pm_.js                   136.76 kB │ gzip:  27.51 kB
+dist/assets/TaxSimulator-Ck3pwDAO.js                81.23 kB │ gzip:  19.80 kB
+dist/assets/PreviSaSimulator-BBRljSMP.js            84.12 kB │ gzip:  18.27 kB
+dist/assets/Gabinete-BL_ZHJ7W.js                   136.76 kB │ gzip:  27.50 kB
 dist/assets/index.es-DsbQenbC.js                   159.65 kB │ gzip:  53.54 kB
 dist/assets/vendor-pdf-EaPf9jlN.js                 601.40 kB │ gzip: 180.37 kB
 dist/assets/vendor-firebase-BidhP2wQ.js            780.15 kB │ gzip: 195.73 kB
-dist/assets/index-74xrjk3s.js                    1,004.36 kB │ gzip: 292.08 kB
-✓ built in 4.45s
+dist/assets/index-BucHDmKe.js                    1,005.20 kB │ gzip: 292.42 kB
+✓ built in 5.02s
 build:0

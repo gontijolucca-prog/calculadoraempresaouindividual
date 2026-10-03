@@ -13,6 +13,8 @@ Gerado 2026-10-02. Compara valores do código com fonte oficial.
 | Teto SS 12×IAS | `6445,56` | 6 445,56 € | 12×537,13 | — | ✅ |
 | IVA dedutível viaturas | `VehicleSimulator.tsx` regras art.21 CIVA | elétrico ≤62,5k 100% etc | CIVA art.21 | — | ✅ golden testes 14/14 pass |
 | IMT Jovem 330 539 limite | `src/lib/imt.ts` | 330 539 € | CIMT art.11-A Lei 73-A/2025 | — | ✅ |
+| LIMIAR justificação 15% | `src/lib/irs.ts: LIMIAR_JUSTIFICACAO_15PCT=28320` | 28 320 € | Provisório — aguardar Portaria | — | ⏳ pendente |
+| Regiões IRS (Açores 0,80 / Madeira 0,70) | `src/lib/irs.ts: REGIOES` | 0,80 / 0,70 | ⚠ Percentagens a confirmar com contabilista | — | ⏳ pendente |
 
 Logs anexos:
 
