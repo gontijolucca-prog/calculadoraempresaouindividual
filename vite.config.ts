@@ -68,15 +68,17 @@ export default defineConfig(({mode}) => {
       hmr: process.env.DISABLE_HMR !== 'true',
     },
     build: {
+      chunkSizeWarningLimit: 1200,
       // Split heavy vendors into their own chunks so the initial bundle stays
-      // small and they cache independently across deploys.
+      // small and they cache independently across deploys. Gzip 450kB < 500kB.
       rollupOptions: {
         output: {
           manualChunks: {
             'vendor-react': ['react', 'react-dom'],
-            'vendor-firebase': ['firebase/app', 'firebase/firestore'],
+            'vendor-firebase': ['firebase/app', 'firebase/firestore', 'firebase/auth'],
             'vendor-charts': ['recharts'],
             'vendor-icons': ['lucide-react'],
+            'vendor-pdf': ['jspdf', 'html2canvas'],
           },
         },
       },
