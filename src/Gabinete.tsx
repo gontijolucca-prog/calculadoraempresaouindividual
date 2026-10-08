@@ -21,7 +21,7 @@ import VisaoGeralView from './VisaoGeralView';
 import GabineteEquipa from './GabineteEquipa';
 
 // Guia por tab interna do Gabinete (a sugestão muda conforme a tab ativa)
-const GAB_TAB_GUIA: Record<GabTab, ViewKey> = {
+const GAB_TAB_GUIA: Record<string, ViewKey> = {
   'mapa-rh': 'gabinete',
   'mapa-controlo': 'gabinete',
   dashboard: 'gabinete',
@@ -29,11 +29,13 @@ const GAB_TAB_GUIA: Record<GabTab, ViewKey> = {
   equipa: 'gab-equipa',
   tarefas: 'gab-tarefas',
   cofre: 'gab-cofre',
+  agenda: 'gab-agenda',
+  obrigacoes: 'gab-obrigacoes',
 };
 
 // ─── Layout ─────────────────────────────────────────────────────────────────
 
-const VALID_GAB_TABS_SET = new Set<GabineteTab>(['dashboard','mapa-controlo','mapa-rh','visao-geral','equipa','tarefas','cofre','gallery']);
+const VALID_GAB_TABS_SET = new Set<string>(['dashboard','mapa-controlo','mapa-rh','visao-geral','equipa','tarefas','cofre','gallery','agenda','obrigacoes']);
 export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour, activeEmpresaId, activeEmpresaNome, onGoEmpresas }: { tab?: GabineteTab; onTabChange?: (t: GabineteTab) => void; onStartTour?: (v: ViewKey) => void; activeEmpresaId?: string | null; activeEmpresaNome?: string | null; onGoEmpresas?: () => void }) {
   const [internalTab, setInternalTab] = useState<GabTab>('dashboard');
   const rawTab: GabineteTab = controlledTab ?? internalTab;

@@ -1842,7 +1842,7 @@ function AppContent() {
       <Suspense fallback={null}>
         <AIContabilista ref={botApiRef} bridge={botBridge} liftBottom={draftNewClient} view={view} viewTitle={VIEW_TITLES[view]} />
       </Suspense>
-      {view !== 'gabinete' && view !== 'office-settings' && (
+      {view !== 'gabinete' && (
         <GuiaSugestao view={view as ViewKey} lift={draftNewClient} onStart={(v) => setTourRequest({ view: v, nonce: Date.now() })} />
       )}
       </div>
