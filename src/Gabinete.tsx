@@ -388,7 +388,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
       <div className="bg-white rounded-[10px] border border-zinc-300 shadow-sm overflow-hidden print:shadow-none">
         <div className="px-3 py-2.5 border-b border-zinc-200 bg-[#F8FAFC] flex flex-wrap items-center gap-2.5">
           <label className="inline-flex items-center gap-1.5 text-[13px] font-medium">
-            <input type="checkbox" checked={todosClientes} onChange={e=>setTodosClientes(e.target.checked)} className="w-4 h-4 rounded border-zinc-400 text-[#0677FF] focus:ring-[#0677FF]" />
+            <input type="checkbox" checked={todosClientes} onChange={e=>setTodosClientes(e.target.checked)} className="w-4 h-4 rounded border-zinc-400 text-zinc-600 focus:ring-zinc-300" />
             Todos os Clientes
           </label>
           <div className="flex items-center gap-1">
@@ -403,11 +403,11 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
           </select>
           <span className="text-sm text-zinc-600">Ano</span>
           <input type="number" value={ano} onChange={e=>setAno(parseInt(e.target.value)|| new Date().getFullYear())} className="w-[78px] px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm" />
-          <button onClick={()=>{ /* filtros já são live */ }} className="ml-auto px-6 py-1.5 rounded border-2 border-[#0677FF] bg-white text-[#0677FF] font-semibold text-sm hover:bg-blue-50">Ok</button>
+          <button onClick={()=>{ /* filtros já são live */ }} className="ml-auto px-6 py-1.5 rounded border border-zinc-300 bg-white text-zinc-700 font-semibold text-sm hover:bg-zinc-50">Ok</button>
         </div>
         <div className="px-3 py-2 flex items-center gap-2">
           <label className="inline-flex items-center gap-1.5 text-[13px] font-medium">
-            <input type="checkbox" checked={todasObrigacoes} onChange={e=>setTodasObrigacoes(e.target.checked)} className="w-4 h-4 rounded border-zinc-400 text-[#0677FF] focus:ring-[#0677FF]" />
+            <input type="checkbox" checked={todasObrigacoes} onChange={e=>setTodasObrigacoes(e.target.checked)} className="w-4 h-4 rounded border-zinc-400 text-zinc-600 focus:ring-zinc-300" />
             Todas as Obrigações
           </label>
           <select value={filtroObrigacao} onChange={e=>setFiltroObrigacao(e.target.value)} disabled={todasObrigacoes} className={`flex-1 px-2 py-1.5 rounded border text-sm ${todasObrigacoes ? 'bg-zinc-100 border-zinc-200 text-zinc-400' : 'bg-white border-zinc-300'}`}>
@@ -470,10 +470,10 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
                     {isExpanded && linhasCli.map(linha => (
                       <motion.tr key={linha.id} initial={{opacity:0, y:-6}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-6}} transition={{duration:0.28, ease:[0.4,0,0.2,1]}} className="border-t border-zinc-200 hover:bg-zinc-50/70">
                         <td className="px-2 py-1.5 pl-7 flex items-center gap-1.5 sticky left-0 bg-white z-[5] border-r border-zinc-200">
-                          <span className="w-4 h-4 rounded-[3px] border border-amber-400 bg-amber-50 flex items-center justify-center shrink-0">
-                            <span className="w-2 h-2 rounded-[1px] bg-amber-500 block" />
+                          <span className="w-4 h-4 rounded-[3px] border border-zinc-300 bg-white flex items-center justify-center shrink-0">
+                            <span className="w-2 h-2 rounded-[1px] bg-zinc-400 block" />
                           </span>
-                          <span className="text-amber-700 font-medium truncate">{linha.label}</span>
+                          <span className="text-zinc-700 font-medium truncate">{linha.label}</span>
                         </td>
                         {meses.map((_, idx) => {
                           const mesNum = idx + 1;
@@ -638,7 +638,7 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
             <option value="">—</option>
             <option value="1">1º Trimestre</option><option value="2">2º Trimestre</option><option value="3">3º Trimestre</option><option value="4">4º Trimestre</option>
           </select>
-          <button onClick={()=>{}} className="px-4 py-1.5 rounded border-2 border-[#3B82F6] text-[#2563EB] font-semibold text-sm bg-white">Ok</button>
+          <button onClick={()=>{}} className="px-4 py-1.5 rounded border border-zinc-300 bg-white text-zinc-700 font-semibold text-sm">Ok</button>
           <div className="ml-auto flex gap-1.5">
             <button onClick={()=>window.print()} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Imprimir</button>
             <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Exportar XLS</button>
@@ -668,7 +668,7 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-zinc-600 whitespace-nowrap">Tipo de tarefa</span>
-            <select value={filtroPilar} onChange={e=>setFiltroPilar(e.target.value)} className="flex-1 px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] focus:ring-2 focus:ring-[#0677FF]/20 focus:border-[#0677FF]">
+            <select value={filtroPilar} onChange={e=>setFiltroPilar(e.target.value)} className="flex-1 px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] focus:ring-1 focus:ring-zinc-300 focus:border-zinc-400">
               <option value="">(todos os tipos)</option>
               {pilares.map(p=> <option key={p.key} value={p.key}>{p.labelFull}</option>)}
             </select>
@@ -878,7 +878,7 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
             <option value="">—</option>
             <option value="1">1º Trimestre</option><option value="2">2º Trimestre</option><option value="3">3º Trimestre</option><option value="4">4º Trimestre</option>
           </select>
-          <button onClick={()=>{}} className="px-4 py-1.5 rounded border-2 border-[#3B82F6] text-[#2563EB] font-semibold text-sm bg-white">Ok</button>
+          <button onClick={()=>{}} className="px-4 py-1.5 rounded border border-zinc-300 bg-white text-zinc-700 font-semibold text-sm">Ok</button>
           <div className="ml-auto flex gap-1.5">
             <button onClick={()=>window.print()} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Imprimir</button>
             <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Exportar XLS</button>
@@ -908,7 +908,7 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-zinc-600 whitespace-nowrap">Tipo de tarefa</span>
-            <select value={filtroPilar} onChange={e=>setFiltroPilar(e.target.value)} className="flex-1 px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] focus:ring-2 focus:ring-[#0677FF]/20 focus:border-[#0677FF]">
+            <select value={filtroPilar} onChange={e=>setFiltroPilar(e.target.value)} className="flex-1 px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] focus:ring-1 focus:ring-zinc-300 focus:border-zinc-400">
               <option value="">(todos os tipos)</option>
               {pilares.map(p=> <option key={p.key} value={p.key}>{p.labelFull}</option>)}
             </select>
