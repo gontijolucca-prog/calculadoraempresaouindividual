@@ -139,18 +139,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
   // Dropdown "Gabinete" — inicia aberto quando estamos no gabinete
   const [gabineteOpen, setGabineteOpen] = useState(active === 'gabinete');
   useEffect(() => { if (active === 'gabinete') setGabineteOpen(true); }, [active]);
-  // Auto-fechar: qualquer dropdown aberto fecha sozinho após 7s, com animação
-  // suave (o contentor anima grid-rows 1fr→0fr). O temporizador recomeça a cada
-  // navegação (active), para não fechar enquanto o utilizador está a escolher.
-  useEffect(() => {
-    if (!gabineteOpen && !simMenuOpen && !relatoriosOpen) return;
-    const t = setTimeout(() => {
-      setGabineteOpen(false);
-      setSimMenuOpen(false);
-      setRelatoriosOpen(false);
-    }, 12000);
-    return () => clearTimeout(t);
-  }, [gabineteOpen, simMenuOpen, relatoriosOpen, active]);
+  // Auto-fechar desativado a pedido — dropdowns só fecham ao clicar na seta
 
   const GAB_TABS = [
   { id: 'dashboard', label: 'Quadro resumo obrigações', Icon: Calendar, desc: 'JAN-DEZ: v Concluído · ✕ Não concluído' },
