@@ -770,13 +770,12 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
   const colabs = useGabineteColaboradores();
   const meses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'] as const;
 
-  // 7 colunas do screenshot 1 (cores distintas)
   type Pilar = { key: string; labelShort: string; labelFull: string; color: string; bgHeader: string; tipos: ObrigacaoTipo[] };
   const pilares: Pilar[] = [
-    { key:'salarios',   labelShort:'Salários',    labelFull:'Salários',                         color:'#7C4DFF', bgHeader:'bg-[#F3E8FD]', tipos:['retencao','ss'] },
-    { key:'ticket',     labelShort:'Ticket',      labelFull:'Carregamento Ticket',              color:'#F29900', bgHeader:'bg-[#FEF7E0]', tipos:['dossier','outro'] },
-    { key:'irs_guia',   labelShort:'Guia IRS',    labelFull:'Guia de IRS/Retenções (Pessoal, indep, rendas)', color:'#0B57D0', bgHeader:'bg-[#E8F0FE]', tipos:['retencao','dossier'] },
-    { key:'dmr_at',     labelShort:'DMR-AT',      labelFull:'DMR - AT',                         color:'#0F9D58', bgHeader:'bg-[#E6F4EA]', tipos:['retencao'] },
+    { key:'salarios',   labelShort:'Salários',    labelFull:'Salários',                         color:'#374151', bgHeader:'bg-white', tipos:['retencao','ss'] },
+    { key:'ticket',     labelShort:'Ticket',      labelFull:'Carregamento Ticket',              color:'#374151', bgHeader:'bg-white', tipos:['dossier','outro'] },
+    { key:'irs_guia',   labelShort:'Guia IRS',    labelFull:'Guia de IRS/Retenções (Pessoal, indep, rendas)', color:'#374151', bgHeader:'bg-white', tipos:['retencao','dossier'] },
+    { key:'dmr_at',     labelShort:'DMR-AT',      labelFull:'DMR - AT',                         color:'#374151', bgHeader:'bg-white', tipos:['retencao'] },
     { key:'dmr_ss',     labelShort:'DMR-SS',      labelFull:'DMR - SS',                         color:'#374151', bgHeader:'bg-white', tipos:['ss'] },
     { key:'pagamentos', labelShort:'Pagamentos',  labelFull:'Pagamentos Encargos Mensais SS + Retenções', color:'#374151', bgHeader:'bg-white', tipos:['ss','retencao'] },
   ];

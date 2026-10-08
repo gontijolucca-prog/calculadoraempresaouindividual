@@ -295,7 +295,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                 {(() => {
                   const qd = GAB_TABS.find(t => t.id === 'dashboard');
                   return qd ? (
-                    <button key={qd.id} type="button" onClick={() => goGabinete(qd.id)} title={qd.desc} aria-current={active==='gabinete' && gabineteTab===qd.id ? 'page' : undefined} className={`w-full flex items-center gap-2.5 px-3 py-[7px] rounded-[10px] text-[12.5px] font-[700] transition-colors text-left border-2 ${active==='gabinete' && gabineteTab===qd.id ? 'bg-[#0677FF] text-white border-[#0677FF] shadow-sm' : 'bg-[#0677FF]/6 text-[#0677FF] border-[#0677FF]/25 hover:bg-[#0677FF]/10 hover:border-[#0677FF]/40'}`}>
+                    <button key={qd.id} type="button" onClick={() => goGabinete(qd.id)} title={qd.desc} aria-current={active==='gabinete' && gabineteTab===qd.id ? 'page' : undefined} className={`w-full flex items-center gap-2.5 px-3 py-[7px] rounded-[10px] text-[12.5px] font-[700] transition-colors text-left border ${active==='gabinete' && gabineteTab===qd.id ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
                       <qd.Icon className="w-[15px] h-[15px] shrink-0" />
                       <span className="truncate">{qd.label}</span>
                     </button>
