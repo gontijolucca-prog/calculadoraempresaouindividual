@@ -117,9 +117,8 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-6 text-zinc-900">
-      {/* A galeria tem os seus próprios tiles informativos; cada função mantém
-          a sugestão de guia contextual quando já estamos dentro dela. */}
-      {guideView && <GuiaSugestao view={guideView} onStart={startTour} />}
+      {/* Guia escondido — só acessível pela bola do AI Contabilista (MiniDock), em todas as páginas */}
+      {guideView && <div className="hidden-dock-triggers"><GuiaSugestao view={guideView} onStart={startTour} /></div>}
 
       {/* Header — sem tabs no topo; navegação continua no dropdown da sidebar */}
       <div className="sticky top-0 z-20 border-b border-zinc-200 bg-white/80 backdrop-blur">
