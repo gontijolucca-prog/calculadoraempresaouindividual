@@ -11,7 +11,6 @@ import LegalInfo from './LegalInfo';
 import LandingPage from './LandingPage';
 import AuthView, { VerifyEmailGate } from './AuthView';
 import EmpresasList from './EmpresasList';
-import SimIntro, { SIM_INTROS } from './SimIntro';
 import ClientHub from './ClientHub';
 import ExportarRelatorio from './ExportarRelatorio';
 import type { AppMode } from './ModeSelector';
@@ -704,13 +703,7 @@ function AppContent() {
   const [relatorioDocPreselect, setRelatorioDocPreselect] = useState<string | null>(null);
   const openRelatorios = (docId: string) => { setRelatorioDocPreselect(docId); setView('exportar'); };
 
-  // Ecrã-intro dos simuladores: ao escolher um simulador na sidebar aparece
-  // primeiro um resumo da utilidade; só o botão "Simular" entra no formulário.
-  // Restauros do histórico e navegação do bot entram diretos (não passam aqui).
-  const [introFor, setIntroFor] = useState<ViewType | null>(null);
-  useEffect(() => {
-    if (introFor && view !== introFor) setIntroFor(null);
-  }, [view, introFor]);
+  // Intro removida a pedido — simuladores entram direto sem ecrã "Vais precisar de"
 
   // Aviso visível quando a sincronização cloud falha (antes falhava em silêncio
   // e os computadores divergiam sem ninguém saber). Limpa ao primeiro sucesso.
@@ -885,10 +878,6 @@ function AppContent() {
     if (view === 'gabinete') setGabineteTab('visao-geral');
     if (opts?.openPackage) requestOpenPackage();
     if (opts?.toggleFlow) requestFlowToggle();
-    // Simulador escolhido no menu → mostra primeiro o ecrã-intro ("Simular" entra).
-    // Os cards da galeria do cliente já explicam o simulador → entram diretos.
-    if (SIM_INTROS[view] && !opts?.skipIntro) setIntroFor(view as ViewType);
-    else setIntroFor(null);
     setView(view as ViewType);
   };
 
@@ -1422,13 +1411,7 @@ function AppContent() {
     <ErrorBoundary>
     <Suspense fallback={<ViewLoading />}>
       <PageTransition pageKey={view}>
-        {introFor && view === introFor && SIM_INTROS[introFor] && (
-          <SimIntro
-            view={introFor}
-            onSimular={() => setIntroFor(null)}
-            onVoltar={() => { setIntroFor(null); setView('empresas'); }}
-          />
-        )}
+        {/* Intro removida — entrada direta */}
         {view === 'hub' && (currentEmpresaId
           ? <ClientHub
               clientName={clientProfile.nomeCliente?.trim() || 'Cliente sem nome'}
@@ -1456,34 +1439,34 @@ function AppContent() {
             office={officeSettings} honorarios={honorariosConfig}
             onGoToOfficeSettings={() => setView('office-settings')} />
         )}
-        {view === 'tax' && introFor !== 'tax' && ((currentEmpresaId || mode === 'novo-cliente')
+        {view === 'tax' && ((currentEmpresaId || mode === 'novo-cliente')
           ? <TaxSimulator initialState={taxState} onStateChange={handleTaxStateChange} profile={clientProfile} />
           : simGate)}
-        {view === 'vehicle' && introFor !== 'vehicle' && (currentEmpresaId
+        {view === 'vehicle' && (currentEmpresaId
           ? <VehicleSimulator initialState={vehicleState} onStateChange={handleVehicleStateChange} />
           : simGate)}
-        {view === 'ticket' && introFor !== 'ticket' && (currentEmpresaId
+        {view === 'ticket' && (currentEmpresaId
           ? <TicketSimulator initialState={ticketState} onStateChange={handleTicketStateChange} profile={clientProfile} />
           : simGate)}
-        {view === 'selfss' && introFor !== 'selfss' && (currentEmpresaId
+        {view === 'selfss' && (currentEmpresaId
           ? <SelfEmployedSSSimulator initialState={ssState} onStateChange={handleSSStateChange} />
           : simGate)}
-        {view === 'diagnostico' && introFor !== 'diagnostico' && (currentEmpresaId
+        {view === 'diagnostico' && (currentEmpresaId
           ? <DiagnosticoAutonomia initialState={diagnosticoState} onStateChange={handleDiagnosticoStateChange} />
           : simGate)}
-        {view === 'imoveis' && introFor !== 'imoveis' && (currentEmpresaId
+        {view === 'imoveis' && (currentEmpresaId
           ? <ImoveisEmpresa initialState={imoveisState} onStateChange={handleImoveisStateChange} profile={clientProfile} />
           : simGate)}
-        {view === 'imt' && introFor !== 'imt' && (currentEmpresaId
+        {view === 'imt' && (currentEmpresaId
           ? <IMTSimulator initialState={imtState} onStateChange={handleIMTStateChange} />
           : simGate)}
-        {view === 'salario' && introFor !== 'salario' && (currentEmpresaId
+        {view === 'salario' && (currentEmpresaId
           ? <SalarioLiquidoSimulator initialState={salarioState} onStateChange={handleSalarioStateChange} />
           : simGate)}
-        {view === 'irs' && introFor !== 'irs' && (currentEmpresaId
+        {view === 'irs' && (currentEmpresaId
           ? <IRSSimulator initialState={irsState} onStateChange={handleIRSStateChange} />
           : simGate)}
-        {view === 'previsa' && introFor !== 'previsa' && (currentEmpresaId
+        {view === 'previsa' && (currentEmpresaId
           ? <PreviSaSimulator initialState={previSaState} onStateChange={handlePreviSaStateChange} />
           : simGate)}
         {view === 'historico' && (
