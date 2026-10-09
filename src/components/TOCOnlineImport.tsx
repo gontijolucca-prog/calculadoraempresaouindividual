@@ -22,7 +22,13 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
   const [list, setList] = useState<TocCustomerDraft[]>(() => getTocDraft());
   const [sel, setSel] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(() => {
+    try {
+      const raw = localStorage.getItem('estudo360:v1:toconline:lastError');
+      if (raw) { const j = JSON.parse(raw); const msg = j.error ? `${j.error}${j.detail ? ' — ' + j.detail : ''}${j.expected ? ' (state)' : ''}` : raw; return `Último erro TOConline: ${msg}. Verifique o redirect_uri em TOConline = ${typeof window !== 'undefined' ? window.location.origin + '/' : ''}`; }
+    } catch {}
+    return null;
+  });
   const [done, setDone] = useState<number | null>(null);
 
   useEffect(() => {
@@ -98,6 +104,8 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
   const handleDisconnect = () => {
     clearTocConfig();
     clearTocDraft();
+    try { localStorage.removeItem('estudo360:v1:toconline:lastError'); } catch {}
+    setError(null);
     setConnected(false);
     setList([]);
     setStep('config');

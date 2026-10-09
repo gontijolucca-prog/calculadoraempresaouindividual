@@ -413,26 +413,52 @@ function AppContent() {
   // clientes e deixa o rascunho pronto a abrir na Lista de Empresas.
   useEffect(() => {
     (async () => {
+      const q = new URLSearchParams(window.location.search);
+      const code = q.get('code');
+      const state = q.get('state');
+      const err = q.get('error');
+      const errDesc = q.get('error_description');
+      if (err) {
+        console.warn('[toc] erro do TOConline:', err, errDesc);
+        try { localStorage.setItem('estudo360:v1:toconline:lastError', JSON.stringify({ error: err, detail: errDesc, url: window.location.href })); } catch {}
+        try { window.history.replaceState({}, '', window.location.pathname); } catch {}
+        const { requestTocOpen } = await import('./lib/toconline');
+        requestTocOpen();
+        setMode('empresa'); setView('empresas');
+        return;
+      }
+      if (!code || !state) return;
       try {
-        const q = new URLSearchParams(window.location.search);
-        const code = q.get('code');
-        const state = q.get('state');
-        if (!code || !state) return;
         const { getTocConfig, pendingState, setTocPending, exchangeTocCode, fetchTocCustomers, saveTocDraft, requestTocOpen } = await import('./lib/toconline');
-        if (pendingState() !== state) return;
+        const expected = pendingState();
+        if (expected !== state) {
+          console.warn('[toc] state mismatch', { expected, got: state });
+          try { localStorage.setItem('estudo360:v1:toconline:lastError', JSON.stringify({ error: 'state_mismatch', expected, got: state })); } catch {}
+          try { window.history.replaceState({}, '', window.location.pathname); } catch {}
+          requestTocOpen(); setMode('empresa'); setView('empresas');
+          return;
+        }
         setTocPending(false);
         const cfg = getTocConfig();
-        if (!cfg) return;
+        if (!cfg) {
+          try { localStorage.setItem('estudo360:v1:toconline:lastError', JSON.stringify({ error: 'sem_config' })); } catch {}
+          try { window.history.replaceState({}, '', window.location.pathname); } catch {}
+          requestTocOpen(); setMode('empresa'); setView('empresas');
+          return;
+        }
         await exchangeTocCode(cfg, code);
         const items = await fetchTocCustomers(cfg);
         saveTocDraft(items);
+        try { localStorage.removeItem('estudo360:v1:toconline:lastError'); } catch {}
         requestTocOpen();
         window.history.replaceState({}, '', window.location.pathname);
         setMode('empresa');
         setView('empresas');
-      } catch (e) {
+      } catch (e: any) {
         console.warn('[toc] callback falhou:', e);
+        try { localStorage.setItem('estudo360:v1:toconline:lastError', JSON.stringify({ error: e?.message || String(e), code, state })); } catch {}
         try { window.history.replaceState({}, '', window.location.pathname); } catch {}
+        try { const { requestTocOpen } = await import('./lib/toconline'); requestTocOpen(); setMode('empresa'); setView('empresas'); } catch {}
       }
     })();
   }, []);
