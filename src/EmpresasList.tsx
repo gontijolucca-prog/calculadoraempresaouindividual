@@ -55,7 +55,16 @@ export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual
   const [confirmDelete, setConfirmDelete] = useState<EmpresaRecord | null>(null);
   const [showNovaModal, setShowNovaModal] = useState(false);
   const [showTOC, setShowTOC] = useState(false);
-  useEffect(() => { if (consumeTocOpen()) setShowTOC(true); }, []);
+  // Abre o modal do TOConline: (a) se o callback OAuth já deixou a flag, ou
+  // (b) quando o callback terminar DEPOIS deste componente montar (evento).
+  // Sem o evento havia corrida: a lista montava antes do fetch acabar e o
+  // modal nunca abria — o utilizador via só a lista sem nada acontecer.
+  useEffect(() => {
+    if (consumeTocOpen()) setShowTOC(true);
+    const onOpen = () => { consumeTocOpen(); setShowTOC(true); };
+    window.addEventListener('estudo360:toc-open', onOpen);
+    return () => window.removeEventListener('estudo360:toc-open', onOpen);
+  }, []);
   // Acordeão: um cartão expandido de cada vez. Inicia sempre FECHADO.
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const novaSaftInputRef = useRef<HTMLInputElement>(null);
