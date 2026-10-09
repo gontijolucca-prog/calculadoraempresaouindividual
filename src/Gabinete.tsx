@@ -245,7 +245,9 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
     window.addEventListener('estudo360:quadro-visiveis-updated', h as EventListener);
     return () => window.removeEventListener('estudo360:quadro-visiveis-updated', h as EventListener);
   }, []);
-  const [soNaoConcluido, setSoNaoConcluido] = useState(false);
+  const [filtroEstado, setFiltroEstado] = useState<string>('');
+  const [filtroRegime, setFiltroRegime] = useState<string>('');
+  const [filtroGrupo, setFiltroGrupo] = useState<string>('');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [obrEditingId, setObrEditingId] = useState<string | null>(null);
   const [showGerir, setShowGerir] = useState(false);
@@ -286,12 +288,48 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
   const expandirTodos = () => setExpanded(new Set(clientes.map(c => c.id)));
   const colapsarTodos = () => setExpanded(new Set());
 
-  // Filtragem de clientes
+  const linhasFiltradas = useMemo(() => {
+    if (todasObrigacoes) return linhasDef;
+    if (quadroVisiveis && quadroVisiveis.length) return linhasDef.filter(l => quadroVisiveis.includes(l.id));
+    if (filtroObrigacao) return linhasDef.filter(l => l.id === filtroObrigacao);
+    return linhasDef;
+  }, [todasObrigacoes, quadroVisiveis, filtroObrigacao, linhasDef]);
+
+  const grupos = useMemo(() => Array.from(new Set(clientes.flatMap(c=> (c.tags||[])))).sort(), [clientes]);
+
+  const calcCellStatus = (cli: GabineteCliente, linha: LinhaDef, mes: number, anoNum: number): 'concluido'|'nao_concluido' => {
+    const hits = obrigacoes.filter(o => {
+      if (o.clienteId !== cli.id) return false;
+      const d = new Date(o.vencimento);
+      if (d.getFullYear() !== anoNum) return false;
+      if (d.getMonth() + 1 !== mes) return false;
+      return linha.tipos.includes(o.tipo as ObrigacaoTipo) || linha.tipos.includes(o.tipo as any);
+    });
+    let best: Obrigacao | undefined;
+    for (const o of hits) { if (!best) best=o; else { const prio=(s:ObrigacaoEstado)=> s==='entregue'?0:s==='atrasada'?1:2; if(prio(o.estado)<prio(best.estado)) best=o; } }
+    if (best) return best.estado==='entregue' ? 'concluido' : 'nao_concluido';
+    const hasData = obrigacoes.length>0;
+    if (!hasData) {
+      switch(linha.id) {
+        case 'modelo44': return mes===1 ? 'concluido' : 'nao_concluido';
+        case 'saft': return mes<=8 ? 'concluido' : 'nao_concluido';
+        case 'iva': return [2,5,8].includes(mes) ? 'concluido' : 'nao_concluido';
+        case 'ies': return mes===7 ? 'concluido' : 'nao_concluido';
+        case 'modelo10': return mes===2 ? 'concluido' : 'nao_concluido';
+        case 'dmr': return mes<=8 ? 'concluido' : 'nao_concluido';
+        case 'ss': return mes<=8 ? 'concluido' : 'nao_concluido';
+        default: return 'nao_concluido';
+      }
+    }
+    return 'nao_concluido';
+  };
+
+  // Filtragem de clientes — todos os filtros combinam (AND)
   const clientesFiltrados = useMemo(() => {
     let list = [...clientes];
     if (!todosClientes) {
       const t = filtroClienteTexto.trim().toLowerCase();
-      if (t) list = list.filter(c => (c.nome + ' ' + c.nif).toLowerCase().includes(t));
+      if (t) list = list.filter(c => (c.nome + ' ' + c.nif + ' ' + (c.tags||[]).join(' ') + ' ' + (c.email||'')).toLowerCase().includes(t));
     }
     if (gestorFiltro) {
       list = list.filter(c => {
@@ -301,24 +339,21 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
         const adm = (c.apoioAdministrativo?.nome || '').toLowerCase();
         const rid = (c as any).responsavelId || '';
         const sid = (c as any).supervisorId || '';
-        // tenta match por id ou nome
-        return rid === gestorFiltro || sid === gestorFiltro || ri.includes(g) || sup.includes(g) || adm.includes(g);
+        const aid = (c as any).apoioId || '';
+        return rid === gestorFiltro || sid === gestorFiltro || aid === gestorFiltro || ri.includes(g) || sup.includes(g) || adm.includes(g);
       });
     }
-    if (soNaoConcluido) {
-      // só clientes que têm pelo menos um Não Concluído no ano
-      // calcula rápido via obrigacoes
-      // filtrado mais abaixo — por agora mantém todos, filtra na render
+    if (filtroGrupo) list = list.filter(c => (c.tags||[]).includes(filtroGrupo));
+    if (filtroRegime) list = list.filter(c => c.regimeIva === filtroRegime);
+    if (filtroEstado) {
+      list = list.filter(c => {
+        const visiveis = linhasFiltradas.filter(l => getObrigacoesAtivas(c).includes(l.id));
+        for (const linha of visiveis) for (let m=1; m<=12; m++) if (calcCellStatus(c, linha, m, ano)===filtroEstado) return true;
+        return false;
+      });
     }
     return list;
-  }, [clientes, todosClientes, filtroClienteTexto, gestorFiltro]);
-
-  const linhasFiltradas = useMemo(() => {
-    if (todasObrigacoes) return linhasDef;
-    if (quadroVisiveis && quadroVisiveis.length) return linhasDef.filter(l => quadroVisiveis.includes(l.id));
-    if (filtroObrigacao) return linhasDef.filter(l => l.id === filtroObrigacao);
-    return linhasDef;
-  }, [todasObrigacoes, quadroVisiveis, filtroObrigacao, linhasDef]);
+  }, [clientes, todosClientes, filtroClienteTexto, gestorFiltro, filtroGrupo, filtroRegime, filtroEstado, linhasFiltradas, ano, obrigacoes]);
 
   const isEmptyGlobal = clientes.length === 0 && tarefas.length === 0 && obrigacoes.length === 0;
   const hasAlgumaObrigacao = obrigacoes.length > 0;
@@ -427,37 +462,56 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
 
   return (
     <div className="space-y-3 print:space-y-2">
-      {/* Barra de filtros — replica a imagem */}
+      {/* Barra de filtros — todos combinam (AND), live sem Ok */}
       <div className="bg-white rounded-[10px] border border-zinc-300 shadow-sm overflow-hidden print:shadow-none">
         <div className="px-3 py-2.5 border-b border-zinc-200 bg-[#F8FAFC] flex flex-wrap items-center gap-2.5">
-          <label className="inline-flex items-center gap-1.5 text-[13px] font-medium">
+          <label className="inline-flex items-center gap-1.5 text-[13px] font-medium shrink-0">
             <input type="checkbox" checked={todosClientes} onChange={e=>setTodosClientes(e.target.checked)} className="w-4 h-4 rounded border-zinc-400 text-zinc-600 focus:ring-zinc-300" />
             Todos os Clientes
           </label>
-          <div className="flex items-center gap-1">
-            <input value={filtroClienteTexto} onChange={e=>setFiltroClienteTexto(e.target.value)} disabled={todosClientes} placeholder={todosClientes ? '' : 'pesquisar cliente…'} className={`w-[160px] px-2 py-1.5 rounded border text-sm ${todosClientes ? 'bg-zinc-100 border-zinc-200 text-zinc-400' : 'bg-white border-zinc-300'}`} />
-            <button disabled={todosClientes} className="px-2 py-1.5 rounded border border-zinc-300 bg-zinc-50 text-xs disabled:opacity-50">…</button>
+          <div className="relative flex-1 min-w-[200px] max-w-[320px]">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <input value={filtroClienteTexto} onChange={e=>{ setFiltroClienteTexto(e.target.value); if(e.target.value) setTodosClientes(false); }} disabled={todosClientes} placeholder={todosClientes ? 'todos' : 'nome, NIF, email ou tag…'} className={`w-full pl-7 pr-2 py-1.5 rounded border text-sm ${todosClientes ? 'bg-zinc-100 border-zinc-200 text-zinc-400' : 'bg-white border-zinc-300'}`} />
           </div>
-          <input value={filtroClienteTexto} onChange={e=>setFiltroClienteTexto(e.target.value)} disabled={todosClientes} placeholder={todosClientes ? '' : 'filtrar por nome/NIF…'} className={`flex-1 min-w-[180px] px-2 py-1.5 rounded border text-sm ${todosClientes ? 'bg-zinc-100 border-zinc-200' : 'bg-white border-zinc-300'}`} />
           <span className="text-sm text-zinc-600">Gestor</span>
-          <select value={gestorFiltro} onChange={e=>setGestorFiltro(e.target.value)} className="min-w-[160px] px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm">
+          <select value={gestorFiltro} onChange={e=>setGestorFiltro(e.target.value)} className="min-w-[130px] px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm">
             <option value="">(todos)</option>
             {colaboradores.map(c=> <option key={c.id} value={c.id}>{c.nome}</option>)}
           </select>
+          <span className="text-sm text-zinc-600">Grupo</span>
+          <select value={filtroGrupo} onChange={e=>setFiltroGrupo(e.target.value)} className="min-w-[110px] px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm">
+            <option value="">(todos)</option>
+            {grupos.map(g=> <option key={g} value={g}>{g}</option>)}
+          </select>
           <span className="text-sm text-zinc-600">Ano</span>
           <input type="number" value={ano} onChange={e=>setAno(parseInt(e.target.value)|| new Date().getFullYear())} className="w-[78px] px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm" />
-          <button onClick={()=>{ /* filtros já são live */ }} className="ml-auto px-6 py-1.5 rounded border border-zinc-300 bg-white text-zinc-700 font-semibold text-sm hover:bg-zinc-50">Ok</button>
+          {(filtroClienteTexto || gestorFiltro || filtroGrupo || filtroEstado || filtroRegime || !todasObrigacoes || !todosClientes) && (
+            <button onClick={()=>{ setFiltroClienteTexto(''); setGestorFiltro(''); setFiltroGrupo(''); setFiltroEstado(''); setFiltroRegime(''); setTodasObrigacoes(true); setQuadroVisiveis(null); setQuadroVisiveisState(null); setTodosClientes(true); setFiltroObrigacao(''); }} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-zinc-700 text-xs hover:bg-zinc-50">Limpar</button>
+          )}
         </div>
-        <div className="px-3 py-2 flex items-center gap-2">
+        <div className="px-3 py-2 flex flex-wrap items-center gap-2">
           <label className="inline-flex items-center gap-1.5 text-[13px] font-medium">
             <input type="checkbox" checked={todasObrigacoes} onChange={e=>{ const v=e.target.checked; setTodasObrigacoes(v); if(v){ setQuadroVisiveis(null); setQuadroVisiveisState(null); showToast('✓ Todas visíveis — gravado'); } else { const all=catalogo.map(c=>c.id); setQuadroVisiveis(all); setQuadroVisiveisState(all); showToast('✓ Filtro ativo — gravado'); } }} className="w-4 h-4 rounded border-zinc-400 text-zinc-600 focus:ring-zinc-300" />
             Todas as Obrigações
           </label>
-          <select value={filtroObrigacao} onChange={e=>setFiltroObrigacao(e.target.value)} disabled={todasObrigacoes} className={`flex-1 px-2 py-1.5 rounded border text-sm ${todasObrigacoes ? 'bg-zinc-100 border-zinc-200 text-zinc-400' : 'bg-white border-zinc-300'}`}>
+          <select value={filtroObrigacao} onChange={e=>setFiltroObrigacao(e.target.value)} disabled={todasObrigacoes} className={`min-w-[140px] px-2 py-1.5 rounded border text-sm ${todasObrigacoes ? 'bg-zinc-100 border-zinc-200 text-zinc-400' : 'bg-white border-zinc-300'}`}>
             <option value="">(todas)</option>
             {linhasDef.map(l=> <option key={l.id} value={l.id}>{l.label}</option>)}
           </select>
-          <button onClick={()=>setShowGerir(!showGerir)} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${showGerir ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-700 border-zinc-300 hover:bg-zinc-50'}`} title="Adicionar, apagar e escolher obrigações visíveis — grava permanente">
+          <span className="text-sm text-zinc-600">Estado</span>
+          <select value={filtroEstado} onChange={e=>setFiltroEstado(e.target.value)} className="min-w-[130px] px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm">
+            <option value="">(todos)</option>
+            <option value="concluido">✓ Concluído</option>
+            <option value="nao_concluido">✕ Não Concluído</option>
+          </select>
+          <span className="text-sm text-zinc-600">Regime</span>
+          <select value={filtroRegime} onChange={e=>setFiltroRegime(e.target.value)} className="min-w-[120px] px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm">
+            <option value="">(todos)</option>
+            <option value="isencao53">Isenção 53</option>
+            <option value="trimestral">Trimestral</option>
+            <option value="mensal">Mensal</option>
+          </select>
+          <button onClick={()=>setShowGerir(!showGerir)} className={`ml-auto shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${showGerir ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-700 border-zinc-300 hover:bg-zinc-50'}`} title="Adicionar, apagar e escolher obrigações visíveis — grava permanente">
             <Plus className="w-3.5 h-3.5" /> Gerir obrigações
           </button>
         </div>
@@ -669,8 +723,12 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
 
   const toggle = (id: string) => setCollapsed(prev => { const n=new Set(prev); if(n.has(id)) n.delete(id); else n.add(id); return n; });
 
-  // Quadro-style: 12 meses fixos no header, dropdown filtra linhas (pilares) — sem multiplicação 7×12
-  const visMeses = [0,1,2,3,4,5,6,7,8,9,10,11] as const;
+  const visMeses = (() => {
+    if (!trim) return [0,1,2,3,4,5,6,7,8,9,10,11];
+    const t = parseInt(trim,10);
+    if (t>=1 && t<=4) { const start=(t-1)*3; return [start,start+1,start+2]; }
+    return [0,1,2,3,4,5,6,7,8,9,10,11];
+  })();
 
   const clientesFiltrados = (() => {
     let list=[...clientes];
@@ -730,8 +788,8 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
   };
 
   const exportCSV = () => {
-    const rows:string[]=[]; const header=['Cliente','Nº','Pilar',...meses].join(';'); rows.push(header);
-    for(const cli of clientesFiltrados){ for(const pi of pilaresVisiveis){ const cells=meses.map((_,idx)=>{ const mes=idx+1; const st=getStatus(cli,pi,mes); const map:any={concluido:'Concluído',nao_concluido:'Não Concluído'}; return map[st]; }); rows.push([cli.nome, cli.nif||'', pi.labelFull, ...cells].join(';')); } }
+    const rows:string[]=[]; const mesesVisiveis=visMeses.map(i=>meses[i]); const header=['Cliente','Nº','Pilar',...mesesVisiveis].join(';'); rows.push(header);
+    for(const cli of clientesFiltrados){ for(const pi of pilaresVisiveis){ const cells=visMeses.map(mi=>{ const mes=mi+1; const st=getStatus(cli,pi,mes); const map:any={concluido:'Concluído',nao_concluido:'Não Concluído'}; return map[st]; }); rows.push([cli.nome, cli.nif||'', pi.labelFull, ...cells].join(';')); } }
     const csv=rows.join('\n'); const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`Mapa_Controlo_${ano}${trim?'_T'+trim:''}.csv`; a.click(); URL.revokeObjectURL(url);
   };
 
@@ -869,12 +927,12 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
             <thead className="sticky top-0 z-10">
               <tr className="bg-[#4A4A4A] text-white text-[11px] tracking-wide">
                 <th className="text-left font-semibold px-2 py-2 w-[280px] min-w-[220px] sticky left-0 bg-[#4A4A4A] z-20 border-r border-[#606060]">Cliente</th>
-                {meses.map(m=> <th key={m} className="text-center font-semibold px-1 py-2 w-[56px] min-w-[48px] border-l border-[#606060]">{m}</th>)}
+                {visMeses.map(mi=> <th key={meses[mi]} className="text-center font-semibold px-1 py-2 w-[56px] min-w-[48px] border-l border-[#606060]">{meses[mi]}</th>)}
               </tr>
             </thead>
             <tbody>
               {clientesFiltrados.length===0 ? (
-                <tr><td colSpan={13} className="px-4 py-12 text-center text-sm text-zinc-500">Sem clientes para os filtros. Crie clientes ou limpe os filtros.</td></tr>
+                <tr><td colSpan={visMeses.length+1} className="px-4 py-12 text-center text-sm text-zinc-500">Sem clientes para os filtros. Crie clientes ou limpe os filtros.</td></tr>
               ) : clientesFiltrados.map((cli, idx)=> {
                 const isExpanded = !collapsed.has(cli.id);
                 return (
@@ -887,7 +945,7 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
                           <span className="font-semibold text-[#0F172A] truncate">{cli.nome}</span>
                         </button>
                       </td>
-                      {meses.map((_, i)=> <td key={i} className="border-l border-zinc-200 bg-[#ECECEC]"></td>)}
+                      {visMeses.map(mi=> <td key={mi} className="border-l border-zinc-200 bg-[#ECECEC]"></td>)}
                     </tr>
                     
                     <AnimatePresence initial={false}>
@@ -897,7 +955,7 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
                           <span className="w-4 h-4 rounded-[3px] border flex items-center justify-center shrink-0" style={{borderColor: pi.color, background: pi.color+'18'}}><span className="w-2 h-2 rounded-[1px] block" style={{background: pi.color}} /></span>
                           <span className="font-medium truncate" style={{color: pi.color}}>{pi.labelShort}</span>
                         </td>
-                        {meses.map((_, mi)=> {
+                        {visMeses.map(mi=> {
                           const mes=mi+1; const st=getStatus(cli,pi,mes);
                           const cellBg = st==='concluido' ? 'bg-emerald-50' : st==='nao_concluido' ? 'bg-red-50' : '';
                           return (
@@ -984,8 +1042,12 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
 
   const toggle = (id: string) => setCollapsed(prev => { const n=new Set(prev); if(n.has(id)) n.delete(id); else n.add(id); return n; });
 
-  // Quadro-style: 12 meses fixos no header, dropdown filtra linhas (pilares) — sem multiplicação 7×12
-  const visMeses = [0,1,2,3,4,5,6,7,8,9,10,11] as const;
+  const visMeses = (() => {
+    if (!trim) return [0,1,2,3,4,5,6,7,8,9,10,11];
+    const t = parseInt(trim,10);
+    if (t>=1 && t<=4) { const start=(t-1)*3; return [start,start+1,start+2]; }
+    return [0,1,2,3,4,5,6,7,8,9,10,11];
+  })();
 
   const clientesFiltrados = (() => {
     let list=[...clientes];
@@ -1045,8 +1107,8 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
   };
 
   const exportCSV = () => {
-    const rows:string[]=[]; const header=['Cliente','Nº','Pilar',...meses].join(';'); rows.push(header);
-    for(const cli of clientesFiltrados){ for(const pi of pilaresVisiveis){ const cells=meses.map((_,idx)=>{ const mes=idx+1; const st=getStatus(cli,pi,mes); const map:any={concluido:'Concluído',nao_concluido:'Não Concluído'}; return map[st]; }); rows.push([cli.nome, cli.nif||'', pi.labelFull, ...cells].join(';')); } }
+    const rows:string[]=[]; const mesesVisiveis=visMeses.map(i=>meses[i]); const header=['Cliente','Nº','Pilar',...mesesVisiveis].join(';'); rows.push(header);
+    for(const cli of clientesFiltrados){ for(const pi of pilaresVisiveis){ const cells=visMeses.map(mi=>{ const mes=mi+1; const st=getStatus(cli,pi,mes); const map:any={concluido:'Concluído',nao_concluido:'Não Concluído'}; return map[st]; }); rows.push([cli.nome, cli.nif||'', pi.labelFull, ...cells].join(';')); } }
     const csv=rows.join('\n'); const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`Mapa_RH_${ano}${trim?'_T'+trim:''}.csv`; a.click(); URL.revokeObjectURL(url);
   };
 
@@ -1184,12 +1246,12 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
             <thead className="sticky top-0 z-10">
               <tr className="bg-[#4A4A4A] text-white text-[11px] tracking-wide">
                 <th className="text-left font-semibold px-2 py-2 w-[280px] min-w-[220px] sticky left-0 bg-[#4A4A4A] z-20 border-r border-[#606060]">Cliente</th>
-                {meses.map(m=> <th key={m} className="text-center font-semibold px-1 py-2 w-[56px] min-w-[48px] border-l border-[#606060]">{m}</th>)}
+                {visMeses.map(mi=> <th key={meses[mi]} className="text-center font-semibold px-1 py-2 w-[56px] min-w-[48px] border-l border-[#606060]">{meses[mi]}</th>)}
               </tr>
             </thead>
             <tbody>
               {clientesFiltrados.length===0 ? (
-                <tr><td colSpan={13} className="px-4 py-12 text-center text-sm text-zinc-500">Sem clientes para os filtros. Crie clientes ou limpe os filtros.</td></tr>
+                <tr><td colSpan={visMeses.length+1} className="px-4 py-12 text-center text-sm text-zinc-500">Sem clientes para os filtros. Crie clientes ou limpe os filtros.</td></tr>
               ) : clientesFiltrados.map((cli, idx)=> {
                 const isExpanded = !collapsed.has(cli.id);
                 return (
@@ -1202,7 +1264,7 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
                           <span className="font-semibold text-[#0F172A] truncate">{cli.nome}</span>
                         </button>
                       </td>
-                      {meses.map((_, i)=> <td key={i} className="border-l border-zinc-200 bg-[#ECECEC]"></td>)}
+                      {visMeses.map(mi=> <td key={mi} className="border-l border-zinc-200 bg-[#ECECEC]"></td>)}
                     </tr>
                     
                     <AnimatePresence initial={false}>
@@ -1212,7 +1274,7 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
                           <span className="w-4 h-4 rounded-[3px] border flex items-center justify-center shrink-0" style={{borderColor: pi.color, background: pi.color+'18'}}><span className="w-2 h-2 rounded-[1px] block" style={{background: pi.color}} /></span>
                           <span className="font-medium truncate" style={{color: pi.color}}>{pi.labelShort}</span>
                         </td>
-                        {meses.map((_, mi)=> {
+                        {visMeses.map(mi=> {
                           const mes=mi+1; const st=getStatus(cli,pi,mes);
                           const cellBg = st==='concluido' ? 'bg-emerald-50' : st==='nao_concluido' ? 'bg-red-50' : '';
                           return (
