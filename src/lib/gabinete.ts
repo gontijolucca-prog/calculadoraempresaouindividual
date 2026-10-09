@@ -21,7 +21,10 @@ export const GABINETE_SHARED_ID = 'shared';
  *  quem ainda não tem gabinete ativo (legado gabinete/{uid}). */
 export function getGabineteOfficeId(): string {
   const uid = auth.currentUser?.uid;
-  if (!uid) throw new Error('Não autenticado — inicia sessão para aceder ao Gabinete.');
+  // Sem sessão ativa não rebenta: usa o espaço partilhado (local) para a UI e os
+  // caches continuarem a funcionar sem ErrorBoundary. As escritas em Firestore
+  // falham em silêncio (regras) e o cache local mantém-se.
+  if (!uid) return GABINETE_SHARED_ID;
   try {
     const v = loadFromStorage<string | null>('gabinete:activeId:' + uid, null)
            ?? loadFromStorage<string | null>('gabinete:activeId', null)

@@ -420,17 +420,16 @@ function AppContent() {
       const errDesc = q.get('error_description');
       if (err) {
         console.warn('[toc] erro do TOConline:', err, errDesc);
-        try { localStorage.setItem('estudo360:v1:toconline:lastError', JSON.stringify({ error: err, detail: errDesc, url: window.location.href })); } catch {}
         try { window.history.replaceState({}, '', window.location.pathname); } catch {}
-        const { requestTocOpen } = await import('./lib/toconline');
-        requestTocOpen();
-        window.dispatchEvent(new Event('estudo360:toc-open'));
+        const { requestTocOpen, saveTocError } = await import('./lib/toconline');
+        saveTocError({ error: err, detail: errDesc });
+        requestTocOpen(); // já dispara o evento (com repetições) para a lista abrir o modal
         setMode('empresa'); setView('empresas');
         return;
       }
       if (!code) return;
       try {
-        const { getTocConfig, pendingState, setTocPending, exchangeTocCode, fetchTocCustomers, saveTocDraft, requestTocOpen } = await import('./lib/toconline');
+        const { getTocConfig, pendingState, setTocPending, exchangeTocCode, fetchTocCustomers, saveTocDraft, requestTocOpen, saveTocError, clearTocError } = await import('./lib/toconline');
         // O TOConline devolve APENAS ?code= (ver Location na doc oficial) — o
         // `state` só aparece se o serviço dele o ecoar. Não bloquear por isso.
         const expected = pendingState();
@@ -440,25 +439,24 @@ function AppContent() {
         setTocPending(false);
         const cfg = getTocConfig();
         if (!cfg) {
-          try { localStorage.setItem('estudo360:v1:toconline:lastError', JSON.stringify({ error: 'sem_config' })); } catch {}
+          saveTocError({ error: 'sem_config' });
           try { window.history.replaceState({}, '', window.location.pathname); } catch {}
-          requestTocOpen(); window.dispatchEvent(new Event('estudo360:toc-open')); setMode('empresa'); setView('empresas');
+          requestTocOpen(); setMode('empresa'); setView('empresas');
           return;
         }
         await exchangeTocCode(cfg, code);
         const items = await fetchTocCustomers(cfg);
         saveTocDraft(items);
-        try { localStorage.removeItem('estudo360:v1:toconline:lastError'); } catch {}
-        requestTocOpen();
-        window.dispatchEvent(new Event('estudo360:toc-open'));
+        clearTocError();
+        requestTocOpen(); // dispara evento com repetições — abre o modal na lista
         window.history.replaceState({}, '', window.location.pathname);
         setMode('empresa');
         setView('empresas');
       } catch (e: any) {
         console.warn('[toc] callback falhou:', e);
-        try { localStorage.setItem('estudo360:v1:toconline:lastError', JSON.stringify({ error: e?.message || String(e), code, state })); } catch {}
+        try { const { saveTocError } = await import('./lib/toconline'); saveTocError({ error: e?.message || String(e) }); } catch {}
         try { window.history.replaceState({}, '', window.location.pathname); } catch {}
-        try { const { requestTocOpen } = await import('./lib/toconline'); requestTocOpen(); window.dispatchEvent(new Event('estudo360:toc-open')); setMode('empresa'); setView('empresas'); } catch {}
+        try { const { requestTocOpen } = await import('./lib/toconline'); requestTocOpen(); setMode('empresa'); setView('empresas'); } catch {}
       }
     })();
   }, []);
@@ -807,7 +805,7 @@ function AppContent() {
       </div>
     );
   }
-  if (!user) {
+  if (!isAuthenticated) {
     if (showAuth) return <AuthView initialMode={authMode} onBack={() => setShowAuth(false)} />;
     return <LandingPage onEnter={() => { setAuthMode('login'); setShowAuth(true); }} onCreateAccount={() => { setAuthMode('signup'); setShowAuth(true); }} />;
   }
@@ -827,8 +825,8 @@ function AppContent() {
   {
     let _activeGabineteId: string | null = null;
     try {
-      const uid = user.uid;
-      const v = localStorage.getItem('estudo360:v1:gabinete:activeId:' + uid);
+      const uid = user?.uid;
+      const v = uid ? localStorage.getItem('estudo360:v1:gabinete:activeId:' + uid) : null;
       if (v) { try { const parsed = JSON.parse(v); if (parsed?.data) _activeGabineteId = String(parsed.data); } catch {} }
       if (!_activeGabineteId) {
         const g = localStorage.getItem('estudo360:v1:gabinete:activeId');
