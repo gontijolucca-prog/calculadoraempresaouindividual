@@ -3,7 +3,7 @@ import { X, Link2, Unlink, Download, Loader2, CheckCircle, AlertTriangle, Copy, 
 import {
   getTocConfig, saveTocConfig, clearTocConfig, isTocConnected,
   buildTocAuthUrl, setTocPending, getTocDraft, clearTocDraft,
-  fetchTocCustomers, getValidTocToken, getLastTocDebug,
+  fetchTocCustomers, getValidTocToken, getLastTocDebug, getTocError, clearTocError,
   type TocConfig, type TocCustomerDraft,
 } from '../lib/toconline';
 
@@ -23,10 +23,11 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
   const [sel, setSel] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(() => {
-    try {
-      const raw = localStorage.getItem('estudo360:v1:toconline:lastError');
-      if (raw) { const j = JSON.parse(raw); const msg = j.error ? `${j.error}${j.detail ? ' — ' + j.detail : ''}${j.expected ? ' (state)' : ''}` : raw; return `Último erro TOConline: ${msg}. Verifique o redirect_uri em TOConline = ${typeof window !== 'undefined' ? window.location.origin + '/' : ''}`; }
-    } catch {}
+    const j = getTocError();
+    if (j) {
+      const msg = j.error ? `${j.error}${j.detail ? ' — ' + j.detail : ''}` : String(j);
+      return `Último erro TOConline: ${msg}. O redirect_uri em TOConline tem de ser exactamente ${typeof window !== 'undefined' ? window.location.origin + '/' : 'https://estudo360.pt/'}`;
+    }
     return null;
   });
   const [done, setDone] = useState<number | null>(null);
@@ -104,7 +105,7 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
   const handleDisconnect = () => {
     clearTocConfig();
     clearTocDraft();
-    try { localStorage.removeItem('estudo360:v1:toconline:lastError'); } catch {}
+    clearTocError();
     setError(null);
     setConnected(false);
     setList([]);

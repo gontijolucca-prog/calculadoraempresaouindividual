@@ -324,6 +324,18 @@ export async function addCatalogoDef(label: string): Promise<ObrigacaoDef> {
   const def: ObrigacaoDef = { id: slug, label: cleanLabel, tipos: ['outro'] as ObrigacaoTipo[] };
   const next = [...cur, def];
   setCatalogo(next);
+  // Propaga aos clientes e ao filtro global: sem isto, um cliente com lista
+  // explícita de obrigações nunca mostraria a linha nova no quadro.
+  try {
+    for (const cli of listClientesCache()) {
+      const ativas = [...new Set([...getObrigacoesAtivas(cli), slug])];
+      await upsertCliente({ ...cli, obrigacoesAtivas: ativas });
+    }
+  } catch {}
+  try {
+    const vis = getQuadroVisiveis();
+    if (vis && !vis.includes(slug)) setQuadroVisiveis([...vis, slug]);
+  } catch {}
   try { logAudit('add_catalogo', cleanLabel, { id: slug }); } catch {}
   return def;
 }
