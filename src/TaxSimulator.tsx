@@ -472,7 +472,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
         <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-[8px] px-3 py-2">
           <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-600" />
           <span className="text-[11px] text-amber-800 font-[500] leading-relaxed">
-            <strong>Lucro + Remuneração = lucro retido na empresa.</strong> Se o sócio sacar o lucro como dividendos, incide retenção de <strong>28%</strong> (CIRS Art. 71.º) — menos <strong>{ptEur(results.lda.impostoDividendos)}</strong>, ficando <strong>{ptEur(results.lda.netDistribuido)}</strong>.
+            <strong>Lucro + Remuneração = lucro retido na empresa.</strong> Se o sócio retirar o lucro como dividendos, incide retenção de <strong>28%</strong> (CIRS Art. 71.º) — menos <strong>{ptEur(results.lda.impostoDividendos)}</strong>, ficando <strong>{ptEur(results.lda.netDistribuido)}</strong>.
           </span>
         </div>
       )}
