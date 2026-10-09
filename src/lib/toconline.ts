@@ -76,28 +76,30 @@ export function buildTocAuthUrl(cfg: TocConfig, state: string): string {
   return `${base}/auth?${p.toString()}`;
 }
 
-function basicAuth(cfg: TocConfig): string {
-  return 'Basic ' + btoa(`${cfg.clientId}:${cfg.secret}`);
+async function callTocProxy(payload: Record<string, unknown>): Promise<any> {
+  const r = await fetch('/api/toconline', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    const detail = j?.detail ? ` — ${typeof j.detail === 'string' ? j.detail.slice(0, 300) : JSON.stringify(j.detail).slice(0, 300)}` : '';
+    const msg = j?.error ? `${j.error} (${r.status})${detail}` : `TOConline devolveu ${r.status}${detail}`;
+    throw new Error(msg);
+  }
+  return j;
 }
 
 export async function exchangeTocCode(cfg: TocConfig, code: string): Promise<TocTokens> {
-  const base = cfg.oauthUrl.replace(/\/$/, '');
-  const body = new URLSearchParams({
-    grant_type: 'authorization_code',
+  const j = await callTocProxy({
+    action: 'exchange',
+    oauthUrl: cfg.oauthUrl,
+    clientId: cfg.clientId,
+    secret: cfg.secret,
     code,
-    scope: 'commercial',
+    redirectUri: redirectUri(),
   });
-  const r = await fetch(`${base}/token`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      Accept: 'application/json',
-      Authorization: basicAuth(cfg),
-    },
-    body: body.toString(),
-  });
-  if (!r.ok) throw new Error(`TOConline recusou o código (${r.status}). Verifique as credenciais.`);
-  const j = await r.json();
   if (!j.access_token) throw new Error('TOConline não devolveu access_token.');
   const tokens: TocTokens = {
     accessToken: j.access_token,
@@ -111,23 +113,13 @@ export async function exchangeTocCode(cfg: TocConfig, code: string): Promise<Toc
 export async function refreshTocToken(cfg: TocConfig): Promise<TocTokens> {
   const cur = getTocTokens();
   if (!cur?.refreshToken) throw new Error('Sem refresh_token — ligue novamente.');
-  const base = cfg.oauthUrl.replace(/\/$/, '');
-  const body = new URLSearchParams({
-    grant_type: 'refresh_token',
-    refresh_token: cur.refreshToken,
-    scope: 'commercial',
+  const j = await callTocProxy({
+    action: 'refresh',
+    oauthUrl: cfg.oauthUrl,
+    clientId: cfg.clientId,
+    secret: cfg.secret,
+    refreshToken: cur.refreshToken,
   });
-  const r = await fetch(`${base}/token`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      Accept: 'application/json',
-      Authorization: basicAuth(cfg),
-    },
-    body: body.toString(),
-  });
-  if (!r.ok) throw new Error('Sessão TOConline expirou — ligue novamente.');
-  const j = await r.json();
   const tokens: TocTokens = {
     accessToken: j.access_token,
     refreshToken: j.refresh_token || cur.refreshToken,
@@ -144,52 +136,28 @@ export async function getValidTocToken(cfg: TocConfig): Promise<string> {
   throw new Error('Ligue a sua conta TOConline primeiro.');
 }
 
-/** Lista clientes da empresa ligada (JSONAPI: {data:[{attributes}]}, com paginação). */
+/** Lista clientes da empresa ligada — via proxy /api/toconline (evita CORS). */
 export async function fetchTocCustomers(cfg: TocConfig): Promise<TocCustomerDraft[]> {
   const token = await getValidTocToken(cfg);
-  const base = cfg.apiUrl.replace(/\/$/, '');
-  const out: TocCustomerDraft[] = [];
-  let page = 1;
-  for (let guard = 0; guard < 25; guard++) {
-    const r = await fetch(`${base}/customers?page[number]=${page}&page[size]=100`, {
-      headers: {
-        'Content-Type': 'application/vnd.api+json',
-        Accept: 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    if (r.status === 401) {
+  try {
+    const j = await callTocProxy({ action: 'customers', apiUrl: cfg.apiUrl, accessToken: token });
+    if (Array.isArray(j.data)) return j.data as TocCustomerDraft[];
+    if (Array.isArray(j)) return j as TocCustomerDraft[];
+    return [];
+  } catch (e: any) {
+    const msg = String(e?.message || '');
+    if (msg.includes('nao_autorizado') || msg.includes('401')) {
       const nt = await refreshTocToken(cfg);
-      const r2 = await fetch(`${base}/customers?page[number]=${page}&page[size]=100`, {
-        headers: {
-          'Content-Type': 'application/vnd.api+json',
-          Accept: 'application/json',
-          Authorization: `Bearer ${nt.accessToken}`,
-        },
-      });
-      if (!r2.ok) throw new Error(`TOConline devolveu ${r2.status} ao listar clientes.`);
-      const j2 = await r2.json();
-      const items2 = Array.isArray(j2.data) ? j2.data : [];
-      if (!items2.length) break;
-      for (const it of items2) out.push(mapTocCustomer(it));
-      if (items2.length < 100) break;
-      page++;
-      continue;
+      const j2 = await callTocProxy({ action: 'customers', apiUrl: cfg.apiUrl, accessToken: nt.accessToken });
+      if (Array.isArray(j2.data)) return j2.data as TocCustomerDraft[];
+      return [];
     }
-    if (!r.ok) throw new Error(`TOConline devolveu ${r.status} ao listar clientes.`);
-    const j = await r.json();
-    const items = Array.isArray(j.data) ? j.data : [];
-    if (!items.length) break;
-    for (const it of items) out.push(mapTocCustomer(it));
-    const totalPages = j.meta?.totalPages ?? j.meta?.['total-pages'];
-    if (items.length < 100 || (typeof totalPages === 'number' && page >= totalPages)) break;
-    page++;
+    throw e;
   }
-  return out;
 }
 
-function mapTocCustomer(it: any): TocCustomerDraft {
-  const a = it?.attributes ?? {};
+function mapTocCustomer(_it: any): TocCustomerDraft {
+  const a = _it?.attributes ?? {};
   return {
     nome: String(a.business_name ?? a.name ?? '').trim(),
     nif: String(a.tax_registration_number ?? a.fiscal_id ?? '').replace(/\D/g, ''),
@@ -200,6 +168,7 @@ function mapTocCustomer(it: any): TocCustomerDraft {
     codigoPostal: a.postcode ?? undefined,
   };
 }
+void mapTocCustomer;
 
 // ——— estado do fluxo OAuth entre redirects ———
 export function setTocPending(v: boolean): string {
