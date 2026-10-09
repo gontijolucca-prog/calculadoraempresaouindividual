@@ -269,7 +269,7 @@ export type ObrigacaoTipo = 'iva' | 'ppc' | 'ies' | 'modelo22' | 'ss' | 'retenca
 // Catálogo único de obrigações fiscais do Quadro Resumo (PEC abolido — sem entrada 'pec').
 // Usado pelo Quadro, pela ficha do cliente e pela geração automática — uma só fonte.
 export interface ObrigacaoDef { id: string; label: string; tipos: ObrigacaoTipo[] }
-export const OBRIGACOES_CATALOGO: ObrigacaoDef[] = [
+export const OBRIGACOES_CATALOGO_DEFAULT: ObrigacaoDef[] = [
   { id: 'modelo44', label: 'Modelo 44', tipos: ['modelo22', 'dossier'] },
   { id: 'saft', label: 'Envio SAFT', tipos: ['dossier', 'outro'] },
   { id: 'iva', label: 'IVA', tipos: ['iva'] },
@@ -278,15 +278,184 @@ export const OBRIGACOES_CATALOGO: ObrigacaoDef[] = [
   { id: 'dmr', label: 'DMR', tipos: ['retencao', 'ss'] },
   { id: 'ss', label: 'Segurança Social', tipos: ['ss'] },
 ];
+// Compat: export legado mantém default para imports antigos; novo código usa getCatalogo()
+export const OBRIGACOES_CATALOGO: ObrigacaoDef[] = OBRIGACOES_CATALOGO_DEFAULT;
+
+// ─── Catálogo persistente (localStorage + Firestore meta) ────────────────────
+function catalogoLsKey(): string {
+  try { return `gabinete:${getGabineteOfficeId()}:catalogoObrigacoes`; } catch { return `gabinete:shared:catalogoObrigacoes`; }
+}
+function quadroVisiveisLsKey(): string {
+  try { return `gabinete:${getGabineteOfficeId()}:quadroVisiveis`; } catch { return `gabinete:shared:quadroVisiveis`; }
+}
+export function getCatalogo(): ObrigacaoDef[] {
+  try {
+    const raw = localStorage.getItem(catalogoLsKey());
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length) {
+        const valid = parsed.filter((x: unknown) => x && typeof (x as ObrigacaoDef).id === 'string' && typeof (x as ObrigacaoDef).label === 'string' && Array.isArray((x as ObrigacaoDef).tipos));
+        if (valid.length) return valid as ObrigacaoDef[];
+      }
+    }
+  } catch {}
+  return [...OBRIGACOES_CATALOGO_DEFAULT];
+}
+export function setCatalogo(list: ObrigacaoDef[]): void {
+  const clean = list.filter(x => x && typeof x.id === 'string' && typeof x.label === 'string');
+  try { localStorage.setItem(catalogoLsKey(), JSON.stringify(clean)); } catch {}
+  try {
+    const officeId = getGabineteOfficeId();
+    setDoc(doc(db, `gabinete/${officeId}/meta`, 'catalogoObrigacoes'), { items: clean, updatedAt: Date.now(), _updatedAt: Date.now() } as unknown as Record<string, unknown>, { merge: true }).catch(()=>{});
+  } catch {}
+  try { window.dispatchEvent(new CustomEvent('estudo360:catalogo-updated', { detail: { items: clean } } as unknown as Event)); } catch {}
+}
+export async function addCatalogoDef(label: string): Promise<ObrigacaoDef> {
+  const cleanLabel = label.trim();
+  if (!cleanLabel) throw new Error('Nome vazio');
+  if (cleanLabel.length > 40) throw new Error('Nome muito longo (máx 40)');
+  const cur = getCatalogo();
+  const slug = cleanLabel.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,24) || `obr_${Date.now().toString(36)}`;
+  if (cur.some(c=>c.id===slug)) throw new Error('Já existe obrigação com esse id');
+  if (cur.some(c=>c.label.toLowerCase()===cleanLabel.toLowerCase())) throw new Error('Já existe obrigação com esse nome');
+  const def: ObrigacaoDef = { id: slug, label: cleanLabel, tipos: ['outro'] as ObrigacaoTipo[] };
+  const next = [...cur, def];
+  setCatalogo(next);
+  try { logAudit('add_catalogo', cleanLabel, { id: slug }); } catch {}
+  return def;
+}
+export async function deleteCatalogoDef(id: string): Promise<void> {
+  const cur = getCatalogo();
+  if (cur.length <= 1) throw new Error('Tem de ficar pelo menos uma obrigação');
+  const next = cur.filter(c=>c.id!==id);
+  if (next.length===cur.length) throw new Error('Não encontrada');
+  setCatalogo(next);
+  try {
+    const clientes = listClientesCache();
+    for (const cli of clientes) {
+      if (cli.obrigacoesAtivas?.includes(id)) {
+        const cleaned = cli.obrigacoesAtivas.filter(x=>x!==id);
+        const fallback = cleaned.length ? cleaned : next.slice(0,1).map(x=>x.id);
+        await upsertCliente({ ...cli, obrigacoesAtivas: fallback });
+      }
+    }
+  } catch {}
+  try { logAudit('delete_catalogo', id); } catch {}
+}
+export function resetCatalogo(): void { setCatalogo([...OBRIGACOES_CATALOGO_DEFAULT]); try { logAudit('reset_catalogo', `${OBRIGACOES_CATALOGO_DEFAULT.length} itens`); } catch {} }
+
+// ─── Mapas — catálogos persistentes dos pilares ──────────────────────────────
+export interface MapaPilarDef { id: string; labelShort: string; labelFull: string; tipos: ObrigacaoTipo[] }
+export const MAPA_CONTROLO_DEFAULT: MapaPilarDef[] = [
+  { id:'docfalta',  labelShort:'Gestão Doc.',  labelFull:'Gestão Doc. em Falta',     tipos:['dossier','outro'] },
+  { id:'vendas',    labelShort:'Vendas',       labelFull:'Vendas/Recebimentos',      tipos:['iva','dossier'] },
+  { id:'compras',   labelShort:'Compras',      labelFull:'Compras/Pagamentos',       tipos:['iva','dossier'] },
+  { id:'salarios',  labelShort:'Salários',     labelFull:'Interface Salários',       tipos:['retencao','ss'] },
+  { id:'aft',       labelShort:'AFT',          labelFull:'AFT - Aquisição/Alienação',tipos:['dossier','outro'] },
+  { id:'banco',     labelShort:'Banco',        labelFull:'Rec. Bancária',            tipos:['dossier','outro'] },
+  { id:'balancete', labelShort:'Balancete',    labelFull:'Verificação do Balancete Analítico', tipos:['ies','modelo22','dossier'] },
+];
+export const MAPA_RH_DEFAULT: MapaPilarDef[] = [
+  { id:'salarios',   labelShort:'Salários',    labelFull:'Salários',                         tipos:['retencao','ss'] },
+  { id:'ticket',     labelShort:'Ticket',      labelFull:'Carregamento Ticket',              tipos:['dossier','outro'] },
+  { id:'irs_guia',   labelShort:'Guia IRS',    labelFull:'Guia de IRS/Retenções (Pessoal, indep, rendas)', tipos:['retencao','dossier'] },
+  { id:'dmr_at',     labelShort:'DMR-AT',      labelFull:'DMR - AT',                         tipos:['retencao'] },
+  { id:'dmr_ss',     labelShort:'DMR-SS',      labelFull:'DMR - SS',                         tipos:['ss'] },
+  { id:'pagamentos', labelShort:'Pagamentos',  labelFull:'Pagamentos Encargos Mensais SS + Retenções', tipos:['ss','retencao'] },
+];
+function mapaControloLsKey(): string { try { return `gabinete:${getGabineteOfficeId()}:catalogoMapaControlo`; } catch { return `gabinete:shared:catalogoMapaControlo`; } }
+function mapaRhLsKey(): string { try { return `gabinete:${getGabineteOfficeId()}:catalogoMapaRH`; } catch { return `gabinete:shared:catalogoMapaRH`; } }
+export function getMapaControloPilares(): MapaPilarDef[] {
+  try {
+    const raw = localStorage.getItem(mapaControloLsKey());
+    if (raw) { const parsed = JSON.parse(raw); if (Array.isArray(parsed) && parsed.length) { const v = (parsed as unknown[]).filter((x: unknown)=> x && typeof (x as MapaPilarDef).id==='string' && typeof (x as MapaPilarDef).labelShort==='string') as MapaPilarDef[]; if (v.length) return v; } }
+  } catch {}
+  return [...MAPA_CONTROLO_DEFAULT];
+}
+export function setMapaControloPilares(list: MapaPilarDef[]): void {
+  const clean = list.filter(x=> x && typeof x.id==='string' && typeof x.labelShort==='string');
+  try { localStorage.setItem(mapaControloLsKey(), JSON.stringify(clean)); } catch {}
+  try { const officeId=getGabineteOfficeId(); setDoc(doc(db, `gabinete/${officeId}/meta`, 'catalogoMapaControlo'), { items: clean, updatedAt: Date.now(), _updatedAt: Date.now() } as unknown as Record<string, unknown>, { merge: true }).catch(()=>{}); } catch {}
+  try { window.dispatchEvent(new CustomEvent('estudo360:mapa-controlo-updated', { detail: { items: clean } } as unknown as Event)); } catch {}
+}
+export async function addMapaControloPilar(labelShort: string, labelFull?: string): Promise<MapaPilarDef> {
+  const s = labelShort.trim(); if (!s) throw new Error('Nome curto vazio'); if (s.length>28) throw new Error('Nome curto máx 28');
+  const f = (labelFull?.trim() || s);
+  const cur = getMapaControloPilares();
+  const id = s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,22) || `pilar_${Date.now().toString(36)}`;
+  if (cur.some(c=>c.id===id)) throw new Error('Já existe pilar com esse id');
+  if (cur.some(c=>c.labelShort.toLowerCase()===s.toLowerCase())) throw new Error('Já existe pilar com esse nome');
+  const def: MapaPilarDef = { id, labelShort: s, labelFull: f, tipos: ['outro'] };
+  setMapaControloPilares([...cur, def]); try { logAudit('add_mapa_controlo', s, { id }); } catch {}
+  return def;
+}
+export async function deleteMapaControloPilar(id: string): Promise<void> {
+  const cur = getMapaControloPilares(); if (cur.length<=1) throw new Error('Tem de ficar pelo menos um pilar'); const next=cur.filter(c=>c.id!==id); if(next.length===cur.length) throw new Error('Não encontrado'); setMapaControloPilares(next); try { logAudit('delete_mapa_controlo', id); } catch {}
+}
+export function resetMapaControloPilares(): void { setMapaControloPilares([...MAPA_CONTROLO_DEFAULT]); try { logAudit('reset_mapa_controlo', `${MAPA_CONTROLO_DEFAULT.length} itens`); } catch {} }
+function mapaRhVisiveisLsKey(): string { try { return `gabinete:${getGabineteOfficeId()}:mapaRHVisiveis`; } catch { return `gabinete:shared:mapaRHVisiveis`; } }
+function mapaControloVisiveisLsKey(): string { try { return `gabinete:${getGabineteOfficeId()}:mapaControloVisiveis`; } catch { return `gabinete:shared:mapaControloVisiveis`; } }
+export function getMapaControloVisiveis(): string[] | null { try { const raw=localStorage.getItem(mapaControloVisiveisLsKey()); if(!raw) return null; const p=JSON.parse(raw); if(Array.isArray(p)) return (p as unknown[]).filter((x):x is string=>typeof x==='string'); } catch {} return null; }
+export function setMapaControloVisiveis(ids: string[] | null): void { try { if(!ids||!ids.length) localStorage.removeItem(mapaControloVisiveisLsKey()); else localStorage.setItem(mapaControloVisiveisLsKey(), JSON.stringify(ids)); } catch {} try { window.dispatchEvent(new CustomEvent('estudo360:mapa-controlo-visiveis-updated', { detail:{ ids } } as unknown as Event)); } catch {} }
+export function getMapaRHVisiveis(): string[] | null { try { const raw=localStorage.getItem(mapaRhVisiveisLsKey()); if(!raw) return null; const p=JSON.parse(raw); if(Array.isArray(p)) return (p as unknown[]).filter((x):x is string=>typeof x==='string'); } catch {} return null; }
+export function setMapaRHVisiveis(ids: string[] | null): void { try { if(!ids||!ids.length) localStorage.removeItem(mapaRhVisiveisLsKey()); else localStorage.setItem(mapaRhVisiveisLsKey(), JSON.stringify(ids)); } catch {} try { window.dispatchEvent(new CustomEvent('estudo360:mapa-rh-visiveis-updated', { detail:{ ids } } as unknown as Event)); } catch {} }
+export function getMapaRHPilares(): MapaPilarDef[] {
+  try {
+    const raw = localStorage.getItem(mapaRhLsKey());
+    if (raw) { const parsed = JSON.parse(raw); if (Array.isArray(parsed) && parsed.length) { const v = (parsed as unknown[]).filter((x: unknown)=> x && typeof (x as MapaPilarDef).id==='string' && typeof (x as MapaPilarDef).labelShort==='string') as MapaPilarDef[]; if (v.length) return v; } }
+  } catch {}
+  return [...MAPA_RH_DEFAULT];
+}
+export function setMapaRHPilares(list: MapaPilarDef[]): void {
+  const clean = list.filter(x=> x && typeof x.id==='string' && typeof x.labelShort==='string');
+  try { localStorage.setItem(mapaRhLsKey(), JSON.stringify(clean)); } catch {}
+  try { const officeId=getGabineteOfficeId(); setDoc(doc(db, `gabinete/${officeId}/meta`, 'catalogoMapaRH'), { items: clean, updatedAt: Date.now(), _updatedAt: Date.now() } as unknown as Record<string, unknown>, { merge: true }).catch(()=>{}); } catch {}
+  try { window.dispatchEvent(new CustomEvent('estudo360:mapa-rh-updated', { detail: { items: clean } } as unknown as Event)); } catch {}
+}
+export async function addMapaRHPilar(labelShort: string, labelFull?: string): Promise<MapaPilarDef> {
+  const s = labelShort.trim(); if (!s) throw new Error('Nome curto vazio'); if (s.length>28) throw new Error('Nome curto máx 28');
+  const f = (labelFull?.trim() || s);
+  const cur = getMapaRHPilares();
+  const id = s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,22) || `pilar_${Date.now().toString(36)}`;
+  if (cur.some(c=>c.id===id)) throw new Error('Já existe pilar com esse id');
+  if (cur.some(c=>c.labelShort.toLowerCase()===s.toLowerCase())) throw new Error('Já existe pilar com esse nome');
+  const def: MapaPilarDef = { id, labelShort: s, labelFull: f, tipos: ['outro'] };
+  setMapaRHPilares([...cur, def]); try { logAudit('add_mapa_rh', s, { id }); } catch {}
+  return def;
+}
+export async function deleteMapaRHPilar(id: string): Promise<void> {
+  const cur = getMapaRHPilares(); if (cur.length<=1) throw new Error('Tem de ficar pelo menos um pilar'); const next=cur.filter(c=>c.id!==id); if(next.length===cur.length) throw new Error('Não encontrado'); setMapaRHPilares(next); try { logAudit('delete_mapa_rh', id); } catch {}
+}
+export function resetMapaRHPilares(): void { setMapaRHPilares([...MAPA_RH_DEFAULT]); try { logAudit('reset_mapa_rh', `${MAPA_RH_DEFAULT.length} itens`); } catch {} }
+// Filtro global do quadro (quais obrigações mostrar) — null = todas
+export function getQuadroVisiveis(): string[] | null {
+  try {
+    const raw = localStorage.getItem(quadroVisiveisLsKey());
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return (parsed as unknown[]).filter((x): x is string => typeof x==='string');
+  } catch {}
+  return null;
+}
+export function setQuadroVisiveis(ids: string[] | null): void {
+  try {
+    if (!ids || ids.length===0) localStorage.removeItem(quadroVisiveisLsKey());
+    else localStorage.setItem(quadroVisiveisLsKey(), JSON.stringify(ids));
+  } catch {}
+  try { window.dispatchEvent(new CustomEvent('estudo360:quadro-visiveis-updated', { detail: { ids } } as unknown as Event)); } catch {}
+}
 /** Obrigações ativas do cliente; clientes antigos (sem campo) têm todas. */
 export function getObrigacoesAtivas(cli: GabineteCliente): string[] {
-  if (!cli.obrigacoesAtivas) return OBRIGACOES_CATALOGO.map(o => o.id);
-  const valid = new Set(OBRIGACOES_CATALOGO.map(o => o.id));
+  const catalogo = getCatalogo();
+  if (!cli.obrigacoesAtivas) return catalogo.map(o => o.id);
+  const valid = new Set(catalogo.map(o => o.id));
   return cli.obrigacoesAtivas.filter(id => valid.has(id));
 }
 export async function setObrigacoesAtivas(cli: GabineteCliente, ids: string[]): Promise<GabineteCliente> {
-  const valid = new Set(OBRIGACOES_CATALOGO.map(o => o.id));
+  const catalogo = getCatalogo();
+  const valid = new Set(catalogo.map(o => o.id));
   const clean = [...new Set(ids)].filter(id => valid.has(id));
+  if (clean.length===0) throw new Error('Tem de ficar pelo menos uma obrigação');
   return upsertCliente({ ...cli, obrigacoesAtivas: clean });
 }
 export interface Obrigacao {

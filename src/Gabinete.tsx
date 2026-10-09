@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Plus, Users, CheckSquare, Calendar, Lock, Building2, Trash2, Eye, EyeOff, Copy, Shield, AlertTriangle, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Clock, Briefcase, MessageSquare, X, Send, Archive, Share2, Pencil, ListChecks } from 'lucide-react';
 import { useGabineteClientes, useGabineteTarefas, useGabineteObrigacoes, useGabineteCofre, useGabineteContactosGeral, useGabineteAssuntos, useGabineteAlertas, useGabineteOcorrencias, useGabineteDocumentos, useGabineteColaboradores } from './lib/useGabinete';
@@ -7,8 +7,10 @@ import {
   upsertTarefa, deleteTarefa, marcarTarefaFeita, newTarefaId,
   upsertObrigacao,
   upsertCofre, deleteCofre, registarVistaCofre, newCofreId, listCofreVazias, purgeCofreVazias,
-  OBRIGACOES_CATALOGO, getObrigacoesAtivas, setObrigacoesAtivas,
-  type GabineteCliente, type Tarefa, type Obrigacao, type ObrigacaoTipo, type ObrigacaoEstado, type CofreEntrada,
+  OBRIGACOES_CATALOGO, OBRIGACOES_CATALOGO_DEFAULT, getCatalogo, setCatalogo, addCatalogoDef, deleteCatalogoDef, resetCatalogo, getQuadroVisiveis, setQuadroVisiveis, getObrigacoesAtivas, setObrigacoesAtivas,
+  MAPA_CONTROLO_DEFAULT, MAPA_RH_DEFAULT, getMapaControloPilares, setMapaControloPilares, addMapaControloPilar, deleteMapaControloPilar, resetMapaControloPilares, getMapaControloVisiveis, setMapaControloVisiveis,
+  getMapaRHPilares, setMapaRHPilares, addMapaRHPilar, deleteMapaRHPilar, resetMapaRHPilares, getMapaRHVisiveis, setMapaRHVisiveis,
+  type GabineteCliente, type Tarefa, type Obrigacao, type ObrigacaoTipo, type ObrigacaoEstado, type CofreEntrada, type ObrigacaoDef, type MapaPilarDef,
 } from './lib/gabinete';
 import { listEmpresas } from './lib/empresas';
 import { getActiveGabineteId, clearActiveGabineteId, getGabineteMeta } from './lib/gabinetes';
@@ -203,9 +205,19 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
   const colaboradores = useGabineteColaboradores();
   const meses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'] as const;
 
-  // —— Linhas do quadro: catálogo único (gabinete.ts) — PEC abolido ——
+  // —— Catálogo dinâmico persistente (localStorage + Firestore) ——
+  const [catalogo, setCatalogoState] = useState<ObrigacaoDef[]>(() => getCatalogo());
+  useEffect(() => {
+    const h = (e: Event) => {
+      const d = (e as CustomEvent).detail as { items?: ObrigacaoDef[] } | undefined;
+      if (d?.items) setCatalogoState(d.items as ObrigacaoDef[]);
+      else setCatalogoState(getCatalogo());
+    };
+    window.addEventListener('estudo360:catalogo-updated', h as EventListener);
+    return () => window.removeEventListener('estudo360:catalogo-updated', h as EventListener);
+  }, []);
   type LinhaDef = { id: string; label: string; tipos: ObrigacaoTipo[]; fallback?: string };
-  const linhasDef: LinhaDef[] = OBRIGACOES_CATALOGO;
+  const linhasDef: LinhaDef[] = catalogo;
   // linhas ativas por cliente (checkboxes na ficha e no cabeçalho do cliente)
   const linhasDoCliente = (cli: GabineteCliente): LinhaDef[] => {
     const ativas = new Set(getObrigacoesAtivas(cli));
@@ -217,16 +229,44 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
   const [filtroClienteTexto, setFiltroClienteTexto] = useState('');
   const [gestorFiltro, setGestorFiltro] = useState<string>(''); // '' = todos
   const [ano, setAno] = useState<number>(new Date().getFullYear());
-  const [todasObrigacoes, setTodasObrigacoes] = useState(true);
-  const [filtroObrigacao, setFiltroObrigacao] = useState<string>(''); // id da linha
+  const [todasObrigacoes, setTodasObrigacoes] = useState<boolean>(() => {
+    const v = getQuadroVisiveis();
+    return v === null;
+  });
+  const [filtroObrigacao, setFiltroObrigacao] = useState<string>(''); // id da linha (legado single)
+  const [quadroVisiveis, setQuadroVisiveisState] = useState<string[] | null>(() => getQuadroVisiveis());
+  useEffect(() => {
+    const h = (e: Event) => {
+      const d = (e as CustomEvent).detail as { ids?: string[] | null } | undefined;
+      setQuadroVisiveisState(d?.ids ?? getQuadroVisiveis());
+      const v = d?.ids ?? getQuadroVisiveis();
+      setTodasObrigacoes(v === null);
+    };
+    window.addEventListener('estudo360:quadro-visiveis-updated', h as EventListener);
+    return () => window.removeEventListener('estudo360:quadro-visiveis-updated', h as EventListener);
+  }, []);
   const [soNaoConcluido, setSoNaoConcluido] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [obrEditingId, setObrEditingId] = useState<string | null>(null);
+  const [showGerir, setShowGerir] = useState(false);
+  const [novaObrLabel, setNovaObrLabel] = useState('');
+  const [toast, setToast] = useState<string | null>(null);
+  const showToast = (msg: string) => { setToast(msg); setTimeout(()=>setToast(null), 2200); };
+  const handleAddObr = async () => {
+    const v = novaObrLabel.trim();
+    if (!v) { alert('Escreve o nome da obrigação'); return; }
+    try { const def = await addCatalogoDef(v); setCatalogoState(getCatalogo()); setNovaObrLabel(''); showToast(`✓ “${def.label}” adicionada — gravado`); } catch (e: unknown) { alert((e as Error).message); }
+  };
+  const handleDeleteObr = async (id: string) => {
+    const lab = catalogo.find(c=>c.id===id)?.label || id;
+    if (!confirm(`Apagar “${lab}”?`)) return;
+    try { await deleteCatalogoDef(id); setCatalogoState(getCatalogo()); const vis = getQuadroVisiveis(); if (vis && !vis.includes(id)) {} showToast(`✓ “${lab}” apagada — gravado`); } catch (e: unknown) { alert((e as Error).message); }
+  };
   const toggleObrigacaoCliente = async (cli: GabineteCliente, defId: string) => {
     const ativas = getObrigacoesAtivas(cli);
     const next = ativas.includes(defId) ? ativas.filter(id => id !== defId) : [...ativas, defId];
     if (next.length === 0) { alert('O cliente tem de ter pelo menos uma obrigação.'); return; }
-    await setObrigacoesAtivas(cli, next);
+    try { await setObrigacoesAtivas(cli, next); showToast(`✓ ${cli.nome}: gravado`); } catch (e: unknown) { alert((e as Error).message); }
   };
 
   // Auto-expandir no primeiro load quando há clientes
@@ -275,9 +315,10 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
 
   const linhasFiltradas = useMemo(() => {
     if (todasObrigacoes) return linhasDef;
-    if (!filtroObrigacao) return linhasDef;
-    return linhasDef.filter(l => l.id === filtroObrigacao);
-  }, [todasObrigacoes, filtroObrigacao]);
+    if (quadroVisiveis && quadroVisiveis.length) return linhasDef.filter(l => quadroVisiveis.includes(l.id));
+    if (filtroObrigacao) return linhasDef.filter(l => l.id === filtroObrigacao);
+    return linhasDef;
+  }, [todasObrigacoes, quadroVisiveis, filtroObrigacao, linhasDef]);
 
   const isEmptyGlobal = clientes.length === 0 && tarefas.length === 0 && obrigacoes.length === 0;
   const hasAlgumaObrigacao = obrigacoes.length > 0;
@@ -348,6 +389,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
       updatedAt: Date.now(),
     };
     await upsertObrigacao(payload);
+    showToast(`✓ ${linha.label} ${String(mes).padStart(2,'0')}/${ano} — gravado`);
   };
 
   const renderIcon = (s: CellStatus, withBg = false) => {
@@ -408,15 +450,67 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
         </div>
         <div className="px-3 py-2 flex items-center gap-2">
           <label className="inline-flex items-center gap-1.5 text-[13px] font-medium">
-            <input type="checkbox" checked={todasObrigacoes} onChange={e=>setTodasObrigacoes(e.target.checked)} className="w-4 h-4 rounded border-zinc-400 text-zinc-600 focus:ring-zinc-300" />
+            <input type="checkbox" checked={todasObrigacoes} onChange={e=>{ const v=e.target.checked; setTodasObrigacoes(v); if(v){ setQuadroVisiveis(null); setQuadroVisiveisState(null); showToast('✓ Todas visíveis — gravado'); } else { const all=catalogo.map(c=>c.id); setQuadroVisiveis(all); setQuadroVisiveisState(all); showToast('✓ Filtro ativo — gravado'); } }} className="w-4 h-4 rounded border-zinc-400 text-zinc-600 focus:ring-zinc-300" />
             Todas as Obrigações
           </label>
           <select value={filtroObrigacao} onChange={e=>setFiltroObrigacao(e.target.value)} disabled={todasObrigacoes} className={`flex-1 px-2 py-1.5 rounded border text-sm ${todasObrigacoes ? 'bg-zinc-100 border-zinc-200 text-zinc-400' : 'bg-white border-zinc-300'}`}>
             <option value="">(todas)</option>
             {linhasDef.map(l=> <option key={l.id} value={l.id}>{l.label}</option>)}
           </select>
+          <button onClick={()=>setShowGerir(!showGerir)} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${showGerir ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-700 border-zinc-300 hover:bg-zinc-50'}`} title="Adicionar, apagar e escolher obrigações visíveis — grava permanente">
+            <Plus className="w-3.5 h-3.5" /> Gerir obrigações
+          </button>
         </div>
+        {showGerir && (
+          <div className="mx-3 mb-3 rounded-xl border border-zinc-300 bg-zinc-50 p-3 space-y-3 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold text-zinc-900">Gerir obrigações do quadro</h4>
+              <button onClick={()=>setShowGerir(false)} className="p-1.5 rounded-lg hover:bg-zinc-200 text-zinc-500"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="flex gap-2">
+              <input value={novaObrLabel} onChange={e=>setNovaObrLabel(e.target.value)} placeholder="Nova obrigação (ex: Modelo 30)" className="flex-1 px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" onKeyDown={e=>{ if(e.key==='Enter') handleAddObr(); }} />
+              <button onClick={handleAddObr} className="px-4 py-2 rounded-lg bg-[#0677FF] text-white text-sm font-semibold hover:bg-blue-600">Adicionar</button>
+              <button onClick={()=>{ if(confirm('Repor lista original (7 obrigações)?')){ resetCatalogo(); setCatalogoState(getCatalogo()); showToast('✓ Lista reposta — gravado'); } }} className="px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm font-medium hover:bg-zinc-100">Repor</button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {catalogo.map(def => (
+                <span key={def.id} className="inline-flex items-center gap-1.5 pl-3 pr-1 py-1 rounded-full border bg-white text-sm shadow-sm">
+                  <span className="font-medium text-zinc-800">{def.label}</span>
+                  <button onClick={()=>handleDeleteObr(def.id)} className="p-1 rounded-full hover:bg-red-50 text-zinc-400 hover:text-red-600" title={`Apagar ${def.label}`}><Trash2 className="w-3.5 h-3.5" /></button>
+                </span>
+              ))}
+            </div>
+            <div className="pt-2 border-t border-zinc-200">
+              <p className="text-xs font-semibold text-zinc-600 mb-1.5">Visíveis no quadro (filtro global — clique para mostrar/esconder)</p>
+              <div className="flex flex-wrap gap-1.5">
+                {catalogo.map(def => {
+                  const isVis = todasObrigacoes || (quadroVisiveis ? quadroVisiveis.includes(def.id) : true);
+                  const active = todasObrigacoes ? true : isVis;
+                  return (
+                    <label key={def.id} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-xs cursor-pointer transition-colors ${active ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-white border-zinc-200 text-zinc-400 line-through'}`}>
+                      <input type="checkbox" checked={active} disabled={todasObrigacoes} onChange={()=>{
+                        if (todasObrigacoes) return;
+                        const cur = quadroVisiveis ? [...quadroVisiveis] : catalogo.map(c=>c.id);
+                        const next = cur.includes(def.id) ? cur.filter(id=>id!==def.id) : [...cur, def.id];
+                        if (next.length===0) { alert('Tem de ficar pelo menos uma visível'); return; }
+                        setQuadroVisiveis(next); setQuadroVisiveisState(next); showToast('✓ Filtro gravado');
+                      }} className="w-3.5 h-3.5 accent-emerald-600 disabled:opacity-50" />
+                      {def.label}
+                    </label>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-zinc-500 mt-1.5">{todasObrigacoes ? 'Todas estão visíveis. Desativa “Todas as Obrigações” para escolher.' : `${quadroVisiveis?.length ?? catalogo.length}/${catalogo.length} visíveis — cada alteração grava logo.`}</p>
+            </div>
+            <p className="text-[11px] text-zinc-500">Adicionar/apagar é permanente (localStorage + Firestore). Cada alteração confirma com “gravado”.</p>
+          </div>
+        )}
       </div>
+      {toast && (
+        <div className="fixed bottom-4 right-4 z-50 bg-zinc-900 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 animate-in slide-in-from-bottom-2 duration-200">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> {toast}
+        </div>
+      )}
 
       {/* Tabela */}
       <div className="bg-white rounded-[10px] border border-zinc-300 shadow-sm overflow-hidden print:border-zinc-400">
@@ -531,17 +625,26 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
   const colabs = useGabineteColaboradores();
   const meses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'] as const;
 
-  // 7 pilares — agora linhas (estilo Quadro), dropdown filtra linhas em vez de multiplicar colunas
+  // Pilares dinâmicos persistentes (localStorage + Firestore) — editáveis
   type Pilar = { key: string; labelShort: string; labelFull: string; color: string; bgHeader: string; tipos: ObrigacaoTipo[] };
-  const pilares: Pilar[] = [
-    { key:'docfalta',  labelShort:'Gestão Doc.',  labelFull:'Gestão Doc. em Falta',     color:'#374151', bgHeader:'bg-white', tipos:['dossier','outro'] },
-    { key:'vendas',    labelShort:'Vendas',       labelFull:'Vendas/Recebimentos',      color:'#374151', bgHeader:'bg-white', tipos:['iva','dossier'] },
-    { key:'compras',   labelShort:'Compras',      labelFull:'Compras/Pagamentos',       color:'#374151', bgHeader:'bg-white', tipos:['iva','dossier'] },
-    { key:'salarios',  labelShort:'Salários',     labelFull:'Interface Salários',       color:'#374151', bgHeader:'bg-white', tipos:['retencao','ss'] },
-    { key:'aft',       labelShort:'AFT',          labelFull:'AFT - Aquisição/Alienação',color:'#374151', bgHeader:'bg-white', tipos:['dossier','outro'] },
-    { key:'banco',     labelShort:'Banco',        labelFull:'Rec. Bancária',            color:'#374151', bgHeader:'bg-white', tipos:['dossier','outro'] },
-    { key:'balancete', labelShort:'Balancete',    labelFull:'Verificação do Balancete Analítico', color:'#374151', bgHeader:'bg-white', tipos:['ies','modelo22','dossier'] },
-  ];
+  const [pilaresRaw, setPilaresRaw] = useState<MapaPilarDef[]>(() => getMapaControloPilares());
+  useEffect(() => {
+    const h = (e: Event) => {
+      const d = (e as CustomEvent).detail as { items?: MapaPilarDef[] } | undefined;
+      if (d?.items) setPilaresRaw(d.items as MapaPilarDef[]);
+      else setPilaresRaw(getMapaControloPilares());
+    };
+    window.addEventListener('estudo360:mapa-controlo-updated', h as EventListener);
+    return () => window.removeEventListener('estudo360:mapa-controlo-updated', h as EventListener);
+  }, []);
+  const pilares: Pilar[] = pilaresRaw.map(p => ({ key: p.id, labelShort: p.labelShort, labelFull: p.labelFull, color:'#374151', bgHeader:'bg-white', tipos: p.tipos }));
+  const [showGerirMC, setShowGerirMC] = useState(false);
+  const [novaMCLabel, setNovaMCLabel] = useState('');
+  const [novaMCFull, setNovaMCFull] = useState('');
+  const [toastMC, setToastMC] = useState<string | null>(null);
+  const showToastMC = (m:string) => { setToastMC(m); setTimeout(()=>setToastMC(null), 2200); };
+  const handleAddMC = async () => { const s=novaMCLabel.trim(); if(!s){alert('Escreve o nome curto');return;} try{ const d=await addMapaControloPilar(s, novaMCFull.trim()||s); setPilaresRaw(getMapaControloPilares()); setNovaMCLabel(''); setNovaMCFull(''); showToastMC(`✓ “${d.labelShort}” adicionado — gravado`);}catch(e:unknown){alert((e as Error).message);} };
+  const handleDelMC = async (id:string) => { const lab=pilaresRaw.find(p=>p.id===id)?.labelShort||id; if(!confirm(`Apagar “${lab}”?`))return; try{ await deleteMapaControloPilar(id); setPilaresRaw(getMapaControloPilares()); showToastMC(`✓ “${lab}” apagado — gravado`);}catch(e:unknown){alert((e as Error).message);} };
 
   const [ano, setAno] = useState<number>(new Date().getFullYear());
   const [trim, setTrim] = useState<string>(''); // '' = todos, '1'..'4'
@@ -551,7 +654,17 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
   const [filtroPilar, setFiltroPilar] = useState<string>(''); // tipo de tarefa = pilar
   const [filtroEstado, setFiltroEstado] = useState<string>(''); // '' todos | 'concluido' | 'nao_concluido'
   const [filtroRegime, setFiltroRegime] = useState<string>(''); // '' todos | 'isencao53'|'trimestral'|'mensal'
-  const pilaresVisiveis = filtroPilar ? pilares.filter(p=>p.key===filtroPilar) : pilares;
+  const [mcVisiveis, setMcVisiveis] = useState<string[] | null>(() => getMapaControloVisiveis());
+  useEffect(()=>{
+    const h=(e:Event)=>{ const d=(e as CustomEvent).detail as { ids?: string[] | null }|undefined; setMcVisiveis(d?.ids ?? getMapaControloVisiveis()); };
+    window.addEventListener('estudo360:mapa-controlo-visiveis-updated', h as EventListener);
+    return ()=>window.removeEventListener('estudo360:mapa-controlo-visiveis-updated', h as EventListener);
+  },[]);
+  const pilaresVisiveis = (()=>{
+    if (filtroPilar) return pilares.filter(p=>p.key===filtroPilar);
+    if (mcVisiveis && mcVisiveis.length) return pilares.filter(p=> mcVisiveis.includes(p.key));
+    return pilares;
+  })();
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   const toggle = (id: string) => setCollapsed(prev => { const n=new Set(prev); if(n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -568,7 +681,7 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
     if(filtroRegime){ list=list.filter(c=> c.regimeIva===filtroRegime); }
     if(filtroEstado){
       list=list.filter(c=> {
-        for(const pi of (filtroPilar ? pilares.filter(p=>p.key===filtroPilar) : pilares)){
+        for(const pi of pilaresVisiveis){
           for(const mi of visMeses){
             const mes=mi+1; const st=getStatus(c,pi,mes);
             if(st===filtroEstado) return true;
@@ -608,6 +721,7 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
       createdAt: existing?.createdAt || Date.now(), updatedAt: Date.now(),
     };
     await upsertObrigacao(payload);
+    showToastMC(`✓ ${pilar.labelShort} ${String(mes).padStart(2,'0')}/${ano} — gravado`);
   };
 
   const renderIcon = (st:string, withBg=false) => {
@@ -691,6 +805,58 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
               <option value="mensal">Mensal</option>
             </select>
           </div>
+        <div className="flex items-center gap-2 pt-2 border-t border-zinc-200 mt-2">
+          <button onClick={()=>setShowGerirMC(!showGerirMC)} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${'`'}${showGerirMC ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-700 border-zinc-300 hover:bg-zinc-50'}${'`'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
+            <Plus className="w-3.5 h-3.5" /> Gerir pilares
+          </button>
+          {mcVisiveis !== null && <span className="text-xs text-zinc-500">{mcVisiveis.length}/{pilares.length} visíveis</span>}
+          {mcVisiveis === null && <span className="text-xs text-zinc-500">Todos visíveis</span>}
+          <span className="ml-auto text-[11px] text-zinc-400">Cada alteração grava logo</span>
+        </div>
+        {showGerirMC && (
+          <div className="rounded-xl border border-zinc-300 bg-zinc-50 p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold text-zinc-900">Gerir pilares — Mapa de Controlo</h4>
+              <button onClick={()=>setShowGerirMC(false)} className="p-1.5 rounded-lg hover:bg-zinc-200 text-zinc-500"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="flex gap-2">
+              <input value={novaMCLabel} onChange={e=>setNovaMCLabel(e.target.value)} placeholder="Nome curto (ex: Tesouraria)" className="flex-1 px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm" />
+              <input value={novaMCFull} onChange={e=>setNovaMCFull(e.target.value)} placeholder="Nome completo (opcional)" className="flex-1 px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm" />
+              <button onClick={handleAddMC} className="px-4 py-2 rounded-lg bg-[#0677FF] text-white text-sm font-semibold hover:bg-blue-600">Adicionar</button>
+              <button onClick={()=>{ if(confirm('Repor pilares originais (7)?')){ resetMapaControloPilares(); setPilaresRaw(getMapaControloPilares()); showToastMC('✓ Reposto — gravado'); } }} className="px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm">Repor</button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {pilaresRaw.map(def=>(
+                <span key={def.id} className="inline-flex items-center gap-1.5 pl-3 pr-1 py-1 rounded-full border bg-white text-sm shadow-sm">
+                  <span className="font-medium text-zinc-800">{def.labelShort}</span>
+                  <button onClick={()=>handleDelMC(def.id)} className="p-1 rounded-full hover:bg-red-50 text-zinc-400 hover:text-red-600" title={`Apagar ${def.labelShort}`}><Trash2 className="w-3.5 h-3.5" /></button>
+                </span>
+              ))}
+            </div>
+            <div className="pt-2 border-t border-zinc-200">
+              <p className="text-xs font-semibold text-zinc-600 mb-1.5">Visíveis no mapa (filtro global)</p>
+              <div className="flex flex-wrap gap-1.5">
+                {pilares.map(p=>{
+                  const isVis = mcVisiveis === null || mcVisiveis.includes(p.key);
+                  return (
+                    <label key={p.key} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-xs cursor-pointer transition-colors ${'`'}${isVis ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-white border-zinc-200 text-zinc-400 line-through'}${'`'}`}>
+                      <input type="checkbox" checked={isVis} onChange={()=>{
+                        const cur = mcVisiveis ? [...mcVisiveis] : pilares.map(x=>x.key);
+                        const next = cur.includes(p.key) ? cur.filter(id=>id!==p.key) : [...cur, p.key];
+                        if(next.length===0){ alert('Tem de ficar pelo menos um visível'); return; }
+                        if(next.length===pilares.length){ setMapaControloVisiveis(null); setMcVisiveis(null); showToastMC('✓ Todos visíveis — gravado'); }
+                        else { setMapaControloVisiveis(next); setMcVisiveis(next); showToastMC('✓ Filtro gravado'); }
+                      }} className="w-3.5 h-3.5 accent-emerald-600" />
+                      {p.labelShort}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+            <p className="text-[11px] text-zinc-500">Adicionar/apagar é permanente (localStorage + Firestore). Cada alteração confirma com “gravado”.</p>
+          </div>
+        )}
+
         </div>
       </div>
 
@@ -764,6 +930,12 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
       </div>
 
       <p className="text-[11px] text-zinc-500 px-1">Mapa de controlo por gabinete isolado: cada célula guarda uma obrigação (clica para alternar: ∅ → ✓ → ✕ → ●). Filtros por cliente, gestor, grupo e trimestre. Cores vivas por fase da contabilidade.</p>
+
+      {toastMC && (
+        <div className="fixed bottom-4 right-4 z-50 bg-zinc-900 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 animate-in slide-in-from-bottom-2 duration-200">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> {toastMC}
+        </div>
+      )}
     </div>
   );
 }
@@ -772,15 +944,22 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
   const colabs = useGabineteColaboradores();
   const meses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'] as const;
 
+  // Pilares dinâmicos persistentes — editáveis
   type Pilar = { key: string; labelShort: string; labelFull: string; color: string; bgHeader: string; tipos: ObrigacaoTipo[] };
-  const pilares: Pilar[] = [
-    { key:'salarios',   labelShort:'Salários',    labelFull:'Salários',                         color:'#374151', bgHeader:'bg-white', tipos:['retencao','ss'] },
-    { key:'ticket',     labelShort:'Ticket',      labelFull:'Carregamento Ticket',              color:'#374151', bgHeader:'bg-white', tipos:['dossier','outro'] },
-    { key:'irs_guia',   labelShort:'Guia IRS',    labelFull:'Guia de IRS/Retenções (Pessoal, indep, rendas)', color:'#374151', bgHeader:'bg-white', tipos:['retencao','dossier'] },
-    { key:'dmr_at',     labelShort:'DMR-AT',      labelFull:'DMR - AT',                         color:'#374151', bgHeader:'bg-white', tipos:['retencao'] },
-    { key:'dmr_ss',     labelShort:'DMR-SS',      labelFull:'DMR - SS',                         color:'#374151', bgHeader:'bg-white', tipos:['ss'] },
-    { key:'pagamentos', labelShort:'Pagamentos',  labelFull:'Pagamentos Encargos Mensais SS + Retenções', color:'#374151', bgHeader:'bg-white', tipos:['ss','retencao'] },
-  ];
+  const [pilaresRaw, setPilaresRaw] = useState<MapaPilarDef[]>(() => getMapaRHPilares());
+  useEffect(()=>{
+    const h=(e:Event)=>{ const d=(e as CustomEvent).detail as { items?: MapaPilarDef[] }|undefined; if(d?.items) setPilaresRaw(d.items as MapaPilarDef[]); else setPilaresRaw(getMapaRHPilares()); };
+    window.addEventListener('estudo360:mapa-rh-updated', h as EventListener);
+    return ()=>window.removeEventListener('estudo360:mapa-rh-updated', h as EventListener);
+  },[]);
+  const pilares: Pilar[] = pilaresRaw.map(p=> ({ key:p.id, labelShort:p.labelShort, labelFull:p.labelFull, color:'#374151', bgHeader:'bg-white', tipos:p.tipos }));
+  const [showGerirRH, setShowGerirRH] = useState(false);
+  const [novaRHLabel, setNovaRHLabel] = useState('');
+  const [novaRHFull, setNovaRHFull] = useState('');
+  const [toastRH, setToastRH] = useState<string | null>(null);
+  const showToastRH=(m:string)=>{ setToastRH(m); setTimeout(()=>setToastRH(null),2200); };
+  const handleAddRH=async()=>{ const s=novaRHLabel.trim(); if(!s){alert('Escreve o nome curto');return;} try{ const d=await addMapaRHPilar(s, novaRHFull.trim()||s); setPilaresRaw(getMapaRHPilares()); setNovaRHLabel(''); setNovaRHFull(''); showToastRH(`✓ “${d.labelShort}” adicionado — gravado`);}catch(e:unknown){alert((e as Error).message);} };
+  const handleDelRH=async(id:string)=>{ const lab=pilaresRaw.find(p=>p.id===id)?.labelShort||id; if(!confirm(`Apagar “${lab}”?`))return; try{ await deleteMapaRHPilar(id); setPilaresRaw(getMapaRHPilares()); showToastRH(`✓ “${lab}” apagado — gravado`);}catch(e:unknown){alert((e as Error).message);} };
 
   const [ano, setAno] = useState<number>(new Date().getFullYear());
   const [trim, setTrim] = useState<string>(''); // '' = todos, '1'..'4'
@@ -790,7 +969,17 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
   const [filtroPilar, setFiltroPilar] = useState<string>(''); // tipo de tarefa = pilar
   const [filtroEstado, setFiltroEstado] = useState<string>(''); // '' todos | 'concluido' | 'nao_concluido'
   const [filtroRegime, setFiltroRegime] = useState<string>(''); // '' todos | 'isencao53'|'trimestral'|'mensal'
-  const pilaresVisiveis = filtroPilar ? pilares.filter(p=>p.key===filtroPilar) : pilares;
+  const [rhVisiveis, setRhVisiveis] = useState<string[] | null>(()=> getMapaRHVisiveis());
+  useEffect(()=>{
+    const h=(e:Event)=>{ const d=(e as CustomEvent).detail as { ids?: string[] | null }|undefined; setRhVisiveis(d?.ids ?? getMapaRHVisiveis()); };
+    window.addEventListener('estudo360:mapa-rh-visiveis-updated', h as EventListener);
+    return ()=>window.removeEventListener('estudo360:mapa-rh-visiveis-updated', h as EventListener);
+  },[]);
+  const pilaresVisiveis = (()=>{
+    if (filtroPilar) return pilares.filter(p=>p.key===filtroPilar);
+    if (rhVisiveis && rhVisiveis.length) return pilares.filter(p=> rhVisiveis.includes(p.key));
+    return pilares;
+  })();
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   const toggle = (id: string) => setCollapsed(prev => { const n=new Set(prev); if(n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -807,7 +996,7 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
     if(filtroRegime){ list=list.filter(c=> c.regimeIva===filtroRegime); }
     if(filtroEstado){
       list=list.filter(c=> {
-        for(const pi of (filtroPilar ? pilares.filter(p=>p.key===filtroPilar) : pilares)){
+        for(const pi of pilaresVisiveis){
           for(const mi of visMeses){
             const mes=mi+1; const st=getStatus(c,pi,mes);
             if(st===filtroEstado) return true;
@@ -847,6 +1036,7 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
       createdAt: existing?.createdAt || Date.now(), updatedAt: Date.now(),
     };
     await upsertObrigacao(payload);
+    showToastRH(`✓ ${pilar.labelShort} ${String(mes).padStart(2,'0')}/${ano} — gravado`);
   };
 
   const renderIcon = (st:string, withBg=false) => {
@@ -930,6 +1120,58 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
               <option value="mensal">Mensal</option>
             </select>
           </div>
+        <div className="flex items-center gap-2 pt-2 border-t border-zinc-200 mt-2">
+          <button onClick={()=>setShowGerirRH(!showGerirRH)} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${'`'}${showGerirRH ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-700 border-zinc-300 hover:bg-zinc-50'}${'`'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
+            <Plus className="w-3.5 h-3.5" /> Gerir pilares
+          </button>
+          {rhVisiveis !== null && <span className="text-xs text-zinc-500">{rhVisiveis.length}/{pilares.length} visíveis</span>}
+          {rhVisiveis === null && <span className="text-xs text-zinc-500">Todos visíveis</span>}
+          <span className="ml-auto text-[11px] text-zinc-400">Cada alteração grava logo</span>
+        </div>
+        {showGerirRH && (
+          <div className="rounded-xl border border-zinc-300 bg-zinc-50 p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold text-zinc-900">Gerir pilares — Mapa RH</h4>
+              <button onClick={()=>setShowGerirRH(false)} className="p-1.5 rounded-lg hover:bg-zinc-200 text-zinc-500"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="flex gap-2">
+              <input value={novaRHLabel} onChange={e=>setNovaRHLabel(e.target.value)} placeholder="Nome curto (ex: Formação)" className="flex-1 px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm" />
+              <input value={novaRHFull} onChange={e=>setNovaRHFull(e.target.value)} placeholder="Nome completo (opcional)" className="flex-1 px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm" />
+              <button onClick={handleAddRH} className="px-4 py-2 rounded-lg bg-[#0677FF] text-white text-sm font-semibold hover:bg-blue-600">Adicionar</button>
+              <button onClick={()=>{ if(confirm('Repor pilares originais (6)?')){ resetMapaRHPilares(); setPilaresRaw(getMapaRHPilares()); showToastRH('✓ Reposto — gravado'); } }} className="px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm">Repor</button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {pilaresRaw.map(def=>(
+                <span key={def.id} className="inline-flex items-center gap-1.5 pl-3 pr-1 py-1 rounded-full border bg-white text-sm shadow-sm">
+                  <span className="font-medium text-zinc-800">{def.labelShort}</span>
+                  <button onClick={()=>handleDelRH(def.id)} className="p-1 rounded-full hover:bg-red-50 text-zinc-400 hover:text-red-600" title={`Apagar ${def.labelShort}`}><Trash2 className="w-3.5 h-3.5" /></button>
+                </span>
+              ))}
+            </div>
+            <div className="pt-2 border-t border-zinc-200">
+              <p className="text-xs font-semibold text-zinc-600 mb-1.5">Visíveis no mapa (filtro global)</p>
+              <div className="flex flex-wrap gap-1.5">
+                {pilares.map(p=>{
+                  const isVis = rhVisiveis === null || rhVisiveis.includes(p.key);
+                  return (
+                    <label key={p.key} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-xs cursor-pointer transition-colors ${'`'}${isVis ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-white border-zinc-200 text-zinc-400 line-through'}${'`'}`}>
+                      <input type="checkbox" checked={isVis} onChange={()=>{
+                        const cur = rhVisiveis ? [...rhVisiveis] : pilares.map(x=>x.key);
+                        const next = cur.includes(p.key) ? cur.filter(id=>id!==p.key) : [...cur, p.key];
+                        if(next.length===0){ alert('Tem de ficar pelo menos um visível'); return; }
+                        if(next.length===pilares.length){ setMapaRHVisiveis(null); setRhVisiveis(null); showToastRH('✓ Todos visíveis — gravado'); }
+                        else { setMapaRHVisiveis(next); setRhVisiveis(next); showToastRH('✓ Filtro gravado'); }
+                      }} className="w-3.5 h-3.5 accent-emerald-600" />
+                      {p.labelShort}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+            <p className="text-[11px] text-zinc-500">Adicionar/apagar é permanente (localStorage + Firestore). Cada alteração confirma com “gravado”.</p>
+          </div>
+        )}
+
         </div>
       </div>
 
@@ -1003,6 +1245,11 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
       </div>
 
       <p className="text-[11px] text-zinc-500 px-1">Mapa de controlo por gabinete isolado: cada célula guarda uma obrigação (clica para alternar: ∅ → ✓ → ✕ → ●). Filtros por cliente, gestor, grupo e trimestre. Cores vivas por fase da contabilidade.</p>
+      {toastRH && (
+        <div className="fixed bottom-4 right-4 z-50 bg-zinc-900 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 animate-in slide-in-from-bottom-2 duration-200">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> {toastRH}
+        </div>
+      )}
     </div>
   );
 }
