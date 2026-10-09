@@ -36,16 +36,17 @@ function devTocProxy(): Plugin {
           if (action === 'customers') {
             const apiUrl = String(j.apiUrl || '').replace(/\/$/, ''); const token = String(j.accessToken || '').trim();
             if (!apiUrl || !token) { res.statusCode = 400; res.end(JSON.stringify({ error: 'parametros_em_falta' })); return; }
-            const out: any[] = []; let page = 1;
+            const out: any[] = []; let page = 1; let firstRaw: any = null; let pagesFetched = 0; let lastMeta: any = null;
             for (let guard = 0; guard < 25; guard++) {
               const r = await fetch(`${apiUrl}/customers?page[number]=${page}&page[size]=100`, { headers: { 'Content-Type': 'application/vnd.api+json', Accept: 'application/json', Authorization: `Bearer ${token}` } });
               if (r.status === 401) { res.statusCode = 401; res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ error: 'nao_autorizado', status: 401 })); return; }
               if (!r.ok) { const t = await r.text(); res.statusCode = r.status; res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ error: 'toconline_erro', status: r.status, detail: t.slice(0, 2000) })); return; }
-              const data: any = await r.json(); const items = Array.isArray(data.data) ? data.data : []; if (!items.length) break;
-              for (const it of items) { const a = it?.attributes ?? {}; out.push({ nome: String(a.business_name ?? a.name ?? '').trim(), nif: String(a.tax_registration_number ?? a.fiscal_id ?? '').replace(/\D/g, ''), email: a.email ?? undefined, telefone: a.mobile_number ?? a.phone_number ?? undefined, morada: a.address_detail ?? undefined, localidade: a.city ?? undefined, codigoPostal: a.postcode ?? undefined }); }
-              const tp = data.meta?.totalPages ?? data.meta?.['total-pages']; if (items.length < 100 || (typeof tp === 'number' && page >= tp)) break; page++;
+              const data: any = await r.json(); lastMeta = data.meta ?? null; const items = Array.isArray(data.data) ? data.data : Array.isArray(data.customers) ? data.customers : Array.isArray(data) ? data : []; if (!firstRaw && items.length) firstRaw = items[0]; if (!items.length) break;
+              for (const it of items) { const a = it?.attributes ?? it ?? {}; const rawNif = a.tax_registration_number ?? a.fiscal_id ?? a.nif ?? a.vat_number ?? a.tax_number ?? ''; out.push({ nome: String(a.business_name ?? a.name ?? a.client_name ?? a.designation ?? '').trim(), nif: String(rawNif).replace(/\D/g, ''), email: a.email ?? undefined, telefone: a.mobile_number ?? a.phone_number ?? undefined, morada: a.address_detail ?? a.address ?? undefined, localidade: a.city ?? undefined, codigoPostal: a.postcode ?? undefined }); }
+              pagesFetched++; const tp = data.meta?.totalPages ?? data.meta?.['total-pages']; if (items.length < 100 || (typeof tp === 'number' && page >= tp)) break; page++;
             }
-            res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ data: out })); return;
+            const debug = { pagesFetched, total: out.length, semNif: out.filter((x:any)=>!x.nif).length, firstRawAttributesKeys: firstRaw?.attributes ? Object.keys(firstRaw.attributes).slice(0,30) : firstRaw ? Object.keys(firstRaw).slice(0,30) : [], firstRawSample: firstRaw ? JSON.stringify(firstRaw).slice(0,1200) : null, meta: lastMeta };
+            res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ data: out, debug })); return;
           }
           res.statusCode = 400; res.end(JSON.stringify({ error: 'acao_invalida' }));
         } catch (e: any) { res.statusCode = 500; res.end(JSON.stringify({ error: 'proxy_dev', detail: String(e?.message || e) })); }

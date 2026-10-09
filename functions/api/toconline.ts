@@ -71,15 +71,16 @@ function basicAuth(clientId: string, secret: string): string {
 }
 
 function mapTocCustomer(it: any) {
-  const a = it?.attributes ?? {};
+  const a = it?.attributes ?? it ?? {};
+  const rawNif = a.tax_registration_number ?? a.fiscal_id ?? a.nif ?? a.vat_number ?? a.tax_number ?? a.vat ?? a.nif_api ?? '';
   return {
-    nome: String(a.business_name ?? a.name ?? '').trim(),
-    nif: String(a.tax_registration_number ?? a.fiscal_id ?? '').replace(/\D/g, ''),
-    email: a.email ?? undefined,
-    telefone: a.mobile_number ?? a.phone_number ?? undefined,
-    morada: a.address_detail ?? undefined,
-    localidade: a.city ?? undefined,
-    codigoPostal: a.postcode ?? undefined,
+    nome: String(a.business_name ?? a.name ?? a.client_name ?? a.designation ?? a.display_name ?? '').trim(),
+    nif: String(rawNif).replace(/\D/g, ''),
+    email: a.email ?? a.e_mail ?? undefined,
+    telefone: a.mobile_number ?? a.phone_number ?? a.phone ?? a.telephone ?? undefined,
+    morada: a.address_detail ?? a.address ?? a.street ?? undefined,
+    localidade: a.city ?? a.locality ?? undefined,
+    codigoPostal: a.postcode ?? a.zip_code ?? a.postal_code ?? undefined,
   };
 }
 
@@ -158,6 +159,9 @@ export const onRequestPost = async (ctx: { request: Request }) => {
     if (!isAllowedTocUrl(apiUrl)) return json({ error: 'api_url_invalido' }, 400, origin);
 
     const out: any[] = [];
+    let firstRaw: any = null;
+    let pagesFetched = 0;
+    let lastMeta: any = null;
     let page = 1;
     for (let guard = 0; guard < 25; guard++) {
       let r: Response;
@@ -181,14 +185,26 @@ export const onRequestPost = async (ctx: { request: Request }) => {
       }
       let j: any;
       try { j = await r.json(); } catch { j = {}; }
-      const items = Array.isArray(j.data) ? j.data : [];
+      lastMeta = j.meta ?? null;
+      const items = Array.isArray(j.data) ? j.data : Array.isArray(j.customers) ? j.customers : Array.isArray(j) ? j : [];
+      if (!firstRaw && items.length) firstRaw = items[0];
       if (!items.length) break;
       for (const it of items) out.push(mapTocCustomer(it));
+      pagesFetched++;
       const totalPages = j.meta?.totalPages ?? j.meta?.['total-pages'];
       if (items.length < 100 || (typeof totalPages === 'number' && page >= totalPages)) break;
       page++;
     }
-    return json({ data: out }, 200, origin);
+    const debug = {
+      pagesFetched,
+      total: out.length,
+      semNif: out.filter((x: any) => !x.nif).length,
+      firstRawKeys: firstRaw ? Object.keys(firstRaw).slice(0, 30) : [],
+      firstRawAttributesKeys: firstRaw?.attributes ? Object.keys(firstRaw.attributes).slice(0, 30) : [],
+      firstRawSample: firstRaw ? JSON.stringify(firstRaw).slice(0, 1200) : null,
+      meta: lastMeta,
+    };
+    return json({ data: out, debug }, 200, origin);
   }
 
   return json({ error: 'nao_implementado' }, 500, origin);

@@ -136,11 +136,13 @@ export async function getValidTocToken(cfg: TocConfig): Promise<string> {
   throw new Error('Ligue a sua conta TOConline primeiro.');
 }
 
+export let lastTocDebug: any = null;
 /** Lista clientes da empresa ligada — via proxy /api/toconline (evita CORS). */
 export async function fetchTocCustomers(cfg: TocConfig): Promise<TocCustomerDraft[]> {
   const token = await getValidTocToken(cfg);
   try {
     const j = await callTocProxy({ action: 'customers', apiUrl: cfg.apiUrl, accessToken: token });
+    lastTocDebug = (j as any)?.debug ?? null;
     if (Array.isArray(j.data)) return j.data as TocCustomerDraft[];
     if (Array.isArray(j)) return j as TocCustomerDraft[];
     return [];
@@ -149,6 +151,7 @@ export async function fetchTocCustomers(cfg: TocConfig): Promise<TocCustomerDraf
     if (msg.includes('nao_autorizado') || msg.includes('401')) {
       const nt = await refreshTocToken(cfg);
       const j2 = await callTocProxy({ action: 'customers', apiUrl: cfg.apiUrl, accessToken: nt.accessToken });
+      lastTocDebug = (j2 as any)?.debug ?? null;
       if (Array.isArray(j2.data)) return j2.data as TocCustomerDraft[];
       return [];
     }

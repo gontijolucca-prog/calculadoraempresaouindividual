@@ -3,7 +3,7 @@ import { X, Link2, Unlink, Download, Loader2, CheckCircle, AlertTriangle, Copy, 
 import {
   getTocConfig, saveTocConfig, clearTocConfig, isTocConnected,
   buildTocAuthUrl, setTocPending, getTocDraft, clearTocDraft,
-  fetchTocCustomers, getValidTocToken,
+  fetchTocCustomers, getValidTocToken, lastTocDebug,
   type TocConfig, type TocCustomerDraft,
 } from '../lib/toconline';
 
@@ -53,8 +53,10 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
     window.location.href = buildTocAuthUrl(getTocConfig()!, state);
   };
 
+  const [debug, setDebug] = useState<any>(null);
   const handleFetch = async () => {
     setError(null);
+    setDebug(null);
     const c = getTocConfig();
     if (!c) { setError('Configure primeiro.'); return; }
     setLoading(true);
@@ -62,10 +64,13 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
     try {
       await getValidTocToken(c);
       const items = await fetchTocCustomers(c);
+      const d = (await import('../lib/toconline')).lastTocDebug;
+      setDebug(d);
       setList(items);
       setSel(new Set(items.map((_, i) => i)));
       setStep('preview');
       setConnected(isTocConnected());
+      if (!items.length) setError(d ? `TOConline devolveu 0 clientes. Páginas: ${d.pagesFetched ?? 0}. Sem NIF: ${d.semNif ?? 0}. Verifique se a empresa tem clientes e se o token tem scope commercial.` : 'TOConline devolveu 0 clientes.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Falha ao buscar clientes.');
       setStep('config');
@@ -154,6 +159,13 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
           {step === 'preview' && done === null && (
             <div className="mt-4">
               <p className="text-[13px] text-[#475569]"><strong className="text-[#0B1D2D]">{novos.length}</strong> novo{novos.length === 1 ? '' : 's'} · {jaExistem} já na lista (ignorados).</p>
+              {debug && (
+                <div className="mt-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] font-mono text-amber-900 leading-relaxed">
+                  <div>Debug: {debug.total ?? 0} recebidos · {debug.semNif ?? 0} sem NIF · {debug.pagesFetched ?? 0} páginas</div>
+                  {debug.firstRawAttributesKeys?.length ? <div className="mt-1">Campos: {debug.firstRawAttributesKeys.join(', ')}</div> : null}
+                  {debug.firstRawSample && <details className="mt-1"><summary className="cursor-pointer text-[#0677FF]">ver exemplo raw</summary><pre className="mt-1 whitespace-pre-wrap break-all text-[10px] bg-white p-2 rounded border">{debug.firstRawSample}</pre></details>}
+                </div>
+              )}
               <div className="mt-3 max-h-[320px] overflow-y-auto border border-[#E2E8F0] rounded-xl divide-y divide-zinc-100">
                 {list.map((d, i) => {
                   const dup = !d.nif || existingNifs.has(d.nif);
