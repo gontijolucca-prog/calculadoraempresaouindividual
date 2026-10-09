@@ -250,7 +250,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
   const [filtroGrupo, setFiltroGrupo] = useState<string>('');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [obrEditingId, setObrEditingId] = useState<string | null>(null);
-  const [showGerir, setShowGerir] = useState(false);
+  const [showGerir, setShowGerir] = useState(true);
   const [novaObrLabel, setNovaObrLabel] = useState('');
   const [toast, setToast] = useState<string | null>(null);
   const showToast = (msg: string) => { setToast(msg); setTimeout(()=>setToast(null), 2200); };
@@ -692,7 +692,7 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
     return () => window.removeEventListener('estudo360:mapa-controlo-updated', h as EventListener);
   }, []);
   const pilares: Pilar[] = pilaresRaw.map(p => ({ key: p.id, labelShort: p.labelShort, labelFull: p.labelFull, color:'#374151', bgHeader:'bg-white', tipos: p.tipos }));
-  const [showGerirMC, setShowGerirMC] = useState(false);
+  const [showGerirMC, setShowGerirMC] = useState(true);
   const [novaMCLabel, setNovaMCLabel] = useState('');
   const [novaMCFull, setNovaMCFull] = useState('');
   const [toastMC, setToastMC] = useState<string | null>(null);
@@ -864,7 +864,7 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
             </select>
           </div>
         <div className="flex items-center gap-2 pt-2 border-t border-zinc-200 mt-2">
-          <button onClick={()=>setShowGerirMC(!showGerirMC)} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${'`'}${showGerirMC ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}${'`'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
+          <button onClick={()=>setShowGerirMC(!showGerirMC)} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerirMC ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
             <Plus className="w-3.5 h-3.5" /> Gerir pilares
           </button>
           {mcVisiveis !== null && <span className="text-xs text-zinc-500">{mcVisiveis.length}/{pilares.length} visíveis</span>}
@@ -897,7 +897,7 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
                 {pilares.map(p=>{
                   const isVis = mcVisiveis === null || mcVisiveis.includes(p.key);
                   return (
-                    <label key={p.key} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-xs cursor-pointer transition-colors ${'`'}${isVis ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-white border-zinc-200 text-zinc-400 line-through'}${'`'}`}>
+                    <label key={p.key} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-xs cursor-pointer transition-colors ${isVis ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-white border-zinc-200 text-zinc-400 line-through'}`}>
                       <input type="checkbox" checked={isVis} onChange={()=>{
                         const cur = mcVisiveis ? [...mcVisiveis] : pilares.map(x=>x.key);
                         const next = cur.includes(p.key) ? cur.filter(id=>id!==p.key) : [...cur, p.key];
@@ -1011,7 +1011,7 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
     return ()=>window.removeEventListener('estudo360:mapa-rh-updated', h as EventListener);
   },[]);
   const pilares: Pilar[] = pilaresRaw.map(p=> ({ key:p.id, labelShort:p.labelShort, labelFull:p.labelFull, color:'#374151', bgHeader:'bg-white', tipos:p.tipos }));
-  const [showGerirRH, setShowGerirRH] = useState(false);
+  const [showGerirRH, setShowGerirRH] = useState(true);
   const [novaRHLabel, setNovaRHLabel] = useState('');
   const [novaRHFull, setNovaRHFull] = useState('');
   const [toastRH, setToastRH] = useState<string | null>(null);
@@ -1183,7 +1183,7 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
             </select>
           </div>
         <div className="flex items-center gap-2 pt-2 border-t border-zinc-200 mt-2">
-          <button onClick={()=>setShowGerirRH(!showGerirRH)} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${'`'}${showGerirRH ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}${'`'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
+          <button onClick={()=>setShowGerirRH(!showGerirRH)} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerirRH ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
             <Plus className="w-3.5 h-3.5" /> Gerir pilares
           </button>
           {rhVisiveis !== null && <span className="text-xs text-zinc-500">{rhVisiveis.length}/{pilares.length} visíveis</span>}
@@ -1216,7 +1216,7 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
                 {pilares.map(p=>{
                   const isVis = rhVisiveis === null || rhVisiveis.includes(p.key);
                   return (
-                    <label key={p.key} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-xs cursor-pointer transition-colors ${'`'}${isVis ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-white border-zinc-200 text-zinc-400 line-through'}${'`'}`}>
+                    <label key={p.key} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-xs cursor-pointer transition-colors ${isVis ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-white border-zinc-200 text-zinc-400 line-through'}`}>
                       <input type="checkbox" checked={isVis} onChange={()=>{
                         const cur = rhVisiveis ? [...rhVisiveis] : pilares.map(x=>x.key);
                         const next = cur.includes(p.key) ? cur.filter(id=>id!==p.key) : [...cur, p.key];
