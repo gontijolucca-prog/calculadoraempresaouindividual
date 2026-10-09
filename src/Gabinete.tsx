@@ -511,7 +511,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
             <option value="trimestral">Trimestral</option>
             <option value="mensal">Mensal</option>
           </select>
-          <button onClick={()=>setShowGerir(!showGerir)} className={`ml-auto shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${showGerir ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-700 border-zinc-300 hover:bg-zinc-50'}`} title="Adicionar, apagar e escolher obrigações visíveis — grava permanente">
+          <button onClick={()=>setShowGerir(!showGerir)} className={`ml-auto shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerir ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher obrigações visíveis — grava permanente">
             <Plus className="w-3.5 h-3.5" /> Gerir obrigações
           </button>
         </div>
@@ -864,7 +864,7 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
             </select>
           </div>
         <div className="flex items-center gap-2 pt-2 border-t border-zinc-200 mt-2">
-          <button onClick={()=>setShowGerirMC(!showGerirMC)} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${'`'}${showGerirMC ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-700 border-zinc-300 hover:bg-zinc-50'}${'`'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
+          <button onClick={()=>setShowGerirMC(!showGerirMC)} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${'`'}${showGerirMC ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}${'`'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
             <Plus className="w-3.5 h-3.5" /> Gerir pilares
           </button>
           {mcVisiveis !== null && <span className="text-xs text-zinc-500">{mcVisiveis.length}/{pilares.length} visíveis</span>}
@@ -1183,7 +1183,7 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
             </select>
           </div>
         <div className="flex items-center gap-2 pt-2 border-t border-zinc-200 mt-2">
-          <button onClick={()=>setShowGerirRH(!showGerirRH)} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors ${'`'}${showGerirRH ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-700 border-zinc-300 hover:bg-zinc-50'}${'`'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
+          <button onClick={()=>setShowGerirRH(!showGerirRH)} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${'`'}${showGerirRH ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}${'`'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
             <Plus className="w-3.5 h-3.5" /> Gerir pilares
           </button>
           {rhVisiveis !== null && <span className="text-xs text-zinc-500">{rhVisiveis.length}/{pilares.length} visíveis</span>}
