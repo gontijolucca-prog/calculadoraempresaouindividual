@@ -65,7 +65,8 @@ function redirectUri(): string {
 }
 
 export function buildTocAuthUrl(cfg: TocConfig, state: string): string {
-  const base = cfg.oauthUrl.replace(/\/$/, '');
+  let base = cfg.oauthUrl.replace(/\/$/, '');
+  if (!base.toLowerCase().includes('/auth')) base = base + '/auth';
   const p = new URLSearchParams({
     client_id: cfg.clientId,
     redirect_uri: redirectUri(),
@@ -73,7 +74,7 @@ export function buildTocAuthUrl(cfg: TocConfig, state: string): string {
     scope: 'commercial',
     state,
   });
-  return `${base}/auth?${p.toString()}`;
+  return `${base}?${p.toString()}`;
 }
 
 async function callTocProxy(payload: Record<string, unknown>): Promise<any> {
@@ -137,6 +138,7 @@ export async function getValidTocToken(cfg: TocConfig): Promise<string> {
 }
 
 export let lastTocDebug: any = null;
+export function getLastTocDebug(): any { return lastTocDebug; }
 /** Lista clientes da empresa ligada — via proxy /api/toconline (evita CORS). */
 export async function fetchTocCustomers(cfg: TocConfig): Promise<TocCustomerDraft[]> {
   const token = await getValidTocToken(cfg);

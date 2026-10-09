@@ -3,7 +3,7 @@ import { X, Link2, Unlink, Download, Loader2, CheckCircle, AlertTriangle, Copy, 
 import {
   getTocConfig, saveTocConfig, clearTocConfig, isTocConnected,
   buildTocAuthUrl, setTocPending, getTocDraft, clearTocDraft,
-  fetchTocCustomers, getValidTocToken, lastTocDebug,
+  fetchTocCustomers, getValidTocToken, getLastTocDebug,
   type TocConfig, type TocCustomerDraft,
 } from '../lib/toconline';
 
@@ -47,10 +47,26 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
 
   const handleConnect = () => {
     setError(null);
-    if (!validCfg) { setError('Preencha os 4 dados da API (vêm do TOConline: Empresa › Configurações › Dados API).'); return; }
-    saveTocConfig({ oauthUrl: cfg.oauthUrl.trim(), apiUrl: cfg.apiUrl.trim(), clientId: cfg.clientId.trim(), secret: cfg.secret.trim() });
-    const state = setTocPending(true);
-    window.location.href = buildTocAuthUrl(getTocConfig()!, state);
+    const missing: string[] = [];
+    if (!cfg.oauthUrl.trim()) missing.push('Endereço OAuth');
+    if (!cfg.apiUrl.trim()) missing.push('Endereço da API');
+    if (!cfg.clientId.trim()) missing.push('Client ID');
+    if (!cfg.secret.trim()) missing.push('Segredo');
+    if (missing.length) { setError('Falta preencher: ' + missing.join(', ') + '.'); return; }
+    try {
+      saveTocConfig({ oauthUrl: cfg.oauthUrl.trim(), apiUrl: cfg.apiUrl.trim(), clientId: cfg.clientId.trim(), secret: cfg.secret.trim() });
+      const state = setTocPending(true);
+      const url = buildTocAuthUrl(getTocConfig()!, state);
+      console.log('[toc] a redirecionar para', url);
+      window.location.assign(url);
+      setTimeout(() => {
+        if (window.location.href.includes('/empresas') || window.location.href.includes('estudo360')) {
+          setError('Redirecionamento bloqueado. Copie este link e abra numa nova aba: ' + url);
+        }
+      }, 1200);
+    } catch (e: any) {
+      setError('Falha ao iniciar login: ' + (e?.message || String(e)));
+    }
   };
 
   const [debug, setDebug] = useState<any>(null);
@@ -64,7 +80,7 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
     try {
       await getValidTocToken(c);
       const items = await fetchTocCustomers(c);
-      const d = (await import('../lib/toconline')).lastTocDebug;
+      const d = getLastTocDebug();
       setDebug(d);
       setList(items);
       setSel(new Set(items.map((_, i) => i)));
@@ -134,7 +150,7 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
               </div>
               <div className="flex flex-wrap gap-2 pt-1">
                 {!connected ? (
-                  <button onClick={handleConnect} disabled={!validCfg} className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#0B1D2D] text-white text-[14px] font-[700] hover:bg-black disabled:opacity-40">
+                  <button onClick={handleConnect} className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#0B1D2D] text-white text-[14px] font-[700] hover:bg-black">
                     <Link2 className="w-4 h-4" /> Entrar com TOConline
                   </button>
                 ) : (

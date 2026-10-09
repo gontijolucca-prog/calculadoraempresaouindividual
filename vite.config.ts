@@ -29,7 +29,8 @@ function devTocProxy(): Plugin {
             const p = new URLSearchParams();
             if (action === 'exchange') { if (!j.code) { res.statusCode = 400; res.end(JSON.stringify({ error: 'code_em_falta' })); return; } p.set('grant_type', 'authorization_code'); p.set('code', String(j.code)); p.set('scope', 'commercial'); if (j.redirectUri) p.set('redirect_uri', String(j.redirectUri)); }
             else { if (!j.refreshToken) { res.statusCode = 400; res.end(JSON.stringify({ error: 'refresh_em_falta' })); return; } p.set('grant_type', 'refresh_token'); p.set('refresh_token', String(j.refreshToken)); p.set('scope', 'commercial'); }
-            const r = await fetch(`${oauthUrl}/token`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json', Authorization: 'Basic ' + Buffer.from(`${clientId}:${secret}`).toString('base64') }, body: p.toString() });
+            let tokenUrl = oauthUrl.replace(/\/$/, ''); if (!tokenUrl.toLowerCase().includes('/token')) tokenUrl = tokenUrl + '/token';
+            const r = await fetch(tokenUrl, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json', Authorization: 'Basic ' + Buffer.from(`${clientId}:${secret}`).toString('base64') }, body: p.toString() });
             const text = await r.text(); let data: any; try { data = JSON.parse(text); } catch { data = { raw: text }; }
             res.statusCode = r.status; res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(data)); return;
           }

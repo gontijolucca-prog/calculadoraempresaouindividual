@@ -129,9 +129,11 @@ export const onRequestPost = async (ctx: { request: Request }) => {
       params.set('scope', 'commercial');
     }
 
+    let tokenUrl = oauthUrl.replace(/\/$/, '');
+    if (!tokenUrl.toLowerCase().includes('/token')) tokenUrl = tokenUrl + '/token';
     let r: Response;
     try {
-      r = await fetch(`${oauthUrl}/token`, {
+      r = await fetch(tokenUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -164,9 +166,11 @@ export const onRequestPost = async (ctx: { request: Request }) => {
     let lastMeta: any = null;
     let page = 1;
     for (let guard = 0; guard < 25; guard++) {
+      let customersBase = apiUrl.replace(/\/$/, '');
+      if (!customersBase.toLowerCase().includes('/customers')) customersBase = customersBase + '/customers';
       let r: Response;
       try {
-        r = await fetch(`${apiUrl}/customers?page[number]=${page}&page[size]=100`, {
+        r = await fetch(`${customersBase}?page[number]=${page}&page[size]=100`, {
           headers: {
             'Content-Type': 'application/vnd.api+json',
             Accept: 'application/json',
