@@ -65,5 +65,15 @@ function is(label: string, got: unknown, exp: unknown) {
   approx('G: Selo = 0', r.impostoSelo, 0);
 }
 
+// ── H: IMT Jovem acima do teto de redução (660 982 €) → sem benefício:
+// IMT normal (taxa única 6% acima de 660 982 €) + Selo 0,8% normal.
+{
+  const r = calcIMT(700000, 'hpp', 'continente', true, 30);
+  approx('H: IMT normal (6% plano)', r.imt, 42000);
+  approx('H: Selo 0,8% normal', r.impostoSelo, 5600);
+  approx('H: total', r.total, 47600);
+  is('H: sem benefício jovem', r.isentoJovem, false);
+}
+
 if (fails) { console.error(`\n${fails} caso(s) FALHARAM`); process.exit(1); }
 else console.log('\nTodos os casos golden de IMT passaram.');

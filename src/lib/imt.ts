@@ -160,23 +160,25 @@ export function calcIMT(
         const imtNormal = calcIMTProgressivo(valor, tabela);
         const imtLimite = calcIMTProgressivo(limiteIsencaoJovem, tabela);
         const imtJovem = Math.max(0, imtNormal - imtLimite);
+        const taxaJovem = tabela.find(e => valor <= e.limite)?.taxa ?? 0;
         return {
           imt: imtJovem, impostoSelo: 0, total: imtJovem,
-          taxaAplicada: 0.08, isento: false, isentoJovem: true,
+          taxaAplicada: taxaJovem, isento: false, isentoJovem: true,
           descricao: `IMT Jovem — redução parcial (excedente a ${new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(limiteIsencaoJovem)}). IS também isento.`,
         };
       }
-      // Acima do tecto jovem: IMT e IS normais
+      // Acima do tecto jovem: sem benefício — IMT e IS normais (o jovem não
+      // isenta nem reduz nada acima de 660 982 €).
     }
 
     const imt = calcIMTProgressivo(valor, tabela);
-    const impostoSelo = jovem ? 0 : valor * 0.008;
+    const impostoSelo = valor * 0.008;
     const taxaEscalao = tabela.find(e => valor <= e.limite);
     return {
       imt, impostoSelo, total: imt + impostoSelo,
       taxaAplicada: taxaEscalao?.taxa ?? 0,
       isento: imt === 0,
-      isentoJovem: jovem,
+      isentoJovem: false,
       descricao: primeiraHabitacao ? 'HPP — Habitação Própria e Permanente (CIMT Art. 17º, n.º 1)' : 'HPP — escalões progressivos',
     };
   }

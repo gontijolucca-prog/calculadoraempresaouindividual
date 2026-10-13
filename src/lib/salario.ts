@@ -143,8 +143,10 @@ export function calcSalarioLiquido(p: SalarioParams): SalarioResult {
   const cashBrutoMensal = p.duodecimos ? p.salarioBruto * (14 / 12) : p.salarioBruto;
   const ssTrabalhador = cashBrutoMensal * SS_RATE_EMPLOYEE;
 
-  // 6. Salário líquido do mês típico.
-  const salarioLiquido = cashBrutoMensal - ssTrabalhador - retencaoIRS + subsidioIsento;
+  // 6. Salário líquido do mês típico. O subsídio de alimentação entra POR INTEIRO
+  //    (isento + excedente tributável): o excedente é pago ao trabalhador e já foi
+  //    incluído na remuneração sujeita para efeitos de retenção (passo 3).
+  const salarioLiquido = cashBrutoMensal - ssTrabalhador - retencaoIRS + subsidioTotal;
 
   // 7. Totais anuais reais (14 remunerações base + subsídio alimentação 11 meses).
   const brutoAnual = p.salarioBruto * 14 + subsidioTributavel * MESES_SUBSIDIO_ALIMENTACAO;
@@ -153,7 +155,7 @@ export function calcSalarioLiquido(p: SalarioParams): SalarioResult {
     ? retencaoIRS * 12
     : retMes.retencao * 12 + retSubsidioInteiro * 2;
   const salarioLiquidoAnual =
-    p.salarioBruto * 14 - ssAnual - retencaoAnual + subsidioIsento * MESES_SUBSIDIO_ALIMENTACAO;
+    p.salarioBruto * 14 - ssAnual - retencaoAnual + subsidioTotal * MESES_SUBSIDIO_ALIMENTACAO;
 
   // 8. IRS anual estimado (escalões Art. 68.º) → acerto esperado na declaração.
   //    Nota: para titulares com deficiência a estimativa anual não modela os

@@ -641,7 +641,10 @@ export function parseSAFT(xmlText: string): SAFTParseResult {
                + sumBy('619', 'debit');
     // If neither sub split, fall back to total 61
     const c61Total = sumBy('61', 'debit');
-    const cmvFinal = cmv > 0 ? cmv : c61Total;
+    // Fallback ao total de 61 apenas com a parte que NÃO está já em cmc
+    // (618/619) — somar o total inteiro contava esses valores duas vezes
+    // (em cmvFinal e em cmcFinal).
+    const cmvFinal = cmv > 0 ? cmv : Math.max(0, c61Total - cmc);
     const cmcFinal = cmc > 0 ? cmc : 0;
 
     const c62 = sumBy('62', 'debit');

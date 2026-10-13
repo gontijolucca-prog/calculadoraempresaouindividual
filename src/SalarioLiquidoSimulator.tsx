@@ -280,9 +280,9 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
           <div className="bg-[#0F172A] text-white rounded-[20px] p-[24px]">
             <div className="text-[12px] font-[700] uppercase tracking-[1px] text-slate-400">Salário Líquido Mensal</div>
             <div className="text-[48px] font-[900] leading-none mt-2 text-white">{ptEur(result.salarioLiquido)}</div>
-            {result.subsidioAlimentacaoIsento > 0 && (
+            {result.subsidioAlimentacao > 0 && (
               <div className="text-[13px] text-emerald-400 font-[600] mt-2">
-                + {ptEur(result.subsidioAlimentacaoIsento)} subsídio de alimentação (isento)
+                Inclui {ptEur(result.subsidioAlimentacao)} de subsídio de alimentação
               </div>
             )}
             <div className="text-[12px] text-slate-400 mt-1">
@@ -322,6 +322,12 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
                 <div className="flex justify-between text-[13px]">
                   <span className="text-emerald-700 font-[500]">Subsídio alimentação (isento)</span>
                   <span className="font-[700] text-emerald-700">+ {ptEur(result.subsidioAlimentacaoIsento)}</span>
+                </div>
+              )}
+              {result.subsidioAlimentacaoTributavel > 0 && (
+                <div className="flex justify-between text-[13px]">
+                  <span className="text-orange-700 font-[500]">Subsídio alimentação (tributável)</span>
+                  <span className="font-[700] text-orange-700">+ {ptEur(result.subsidioAlimentacaoTributavel)}</span>
                 </div>
               )}
               <div className="h-px bg-[#E2E8F0] my-1" />

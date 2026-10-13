@@ -7,6 +7,7 @@ import {
   calculateIRS, calcIRSJovem, calcDependentsDeduction,
   calcTicketSavings, calcSelfSSContribution, calculateIRC,
 } from './lib/pt2026';
+import { DED_ESPECIFICA_CAT_A_2026, LIMIAR_JUSTIFICACAO_15PCT } from './lib/fiscal';
 
 interface TaxSimulatorState {
   profSit: string; currentInc: number; age: number; isMainAct: boolean;
@@ -272,12 +273,13 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
 
     let eniSS = 0;
     if (!(taxState.profSit === 'tco' && !taxState.isMainAct && taxState.rev <= 20000)) {
-      eniSS = taxState.rev * (taxState.isServices ? 0.70 : 0.20) * 0.214;
+      // Mesmo motor do TaxSimulator (teto 12×IAS + mínimo) — evita PDF ≠ simulador.
+      eniSS = calcSelfSSContribution(taxState.rev / 12, taxState.isServices ? 'servicos' : 'bens', false).anual;
     }
     let eniRC = taxState.rev * (taxState.isServices ? 0.75 : 0.15);
-    if (taxState.isServices && taxState.rev > 27360) {
+    if (taxState.isServices && taxState.rev > LIMIAR_JUSTIFICACAO_15PCT) {
       const rj = taxState.rev * 0.15;
-      const jd = costsEni + 4104;
+      const jd = costsEni + DED_ESPECIFICA_CAT_A_2026;
       if (jd < rj) eniRC += rj - jd;
     }
     let irsJovemDeduction = 0;

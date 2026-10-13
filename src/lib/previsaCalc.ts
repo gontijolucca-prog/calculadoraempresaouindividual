@@ -235,15 +235,35 @@ export function totalSaldoElegivel(s: PreviSaState): number {
   return saldosPorAno(s).reduce((acc, r) => acc + (r.elegivel ? r.saldo : 0), 0);
 }
 
+// ─── RAI — fonte ÚNICA (evita fórmulas divergentes entre Previsa, SAF-T,
+// Diagnóstico e histórico de simulações) ─────────────────────────────────────
+const n = (v: number | undefined): number => Number(v) || 0;
+
+/** Rendimentos da classe 7: 71 (vendas) + 72 (serviços) + 74–79 (outros). */
+export function totalRendimentosClasse7(s: PreviSaState): number {
+  return n(s.rai_711) + n(s.rai_712) + n(s.rai_72) + n(s.rai_74) + n(s.rai_75)
+       + n(s.rai_76) + n(s.rai_77) + n(s.rai_78) + n(s.rai_79);
+}
+
+/** Gastos da classe 6: 61–69 (CMV, FSE, pessoal, amortizações, …). */
+export function totalGastosClasse6(s: PreviSaState): number {
+  return n(s.rai_cmv) + n(s.rai_cmc) + n(s.rai_62) + n(s.rai_63) + n(s.rai_64)
+       + n(s.rai_65) + n(s.rai_66) + n(s.rai_67) + n(s.rai_68) + n(s.rai_69);
+}
+
+/** RAI = rendimentos (7) − gastos (6) ± imposto diferido (8122). */
+export function raiFromPrevisa(s: PreviSaState): number {
+  return totalRendimentosClasse7(s) - totalGastosClasse6(s) + n(s.rai_8122_db) - n(s.rai_8122_cr);
+}
+
 export function calculate(s: PreviSaState): CalcResult {
   // RAI — mesma demonstração de resultados do Excel ' Res Q10':
   // TOTAL DE RENDIMENTOS (C21) − total de gastos (C62) ± imposto diferido (C64).
-  const totalRendimentos =
-    s.rai_711 + s.rai_712 + s.rai_72;
-  const totalGastos =
-    s.rai_cmv + s.rai_cmc + s.rai_62 + s.rai_63 + s.rai_64 +
-    s.rai_65 + s.rai_66 + s.rai_67 + s.rai_68 + s.rai_69;
-  const raiCalc = totalRendimentos - totalGastos + s.rai_8122_db - s.rai_8122_cr;
+  // 7 COMPLETA (inclui 74–79) — antes só somava 711+712+72 e divergia do valor
+  // mostrado pelo leitor de SAF-T a partir dos mesmos dados.
+  const totalRendimentos = totalRendimentosClasse7(s);
+  const totalGastos = totalGastosClasse6(s);
+  const raiCalc = raiFromPrevisa(s);
 
   const effectiveRai = s.useRaiCalc ? raiCalc : s.c701_rai;
 

@@ -103,6 +103,9 @@ const run = (p: Partial<SalarioParams> = {}) => calcSalarioLiquido({ ...base, ..
   approx('G: subsídio isento (10,46×20)', r.subsidioAlimentacaoIsento, 209.2);
   approx('G: subsídio tributável ((12−10,46)×20)', r.subsidioAlimentacaoTributavel, 30.8);
   approx('G: retenção sobre 1530,80', r.retencaoIRS, 175);
+  // Líquido com o subsídio POR INTEIRO (excedente incluído) — regressão do bug
+  // em que o excedente tributável era retido mas não contava no líquido.
+  approx('G: líquido inclui subsídio por inteiro', r.salarioLiquido, 1500 + 240 - 165 - 175);
 }
 
 // ── Caso H: acerto anual estimado coerente ──

@@ -51,6 +51,7 @@ import { migrarEmpresasParaGabinete } from './lib/gabinete';
 import { enforceProfileRules } from './lib/profileRules';
 import { DOC_TYPES, downloadAsWord } from './lib/wordDocs';
 import { downloadPrevisaPdf } from './lib/previsaPdf';
+import { raiFromPrevisa } from './lib/previsaCalc';
 import GuiaSistema from './components/GuiaSistema';
 import GuiaSugestao from './components/GuiaSugestao';
 import MiniDock from './components/MiniDock';
@@ -1176,8 +1177,8 @@ function AppContent() {
       // Se o diagnóstico ainda vem vazio mas o Previsa já tem RAI, usa-o como proxy de resultado
       if (diag.resultadoLiquido === 0) {
         const rai = previsaForInit.useRaiCalc
-          ? (previsaForInit.rai_711 + previsaForInit.rai_712 + previsaForInit.rai_72 + previsaForInit.rai_74 + previsaForInit.rai_75) - (previsaForInit.rai_cmv + previsaForInit.rai_62)
-          : previsaForInit.c701_rai;
+            ? raiFromPrevisa(previsaForInit)
+            : previsaForInit.c701_rai;
         if (rai !== 0) diag.resultadoLiquido = rai;
       }
       setDiagnosticoState(diag);

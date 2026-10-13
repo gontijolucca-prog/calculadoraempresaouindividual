@@ -10,7 +10,8 @@ import {
   calcTicketSavings, calcSelfSSContribution, calculateIRC,
 } from './pt2026';
 import { calcSalarioLiquido } from './salario';
-import { DED_ESPECIFICA_CAT_A_2026 } from './fiscal';
+import { DED_ESPECIFICA_CAT_A_2026, LIMIAR_JUSTIFICACAO_15PCT } from './fiscal';
+import { raiFromPrevisa, totalRendimentosClasse7, totalGastosClasse6 } from './previsaCalc';
 
 const eur = (n: number) =>
   new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number.isFinite(n) ? n : 0);
@@ -29,10 +30,12 @@ function resultadoFiscal(s: any, profile: Profileish): { label: string; valor: s
 
   let eniSS = 0;
   if (!(s.profSit === 'tco' && !s.isMainAct && num(s.rev) <= 20000)) {
-    eniSS = num(s.rev) * (s.isServices ? 0.70 : 0.20) * 0.214;
+    // Mesmo motor do TaxSimulator (teto 12×IAS + mínimo) — o histórico tinha a
+    // fórmula sem teto e divergia do simulador acima de ~110 k€/ano.
+    eniSS = calcSelfSSContribution(num(s.rev) / 12, s.isServices ? 'servicos' : 'bens', false).anual;
   }
   let eniRC = num(s.rev) * (s.isServices ? 0.75 : 0.15);
-  if (s.isServices && num(s.rev) > 27360) {
+  if (s.isServices && num(s.rev) > LIMIAR_JUSTIFICACAO_15PCT) {
     const rj = num(s.rev) * 0.15;
     const jd = costsEni + DED_ESPECIFICA_CAT_A_2026;
     if (jd < rj) eniRC += rj - jd;
@@ -99,9 +102,9 @@ export function resultSimulacao(tipo: string, state: unknown, profile?: Profilei
         return [{ label: 'IRS estimado', valor: eur(calculateIRS(rend)) }, { label: 'Taxa efetiva', valor: `${((calculateIRS(rend) / rend) * 100).toFixed(1)}%` }];
       }
       case 'previsa': {
-        const rend = num(s.rai_711) + num(s.rai_712) + num(s.rai_72) + num(s.rai_74) + num(s.rai_75) + num(s.rai_76) + num(s.rai_77) + num(s.rai_78) + num(s.rai_79);
-        const gastos = num(s.rai_cmv) + num(s.rai_cmc) + num(s.rai_62) + num(s.rai_63) + num(s.rai_64) + num(s.rai_65) + num(s.rai_66) + num(s.rai_67) + num(s.rai_68) + num(s.rai_69);
-        const rai = s.useRaiCalc ? rend - gastos : num(s.c701_rai);
+        const rend = totalRendimentosClasse7(s as any);
+        const gastos = totalGastosClasse6(s as any);
+        const rai = s.useRaiCalc ? raiFromPrevisa(s as any) : num(s.c701_rai);
         if (rend === 0 && gastos === 0 && !num(s.c701_rai)) return [];
         const lucro = Math.max(0, rai);
         return [
