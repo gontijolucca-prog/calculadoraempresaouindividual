@@ -10,6 +10,7 @@ import {
   OBRIGACOES_CATALOGO, OBRIGACOES_CATALOGO_DEFAULT, getCatalogo, setCatalogo, addCatalogoDef, deleteCatalogoDef, resetCatalogo, getQuadroVisiveis, setQuadroVisiveis, getObrigacoesAtivas, setObrigacoesAtivas,
   MAPA_CONTROLO_DEFAULT, MAPA_RH_DEFAULT, getMapaControloPilares, setMapaControloPilares, addMapaControloPilar, deleteMapaControloPilar, resetMapaControloPilares, getMapaControloVisiveis, setMapaControloVisiveis,
   getMapaRHPilares, setMapaRHPilares, addMapaRHPilar, deleteMapaRHPilar, resetMapaRHPilares, getMapaRHVisiveis, setMapaRHVisiveis,
+  startGabineteMetaSync,
   type GabineteCliente, type Tarefa, type Obrigacao, type ObrigacaoTipo, type ObrigacaoEstado, type CofreEntrada, type ObrigacaoDef, type MapaPilarDef,
 } from './lib/gabinete';
 import { listEmpresas } from './lib/empresas';
@@ -62,6 +63,17 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
   const documentosF = useMemo(() => activeEmpresaId ? documentosAll.filter(d => d.clienteId === activeEmpresaId) : documentosAll, [documentosAll, activeEmpresaId]);
   const colaboradores = useGabineteColaboradores();
   React.useEffect(() => { seedMykolaVasylDemo().catch(()=>{}); ensureAllClientesDefaults().catch(()=>{}); import('./lib/firebase').then(m=>{ const uid = m.auth?.currentUser?.uid; const email = m.auth?.currentUser?.email; if(uid && email) linkColaboradorPorEmail(email, uid).catch(()=>{}); }).catch(()=>{}); }, []);
+  // Catálogos (obrigações/pilares) e filtros: leitura live do Firestore — sem isto
+  // um pilar adicionado só existia no localStorage deste browser.
+  React.useEffect(() => {
+    let stop = startGabineteMetaSync();
+    const onSwitch = () => { try { stop(); } catch {} stop = startGabineteMetaSync(); };
+    window.addEventListener('estudo360:gabinete-switch', onSwitch as EventListener);
+    return () => {
+      window.removeEventListener('estudo360:gabinete-switch', onSwitch as EventListener);
+      try { stop(); } catch {}
+    };
+  }, []);
   const clienteAtivo = useMemo(() => {
     if (!activeEmpresaId) return null;
     const gc = clientes.find(c => c.id === activeEmpresaId);
@@ -566,8 +578,8 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
         </div>
       )}
 
-      {/* Tabela */}
-      <div className="bg-white rounded-[10px] border border-zinc-300 shadow-sm overflow-hidden print:border-zinc-400">
+      {/* Tabela — sem contorno: o fundo da página já delimita o quadro */}
+      <div className="bg-white rounded-[10px] shadow-sm overflow-hidden print:shadow-none">
         <div className="overflow-auto max-h-[62vh] print:max-h-none print:overflow-visible">
           <table className="w-full text-[13px] border-collapse">
             <thead className="sticky top-0 z-10">

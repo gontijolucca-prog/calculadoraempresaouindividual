@@ -284,34 +284,117 @@ export const OBRIGACOES_CATALOGO_DEFAULT: ObrigacaoDef[] = [
 // Compat: export legado mantém default para imports antigos; novo código usa getCatalogo()
 export const OBRIGACOES_CATALOGO: ObrigacaoDef[] = OBRIGACOES_CATALOGO_DEFAULT;
 
-// ─── Catálogo persistente (localStorage + Firestore meta) ────────────────────
-function catalogoLsKey(): string {
-  try { return `gabinete:${getGabineteOfficeId()}:catalogoObrigacoes`; } catch { return `gabinete:shared:catalogoObrigacoes`; }
+// ─── Meta (catálogos + filtros) — persistência real + leitura live ───────────
+// Estes 6 documentos gravavam em Firestore mas nunca eram lidos de volta: num
+// browser novo (ou depois de limpar o cache) pilares e filtros desapareciam.
+// Agora há subscrição live de `gabinete/{officeId}/meta/*` (ver startGabineteMetaSync).
+export type MetaDocName =
+  | 'catalogoObrigacoes' | 'catalogoMapaControlo' | 'catalogoMapaRH'
+  | 'quadroVisiveis' | 'mapaControloVisiveis' | 'mapaRHVisiveis';
+
+const META_EVENTOS: Record<MetaDocName, string> = {
+  catalogoObrigacoes: 'estudo360:catalogo-updated',
+  catalogoMapaControlo: 'estudo360:mapa-controlo-updated',
+  catalogoMapaRH: 'estudo360:mapa-rh-updated',
+  quadroVisiveis: 'estudo360:quadro-visiveis-updated',
+  mapaControloVisiveis: 'estudo360:mapa-controlo-visiveis-updated',
+  mapaRHVisiveis: 'estudo360:mapa-rh-visiveis-updated',
+};
+const META_DOCS = Object.keys(META_EVENTOS) as MetaDocName[];
+const ehVisiveis = (n: MetaDocName) => n.endsWith('Visiveis');
+
+function metaLsKey(n: MetaDocName): string {
+  try { return `gabinete:${getGabineteOfficeId()}:${n}`; } catch { return `gabinete:shared:${n}`; }
 }
-function quadroVisiveisLsKey(): string {
-  try { return `gabinete:${getGabineteOfficeId()}:quadroVisiveis`; } catch { return `gabinete:shared:quadroVisiveis`; }
-}
-export function getCatalogo(): ObrigacaoDef[] {
+function metaTsLsKey(n: MetaDocName): string { return `${metaLsKey(n)}:ts`; }
+
+/** Lê o valor meta em localStorage (array; null = nunca gravado neste browser). */
+function readMetaLs<T>(n: MetaDocName): T[] | null {
   try {
-    const raw = localStorage.getItem(catalogoLsKey());
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length) {
-        const valid = parsed.filter((x: unknown) => x && typeof (x as ObrigacaoDef).id === 'string' && typeof (x as ObrigacaoDef).label === 'string' && Array.isArray((x as ObrigacaoDef).tipos));
-        if (valid.length) return valid as ObrigacaoDef[];
-      }
-    }
+    const raw = localStorage.getItem(metaLsKey(n));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as T[]) : null;
+  } catch { return null; }
+}
+
+function normalizeVisiveis(ids: unknown): string[] | null {
+  if (!Array.isArray(ids)) return null;
+  const clean = ids.filter((x): x is string => typeof x === 'string');
+  return clean.length ? clean : null;
+}
+
+function dispatchMeta(n: MetaDocName, list: unknown[] | null): void {
+  try {
+    const detail = ehVisiveis(n) ? { ids: normalizeVisiveis(list) } : { items: list ?? [] };
+    window.dispatchEvent(new CustomEvent(META_EVENTOS[n], { detail } as unknown as Event));
   } catch {}
+}
+
+/** Empurra um valor local para o Firestore (sem tocar em localStorage/eventos). */
+function pushMeta(n: MetaDocName, list: unknown[]): void {
+  try {
+    const officeId = getGabineteOfficeId();
+    const payload = ehVisiveis(n) ? { ids: list } : { items: list };
+    setDoc(doc(db, `gabinete/${officeId}/meta`, n), { ...payload, updatedAt: Date.now(), _updatedAt: Date.now() } as unknown as Record<string, unknown>, { merge: true }).catch(()=>{});
+  } catch {}
+}
+
+/** Grava meta nos 3 sítios: localStorage + Firestore + evento para a UI. */
+export function writeMeta(n: MetaDocName, list: unknown[]): void {
+  try {
+    localStorage.setItem(metaLsKey(n), JSON.stringify(list));
+    localStorage.setItem(metaTsLsKey(n), String(Date.now()));
+  } catch {}
+  dispatchMeta(n, list);
+  pushMeta(n, list);
+}
+
+/** Liga a leitura live dos 6 docs meta. Devolve a função que desliga. */
+export function startGabineteMetaSync(): Unsubscribe {
+  const unsubs: Unsubscribe[] = [];
+  for (const name of META_DOCS) {
+    try {
+      const ref = doc(db, `gabinete/${getGabineteOfficeId()}/meta`, name);
+      const unsub = onSnapshot(ref, (snap) => {
+        const data = snap.data() as { items?: unknown[]; ids?: unknown[]; _updatedAt?: number } | undefined;
+        const local = readMetaLs<unknown>(name);
+        // sem doc remoto: empurra o que existe localmente (nada se perde)
+        if (!data) { if (local && local.length) pushMeta(name, local); return; }
+        const incoming = ehVisiveis(name) ? data.ids : data.items;
+        if (!Array.isArray(incoming)) return;
+        if (JSON.stringify(incoming) === (local ? JSON.stringify(local) : null)) return;
+        const localTs = Number(localStorage.getItem(metaTsLsKey(name)) || 0);
+        const remoteTs = Number(data._updatedAt || 0);
+        // remoto mais antigo do que uma alteração local ainda não sincronizada:
+        // mantém o local e volta a empurrá-lo
+        if (local && local.length && localTs && remoteTs && remoteTs < localTs) { pushMeta(name, local); return; }
+        try {
+          localStorage.setItem(metaLsKey(name), JSON.stringify(incoming));
+          localStorage.setItem(metaTsLsKey(name), String(Math.max(localTs, remoteTs) || Date.now()));
+        } catch {}
+        dispatchMeta(name, incoming);
+      }, (err) => console.warn(`[gabinete] meta ${name} onSnapshot:`, err));
+      unsubs.push(unsub);
+    } catch (e) {
+      console.warn(`[gabinete] meta ${name} subscribe falhou:`, e);
+    }
+  }
+  return () => { for (const u of unsubs) { try { u(); } catch {} } };
+}
+
+// ─── Catálogo persistente (localStorage + Firestore meta) ────────────────────
+export function getCatalogo(): ObrigacaoDef[] {
+  const parsed = readMetaLs<ObrigacaoDef>('catalogoObrigacoes');
+  if (parsed && parsed.length) {
+    const valid = parsed.filter((x: unknown) => x && typeof (x as ObrigacaoDef).id === 'string' && typeof (x as ObrigacaoDef).label === 'string' && Array.isArray((x as ObrigacaoDef).tipos));
+    if (valid.length) return valid;
+  }
   return [...OBRIGACOES_CATALOGO_DEFAULT];
 }
 export function setCatalogo(list: ObrigacaoDef[]): void {
   const clean = list.filter(x => x && typeof x.id === 'string' && typeof x.label === 'string');
-  try { localStorage.setItem(catalogoLsKey(), JSON.stringify(clean)); } catch {}
-  try {
-    const officeId = getGabineteOfficeId();
-    setDoc(doc(db, `gabinete/${officeId}/meta`, 'catalogoObrigacoes'), { items: clean, updatedAt: Date.now(), _updatedAt: Date.now() } as unknown as Record<string, unknown>, { merge: true }).catch(()=>{});
-  } catch {}
-  try { window.dispatchEvent(new CustomEvent('estudo360:catalogo-updated', { detail: { items: clean } } as unknown as Event)); } catch {}
+  writeMeta('catalogoObrigacoes', clean);
 }
 export async function addCatalogoDef(label: string): Promise<ObrigacaoDef> {
   const cleanLabel = label.trim();
@@ -378,20 +461,17 @@ export const MAPA_RH_DEFAULT: MapaPilarDef[] = [
   { id:'dmr_ss',     labelShort:'DMR-SS',      labelFull:'DMR - SS',                         tipos:['ss'] },
   { id:'pagamentos', labelShort:'Pagamentos',  labelFull:'Pagamentos Encargos Mensais SS + Retenções', tipos:['ss','retencao'] },
 ];
-function mapaControloLsKey(): string { try { return `gabinete:${getGabineteOfficeId()}:catalogoMapaControlo`; } catch { return `gabinete:shared:catalogoMapaControlo`; } }
-function mapaRhLsKey(): string { try { return `gabinete:${getGabineteOfficeId()}:catalogoMapaRH`; } catch { return `gabinete:shared:catalogoMapaRH`; } }
 export function getMapaControloPilares(): MapaPilarDef[] {
-  try {
-    const raw = localStorage.getItem(mapaControloLsKey());
-    if (raw) { const parsed = JSON.parse(raw); if (Array.isArray(parsed) && parsed.length) { const v = (parsed as unknown[]).filter((x: unknown)=> x && typeof (x as MapaPilarDef).id==='string' && typeof (x as MapaPilarDef).labelShort==='string') as MapaPilarDef[]; if (v.length) return v; } }
-  } catch {}
+  const parsed = readMetaLs<MapaPilarDef>('catalogoMapaControlo');
+  if (parsed && parsed.length) {
+    const valid = parsed.filter((x: unknown)=> x && typeof (x as MapaPilarDef).id==='string' && typeof (x as MapaPilarDef).labelShort==='string');
+    if (valid.length) return valid;
+  }
   return [...MAPA_CONTROLO_DEFAULT];
 }
 export function setMapaControloPilares(list: MapaPilarDef[]): void {
   const clean = list.filter(x=> x && typeof x.id==='string' && typeof x.labelShort==='string');
-  try { localStorage.setItem(mapaControloLsKey(), JSON.stringify(clean)); } catch {}
-  try { const officeId=getGabineteOfficeId(); setDoc(doc(db, `gabinete/${officeId}/meta`, 'catalogoMapaControlo'), { items: clean, updatedAt: Date.now(), _updatedAt: Date.now() } as unknown as Record<string, unknown>, { merge: true }).catch(()=>{}); } catch {}
-  try { window.dispatchEvent(new CustomEvent('estudo360:mapa-controlo-updated', { detail: { items: clean } } as unknown as Event)); } catch {}
+  writeMeta('catalogoMapaControlo', clean);
 }
 export async function addMapaControloPilar(labelShort: string, labelFull?: string): Promise<MapaPilarDef> {
   const s = labelShort.trim(); if (!s) throw new Error('Nome curto vazio'); if (s.length>28) throw new Error('Nome curto máx 28');
@@ -408,24 +488,21 @@ export async function deleteMapaControloPilar(id: string): Promise<void> {
   const cur = getMapaControloPilares(); if (cur.length<=1) throw new Error('Tem de ficar pelo menos um pilar'); const next=cur.filter(c=>c.id!==id); if(next.length===cur.length) throw new Error('Não encontrado'); setMapaControloPilares(next); try { logAudit('delete_mapa_controlo', id); } catch {}
 }
 export function resetMapaControloPilares(): void { setMapaControloPilares([...MAPA_CONTROLO_DEFAULT]); try { logAudit('reset_mapa_controlo', `${MAPA_CONTROLO_DEFAULT.length} itens`); } catch {} }
-function mapaRhVisiveisLsKey(): string { try { return `gabinete:${getGabineteOfficeId()}:mapaRHVisiveis`; } catch { return `gabinete:shared:mapaRHVisiveis`; } }
-function mapaControloVisiveisLsKey(): string { try { return `gabinete:${getGabineteOfficeId()}:mapaControloVisiveis`; } catch { return `gabinete:shared:mapaControloVisiveis`; } }
-export function getMapaControloVisiveis(): string[] | null { try { const raw=localStorage.getItem(mapaControloVisiveisLsKey()); if(!raw) return null; const p=JSON.parse(raw); if(Array.isArray(p)) return (p as unknown[]).filter((x):x is string=>typeof x==='string'); } catch {} return null; }
-export function setMapaControloVisiveis(ids: string[] | null): void { try { if(!ids||!ids.length) localStorage.removeItem(mapaControloVisiveisLsKey()); else localStorage.setItem(mapaControloVisiveisLsKey(), JSON.stringify(ids)); } catch {} try { window.dispatchEvent(new CustomEvent('estudo360:mapa-controlo-visiveis-updated', { detail:{ ids } } as unknown as Event)); } catch {} }
-export function getMapaRHVisiveis(): string[] | null { try { const raw=localStorage.getItem(mapaRhVisiveisLsKey()); if(!raw) return null; const p=JSON.parse(raw); if(Array.isArray(p)) return (p as unknown[]).filter((x):x is string=>typeof x==='string'); } catch {} return null; }
-export function setMapaRHVisiveis(ids: string[] | null): void { try { if(!ids||!ids.length) localStorage.removeItem(mapaRhVisiveisLsKey()); else localStorage.setItem(mapaRhVisiveisLsKey(), JSON.stringify(ids)); } catch {} try { window.dispatchEvent(new CustomEvent('estudo360:mapa-rh-visiveis-updated', { detail:{ ids } } as unknown as Event)); } catch {} }
+export function getMapaControloVisiveis(): string[] | null { return normalizeVisiveis(readMetaLs('mapaControloVisiveis')); }
+export function setMapaControloVisiveis(ids: string[] | null): void { writeMeta('mapaControloVisiveis', ids && ids.length ? ids : []); }
+export function getMapaRHVisiveis(): string[] | null { return normalizeVisiveis(readMetaLs('mapaRHVisiveis')); }
+export function setMapaRHVisiveis(ids: string[] | null): void { writeMeta('mapaRHVisiveis', ids && ids.length ? ids : []); }
 export function getMapaRHPilares(): MapaPilarDef[] {
-  try {
-    const raw = localStorage.getItem(mapaRhLsKey());
-    if (raw) { const parsed = JSON.parse(raw); if (Array.isArray(parsed) && parsed.length) { const v = (parsed as unknown[]).filter((x: unknown)=> x && typeof (x as MapaPilarDef).id==='string' && typeof (x as MapaPilarDef).labelShort==='string') as MapaPilarDef[]; if (v.length) return v; } }
-  } catch {}
+  const parsed = readMetaLs<MapaPilarDef>('catalogoMapaRH');
+  if (parsed && parsed.length) {
+    const valid = parsed.filter((x: unknown)=> x && typeof (x as MapaPilarDef).id==='string' && typeof (x as MapaPilarDef).labelShort==='string');
+    if (valid.length) return valid;
+  }
   return [...MAPA_RH_DEFAULT];
 }
 export function setMapaRHPilares(list: MapaPilarDef[]): void {
   const clean = list.filter(x=> x && typeof x.id==='string' && typeof x.labelShort==='string');
-  try { localStorage.setItem(mapaRhLsKey(), JSON.stringify(clean)); } catch {}
-  try { const officeId=getGabineteOfficeId(); setDoc(doc(db, `gabinete/${officeId}/meta`, 'catalogoMapaRH'), { items: clean, updatedAt: Date.now(), _updatedAt: Date.now() } as unknown as Record<string, unknown>, { merge: true }).catch(()=>{}); } catch {}
-  try { window.dispatchEvent(new CustomEvent('estudo360:mapa-rh-updated', { detail: { items: clean } } as unknown as Event)); } catch {}
+  writeMeta('catalogoMapaRH', clean);
 }
 export async function addMapaRHPilar(labelShort: string, labelFull?: string): Promise<MapaPilarDef> {
   const s = labelShort.trim(); if (!s) throw new Error('Nome curto vazio'); if (s.length>28) throw new Error('Nome curto máx 28');
@@ -443,22 +520,8 @@ export async function deleteMapaRHPilar(id: string): Promise<void> {
 }
 export function resetMapaRHPilares(): void { setMapaRHPilares([...MAPA_RH_DEFAULT]); try { logAudit('reset_mapa_rh', `${MAPA_RH_DEFAULT.length} itens`); } catch {} }
 // Filtro global do quadro (quais obrigações mostrar) — null = todas
-export function getQuadroVisiveis(): string[] | null {
-  try {
-    const raw = localStorage.getItem(quadroVisiveisLsKey());
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return (parsed as unknown[]).filter((x): x is string => typeof x==='string');
-  } catch {}
-  return null;
-}
-export function setQuadroVisiveis(ids: string[] | null): void {
-  try {
-    if (!ids || ids.length===0) localStorage.removeItem(quadroVisiveisLsKey());
-    else localStorage.setItem(quadroVisiveisLsKey(), JSON.stringify(ids));
-  } catch {}
-  try { window.dispatchEvent(new CustomEvent('estudo360:quadro-visiveis-updated', { detail: { ids } } as unknown as Event)); } catch {}
-}
+export function getQuadroVisiveis(): string[] | null { return normalizeVisiveis(readMetaLs('quadroVisiveis')); }
+export function setQuadroVisiveis(ids: string[] | null): void { writeMeta('quadroVisiveis', ids && ids.length ? ids : []); }
 /** Obrigações ativas do cliente; clientes antigos (sem campo) têm todas. */
 export function getObrigacoesAtivas(cli: GabineteCliente): string[] {
   const catalogo = getCatalogo();
