@@ -250,7 +250,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
   const [filtroGrupo, setFiltroGrupo] = useState<string>('');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [obrEditingId, setObrEditingId] = useState<string | null>(null);
-  const [showGerir, setShowGerir] = useState(true);
+  const [showGerir, setShowGerir] = useState(false);
   const [novaObrLabel, setNovaObrLabel] = useState('');
   const [toast, setToast] = useState<string | null>(null);
   const showToast = (msg: string) => { setToast(msg); setTimeout(()=>setToast(null), 2200); };
@@ -692,7 +692,7 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
     return () => window.removeEventListener('estudo360:mapa-controlo-updated', h as EventListener);
   }, []);
   const pilares: Pilar[] = pilaresRaw.map(p => ({ key: p.id, labelShort: p.labelShort, labelFull: p.labelFull, color:'#374151', bgHeader:'bg-white', tipos: p.tipos }));
-  const [showGerirMC, setShowGerirMC] = useState(true);
+  const [showGerirMC, setShowGerirMC] = useState(false);
   const [novaMCLabel, setNovaMCLabel] = useState('');
   const [novaMCFull, setNovaMCFull] = useState('');
   const [toastMC, setToastMC] = useState<string | null>(null);
@@ -863,23 +863,24 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
               <option value="mensal">Mensal</option>
             </select>
           </div>
-        <div className="flex items-center gap-2 pt-2 border-t border-zinc-200 mt-2">
-          <button onClick={()=>setShowGerirMC(!showGerirMC)} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerirMC ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
+        </div>
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-200 mt-2">
+          <button onClick={()=>setShowGerirMC(!showGerirMC)} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerirMC ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
             <Plus className="w-3.5 h-3.5" /> Gerir pilares
           </button>
-          {mcVisiveis !== null && <span className="text-xs text-zinc-500">{mcVisiveis.length}/{pilares.length} visíveis</span>}
-          {mcVisiveis === null && <span className="text-xs text-zinc-500">Todos visíveis</span>}
-          <span className="ml-auto text-[11px] text-zinc-400">Cada alteração grava logo</span>
+          {mcVisiveis !== null && <span className="text-xs text-zinc-500 whitespace-nowrap">{mcVisiveis.length}/{pilares.length} visíveis</span>}
+          {mcVisiveis === null && <span className="text-xs text-zinc-500 whitespace-nowrap">Todos visíveis</span>}
+          <span className="ml-auto text-[11px] text-zinc-400 whitespace-nowrap">Cada alteração grava logo</span>
         </div>
         {showGerirMC && (
-          <div className="rounded-xl border border-zinc-300 bg-zinc-50 p-3 space-y-3">
+          <div className="rounded-xl border border-zinc-300 bg-zinc-50 p-3 space-y-3 animate-in fade-in duration-200">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-semibold text-zinc-900">Gerir pilares — Mapa de Controlo</h4>
               <button onClick={()=>setShowGerirMC(false)} className="p-1.5 rounded-lg hover:bg-zinc-200 text-zinc-500"><X className="w-4 h-4" /></button>
             </div>
-            <div className="flex gap-2">
-              <input value={novaMCLabel} onChange={e=>setNovaMCLabel(e.target.value)} placeholder="Nome curto (ex: Tesouraria)" className="flex-1 px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm" />
-              <input value={novaMCFull} onChange={e=>setNovaMCFull(e.target.value)} placeholder="Nome completo (opcional)" className="flex-1 px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm" />
+            <div className="flex flex-wrap gap-2">
+              <input value={novaMCLabel} onChange={e=>setNovaMCLabel(e.target.value)} placeholder="Nome curto (ex: Tesouraria)" className="flex-1 min-w-[200px] max-w-[340px] px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm" />
+              <input value={novaMCFull} onChange={e=>setNovaMCFull(e.target.value)} placeholder="Nome completo (opcional)" className="flex-1 min-w-[200px] max-w-[340px] px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm" />
               <button onClick={handleAddMC} className="px-4 py-2 rounded-lg bg-[#0677FF] text-white text-sm font-semibold hover:bg-blue-600">Adicionar</button>
               <button onClick={()=>{ if(confirm('Repor pilares originais (7)?')){ resetMapaControloPilares(); setPilaresRaw(getMapaControloPilares()); showToastMC('✓ Reposto — gravado'); } }} className="px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm">Repor</button>
             </div>
@@ -914,8 +915,6 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
             <p className="text-[11px] text-zinc-500">Adicionar/apagar é permanente (localStorage + Firestore). Cada alteração confirma com “gravado”.</p>
           </div>
         )}
-
-        </div>
       </div>
 
 
@@ -1011,7 +1010,7 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
     return ()=>window.removeEventListener('estudo360:mapa-rh-updated', h as EventListener);
   },[]);
   const pilares: Pilar[] = pilaresRaw.map(p=> ({ key:p.id, labelShort:p.labelShort, labelFull:p.labelFull, color:'#374151', bgHeader:'bg-white', tipos:p.tipos }));
-  const [showGerirRH, setShowGerirRH] = useState(true);
+  const [showGerirRH, setShowGerirRH] = useState(false);
   const [novaRHLabel, setNovaRHLabel] = useState('');
   const [novaRHFull, setNovaRHFull] = useState('');
   const [toastRH, setToastRH] = useState<string | null>(null);
@@ -1182,23 +1181,24 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
               <option value="mensal">Mensal</option>
             </select>
           </div>
-        <div className="flex items-center gap-2 pt-2 border-t border-zinc-200 mt-2">
-          <button onClick={()=>setShowGerirRH(!showGerirRH)} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerirRH ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
+        </div>
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-200 mt-2">
+          <button onClick={()=>setShowGerirRH(!showGerirRH)} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerirRH ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
             <Plus className="w-3.5 h-3.5" /> Gerir pilares
           </button>
-          {rhVisiveis !== null && <span className="text-xs text-zinc-500">{rhVisiveis.length}/{pilares.length} visíveis</span>}
-          {rhVisiveis === null && <span className="text-xs text-zinc-500">Todos visíveis</span>}
-          <span className="ml-auto text-[11px] text-zinc-400">Cada alteração grava logo</span>
+          {rhVisiveis !== null && <span className="text-xs text-zinc-500 whitespace-nowrap">{rhVisiveis.length}/{pilares.length} visíveis</span>}
+          {rhVisiveis === null && <span className="text-xs text-zinc-500 whitespace-nowrap">Todos visíveis</span>}
+          <span className="ml-auto text-[11px] text-zinc-400 whitespace-nowrap">Cada alteração grava logo</span>
         </div>
         {showGerirRH && (
-          <div className="rounded-xl border border-zinc-300 bg-zinc-50 p-3 space-y-3">
+          <div className="rounded-xl border border-zinc-300 bg-zinc-50 p-3 space-y-3 animate-in fade-in duration-200">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-semibold text-zinc-900">Gerir pilares — Mapa RH</h4>
               <button onClick={()=>setShowGerirRH(false)} className="p-1.5 rounded-lg hover:bg-zinc-200 text-zinc-500"><X className="w-4 h-4" /></button>
             </div>
-            <div className="flex gap-2">
-              <input value={novaRHLabel} onChange={e=>setNovaRHLabel(e.target.value)} placeholder="Nome curto (ex: Formação)" className="flex-1 px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm" />
-              <input value={novaRHFull} onChange={e=>setNovaRHFull(e.target.value)} placeholder="Nome completo (opcional)" className="flex-1 px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm" />
+            <div className="flex flex-wrap gap-2">
+              <input value={novaRHLabel} onChange={e=>setNovaRHLabel(e.target.value)} placeholder="Nome curto (ex: Formação)" className="flex-1 min-w-[200px] max-w-[340px] px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm" />
+              <input value={novaRHFull} onChange={e=>setNovaRHFull(e.target.value)} placeholder="Nome completo (opcional)" className="flex-1 min-w-[200px] max-w-[340px] px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm" />
               <button onClick={handleAddRH} className="px-4 py-2 rounded-lg bg-[#0677FF] text-white text-sm font-semibold hover:bg-blue-600">Adicionar</button>
               <button onClick={()=>{ if(confirm('Repor pilares originais (6)?')){ resetMapaRHPilares(); setPilaresRaw(getMapaRHPilares()); showToastRH('✓ Reposto — gravado'); } }} className="px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm">Repor</button>
             </div>
@@ -1233,8 +1233,6 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
             <p className="text-[11px] text-zinc-500">Adicionar/apagar é permanente (localStorage + Firestore). Cada alteração confirma com “gravado”.</p>
           </div>
         )}
-
-        </div>
       </div>
 
 
