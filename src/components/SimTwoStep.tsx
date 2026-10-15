@@ -31,7 +31,7 @@ export function SimTwoStep({ title, subtitle, view, state, simulated, ready, onS
           <div className="text-center mb-6">
             <h1 className="text-[28px] md:text-[32px] font-[800] tracking-tight text-[#0F172A]">{title}</h1>
             {subtitle && <p className="text-[14px] font-[500] text-[#64748B] mt-1.5 max-w-[520px] mx-auto leading-relaxed">{subtitle}</p>}
-            <p className="text-[11px] font-[700] uppercase tracking-wide text-[#94A3B8] mt-3">
+            <p className="text-[11px] font-[700] uppercase tracking-wide text-[#64748B] mt-3">
               Campos com <span className="text-red-500">*</span> são obrigatórios
             </p>
           </div>
@@ -46,9 +46,6 @@ export function SimTwoStep({ title, subtitle, view, state, simulated, ready, onS
             </div>
           </div>
 
-          <p className="text-center text-[11px] text-[#94A3B8] mt-4">
-            Cálculos indicativos — confirme com o seu CC.
-          </p>
         </div>
       </motion.div>
     );

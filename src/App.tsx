@@ -742,10 +742,13 @@ function AppContent() {
     return () => window.removeEventListener('estudo360:cloud-sync', onSync);
   }, []);
 
-  // Sync document.title with the active view (helps history & screen readers)
+  // Sync document.title with the active view (helps history & screen readers).
+  // Antes de autenticar (landing/auth) mantém o título de marca.
   useEffect(() => {
-    document.title = `${VIEW_TITLES[view]} · Estudo 360`;
-  }, [view]);
+    document.title = isAuthenticated
+      ? `${VIEW_TITLES[view]} · Estudo 360`
+      : 'Estudo 360 · Análise. Estratégia. Decisão.';
+  }, [view, isAuthenticated]);
 
   useEffect(() => {
     const main = document.getElementById('main-content');
@@ -1880,7 +1883,7 @@ function AppContent() {
       />
 
       {/* Disclaimer legal — sempre visível enquanto logged in */}
-      <div className="border-t border-slate-200 bg-slate-50/80 px-4 py-1.5 text-[10px] text-slate-400 text-center leading-tight flex-shrink-0">
+      <div className="border-t border-slate-200 bg-slate-50/80 px-4 py-1.5 text-[10px] text-slate-500 text-center leading-tight flex-shrink-0">
         Cálculos indicativos — confirme com o seu TOC. 
         <span className="hidden sm:inline"> Base legal: CIRS/CIRC/CIVA OE 2026.</span>
       </div>

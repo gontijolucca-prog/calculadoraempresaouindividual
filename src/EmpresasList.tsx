@@ -188,7 +188,7 @@ export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual
           </ul>
         )}
 
-        <p className="mt-8 text-[11px] text-[#94A3B8] font-[500]">
+        <p className="mt-8 text-[11px] text-[#64748B] font-[500]">
           {empresas.length} empresa{empresas.length === 1 ? '' : 's'} guardada{empresas.length === 1 ? '' : 's'} · sincronizado na nuvem
         </p>
       </div>

@@ -142,7 +142,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
   // Auto-fechar desativado a pedido — dropdowns só fecham ao clicar na seta
 
   const GAB_TABS = [
-  { id: 'dashboard', label: 'Quadro resumo obrigações', Icon: Calendar, desc: 'JAN-DEZ: v Concluído · ✕ Não concluído' },
+  { id: 'dashboard', label: 'Quadro de obrigações', Icon: Calendar, desc: 'JAN-DEZ: v Concluído · ✕ Não concluído' },
   { id: 'mapa-controlo', label: 'Mapa de controlo', Icon: Table2, desc: '7 fases · JAN-DEZ colorido - Doc. Falta -> Balancete' },
   { id: 'mapa-rh', label: 'Mapa RH', Icon: Users, desc: '6 colunas RH - Salários, Ticket, IRS, DMR-AT/SS, Encargos' },
   { id: 'visao-geral', label: 'Visão geral', Icon: LayoutDashboard, desc: 'Ficha 360' },
@@ -258,7 +258,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                   >
                     <span className="w-2 h-2 rounded-full bg-[var(--brand-bordeaux-neon)] shrink-0 bordeaux-neon-pulse" style={{ boxShadow: '0 0 0 6px var(--brand-bordeaux-glow)' }} aria-hidden="true" />
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[9px] font-[800] uppercase tracking-[1px] text-[var(--brand-bordeaux-neon)]">A trabalhar em</span>
+                      <span className="block text-[10px] font-[800] uppercase tracking-[1px] text-[#BE123C]">A trabalhar em</span>
                       <span className="block text-[13px] font-[700] text-[#0B1D2D] truncate">{activeClientName}</span>
                     </span>
                   </button>
@@ -319,7 +319,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
             <div className={cn("grid transition-all duration-700 ease-in-out motion-reduce:transition-none", relatoriosOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
               <div className="overflow-hidden">
               <div className="mt-0.5 ml-2.5 pl-2 border-l-2 border-slate-200 space-y-0.5">
-                <ClientNavItem label="Demonstrações financeiras" Icon={FileDown}
+                <ClientNavItem label="Demonstrações" Icon={FileDown}
                   onClick={() => { onOpenRelatorios?.('balanco'); setDrawerOpen(false); }}
                   title="Balanço, Demonstração de Resultados, Alterações no CP, Fluxos de Caixa e pacote completo." />
                 <ClientNavItem label="Encerramento de contas" Icon={FileDown}

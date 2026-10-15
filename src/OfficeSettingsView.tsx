@@ -155,7 +155,7 @@ function EscritorioForm({ office, onChange }: { office: OfficeSettings; onChange
               <div className="flex gap-2 items-center">
                 <input type="color" value={office.corPrimaria} onChange={e => set('corPrimaria', e.target.value)} className="w-12 h-10 rounded-[8px] border-2 border-[#E2E8F0] cursor-pointer" />
                 <input type="text" value={office.corPrimaria} onChange={e => set('corPrimaria', e.target.value)} className={inputCls + ' max-w-[140px] font-mono'} placeholder="#0677FF" />
-                <div className="flex-1 h-10 rounded-[8px]" style={{ backgroundColor: office.corPrimaria }} aria-hidden="true" />
+                <div className="w-32 h-10 rounded-[8px] shrink-0 border border-[#E2E8F0]" style={{ backgroundColor: office.corPrimaria }} aria-hidden="true" />
               </div>
               <p className="text-[11px] text-[#64748B] mt-1">Usada em cabeçalhos de proposta, contratos e PDFs.</p>
             </div>

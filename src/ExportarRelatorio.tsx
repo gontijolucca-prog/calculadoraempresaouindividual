@@ -497,7 +497,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
             </p>
           </div>
         ) : (
-          <div className="mt-7 grid grid-cols-1 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] gap-6 items-start">
+          <div className="mt-7 grid grid-cols-1 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] gap-6 items-start">
             {/* ── Coluna de controlo ── */}
             <div className="lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:pr-1 no-print">
               {/* Passo 1 — empresa (dropdown) */}
