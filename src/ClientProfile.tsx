@@ -663,10 +663,10 @@ export default function ClientProfile({
               onChange={e => setSt({ nif: e.target.value.replace(/\D/g, '').slice(0, 9) })}
               className={inputClass}
               placeholder="123456789"
-              aria-invalid={st.nif.length > 0 && !isValidNIFPT(st.nif)}
+              aria-invalid={st.nif.length === 9 && !isValidNIFPT(st.nif)}
               aria-describedby="nif-help"
             />
-            {st.nif.length > 0 && !isValidNIFPT(st.nif) && (
+            {st.nif.length === 9 && !isValidNIFPT(st.nif) && (
               <p id="nif-help" className="text-[11px] text-amber-700 font-[600] mt-1">
                 NIF deve ter 9 dígitos e checksum válido.
               </p>
@@ -1314,10 +1314,10 @@ export default function ClientProfile({
                   onChange={e => updateProfile('nif', e.target.value.replace(/\D/g, '').slice(0, 9))}
                   className={inputClass}
                   placeholder="123456789"
-                  aria-invalid={profile.nif.length > 0 && !isValidNIFPT(profile.nif)}
+                  aria-invalid={profile.nif.length === 9 && !isValidNIFPT(profile.nif)}
                   aria-describedby="nif-help"
                 />
-                {profile.nif.length > 0 && !isValidNIFPT(profile.nif) && (
+                {profile.nif.length === 9 && !isValidNIFPT(profile.nif) && (
                   <p id="nif-help" className="text-[11px] text-amber-700 font-[600] mt-1">
                     NIF deve ter 9 dígitos e checksum válido.
                   </p>

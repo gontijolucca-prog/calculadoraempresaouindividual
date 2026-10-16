@@ -21,7 +21,12 @@ export default function PropostaGamaView({ office, honorarios, onGoToOfficeSetti
   const empresas = useMemo(() => listEmpresas(), []);
   const [clienteId, setClienteId] = useState('');
   const cliente = empresas.find((e) => e.id === clienteId);
-  const semDadosEscritorio = !office.nome?.trim();
+  const faltamDados = [
+    !office.nome?.trim() && 'nome',
+    !office.nif?.trim() && 'NIF',
+    !office.email?.trim() && !office.telefone?.trim() && 'contacto',
+    !office.morada?.trim() && !office.localidade?.trim() && 'morada',
+  ].filter((v): v is string => !!v);
 
   return (
     <div className="h-full overflow-y-auto bg-[#F5F7FA]">
@@ -36,9 +41,9 @@ export default function PropostaGamaView({ office, honorarios, onGoToOfficeSetti
           </div>
         </div>
 
-        {semDadosEscritorio && (
+        {faltamDados.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 px-3.5 py-2.5 bg-amber-50 border border-amber-200 rounded-[10px] mb-5">
-            <p className="text-[12px] text-amber-900 font-[600]">O escritório ainda não tem nome nas Definições — a proposta sai genérica.</p>
+            <p className="text-[12px] text-amber-900 font-[600]">Faltam dados do escritório nas Definições ({faltamDados.join(', ')}) — a proposta sai sem eles.</p>
             {onGoToOfficeSettings && (
               <button type="button" onClick={onGoToOfficeSettings} className="inline-flex items-center gap-1 text-[12px] font-[700] text-[#0677FF] hover:underline">
                 Preencher Definições do Escritório <ArrowRight className="w-3 h-3" />

@@ -54,14 +54,17 @@ export function buildGamaPrompt(
   const s = sections || {};
   const lines: string[] = [];
   // Estrutura Ativiwise: capa → Sobre nós → Equipa → Valores → Digital → Âmbito → Benefícios → Investimento → Fecho
-  const paraQuem = cliente?.nome ? `, ${cliente.nome}` : '';
+  const paraQuem = cliente?.nome ? ` para ${cliente.nome}` : '';
   lines.push(`# Proposta de Serviços de Contabilidade — ${o.nome || 'o nosso escritório'}${paraQuem}`);
   lines.push('');
   lines.push(`${o.nome || 'O nosso escritório'} · Ao seu lado na gestão do negócio.`);
   lines.push('');
   lines.push('## Sobre nós');
   if (o.historia?.trim()) lines.push(o.historia.trim());
-  else lines.push(`${o.nome || 'O nosso escritório'} é um escritório de contabilidade certificado em Portugal. Trabalhamos com proximidade, rigor e ferramentas digitais — da contabilidade do dia a dia ao apoio à decisão.`);
+  else {
+    const quem = o.tipo === 'individual' ? 'é contabilista certificado' : 'é um escritório de contabilidade certificado';
+    lines.push(`${o.nome || 'O nosso escritório'} ${quem} em Portugal. Trabalhamos com proximidade, rigor e ferramentas digitais — da contabilidade do dia a dia ao apoio à decisão.`);
+  }
   if (o.anoFundacao) lines.push(`A acompanhar clientes desde ${o.anoFundacao}.`);
   lines.push('');
   if (s.equipa !== false) {
@@ -97,7 +100,10 @@ export function buildGamaPrompt(
   }
   lines.push('');
   lines.push('## Investimento — Honorários');
-  if (mensal) lines.push(`Honorário mensal: ${new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'}).format(mensal)}/mês${ivaPct}.`);
+  if (mensal) {
+    const eur = (v: number) => new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'}).format(v);
+    lines.push(`Honorário mensal: ${eur(mensal)}/mês — ${eur(mensal * 12)}/ano${ivaPct}.`);
+  }
   else if (h.baseMensal && Object.keys(h.baseMensal).length) {
     lines.push(`Valores mensais por tipo de entidade${ivaPct}:`);
     for (const [k,v] of Object.entries(h.baseMensal)) if (typeof v === 'number' && v>0) lines.push(`- ${k}: ${new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR'}).format(v)}/mês`);
@@ -107,13 +113,18 @@ export function buildGamaPrompt(
   if (s.observacoes?.trim()) { lines.push(''); lines.push(s.observacoes.trim()); }
   lines.push('');
   lines.push('## Agradecemos a oportunidade');
-  lines.push('Ficamos ao dispor para qualquer questão — responda a esta proposta por email ou telefone.');
-  const contacto = [o.email, o.telefone].filter(Boolean).join(' · ') || '—';
-  lines.push(`Contacto: ${contacto}${o.website ? ` · ${o.website}` : ''}`);
-  lines.push(`Sede: ${[o.morada, o.codigoPostal, o.localidade].filter(Boolean).join(', ') || '—'}`);
-  const ced = o.cedulaProfissional ? ` · Cédula: ${o.cedulaProfissional}` : '';
-  const occ = o.numeroInscricaoOCC ? ` · OCC: ${o.numeroInscricaoOCC}` : '';
-  lines.push(`NIF: ${o.nif || '—'}${ced}${occ}`);
+  lines.push('Ficamos ao dispor para qualquer questão.');
+  const contacto = [o.email, o.telefone].filter(Boolean).join(' · ');
+  if (contacto) lines.push('**Próximo passo:** responda a esta proposta por email ou telefone e tratamos do arranque (documentos, acessos e calendário).');
+  const sede = [o.morada, o.codigoPostal, o.localidade].filter(Boolean).join(', ');
+  const ids = [
+    o.nif ? `NIF: ${o.nif}` : '',
+    o.cedulaProfissional ? `Cédula: ${o.cedulaProfissional}` : '',
+    o.numeroInscricaoOCC ? `OCC: ${o.numeroInscricaoOCC}` : '',
+  ].filter(Boolean).join(' · ');
+  if (contacto) lines.push(`Contacto: ${contacto}${o.website ? ` · ${o.website}` : ''}`);
+  if (sede) lines.push(`Sede: ${sede}`);
+  if (ids) lines.push(ids);
   lines.push('');
   lines.push('---');
   lines.push('_Proposta gerada no Estudo 360° — conteúdo editável no Gama._');

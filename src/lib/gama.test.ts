@@ -41,6 +41,28 @@ async function run() {
   const p3 = buildGamaPrompt(office, {}, {}, { observacoes: 'Nota final Z' });
   check('observações incluídas', p3.includes('Nota final Z'));
 
+  check('título usa "para" com cliente', p1.includes('— Gabinete Teste para Cliente Y'));
+
+  const semDados = buildGamaPrompt({ nome: 'X' }, {}, {}, {});
+  check('sem contacto → sem linha "Contacto: —"', !semDados.includes('Contacto: —'));
+  check('sem sede → sem linha "Sede: —"', !semDados.includes('Sede: —'));
+  check('sem NIF → sem linha "NIF: —"', !semDados.includes('NIF: —'));
+  check('sem contacto → sem "Próximo passo"', !semDados.includes('Próximo passo'));
+
+  const individual = buildGamaPrompt({ nome: 'Ana', tipo: 'individual' }, {}, {}, {});
+  check('tipo individual → contabilista certificado', individual.includes('Ana é contabilista certificado'));
+  const sociedade = buildGamaPrompt({ nome: 'Firma X', tipo: 'sociedade' }, {}, {}, {});
+  check('tipo sociedade → escritório certificado', sociedade.includes('Firma X é um escritório de contabilidade certificado'));
+
+  const comContacto = buildGamaPrompt({ nome: 'X', email: 'a@b.pt' }, {}, {}, {});
+  check('com contacto → "Próximo passo" presente', comContacto.includes('Próximo passo'));
+
+  const comMensal = buildGamaPrompt(office, { taxaIVA: 0.23, mensalExemplo: 100 }, {}, {});
+  const norm = (t: string) => t.replace(/[\u00a0\u202f]/g, ' ');
+  // pt-PT não agrupa 4 dígitos (1200,00); noutras ICU pode agrupar com espaço — normalizar ambos.
+  const semEspacoMilhar = (t: string) => norm(t).replace(/(\d) (\d)/g, '$1$2');
+  check('investimento mostra mensal + anual', semEspacoMilhar(comMensal).includes('100,00 €/mês — 1200,00 €/ano'));
+
   // ── 2) createGamaPresentation ────────────────────────────────────────────
   stubFetch(() => ({ body: {} }));
   let err1 = '';
