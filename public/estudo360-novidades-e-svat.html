@@ -1,0 +1,829 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Estudo360 · Novidades & Candidatura SVAT</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Fraunces:opsz,wght@9..144,300;9..144,700;9..144,900&display=swap" rel="stylesheet">
+<style>
+  /* ── Minimal: papel, tinta, uma cor ─────────────────────────── */
+  :root{
+    --paper:#FFFFFF; --paper-2:#FAFAF7; --ink:#14181E; --muted:#6B7280; --soft:#9AA1AB;
+    --line:#E7E6E1; --line-2:#DAD9D3;
+    --accent:#0677FF; --accent-soft:#EBF3FF;
+    --green:#0E9F6E; --amber:#B45309; --rose:#BE123C;
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--paper-2); color:var(--ink);
+    font-family:"Montserrat","Helvetica Neue",Helvetica,sans-serif;
+    font-weight:400; line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  .menos{font-weight:300}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+  .serif{font-family:"Fraunces",Georgia,serif}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+
+  /* ── Barra de topo ─────────────────────────────────────────── */
+  .top{position:sticky;top:0;z-index:50;background:var(--paper);border-bottom:1px solid var(--line)}
+  .top-in{display:flex;align-items:center;gap:12px;padding:12px 0}
+  .top .logo{width:30px;height:30px;flex:none}
+  .top .brand{font-weight:600;letter-spacing:-.2px;font-size:14.5px}
+  .top .brand span{color:var(--accent)}
+  .top nav{margin-left:auto;display:flex;gap:2px}
+  .top nav a{
+    font-size:12.5px;font-weight:500;color:var(--muted);text-decoration:none;
+    padding:8px 12px;border-radius:8px;transition:color .2s,background .2s;
+  }
+  .top nav a:hover{color:var(--ink);background:var(--paper-2)}
+
+  /* ── Hero ──────────────────────────────────────────────────── */
+  .hero{background:var(--paper);border-bottom:1px solid var(--line)}
+  .hero::before,.hero::after{display:none}
+  .grain{display:none}
+  .hero-in{display:grid;grid-template-columns:1.3fr .7fr;gap:44px;align-items:center;padding:64px 0 60px}
+  .kicker{display:inline-flex;align-items:center;gap:8px;font-family:"JetBrains Mono",monospace;font-size:10.5px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+  .kicker i{width:7px;height:7px;background:var(--accent);border-radius:2px}
+  h1{font-family:"Fraunces",Georgia,serif;font-weight:700;font-size:clamp(30px,4.2vw,50px);line-height:1.06;letter-spacing:-1px;margin:16px 0 14px}
+  h1 em{font-style:italic;color:var(--accent)}
+  .hero p.sub{max-width:560px;color:var(--muted);font-weight:400;font-size:15.5px;margin:0}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
+  .chip{display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--muted);font-size:12px;font-weight:500}
+  .chip b{color:var(--ink);font-weight:600}
+  .hero-card{border:1px solid var(--line);background:var(--paper);border-radius:12px;padding:22px 22px 16px}
+  .hero-card .num{font-family:"Fraunces",Georgia,serif;font-weight:700;font-size:44px;line-height:1;letter-spacing:-1.5px}
+  .hero-card .num small{font-size:22px;color:var(--accent);letter-spacing:0}
+  .hero-card .lbl{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .hero-card hr{border:0;border-top:1px solid var(--line);margin:16px 0 6px}
+  .hero-card .row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);padding:6px 0;border-top:1px solid var(--line)}
+  .hero-card .row:first-of-type{border-top:0}
+  .hero-card .row b{color:var(--ink);font-weight:600}
+  .scroll-hint{display:inline-flex;align-items:center;gap:8px;margin-top:28px;color:var(--accent);font-size:12.5px;font-weight:600;text-decoration:none}
+  .scroll-hint svg{transition:transform .25s}
+  .scroll-hint:hover svg{transform:translateY(3px)}
+
+  /* ── Secções ───────────────────────────────────────────────── */
+  section{padding:60px 0 14px;scroll-margin-top:70px}
+  .sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:26px}
+  .sec-head h2{font-family:"Fraunces",Georgia,serif;font-weight:700;font-size:clamp(24px,2.8vw,34px);letter-spacing:-.7px;line-height:1.1;margin:6px 0 0}
+  .sec-head .side{font-size:12px;color:var(--soft);font-weight:500;white-space:nowrap;padding-bottom:5px}
+  .overline{font-family:"JetBrains Mono",monospace;font-size:10.5px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+  .counter{display:flex;gap:8px}
+  .pill{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:500;padding:6px 11px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+  .pill .dot{width:6px;height:6px;border-radius:99px}
+  .dot.g{background:var(--green)} .dot.b{background:var(--accent)} .dot.o{background:var(--amber)}
+
+  /* ── Timeline ──────────────────────────────────────────────── */
+  .timeline{position:relative;margin-top:4px}
+  .timeline::before{content:"";position:absolute;left:22px;top:12px;bottom:40px;width:1px;background:var(--line)}
+  .day{position:relative;padding-left:64px;margin-bottom:40px}
+  .day .when{position:absolute;left:0;top:0;width:46px;display:flex;flex-direction:column;align-items:center;gap:5px}
+  .day .when .knob{width:31px;height:31px;border-radius:50%;background:var(--paper);border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:500;color:var(--ink)}
+  .day .when .fulldate{font-family:"JetBrains Mono",monospace;font-size:9.5px;font-weight:500;letter-spacing:.4px;color:var(--soft)}
+  .day h3{margin:3px 0 2px;font-size:15.5px;font-weight:600;letter-spacing:-.2px}
+  .day .note{font-size:12.5px;color:var(--muted);font-weight:400;margin:0 0 14px}
+  .card{
+    background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px 16px;display:flex;gap:13px;align-items:flex-start;
+    transition:border-color .25s, background .25s;
+  }
+  .card + .card{margin-top:8px}
+  .card:hover{border-color:var(--line-2);background:#FDFDFB}
+  .ic{flex:none;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-top:1px;background:#F4F4F0;border:1px solid var(--line);color:var(--ink)}
+  .ic.g,.ic.b,.ic.o,.ic.r{background:#F4F4F0;border-color:var(--line);color:var(--ink)}
+  .card .body{min-width:0}
+  .card .tag{
+    display:inline-flex;align-items:center;font-family:"JetBrains Mono",monospace;
+    font-size:9.5px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;
+    padding:3px 9px;border-radius:999px;margin-bottom:6px;border:1px solid var(--line);color:var(--muted);
+  }
+  .card .tag::before{content:"";width:5px;height:5px;border-radius:99px;margin-right:6px;background:var(--soft)}
+  .tag.g::before{background:var(--green)}
+  .tag.b::before{background:var(--accent)}
+  .tag.o::before{background:var(--amber)}
+  .card .txt{font-size:13.5px;color:var(--ink);font-weight:400}
+  .card .txt b{font-weight:600}
+  .card .extra{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .hero-day .card{border-left:2px solid var(--accent)}
+
+  /* ── SVAT ──────────────────────────────────────────────────── */
+  .svat{margin-top:40px;border:1px solid var(--line);background:var(--paper);border-radius:14px;padding:40px 38px 34px}
+  .svat::before{display:none}
+  .svat .seal{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .seal-badge{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;border:1.5px solid var(--ink);background:var(--paper)}
+  .seal-badge .in{font-family:"JetBrains Mono",monospace;font-weight:500;font-size:13px;letter-spacing:.5px;color:var(--ink)}
+  .svat h2{font-family:"Fraunces",Georgia,serif;font-weight:700;font-size:clamp(24px,2.8vw,36px);letter-spacing:-.7px;margin:18px 0 10px;line-height:1.08}
+  .svat .lead{color:var(--muted);font-weight:400;max-width:720px;font-size:14.5px}
+  .svat .overline{color:var(--muted)}
+  .status{margin:24px 0 8px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .status .st{border:1px solid var(--line);border-radius:10px;padding:12px 13px 10px;background:var(--paper-2)}
+  .status .st b{display:block;font-size:12.5px;font-weight:600}
+  .status .st span{font-size:11.5px;color:var(--muted)}
+  .status .st .mark{font-size:13px;margin-bottom:5px;display:block}
+  .steps{margin:26px 0 0;display:grid;gap:0;counter-reset:passo}
+  .step{
+    counter-increment:passo;display:flex;gap:16px;align-items:flex-start;
+    border:0;border-top:1px solid var(--line);border-radius:0;padding:15px 2px;
+    background:none;transition:background .2s;
+  }
+  .step:hover{background:var(--paper-2)}
+  .step::before{
+    content:counter(passo,decimal-leading-zero);flex:none;width:34px;padding-top:2px;
+    font-family:"JetBrains Mono",monospace;font-weight:500;font-size:11px;color:var(--accent);
+  }
+  .step > div > b{font-size:13.5px;font-weight:600;display:block}
+  .step p{margin:3px 0 0;font-size:13px;color:var(--muted)}
+  .step a{color:var(--accent);font-weight:500;text-decoration:none;border-bottom:1px solid rgba(6,119,255,.35)}
+  .step a:hover{border-color:var(--accent)}
+  .code-line{
+    display:inline-flex;gap:8px;align-items:center;margin-top:8px;padding:6px 11px;border-radius:8px;
+    background:var(--paper-2);border:1px solid var(--line);
+    font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--ink);
+  }
+  .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:8px;
+    font-size:13px;font-weight:600;text-decoration:none;transition:background .2s,border-color .2s,color .2s;letter-spacing:.1px;
+  }
+  .btn.primary{background:var(--ink);color:#fff}
+  .btn.primary:hover{background:#000}
+  .btn.ghost{border:1px solid var(--line-2);color:var(--ink);background:var(--paper)}
+  .btn.ghost:hover{background:var(--paper-2)}
+  .honest{margin-top:24px;border:1px solid var(--line);border-left:2px solid var(--accent);background:var(--paper-2);border-radius:0 10px 10px 0;padding:14px 16px;font-size:12.5px;color:var(--muted)}
+  .honest b{color:var(--ink);font-weight:600}
+
+  /* ── Dossier: lista de ficheiros ───────────────────────────── */
+  .dossier{margin-top:34px;border-top:1px solid var(--line);padding-top:24px}
+  .dossier-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:13px}
+  .dossier-head b{font-size:14.5px;font-weight:600;letter-spacing:-.1px}
+  .dossier-head span{font-size:11.5px;color:var(--muted);font-weight:400}
+  .files{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .f{display:flex;gap:11px;align-items:flex-start;text-decoration:none;color:inherit;cursor:pointer;border:1px solid var(--line);background:var(--paper);border-radius:10px;padding:10px 12px;transition:background .2s,border-color .2s,transform .2s}
+  .f:hover{background:var(--paper-2);border-color:var(--line-2);transform:translateY(-1px)}
+  .f .fc{min-width:0;flex:1}
+  .f .fn{flex:none;font-size:10px;font-weight:500;color:var(--ink);background:var(--paper-2);border:1px solid var(--line);border-radius:6px;padding:2px 6px;margin-top:1px}
+  .f .ff{font-size:11.5px;font-weight:600;color:var(--ink);word-break:break-word}
+  .f .fo{flex:none;font-size:11px;font-weight:500;color:var(--accent);margin-top:2px;opacity:.55;transition:opacity .2s,transform .2s}
+  .f:hover .fo{opacity:1;transform:translateX(2px)}
+  .f .fd{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.45}
+  .f .ftag{flex:none;font-family:"JetBrains Mono",monospace;font-size:8.5px;font-weight:500;letter-spacing:.9px;text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;margin-top:1px}
+  .f .ftag.g{border-color:var(--line);color:var(--soft)}
+  .dossier-note{margin:13px 0 0;font-size:12px;color:var(--muted)}
+  .dossier-note b{color:var(--ink);font-weight:600}
+
+  /* ── Próximos passos ───────────────────────────────────────── */
+  .next-card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:22px 22px 18px}
+  .next-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:13px}
+  .next-lead{margin:0;font-size:13px;color:var(--muted);max-width:660px}
+  .np-status{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:500;color:var(--muted);white-space:nowrap;padding-top:2px}
+  .dotk{width:7px;height:7px;border-radius:99px;background:#C6CBD3;flex:none}
+  .dotk.ok{background:var(--green)}
+  .dotk.warm{background:var(--amber)}
+  .dotk.err{background:var(--rose)}
+  #npText{display:block;width:100%;min-height:220px;resize:vertical;border:1px solid var(--line);border-radius:10px;background:var(--paper-2);padding:15px 16px;font-family:"Montserrat","Helvetica Neue",Helvetica,sans-serif;font-size:13.5px;line-height:1.7;color:var(--ink);outline:none;transition:border-color .2s,box-shadow .2s,background .2s}
+  #npText::placeholder{color:var(--soft)}
+  #npText:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(6,119,255,.12);background:var(--paper)}
+  .next-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:13px}
+  .npbtn{border:0;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:8px;font-family:"Montserrat","Helvetica Neue",Helvetica,sans-serif;font-size:12.5px;font-weight:600;transition:background .2s,border-color .2s,color .2s}
+  .npbtn.primary{background:var(--ink);color:#fff}
+  .npbtn.primary:hover{background:#000}
+  .npbtn.ghost{background:var(--paper);border:1px solid var(--line-2);color:var(--ink)}
+  .npbtn.ghost:hover{background:var(--paper-2)}
+  .np-file{font-size:11px;color:var(--soft)}
+
+  footer{padding:30px 0 54px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;border-top:1px solid var(--line);margin-top:40px}
+  footer b{color:var(--ink);font-weight:600}
+
+  /* Reveal */
+  .reveal{opacity:0;transform:translateY(12px);transition:opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1);transition-delay:var(--d,0ms)}
+  .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion: reduce){.reveal{opacity:1;transform:none;transition:none}.f:hover{transform:none}}
+
+  @media (max-width:860px){
+    .hero-in{grid-template-columns:1fr;gap:28px;padding:44px 0 44px}
+    .hero-card{max-width:460px}
+    .status{grid-template-columns:1fr 1fr}
+    .svat{padding:28px 20px 24px;border-radius:12px}
+    .sec-head{flex-direction:column;align-items:flex-start}
+    .files{grid-template-columns:1fr}
+  }
+  @media (max-width:640px){
+    .top-in{flex-wrap:wrap;padding:9px 0;gap:4px 10px}
+    .top nav{margin-left:0;width:100%;gap:0;overflow-x:auto;scrollbar-width:none}
+    .top nav::-webkit-scrollbar{display:none}
+    .top nav a{white-space:nowrap;font-size:11.5px;padding:6px 9px}
+    .wrap{padding:0 18px}
+  }
+  @media print{
+    .top,.scroll-hint,.next-actions{display:none}
+    body{background:#fff}
+    .card,.step,.f,.next-card{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Topo ─────────────────────────────────────────────────────── -->
+<div class="top">
+  <div class="wrap top-in">
+    <svg class="logo" viewBox="0 0 120 120" aria-hidden="true">
+      <defs>
+        <radialGradient id="orb" cx="42%" cy="42%" r="58%">
+          <stop offset="0%" stop-color="#9FE2FF"/><stop offset="35%" stop-color="#00C2FF"/>
+          <stop offset="70%" stop-color="#0677FF"/><stop offset="100%" stop-color="#0B1D2D"/>
+        </radialGradient>
+        <linearGradient id="ring-h" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#0B1D2D"/><stop offset="50%" stop-color="#0677FF"/><stop offset="100%" stop-color="#0B1D2D"/>
+        </linearGradient>
+        <style>
+          @keyframes roda { to { transform: rotate(360deg); } }
+          .dial{transform-box:fill-box;transform-origin:center;animation:roda 36s linear infinite}
+          @media (prefers-reduced-motion: reduce){.dial{animation:none}}
+        </style>
+      </defs>
+      <circle cx="60" cy="60" r="44" fill="none" stroke="#0677FF" stroke-width="3.6" stroke-dasharray="14 6" stroke-linecap="round" class="dial"/>
+      <g stroke="#0677FF" stroke-width="3" stroke-linecap="round">
+        <line x1="60" y1="6" x2="60" y2="14"/><line x1="60" y1="106" x2="60" y2="114"/>
+        <line x1="6" y1="60" x2="14" y2="60"/><line x1="106" y1="60" x2="114" y2="60"/>
+      </g>
+      <ellipse cx="60" cy="60" rx="52" ry="15" fill="none" stroke="url(#ring-h)" stroke-width="4" transform="rotate(-22 60 60)"/>
+      <circle cx="60" cy="60" r="20" fill="url(#orb)"/>
+      <ellipse cx="53" cy="52" rx="5" ry="3.2" fill="#fff" opacity=".75"/>
+      <circle cx="50" cy="50" r="1.6" fill="#fff" opacity=".9"/>
+    </svg>
+    <div class="brand">Estudo<span>360</span></div>
+    <nav>
+      <a href="#novidades">Novidades</a>
+      <a href="#svat">Candidatura SVAT</a>
+      <a href="#proximos">Próximos passos</a>
+    </nav>
+  </div>
+</div>
+
+<!-- ── Hero ─────────────────────────────────────────────────────── -->
+<header class="hero">
+  <div class="grain"></div>
+  <div class="wrap hero-in">
+    <div>
+      <span class="kicker"><i></i>Atualizações · mais recentes primeiro</span>
+      <h1>Tudo o que melhorámos, corrigimos e <em>construímos</em>.</h1>
+      <p class="sub">O resumo simples das últimas semanas — do novo visual à grande revisão a fundo. Sem termos técnicos: só o que mudou na prática, para ti.</p>
+      <div class="chips">
+        <span class="chip"><b>20+</b> melhorias e correções</span>
+        <span class="chip">Já tudo <b>no ar</b> em estudo360.pt</span>
+        <span class="chip">Dossier <b>SVAT</b> pronto</span>
+      </div>
+      <a class="scroll-hint" href="#novidades">Ver as novidades
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+      </a>
+    </div>
+    <aside class="hero-card reveal">
+      <div class="num">20<small>+</small></div>
+      <div class="lbl">melhorias e correções, da mais recente para a mais antiga</div>
+      <hr>
+      <div class="row"><span>Testes automáticos</span><b>25/25 ✓</b></div>
+      <div class="row"><span>Registos que se perdem</span><b>Zero</b></div>
+      <div class="row"><span>Cofre de senhas</span><b>Só tu vês</b></div>
+      <div class="row"><span>Selo SVAT</span><b>Dossier pronto</b></div>
+    </aside>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ── Novidades ───────────────────────────────────────────── -->
+  <section id="novidades">
+    <div class="sec-head reveal">
+      <div>
+        <div class="overline">Novidades do produto</div>
+        <h2>O que mudou, por ordem</h2>
+      </div>
+      <div class="counter">
+        <span class="pill"><span class="dot g"></span>Novidades</span>
+        <span class="pill"><span class="dot b"></span>Melhorias</span>
+        <span class="pill"><span class="dot o"></span>Correções</span>
+      </div>
+    </div>
+
+    <div class="timeline">
+
+      <!-- HOJE -->
+      <div class="day hero-day">
+        <div class="when"><div class="knob">01</div><div class="fulldate">16/10</div></div>
+        <h3>Revisão a fundo de tudo</h3>
+        <p class="note">Testámos o site de ponta a ponta como se fosse um utilizador real: criar conta, gabinete, clientes, trabalho do dia a dia, cofre, equipa e até sem internet.</p>
+
+        <div class="card reveal">
+          <div class="ic g"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <div class="body"><span class="tag g">Segurança</span>
+            <div class="txt"><b>Corrigimos os cliques que “não pegavam”.</b> Havia situações em que o site aceitava o clique mas a gravação falhava em silêncio. Agora, tudo o que crias, editas ou apagas fica mesmo guardado.</div>
+          </div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic b"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></div>
+          <div class="body"><span class="tag b">Visão geral</span>
+            <div class="txt"><b>Já podes editar e adicionar obrigações na Visão Geral</b> do cliente — ligar/desligar com um clique e criar obrigações novas (ex.: “Modelo 30”). As personalizadas já aparecem na lista.</div>
+            <div class="extra">Ao abrir um cliente, o site cria sozinho os prazos e as tarefas correspondentes — e tudo fica visível nas páginas Obrigações, Tarefas e Agenda.</div>
+          </div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic g"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div class="body"><span class="tag g">Cofre de senhas</span>
+            <div class="txt"><b>Só admin e contabilista conseguem ver o cofre.</b> A estagiária deixou de ter acesso — nem por fora do site. As senhas continuam cifradas com uma passphrase só tua.</div>
+            <div class="extra">O aviso de “limpar senhas vazias” deixou de aparecer sem motivo.</div>
+          </div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic b"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
+          <div class="body"><span class="tag b">Equipa</span>
+            <div class="txt"><b>Convidar uma pessoa passa mesmo a dar acesso</b> ao gabinete (antes o convite “morria” pelo caminho). E remover alguém tira o acesso de verdade.</div>
+            <div class="extra">Quem não tem carteira própria já consegue escolher os clientes do gabinete e trabalhar neles.</div>
+          </div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic g"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></div>
+          <div class="body"><span class="tag g">Nada se perde</span>
+            <div class="txt"><b>Trabalhar sem internet deixou de ser um risco.</b> O que fizeres nesses momentos fica guardado e sobe sozinho quando a ligação voltar.</div>
+            <div class="extra">Importação de SAF-T em lote: vários ficheiros de uma vez, com confirmação de gravação mesmo quando o armazenamento enche.</div>
+          </div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic b"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 8l7-5 7 5M5 16l7 5 7-5"/></svg></div>
+          <div class="body"><span class="tag b">Proposta Gamma &amp; visual</span>
+            <div class="txt"><b>A Proposta Gamma ficou mais estável</b> (gera sem falhar quando há várias ao mesmo tempo), sem espaços em branco a mais, com preço anual e aviso quando o NIF não tem 9 dígitos.</div>
+            <div class="extra">Novo logótipo com animação contínua e Base Legal &amp; Referências atualizada para outubro de 2026.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 15/10 -->
+      <div class="day">
+        <div class="when"><div class="knob">02</div><div class="fulldate">15/10</div></div>
+        <h3>Listas e mapas à prova de mudanças</h3>
+        <p class="note">Pequenas correções com grande impacto no dia a dia.</p>
+
+        <div class="card reveal">
+          <div class="ic b"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"/><path d="M8 16h.01M8 20h.01M12 18h.01M12 22h.01M16 16h.01M16 20h.01"/></svg></div>
+          <div class="body"><span class="tag b">Nuvem</span>
+            <div class="txt"><b>As listas de obrigações e os mapas ficam guardados na nuvem.</b> Deixaram de desaparecer quando entras noutro computador.</div>
+          </div>
+        </div>
+        <div class="card reveal">
+          <div class="ic o"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.3 2.3-2-2 2.3-2.3z"/></svg></div>
+          <div class="body"><span class="tag o">Correção</span>
+            <div class="txt"><b>O painel “Gerir pilares” já não se mistura com os filtros</b> — abre em condições e fecha com um clique.</div>
+            <div class="extra">Contraste e legibilidade melhorados: texto, etiquetas e cores mais fáceis de ler.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 13/10 -->
+      <div class="day">
+        <div class="when"><div class="knob">03</div><div class="fulldate">13/10</div></div>
+        <h3>Simuladores mais certos</h3>
+        <p class="note">Os simuladores foram revistos ao detalhe para os números baterem certo ao cêntimo.</p>
+        <div class="card reveal">
+          <div class="ic o"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h8M8 14h4"/></svg></div>
+          <div class="body"><span class="tag o">Correção</span>
+            <div class="txt"><b>IMT Jovem acima do teto, líquido com subsídio tributável, valores do PDF e RAI</b> — quatro correções fiscais verificadas ao detalhe.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 09/10 -->
+      <div class="day">
+        <div class="when"><div class="knob">04</div><div class="fulldate">09/10</div></div>
+        <h3>TOConline ligado e os 3 mapas completos</h3>
+        <p class="note">A ligação ao TOConline passou a funcionar de ponta a ponta — e os três mapas do gabinete ficaram completos.</p>
+        <div class="card reveal">
+          <div class="ic g"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
+          <div class="body"><span class="tag g">TOConline</span>
+            <div class="txt"><b>Ligar a conta TOConline já funciona</b> — entrar, importar clientes e cada gabinete só vê os seus próprios dados. Os erros passaram a ser visíveis, em vez de “nada acontece”.</div>
+          </div>
+        </div>
+        <div class="card reveal">
+          <div class="ic g"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
+          <div class="body"><span class="tag g">Mapas</span>
+            <div class="txt"><b>Quadro, Mapa RH e Mapa Controlo 100% funcionais:</b> criar, editar, apagar e escolher o que aparece — tudo testado no browser, tudo gravado.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 08/10 -->
+      <div class="day">
+        <div class="when"><div class="knob">05</div><div class="fulldate">08/10</div></div>
+        <h3>Guia verificado e navegação mais calma</h3>
+        <p class="note">Revisão completa do Guia e uma limpeza geral no gabinete: menos ruído visual, caminho mais direto.</p>
+        <div class="card reveal">
+          <div class="ic b"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></div>
+          <div class="body"><span class="tag b">Guia</span>
+            <div class="txt"><b>Verificação completa do Guia:</b> 22 páginas e 10 simuladores confirmados, um a um.</div>
+            <div class="extra">Os simuladores abrem agora diretamente (sem menu intermédio) e a barra lateral deixou de fechar sozinha.</div>
+          </div>
+        </div>
+        <div class="card reveal">
+          <div class="ic b"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6 7 18.2l1.9-5.8L4 8.8h6.1z"/></svg></div>
+          <div class="body"><span class="tag b">Visual</span>
+            <div class="txt"><b>Gabinete mais limpo:</b> sem cores a mais nem contornos azuis desnecessários. O destaque fica para o que interessa.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 03/10 -->
+      <div class="day">
+        <div class="when"><div class="knob">06</div><div class="fulldate">03/10</div></div>
+        <h3>Auditoria de qualidade</h3>
+        <p class="note">Uma passagem completa pelo produto para confirmar o que está pronto — e dizer com honestidade o que ainda falta.</p>
+        <div class="card reveal">
+          <div class="ic b"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div class="body"><span class="tag b">Qualidade</span>
+            <div class="txt"><b>App mais leve e mais rápida</b> e verificação fiscal de 2026 feita com honestidade — o que ainda falta está marcado como pendente, sem promessas falsas.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 02/10 -->
+      <div class="day">
+        <div class="when"><div class="knob">07</div><div class="fulldate">02/10</div></div>
+        <h3>Cofre cifrado e auditoria para a AT</h3>
+        <p class="note">Dois marcos importantes: o cofre passou a ter cifra a sério e o rasto de auditoria que a AT exige ficou completo.</p>
+        <div class="card reveal">
+          <div class="ic g"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.4"/></svg></div>
+          <div class="body"><span class="tag g">Cofre</span>
+            <div class="txt"><b>Senhas com cifra real</b> (nem quem gere o site consegue ler) e desbloqueio com passphrase num modal próprio.</div>
+            <div class="extra">Registo de quem consulta cada senha, sem nunca mostrar o segredo.</div>
+          </div>
+        </div>
+        <div class="card reveal">
+          <div class="ic g"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15l2 2 4-4"/></svg></div>
+          <div class="body"><span class="tag g">Auditoria SVAT</span>
+            <div class="txt"><b>Rasto de auditoria completo e à prova de alteração</b> — quem fez, quando e o que mudou, em todas as ações do gabinete. É o requisito principal que a AT pede (G1+G2+G3).</div>
+            <div class="extra">Também ficou pronto o “gerar texto para o Gamma” com um clique.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 25/09 -->
+      <div class="day">
+        <div class="when"><div class="knob">08</div><div class="fulldate">25/09</div></div>
+        <h3>Ligações, obrigações e linguagem</h3>
+        <p class="note">Integrações novas, o quadro de obrigações renovado e uma limpeza da linguagem em todo o site.</p>
+        <div class="card reveal">
+          <div class="ic g"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
+          <div class="body"><span class="tag g">Integrações</span>
+            <div class="txt"><b>Entrar com TOConline e importar clientes</b> diretamente para a lista, com instruções passo a passo.</div>
+          </div>
+        </div>
+        <div class="card reveal">
+          <div class="ic b"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+          <div class="body"><span class="tag b">Obrigações</span>
+            <div class="txt"><b>Escolher as obrigações de cada cliente com uma checklist</b> que sincroniza com o quadro. O PEC foi removido (deixou de existir na lei).</div>
+          </div>
+        </div>
+        <div class="card reveal">
+          <div class="ic o"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 0 5.4-5.4l-2.3 2.3-2-2 2.3-2.3z"/></svg></div>
+          <div class="body"><span class="tag o">Correções</span>
+            <div class="txt"><b>Tickets (excedente já não anula a poupança) e PDF em branco</b> corrigidos. O site inteiro passou a tratar-te por “você”, com 70+ textos reescritos.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 24/09 -->
+      <div class="day">
+        <div class="when"><div class="knob">09</div><div class="fulldate">24/09</div></div>
+        <h3>Novo visual e base do produto</h3>
+        <p class="note">O início do Estudo360 atual: nova cara, simuladores revistos e as bases de tudo o que veio depois.</p>
+        <div class="card reveal">
+          <div class="ic g"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6 7 18.2l1.9-5.8L4 8.8h6.1z"/></svg></div>
+          <div class="body"><span class="tag g">Novo visual</span>
+            <div class="txt"><b>Landing redesenhada</b> — hero limpo, linguagem simples e acesso direto aos 10 simuladores e às funções do gabinete.</div>
+          </div>
+        </div>
+        <div class="card reveal">
+          <div class="ic b"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M5 17H3v-6l2-5h9l4 5h3v6h-2"/><path d="M9 17h6"/></svg></div>
+          <div class="body"><span class="tag b">Simuladores</span>
+            <div class="txt"><b>Viaturas cobre todos os enquadramentos fiscais de 2026</b> e ganhou mais opções (CO₂, autonomia, cilindrada, uso %, ano). O PreviSa passou de Excel para PDF dentro do site.</div>
+            <div class="extra">Menus e mapas com animações suaves.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── SVAT ────────────────────────────────────────────────── -->
+  <section id="svat">
+    <div class="svat">
+      <div class="seal">
+        <div class="seal-badge"><div class="in">AT</div></div>
+        <div>
+          <div class="overline">Candidatura à certificação</div>
+          <b style="font-size:13.5px;font-weight:600">Selo de Validação AT — Portaria n.º 293/2017</b>
+        </div>
+      </div>
+
+      <h2>Como nos candidatamos ao selo SVAT</h2>
+      <p class="lead">O SVAT é um selo oficial da Autoridade Tributária para software de gestão. O dossier já está todo preparado (10 documentos + provas) — falta apenas enviá-lo. Aqui tens o caminho simples, passo a passo.</p>
+
+      <div class="status">
+        <div class="st"><span class="mark">✅</span><b>Dossier completo</b><span>10 documentos PDF prontos</span></div>
+        <div class="st"><span class="mark">✅</span><b>9/9 requisitos</b><span>com provas no código</span></div>
+        <div class="st"><span class="mark">✅</span><b>Texto do pedido</b><span>já escrito, pronto a colar</span></div>
+        <div class="st"><span class="mark">⏳</span><b>Falta enviar</b><span>assinar o doc. 07 e submeter</span></div>
+      </div>
+
+      <div class="steps">
+        <div class="step reveal">
+          <div>
+            <b>Abrir o dossier que já existe</b>
+            <p>Na pasta <span class="mono">docs-candidatura-svat</span> estão os 10 ficheiros pela ordem de envio: memória descritiva, matriz de conformidade, dicionário de dados, checklist, guia passo-a-passo, texto pronto, declaração do produtor, logótipo/selo e anexos técnicos. Na lista abaixo, cada ficheiro <b>abre com um clique</b> — e ficam todos na pasta <span class="mono">docs-candidatura-svat</span>.</p>
+          </div>
+        </div>
+        <div class="step reveal">
+          <div>
+            <b>Entrar no E-balcão do Portal das Finanças</b>
+            <p>Escolher: <b>Outras Obrigações → Certificação de Software → Questões Técnicas</b>. Alternativa por email: <a href="mailto:certificacao.software@at.gov.pt">certificacao.software@at.gov.pt</a>.</p>
+            <span class="code-line">sitfiscal.portaldasfinancas.gov.pt/ebalcao</span>
+          </div>
+        </div>
+        <div class="step reveal">
+          <div>
+            <b>Colar o texto e anexar os documentos</b>
+            <p>Abrir o ficheiro <b>06 – Texto-Pronto-para-colar</b>, colar no E-balcão e anexar os documentos <b>01 a 04</b> (+ o <b>07</b> e o <b>09</b>). É um copiar-colar de 2 minutos.</p>
+          </div>
+        </div>
+        <div class="step reveal">
+          <div>
+            <b>Só falta preencher dois dados e assinar</b>
+            <p>Na declaração do produtor (<b>07</b>) preencher a razão social e o NIF da Recofatima e assinar. O resto do dossier está pronto.</p>
+          </div>
+        </div>
+        <div class="step reveal">
+          <div>
+            <b>Enviar e guardar o comprovativo</b>
+            <p>Depois de submeter, guardar a prova de envio na mesma pasta (ficheiro <span class="mono">10-Comprovativo-Envio</span>). É <b>gratuito, sem prazo</b> e a AT responde normalmente em até <b>30 dias</b>.</p>
+          </div>
+        </div>
+        <div class="step reveal">
+          <div>
+            <b>Depois da resposta</b>
+            <p>Se for aprovado: usamos o selo oficial com o número <b>XXXX/AT</b> (já há um exemplo visual na pasta 08). Se a AT responder <b>“sem objeto”</b> — possível, porque o SVAT foi pensado para programas como o TOConline e o Estudo360 não emite faturas — usamos o Plano B: o selo próprio “Auditoria SVAT 9/9 conforme” na landing, com tudo documentado.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista completa do dossier -->
+      <div class="dossier reveal">
+        <div class="dossier-head">
+          <b>O dossier, ficheiro a ficheiro</b>
+          <span>pasta <span class="mono">docs-candidatura-svat</span> · ordem de cima para baixo = ordem de anexos · <b style="color:var(--ink);font-weight:600">clica num ficheiro para o abrir</b></span>
+        </div>
+        <div class="files">
+          <a class="f" href="docs-candidatura-svat/00-LEIA-PRIMEIRO.pdf" title="Abrir LEIA-PRIMEIRO.pdf"><span class="fn mono">00</span><div class="fc"><div class="ff mono">LEIA-PRIMEIRO.pdf</div><div class="fd">Tudo explicado em 2 minutos — começa por aqui</div></div><span class="fo">↗</span><span class="ftag g">Guia</span></a>
+          <a class="f" href="docs-candidatura-svat/00-INDICE.pdf" title="Abrir INDICE.pdf"><span class="fn mono">00</span><div class="fc"><div class="ff mono">INDICE.pdf</div><div class="fd">Este índice, pela ordem certa de envio</div></div><span class="fo">↗</span><span class="ftag g">Guia</span></a>
+          <a class="f" href="docs-candidatura-svat/01-Memoria-Descritiva.pdf" title="Abrir Memoria-Descritiva.pdf"><span class="fn mono">01</span><div class="fc"><div class="ff mono">Memoria-Descritiva.pdf</div><div class="fd">O que o Estudo360 faz e o que não faz</div></div><span class="fo">↗</span><span class="ftag">Para a AT</span></a>
+          <a class="f" href="docs-candidatura-svat/02-Matriz-Conformidade.pdf" title="Abrir Matriz-Conformidade.pdf"><span class="fn mono">02</span><div class="fc"><div class="ff mono">Matriz-Conformidade.pdf</div><div class="fd">Os 9 requisitos da AT, com prova no código</div></div><span class="fo">↗</span><span class="ftag">Para a AT</span></a>
+          <a class="f" href="docs-candidatura-svat/03-Dicionario-Dados.pdf" title="Abrir Dicionario-Dados.pdf"><span class="fn mono">03</span><div class="fc"><div class="ff mono">Dicionario-Dados.pdf</div><div class="fd">Onde fica cada dado e como fica registado</div></div><span class="fo">↗</span><span class="ftag">Para a AT</span></a>
+          <a class="f" href="docs-candidatura-svat/04-Checklist-Submissao.pdf" title="Abrir Checklist-Submissao.pdf"><span class="fn mono">04</span><div class="fc"><div class="ff mono">Checklist-Submissao.pdf</div><div class="fd">Verificação final e prazos legais</div></div><span class="fo">↗</span><span class="ftag">Para a AT</span></a>
+          <a class="f" href="docs-candidatura-svat/05-Guia-E-balcao-Passo-a-Passo.pdf" title="Abrir Guia-E-balcao-Passo-a-Passo.pdf"><span class="fn mono">05</span><div class="fc"><div class="ff mono">Guia-E-balcao-Passo-a-Passo.pdf</div><div class="fd">Onde clicar no E-balcão, passo a passo</div></div><span class="fo">↗</span><span class="ftag g">Guia</span></a>
+          <a class="f" href="docs-candidatura-svat/06-Texto-Pronto-para-colar.txt" title="Abrir Texto-Pronto-para-colar.txt · .pdf"><span class="fn mono">06</span><div class="fc"><div class="ff mono">Texto-Pronto-para-colar.txt · .pdf</div><div class="fd">O pedido já escrito, para colar no E-balcão</div></div><span class="fo">↗</span><span class="ftag">Para a AT</span></a>
+          <a class="f" href="docs-candidatura-svat/07-Declaracao-Produtor.pdf" title="Abrir Declaracao-Produtor.pdf"><span class="fn mono">07</span><div class="fc"><div class="ff mono">Declaracao-Produtor.pdf</div><div class="fd">Declaração da Recofatima — assinar e juntar</div></div><span class="fo">↗</span><span class="ftag">Para a AT</span></a>
+          <a class="f" href="docs-candidatura-svat/08-Logotipo-SVAT/00-README-Logotipo.pdf" title="Abrir 00-README-Logotipo.pdf"><span class="fn mono">08</span><div class="fc"><div class="ff mono">Logotipo-SVAT/</div><div class="fd">Logótipo AT + exemplo do selo (SVG) + regras de uso (PDF)</div></div><span class="fo">↗</span><span class="ftag g">Guia</span></a>
+          <a class="f" href="docs-candidatura-svat/09-Anexos-Tecnicos.pdf" title="Abrir Anexos-Tecnicos.pdf"><span class="fn mono">09</span><div class="fc"><div class="ff mono">Anexos-Tecnicos.pdf</div><div class="fd">Regras de segurança + exemplo de auditoria</div></div><span class="fo">↗</span><span class="ftag">Para a AT</span></a>
+          <a class="f" href="docs-candidatura-svat/README.md" title="Abrir README.md"><span class="fn mono">—</span><div class="fc"><div class="ff mono">README.md</div><div class="fd">Guia rápido da pasta (uso interno)</div></div><span class="fo">↗</span><span class="ftag g">Apoio</span></a>
+          <a class="f" href="docs-candidatura-svat/TXT-WhatsApp-Sandrine-17h.txt" title="Abrir TXT-WhatsApp-Sandrine-17h.txt"><span class="fn mono">—</span><div class="fc"><div class="ff mono">TXT-WhatsApp-Sandrine-17h.txt</div><div class="fd">Resumo rápido para enviar por mensagem (uso interno)</div></div><span class="fo">↗</span><span class="ftag g">Apoio</span></a>
+        </div>
+        <p class="dossier-note">Os ficheiros <b>01 a 04</b> e o <b>07</b> são os anexos do pedido; o <b>06</b> é o texto que se cola no E-balcão; o <b>09</b> fica pronto para enviar se a AT pedir prova técnica.</p>
+      </div>
+
+      <div class="cta">
+        <a class="btn primary" href="https://sitfiscal.portaldasfinancas.gov.pt/ebalcao" target="_blank" rel="noreferrer">Abrir o E-balcão
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>
+        </a>
+        <a class="btn ghost" href="mailto:certificacao.software@at.gov.pt">Enviar por email</a>
+      </div>
+
+      <div class="honest">
+        <b>Nota honesta:</b> o dossier está 100% pronto e os requisitos de auditoria (G1+G2+G3) já estão a funcionar em produção. Mesmo no cenário menos bom (“sem objeto”), ficamos com a auditoria documentada como selo próprio — não se perde nada do trabalho feito.
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Próximos passos ─────────────────────────────────────── -->
+  <section id="proximos">
+    <div class="sec-head reveal">
+      <div>
+        <div class="overline">Organização</div>
+        <h2>Próximos passos</h2>
+      </div>
+      <div class="side">Escreve · fica guardado sozinho · grava no teu Mac</div>
+    </div>
+
+    <div class="next-card reveal">
+      <div class="next-top">
+        <p class="next-lead">Escreve aqui o que falta fazer — uma linha por passo. Fica guardado automaticamente neste navegador e, com um clique, também num ficheiro do teu Mac: escolhes o ficheiro uma vez e depois grava sempre sozinho.</p>
+        <div class="np-status"><span class="dotk warm" id="npDot"></span><span id="npStatus">A ligar…</span></div>
+      </div>
+      <textarea id="npText" spellcheck="false" placeholder="Ex.:&#10;- Assinar a declaração 07 e enviar o pedido SVAT&#10;- Guardar o comprovativo de envio na pasta do dossier&#10;- Combinar com a Sandrine a resposta a eventuais pedidos da AT"></textarea>
+      <div class="next-actions">
+        <button type="button" id="npSave" class="npbtn primary">Ligar ficheiro no Mac</button>
+        <button type="button" id="npDownload" class="npbtn ghost">Descarregar cópia</button>
+        <span class="np-file mono" id="npFile"></span>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span><b>Estudo360</b> · Resumo de novidades · da mais recente para a mais antiga · atualizado a 16/10/2026</span>
+    <span class="mono">estudo360.pt</span>
+  </footer>
+</main>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  }, { threshold: .12 });
+  document.querySelectorAll('.reveal').forEach((el, i) => {
+    el.style.setProperty('--d', (i % 6) * 55 + 'ms');
+    io.observe(el);
+  });
+
+  // ── Próximos passos: gravação automática + ficheiro no Mac ──
+  (function () {
+    var KEY = 'estudo360:novidades:proximos-passos:v1';
+    var ta = document.getElementById('npText');
+    var statusEl = document.getElementById('npStatus');
+    var dot = document.getElementById('npDot');
+    var fileEl = document.getElementById('npFile');
+    var saveBtn = document.getElementById('npSave');
+    var dlBtn = document.getElementById('npDownload');
+    if (!ta || !saveBtn) return;
+
+    var canPick = typeof window.showSaveFilePicker === 'function';
+    var handle = null;
+
+    function fmtTime(d) { return d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }); }
+    function setStatus(kind, msg) { dot.className = 'dotk ' + kind; statusEl.textContent = msg; }
+
+    try { var saved = localStorage.getItem(KEY); if (saved) ta.value = saved; } catch (e) {}
+
+    function saveLocal() {
+      try {
+        localStorage.setItem(KEY, ta.value);
+        setStatus('ok', 'Guardado automaticamente às ' + fmtTime(new Date()));
+      } catch (e) {
+        setStatus('err', 'Sem espaço neste navegador — usa o botão para gravar no Mac');
+      }
+    }
+
+    function buildFile() {
+      var body = ta.value.replace(/\s+$/, '');
+      return '# Estudo360 — Próximos passos\n\n_Última gravação: ' + new Date().toLocaleString('pt-PT') + '_\n\n' + (body || '(sem passos escritos)') + '\n';
+    }
+
+    function openDb() {
+      return new Promise(function (res, rej) {
+        var r = indexedDB.open('estudo360-proximos-passos', 1);
+        r.onupgradeneeded = function () { r.result.createObjectStore('h'); };
+        r.onsuccess = function () { res(r.result); };
+        r.onerror = function () { rej(r.error); };
+      });
+    }
+    function dbGet(k) {
+      return openDb().then(function (d) {
+        return new Promise(function (res, rej) {
+          var q = d.transaction('h', 'readonly').objectStore('h').get(k);
+          q.onsuccess = function () { res(q.result); };
+          q.onerror = function () { rej(q.error); };
+        });
+      });
+    }
+    function dbSet(k, v) {
+      return openDb().then(function (d) {
+        return new Promise(function (res, rej) {
+          var q = d.transaction('h', 'readwrite').objectStore('h').put(v, k);
+          q.onsuccess = function () { res(); };
+          q.onerror = function () { rej(q.error); };
+        });
+      });
+    }
+
+    function permState() {
+      if (!handle) return Promise.resolve('none');
+      if (!handle.queryPermission) return Promise.resolve('granted');
+      return handle.queryPermission({ mode: 'readwrite' }).catch(function () { return 'prompt'; });
+    }
+
+    function writeFile() {
+      if (!handle) return Promise.resolve(false);
+      return permState().then(function (p) {
+        if (p !== 'granted') return false;
+        return handle.createWritable().then(function (w) {
+          return w.write(buildFile()).then(function () { return w.close(); });
+        }).then(function () {
+          setStatus('ok', 'Guardado no Mac (' + handle.name + ') às ' + fmtTime(new Date()));
+          return true;
+        });
+      }).catch(function () {
+        setStatus('err', 'Falhou a gravação no Mac — carrega em Guardar');
+        return false;
+      });
+    }
+
+    var tFile = null;
+    function scheduleFileWrite() {
+      if (!handle) return;
+      clearTimeout(tFile);
+      tFile = setTimeout(function () { writeFile(); }, 1200);
+    }
+
+    function updateBtn() {
+      if (!canPick) { saveBtn.textContent = 'Descarregar para o Mac'; return; }
+      if (!handle) { saveBtn.textContent = 'Ligar ficheiro no Mac'; return; }
+      permState().then(function (p) {
+        saveBtn.textContent = p === 'granted' ? 'Guardar agora no Mac' : 'Religar ficheiro no Mac';
+      });
+    }
+
+    saveBtn.addEventListener('click', function () {
+      if (!canPick) { downloadCopy(); return; }
+      var chain = handle ? Promise.resolve(handle) : window.showSaveFilePicker({
+        suggestedName: 'Estudo360-Proximos-Passos.md',
+        types: [{ description: 'Markdown', accept: { 'text/markdown': ['.md'] } }]
+      }).then(function (h) {
+        handle = h;
+        dbSet('fileHandle', h);
+        fileEl.textContent = 'Ficheiro: ' + h.name;
+        return h;
+      });
+      chain.then(function (h) {
+        return permState().then(function (p) {
+          if (p === 'granted') return true;
+          return h.requestPermission ? h.requestPermission({ mode: 'readwrite' }).then(function (np) { return np === 'granted'; }) : true;
+        });
+      }).then(function (ok) {
+        if (!ok) { setStatus('err', 'Permissão recusada — o ficheiro não foi gravado'); updateBtn(); return; }
+        return writeFile().then(function () { updateBtn(); });
+      }).catch(function (err) {
+        if (err && err.name === 'AbortError') return;
+        setStatus('err', 'Não foi possível ligar o ficheiro — usa "Descarregar cópia"');
+      });
+    });
+
+    function downloadCopy() {
+      var blob = new Blob([buildFile()], { type: 'text/markdown' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'Estudo360-Proximos-Passos.md';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 3000);
+      setStatus('ok', 'Cópia descarregada (pasta Transferências) às ' + fmtTime(new Date()));
+    }
+    dlBtn.addEventListener('click', downloadCopy);
+
+    var tLocal = null;
+    ta.addEventListener('input', function () {
+      setStatus('warm', 'A guardar…');
+      clearTimeout(tLocal);
+      tLocal = setTimeout(saveLocal, 300);
+      scheduleFileWrite();
+    });
+    window.addEventListener('beforeunload', function () { try { localStorage.setItem(KEY, ta.value); } catch (e) {} });
+
+    if (canPick) {
+      dbGet('fileHandle').then(function (h) {
+        if (!h) { updateBtn(); return; }
+        handle = h;
+        fileEl.textContent = 'Ficheiro: ' + h.name;
+        permState().then(function (p) {
+          if (p === 'granted') setStatus('ok', 'Ligado a ' + h.name);
+          else setStatus('warm', 'Ligado a ' + h.name + ' — carrega em "Religar" para voltar a gravar sozinho');
+          updateBtn();
+        });
+      }).catch(function () { updateBtn(); });
+    } else {
+      updateBtn();
+    }
+
+    if (ta.value) {
+      if (statusEl.textContent.indexOf('A ligar') !== -1) setStatus('ok', 'Guardado neste navegador');
+    } else {
+      setStatus('warm', canPick ? 'Liga um ficheiro no Mac para gravar aí também' : 'Escreve — depois podes descarregar para o Mac');
+    }
+  })();
+</script>
+</body>
+</html>

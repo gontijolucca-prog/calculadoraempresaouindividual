@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="0 0 360 360">
+<defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0f2a44"/><stop offset="100%" stop-color="#1a6a3a"/></linearGradient></defs>
+<circle cx="180" cy="180" r="170" fill="none" stroke="url(#g)" stroke-width="8"/>
+<circle cx="180" cy="180" r="152" fill="none" stroke="#c9a84a" stroke-width="2" stroke-dasharray="6 4"/>
+<circle cx="180" cy="180" r="118" fill="#f6f8fb" stroke="#0f2a44" stroke-width="1.5"/>
+<text x="180" y="98" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="13" font-weight="800" fill="#0f2a44" letter-spacing="3">AUTORIDADE TRIBUTÁRIA</text>
+<text x="180" y="118" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="11" font-weight="700" fill="#1a4a7a" letter-spacing="2">PORTUGAL</text>
+<text x="180" y="168" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="34" font-weight="900" fill="#0f2a44">SVAT</text>
+<text x="180" y="192" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="9" font-weight="700" fill="#6b7a90" letter-spacing="2">SELO DE VALIDAÇÃO AT</text>
+<line x1="110" y1="205" x2="250" y2="205" stroke="#c9a84a" stroke-width="1.2"/>
+<text x="180" y="225" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="8.5" fill="#1a4a7a">Portaria n.º 293/2017</text>
+<text x="180" y="238" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="7.5" fill="#6b7a90">Software validado pela AT</text>
+<text x="180" y="272" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="7" fill="#9aa8c0">N.º XXXX/AT — após aprovação</text>
+<g transform="translate(180,258)"><circle r="6" fill="#0f8a4a"/><path d="M -3 0 L 0 3 L 4 -4" stroke="white" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>
+</svg>

@@ -1,0 +1,16 @@
+Olá Sandrine — dossier SVAT 100% pronto para hoje 17h ✅
+
+O que é: Selo de Validação AT (Portaria 293/2017) — o único selo oficial da AT para software de gestão. Dá-nos “validado pela AT” no site, super forte para fechar gabinetes.
+
+Estado: tudo feito e já em produção. Não falta nada. É grátis, sem prazo, resposta em 30 dias.
+
+O que fazemos às 17h (10 min):
+1. Abrir E-balcão (sitfiscal.portaldasfinancas.gov.pt/ebalcao) com NIF da Recofatima > Outras Obrigações > Certificação Software > Questões técnicas
+2. Copiar o texto de 06-Texto-Pronto-para-colar.txt e colar
+3. Anexar os 4 PDFs (01 a 04) + Declaração 07 e Enviar
+
+Pasta completa: docs-candidatura-svat/ com 10 documentos + logotipo. Guia passo-a-passo no ficheiro 05 — basta seguir e clicar. O selo oficial com nº XXXX/AT vem depois da aprovação e já temos mock na pasta 08 para ver como fica.
+
+Nota honesta: SVAT foi feito para TOConline, AT pode dizer “sem objeto” porque não escrituramos — nesse caso usamos a auditoria como selo próprio na landing (9/9 conforme, já está tudo documentado).
+
+Traz só o NIF/senha da Recofatima. O resto está feito.
