@@ -16,14 +16,33 @@
       <stop offset="50%" stop-color="#0677FF"/>
       <stop offset="100%" stop-color="#0B1D2D"/>
     </linearGradient>
+    <style>
+      @keyframes e360-roda { to { transform: rotate(360deg); } }
+      @keyframes e360-orbita { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -360; } }
+      @keyframes e360-respira {
+        0%, 100% { opacity: 0.8; transform: scale(1); }
+        50%      { opacity: 1;   transform: scale(1.05); }
+      }
+      @keyframes e360-pulsa {
+        0%, 100% { transform: scale(1); }
+        50%      { transform: scale(1.035); }
+      }
+      .e360-dial { transform-box: fill-box; transform-origin: center; animation: e360-roda 36s linear infinite; }
+      .e360-cometa { stroke-dasharray: 44 316; animation: e360-orbita 5.2s linear infinite; }
+      .e360-glow { transform-box: fill-box; transform-origin: center; animation: e360-respira 6.5s ease-in-out infinite; }
+      .e360-orbe { transform-box: fill-box; transform-origin: center; animation: e360-pulsa 6.5s ease-in-out infinite; }
+      @media (prefers-reduced-motion: reduce) {
+        .e360-dial, .e360-cometa, .e360-glow, .e360-orbe { animation: none; }
+      }
+    </style>
   </defs>
 
   <!-- Soft outer glow halo (subtle) -->
-  <circle cx="60" cy="60" r="56" fill="url(#glow)"/>
+  <circle cx="60" cy="60" r="56" fill="url(#glow)" class="e360-glow"/>
 
   <!-- Outer ring — segmented dial style. Stroke + dasharray creates the tick gaps. -->
   <circle cx="60" cy="60" r="44" fill="none" stroke="#0677FF" stroke-width="3.6"
-          stroke-dasharray="14 6" stroke-linecap="round"/>
+          stroke-dasharray="14 6" stroke-linecap="round" class="e360-dial"/>
 
   <!-- Four cardinal tick stems anchored just outside the outer ring -->
   <g stroke="#0677FF" stroke-width="3" stroke-linecap="round">
@@ -38,11 +57,18 @@
            fill="none" stroke="url(#ring-h)" stroke-width="4"
            transform="rotate(-22 60 60)"/>
 
+  <!-- Comet on the same orbit: a bright dash travelling the ellipse (hidden behind the sphere on the far pass) -->
+  <ellipse cx="60" cy="60" rx="52" ry="15" pathLength="360"
+           fill="none" stroke="#00C2FF" stroke-width="4.2" stroke-linecap="round"
+           transform="rotate(-22 60 60)" class="e360-cometa"/>
+
   <!-- Inner sphere (the glowing planet) -->
-  <circle cx="60" cy="60" r="20" fill="url(#orb)"/>
-  <!-- Specular highlight on the upper-left of the sphere -->
-  <ellipse cx="53" cy="52" rx="5" ry="3.2" fill="#ffffff" opacity="0.75"/>
-  <circle cx="50" cy="50" r="1.6" fill="#ffffff" opacity="0.9"/>
+  <g class="e360-orbe">
+    <circle cx="60" cy="60" r="20" fill="url(#orb)"/>
+    <!-- Specular highlight on the upper-left of the sphere -->
+    <ellipse cx="53" cy="52" rx="5" ry="3.2" fill="#ffffff" opacity="0.75"/>
+    <circle cx="50" cy="50" r="1.6" fill="#ffffff" opacity="0.9"/>
+  </g>
 
   <!-- Orbital ellipse foreground arc (re-drawn over the sphere to sell the 3D pass-through) -->
   <path d="M 25.5 71 A 52 15 -22 0 0 94 49"
