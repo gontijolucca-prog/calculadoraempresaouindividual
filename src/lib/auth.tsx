@@ -6,6 +6,9 @@ import {
   signOut,
   sendEmailVerification,
   sendPasswordResetEmail,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
   updateProfile,
   type User,
 } from 'firebase/auth';
@@ -15,7 +18,7 @@ import { collection, addDoc } from 'firebase/firestore';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signInWithEmail: (email: string, password: string, remember?: boolean) => Promise<void>;
   signUpWithEmail: (email: string, password: string, displayName?: string) => Promise<void>;
   logout: () => Promise<void>;
   sendVerificationEmail: () => Promise<void>;
@@ -58,7 +61,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch { /* offline ou rules antigas — login continua */ }
   };
 
-  const signInWithEmail = async (email: string, password: string) => {
+  const signInWithEmail = async (email: string, password: string, remember = true) => {
+    // "Lembrar-me": sessão persistente (sobrevive a fechar o browser) vs sessão só desta janela.
+    await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
     const cred = await signInWithEmailAndPassword(auth, email, password);
     if (cred.user) void logAuthEvent(cred.user, 'login');
   };

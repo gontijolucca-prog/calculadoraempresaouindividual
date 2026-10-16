@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache, persistentSingleTabManager, enableIndexedDbPersistence, getFirestore } from 'firebase/firestore';
-import { getAuth, connectAuthEmulator } from 'firebase/auth';
+import { initializeAuth, getAuth, connectAuthEmulator, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
 import { connectFirestoreEmulator } from 'firebase/firestore';
 
 // ⚠ SECURITY: Move to env vars in production.
@@ -33,7 +33,15 @@ try {
 }
 
 export const db = _db;
-export const auth = getAuth(app);
+// Auth preso a browserLocalPersistence (localStorage) — evita o deadlock de
+// inicialização multi-aba da persistência por IndexedDB (authStateReady nunca resolve).
+let _auth;
+try {
+  _auth = initializeAuth(app, { persistence: [browserLocalPersistence, browserSessionPersistence] });
+} catch {
+  _auth = getAuth(app); // HMR/re-init
+}
+export const auth = _auth;
 
 // Emuladores locais — só em `vite dev` com VITE_FIREBASE_EMULATORS=1 (nunca em builds).
 // O curto-circuito por `window` mantém isto seguro em Node (testes) — em runtime

@@ -22,6 +22,7 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [remember, setRemember] = useState(true);
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +43,7 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
     setLoading(true);
     try {
       if (mode === 'login') {
-        await signInWithEmail(email.trim(), password);
+        await signInWithEmail(email.trim(), password, remember);
       } else if (mode === 'signup') {
         await signUpWithEmail(email.trim(), password, name.trim());
         setInfo('Conta criada. Verifique o seu email para ativar o acesso — enviámos um link.');
@@ -135,6 +136,12 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
                     <button type="button" onClick={()=>setShowPass(v=>!v)} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-[#1A1A18]/30 hover:text-[#1A1A18]/60 transition-colors">{showPass ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
                   </div>
                   {mode==='signup' && <p className="text-[11px] text-[#1A1A18]/30 mt-1">Utilize 8 ou mais caracteres.</p>}
+                </label>
+              )}
+              {mode === 'login' && (
+                <label className="flex items-center gap-2 text-[13px] text-[#1A1A18]/60 cursor-pointer select-none">
+                  <input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)} className="w-4 h-4 rounded accent-[#B06D35]" />
+                  Lembrar-me neste dispositivo
                 </label>
               )}
 
