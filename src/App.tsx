@@ -49,7 +49,7 @@ import { ThemeProvider } from './ThemeContext';
 import { MotionProvider, PageTransition } from './AnimatedPage';
 import { parseSAFT, decodeSaftText, normalizeXmlEncodingToUtf8, type SAFTParseResult } from './lib/saft';
 import { prepararEmpresaSAFT, LOTE_SAFT_XML_BUDGET, type SaftLoteResumo } from './lib/saftLote';
-import { migrarEmpresasParaGabinete } from './lib/gabinete';
+import { migrarEmpresasParaGabinete, listClientesCache } from './lib/gabinete';
 import { enforceProfileRules } from './lib/profileRules';
 import { DOC_TYPES, downloadAsWord } from './lib/wordDocs';
 import { downloadPrevisaPdf } from './lib/previsaPdf';
@@ -1607,7 +1607,20 @@ function AppContent() {
         )}
         {view === 'gabinete' && (
           <Suspense fallback={<div className="p-8 text-center text-zinc-500">A carregar Gabinete…</div>}>
-            <Gabinete tab={gabineteTab as any} onTabChange={setGabineteTab} onStartTour={(v) => setTourRequest({ view: v, nonce: Date.now() })} activeEmpresaId={currentEmpresaId} activeEmpresaNome={currentEmpresaId ? (getEmpresa(currentEmpresaId)?.nome || null) : null} onGoEmpresas={()=>setView('empresas')} onSelectEmpresa={(id)=>{ setCurrentEmpresaId(id); setCurrentEmpresaIdState(id); }} />
+            <Gabinete tab={gabineteTab as any} onTabChange={setGabineteTab} onStartTour={(v) => setTourRequest({ view: v, nonce: Date.now() })} activeEmpresaId={currentEmpresaId} activeEmpresaNome={currentEmpresaId ? (getEmpresa(currentEmpresaId)?.nome || null) : null} onGoEmpresas={()=>setView('empresas')} onSelectEmpresa={(id) => {
+              // A ficha do gabinete pode ter id ≠ da empresa: resolve pelo empresaId
+              // e carrega o estado COMPLETO do cliente (perfil + simuladores) — sem
+              // isto a sidebar e os simuladores ficavam com o cliente anterior.
+              let empresaId = id;
+              try {
+                const gc = listClientesCache().find(c => c.id === id || c.empresaId === id);
+                if (gc?.empresaId) empresaId = gc.empresaId;
+              } catch {}
+              if (!selectEmpresa(empresaId)) {
+                setCurrentEmpresaId(id);
+                setCurrentEmpresaIdState(id);
+              }
+            }} />
           </Suspense>
         )}
         {view === 'office-settings' && (
