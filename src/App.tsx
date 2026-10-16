@@ -1590,7 +1590,7 @@ function AppContent() {
         )}
         {view === 'gabinete' && (
           <Suspense fallback={<div className="p-8 text-center text-zinc-500">A carregar Gabinete…</div>}>
-            <Gabinete tab={gabineteTab as any} onTabChange={setGabineteTab} onStartTour={(v) => setTourRequest({ view: v, nonce: Date.now() })} activeEmpresaId={currentEmpresaId} activeEmpresaNome={currentEmpresaId ? (getEmpresa(currentEmpresaId)?.nome || null) : null} onGoEmpresas={()=>setView('empresas')} />
+            <Gabinete tab={gabineteTab as any} onTabChange={setGabineteTab} onStartTour={(v) => setTourRequest({ view: v, nonce: Date.now() })} activeEmpresaId={currentEmpresaId} activeEmpresaNome={currentEmpresaId ? (getEmpresa(currentEmpresaId)?.nome || null) : null} onGoEmpresas={()=>setView('empresas')} onSelectEmpresa={(id)=>{ setCurrentEmpresaId(id); setCurrentEmpresaIdState(id); }} />
           </Suspense>
         )}
         {view === 'office-settings' && (

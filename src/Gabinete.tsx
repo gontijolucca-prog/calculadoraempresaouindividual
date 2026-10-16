@@ -46,7 +46,7 @@ const GAB_TAB_GUIA: Record<string, ViewKey> = {
 // ─── Layout ─────────────────────────────────────────────────────────────────
 
 const VALID_GAB_TABS_SET = new Set<string>(['dashboard','mapa-controlo','mapa-rh','visao-geral','equipa','tarefas','cofre','gallery','agenda','obrigacoes','lixeira']);
-export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour, activeEmpresaId, activeEmpresaNome, onGoEmpresas }: { tab?: GabineteTab; onTabChange?: (t: GabineteTab) => void; onStartTour?: (v: ViewKey) => void; activeEmpresaId?: string | null; activeEmpresaNome?: string | null; onGoEmpresas?: () => void }) {
+export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour, activeEmpresaId, activeEmpresaNome, onGoEmpresas, onSelectEmpresa }: { tab?: GabineteTab; onTabChange?: (t: GabineteTab) => void; onStartTour?: (v: ViewKey) => void; activeEmpresaId?: string | null; activeEmpresaNome?: string | null; onGoEmpresas?: () => void; onSelectEmpresa?: (id: string) => void }) {
   const [internalTab, setInternalTab] = useState<GabTab>('dashboard');
   const rawTab: GabineteTab = controlledTab ?? internalTab;
   const tab: GabineteTab = VALID_GAB_TABS_SET.has(rawTab) ? rawTab : 'gallery';
@@ -252,11 +252,11 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
         {tab === 'gallery' && <GabineteGallery onOpen={goFunction} />}
         {tab !== 'gallery' && (
           <>
-            {tab === 'visao-geral' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolha um cliente na lista para ver a visão geral.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <VisaoGeralView cliente={clienteAtivo} contactos={contactosF} alertas={alertasF} ocorrencias={ocorrenciasF} tarefas={tarefas} obrigacoes={obrigacoes} cofre={cofre} documentos={documentosF} colaboradores={colaboradores} role={effectiveRole} onGo={(tab)=>setTab(tab as GabineteTab)} onOpenCofre={()=>setTab('cofre')} />)}
+            {tab === 'visao-geral' && (!activeEmpresaId ? <EscolherCliente clientes={clientes} onSelect={onSelectEmpresa} onGoEmpresas={onGoEmpresas} /> : <VisaoGeralView cliente={clienteAtivo} contactos={contactosF} alertas={alertasF} ocorrencias={ocorrenciasF} tarefas={tarefas} obrigacoes={obrigacoes} cofre={cofre} documentos={documentosF} colaboradores={colaboradores} role={effectiveRole} onGo={(tab)=>setTab(tab as GabineteTab)} onOpenCofre={()=>setTab('cofre')} />)}
             {tab === 'dashboard' && <Dashboard clientes={clientes} tarefas={tarefasRaw} obrigacoes={obrigacoesRaw} cofre={cofre} onGo={goFunction} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
             {tab === 'mapa-rh' && <MapaRHView clientes={clientes} obrigacoes={obrigacoesRaw} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
             {tab === 'mapa-controlo' && <MapaControloView clientes={clientes} obrigacoes={obrigacoesRaw} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
-            {tab === 'tarefas' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolha um cliente na lista para ver as tarefas.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <TarefasView tarefas={tarefas} clientes={clientes} obrigacoes={obrigacoes} activeEmpresaId={activeEmpresaId} activeEmpresaNome={activeEmpresaNome} canDelete={can(effectiveRole, 'apagar')} canGerirObrigacoes={can(effectiveRole, 'gerir-obrigacoes')} />)}
+            {tab === 'tarefas' && (!activeEmpresaId ? <EscolherCliente clientes={clientes} onSelect={onSelectEmpresa} onGoEmpresas={onGoEmpresas} /> : <TarefasView tarefas={tarefas} clientes={clientes} obrigacoes={obrigacoes} activeEmpresaId={activeEmpresaId} activeEmpresaNome={activeEmpresaNome} canDelete={can(effectiveRole, 'apagar')} canGerirObrigacoes={can(effectiveRole, 'gerir-obrigacoes')} />)}
             {tab === 'equipa' && (can(effectiveRole, 'gerir-equipa') ? <GabineteEquipa /> : <SemPermissao titulo="Equipa" />)}
             {tab === 'agenda' && <AgendaView tarefas={tarefas} obrigacoes={obrigacoes} alertas={alertasF} clientes={clientes} />}
             {tab === 'obrigacoes' && <ObrigacoesView obrigacoes={obrigacoesRaw} clientes={clientes} activeEmpresaId={activeEmpresaId} canGerirObrigacoes={can(effectiveRole, 'gerir-obrigacoes')} />}
@@ -2087,6 +2087,23 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
 }
 
 // ─── Sem permissão — cargo sem acesso a esta função ─────────────────────────
+function EscolherCliente({ clientes, onSelect, onGoEmpresas }: { clientes: GabineteCliente[]; onSelect?: (id: string) => void; onGoEmpresas?: () => void }) {
+  return (
+    <div className="bg-white rounded-2xl border p-8 text-center">
+      <p className="text-sm text-zinc-600">Escolha um cliente para continuar.</p>
+      {clientes.length > 0 && onSelect ? (
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
+          {clientes.map(c => (
+            <button key={c.id} onClick={() => onSelect(c.id)} className="px-4 py-2 rounded-xl border border-zinc-200 bg-white text-sm font-[600] text-[#0F172A] hover:bg-zinc-50">{c.nome}</button>
+          ))}
+        </div>
+      ) : (
+        <button onClick={() => onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button>
+      )}
+    </div>
+  );
+}
+
 function SemPermissao({ titulo }: { titulo: string }) {
   return (
     <div className="bg-white rounded-2xl border border-zinc-200 p-8 text-center">

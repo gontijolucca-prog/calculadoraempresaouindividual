@@ -1368,7 +1368,7 @@ export function gerarObrigacoesParaCliente(cli: GabineteCliente, ano = new Date(
   if (novas.length) {
     const all = [...existentes, ...novas];
     saveObrigacoesCache(all);
-    novas.forEach(o => safeSetDoc(colPath('obrigacoes'), o.id, o).catch(() => {}));
+    novas.forEach(o => queueSet(colPath('obrigacoes'), o.id, o));
     // também cria tarefas espelho para cada obrigação
     novas.forEach(o => {
       const t: Tarefa = {
@@ -1388,7 +1388,7 @@ export function gerarObrigacoesParaCliente(cli: GabineteCliente, ano = new Date(
       const tList = listTarefasCache();
       tList.unshift(t);
       saveTarefasCache(tList);
-      safeSetDoc(colPath('tarefas'), t.id, t).catch(() => {});
+      queueSet(colPath('tarefas'), t.id, t);
     });
   }
   return novas;

@@ -55,7 +55,7 @@ async function openGabTab(label) {
     await nav.click();
     await page.waitForTimeout(500);
   }
-  await page.locator(`aside button:has-text("${label}")`).first().click({ timeout: 15000 });
+  await page.locator('aside button').filter({ hasText: new RegExp('^' + label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$') }).first().click({ timeout: 15000 });
   await page.waitForTimeout(400);
 }
 
@@ -69,6 +69,8 @@ page.on('console', m => { if (m.type() === 'error') errors.push(`console.error: 
 page.on('console', m => logs.push(m.text()));
 page.on('requestfailed', r => {
   const u = r.url();
+  // Canais streaming do Firestore abortados em reloads são ruído benigno do SDK.
+  if (u.includes('google.firestore.v1.Firestore') && r.failure()?.errorText === 'net::ERR_ABORTED') return;
   if (!u.includes('favicon') && !u.includes('fonts.g')) errors.push(`requestfailed: ${u.slice(0, 120)} ${r.failure()?.errorText}`);
 });
 
@@ -147,7 +149,7 @@ try {
   });
 
   await step('Adicionar tarefa', async () => {
-    await page.locator('button:has-text("+ Nova")').first().click();
+    await page.locator('#sec-tarefas button:has-text("+ Nova")').first().click();
     const modal = page.locator('div.fixed', { has: page.locator('h3:has-text("Nova tarefa")') }).last();
     await modal.locator('input[placeholder="Título da tarefa"]').fill('QA Tarefa E2E');
     const d = new Date(); d.setDate(d.getDate() + 2);
@@ -196,8 +198,9 @@ try {
     await openGabTab('Visão geral');
     await page.locator('text=QA Cliente E2E Lda').first().waitFor({ timeout: 25000 });
     await page.locator('text=QA Alerta E2E confirmar IVA').first().waitFor({ timeout: 15000 });
-    await page.locator('text=QA Tarefa E2E').first().waitFor({ timeout: 15000 });
     await page.locator('text=6/7 ativas').waitFor({ timeout: 15000 });
+    await openGabTab('Tarefas');
+    await page.locator('tr:has-text("QA Tarefa E2E")').first().waitFor({ timeout: 20000 });
   });
 
   await step('Regras Firestore (emulador): intruso bloqueado, dono permitido', async () => {

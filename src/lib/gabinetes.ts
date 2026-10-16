@@ -242,6 +242,35 @@ export async function inviteToGabinete(gabineteId: string, email: string, role: 
   });
 }
 
+/** Revoga o acesso de um membro/convite (o dono nunca sai). Usado ao remover da equipa. */
+export async function removeFromGabinete(gabineteId: string, email: string, uid?: string): Promise<void> {
+  const u = auth.currentUser;
+  if (!u) throw new Error('Não autenticado');
+  const emailLc = normalizeEmail(email);
+  const ref = doc(db, 'gabinetes', gabineteId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+  const data = snap.data() as GabineteMeta;
+  if ((uid && data.ownerUid === uid) || normalizeEmail(data.ownerEmail || '') === emailLc) {
+    throw new Error('O dono do gabinete não pode ser removido.');
+  }
+  const members: Record<string, unknown> = { ...(data.members || {}) };
+  if (uid) delete members[uid];
+  for (const [k, v] of Object.entries(members)) {
+    const em = normalizeEmail((v as { email?: string } | undefined)?.email || '');
+    if (k !== data.ownerUid && em && em === emailLc) delete members[k];
+  }
+  // updateDoc substitui os campos por inteiro — o merge do setDoc deixaria
+  // ficar o membro antigo dentro de `members`.
+  await updateDoc(ref, {
+    memberUids: (data.memberUids || []).filter(x => x === data.ownerUid || x !== uid),
+    inviteEmails: (data.inviteEmails || []).filter(e => e !== emailLc),
+    invites: (data.invites || []).filter(i => normalizeEmail(i.email) !== emailLc),
+    members,
+    updatedAt: Date.now(),
+  } as any);
+}
+
 export async function getGabineteMeta(id: string): Promise<GabineteMeta | null> {
   const snap = await getDoc(doc(db, 'gabinetes', id)).catch(() => null);
   if (!snap || !snap.exists()) return null;

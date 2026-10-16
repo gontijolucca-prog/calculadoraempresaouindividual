@@ -3,6 +3,7 @@ import { Users, Mail, Trash2, Pencil, X, Plus, Search, CheckCircle2, Clock, Shie
 import { useGabineteColaboradores, useGabineteClientes } from './lib/useGabinete';
 import { filterActive } from './lib/gabineteSelectors';
 import { upsertColaborador, deleteColaborador, newColaboradorId, getColaboradorInitials, upsertCliente, type Colaborador, type ColaboradorRole } from './lib/gabinete';
+import { getActiveGabineteId, inviteToGabinete, removeFromGabinete } from './lib/gabinetes';
 
 const roleLabel: Record<ColaboradorRole, string> = {
   admin: 'Admin',
@@ -70,6 +71,16 @@ export default function GabineteEquipa() {
       updatedAt: Date.now(),
     };
     await upsertColaborador(col);
+    // Convite real ao gabinete: sem isto o colaborador nunca conseguia entrar
+    // (só ficava o registo local na lista da equipa).
+    const gabId = getActiveGabineteId();
+    if (gabId) {
+      try {
+        await inviteToGabinete(gabId, email, role || 'contabilista');
+      } catch (e) {
+        alert('Funcionário guardado, mas o convite ao gabinete falhou: ' + String((e as Error)?.message || e));
+      }
+    }
     setShowForm(false);
     setEditing(null);
     setForm({ role: 'contabilista' });
@@ -146,7 +157,15 @@ export default function GabineteEquipa() {
                       <div className="flex justify-end gap-1">
                         <button onClick={() => openEdit(c)} className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-600" title="Editar"><Pencil className="w-3.5 h-3.5" /></button>
                         {c.status === 'convite_pendente' && <button onClick={() => handleReenviar(c)} className="p-1.5 rounded-lg hover:bg-zinc-100 text-[#2563EB]" title="Reenviar convite"><Mail className="w-3.5 h-3.5" /></button>}
-                        <button onClick={async () => { if (confirm(`Remover ${c.nome}?`)) await deleteColaborador(c.id); }} className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-600" title="Remover"><Trash2 className="w-3.5 h-3.5" /></button>
+                        <button onClick={async () => {
+                          if (!confirm(`Remover ${c.nome}? Deixa de ter acesso a este gabinete.`)) return;
+                          const gabId = getActiveGabineteId();
+                          if (gabId) {
+                            try { await removeFromGabinete(gabId, c.email, c.linkedUid || undefined); }
+                            catch (e) { alert(String((e as Error)?.message || e)); return; }
+                          }
+                          await deleteColaborador(c.id);
+                        }} className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-600" title="Remover"><Trash2 className="w-3.5 h-3.5" /></button>
                       </div>
                     </td>
                   </tr>

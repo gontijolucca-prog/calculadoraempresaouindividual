@@ -98,7 +98,9 @@ service cloud.firestore {
     }
 
     match /gabinete/{officeId}/{col}/{docId} {
-      allow read: if gabIsUser(officeId);
+      // O cofre só é legível por admin/contabilista — a estagiária nem por API.
+      allow read: if gabIsUser(officeId)
+        && (col != 'cofre' || gabRoleIs(officeId, ['admin', 'contabilista']));
       allow create: if gabIsUser(officeId)
         && isValidGabineteDoc(request.resource.data)
         && (!isColRestrita(col) || gabRoleIs(officeId, ['admin', 'contabilista']));

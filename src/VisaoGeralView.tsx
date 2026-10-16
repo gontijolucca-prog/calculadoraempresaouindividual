@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import {
   upsertCliente,
-  OBRIGACOES_CATALOGO, getObrigacoesAtivas, setObrigacoesAtivas,
+  getCatalogo, addCatalogoDef, gerarObrigacoesParaCliente, getObrigacoesAtivas, setObrigacoesAtivas,
   upsertContactoGabinete, deleteContactoGabinete, newContactoGabineteId,
   upsertAlertaGabinete, deleteAlertaGabinete, newAlertaGabineteId,
   upsertOcorrencia, deleteOcorrencia, newOcorrenciaId,
@@ -15,7 +15,7 @@ import {
 import { mergePrazos } from './lib/gabineteSelectors';
 import { can } from './lib/permissions';
 import type { GabineteRole } from './lib/gabinetes';
-import type { GabineteCliente, Tarefa, Obrigacao, CofreEntrada, GabineteDocumento, ContactoGabinete, AlertaGabinete, OcorrenciaGabinete, Colaborador } from './lib/gabinete';
+import type { GabineteCliente, Tarefa, Obrigacao, ObrigacaoDef, CofreEntrada, GabineteDocumento, ContactoGabinete, AlertaGabinete, OcorrenciaGabinete, Colaborador } from './lib/gabinete';
 
 type Props = {
   cliente: GabineteCliente | null;
@@ -114,6 +114,17 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
   const avatarInitials = displayNome === '—' ? '—' : initialsOf(displayNome).slice(0, 2);
 
   // ——— Modais funcionais ———
+  const [catalogoObr, setCatalogoObr] = useState<ObrigacaoDef[]>(() => getCatalogo());
+  React.useEffect(() => {
+    const h = () => setCatalogoObr(getCatalogo());
+    window.addEventListener('estudo360:catalogo-updated', h);
+    return () => window.removeEventListener('estudo360:catalogo-updated', h);
+  }, []);
+  // Backfill: gera as obrigações/prazos em falta deste cliente ao abrir a ficha.
+  React.useEffect(() => {
+    if (!cliente || !canGerirObrigacoes) return;
+    try { gerarObrigacoesParaCliente(cliente); } catch {}
+  }, [cliente?.id, canGerirObrigacoes]);
   const [showEditCliente, setShowEditCliente] = useState(false);
   const [formCliente, setFormCliente] = useState<Partial<GabineteCliente>>({});
   const [showAddAlerta, setShowAddAlerta] = useState(false);
@@ -143,6 +154,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
     if (!cliente) return;
     const upd: GabineteCliente = { ...cliente, ...formCliente, gerentes: typeof formCliente.gerentes === 'string' ? (formCliente.gerentes as unknown as string).split(',').map(s=>s.trim()).filter(Boolean) : formCliente.gerentes, updatedAt: Date.now() };
     await upsertCliente(upd);
+    try { gerarObrigacoesParaCliente(upd); } catch {}
     await upsertOcorrencia({ id: newOcorrenciaId(), clienteId: cliente.id, clienteNome: upd.nome, data: Date.now(), autorNome: upd.responsavelInterno?.nome || 'Equipa', autorInitials: upd.responsavelInterno?.initials || 'EQ', descricao: 'Ficha atualizada', createdAt: Date.now() });
     setShowEditCliente(false);
   };
@@ -305,7 +317,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
 
         {/* Coluna do meio: Obrigações + Situação + Tarefas */}
         <div className="space-y-3">
-          {cliente && <ObrigacoesCard cliente={cliente} readOnly={!canEditFicha} />}
+          {cliente && <ObrigacoesCard cliente={cliente} catalogo={catalogoObr} readOnly={!canEditFicha} />}
           <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><span className="w-5 h-5 rounded-full bg-[#FFF7ED] border border-[#FED7AA] flex items-center justify-center text-[11px]">◉</span> Situação atual</h3>
@@ -564,7 +576,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
             <div className="space-y-2">
               <div className="text-[12px] font-[600] text-zinc-600">Obrigações ativas (aparecem no Quadro e nos mapas)</div>
               <div className="flex flex-wrap gap-1.5 max-h-[160px] overflow-y-auto">
-                {OBRIGACOES_CATALOGO.map(def => {
+                {catalogoObr.map(def => {
                   const cur = (formCliente.obrigacoesAtivas as string[] | undefined) ?? getObrigacoesAtivas(cliente);
                   const on = cur.includes(def.id);
                   return (
@@ -678,24 +690,53 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
 }
 
 // ─── Obrigações do cliente — checkboxes sincronizadas com o Quadro ──────────
-function ObrigacoesCard({ cliente, readOnly }: { cliente: GabineteCliente; readOnly?: boolean }) {
+function ObrigacoesCard({ cliente, catalogo, readOnly }: { cliente: GabineteCliente; catalogo: ObrigacaoDef[]; readOnly?: boolean }) {
   const [saving, setSaving] = useState<string | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [novoLabel, setNovoLabel] = useState('');
+  const [adding, setAdding] = useState(false);
   const ativas = getObrigacoesAtivas(cliente);
+  const gerar = (cli: GabineteCliente) => { try { gerarObrigacoesParaCliente(cli); } catch {} };
   const toggle = async (id: string) => {
     const next = ativas.includes(id) ? ativas.filter(x => x !== id) : [...ativas, id];
     if (next.length === 0) { alert('O cliente tem de ter pelo menos uma obrigação.'); return; }
     setSaving(id);
-    try { await setObrigacoesAtivas(cliente, next); } finally { setSaving(null); }
+    try {
+      await setObrigacoesAtivas(cliente, next);
+      if (!ativas.includes(id)) gerar({ ...cliente, obrigacoesAtivas: next });
+    } finally { setSaving(null); }
+  };
+  const handleAdd = async () => {
+    const label = novoLabel.trim();
+    if (!label) return;
+    setAdding(true);
+    try {
+      const def = await addCatalogoDef(label);
+      const next = [...new Set([...ativas, def.id])];
+      await setObrigacoesAtivas(cliente, next);
+      setNovoLabel(''); setShowAdd(false);
+    } catch (e) { alert(e instanceof Error ? e.message : String(e)); }
+    finally { setAdding(false); }
   };
   return (
     <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
       <div className="flex items-center justify-between mb-1">
         <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Calendar className="w-4 h-4 text-[#64748B]" /> Obrigações</h3>
-        <span className="text-[11px] text-[#64748B]">{ativas.length}/{OBRIGACOES_CATALOGO.length} ativas</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-[#64748B]">{ativas.length}/{catalogo.length} ativas</span>
+          {!readOnly && <button onClick={()=>setShowAdd(v=>!v)} className="text-[11px] font-[600] px-2 py-0.5 rounded-full bg-white border border-[#E2E8F0] text-[#2563EB] hover:bg-zinc-50">+ Nova</button>}
+        </div>
       </div>
       <p className="text-[11px] text-[#94A3B8] mb-2.5">{readOnly ? 'O que está marcado aparece no Quadro e nos mapas.' : 'O que está marcado aparece no Quadro e nos mapas.'}</p>
+      {showAdd && !readOnly && (
+        <div className="flex gap-1.5 mb-2.5">
+          <input value={novoLabel} onChange={e=>setNovoLabel(e.target.value)} placeholder="Nova obrigação (ex: Modelo 30)" className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-[12px]" onKeyDown={e=>{ if (e.key==='Enter') handleAdd(); }} />
+          <button onClick={handleAdd} disabled={adding || !novoLabel.trim()} className="px-3 py-1.5 rounded-lg bg-[#0677FF] text-white text-[11px] font-[600] disabled:opacity-50">Adicionar</button>
+          <button onClick={()=>{ setShowAdd(false); setNovoLabel(''); }} className="px-2.5 py-1.5 rounded-lg border border-[#E2E8F0] text-[11px] font-[500] text-[#64748B]">Cancelar</button>
+        </div>
+      )}
       <div className="flex flex-wrap gap-1.5">
-        {OBRIGACOES_CATALOGO.map(def => {
+        {catalogo.map(def => {
           const on = ativas.includes(def.id);
           return (
             <label key={def.id} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-[12px] font-[500] ${readOnly ? 'cursor-default' : 'cursor-pointer'} transition-all duration-200 ${on ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-zinc-50 border-zinc-200 text-zinc-400'}`}>
