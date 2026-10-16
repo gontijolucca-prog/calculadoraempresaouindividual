@@ -314,7 +314,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
         </div>
         <div className="ml-auto flex items-center gap-3">
           <span className="text-[11px] font-[700] bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full">
-            ✓ Atualizado Maio 2026
+            ✓ Atualizado Outubro 2026
           </span>
         </div>
       </div>
@@ -330,7 +330,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
         <div className="bg-amber-50 border border-amber-200 rounded-[16px] p-5 flex gap-4">
           <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-[13px] text-amber-900 font-[500] leading-relaxed">
-            <strong>Nota:</strong> Esta página apresenta a legislação em que os cálculos dos simuladores se baseiam, com dados válidos para <strong>maio de 2026</strong>. A lei fiscal pode sofrer alterações. Este simulador não substitui o aconselhamento de um <strong>contabilista certificado (OCC)</strong>.
+            <strong>Nota:</strong> Esta página apresenta a legislação em que os cálculos dos simuladores se baseiam, com dados válidos para <strong>outubro de 2026</strong>. A lei fiscal pode sofrer alterações. Este simulador não substitui o aconselhamento de um <strong>contabilista certificado (OCC)</strong>.
           </p>
         </div>
 
@@ -659,7 +659,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
                   </tbody>
                 </table>
               </div>
-              <p className="text-[11px] text-[#94A3B8] mt-2 font-[500]">Fonte: OE 2026 (validado maio 2026) • Aplicável a residentes em Portugal Continental</p>
+              <p className="text-[11px] text-[#94A3B8] mt-2 font-[500]">Fonte: OE 2026 (validado outubro 2026) • Aplicável a residentes em Portugal Continental</p>
             </div>
 
             {/* IRS Jovem */}
@@ -1384,7 +1384,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
         <section id="legal-fontes" className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0] scroll-mt-24">
           <SectionHeader icon={BookOpen} title="Fontes Web Consultadas (validação OE 2026)" color="#475569" />
           <p className="text-[13px] text-[#475569] mb-5 leading-relaxed">
-            Os valores fiscais hardcoded nos simuladores foram cruzados com as fontes abaixo (Maio 2026). Antes de produção, validar contra a publicação oficial no <a href="https://info.portaldasfinancas.gov.pt" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Portal das Finanças</a> e no <a href="https://dre.pt" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Diário da República (dre.pt)</a>.
+            Os valores fiscais hardcoded nos simuladores foram cruzados com as fontes abaixo (Outubro 2026). Antes de produção, validar contra a publicação oficial no <a href="https://info.portaldasfinancas.gov.pt" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Portal das Finanças</a> e no <a href="https://dre.pt" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Diário da República (dre.pt)</a>.
           </p>
 
           <div className="space-y-5">
@@ -1447,7 +1447,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
           </div>
 
           <p className="text-[11px] text-[#94A3B8] mt-6 font-[500] leading-relaxed">
-            Última verificação cruzada: <strong>17 de Maio de 2026</strong>. Os valores hardcoded em <code className="bg-slate-100 px-1 py-0.5 rounded text-[10px]">src/lib/pt2026.ts</code>, <code className="bg-slate-100 px-1 py-0.5 rounded text-[10px]">src/lib/imt.ts</code> e <code className="bg-slate-100 px-1 py-0.5 rounded text-[10px]">src/lib/salario.ts</code> foram validados contra ≥2 fontes independentes e re-verificados por cálculo matemático (parcelas a abater do Art. 68.º CIRS calculadas escalão-a-escalão, erro &lt;€0,10).
+            Última verificação cruzada: <strong>2 de Outubro de 2026</strong>. Os valores hardcoded em <code className="bg-slate-100 px-1 py-0.5 rounded text-[10px]">src/lib/pt2026.ts</code>, <code className="bg-slate-100 px-1 py-0.5 rounded text-[10px]">src/lib/imt.ts</code> e <code className="bg-slate-100 px-1 py-0.5 rounded text-[10px]">src/lib/salario.ts</code> foram validados contra ≥2 fontes independentes e re-verificados por cálculo matemático (parcelas a abater do Art. 68.º CIRS calculadas escalão-a-escalão, erro &lt;€0,10).
           </p>
         </section>
 
@@ -1456,7 +1456,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
           <div className="inline-flex items-center gap-2 bg-white border border-[#E2E8F0] rounded-full px-6 py-3 shadow-sm">
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
             <span className="text-[13px] font-[600] text-[#475569]">
-              Informação atualizada em <strong>Maio de 2026</strong> • Estudo 360
+              Informação atualizada em <strong>Outubro de 2026</strong> • Estudo 360
             </span>
           </div>
           <p className="text-[12px] text-[#94A3B8] mt-3 max-w-xl mx-auto">
