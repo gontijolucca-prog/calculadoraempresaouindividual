@@ -1767,7 +1767,7 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
     const o = e as unknown as Record<string, unknown>;
     for (const k of ['password','pass','secret','segredoPlain','valor']) {
       const v = (o[k] as string | undefined)?.trim();
-      if (v && v !== '—' && v !== '-') return v;
+      if (v && v !== '—' && v !== '-' && v !== '...') return v;
     }
     return '';
   };
@@ -1814,7 +1814,7 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
       if (s && s !== '—' && s !== '-') return s;
       for (const k of ['password','pass','secret','segredoPlain','valor']) {
         const v = (o[k] as string | undefined)?.trim();
-        if (v && v !== '—' && v !== '-') return v;
+        if (v && v !== '—' && v !== '-' && v !== '...') return v;
       }
       return '';
     })();
@@ -1828,8 +1828,8 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
     if (!form.titulo?.trim()) return alert('Título é obrigatório');
     const atual = (form as unknown as { segredo?: string }).segredo?.trim() || '';
     const novo = (form as unknown as { secretPlain?: string }).secretPlain?.trim() || '';
-    const finalSeg = novo || atual;
-    if (!finalSeg) return alert('Password é obrigatória');
+    const finalSeg = (novo || atual).trim();
+    if (!finalSeg || finalSeg === '—' || finalSeg === '-' || finalSeg === '...') return alert('Password é obrigatória');
     const entry: CofreEntrada = {
       id: (form.id as string) || newCofreId(),
       titulo: form.titulo!.trim(),
@@ -1892,9 +1892,10 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
               setPurging(true);
               try { const n = await purgeCofreVazias(); alert(`${n} entradas vazias apagadas.`); } catch (e) { alert('Falha ao limpar: ' + String(e)); } finally { setPurging(false); }
             }}
-            className="hidden sm:inline-flex px-3 py-2 rounded-full border border-amber-300 bg-amber-50 text-amber-800 text-xs font-semibold hover:bg-amber-100 disabled:opacity-50"
+            className="inline-flex px-3 py-2 rounded-full border border-amber-300 bg-amber-50 text-amber-800 text-xs font-semibold hover:bg-amber-100 disabled:opacity-50"
             title="Apaga só entradas sem segredo e sem cipher"
-          ><Trash2 className="w-3.5 h-3.5 mr-1" />{purging ? 'A limpar...' : `Limpar ${vaziasCount} vazias`}</button>
+            aria-label={purging ? 'A limpar vazias' : `Limpar ${vaziasCount} vazias`}
+          ><Trash2 className="w-3.5 h-3.5 sm:mr-1" /><span className="hidden sm:inline">{purging ? 'A limpar...' : `Limpar ${vaziasCount} vazias`}</span></button>
         )}
         <button onClick={startCreate} className="hidden sm:inline-flex px-4 py-2 rounded-full bg-[#0B57D0] text-white text-sm font-medium hover:bg-[#0B4BBA]"><Plus className="w-4 h-4 mr-1.5" /> Adicionar</button>
         <button onClick={startCreate} className="sm:hidden w-9 h-9 rounded-full bg-[#0B57D0] text-white flex items-center justify-center"><Plus className="w-4 h-4" /></button>

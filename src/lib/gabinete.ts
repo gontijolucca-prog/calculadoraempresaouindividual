@@ -830,10 +830,16 @@ export function newCofreId(): string { return newId('cof'); }
 
 // ─── Cofre — limpeza de vazias (migração secret→segredo) ─────────────────────
 function isCofreVazia(e: CofreEntrada): boolean {
-  const raw = ((e as unknown as Record<string, unknown>).segredo as string | undefined)?.trim() ?? '';
+  const o = e as unknown as Record<string, unknown>;
+  const raw = (o.segredo as string | undefined)?.trim() ?? '';
   const vazia = !raw || raw === '—' || raw === '-' || raw === '...';
-  const hasCipher = !!(e as unknown as { cipher?: unknown }).cipher;
-  return vazia && !hasCipher;
+  if (!vazia) return false;
+  // Docs antigos podem guardar a password noutro campo — nunca marcar como vazia.
+  for (const k of ['password', 'pass', 'secret', 'segredoPlain', 'valor']) {
+    const v = (o[k] as string | undefined)?.trim();
+    if (v && v !== '—' && v !== '-' && v !== '...') return false;
+  }
+  return !o.cipher;
 }
 export function listCofreVazias(): CofreEntrada[] {
   return listCofreCache().filter(isCofreVazia);
@@ -1379,17 +1385,6 @@ async function ensureMykolaDependencias(clienteId: string, clienteNome: string):
       { nome: 'Sandrine Reis', email: 'admin@estudo360.pt', role: 'admin' as const, status: 'ativo' as const },
     ]) {
       await upsertColaborador({ id: newColaboradorId(), nome: col.nome, email: col.email, role: col.role, status: col.status, initials: getColaboradorInitials(col.nome), createdAt: Date.now(), updatedAt: Date.now() });
-    }
-  }
-  // Cofre — entradas placeholder (o utilizador completa depois)
-  if (listCofreCache().filter(c=>c.clienteId===clienteId).length === 0) {
-    for (const a of [
-      { categoria: 'AT' as const, titulo: 'Portal das Finanças', username: '518123456' },
-      { categoria: 'SS' as const, titulo: 'Segurança Social Direta', username: '518123456' },
-      { categoria: 'OUTRO' as const, titulo: 'TOConline', username: 'mykola.vasyl' },
-      { categoria: 'OUTRO' as const, titulo: 'Homebanking BPI', username: 'mykola.vasyl' },
-    ] as const) {
-      await upsertCofre({ id: newCofreId(), titulo: a.titulo, categoria: a.categoria, clienteId, clienteNome, username: a.username, segredo: '', createdAt: Date.now(), updatedAt: Date.now() } as unknown as CofreEntrada);
     }
   }
 }
