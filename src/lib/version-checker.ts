@@ -57,6 +57,8 @@ export function initVersionChecker(config: VersionCheckConfig = {}) {
 }
 
 async function fetchAndCheckVersion() {
+  // Em dev não existe /version.json (o Vite devolve o index.html) — skip.
+  if (import.meta.env.DEV) return;
   try {
     // Append cache-bust query to force fresh fetch from CF
     const response = await fetch('/version.json?t=' + Date.now(), {
@@ -64,11 +66,13 @@ async function fetchAndCheckVersion() {
     });
 
     if (!response.ok) {
-      if (import.meta.env.DEV) console.warn('[Version Checker] Failed to fetch version:', response.status);
       return;
     }
 
-    const data = (await response.json()) as { buildId: string; timestamp: number };
+    // Pode vir HTML (proxy/CDN a devolver 200 com fallback) — nunca deixar rebentar o parse.
+    let data: { buildId?: string; timestamp?: number };
+    try { data = (await response.json()) as typeof data; } catch { return; }
+    if (!data.buildId) return;
     const currentVersion = data.buildId;
 
     if (lastVersion === null) {

@@ -532,8 +532,9 @@ function AppContent() {
           : [];
         if (list.length > 0 && listEmpresas().length === 0) {
           saveEmpresas(list);
-          setCurrentEmpresaId(list[0].id);
-          setCurrentEmpresaIdState(list[0].id);
+          // Carrega o estado completo da empresa importada (perfil + simuladores),
+          // senão o sidebar mostra "Cliente sem nome" até ao próximo reload.
+          selectEmpresa(list[0].id);
           saveToStorage('importFeito', true);
           setEmpresasRefresh((n) => n + 1);
         }
@@ -665,6 +666,14 @@ function AppContent() {
       if (currentEmpresaId) {
         const emp = merged.find(e => e.id === currentEmpresaId);
         if (emp) loadEmpresaIntoState(emp);
+        else if (merged.length > 0) {
+          // O cliente ativo já não existe (apagado noutro dispositivo) — limpa
+          // o estado ativo em vez de ficar preso em “Cliente sem nome”.
+          setCurrentEmpresaId(null);
+          setCurrentEmpresaIdState(null);
+          setClientProfile({ ...defaultProfile });
+          setPreviSaState(defaultPreviSaState());
+        }
       }
     })();
     return () => { cancelled = true; };
@@ -700,6 +709,14 @@ function AppContent() {
       if (empId) {
         const emp = list.find(e => e.id === empId);
         if (emp) loadEmpresaIntoState(emp);
+        else if (list.length > 0) {
+          // Ativo apagado noutro dispositivo — limpa o estado em vez de deixar
+          // a sidebar presa em “Cliente sem nome”.
+          setCurrentEmpresaId(null);
+          setCurrentEmpresaIdState(null);
+          setClientProfile({ ...defaultProfile });
+          setPreviSaState(defaultPreviSaState());
+        }
       }
     });
     return unsub;
