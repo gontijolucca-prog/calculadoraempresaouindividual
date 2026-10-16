@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import type { ClientProfile } from './ClientProfile';
 import type { OfficeSettings } from './lib/officeSettings';
-import GamaExportButton from './components/GamaExportButton';
 import { calcularProposta, type HonorariosConfig } from './lib/honorarios';
 
 interface Props {

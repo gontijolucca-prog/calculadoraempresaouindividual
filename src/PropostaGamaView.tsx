@@ -68,6 +68,7 @@ export default function PropostaGamaView({ office, honorarios, onGoToOfficeSetti
               office={office}
               honorarios={honorarios}
               cliente={cliente ? { nome: cliente.nome, nif: cliente.nif } : undefined}
+              onGoToOfficeSettings={onGoToOfficeSettings}
             />
           </div>
         </div>

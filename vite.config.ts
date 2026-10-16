@@ -94,6 +94,38 @@ function devChatProxy(): Plugin {
   };
 }
 
+// Dev-only: serve o /api/gama (geração de apresentações no Gamma) fora do
+// browser, como em produção quem serve é a Cloudflare Pages Function
+// (functions/api/gama.ts). A chave do gabinete vem no corpo do pedido.
+function devGamaProxy(): Plugin {
+  return {
+    name: 'dev-gama-proxy',
+    configureServer(server) {
+      server.middlewares.use('/api/gama', async (req, res) => {
+        if (req.method === 'OPTIONS') { res.statusCode = 204; res.setHeader('Access-Control-Allow-Origin', '*'); res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); res.end(); return; }
+        if (req.method !== 'POST') { res.statusCode = 405; res.end('{"error":"metodo"}'); return; }
+        try {
+          let body = ''; for await (const chunk of req) body += chunk;
+          const j = JSON.parse(body || '{}');
+          const key = String(j.key || '').trim();
+          if (!key) { res.statusCode = 400; res.end(JSON.stringify({ error: 'key_em_falta' })); return; }
+          const base = 'https://public-api.gamma.app/v0.2/generations';
+          const headers = { 'X-API-KEY': key, Authorization: `Bearer ${key}` };
+          let r: Response | null = null;
+          if (j.action === 'create') {
+            r = await fetch(base, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify({ inputText: String(j.inputText || ''), textMode: 'generate', format: 'presentation', cardOptions: { dimensions: '16x9' }, sharingOptions: { workspaceAccess: 'view' } }) });
+          } else if (j.action === 'status' && j.generationId) {
+            r = await fetch(`${base}/${encodeURIComponent(String(j.generationId))}`, { headers });
+          }
+          if (!r) { res.statusCode = 400; res.end(JSON.stringify({ error: 'acao_invalida' })); return; }
+          const text = await r.text();
+          res.statusCode = r.status; res.setHeader('Content-Type', 'application/json'); res.end(text);
+        } catch (e: any) { res.statusCode = 502; res.end(JSON.stringify({ error: 'proxy_dev', detail: String(e?.message || e) })); }
+      });
+    },
+  };
+}
+
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
   // Dynamically set the base path if provided by the environment (e.g., GitHub Actions),
@@ -102,7 +134,7 @@ export default defineConfig(({mode}) => {
 
   return {
     base: basePath,
-    plugins: [react(), tailwindcss(), vitePluginVersion(), devTocProxy(), devChatProxy()],
+    plugins: [react(), tailwindcss(), vitePluginVersion(), devTocProxy(), devChatProxy(), devGamaProxy()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

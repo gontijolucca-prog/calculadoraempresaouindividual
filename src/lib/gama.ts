@@ -1,7 +1,9 @@
 /**
- * Integração Gama — geração de apresentações via Gamma API v1 (public-api.gamma.app)
- * Docs: gamma-app/gamma-docs (endpoints create-generation / get-generation-status)
- * Fluxo async: POST /v0.2/generations -> {id} -> poll GET /v0.2/generations/:id até completed -> gammaUrl
+ * Integração Gama — geração de apresentações via Gamma API v1 (public-api.gamma.app).
+ * O browser fala com o proxy /api/gama (Cloudflare Pages Function em produção,
+ * middleware do vite em dev) porque a API do Gamma não devolve CORS e o CSP do
+ * app só permite connect-src 'self'. Fluxo async: create -> {id} -> poll status
+ * até completed -> gammaUrl.
  */
 
 export type GamaStatus = 'pending' | 'processing' | 'completed' | 'failed';
@@ -21,8 +23,7 @@ export interface GamaStatusResponse {
   error?: string;
 }
 
-const GAMMA_API_BASE = 'https://public-api.gamma.app';
-const GAMMA_CREATE_PATH = '/v0.2/generations';
+const GAMA_PROXY_PATH = '/api/gama';
 const POLL_INTERVAL_MS = 3000;
 const POLL_TIMEOUT_MS = 90000;
 
@@ -122,20 +123,10 @@ export function buildGamaPrompt(
 export async function createGamaPresentation(inputText: string, apiKeyExplicit?: string): Promise<{ generationId: string }> {
   const apiKey = resolveApiKey(apiKeyExplicit);
   if (!apiKey) throw new Error('Gama API key em falta. Configura em Definições do Escritório ou VITE_GAMMA_API_KEY.');
-  const res = await fetch(`${GAMMA_API_BASE}${GAMMA_CREATE_PATH}`, {
+  const res = await fetch(GAMA_PROXY_PATH, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-API-KEY': apiKey,
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      inputText,
-      textMode: 'generate',
-      format: 'presentation',
-      cardOptions: { dimensions: '16x9' },
-      sharingOptions: { workspaceAccess: 'view' },
-    }),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'create', inputText, key: apiKey }),
   });
   if (!res.ok) {
     const txt = await res.text().catch(()=> '');
@@ -150,11 +141,10 @@ export async function createGamaPresentation(inputText: string, apiKeyExplicit?:
 export async function getGamaGenerationStatus(generationId: string, apiKeyExplicit?: string): Promise<GamaStatusResponse> {
   const apiKey = resolveApiKey(apiKeyExplicit);
   if (!apiKey) throw new Error('Gama API key em falta');
-  const res = await fetch(`${GAMMA_API_BASE}${GAMMA_CREATE_PATH}/${encodeURIComponent(generationId)}`, {
-    headers: {
-      'X-API-KEY': apiKey,
-      'Authorization': `Bearer ${apiKey}`,
-    },
+  const res = await fetch(GAMA_PROXY_PATH, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'status', generationId, key: apiKey }),
   });
   if (!res.ok) {
     const txt = await res.text().catch(()=> '');
