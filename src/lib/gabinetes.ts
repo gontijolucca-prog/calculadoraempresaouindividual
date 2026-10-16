@@ -110,7 +110,6 @@ export async function createGabinete(nome: string, nif?: string): Promise<string
   const payload: GabineteMeta = {
     id,
     nome: nome.trim() || 'Novo Gabinete',
-    nif: nif?.trim() || undefined,
     ownerUid: u.uid,
     ownerEmail: email,
     createdAt: now,
@@ -120,6 +119,9 @@ export async function createGabinete(nome: string, nif?: string): Promise<string
     inviteEmails: [],
     invites: [],
   };
+  // NIF é opcional: campo ausente, nunca `undefined` (o setDoc rebenta com undefined)
+  const nifTrim = nif?.trim();
+  if (nifTrim) payload.nif = nifTrim;
   await setDoc(doc(db, 'gabinetes', id), payload as any);
   return id;
 }

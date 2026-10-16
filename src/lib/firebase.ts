@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache, persistentSingleTabManager, enableIndexedDbPersistence, getFirestore } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { getAuth, connectAuthEmulator } from 'firebase/auth';
+import { connectFirestoreEmulator } from 'firebase/firestore';
 
 // ⚠ SECURITY: Move to env vars in production.
 // These are Firebase Web API keys (not secrets), but should still be
@@ -33,6 +34,22 @@ try {
 
 export const db = _db;
 export const auth = getAuth(app);
+
+// Emuladores locais — só em `vite dev` com VITE_FIREBASE_EMULATORS=1 (nunca em builds).
+// O curto-circuito por `window` mantém isto seguro em Node (testes) — em runtime
+// o Vite dev injeta `import.meta.env` no topo de cada módulo servido.
+const EMULADORES_ATIVOS = typeof window !== 'undefined'
+  && import.meta.env.DEV
+  && import.meta.env.VITE_FIREBASE_EMULATORS === '1';
+if (EMULADORES_ATIVOS) {
+  try {
+    connectFirestoreEmulator(db, '127.0.0.1', 8180);
+    connectAuthEmulator(auth, 'http://127.0.0.1:9199', { disableWarnings: true });
+    console.info('[firebase] emuladores locais ligados (auth 9199 / firestore 8180)');
+  } catch (e) {
+    console.warn('[firebase] falha ao ligar emuladores:', e);
+  }
+}
 
 // Helper para UI: estado da ligação live
 export function onFirestoreError(cb: (err: unknown) => void) {

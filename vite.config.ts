@@ -7,6 +7,22 @@ import {homedir} from 'os';
 import {join} from 'path';
 import {vitePluginVersion} from './vite-plugin-version';
 
+// Dev-only: relaxa o CSP do index.html para a app poder falar com o
+// Firebase Emulator Suite local (auth 9199 / firestore 8180). Em produção
+// o index.html fica intocado.
+function devEmulatorCsp(): Plugin {
+  return {
+    name: 'dev-emulator-csp',
+    apply: 'serve',
+    transformIndexHtml(html) {
+      return html.replace(
+        "connect-src 'self'",
+        "connect-src 'self' http://127.0.0.1:9199 http://127.0.0.1:8180",
+      );
+    },
+  };
+}
+
 // Dev-only: serve o /api/chat (AI Contabilista) com a chave do OpenCode Go local.
 // Em produção quem serve é a Cloudflare Pages Function (functions/api/chat.ts).
 // A chave é lida do auth.json do opencode — nunca vai para o cliente.
@@ -134,7 +150,7 @@ export default defineConfig(({mode}) => {
 
   return {
     base: basePath,
-    plugins: [react(), tailwindcss(), vitePluginVersion(), devTocProxy(), devChatProxy(), devGamaProxy()],
+    plugins: [react(), tailwindcss(), vitePluginVersion(), devTocProxy(), devChatProxy(), devGamaProxy(), devEmulatorCsp()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

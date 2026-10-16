@@ -23,6 +23,20 @@ export type AuditEvent = {
 function nid(): string { return Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-4); }
 function uid(): string | null { return auth.currentUser?.uid ?? null; }
 
+/** Remove campos `undefined` — o setDoc do Firestore rejeita-os com throw síncrono. */
+function semUndefined<T>(v: T): T {
+  if (Array.isArray(v)) return v.map(semUndefined) as unknown as T;
+  if (v && typeof v === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
+      if (x === undefined) continue;
+      out[k] = semUndefined(x);
+    }
+    return out as T;
+  }
+  return v;
+}
+
 function queueLocal(ev: AuditEvent): void {
   try {
     const q = loadFromStorage<AuditEvent[]>(QUEUE_KEY, []);
@@ -33,21 +47,23 @@ function queueLocal(ev: AuditEvent): void {
 
 /** Log fire-and-forget. Nunca lança. */
 export function logAudit(type: string, detail?: string, payload?: unknown, empresaId?: string): void {
-  const u = uid();
-  const ev: AuditEvent = {
-    id: nid(),
-    ts: Date.now(),
-    uid: u ?? 'anon',
-    email: auth.currentUser?.email ?? undefined,
-    type,
-    detail: detail?.slice(0, 500),
-    empresaId,
-    payload,
-  };
-  queueLocal(ev);
-  if (!u) return;
-  // best-effort Firestore
-  setDoc(doc(db, COL, ev.id), ev as any).catch(()=>{});
+  try {
+    const u = uid();
+    const ev: AuditEvent = {
+      id: nid(),
+      ts: Date.now(),
+      uid: u ?? 'anon',
+      email: auth.currentUser?.email ?? undefined,
+      type,
+      detail: detail?.slice(0, 500),
+      empresaId,
+      payload,
+    };
+    queueLocal(ev);
+    if (!u) return;
+    // best-effort Firestore — o throw síncrono de campos undefined também é apanhado
+    try { setDoc(doc(db, COL, ev.id), semUndefined(ev) as any).catch(()=>{}); } catch {}
+  } catch {}
 }
 
 /** Tenta reenviar queue local (chamado no arranque e antes de unload). */
@@ -59,6 +75,6 @@ export async function flushAuditQueue(): Promise<void> {
   const pending = q.filter(e => e.uid === u || e.uid === 'anon');
   for (const ev of pending.slice(-80)) {
     const toSend = ev.uid === 'anon' ? { ...ev, uid: u, email: auth.currentUser?.email ?? undefined } : ev;
-    try { await setDoc(doc(db, COL, toSend.id), toSend as any); } catch {}
+    try { await setDoc(doc(db, COL, toSend.id), semUndefined(toSend) as any); } catch {}
   }
 }
