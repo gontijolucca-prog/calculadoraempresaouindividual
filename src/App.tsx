@@ -380,7 +380,7 @@ function AppContent() {
   });
   const [prevView, setPrevView] = useState<ViewType>('profile');
   // Gabinete: tab ativa dentro do dropdown da sidebar
-  const VALID_GAB_TABS = new Set(['dashboard','mapa-controlo','mapa-rh','visao-geral','equipa','tarefas','cofre','gallery']);
+  const VALID_GAB_TABS = new Set(['dashboard','mapa-controlo','mapa-rh','visao-geral','equipa','tarefas','cofre','gallery','agenda','obrigacoes','lixeira']);
   const [gabineteTab, setGabineteTab] = useState<string>(() => {
     const raw = loadFromStorage<string>('gabineteTab', 'dashboard') || 'dashboard';
     return VALID_GAB_TABS.has(raw) ? raw : 'gallery';

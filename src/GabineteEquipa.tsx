@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Users, Mail, Trash2, Pencil, X, Plus, Search, CheckCircle2, Clock, Shield } from 'lucide-react';
 import { useGabineteColaboradores, useGabineteClientes } from './lib/useGabinete';
+import { filterActive } from './lib/gabineteSelectors';
 import { upsertColaborador, deleteColaborador, newColaboradorId, getColaboradorInitials, upsertCliente, type Colaborador, type ColaboradorRole } from './lib/gabinete';
 
 const roleLabel: Record<ColaboradorRole, string> = {
@@ -16,7 +17,8 @@ const roleStyle: Record<ColaboradorRole, string> = {
 
 export default function GabineteEquipa() {
   const colaboradores = useGabineteColaboradores();
-  const clientes = useGabineteClientes();
+  const clientesAll = useGabineteClientes();
+  const clientes = useMemo(() => filterActive(clientesAll), [clientesAll]);
   const [q, setQ] = useState('');
   const [filtroRole, setFiltroRole] = useState<'todos' | ColaboradorRole>('todos');
   const [showForm, setShowForm] = useState(false);

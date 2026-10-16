@@ -11,6 +11,8 @@ import {
 import { db, auth } from './firebase';
 import { loadFromStorage, saveToStorage } from './storage';
 import { logAudit } from './audit';
+import { beginWrite, endWrite, enqueueOp, listOps, dropOp, bumpTries, saveOps, clearSyncError } from './sync';
+import { tarefaFromAssunto, type AssuntoLegacy } from './gabineteSelectors';
 import type { CofreCipher } from './cofreCrypto';
 import { CALENDARIO_FISCAL_2026 } from './calendarioFiscal2026';
 
@@ -128,6 +130,45 @@ async function safeDeleteDoc(path: string, id: string): Promise<void> {
   }
 }
 
+/**
+ * Escrita local-first: dispara para Firestore em background e devolve já.
+ * Se o servidor rejeitar/falhar, a operação fica na outbox com repetição.
+ */
+export function queueSet(path: string, id: string, data: unknown): void {
+  beginWrite();
+  safeSetDoc(path, id, data)
+    .then(() => endWrite())
+    .catch((e) => { endWrite(e); enqueueOp({ kind: 'set', path, docId: id, data }); });
+}
+export function queueRemove(path: string, id: string): void {
+  beginWrite();
+  safeDeleteDoc(path, id)
+    .then(() => endWrite())
+    .catch((e) => { endWrite(e); enqueueOp({ kind: 'delete', path, docId: id }); });
+}
+
+/** Repete as operações pendentes da outbox. Devolve quantas ficaram resolvidas. */
+export async function flushOutbox(): Promise<number> {
+  const ops = listOps();
+  if (ops.length === 0) { clearSyncError(); return 0; }
+  let remaining = ops;
+  let done = 0;
+  for (const op of ops) {
+    try {
+      if (op.kind === 'set') await safeSetDoc(op.path, op.docId, op.data);
+      else await safeDeleteDoc(op.path, op.docId);
+      remaining = dropOp(remaining, op.id);
+      done++;
+    } catch (e) {
+      remaining = bumpTries(remaining, op.id);
+      endWrite(e);
+    }
+  }
+  saveOps(remaining);
+  if (remaining.length === 0) clearSyncError();
+  return done;
+}
+
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
 // ─── Contactos de Quadros ──────────────────────────────────────────────────
@@ -192,6 +233,7 @@ export interface GabineteCliente {
   createdAt: number;
   updatedAt: number;
   createdBy?: string;
+  deletedAt?: number;
 }
 
 // ——— Visão Geral — novas coleções por cliente ———
@@ -207,24 +249,19 @@ export interface ContactoGabinete {
   isGerente?: boolean;
   createdAt: number;
   updatedAt: number;
-}
-export interface AssuntoGabinete {
-  id: string;
-  clienteId: string;
-  clienteNome?: string;
-  titulo: string;
-  estado: 'em_curso' | 'aguard_cliente' | 'pendente' | 'concluido';
-  updatedAt: number;
-  descricao?: string;
-  createdAt: number;
+  deletedAt?: number;
 }
 export interface AlertaGabinete {
   id: string;
   clienteId: string;
   clienteNome?: string;
   texto: string;
+  vencimento?: number; // ms — prazo do alerta
+  estado?: 'aberto' | 'resolvido'; // ausente em docs antigos = aberto
+  resolvidoEm?: number;
   createdAt: number;
   updatedAt: number;
+  deletedAt?: number;
 }
 export interface OcorrenciaGabinete {
   id: string;
@@ -235,6 +272,7 @@ export interface OcorrenciaGabinete {
   autorInitials: string;
   descricao: string;
   createdAt: number;
+  deletedAt?: number;
 }
 
 // Tarefa / Obrigação
@@ -263,6 +301,7 @@ export interface Tarefa {
   arquivada?: boolean;
   // compat: campo antigo
   tags?: string[];
+  deletedAt?: number;
 }
 
 // Obrigação fiscal — catálogo + instância por cliente/periodo
@@ -552,6 +591,7 @@ export interface Obrigacao {
   origem?: 'cliente' | 'calendario_fiscal';
   createdAt: number;
   updatedAt: number;
+  deletedAt?: number;
 }
 
 // Cofre — zero-knowledge
@@ -607,6 +647,7 @@ export interface GabineteDocumento {
   versao?: number;
   dataUpload: number;
   uploadedBy?: string;
+  deletedAt?: number;
 }
 
 // Histórico de Conversação — Fase 1
@@ -651,16 +692,20 @@ export async function upsertCliente(c: GabineteCliente): Promise<GabineteCliente
   const next = stamp({ ...c });
   if (idx >= 0) list[idx] = next; else list.push(next);
   saveClientesCache(list);
-  try { await safeSetDoc(colPath('clientes'), c.id, next); } catch { /* cache já tem */ }
+  queueSet(colPath('clientes'), c.id, next);
   logAudit(idx >= 0 ? 'edit_cliente' : 'create_cliente', c.nome || c.id, { nif: (c.nif || '').slice(0, 9) }, c.id);
   return next;
 }
 export async function deleteCliente(id: string): Promise<void> {
   const alvo = listClientesCache().find(x => x.id === id);
   auditDelete('delete_cliente', id, alvo && { nome: alvo.nome, nif: alvo.nif }, id);
-  const list = listClientesCache().filter(x => x.id !== id);
+  if (!alvo) return;
+  const next = { ...alvo, deletedAt: Date.now(), updatedAt: Date.now() };
+  const list = listClientesCache();
+  const idx = list.findIndex(x => x.id === id);
+  if (idx >= 0) list[idx] = next;
   saveClientesCache(list);
-  try { await safeDeleteDoc(colPath('clientes'), id); } catch {}
+  queueSet(colPath('clientes'), id, next);
 }
 export function newClienteId(): string { return newId('cli'); }
 
@@ -679,16 +724,20 @@ export async function upsertTarefa(t: Tarefa): Promise<Tarefa> {
   }
   if (idx >= 0) list[idx] = next; else list.unshift(next);
   saveTarefasCache(list);
-  try { await safeSetDoc(colPath('tarefas'), t.id, next); } catch {}
+  queueSet(colPath('tarefas'), t.id, next);
   logAudit('save_tarefa', t.titulo?.slice(0, 80) || t.id, { estado: (next as Tarefa).estado }, t.clienteId);
   return next;
 }
 export async function deleteTarefa(id: string): Promise<void> {
   const alvo = listTarefasCache().find(x => x.id === id);
   auditDelete('delete_tarefa', id, alvo && { titulo: alvo.titulo }, alvo?.clienteId);
-  const list = listTarefasCache().filter(x => x.id !== id);
+  if (!alvo) return;
+  const next = { ...alvo, deletedAt: Date.now(), updatedAt: Date.now() };
+  const list = listTarefasCache();
+  const idx = list.findIndex(x => x.id === id);
+  if (idx >= 0) list[idx] = next;
   saveTarefasCache(list);
-  try { await safeDeleteDoc(colPath('tarefas'), id); } catch {}
+  queueSet(colPath('tarefas'), id, next);
 }
 export async function marcarTarefaFeita(id: string, done = true): Promise<void> {
   const list = listTarefasCache();
@@ -707,16 +756,20 @@ export async function upsertObrigacao(o: Obrigacao): Promise<Obrigacao> {
   const next = stamp({ ...o });
   if (idx >= 0) list[idx] = next; else list.push(next);
   saveObrigacoesCache(list);
-  try { await safeSetDoc(colPath('obrigacoes'), o.id, next); } catch {}
+  queueSet(colPath('obrigacoes'), o.id, next);
   logAudit('save_obrigacao', o.titulo?.slice(0, 80) || o.id, { estado: (next as Obrigacao).estado }, o.clienteId);
   return next;
 }
 export async function deleteObrigacao(id: string): Promise<void> {
   const alvo = listObrigacoesCache().find(x => x.id === id);
   auditDelete('delete_obrigacao', id, alvo && { titulo: alvo.titulo }, alvo?.clienteId);
-  const list = listObrigacoesCache().filter(x => x.id !== id);
+  if (!alvo) return;
+  const next = { ...alvo, deletedAt: Date.now(), updatedAt: Date.now() };
+  const list = listObrigacoesCache();
+  const idx = list.findIndex(x => x.id === id);
+  if (idx >= 0) list[idx] = next;
   saveObrigacoesCache(list);
-  try { await safeDeleteDoc(colPath('obrigacoes'), id); } catch {}
+  queueSet(colPath('obrigacoes'), id, next);
 }
 export function newObrigacaoId(): string { return newId('obr'); }
 
@@ -798,7 +851,7 @@ export async function upsertCofre(e: CofreEntrada): Promise<CofreEntrada> {
   const next = stamp({ ...toSave });
   if (idx >= 0) list[idx] = next; else list.unshift(next);
   saveCofreCache(list);
-  try { await safeSetDoc(colPath('cofre'), e.id, next); } catch {}
+  queueSet(colPath('cofre'), e.id, next);
   logAudit(idx >= 0 ? 'edit_cofre' : 'create_cofre', e.titulo || e.id, { categoria: (next as CofreEntrada).categoria }, e.clienteId);
   return next;
 }
@@ -807,7 +860,7 @@ export async function deleteCofre(id: string): Promise<void> {
   auditDelete('delete_cofre', id, alvo && { titulo: alvo.titulo, categoria: alvo.categoria }, alvo?.clienteId);
   const list = listCofreCache().filter(x => x.id !== id);
   saveCofreCache(list);
-  try { await safeDeleteDoc(colPath('cofre'), id); } catch {}
+  queueRemove(colPath('cofre'), id);
 }
 export async function registarVistaCofre(id: string): Promise<void> {
   const list = listCofreCache();
@@ -824,7 +877,7 @@ export async function registarVistaCofre(id: string): Promise<void> {
   const idx = list.findIndex(x => x.id === id);
   list[idx] = next;
   saveCofreCache(list);
-  try { await safeSetDoc(colPath('cofre'), id, next); } catch {}
+  queueSet(colPath('cofre'), id, next);
 }
 export function newCofreId(): string { return newId('cof'); }
 
@@ -868,7 +921,7 @@ export async function upsertColaborador(c: Colaborador): Promise<void> {
   const withTs = { ...c, updatedAt: now, updatedBy: actor(), initials: c.initials || getColaboradorInitials(c.nome), status: c.status || 'ativo' as const };
   if (idx >= 0) list[idx] = withTs as Colaborador; else list.push(withTs as Colaborador);
   saveColaboradoresCache(list);
-  try { await safeSetDoc(colPath('colaboradores'), c.id, withTs); } catch {}
+  queueSet(colPath('colaboradores'), c.id, withTs);
   logAudit('save_colaborador', c.nome || c.id);
 }
 export async function deleteColaborador(id: string): Promise<void> {
@@ -876,7 +929,7 @@ export async function deleteColaborador(id: string): Promise<void> {
   auditDelete('delete_colaborador', id, alvo && { nome: alvo.nome });
   const list = listColaboradoresCache().filter(x => x.id !== id);
   saveColaboradoresCache(list);
-  try { await safeDeleteDoc(colPath('colaboradores'), id); } catch {}
+  queueRemove(colPath('colaboradores'), id);
 }
 export function newColaboradorId(): string { return newId('col'); }
 export function getColaboradorInitials(nome: string): string {
@@ -895,7 +948,7 @@ export async function linkColaboradorPorEmail(email: string, uid: string): Promi
       c.linkedUid = uid;
       c.updatedAt = Date.now();
       changed = true;
-      try { await safeSetDoc(colPath('colaboradores'), c.id, c); } catch {}
+      queueSet(colPath('colaboradores'), c.id, c);
     }
   }
   if (changed) saveColaboradoresCache(list);
@@ -910,7 +963,7 @@ export async function upsertConversa(c: Conversa): Promise<Conversa> {
   const next = stamp({ ...c });
   if (idx >= 0) list[idx] = next; else list.unshift(next);
   saveConversasCache(list);
-  try { await safeSetDoc(colPath('conversas'), c.id, next); } catch {}
+  queueSet(colPath('conversas'), c.id, next);
   logAudit('save_conversa', c.titulo?.slice(0, 80) || c.id, undefined, c.clienteId);
   return next;
 }
@@ -919,7 +972,7 @@ export async function deleteConversa(id: string): Promise<void> {
   auditDelete('delete_conversa', id, alvo && { titulo: alvo.titulo }, alvo?.clienteId);
   const list = listConversasCache().filter(x => x.id !== id);
   saveConversasCache(list);
-  try { await safeDeleteDoc(colPath('conversas'), id); } catch {}
+  queueRemove(colPath('conversas'), id);
 }
 export function newConversaId(): string { return newId('cnv'); }
 
@@ -952,15 +1005,15 @@ export interface EnvioComunicacao {
 export function listModelosCache(): ModeloComunicacao[] { return readCache<ModeloComunicacao>('modelos', []); }
 export function saveModelosCache(list: ModeloComunicacao[]): void { writeCache('modelos', list); }
 export async function upsertModelo(m: ModeloComunicacao): Promise<ModeloComunicacao> {
-  const list = listModelosCache(); const idx=list.findIndex(x=>x.id===m.id); const next=stamp({...m}); if(idx>=0) list[idx]=next; else list.unshift(next); saveModelosCache(list); try{ await safeSetDoc(colPath('modelos'), m.id, next);}catch{} logAudit('save_modelo', m.titulo?.slice(0,80) || m.id);
+  const list = listModelosCache(); const idx=list.findIndex(x=>x.id===m.id); const next=stamp({...m}); if(idx>=0) list[idx]=next; else list.unshift(next); saveModelosCache(list); queueSet(colPath('modelos'), m.id, next); logAudit('save_modelo', m.titulo?.slice(0,80) || m.id);
   return next;
 }
-export async function deleteModelo(id:string):Promise<void>{ const alvo=listModelosCache().find(x=>(x as {id:string}).id===id); auditDelete('delete_modelo', id, alvo && { titulo: (alvo as {titulo?:string;nome?:string}).titulo ?? (alvo as {titulo?:string;nome?:string}).nome }); const list=listModelosCache().filter(x=>x.id!==id); saveModelosCache(list); try{ await safeDeleteDoc(colPath('modelos'), id);}catch{} }
+export async function deleteModelo(id:string):Promise<void>{ const alvo=listModelosCache().find(x=>(x as {id:string}).id===id); auditDelete('delete_modelo', id, alvo && { titulo: (alvo as {titulo?:string;nome?:string}).titulo ?? (alvo as {titulo?:string;nome?:string}).nome }); const list=listModelosCache().filter(x=>x.id!==id); saveModelosCache(list); queueRemove(colPath('modelos'), id); }
 export function newModeloId():string{ return newId('mdl'); }
 export function listEnviosCache(): EnvioComunicacao[] { return readCache<EnvioComunicacao>('envios', []); }
 export function saveEnviosCache(list: EnvioComunicacao[]): void { writeCache('envios', list); }
 export async function upsertEnvio(e: EnvioComunicacao): Promise<EnvioComunicacao> {
-  const list=listEnviosCache(); const idx=list.findIndex(x=>x.id===e.id); const ee=stamp({...e}); if(idx>=0) list[idx]=ee; else list.unshift(ee); saveEnviosCache(list); try{ await safeSetDoc(colPath('envios'), e.id, ee);}catch{} logAudit('save_envio', e.assunto?.slice(0,80) || e.id, undefined, e.clienteId); return ee;
+  const list=listEnviosCache(); const idx=list.findIndex(x=>x.id===e.id); const ee=stamp({...e}); if(idx>=0) list[idx]=ee; else list.unshift(ee); saveEnviosCache(list); queueSet(colPath('envios'), e.id, ee); logAudit('save_envio', e.assunto?.slice(0,80) || e.id, undefined, e.clienteId); return ee;
 }
 export function newEnvioId():string{ return newId('env'); }
 
@@ -982,9 +1035,9 @@ export interface Tempo {
 export function listTemposCache(): Tempo[] { return readCache<Tempo>('tempos', []); }
 export function saveTemposCache(list: Tempo[]): void { writeCache('tempos', list); }
 export async function upsertTempo(t: Tempo): Promise<Tempo> {
-  const list=listTemposCache(); const idx=list.findIndex(x=>x.id===t.id); const next=stamp({...t}); if(idx>=0) list[idx]=next; else list.unshift(next); saveTemposCache(list); try{ await safeSetDoc(colPath('tempos'), t.id, next);}catch{} logAudit('save_tempo', t.descricao?.slice(0,80) || t.id, undefined, t.clienteId); return next;
+  const list=listTemposCache(); const idx=list.findIndex(x=>x.id===t.id); const next=stamp({...t}); if(idx>=0) list[idx]=next; else list.unshift(next); saveTemposCache(list); queueSet(colPath('tempos'), t.id, next); logAudit('save_tempo', t.descricao?.slice(0,80) || t.id, undefined, t.clienteId); return next;
 }
-export async function deleteTempo(id:string):Promise<void>{ const alvo=listTemposCache().find(x=>(x as {id:string}).id===id); auditDelete('delete_tempo', id, alvo && { titulo: (alvo as {titulo?:string;nome?:string}).titulo ?? (alvo as {titulo?:string;nome?:string}).nome }); const list=listTemposCache().filter(x=>x.id!==id); saveTemposCache(list); try{ await safeDeleteDoc(colPath('tempos'), id);}catch{} }
+export async function deleteTempo(id:string):Promise<void>{ const alvo=listTemposCache().find(x=>(x as {id:string}).id===id); auditDelete('delete_tempo', id, alvo && { titulo: (alvo as {titulo?:string;nome?:string}).titulo ?? (alvo as {titulo?:string;nome?:string}).nome }); const list=listTemposCache().filter(x=>x.id!==id); saveTemposCache(list); queueRemove(colPath('tempos'), id); }
 export function newTempoId():string{ return newId('tmp'); }
 
 // ─── Actas & Guias — Fase 4 ──────────────────────────────────────────────────
@@ -1002,50 +1055,82 @@ export interface Acta {
 export function listActasCache(): Acta[] { return readCache<Acta>('actas', []); }
 export function saveActasCache(list: Acta[]): void { writeCache('actas', list); }
 export async function upsertActa(a: Acta): Promise<Acta> {
-  const list=listActasCache(); const idx=list.findIndex(x=>x.id===a.id); const next=stamp({...a}); if(idx>=0) list[idx]=next; else list.unshift(next); saveActasCache(list); try{ await safeSetDoc(colPath('actas'), a.id, next);}catch{} logAudit('save_acta', a.titulo?.slice(0,80) || a.id, undefined, a.clienteId); return next;
+  const list=listActasCache(); const idx=list.findIndex(x=>x.id===a.id); const next=stamp({...a}); if(idx>=0) list[idx]=next; else list.unshift(next); saveActasCache(list); queueSet(colPath('actas'), a.id, next); logAudit('save_acta', a.titulo?.slice(0,80) || a.id, undefined, a.clienteId); return next;
 }
-export async function deleteActa(id:string):Promise<void>{ const alvo=listActasCache().find(x=>(x as {id:string}).id===id); auditDelete('delete_acta', id, alvo && { titulo: (alvo as {titulo?:string;nome?:string}).titulo ?? (alvo as {titulo?:string;nome?:string}).nome }); const list=listActasCache().filter(x=>x.id!==id); saveActasCache(list); try{ await safeDeleteDoc(colPath('actas'), id);}catch{} }
+export async function deleteActa(id:string):Promise<void>{ const alvo=listActasCache().find(x=>(x as {id:string}).id===id); auditDelete('delete_acta', id, alvo && { titulo: (alvo as {titulo?:string;nome?:string}).titulo ?? (alvo as {titulo?:string;nome?:string}).nome }); const list=listActasCache().filter(x=>x.id!==id); saveActasCache(list); queueRemove(colPath('actas'), id); }
 export function newActaId():string{ return newId('act'); }
 
-// ——— CRUD — Visão Geral: Contactos/Assuntos/Alertas/Ocorrências/Documentos ———
+// ——— CRUD — Visão Geral: Contactos/Alertas/Ocorrências/Documentos ———
 export function listContactosCache(): ContactoGabinete[] { return readCache<ContactoGabinete>('contactosGeral', []); }
 export function saveContactosCache(list: ContactoGabinete[]): void { writeCache('contactosGeral', list); }
 export async function upsertContactoGabinete(c: ContactoGabinete): Promise<ContactoGabinete> {
-  const list = listContactosCache(); const idx = list.findIndex(x=>x.id===c.id); const next=stamp({...c}); if(idx>=0) list[idx]=next; else list.unshift(next); saveContactosCache(list); try{ await safeSetDoc(colPath('contactosGeral'), c.id, next);}catch{} logAudit('save_contacto', c.nome?.slice(0,80) || c.id, undefined, c.clienteId); return next;
+  const list = listContactosCache(); const idx = list.findIndex(x=>x.id===c.id); const next=stamp({...c}); if(idx>=0) list[idx]=next; else list.unshift(next); saveContactosCache(list); queueSet(colPath('contactosGeral'), c.id, next); logAudit('save_contacto', c.nome?.slice(0,80) || c.id, undefined, c.clienteId); return next;
 }
-export async function deleteContactoGabinete(id:string):Promise<void>{ const alvo=listContactosCache().find(x=>(x as {id:string}).id===id); auditDelete('delete_contacto', id, alvo && { titulo: (alvo as {titulo?:string;nome?:string}).titulo ?? (alvo as {titulo?:string;nome?:string}).nome }); const list=listContactosCache().filter(x=>x.id!==id); saveContactosCache(list); try{ await safeDeleteDoc(colPath('contactosGeral'), id);}catch{} }
+export async function deleteContactoGabinete(id: string): Promise<void> {
+  const alvo = listContactosCache().find(x => x.id === id);
+  auditDelete('delete_contacto', id, alvo && { nome: alvo.nome }, alvo?.clienteId);
+  if (!alvo) return;
+  const next = { ...alvo, deletedAt: Date.now(), updatedAt: Date.now() };
+  const list = listContactosCache();
+  const idx = list.findIndex(x => x.id === id);
+  if (idx >= 0) list[idx] = next;
+  saveContactosCache(list);
+  queueSet(colPath('contactosGeral'), id, next);
+}
 export function newContactoGabineteId():string{ return newId('cgc'); }
-
-export function listAssuntosCache(): AssuntoGabinete[] { return readCache<AssuntoGabinete>('assuntosGeral', []); }
-export function saveAssuntosCache(list: AssuntoGabinete[]): void { writeCache('assuntosGeral', list); }
-export async function upsertAssuntoGabinete(a: AssuntoGabinete): Promise<AssuntoGabinete> {
-  const list = listAssuntosCache(); const idx=list.findIndex(x=>x.id===a.id); const next=stamp({...a}); if(idx>=0) list[idx]=next; else list.unshift(next); saveAssuntosCache(list); try{ await safeSetDoc(colPath('assuntosGeral'), a.id, next);}catch{} logAudit('save_assunto', a.titulo?.slice(0,80) || a.id, undefined, a.clienteId); return next;
-}
-export async function deleteAssuntoGabinete(id:string):Promise<void>{ const alvo=listAssuntosCache().find(x=>(x as {id:string}).id===id); auditDelete('delete_assunto', id, alvo && { titulo: (alvo as {titulo?:string;nome?:string}).titulo ?? (alvo as {titulo?:string;nome?:string}).nome }); const list=listAssuntosCache().filter(x=>x.id!==id); saveAssuntosCache(list); try{ await safeDeleteDoc(colPath('assuntosGeral'), id);}catch{} }
-export function newAssuntoGabineteId():string{ return newId('ass'); }
 
 export function listAlertasCache(): AlertaGabinete[] { return readCache<AlertaGabinete>('alertasGeral', []); }
 export function saveAlertasCache(list: AlertaGabinete[]): void { writeCache('alertasGeral', list); }
 export async function upsertAlertaGabinete(a: AlertaGabinete): Promise<AlertaGabinete> {
-  const list=listAlertasCache(); const idx=list.findIndex(x=>x.id===a.id); const next=stamp({...a}); if(idx>=0) list[idx]=next; else list.unshift(next); saveAlertasCache(list); try{ await safeSetDoc(colPath('alertasGeral'), a.id, next);}catch{} logAudit('save_alerta', a.texto?.slice(0,80) || a.id, undefined, a.clienteId); return next;
+  const list=listAlertasCache(); const idx=list.findIndex(x=>x.id===a.id); const next=stamp({...a}); if(idx>=0) list[idx]=next; else list.unshift(next); saveAlertasCache(list); queueSet(colPath('alertasGeral'), a.id, next); logAudit('save_alerta', a.texto?.slice(0,80) || a.id, undefined, a.clienteId); return next;
 }
-export async function deleteAlertaGabinete(id:string):Promise<void>{ const alvo=listAlertasCache().find(x=>(x as {id:string}).id===id); auditDelete('delete_alerta', id, alvo && { titulo: (alvo as {titulo?:string;nome?:string}).titulo ?? (alvo as {titulo?:string;nome?:string}).nome }); const list=listAlertasCache().filter(x=>x.id!==id); saveAlertasCache(list); try{ await safeDeleteDoc(colPath('alertasGeral'), id);}catch{} }
+export async function deleteAlertaGabinete(id: string): Promise<void> {
+  const alvo = listAlertasCache().find(x => x.id === id);
+  auditDelete('delete_alerta', id, alvo && { texto: alvo.texto }, alvo?.clienteId);
+  if (!alvo) return;
+  const next = { ...alvo, deletedAt: Date.now(), updatedAt: Date.now() };
+  const list = listAlertasCache();
+  const idx = list.findIndex(x => x.id === id);
+  if (idx >= 0) list[idx] = next;
+  saveAlertasCache(list);
+  queueSet(colPath('alertasGeral'), id, next);
+}
 export function newAlertaGabineteId():string{ return newId('alt'); }
 
 export function listOcorrenciasCache(): OcorrenciaGabinete[] { return readCache<OcorrenciaGabinete>('ocorrencias', []); }
 export function saveOcorrenciasCache(list: OcorrenciaGabinete[]): void { writeCache('ocorrencias', list); }
 export async function upsertOcorrencia(o: OcorrenciaGabinete): Promise<OcorrenciaGabinete> {
-  const list=listOcorrenciasCache(); const idx=list.findIndex(x=>x.id===o.id); const oo=stamp({...o}); if(idx>=0) list[idx]=oo; else list.unshift(oo); saveOcorrenciasCache(list); try{ await safeSetDoc(colPath('ocorrencias'), o.id, oo);}catch{} logAudit('save_ocorrencia', o.descricao?.slice(0,80) || o.id, undefined, o.clienteId); return oo;
+  const list=listOcorrenciasCache(); const idx=list.findIndex(x=>x.id===o.id); const oo=stamp({...o}); if(idx>=0) list[idx]=oo; else list.unshift(oo); saveOcorrenciasCache(list); queueSet(colPath('ocorrencias'), o.id, oo); logAudit('save_ocorrencia', o.descricao?.slice(0,80) || o.id, undefined, o.clienteId); return oo;
 }
-export async function deleteOcorrencia(id:string):Promise<void>{ const alvo=listOcorrenciasCache().find(x=>(x as {id:string}).id===id); auditDelete('delete_ocorrencia', id, alvo && { titulo: (alvo as {titulo?:string;nome?:string}).titulo ?? (alvo as {titulo?:string;nome?:string}).nome }); const list=listOcorrenciasCache().filter(x=>x.id!==id); saveOcorrenciasCache(list); try{ await safeDeleteDoc(colPath('ocorrencias'), id);}catch{} }
+export async function deleteOcorrencia(id: string): Promise<void> {
+  const alvo = listOcorrenciasCache().find(x => x.id === id);
+  auditDelete('delete_ocorrencia', id, alvo && { descricao: alvo.descricao }, alvo?.clienteId);
+  if (!alvo) return;
+  const next = { ...alvo, deletedAt: Date.now() };
+  const list = listOcorrenciasCache();
+  const idx = list.findIndex(x => x.id === id);
+  if (idx >= 0) list[idx] = next;
+  saveOcorrenciasCache(list);
+  queueSet(colPath('ocorrencias'), id, next);
+}
 export function newOcorrenciaId():string{ return newId('oco'); }
 
 export function listDocumentosGeralCache(): GabineteDocumento[] { return readCache<GabineteDocumento>('documentos', []); }
 export function saveDocumentosGeralCache(list: GabineteDocumento[]): void { writeCache('documentos', list); }
 export async function upsertDocumentoGeral(d: GabineteDocumento): Promise<GabineteDocumento> {
-  const list=listDocumentosGeralCache(); const idx=list.findIndex(x=>x.id===d.id); const dd=stamp({...d}); if(idx>=0) list[idx]=dd; else list.unshift(dd); saveDocumentosGeralCache(list); try{ await safeSetDoc(colPath('documentos'), d.id, dd as unknown as Record<string,unknown>);}catch{} logAudit('save_documento', d.nome?.slice(0,80) || d.id, undefined, d.clienteId); return dd;
+  const list=listDocumentosGeralCache(); const idx=list.findIndex(x=>x.id===d.id); const dd=stamp({...d}); if(idx>=0) list[idx]=dd; else list.unshift(dd); saveDocumentosGeralCache(list); queueSet(colPath('documentos'), d.id, dd as unknown as Record<string,unknown>); logAudit('save_documento', d.nome?.slice(0,80) || d.id, undefined, d.clienteId); return dd;
 }
-export async function deleteDocumentoGeral(id:string):Promise<void>{ const alvo=listDocumentosGeralCache().find(x=>(x as {id:string}).id===id); auditDelete('delete_documento', id, alvo && { titulo: (alvo as {titulo?:string;nome?:string}).titulo ?? (alvo as {titulo?:string;nome?:string}).nome }); const list=listDocumentosGeralCache().filter(x=>x.id!==id); saveDocumentosGeralCache(list); try{ await safeDeleteDoc(colPath('documentos'), id);}catch{} }
+export async function deleteDocumentoGeral(id: string): Promise<void> {
+  const alvo = listDocumentosGeralCache().find(x => x.id === id);
+  auditDelete('delete_documento', id, alvo && { nome: alvo.nome }, alvo?.clienteId);
+  if (!alvo) return;
+  const next = { ...alvo, deletedAt: Date.now() };
+  const list = listDocumentosGeralCache();
+  const idx = list.findIndex(x => x.id === id);
+  if (idx >= 0) list[idx] = next;
+  saveDocumentosGeralCache(list);
+  queueSet(colPath('documentos'), id, next);
+}
 export function newDocumentoGeralId():string{ return newId('doc'); }
 
 // Fase 3 — avença já no GabineteCliente acima
@@ -1102,7 +1187,6 @@ export const subscribeObrigacoes = makeSubscriber<Obrigacao>('obrigacoes');
 export const subscribeCofre = makeSubscriber<CofreEntrada>('cofre');
 export const subscribeColaboradores = makeSubscriber<Colaborador>('colaboradores');
 export const subscribeContactosGeral = makeSubscriber<ContactoGabinete>('contactosGeral');
-export const subscribeAssuntosGeral = makeSubscriber<AssuntoGabinete>('assuntosGeral');
 export const subscribeAlertasGeral = makeSubscriber<AlertaGabinete>('alertasGeral');
 export const subscribeOcorrencias = makeSubscriber<OcorrenciaGabinete>('ocorrencias');
 export const subscribeDocumentosGeral = makeSubscriber<GabineteDocumento>('documentos');
@@ -1123,6 +1207,86 @@ export async function fetchAll<T>(col: string): Promise<T[]> {
   } catch {
     return readCache<T>(col, []);
   }
+}
+
+// ─── Lixeira — restaurar / purgar (soft-delete) ──────────────────────────────
+// Todas as coleções operacionais guardam `deletedAt` em vez de apagar o doc.
+// A Lixeira lista esses registos; restaurar volta a pôr `deletedAt` a undefined;
+// purgar é o único delete definitivo (admin) e o cofre mantém delete direto.
+export const LIXEIRA_COLS = {
+  clientes: 'clientes',
+  tarefas: 'tarefas',
+  obrigacoes: 'obrigacoes',
+  contactos: 'contactosGeral',
+  alertas: 'alertasGeral',
+  ocorrencias: 'ocorrencias',
+  documentos: 'documentos',
+} as const;
+export type LixeiraColKey = keyof typeof LIXEIRA_COLS;
+
+type LixeiraItem = { id: string; deletedAt?: number; clienteId?: string; updatedAt?: number };
+
+export function restaurarGabineteItem(tipo: LixeiraColKey, id: string): void {
+  const col = LIXEIRA_COLS[tipo];
+  const list = readCache<LixeiraItem>(col, []);
+  const idx = list.findIndex(x => x.id === id);
+  if (idx < 0) return;
+  // 0 em vez de undefined: o setDoc usa merge e campos undefined são ignorados,
+  // por isso o deletedAt antigo ficaria no servidor e o registo nunca saía da lixeira.
+  const next: LixeiraItem = { ...list[idx], deletedAt: 0, updatedAt: Date.now() };
+  list[idx] = next;
+  writeCache(col, list);
+  queueSet(colPath(col), id, next);
+  logAudit('restaurar_item', `${tipo}:${id}`, undefined, next.clienteId);
+}
+
+export async function purgarGabineteItem(tipo: LixeiraColKey, id: string): Promise<void> {
+  const col = LIXEIRA_COLS[tipo];
+  const list = readCache<LixeiraItem>(col, []).filter(x => x.id !== id);
+  writeCache(col, list);
+  queueRemove(colPath(col), id);
+  logAudit('purgar_item', `${tipo}:${id}`);
+}
+
+// ─── Migração one-shot — Assuntos viram Tarefas ──────────────────────────────
+// A entidade `assuntosGeral` foi substituída por Tarefas (com prazo/estado/
+// responsável). Copia cada assunto sem tarefa espelho e apaga os docs antigos.
+// Marker em `meta` torna a operação idempotente em todas as máquinas.
+const ASSUNTOS_MIGRADOS_MARKER = 'assuntos-migrados-v1';
+
+export async function migrarAssuntosParaTarefasV1(): Promise<number> {
+  const metaCache = readCache<{ id: string }>('meta', []);
+  if (metaCache.some(m => m.id === ASSUNTOS_MIGRADOS_MARKER)) return 0;
+
+  let assuntos: AssuntoLegacy[] = [];
+  try {
+    const snap = await getDocs(collection(db, colPath('assuntosGeral')));
+    snap.forEach(d => assuntos.push(d.data() as AssuntoLegacy));
+  } catch {
+    assuntos = readCache<AssuntoLegacy>('assuntosGeral', []);
+  }
+
+  const titulosExistentes = new Set(
+    listTarefasCache().map(t => `${t.clienteId ?? ''}|${(t.titulo || '').trim().toLowerCase()}`),
+  );
+  let criados = 0;
+  for (const a of assuntos) {
+    if (!a?.id || !a.titulo?.trim() || !a.clienteId) continue;
+    const chave = `${a.clienteId}|${a.titulo.trim().toLowerCase()}`;
+    if (titulosExistentes.has(chave)) continue;
+    titulosExistentes.add(chave);
+    await upsertTarefa(tarefaFromAssunto(a, newTarefaId()));
+    criados++;
+  }
+
+  for (const a of assuntos) {
+    if (a?.id) queueRemove(colPath('assuntosGeral'), a.id);
+  }
+  writeCache('assuntosGeral', []);
+  const marker = { id: ASSUNTOS_MIGRADOS_MARKER, migratedAt: Date.now(), count: assuntos.length };
+  writeCache('meta', [...metaCache, marker]);
+  queueSet(colPath('meta'), ASSUNTOS_MIGRADOS_MARKER, marker);
+  return criados;
 }
 
 // ─── Gerador automático de obrigações fiscais ─────────────────────────────────
@@ -1228,188 +1392,6 @@ export function gerarObrigacoesParaCliente(cli: GabineteCliente, ano = new Date(
     });
   }
   return novas;
-}
-
-// ——— Seed demo: garante que o cliente do mockup existe com dados completos ———
-export async function seedMykolaVasylDemo(): Promise<string | null> {
-  const TARGET_NIF = '518123456';
-  const TARGET_NOME = 'Mykola & Vasyl, Lda';
-  const existentes = listClientesCache();
-  const byNif = existentes.find(c => (c.nif||'').replace(/\D/g,'') === TARGET_NIF);
-  const byNome = existentes.find(c => c.nome === TARGET_NOME);
-  if (byNif || byNome) {
-    const cli = byNif || byNome;
-    if (!cli) return null;
-    // Se já existe mas falta campos do mockup, completa
-    let needsUpdate = false;
-    if (!cli.caeDescricao) { cli.caeDescricao = 'Instalações elétricas'; cli.caes = '43210'; needsUpdate = true; }
-    if (!cli.regimeIrc) { cli.regimeIrc = 'geral'; needsUpdate = true; }
-    if (!cli.tipoSociedade) { cli.tipoSociedade = 'Sociedade por quotas'; needsUpdate = true; }
-    if (!cli.gerentes || cli.gerentes.length === 0) { cli.gerentes = ['Mykola Ivanenko', 'Vasyl Petrenko']; needsUpdate = true; }
-    if (cli.nrTrabalhadores == null) { cli.nrTrabalhadores = 3; needsUpdate = true; }
-    if (!cli.inicioAtividade) { cli.inicioAtividade = new Date('2025-12-15').getTime(); needsUpdate = true; }
-    if (!cli.responsavelInterno) { cli.responsavelInterno = { nome: 'Ana Margarida', initials: 'AM' }; needsUpdate = true; }
-    if (!cli.apoioAdministrativo) { cli.apoioAdministrativo = { nome: 'Vilma', initials: 'VI' }; needsUpdate = true; }
-    if (!cli.supervisor) { cli.supervisor = { nome: 'Sandrine Reis', initials: 'SR' }; needsUpdate = true; }
-    if (!cli.orientacoes) { cli.orientacoes = 'Todas as faturas devem ser digitalizadas e inseridas no TOCOnline no momento da receção.\nCliente prefere comunicação por WhatsApp.\nConfirmar sempre a afetação de despesas (pessoal vs. empresa).\nValidar dedutibilidade de despesas com viatura, combustível e portagens.\nAntes de fechar o mês, confirmar se existem documentos em falta.'; needsUpdate = true; }
-    if (!cli.situacaoAtual) {
-      cli.situacaoAtual = [
-        { texto: 'Documentação de julho e agosto em falta', cor: 'red' },
-        { texto: 'IVA tratado até julho', cor: 'green' },
-        { texto: 'Contabilidade em dia', cor: 'green' },
-        { texto: 'Processo de compensação Segurança Social pendente', cor: 'orange' },
-        { texto: 'Salários atualizados', cor: 'green' },
-      ];
-      needsUpdate = true;
-    }
-    if (needsUpdate) { cli.updatedAt = Date.now(); await upsertCliente(cli); }
-    // Garante tarefas/assuntos/alertas/contactos/ocorrencias/documentos/cofre
-    await ensureMykolaDependencias(cli.id, cli.nome);
-    return cli.id;
-  }
-  const cli: GabineteCliente = {
-    id: newClienteId(),
-    nome: TARGET_NOME,
-    nif: TARGET_NIF,
-    tipoEntidade: 'LDA',
-    regimeIva: 'trimestral',
-    regimeIrc: 'geral',
-    tipoSociedade: 'Sociedade por quotas',
-    caes: '43210',
-    caeDescricao: 'Instalações elétricas',
-    gerentes: ['Mykola Ivanenko', 'Vasyl Petrenko'],
-    nrTrabalhadores: 3,
-    inicioAtividade: new Date('2025-12-15').getTime(),
-    responsavelInterno: { nome: 'Ana Margarida', initials: 'AM' },
-    apoioAdministrativo: { nome: 'Vilma', initials: 'VI' },
-    supervisor: { nome: 'Sandrine Reis', initials: 'SR' },
-    orientacoes: 'Todas as faturas devem ser digitalizadas e inseridas no TOCOnline no momento da receção.\nCliente prefere comunicação por WhatsApp.\nConfirmar sempre a afetação de despesas (pessoal vs. empresa).\nValidar dedutibilidade de despesas com viatura, combustível e portagens.\nAntes de fechar o mês, confirmar se existem documentos em falta.',
-    situacaoAtual: [
-      { texto: 'Documentação de julho e agosto em falta', cor: 'red' },
-      { texto: 'IVA tratado até julho', cor: 'green' },
-      { texto: 'Contabilidade em dia', cor: 'green' },
-      { texto: 'Processo de compensação Segurança Social pendente', cor: 'orange' },
-      { texto: 'Salários atualizados', cor: 'green' },
-    ],
-    estado: 'ativo',
-    createdAt: new Date('2025-12-15').getTime(),
-    updatedAt: Date.now(),
-  };
-  await upsertCliente(cli);
-  // Cria EmpresaRecord espelho para lista de empresas
-  try {
-    const { upsertEmpresa, listEmpresas: listEmp } = await import('./empresas');
-    const exists = listEmp().find(e => (e.nif||'').replace(/\D/g,'') === TARGET_NIF);
-    if (!exists) {
-      const { newId } = await import('./empresas');
-      const emp = { id: cli.id, nome: TARGET_NOME, nif: TARGET_NIF, createdAt: Date.now(), updatedAt: Date.now(), profile: { nomeCliente: TARGET_NOME } as unknown as import('./empresas').EmpresaRecord['profile'] };
-      upsertEmpresa(emp as import('./empresas').EmpresaRecord);
-    }
-  } catch {}
-  await ensureMykolaDependencias(cli.id, cli.nome);
-  gerarObrigacoesParaCliente(cli, new Date().getFullYear());
-  return cli.id;
-}
-
-async function ensureMykolaDependencias(clienteId: string, clienteNome: string): Promise<void> {
-  // Contactos
-  if (listContactosCache().filter(c=>c.clienteId===clienteId).length === 0) {
-    for (const c of [
-      { nome: 'Mykola Ivanenko', cargo: 'Gerente', telefone: '+351 9XX XXX XXX', initials: 'MI', isGerente: true },
-      { nome: 'Vasyl Petrenko', cargo: 'Gerente', telefone: '+351 9XX XXX XXX', initials: 'VP', isGerente: true },
-      { nome: 'Iryna', cargo: 'Administrativa', telefone: '+351 9XX XXX XXX', initials: 'IA' },
-    ] as const) {
-      await upsertContactoGabinete({ id: newContactoGabineteId(), clienteId, clienteNome, nome: c.nome, cargo: c.cargo, telefone: c.telefone, initials: c.initials, isGerente: (c as unknown as {isGerente?:boolean}).isGerente, createdAt: Date.now(), updatedAt: Date.now() });
-    }
-  }
-  // Alertas
-  if (listAlertasCache().filter(a=>a.clienteId===clienteId).length === 0) {
-    for (const texto of [
-      'Cliente tem dificuldade em reunir documentação.',
-      'Todas as faturas devem ser enviadas por WhatsApp assim que são recebidas.',
-      'Atenção à dedutibilidade de despesas com viatura.',
-    ]) {
-      await upsertAlertaGabinete({ id: newAlertaGabineteId(), clienteId, clienteNome, texto, createdAt: Date.now(), updatedAt: Date.now() });
-    }
-  }
-  // Assuntos = também cria tarefas ligadas (funcional: assuntos são tarefas)
-  if (listAssuntosCache().filter(a=>a.clienteId===clienteId).length === 0) {
-    const now = Date.now();
-    const assuntosSeed: { titulo: string; estado: AssuntoGabinete['estado']; updatedAt: number }[] = [
-      { titulo: 'Duplicação de contribuições Segurança Social', estado: 'em_curso', updatedAt: new Date('2026-09-16').getTime() },
-      { titulo: 'Viatura da empresa', estado: 'aguard_cliente', updatedAt: new Date('2026-09-08').getTime() },
-      { titulo: 'Documentação em falta (Jul-Ago)', estado: 'pendente', updatedAt: new Date('2026-09-16').getTime() },
-    ];
-    for (const s of assuntosSeed) {
-      await upsertAssuntoGabinete({ id: newAssuntoGabineteId(), clienteId, clienteNome, titulo: s.titulo, estado: s.estado, updatedAt: s.updatedAt, createdAt: now });
-      // Tarefa espelho para funcionalidade Tarefas
-      const tid = newTarefaId();
-      const t: Tarefa = { id: tid, titulo: s.titulo, tipo: 'tarefa', origem: 'manual', estado: s.estado === 'pendente' ? 'todo' : s.estado === 'aguard_cliente' ? 'todo' : 'doing', prioridade: 'media' as const, clienteId, clienteNome, createdAt: s.updatedAt, updatedAt: s.updatedAt };
-      await upsertTarefa(t);
-    }
-  } else if (listTarefasCache().filter(t=>t.clienteId===clienteId).length === 0) {
-    // Se assuntos já existem mas sem tarefas, cria tarefas
-    for (const a of listAssuntosCache().filter(x=>x.clienteId===clienteId)) {
-      await upsertTarefa({ id: newTarefaId(), titulo: a.titulo, tipo: 'tarefa', origem: 'manual', estado: a.estado==='pendente'?'todo':'doing', prioridade: 'media', clienteId, clienteNome, createdAt: a.updatedAt, updatedAt: a.updatedAt });
-    }
-  }
-  // Ocorrências
-  if (listOcorrenciasCache().filter(o=>o.clienteId===clienteId).length === 0) {
-    for (const o of [
-      { data: new Date('2026-09-16').getTime(), autorNome: 'Sandrine Reis', autorInitials: 'SR', descricao: 'Atualização: sem resposta da Segurança Social.' },
-      { data: new Date('2026-09-08').getTime(), autorNome: 'Ana Margarida', autorInitials: 'AM', descricao: 'Envio do pedido de compensação SS.' },
-      { data: new Date('2026-09-07').getTime(), autorNome: 'Ana Margarida', autorInitials: 'AM', descricao: 'Pagamento duplicado de €445,18.' },
-      { data: new Date('2026-05-05').getTime(), autorNome: 'Ana Margarida', autorInitials: 'AM', descricao: 'Pagamento duplicado de €445,18.' },
-      { data: new Date('2025-12-15').getTime(), autorNome: 'Sandrine Reis', autorInitials: 'SR', descricao: 'Constituição da sociedade.' },
-    ] as const) {
-      await upsertOcorrencia({ id: newOcorrenciaId(), clienteId, clienteNome, data: o.data, autorNome: o.autorNome, autorInitials: o.autorInitials, descricao: o.descricao, createdAt: o.data });
-    }
-  }
-  // Documentos
-  if (listDocumentosGeralCache().filter(d=>d.clienteId===clienteId).length === 0) {
-    for (const d of [
-      { nome: 'Contrato de constituição.pdf', dataUpload: new Date('2025-12-12').getTime() },
-      { nome: 'Certidão permanente.pdf', dataUpload: new Date('2025-12-12').getTime() },
-      { nome: 'Contrato de arrendamento.pdf', dataUpload: new Date('2026-01-03').getTime() },
-      { nome: 'Financiamento viatura.pdf', dataUpload: new Date('2026-02-15').getTime() },
-      { nome: 'Parecer OCC – viatura.pdf', dataUpload: new Date('2026-08-27').getTime() },
-    ] as const) {
-      await upsertDocumentoGeral({ id: newDocumentoGeralId(), clienteId, clienteNome, nome: d.nome, tipo: 'OUTRO', dataUpload: d.dataUpload });
-    }
-  }
-  // Equipa demo (se vazia global, cria 3 colaboradores)
-  if (listColaboradoresCache().length === 0) {
-    for (const col of [
-      { nome: 'Ana Margarida', email: 'ana.margarida@estudo360.pt', role: 'contabilista' as const, status: 'ativo' as const },
-      { nome: 'Vilma', email: 'vilma@estudo360.pt', role: 'estagiaria' as const, status: 'ativo' as const },
-      { nome: 'Sandrine Reis', email: 'admin@estudo360.pt', role: 'admin' as const, status: 'ativo' as const },
-    ]) {
-      await upsertColaborador({ id: newColaboradorId(), nome: col.nome, email: col.email, role: col.role, status: col.status, initials: getColaboradorInitials(col.nome), createdAt: Date.now(), updatedAt: Date.now() });
-    }
-  }
-}
-
-export async function ensureAllClientesDefaults(): Promise<void> {
-  const all = listClientesCache();
-  let changed = false;
-  for (const cli of all) {
-    let upd = false;
-    if (!cli.situacaoAtual || cli.situacaoAtual.length === 0) {
-      cli.situacaoAtual = [
-        { texto: 'Documentação de julho e agosto em falta', cor: 'red' },
-        { texto: 'IVA tratado até julho', cor: 'green' },
-        { texto: 'Contabilidade em dia', cor: 'green' },
-        { texto: 'Processo de compensação Segurança Social pendente', cor: 'orange' },
-        { texto: 'Salários atualizados', cor: 'green' },
-      ];
-      upd = true;
-    }
-    if (!cli.orientacoes) {
-      cli.orientacoes = 'Todas as faturas devem ser digitalizadas e inseridas no TOCOnline no momento da receção.\nCliente prefere comunicação por WhatsApp.\nConfirmar sempre a afetação de despesas (pessoal vs. empresa).\nValidar dedutibilidade de despesas com viatura, combustível e portagens.\nAntes de fechar o mês, confirmar se existem documentos em falta.';
-      upd = true;
-    }
-    if (upd) { cli.updatedAt = Date.now(); await upsertCliente(cli); changed = true; }
-  }
 }
 
 // Migração: cada EmpresaRecord vira GabineteCliente (one-off, idempotente por NIF)

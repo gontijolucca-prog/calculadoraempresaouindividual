@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
-  subscribeClientes, subscribeTarefas, subscribeObrigacoes, subscribeCofre, subscribeColaboradores, subscribeContactosGeral, subscribeAssuntosGeral, subscribeAlertasGeral, subscribeOcorrencias, subscribeDocumentosGeral, subscribeConversas, subscribeModelos, subscribeEnvios, subscribeTempos, subscribeActas,
-  listClientesCache, listTarefasCache, listObrigacoesCache, listCofreCache, listColaboradoresCache, listContactosCache, listAssuntosCache, listAlertasCache, listOcorrenciasCache, listDocumentosGeralCache, listConversasCache, listModelosCache, listEnviosCache, listTemposCache, listActasCache,
+  subscribeClientes, subscribeTarefas, subscribeObrigacoes, subscribeCofre, subscribeColaboradores, subscribeContactosGeral, subscribeAlertasGeral, subscribeOcorrencias, subscribeDocumentosGeral, subscribeConversas, subscribeModelos, subscribeEnvios, subscribeTempos, subscribeActas,
+  listClientesCache, listTarefasCache, listObrigacoesCache, listCofreCache, listColaboradoresCache, listContactosCache, listAlertasCache, listOcorrenciasCache, listDocumentosGeralCache, listConversasCache, listModelosCache, listEnviosCache, listTemposCache, listActasCache,
   seedCalendarioFiscal2026,
-  type GabineteCliente, type Tarefa, type Obrigacao, type CofreEntrada, type Colaborador, type ContactoGabinete, type AssuntoGabinete, type AlertaGabinete, type OcorrenciaGabinete, type GabineteDocumento, type Conversa, type ModeloComunicacao, type EnvioComunicacao, type Tempo, type Acta,
+  type GabineteCliente, type Tarefa, type Obrigacao, type CofreEntrada, type Colaborador, type ContactoGabinete, type AlertaGabinete, type OcorrenciaGabinete, type GabineteDocumento, type Conversa, type ModeloComunicacao, type EnvioComunicacao, type Tempo, type Acta,
 } from './gabinete';
 
 export function useGabineteClientes(): GabineteCliente[] {
@@ -67,11 +67,6 @@ export function useGabineteTempos(): Tempo[] {
 export function useGabineteContactosGeral(): ContactoGabinete[] {
   const [items, setItems] = useState<ContactoGabinete[]>(() => listContactosCache());
   useEffect(() => subscribeContactosGeral(setItems), []);
-  return items;
-}
-export function useGabineteAssuntos(): AssuntoGabinete[] {
-  const [items, setItems] = useState<AssuntoGabinete[]>(() => listAssuntosCache());
-  useEffect(() => subscribeAssuntosGeral(setItems), []);
   return items;
 }
 export function useGabineteAlertas(): AlertaGabinete[] {

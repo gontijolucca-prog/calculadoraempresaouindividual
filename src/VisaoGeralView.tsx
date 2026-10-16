@@ -1,23 +1,25 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Building2, AlertTriangle, Calendar, FileText, Users, Lock, Info, Phone, Mail, MessageCircle, Clock, Plus, Trash2, X, Pencil
+  Building2, AlertTriangle, Calendar, FileText, Users, Lock, Phone, Mail, MessageCircle, Clock, Plus, Trash2, X, CheckSquare
 } from 'lucide-react';
 import {
   upsertCliente,
   OBRIGACOES_CATALOGO, getObrigacoesAtivas, setObrigacoesAtivas,
   upsertContactoGabinete, deleteContactoGabinete, newContactoGabineteId,
-  upsertAssuntoGabinete, deleteAssuntoGabinete, newAssuntoGabineteId,
   upsertAlertaGabinete, deleteAlertaGabinete, newAlertaGabineteId,
   upsertOcorrencia, deleteOcorrencia, newOcorrenciaId,
   upsertDocumentoGeral, deleteDocumentoGeral, newDocumentoGeralId,
-  upsertTarefa, deleteTarefa, newTarefaId,
+  upsertTarefa, deleteTarefa, marcarTarefaFeita, newTarefaId,
+  upsertObrigacao,
 } from './lib/gabinete';
-import type { GabineteCliente, Tarefa, Obrigacao, CofreEntrada, GabineteDocumento, ContactoGabinete, AssuntoGabinete, AlertaGabinete, OcorrenciaGabinete, Colaborador } from './lib/gabinete';
+import { mergePrazos } from './lib/gabineteSelectors';
+import { can } from './lib/permissions';
+import type { GabineteRole } from './lib/gabinetes';
+import type { GabineteCliente, Tarefa, Obrigacao, CofreEntrada, GabineteDocumento, ContactoGabinete, AlertaGabinete, OcorrenciaGabinete, Colaborador } from './lib/gabinete';
 
 type Props = {
   cliente: GabineteCliente | null;
   contactos: ContactoGabinete[];
-  assuntos: AssuntoGabinete[];
   alertas: AlertaGabinete[];
   ocorrencias: OcorrenciaGabinete[];
   tarefas: Tarefa[];
@@ -25,6 +27,7 @@ type Props = {
   cofre: CofreEntrada[];
   documentos: GabineteDocumento[];
   colaboradores?: Colaborador[];
+  role?: GabineteRole | null;
   onEditCliente?: () => void;
   onGo?: (tab: string) => void;
   onOpenCofre?: () => void;
@@ -37,102 +40,89 @@ function initialsOf(name: string): string {
   return (p[0][0] + p[1][0]).toUpperCase();
 }
 
-const estadoBadgeCls: Record<string, string> = {
-  em_curso: 'bg-[#FFF7ED] text-amber-700 border-amber-200',
-  aguard_cliente: 'bg-[#FFFBEB] text-amber-700 border-amber-200',
-  pendente: 'bg-[#FFF1F2] text-rose-700 border-rose-200',
-  concluido: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+function fmtData(ms?: number): string {
+  if (!ms) return '—';
+  return new Date(ms).toLocaleDateString('pt-PT');
+}
+
+const tarefaBadgeCls: Record<string, string> = {
+  todo: 'bg-[#FFF7ED] text-amber-700 border-amber-200',
+  doing: 'bg-blue-50 text-blue-700 border-blue-200',
+  atrasada: 'bg-[#FFF1F2] text-rose-700 border-rose-200',
+  done: 'bg-emerald-50 text-emerald-700 border-emerald-200',
 };
-const estadoLabel: Record<string, string> = {
-  em_curso: 'Em curso',
-  aguard_cliente: 'Aguard. cliente',
-  pendente: 'Pendente',
-  concluido: 'Concluído',
+const tarefaLabel: Record<string, string> = {
+  todo: 'Por fazer',
+  doing: 'Em curso',
+  atrasada: 'Atrasada',
+  done: 'Concluída',
 };
 
-export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, ocorrencias, tarefas, obrigacoes, cofre, documentos, colaboradores, onEditCliente, onGo, onOpenCofre }: Props) {
-  const displayNome = cliente?.nome || 'Mykola & Vasyl, Lda';
-  const displayNif = cliente?.nif || '518 123 456';
-  const caeLabel = cliente?.caes || cliente?.caeDescricao || '43210';
-  const caeDesc = cliente?.caeDescricao || 'Instalações elétricas';
-  const tipoSoc = cliente?.tipoSociedade || (cliente?.tipoEntidade === 'LDA' ? 'Sociedade por quotas' : cliente?.tipoEntidade || 'Sociedade por quotas');
-  const regimeIvaLabel = cliente?.regimeIva === 'mensal' ? 'Mensal' : cliente?.regimeIva === 'isencao53' ? 'Isenção Art. 53' : 'Trimestral';
-  const regimeIrcLabel = cliente?.regimeIrc === 'simplificado' ? 'Simplificado' : cliente?.regimeIrc === 'transparencia' ? 'Transparência' : 'Regime Geral';
-  const nrTrab = cliente?.nrTrabalhadores ?? 3;
-  const inicioAtiv = cliente?.inicioAtividade ? new Date(cliente.inicioAtividade).toLocaleDateString('pt-PT') : '15/12/2025';
-  const gerentes = cliente?.gerentes && cliente.gerentes.length > 0 ? cliente.gerentes : ['Mykola Ivanenko', 'Vasyl Petrenko'];
-  const responsavel = cliente?.responsavelInterno || { nome: 'Ana Margarida', initials: 'AM' };
-  const apoio = cliente?.apoioAdministrativo || { nome: 'Vilma', initials: 'VI' };
-  const supervisor = cliente?.supervisor || { nome: 'Sandrine Reis', initials: 'SR' };
-  const orientacoes = (cliente?.orientacoes || '').trim() || [
-    'Todas as faturas devem ser digitalizadas e inseridas no TOCOnline no momento da receção.',
-    'Cliente prefere comunicação por WhatsApp.',
-    'Confirmar sempre a afetação de despesas (pessoal vs. empresa).',
-    'Validar dedutibilidade de despesas com viatura, combustível e portagens.',
-    'Antes de fechar o mês, confirmar se existem documentos em falta.',
-  ].join('\n');
+export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencias, tarefas, obrigacoes, cofre, documentos, colaboradores, role, onGo, onOpenCofre }: Props) {
+  const canDelete = can(role, 'apagar');
+  const canEditFicha = can(role, 'editar-clientes');
+  const canGerirObrigacoes = can(role, 'gerir-obrigacoes');
+  const canVerCofre = can(role, 'ver-cofre');
+
+  const displayNome = cliente?.nome || '—';
+  const displayNif = cliente?.nif || '—';
+  const caeLabel = cliente?.caes || '—';
+  const caeDesc = cliente?.caeDescricao || '—';
+  const tipoSoc = cliente?.tipoSociedade || cliente?.tipoEntidade || '—';
+  const regimeIvaLabel = cliente?.regimeIva === 'mensal' ? 'Mensal' : cliente?.regimeIva === 'isencao53' ? 'Isenção Art. 53' : cliente?.regimeIva === 'trimestral' ? 'Trimestral' : '—';
+  const regimeIrcLabel = cliente?.regimeIrc === 'simplificado' ? 'Simplificado' : cliente?.regimeIrc === 'transparencia' ? 'Transparência' : cliente?.regimeIrc === 'geral' ? 'Regime Geral' : '—';
+  const nrTrab = cliente?.nrTrabalhadores != null ? String(cliente.nrTrabalhadores) : '—';
+  const inicioAtiv = cliente?.inicioAtividade ? new Date(cliente.inicioAtividade).toLocaleDateString('pt-PT') : '—';
+  const gerentes = (cliente?.gerentes || []).join(', ') || '—';
+  const responsavel = cliente?.responsavelInterno || null;
+  const apoio = cliente?.apoioAdministrativo || null;
+  const supervisor = cliente?.supervisor || null;
+  const orientacoes = (cliente?.orientacoes || '').trim();
 
   const situacaoItems = useMemo(() => {
-    if (cliente?.situacaoAtual && cliente.situacaoAtual.length > 0) {
-      const dotMap: Record<string, string> = { red: 'bg-[#EF4444]', green: 'bg-[#10B981]', orange: 'bg-[#F59E0B]' };
-      return cliente.situacaoAtual.map(s => ({ dot: dotMap[s.cor] || 'bg-zinc-400', text: s.texto }));
-    }
-    return [
-      { dot: 'bg-[#EF4444]', text: 'Documentação de julho e agosto em falta' },
-      { dot: 'bg-[#10B981]', text: 'IVA tratado até julho' },
-      { dot: 'bg-[#10B981]', text: 'Contabilidade em dia' },
-      { dot: 'bg-[#F59E0B]', text: 'Processo de compensação Segurança Social pendente' },
-      { dot: 'bg-[#10B981]', text: 'Salários atualizados' },
-    ];
+    const dotMap: Record<string, string> = { red: 'bg-[#EF4444]', green: 'bg-[#10B981]', orange: 'bg-[#F59E0B]' };
+    return (cliente?.situacaoAtual || []).map(s => ({ dot: dotMap[s.cor] || 'bg-zinc-400', text: s.texto }));
   }, [cliente?.situacaoAtual]);
 
-  const proximosPrazos = useMemo(() => {
-    const fromObr = obrigacoes
-      .filter(o => o.vencimento >= Date.now())
-      .sort((a, b) => a.vencimento - b.vencimento)
-      .slice(0, 5)
-      .map(o => ({ label: new Date(o.vencimento).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' }).replace('.', '').replace(' ', ' '), title: o.titulo }));
-    if (fromObr.length >= 3) return fromObr;
-    return [
-      { label: '10 set', title: 'Envio IVA (2.º trimestre)' },
-      { label: '15 set', title: 'Submissão DMR' },
-      { label: '20 set', title: 'Pagamento TSU' },
-      { label: '30 set', title: 'Resposta SS – compensação' },
-      { label: '15 out', title: 'Modelo 22 (se aplicável)' },
-    ];
-  }, [obrigacoes]);
+  const prazos = useMemo(
+    () => mergePrazos(obrigacoes, alertas, { limit: 5 }),
+    [obrigacoes, alertas],
+  );
 
-  const assuntosExibir: AssuntoGabinete[] = assuntos.slice(0, 3);
+  const tarefasCliente = useMemo(
+    () => tarefas.filter(t => t.clienteId === cliente?.id && !t.arquivada).slice(0, 3),
+    [tarefas, cliente?.id],
+  );
+  const tarefasClienteTotal = useMemo(
+    () => tarefas.filter(t => t.clienteId === cliente?.id && !t.arquivada).length,
+    [tarefas, cliente?.id],
+  );
 
-  const alertasExibir: AlertaGabinete[] = alertas.slice(0, 5);
-
+  const alertasAbertos = useMemo(
+    () => alertas.filter(a => (a.estado ?? 'aberto') === 'aberto'),
+    [alertas],
+  );
+  const alertasExibir: AlertaGabinete[] = alertasAbertos.slice(0, 5);
   const contactosExibir: ContactoGabinete[] = contactos.slice(0, 5);
-
   const docsExibir: GabineteDocumento[] = documentos.slice(0, 5);
-
-  const cofreFallback = (() => {
-    const fromCofre = cofre.filter(c => !cliente || c.clienteId === cliente.id).slice(0, 4);
-    if (fromCofre.length > 0) return fromCofre.map(c => ({ label: c.categoria, title: c.titulo }));
-    return [
-      { label: 'AT', title: 'Portal das Finanças' },
-      { label: 'SS', title: 'Segurança Social Direta' },
-      { label: 'TOC', title: 'TOConline' },
-      { label: 'BPI', title: 'Homebanking' },
-    ];
-  })();
-
   const ocorrExibir: OcorrenciaGabinete[] = ocorrencias.slice(0, 7);
+  const cofreItems = useMemo(
+    () => cofre.filter(c => !cliente || c.clienteId === cliente.id).slice(0, 4),
+    [cofre, cliente],
+  );
 
-  const avatarInitials = initialsOf(displayNome).slice(0, 2);
+  const avatarInitials = displayNome === '—' ? '—' : initialsOf(displayNome).slice(0, 2);
 
   // ——— Modais funcionais ———
   const [showEditCliente, setShowEditCliente] = useState(false);
   const [formCliente, setFormCliente] = useState<Partial<GabineteCliente>>({});
   const [showAddAlerta, setShowAddAlerta] = useState(false);
   const [alertaTexto, setAlertaTexto] = useState('');
-  const [showAddAssunto, setShowAddAssunto] = useState(false);
-  const [assuntoTitulo, setAssuntoTitulo] = useState('');
-  const [assuntoEstado, setAssuntoEstado] = useState<AssuntoGabinete['estado']>('em_curso');
+  const [alertaVenc, setAlertaVenc] = useState('');
+  const [showAddTarefa, setShowAddTarefa] = useState(false);
+  const [tarefaTitulo, setTarefaTitulo] = useState('');
+  const [tarefaEstado, setTarefaEstado] = useState<Tarefa['estado']>('todo');
+  const [tarefaPrazo, setTarefaPrazo] = useState('');
   const [showAddContacto, setShowAddContacto] = useState(false);
   const [contactoForm, setContactoForm] = useState<Partial<ContactoGabinete>>({});
   const [showAddDoc, setShowAddDoc] = useState(false);
@@ -140,6 +130,7 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
   const [showAddOcorr, setShowAddOcorr] = useState(false);
   const [ocorrDesc, setOcorrDesc] = useState('');
   const [showEditSituacao, setShowEditSituacao] = useState(false);
+  const [situacaoEdit, setSituacaoEdit] = useState<Array<{ texto: string; cor: 'red' | 'green' | 'orange' }>>([]);
   const [showEditOrient, setShowEditOrient] = useState(false);
   const [orientEdit, setOrientEdit] = useState(orientacoes);
 
@@ -151,23 +142,31 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
   const handleSaveCliente = async () => {
     if (!cliente) return;
     const upd: GabineteCliente = { ...cliente, ...formCliente, gerentes: typeof formCliente.gerentes === 'string' ? (formCliente.gerentes as unknown as string).split(',').map(s=>s.trim()).filter(Boolean) : formCliente.gerentes, updatedAt: Date.now() };
-    // Ensure proper types for gerentes string case: form is string input
     await upsertCliente(upd);
     await upsertOcorrencia({ id: newOcorrenciaId(), clienteId: cliente.id, clienteNome: upd.nome, data: Date.now(), autorNome: upd.responsavelInterno?.nome || 'Equipa', autorInitials: upd.responsavelInterno?.initials || 'EQ', descricao: 'Ficha atualizada', createdAt: Date.now() });
     setShowEditCliente(false);
   };
   const handleAddAlerta = async () => {
     if (!cliente || !alertaTexto.trim()) return;
-    await upsertAlertaGabinete({ id: newAlertaGabineteId(), clienteId: cliente.id, clienteNome: cliente.nome, texto: alertaTexto.trim(), createdAt: Date.now(), updatedAt: Date.now() });
-    setAlertaTexto(''); setShowAddAlerta(false);
+    await upsertAlertaGabinete({
+      id: newAlertaGabineteId(), clienteId: cliente.id, clienteNome: cliente.nome,
+      texto: alertaTexto.trim(),
+      vencimento: alertaVenc ? new Date(`${alertaVenc}T12:00:00`).getTime() : undefined,
+      estado: 'aberto',
+      createdAt: Date.now(), updatedAt: Date.now(),
+    });
+    setAlertaTexto(''); setAlertaVenc(''); setShowAddAlerta(false);
   };
-  const handleAddAssunto = async () => {
-    if (!cliente || !assuntoTitulo.trim()) return;
+  const handleAddTarefa = async () => {
+    if (!cliente || !tarefaTitulo.trim()) return;
     const now = Date.now();
-    await upsertAssuntoGabinete({ id: newAssuntoGabineteId(), clienteId: cliente.id, clienteNome: cliente.nome, titulo: assuntoTitulo.trim(), estado: assuntoEstado, updatedAt: now, createdAt: now });
-    // Tarefa espelho — funcional: assuntos são tarefas
-    await upsertTarefa({ id: newTarefaId(), titulo: assuntoTitulo.trim(), tipo: 'tarefa', origem: 'manual', estado: assuntoEstado==='pendente'?'todo':assuntoEstado==='aguard_cliente'?'todo':'doing', prioridade: 'media', clienteId: cliente.id, clienteNome: cliente.nome, createdAt: now, updatedAt: now });
-    setAssuntoTitulo(''); setShowAddAssunto(false);
+    await upsertTarefa({
+      id: newTarefaId(), titulo: tarefaTitulo.trim(), tipo: 'tarefa', origem: 'manual',
+      estado: tarefaEstado, prioridade: 'media', clienteId: cliente.id, clienteNome: cliente.nome,
+      dataVencimento: tarefaPrazo ? new Date(`${tarefaPrazo}T12:00:00`).getTime() : undefined,
+      createdAt: now, updatedAt: now,
+    });
+    setTarefaTitulo(''); setTarefaEstado('todo'); setTarefaPrazo(''); setShowAddTarefa(false);
   };
   const handleAddContacto = async () => {
     if (!cliente || !contactoForm.nome?.trim()) return;
@@ -184,10 +183,30 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
     await upsertOcorrencia({ id: newOcorrenciaId(), clienteId: cliente.id, clienteNome: cliente.nome, data: Date.now(), autorNome: cliente.responsavelInterno?.nome || 'Equipa', autorInitials: cliente.responsavelInterno?.initials || 'EQ', descricao: ocorrDesc.trim(), createdAt: Date.now() });
     setOcorrDesc(''); setShowAddOcorr(false);
   };
+  const resolverObrigacao = async (id: string, estado: 'entregue' | 'dispensada') => {
+    const o = obrigacoes.find(x => x.id === id);
+    if (o) await upsertObrigacao({ ...o, estado });
+  };
+  const resolverAlerta = async (id: string) => {
+    const a = alertas.find(x => x.id === id);
+    if (a) await upsertAlertaGabinete({ ...a, estado: 'resolvido', resolvidoEm: Date.now() });
+  };
+
+  const tabs = [
+    { id: 'visao', label: 'Visão geral', active: true as const, scroll: 'top' },
+    { id: 'tarefas', label: `Tarefas (${tarefasClienteTotal})`, go: 'tarefas' },
+    { id: 'docs', label: 'Documentos', scroll: 'sec-docs' },
+    { id: 'contatos', label: 'Contactos', scroll: 'sec-contactos' },
+    ...(canVerCofre ? [{ id: 'acessos', label: 'Acessos', go: 'cofre' }] : []),
+    { id: 'obrig', label: 'Obrigações', go: 'obrigacoes' },
+    { id: 'hist', label: 'Histórico', scroll: 'sec-historico' },
+    { id: 'equipa', label: 'Equipa', go: 'equipa' },
+    { id: 'notas', label: 'Notas', scroll: 'sec-orientacoes' },
+  ] as Array<{ id: string; label: string; active?: boolean; go?: string; scroll?: string }>;
 
   return (
     <div className="space-y-3">
-      {/* Header empresa - exatamente como print */}
+      {/* Header empresa */}
       <div id="top" className="bg-white rounded-xl border border-[#E2E8F0] p-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex gap-3.5 min-w-0">
@@ -197,42 +216,31 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
               <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[12px] text-[#64748B]">
                 <span>NIF <span className="font-[600] text-[#334155]">{displayNif}</span></span>
                 <span className="text-[#CBD5E1]">|</span>
-                <span>CAE <span className="font-[600] text-[#334155]">{caeLabel} – {caeDesc}</span></span>
+                <span>CAE <span className="font-[600] text-[#334155]">{caeLabel}{caeDesc !== '—' ? ` – ${caeDesc}` : ''}</span></span>
                 <span className="text-[#CBD5E1]">|</span>
                 <span>{tipoSoc}</span>
               </div>
               <div className="mt-2.5 flex flex-wrap gap-1.5">
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#DCFCE7] border border-[#86EFAC] px-2.5 py-1 text-[11px] font-[700] text-[#166534]"><span className="w-3.5 h-3.5 rounded-full bg-[#16A34A] text-white flex items-center justify-center text-[9px]">✓</span> Ativo</span>
+                {cliente?.estado !== 'arquivado' && <span className="inline-flex items-center gap-1 rounded-full bg-[#DCFCE7] border border-[#86EFAC] px-2.5 py-1 text-[11px] font-[700] text-[#166534]"><span className="w-3.5 h-3.5 rounded-full bg-[#16A34A] text-white flex items-center justify-center text-[9px]">✓</span> {cliente ? 'Ativo' : 'Sem cliente'}</span>}
                 <span className="rounded-full bg-white border border-[#E2E8F0] px-2.5 py-1 text-[11px] font-[500] text-[#475569]">IVA {regimeIvaLabel}</span>
                 <span className="rounded-full bg-white border border-[#E2E8F0] px-2.5 py-1 text-[11px] font-[500] text-[#475569]">IRC ({regimeIrcLabel})</span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-white border border-[#E2E8F0] px-2.5 py-1 text-[11px] font-[500] text-[#475569]"><span className="w-3 h-3 rounded bg-[#E0E7FF] flex items-center justify-center text-[7px]">◈</span> Contabilidade + Salários</span>
               </div>
             </div>
           </div>
-          <div className="hidden sm:flex items-center gap-2 shrink-0">
-            <button onClick={handleEditClienteOpen} className="px-3.5 py-1.5 rounded-lg bg-white border border-[#E2E8F0] text-[13px] font-[500] text-[#334155] flex items-center gap-1">Ações <span className="text-[10px]">▾</span></button>
-            <button onClick={handleEditClienteOpen} className="px-3.5 py-1.5 rounded-lg bg-[#0F172A] text-white text-[13px] font-[600] flex items-center gap-1.5">✎ Editar</button>
-          </div>
+          {canEditFicha && (
+            <div className="hidden sm:flex items-center gap-2 shrink-0">
+              <button onClick={handleEditClienteOpen} className="px-3.5 py-1.5 rounded-lg bg-[#0F172A] text-white text-[13px] font-[600] flex items-center gap-1.5">✎ Editar</button>
+            </div>
+          )}
         </div>
 
         {/* Tabs secundárias */}
         <div className="mt-4 -mb-4 border-t border-[#F1F5F9] -mx-4 px-4">
           <div className="flex gap-5 overflow-x-auto scrollbar-none text-[13px]">
-            {[
-              { id: 'visao', label: 'Visão geral', active: true, scroll: 'top' },
-              { id: 'tarefas', label: `Tarefas (${tarefas.length || 4})`, go: 'tarefas' },
-              { id: 'assuntos', label: `Assuntos (${assuntos.length || 3})`, scroll: 'sec-assuntos' },
-              { id: 'docs', label: 'Documentos', scroll: 'sec-docs' },
-              { id: 'contatos', label: 'Contactos', scroll: 'sec-contactos' },
-              { id: 'acessos', label: 'Acessos', go: 'cofre' },
-              { id: 'obrig', label: 'Obrigações', go: 'obrigacoes' },
-              { id: 'hist', label: 'Histórico', scroll: 'sec-historico' },
-              { id: 'equipa', label: 'Equipa', go: 'equipa' },
-              { id: 'notas', label: 'Notas', scroll: 'sec-orientacoes' },
-            ].map(t => (
+            {tabs.map(t => (
               <button
                 key={t.id}
-                onClick={() => t.go ? onGo?.(t.go) : t.scroll ? document.getElementById(t.scroll as string)?.scrollIntoView({ behavior: 'smooth', block: 'start' }) : undefined}
+                onClick={() => t.go ? onGo?.(t.go) : t.scroll ? document.getElementById(t.scroll)?.scrollIntoView({ behavior: 'smooth', block: 'start' }) : undefined}
                 className={`whitespace-nowrap py-3 border-b-2 font-[600] ${t.active ? 'border-[#0F172A] text-[#0F172A]' : 'border-transparent text-[#64748B] hover:text-[#334155] font-[500]'}`}
               >
                 {t.label}
@@ -248,17 +256,17 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
         <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Building2 className="w-4 h-4 text-[#64748B]" /> Resumo da empresa</h3>
-            <button onClick={handleEditClienteOpen} className="text-[12px] font-[500] text-[#2563EB]">Editar</button>
+            {canEditFicha && <button onClick={handleEditClienteOpen} className="text-[12px] font-[500] text-[#2563EB]">Editar</button>}
           </div>
           <div className="space-y-2">
             {[
               ['Nome', displayNome],
               ['NIF', displayNif],
-              ['CAE principal', `${caeLabel} – ${caeDesc}`],
+              ['CAE principal', caeDesc !== '—' ? `${caeLabel} – ${caeDesc}` : caeLabel],
               ['Regime IVA', regimeIvaLabel],
               ['IRC', regimeIrcLabel],
-              ['Gerentes', gerentes.join(', ')],
-              ['N.º trabalhadores', String(nrTrab)],
+              ['Gerentes', gerentes],
+              ['N.º trabalhadores', nrTrab],
               ['Início de atividade', inicioAtiv],
             ].map(([k, v]) => (
               <div key={k} className="flex gap-2 text-[12.5px] leading-[18px]">
@@ -267,59 +275,86 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
               </div>
             ))}
             <div className="pt-3 mt-3 border-t border-[#F1F5F9] space-y-2.5">
-              {[
-                { label: 'Responsável interno', person: responsavel, bg: 'bg-[#E0E7FF] text-[#4338CA]' },
-                { label: 'Apoio administrativo', person: apoio, bg: 'bg-[#F3E8FF] text-[#7C3AED]' },
-                { label: 'Supervisor', person: supervisor, bg: 'bg-[#1E293B] text-white' },
-              ].map(row => (
-                <div key={row.label} className="flex items-center gap-2 text-[12.5px]">
-                  <span className="w-[125px] shrink-0 text-[#64748B]">{row.label}</span>
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-[700] shrink-0 ${row.bg}`}>{row.person.initials}</span>
-                  <span className="font-[500] text-[#0F172A]">{row.person.nome}</span>
+              {responsavel ? (
+                <div className="flex items-center gap-2 text-[12.5px]">
+                  <span className="w-[125px] shrink-0 text-[#64748B]">Responsável interno</span>
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-[700] shrink-0 bg-[#E0E7FF] text-[#4338CA]">{responsavel.initials}</span>
+                  <span className="font-[500] text-[#0F172A]">{responsavel.nome}</span>
                 </div>
-              ))}
+              ) : null}
+              {apoio ? (
+                <div className="flex items-center gap-2 text-[12.5px]">
+                  <span className="w-[125px] shrink-0 text-[#64748B]">Apoio administrativo</span>
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-[700] shrink-0 bg-[#F3E8FF] text-[#7C3AED]">{apoio.initials}</span>
+                  <span className="font-[500] text-[#0F172A]">{apoio.nome}</span>
+                </div>
+              ) : null}
+              {supervisor ? (
+                <div className="flex items-center gap-2 text-[12.5px]">
+                  <span className="w-[125px] shrink-0 text-[#64748B]">Supervisor</span>
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-[700] shrink-0 bg-[#1E293B] text-white">{supervisor.initials}</span>
+                  <span className="font-[500] text-[#0F172A]">{supervisor.nome}</span>
+                </div>
+              ) : null}
+              {!responsavel && !apoio && !supervisor && (
+                <div className="text-[12px] text-[#94A3B8]">{canEditFicha ? 'Sem equipa atribuída — edita a ficha para associar.' : 'Sem equipa atribuída.'}</div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Coluna do meio: Obrigações + Situação + Assuntos empilhados */}
+        {/* Coluna do meio: Obrigações + Situação + Tarefas */}
         <div className="space-y-3">
-          {cliente && <ObrigacoesCard cliente={cliente} />}
+          {cliente && <ObrigacoesCard cliente={cliente} readOnly={!canEditFicha} />}
           <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><span className="w-5 h-5 rounded-full bg-[#FFF7ED] border border-[#FED7AA] flex items-center justify-center text-[11px]">◉</span> Situação atual</h3>
-              <button onClick={()=>setShowEditSituacao(true)} className="text-[12px] font-[500] text-[#2563EB]">Editar</button>
+              {canEditFicha && (
+                <button onClick={() => { setSituacaoEdit([...(cliente?.situacaoAtual || [])]); setShowEditSituacao(true); }} className="text-[12px] font-[500] text-[#2563EB]">Editar</button>
+              )}
             </div>
-            <ul className="space-y-2">
-              {situacaoItems.map((it, i) => (
-                <li key={i} className="flex items-center gap-2.5 text-[12.5px] leading-tight">
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${it.dot}`} />
-                  <span className="text-[#334155]">{it.text}</span>
-                </li>
-              ))}
-            </ul>
+            {situacaoItems.length === 0 ? (
+              <div className="text-[12px] text-[#94A3B8] border-2 border-dashed rounded-lg p-3 text-center">Sem situação registada{canEditFicha ? ' — usa Editar para adicionar.' : '.'}</div>
+            ) : (
+              <ul className="space-y-2">
+                {situacaoItems.map((it, i) => (
+                  <li key={i} className="flex items-center gap-2.5 text-[12.5px] leading-tight">
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${it.dot}`} />
+                    <span className="text-[#334155]">{it.text}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
-          <div id="sec-assuntos" className="bg-[#F0FDF4] rounded-xl border border-[#BBF7D0] p-4">
+          <div id="sec-tarefas" className="bg-[#F0FDF4] rounded-xl border border-[#BBF7D0] p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#065F46]"><span className="w-5 h-5 rounded bg-white border border-[#BBF7D0] flex items-center justify-center">▭</span> Assuntos principais</h3>
+              <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#065F46]"><CheckSquare className="w-4 h-4" /> Tarefas principais</h3>
               <div className="flex items-center gap-2">
-                <button onClick={()=>setShowAddAssunto(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#BBF7D0] text-[#065F46] hover:bg-emerald-50">+ Novo</button>
-                <button onClick={() => onGo?.('tarefas')} className="text-[12px] font-[500] text-[#2563EB]">Ver todos ({assuntos.length})</button>
+                <button onClick={()=>setShowAddTarefa(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#BBF7D0] text-[#065F46] hover:bg-emerald-50">+ Nova</button>
+                <button onClick={() => onGo?.('tarefas')} className="text-[12px] font-[500] text-[#2563EB]">Ver todas ({tarefasClienteTotal})</button>
               </div>
             </div>
             <div className="space-y-2">
-              {assuntosExibir.length===0 ? <div className="text-[12px] text-[#64748B] border-2 border-dashed rounded-lg p-3 text-center bg-white/60">Sem assuntos</div> : assuntosExibir.map(a => {
-                const cls = estadoBadgeCls[a.estado] || estadoBadgeCls.pendente;
-                const label = estadoLabel[a.estado] || a.estado;
+              {tarefasCliente.length===0 ? <div className="text-[12px] text-[#64748B] border-2 border-dashed rounded-lg p-3 text-center bg-white/60">Sem tarefas deste cliente</div> : tarefasCliente.map(t => {
+                const cls = tarefaBadgeCls[t.estado] || tarefaBadgeCls.todo;
+                const label = tarefaLabel[t.estado] || t.estado;
                 return (
-                  <div key={a.id} className="bg-white rounded-lg border border-[#E2E8F0] px-3 py-2.5 flex items-start justify-between gap-2 group hover:border-[#10B981]/30">
+                  <div key={t.id} className="bg-white rounded-lg border border-[#E2E8F0] px-3 py-2.5 flex items-start justify-between gap-2 group hover:border-[#10B981]/30">
                     <button onClick={()=>onGo?.('tarefas')} className="min-w-0 text-left flex-1">
-                      <div className="text-[12.5px] font-[600] text-[#0F172A] leading-tight flex items-center gap-1.5"><span className="text-[#10B981] text-[10px]">▶</span> <span className="truncate">{a.titulo}</span></div>
-                      <div className="text-[11px] text-[#94A3B8] mt-0.5">Atualizado: {new Date(a.updatedAt).toLocaleDateString('pt-PT')}</div>
+                      <div className="text-[12.5px] font-[600] text-[#0F172A] leading-tight truncate">{t.titulo}</div>
+                      <div className="text-[11px] text-[#94A3B8] mt-0.5">
+                        {t.dataVencimento ? `Prazo: ${fmtData(t.dataVencimento)}` : 'Sem prazo'}
+                        {t.responsavelNome ? ` · ${t.responsavelNome}` : ''}
+                      </div>
                     </button>
                     <span className={`shrink-0 text-[11px] font-[600] px-2 py-0.5 rounded-full border ${cls}`}>{label}</span>
-                    <button onClick={async()=>{ if(confirm('Remover assunto e tarefa associada?')){ await deleteAssuntoGabinete(a.id); const tsk = tarefas.find(tt=>tt.titulo===a.titulo && tt.clienteId===cliente?.id); if(tsk) await deleteTarefa(tsk.id); } }} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-zinc-100 rounded"><Trash2 className="w-3 h-3 text-zinc-500" /></button>
+                    {t.estado !== 'done' && (
+                      <button onClick={()=>marcarTarefaFeita(t.id, true)} title="Concluir" className="opacity-0 group-hover:opacity-100 p-1 hover:bg-emerald-50 rounded text-emerald-600"><CheckSquare className="w-3 h-3" /></button>
+                    )}
+                    {canDelete && (
+                      <button onClick={async()=>{ if(confirm('Mover tarefa para a lixeira?')) await deleteTarefa(t.id); }} title="Apagar" className="opacity-0 group-hover:opacity-100 p-1 hover:bg-zinc-100 rounded"><Trash2 className="w-3 h-3 text-zinc-500" /></button>
+                    )}
                   </div>
                 );
               })}
@@ -335,11 +370,17 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
               <button onClick={()=>setShowAddAlerta(true)} className="text-[12px] font-[500] text-[#2563EB]">+ Adicionar</button>
             </div>
             <ul className="space-y-2">
-              {alertasExibir.length===0 ? <li className="text-[12px] text-[#94A3B8] border-2 border-dashed border-[#FECACA] rounded-lg p-3 text-center">Sem alertas</li> : alertasExibir.map(a => (
-                <li key={a.id} className="flex gap-2 text-[12.5px] leading-[17px] group">
+              {alertasExibir.length===0 ? <li className="text-[12px] text-[#94A3B8] border-2 border-dashed border-[#FECACA] rounded-lg p-3 text-center">Sem alertas abertos</li> : alertasExibir.map(a => (
+                <li key={a.id} className="flex gap-2 text-[12.5px] leading-[17px] group items-start">
                   <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#DC2626] shrink-0" />
-                  <span className="flex-1 text-[#7F1D1D]">{a.texto}</span>
-                  <button onClick={async()=>{ if(confirm('Remover alerta?')) await deleteAlertaGabinete(a.id); }} className="opacity-0 group-hover:opacity-100 text-[#DC2626] hover:bg-white rounded px-1"><Trash2 className="w-3 h-3" /></button>
+                  <span className="flex-1 text-[#7F1D1D]">
+                    {a.texto}
+                    {a.vencimento ? <span className="text-[11px] text-[#B91C1C]"> · até {fmtData(a.vencimento)}</span> : null}
+                  </span>
+                  <button onClick={()=>resolverAlerta(a.id)} className="opacity-0 group-hover:opacity-100 text-[11px] font-[600] text-emerald-700 hover:bg-white rounded px-1 shrink-0">Resolver</button>
+                  {canDelete && (
+                    <button onClick={async()=>{ if(confirm('Mover alerta para a lixeira?')) await deleteAlertaGabinete(a.id); }} className="opacity-0 group-hover:opacity-100 text-[#DC2626] hover:bg-white rounded px-1 shrink-0"><Trash2 className="w-3 h-3" /></button>
+                  )}
                 </li>
               ))}
             </ul>
@@ -348,16 +389,36 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
           <div className="bg-[#EFF6FF] rounded-xl border border-[#BFDBFE] p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#1E40AF]"><Calendar className="w-4 h-4" /> Próximos prazos</h3>
-              <button onClick={() => onGo?.('obrigacoes')} className="text-[12px] font-[500] text-[#2563EB]">Ver todos</button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => onGo?.('obrigacoes')} className="text-[12px] font-[500] text-[#2563EB]">Ver todos</button>
+                <button onClick={() => setShowAddAlerta(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#BFDBFE] text-[#1E40AF] hover:bg-blue-50">+ Alerta</button>
+              </div>
             </div>
-            <ul className="space-y-2">
-              {proximosPrazos.map((p, i) => (
-                <li key={i} className="flex gap-3 text-[12.5px]">
-                  <span className="w-[48px] shrink-0 font-[700] text-[#334155]">{p.label}</span>
-                  <span className="flex-1 text-[#475569] truncate">{p.title}</span>
-                </li>
-              ))}
-            </ul>
+            {prazos.length === 0 ? (
+              <div className="text-[12px] text-[#64748B] border-2 border-dashed border-[#BFDBFE] rounded-lg p-3 text-center bg-white/60">
+                Sem prazos com data{canGerirObrigacoes ? ' — adiciona uma obrigação ou um alerta com vencimento.' : '.'}
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {prazos.map(p => (
+                  <li key={`${p.kind}-${p.id}`} className="flex items-center gap-2 text-[12.5px] group">
+                    <span className={`w-[48px] shrink-0 font-[700] ${p.atrasado ? 'text-[#B91C1C]' : 'text-[#334155]'}`}>{fmtData(p.vencimento)}</span>
+                    <span className={`flex-1 truncate ${p.atrasado ? 'text-[#B91C1C] font-[600]' : 'text-[#475569]'}`} title={p.titulo}>
+                      {p.kind === 'alerta' ? '⏰ ' : ''}{p.titulo}
+                    </span>
+                    {p.kind === 'alerta' && (
+                      <button onClick={()=>resolverAlerta(p.id)} className="opacity-0 group-hover:opacity-100 text-[11px] font-[600] text-emerald-700 hover:bg-white rounded px-1 shrink-0">Resolver</button>
+                    )}
+                    {p.kind === 'obrigacao' && canGerirObrigacoes && p.estado !== 'entregue' && (
+                      <button onClick={()=>resolverObrigacao(p.id, 'entregue')} className="opacity-0 group-hover:opacity-100 text-[11px] font-[600] text-emerald-700 hover:bg-white rounded px-1 shrink-0">Entregue</button>
+                    )}
+                    {p.kind === 'obrigacao' && canGerirObrigacoes && p.estado !== 'dispensada' && (
+                      <button onClick={()=>resolverObrigacao(p.id, 'dispensada')} className="opacity-0 group-hover:opacity-100 text-[11px] font-[500] text-[#64748B] hover:bg-white rounded px-1 shrink-0">Dispensar</button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </div>
@@ -365,14 +426,18 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
       {/* Orientações */}
       <div id="sec-orientacoes" className="bg-[#FFFBEB] rounded-xl border border-[#FDE68A] p-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#92400E]"><Info className="w-4 h-4 text-[#D97706]" /> Orientações à equipa</h3>
-          <button onClick={()=>{ setOrientEdit(orientacoes); setShowEditOrient(true); }} className="text-[12px] font-[500] text-[#2563EB]">Editar</button>
+          <h3 className="text-[13px] font-[700] text-[#78350F]">Orientações à equipa</h3>
+          {canEditFicha && <button onClick={()=>{ setOrientEdit(orientacoes); setShowEditOrient(true); }} className="text-[12px] font-[500] text-[#2563EB]">Editar</button>}
         </div>
-        <ul className="list-disc pl-5 space-y-1 text-[12.5px] leading-[18px] text-[#78350F]">
-          {orientacoes.split('\n').filter(Boolean).map((line, i) => (
-            <li key={i}>{line}</li>
-          ))}
-        </ul>
+        {orientacoes ? (
+          <ul className="list-disc pl-5 space-y-1 text-[12.5px] leading-[18px] text-[#78350F]">
+            {orientacoes.split('\n').filter(Boolean).map((line, i) => (
+              <li key={i}>{line}</li>
+            ))}
+          </ul>
+        ) : (
+          <div className="text-[12px] text-[#A16207]">{canEditFicha ? 'Sem orientações — usa Editar para escrever as indicações para a equipa.' : 'Sem orientações definidas.'}</div>
+        )}
       </div>
 
       {/* Bottom 3 cols */}
@@ -388,7 +453,7 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
                 <span className="flex items-center gap-1.5 truncate"><span className="w-3 h-3 rounded-[2px] bg-[#FEE2E2] border border-[#FECACA] flex items-center justify-center text-[7px] text-[#DC2626]">⧉</span> <span className="truncate text-[#334155]">{d.nome}</span></span>
                 <span className="flex items-center gap-2 shrink-0">
                   <span className="text-[11px] text-[#94A3B8]">{new Date(d.dataUpload).toLocaleDateString('pt-PT')}</span>
-                  <button onClick={async()=>{ if(confirm('Remover documento?')) await deleteDocumentoGeral(d.id); }} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-zinc-100 rounded"><Trash2 className="w-3 h-3 text-zinc-500" /></button>
+                  {canDelete && <button onClick={async()=>{ if(confirm('Mover documento para a lixeira?')) await deleteDocumentoGeral(d.id); }} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-zinc-100 rounded"><Trash2 className="w-3 h-3 text-zinc-500" /></button>}
                 </span>
               </li>
             ))}
@@ -404,7 +469,7 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
             {contactosExibir.length===0 ? <li className="text-[12px] text-[#94A3B8] border-2 border-dashed rounded-lg p-3 text-center">Sem contactos</li> : contactosExibir.map(c => (
               <li key={c.id} className="flex items-start justify-between gap-2 group">
                 <div className="flex gap-2.5 min-w-0">
-                  <span className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-[700] text-white shrink-0" style={{ background: c.initials === 'MI' ? '#6366F1' : c.initials === 'VP' ? '#7C3AED' : '#334155' }}>{c.initials || initialsOf(c.nome)}</span>
+                  <span className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-[700] text-white shrink-0 bg-[#334155]">{c.initials || initialsOf(c.nome)}</span>
                   <div className="min-w-0">
                     <div className="text-[12.5px] font-[700] text-[#0F172A] leading-none truncate">{c.nome}</div>
                     <div className="text-[11px] text-[#64748B]">{c.cargo || '—'}</div>
@@ -416,34 +481,36 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
                   {c.email && <a href={`mailto:${c.email}`} className="w-6 h-6 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:bg-zinc-50"><Mail className="w-3 h-3" /></a>}
                   {!c.email && <span className="w-6 h-6 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-zinc-300"><Mail className="w-3 h-3" /></span>}
                   <span className="w-6 h-6 rounded-full bg-[#DCFCE7] border border-[#BBF7D0] flex items-center justify-center text-[#16A34A]"><MessageCircle className="w-3 h-3" /></span>
-                  <button onClick={async()=>{ if(confirm('Remover contacto?')) await deleteContactoGabinete(c.id); }} className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-zinc-500 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="w-3 h-3" /></button>
+                  {canDelete && <button onClick={async()=>{ if(confirm('Mover contacto para a lixeira?')) await deleteContactoGabinete(c.id); }} className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-zinc-500 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="w-3 h-3" /></button>}
                 </div>
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Lock className="w-4 h-4 text-[#2563EB]" /> Acessos</h3>
-            <button onClick={onOpenCofre} className="text-[12px] font-[500] text-[#2563EB] flex items-center gap-1">◎ Abrir cofre</button>
+        {canVerCofre && (
+          <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Lock className="w-4 h-4 text-[#2563EB]" /> Acessos</h3>
+              <button onClick={onOpenCofre} className="text-[12px] font-[500] text-[#2563EB] flex items-center gap-1">◎ Abrir cofre</button>
+            </div>
+            <ul className="space-y-2.5">
+              {cofreItems.length === 0 ? <li className="text-[12px] text-[#94A3B8] border-2 border-dashed rounded-lg p-3 text-center">Sem acessos guardados</li> : cofreItems.map(c => (
+                <li key={c.id} className="flex items-center justify-between text-[12.5px] py-1">
+                  <span className="flex items-center gap-2 min-w-0"><span className="w-9 text-center text-[10px] font-[700] px-1 py-1 rounded bg-[#F1F5F9] border border-[#E2E8F0] text-[#475569] shrink-0">{c.categoria || '—'}</span> <span className="text-[#334155] truncate">{c.titulo}</span></span>
+                  <button onClick={onOpenCofre} className="text-[11px] font-[500] text-[#2563EB] shrink-0">ver no cofre</button>
+                </li>
+              ))}
+            </ul>
           </div>
-          <ul className="space-y-2.5">
-            {cofreFallback.map((a, i) => (
-              <li key={i} className="flex items-center justify-between text-[12.5px] py-1">
-                <span className="flex items-center gap-2"><span className="w-9 text-center text-[10px] font-[700] px-1 py-1 rounded bg-[#F1F5F9] border border-[#E2E8F0] text-[#475569]">{a.label}</span> <span className="text-[#334155]">{a.title}</span></span>
-                <button onClick={onOpenCofre} className="text-[11px] font-[500] text-[#2563EB]">ver no cofre</button>
-              </li>
-            ))}
-          </ul>
-        </div>
+        )}
       </div>
 
       {/* Histórico */}
       <div id="sec-historico" className="bg-white rounded-xl border border-[#E2E8F0] p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Clock className="w-4 h-4 text-[#2563EB]" /> Histórico / Últimas ocorrências</h3>
-          <div className="flex items-center gap-2"><button onClick={()=>setShowAddOcorr(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#E2E8F0] text-[#2563EB]">+ Ocorrência</button><button className="text-[12px] font-[500] text-[#2563EB]">Ver todo o histórico</button></div>
+          <button onClick={()=>setShowAddOcorr(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#E2E8F0] text-[#2563EB]">+ Ocorrência</button>
         </div>
         <div className="relative">
           <div className="absolute left-[42px] top-2 bottom-2 w-px bg-[#E2E8F0] hidden sm:block" />
@@ -455,12 +522,13 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
                 <span className="w-6 h-6 rounded-full bg-[#1E293B] text-white flex items-center justify-center text-[9px] font-[700] shrink-0">{o.autorInitials}</span>
                 <span className="w-[105px] shrink-0 text-[12px] font-[600] text-[#334155] truncate">{o.autorNome}</span>
                 <span className="flex-1 text-[#475569] truncate">{o.descricao}</span>
-                <button onClick={async()=>{ if(confirm('Remover ocorrência?')) await deleteOcorrencia(o.id); }} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-zinc-100 rounded"><Trash2 className="w-3 h-3 text-zinc-500" /></button>
+                {canDelete && <button onClick={async()=>{ if(confirm('Mover ocorrência para a lixeira?')) await deleteOcorrencia(o.id); }} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-zinc-100 rounded"><Trash2 className="w-3 h-3 text-zinc-500" /></button>}
               </li>
             ))}
           </ul>
         </div>
       </div>
+
       {/* ——— Modais funcionais ——— */}
       {showEditCliente && cliente && (
         <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={()=>setShowEditCliente(false)}>
@@ -472,17 +540,32 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
               <input value={formCliente.caes||''} onChange={e=>setFormCliente({...formCliente, caes:e.target.value})} placeholder="CAE" className="px-3 py-2 rounded-xl border text-sm" />
               <input value={formCliente.caeDescricao||''} onChange={e=>setFormCliente({...formCliente, caeDescricao:e.target.value})} placeholder="CAE descricao" className="col-span-2 px-3 py-2 rounded-xl border text-sm" />
               <input value={Array.isArray(formCliente.gerentes) ? formCliente.gerentes.join(', ') : (formCliente.gerentes as unknown as string) || ''} onChange={e=>setFormCliente({...formCliente, gerentes: e.target.value.split(',').map(s=>s.trim()).filter(Boolean) as unknown as string[]})} placeholder="Gerentes (virgula)" className="col-span-2 px-3 py-2 rounded-xl border text-sm" />
-              <input type="number" value={formCliente.nrTrabalhadores ?? ''} onChange={e=>setFormCliente({...formCliente, nrTrabalhadores: e.target.value? Number(e.target.value): undefined})} placeholder="N trabalhadores" className="px-3 py-2 rounded-xl border text-sm" />
-              <input type="date" value={formCliente.inicioAtividade ? new Date(formCliente.inicioAtividade).toISOString().slice(0,10) : ''} onChange={e=>setFormCliente({...formCliente, inicioAtividade: e.target.value? new Date(e.target.value).getTime(): undefined})} className="px-3 py-2 rounded-xl border text-sm" />
-              <select value={formCliente.responsavelId||''} onChange={e=>{ const col=(colaboradores||[]).find(c=>c.id===e.target.value); setFormCliente({...formCliente, responsavelId: e.target.value||undefined, responsavelInterno: col? {nome:col.nome, initials:col.initials||col.nome.slice(0,2).toUpperCase()}: undefined}); }} className="col-span-2 px-3 py-2 rounded-xl border bg-white text-sm"><option value="">Responsável interno — nenhum</option>{(colaboradores||[]).map(c=><option key={c.id} value={c.id}>{c.nome} ({c.role})</option>)}</select>
-              <select value={formCliente.apoioId||''} onChange={e=>{ const col=(colaboradores||[]).find(c=>c.id===e.target.value); setFormCliente({...formCliente, apoioId: e.target.value||undefined, apoioAdministrativo: col? {nome:col.nome, initials:col.initials||col.nome.slice(0,2).toUpperCase()}: undefined}); }} className="col-span-2 px-3 py-2 rounded-xl border bg-white text-sm"><option value="">Apoio administrativo — nenhum</option>{(colaboradores||[]).map(c=><option key={c.id} value={c.id}>{c.nome} ({c.role})</option>)}</select>
-              <select value={formCliente.supervisorId||''} onChange={e=>{ const col=(colaboradores||[]).find(c=>c.id===e.target.value); setFormCliente({...formCliente, supervisorId: e.target.value||undefined, supervisor: col? {nome:col.nome, initials:col.initials||col.nome.slice(0,2).toUpperCase()}: undefined}); }} className="col-span-2 px-3 py-2 rounded-xl border bg-white text-sm"><option value="">Supervisor — nenhum</option>{(colaboradores||[]).map(c=><option key={c.id} value={c.id}>{c.nome} ({c.role})</option>)}</select>
+              <input value={formCliente.nrTrabalhadores != null ? String(formCliente.nrTrabalhadores) : ''} onChange={e=>setFormCliente({...formCliente, nrTrabalhadores: e.target.value === '' ? undefined : parseInt(e.target.value, 10) || 0})} placeholder="N. trabalhadores" className="px-3 py-2 rounded-xl border text-sm" />
+              <select value={formCliente.regimeIva||''} onChange={e=>setFormCliente({...formCliente, regimeIva:e.target.value as GabineteCliente['regimeIva']})} className="px-3 py-2 rounded-xl border text-sm bg-white">
+                <option value="">Regime IVA…</option>
+                <option value="mensal">Mensal</option>
+                <option value="trimestral">Trimestral</option>
+                <option value="isencao53">Isenção Art. 53</option>
+              </select>
+              <select value={formCliente.regimeIrc||''} onChange={e=>setFormCliente({...formCliente, regimeIrc:e.target.value as GabineteCliente['regimeIrc']})} className="px-3 py-2 rounded-xl border text-sm bg-white">
+                <option value="">IRC…</option>
+                <option value="geral">Regime Geral</option>
+                <option value="simplificado">Simplificado</option>
+                <option value="transparencia">Transparência</option>
+              </select>
+              <select value={formCliente.tipoSociedade||''} onChange={e=>setFormCliente({...formCliente, tipoSociedade:e.target.value})} className="px-3 py-2 rounded-xl border text-sm bg-white">
+                <option value="">Tipo de sociedade…</option>
+                <option value="Sociedade por quotas">Sociedade por quotas</option>
+                <option value="Sociedade unipessoal">Sociedade unipessoal</option>
+                <option value="Empresário individual">Empresário individual</option>
+              </select>
+              <input type="date" value={formCliente.inicioAtividade ? new Date(formCliente.inicioAtividade).toISOString().slice(0,10) : ''} onChange={e=>setFormCliente({...formCliente, inicioAtividade: e.target.value ? new Date(`${e.target.value}T12:00:00`).getTime() : undefined})} className="px-3 py-2 rounded-xl border text-sm" />
             </div>
-            <div>
-              <div className="text-[11px] font-[700] uppercase tracking-[1px] text-zinc-500 mb-1.5">Obrigações deste cliente</div>
-              <div className="flex flex-wrap gap-1.5">
+            <div className="space-y-2">
+              <div className="text-[12px] font-[600] text-zinc-600">Obrigações ativas (aparecem no Quadro e nos mapas)</div>
+              <div className="flex flex-wrap gap-1.5 max-h-[160px] overflow-y-auto">
                 {OBRIGACOES_CATALOGO.map(def => {
-                  const cur = formCliente.obrigacoesAtivas ?? getObrigacoesAtivas(cliente);
+                  const cur = (formCliente.obrigacoesAtivas as string[] | undefined) ?? getObrigacoesAtivas(cliente);
                   const on = cur.includes(def.id);
                   return (
                     <label key={def.id} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-[12px] cursor-pointer transition-all ${on ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-zinc-50 border-zinc-200 text-zinc-400'}`}>
@@ -506,17 +589,28 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
           <div className="w-full max-w-[480px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
             <div className="flex items-center justify-between"><h3 className="font-semibold">Novo alerta</h3><button onClick={()=>setShowAddAlerta(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
             <textarea value={alertaTexto} onChange={e=>setAlertaTexto(e.target.value)} placeholder="Texto do alerta..." rows={3} className="w-full px-3 py-2 rounded-xl border text-sm" />
+            <label className="block text-[12px] text-zinc-600">Vencimento (opcional — entra nos próximos prazos)
+              <input type="date" value={alertaVenc} onChange={e=>setAlertaVenc(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border text-sm" />
+            </label>
             <div className="flex justify-end gap-2"><button onClick={()=>setShowAddAlerta(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddAlerta} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Adicionar</button></div>
           </div>
         </div>
       )}
-      {showAddAssunto && (
-        <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddAssunto(false)}>
+      {showAddTarefa && (
+        <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddTarefa(false)}>
           <div className="w-full max-w-[480px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
-            <div className="flex items-center justify-between"><h3 className="font-semibold">Novo assunto</h3><button onClick={()=>setShowAddAssunto(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
-            <input value={assuntoTitulo} onChange={e=>setAssuntoTitulo(e.target.value)} placeholder="Titulo do assunto" className="w-full px-3 py-2 rounded-xl border text-sm" />
-            <select value={assuntoEstado} onChange={e=>setAssuntoEstado(e.target.value as AssuntoGabinete['estado'])} className="w-full px-3 py-2 rounded-xl border bg-white text-sm"><option value="em_curso">Em curso</option><option value="aguard_cliente">Aguard. cliente</option><option value="pendente">Pendente</option><option value="concluido">Concluido</option></select>
-            <div className="flex justify-end gap-2"><button onClick={()=>setShowAddAssunto(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddAssunto} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Criar (vai para Tarefas)</button></div>
+            <div className="flex items-center justify-between"><h3 className="font-semibold">Nova tarefa</h3><button onClick={()=>setShowAddTarefa(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
+            <input value={tarefaTitulo} onChange={e=>setTarefaTitulo(e.target.value)} placeholder="Título da tarefa" className="w-full px-3 py-2 rounded-xl border text-sm" />
+            <div className="grid grid-cols-2 gap-3">
+              <select value={tarefaEstado} onChange={e=>setTarefaEstado(e.target.value as Tarefa['estado'])} className="px-3 py-2 rounded-xl border bg-white text-sm">
+                <option value="todo">Por fazer</option>
+                <option value="doing">Em curso</option>
+                <option value="atrasada">Atrasada</option>
+                <option value="done">Concluída</option>
+              </select>
+              <input type="date" value={tarefaPrazo} onChange={e=>setTarefaPrazo(e.target.value)} className="px-3 py-2 rounded-xl border text-sm" />
+            </div>
+            <div className="flex justify-end gap-2"><button onClick={()=>setShowAddTarefa(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddTarefa} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Criar tarefa</button></div>
           </div>
         </div>
       )}
@@ -554,16 +648,19 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
           <div className="w-full max-w-[520px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
             <div className="flex items-center justify-between"><h3 className="font-semibold">Editar situacao</h3><button onClick={()=>setShowEditSituacao(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
             <div className="space-y-2">
-              {(cliente.situacaoAtual||[]).map((s, i)=>(
+              {situacaoEdit.map((s, i)=>(
                 <div key={i} className="flex gap-2">
-                  <select value={s.cor} onChange={e=>{ const arr=[...(cliente.situacaoAtual||[])]; arr[i]={...arr[i], cor:e.target.value as 'red'|'green'|'orange'}; upsertCliente({...cliente, situacaoAtual:arr, updatedAt: Date.now()}); }} className="px-2 py-2 rounded-lg border text-xs"><option value="green">Verde</option><option value="orange">Laranja</option><option value="red">Vermelho</option></select>
-                  <input value={s.texto} onChange={e=>{ const arr=[...(cliente.situacaoAtual||[])]; arr[i]={...arr[i], texto:e.target.value}; upsertCliente({...cliente, situacaoAtual:arr, updatedAt: Date.now()}); }} className="flex-1 px-3 py-2 rounded-xl border text-sm" />
-                  <button onClick={async()=>{ const arr=[...(cliente.situacaoAtual||[])]; arr.splice(i,1); await upsertCliente({...cliente, situacaoAtual:arr, updatedAt: Date.now()}); }} className="p-2 hover:bg-rose-50 rounded text-rose-600"><Trash2 className="w-4 h-4" /></button>
+                  <select value={s.cor} onChange={e=>{ const arr=[...situacaoEdit]; arr[i]={...arr[i], cor:e.target.value as 'red'|'green'|'orange'}; setSituacaoEdit(arr); }} className="px-2 py-2 rounded-lg border text-xs"><option value="green">Verde</option><option value="orange">Laranja</option><option value="red">Vermelho</option></select>
+                  <input value={s.texto} onChange={e=>{ const arr=[...situacaoEdit]; arr[i]={...arr[i], texto:e.target.value}; setSituacaoEdit(arr); }} className="flex-1 px-3 py-2 rounded-xl border text-sm" />
+                  <button onClick={()=>setSituacaoEdit(situacaoEdit.filter((_, j)=>j!==i))} className="p-2 hover:bg-rose-50 rounded text-rose-600"><Trash2 className="w-4 h-4" /></button>
                 </div>
               ))}
-              <button onClick={async()=>{ const arr=[...(cliente.situacaoAtual||[]), {texto:'Novo item', cor:'green' as const}]; await upsertCliente({...cliente, situacaoAtual:arr, updatedAt: Date.now()}); }} className="text-sm text-[#2563EB] flex items-center gap-1"><Plus className="w-3 h-3" /> Adicionar linha</button>
+              <button onClick={()=>setSituacaoEdit([...situacaoEdit, {texto:'', cor:'green'}])} className="text-sm text-[#2563EB] flex items-center gap-1"><Plus className="w-3 h-3" /> Adicionar linha</button>
             </div>
-            <div className="flex justify-end"><button onClick={()=>setShowEditSituacao(false)} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Fechar</button></div>
+            <div className="flex justify-end gap-2">
+              <button onClick={()=>setShowEditSituacao(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button>
+              <button onClick={async()=>{ await upsertCliente({...cliente, situacaoAtual: situacaoEdit.filter(s=>s.texto.trim()), updatedAt: Date.now()}); setShowEditSituacao(false); }} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Guardar</button>
+            </div>
           </div>
         </div>
       )}
@@ -581,7 +678,7 @@ export default function VisaoGeralView({ cliente, contactos, assuntos, alertas, 
 }
 
 // ─── Obrigações do cliente — checkboxes sincronizadas com o Quadro ──────────
-function ObrigacoesCard({ cliente }: { cliente: GabineteCliente }) {
+function ObrigacoesCard({ cliente, readOnly }: { cliente: GabineteCliente; readOnly?: boolean }) {
   const [saving, setSaving] = useState<string | null>(null);
   const ativas = getObrigacoesAtivas(cliente);
   const toggle = async (id: string) => {
@@ -596,13 +693,13 @@ function ObrigacoesCard({ cliente }: { cliente: GabineteCliente }) {
         <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Calendar className="w-4 h-4 text-[#64748B]" /> Obrigações</h3>
         <span className="text-[11px] text-[#64748B]">{ativas.length}/{OBRIGACOES_CATALOGO.length} ativas</span>
       </div>
-      <p className="text-[11px] text-[#94A3B8] mb-2.5">O que está marcado aparece no Quadro e nos mapas.</p>
+      <p className="text-[11px] text-[#94A3B8] mb-2.5">{readOnly ? 'O que está marcado aparece no Quadro e nos mapas.' : 'O que está marcado aparece no Quadro e nos mapas.'}</p>
       <div className="flex flex-wrap gap-1.5">
         {OBRIGACOES_CATALOGO.map(def => {
           const on = ativas.includes(def.id);
           return (
-            <label key={def.id} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-[12px] font-[500] cursor-pointer transition-all duration-200 ${on ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-zinc-50 border-zinc-200 text-zinc-400'}`}>
-              <input type="checkbox" checked={on} disabled={saving === def.id} onChange={() => toggle(def.id)} className="w-3.5 h-3.5 accent-emerald-600" />
+            <label key={def.id} className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-[12px] font-[500] ${readOnly ? 'cursor-default' : 'cursor-pointer'} transition-all duration-200 ${on ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-zinc-50 border-zinc-200 text-zinc-400'}`}>
+              <input type="checkbox" checked={on} disabled={readOnly || saving === def.id} onChange={() => toggle(def.id)} className="w-3.5 h-3.5 accent-emerald-600" />
               {def.label}
             </label>
           );

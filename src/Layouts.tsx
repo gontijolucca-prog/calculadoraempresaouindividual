@@ -4,7 +4,7 @@ import {
   ClipboardList, Upload, LogOut, Receipt,
   ChevronDown, ChevronRight, TrendingUp, Settings, UserPlus, Building2,
   Menu, X, Clock, Briefcase, ListOrdered, Package, History, FileDown, LayoutDashboard, LayoutGrid, Table2,
-  CheckSquare, Calendar, Lock, Users, Presentation,
+  CheckSquare, Calendar, Lock, Users, Presentation, ListChecks, Trash2,
 } from 'lucide-react';
 import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
 import { cn } from './lib/utils';
@@ -148,7 +148,10 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
   { id: 'mapa-rh', label: 'Mapa RH', Icon: Users, desc: '6 colunas RH - Salários, Ticket, IRS, DMR-AT/SS, Encargos' },
   { id: 'equipa', label: 'Equipa', Icon: Users, desc: 'Funcionários' },
   { id: 'tarefas', label: 'Tarefas', Icon: CheckSquare, desc: 'Lista por urgência e estado' },
+  { id: 'agenda', label: 'Agenda', Icon: Clock, desc: 'Tarefas, obrigações e alertas por dia' },
+  { id: 'obrigacoes', label: 'Obrigações', Icon: ListChecks, desc: 'Entregas e prazos por cliente' },
   { id: 'cofre', label: 'Cofre', Icon: Lock, desc: 'Acessos protegidos' },
+  { id: 'lixeira', label: 'Lixeira', Icon: Trash2, desc: 'Restaurar registos apagados' },
 ] as const;
   const goGabinete = (tab: string) => {
     onGabineteTab?.(tab);

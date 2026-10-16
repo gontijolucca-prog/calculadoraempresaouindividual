@@ -1,8 +1,13 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Plus, Users, CheckSquare, Calendar, Lock, Building2, Trash2, Eye, EyeOff, Copy, Shield, AlertTriangle, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Clock, Briefcase, MessageSquare, X, Send, Archive, Share2, Pencil, ListChecks } from 'lucide-react';
-import { useGabineteClientes, useGabineteTarefas, useGabineteObrigacoes, useGabineteCofre, useGabineteContactosGeral, useGabineteAssuntos, useGabineteAlertas, useGabineteOcorrencias, useGabineteDocumentos, useGabineteColaboradores } from './lib/useGabinete';
-import { seedMykolaVasylDemo, ensureAllClientesDefaults, linkColaboradorPorEmail } from './lib/gabinete';
+import { useGabineteClientes, useGabineteTarefas, useGabineteObrigacoes, useGabineteCofre, useGabineteContactosGeral, useGabineteAlertas, useGabineteOcorrencias, useGabineteDocumentos, useGabineteColaboradores } from './lib/useGabinete';
+import { migrarAssuntosParaTarefasV1, linkColaboradorPorEmail, upsertCliente, restaurarGabineteItem, purgarGabineteItem, flushOutbox } from './lib/gabinete';
+import { filterActive } from './lib/gabineteSelectors';
+import { can, deriveRole } from './lib/permissions';
+import { getSyncSnapshot, subscribeSync, type SyncSnapshot } from './lib/sync';
+import type { GabineteRole } from './lib/gabinetes';
+import { auth } from './lib/firebase';
 import {
   upsertTarefa, deleteTarefa, marcarTarefaFeita, newTarefaId,
   upsertObrigacao,
@@ -12,6 +17,7 @@ import {
   getMapaRHPilares, setMapaRHPilares, addMapaRHPilar, deleteMapaRHPilar, resetMapaRHPilares, getMapaRHVisiveis, setMapaRHVisiveis,
   startGabineteMetaSync,
   type GabineteCliente, type Tarefa, type Obrigacao, type ObrigacaoTipo, type ObrigacaoEstado, type CofreEntrada, type ObrigacaoDef, type MapaPilarDef,
+  type AlertaGabinete, type ContactoGabinete, type OcorrenciaGabinete, type GabineteDocumento, type LixeiraColKey,
 } from './lib/gabinete';
 import { listEmpresas } from './lib/empresas';
 import { getActiveGabineteId, clearActiveGabineteId, getGabineteMeta } from './lib/gabinetes';
@@ -34,35 +40,66 @@ const GAB_TAB_GUIA: Record<string, ViewKey> = {
   cofre: 'gab-cofre',
   agenda: 'gab-agenda',
   obrigacoes: 'gab-obrigacoes',
+  lixeira: 'gabinete',
 };
 
 // ─── Layout ─────────────────────────────────────────────────────────────────
 
-const VALID_GAB_TABS_SET = new Set<string>(['dashboard','mapa-controlo','mapa-rh','visao-geral','equipa','tarefas','cofre','gallery','agenda','obrigacoes']);
+const VALID_GAB_TABS_SET = new Set<string>(['dashboard','mapa-controlo','mapa-rh','visao-geral','equipa','tarefas','cofre','gallery','agenda','obrigacoes','lixeira']);
 export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour, activeEmpresaId, activeEmpresaNome, onGoEmpresas }: { tab?: GabineteTab; onTabChange?: (t: GabineteTab) => void; onStartTour?: (v: ViewKey) => void; activeEmpresaId?: string | null; activeEmpresaNome?: string | null; onGoEmpresas?: () => void }) {
   const [internalTab, setInternalTab] = useState<GabTab>('dashboard');
   const rawTab: GabineteTab = controlledTab ?? internalTab;
   const tab: GabineteTab = VALID_GAB_TABS_SET.has(rawTab) ? rawTab : 'gallery';
   const setTab = (onTabChange ?? setInternalTab) as (t: GabineteTab) => void;
   const activeFunction = tab === 'gallery' ? null : GABINET_FUNCTIONS.find((item) => item.id === tab);
-  const clientes = useGabineteClientes();
-  const tarefasRaw = useGabineteTarefas();
-  const obrigacoesRaw = useGabineteObrigacoes();
+  const clientesAll = useGabineteClientes();
+  const tarefasAll = useGabineteTarefas();
+  const obrigacoesAll = useGabineteObrigacoes();
   const cofre = useGabineteCofre();
   const contactosAll = useGabineteContactosGeral();
-  const assuntosAll = useGabineteAssuntos();
   const alertasAll = useGabineteAlertas();
   const ocorrenciasAll = useGabineteOcorrencias();
   const documentosAll = useGabineteDocumentos();
+  const clientes = useMemo(() => filterActive(clientesAll), [clientesAll]);
+  const tarefasRaw = useMemo(() => filterActive(tarefasAll), [tarefasAll]);
+  const obrigacoesRaw = useMemo(() => filterActive(obrigacoesAll), [obrigacoesAll]);
+  const contactosAllAtivos = useMemo(() => filterActive(contactosAll), [contactosAll]);
+  const alertasAllAtivos = useMemo(() => filterActive(alertasAll), [alertasAll]);
+  const ocorrenciasAllAtivas = useMemo(() => filterActive(ocorrenciasAll), [ocorrenciasAll]);
+  const documentosAllAtivos = useMemo(() => filterActive(documentosAll), [documentosAll]);
   const tarefas = useMemo(() => activeEmpresaId ? tarefasRaw.filter(t => !t.clienteId || t.clienteId === activeEmpresaId) : tarefasRaw, [tarefasRaw, activeEmpresaId]);
   const obrigacoes = useMemo(() => activeEmpresaId ? obrigacoesRaw.filter(o => !o.clienteId || o.clienteId === activeEmpresaId) : obrigacoesRaw, [obrigacoesRaw, activeEmpresaId]);
-  const contactosF = useMemo(() => activeEmpresaId ? contactosAll.filter(c => c.clienteId === activeEmpresaId) : contactosAll, [contactosAll, activeEmpresaId]);
-  const assuntosF = useMemo(() => activeEmpresaId ? assuntosAll.filter(a => a.clienteId === activeEmpresaId) : assuntosAll, [assuntosAll, activeEmpresaId]);
-  const alertasF = useMemo(() => activeEmpresaId ? alertasAll.filter(a => a.clienteId === activeEmpresaId) : alertasAll, [alertasAll, activeEmpresaId]);
-  const ocorrenciasF = useMemo(() => activeEmpresaId ? ocorrenciasAll.filter(o => o.clienteId === activeEmpresaId) : ocorrenciasAll, [ocorrenciasAll, activeEmpresaId]);
-  const documentosF = useMemo(() => activeEmpresaId ? documentosAll.filter(d => d.clienteId === activeEmpresaId) : documentosAll, [documentosAll, activeEmpresaId]);
+  const contactosF = useMemo(() => activeEmpresaId ? contactosAllAtivos.filter(c => c.clienteId === activeEmpresaId) : contactosAllAtivos, [contactosAllAtivos, activeEmpresaId]);
+  const alertasF = useMemo(() => activeEmpresaId ? alertasAllAtivos.filter(a => a.clienteId === activeEmpresaId) : alertasAllAtivos, [alertasAllAtivos, activeEmpresaId]);
+  const ocorrenciasF = useMemo(() => activeEmpresaId ? ocorrenciasAllAtivas.filter(o => o.clienteId === activeEmpresaId) : ocorrenciasAllAtivas, [ocorrenciasAllAtivas, activeEmpresaId]);
+  const documentosF = useMemo(() => activeEmpresaId ? documentosAllAtivos.filter(d => d.clienteId === activeEmpresaId) : documentosAllAtivos, [documentosAllAtivos, activeEmpresaId]);
   const colaboradores = useGabineteColaboradores();
-  React.useEffect(() => { seedMykolaVasylDemo().catch(()=>{}); ensureAllClientesDefaults().catch(()=>{}); import('./lib/firebase').then(m=>{ const uid = m.auth?.currentUser?.uid; const email = m.auth?.currentUser?.email; if(uid && email) linkColaboradorPorEmail(email, uid).catch(()=>{}); }).catch(()=>{}); }, []);
+  // Cargo do utilizador no gabinete ativo (dono = admin; membro sem role = contabilista).
+  const [role, setRole] = useState<GabineteRole | null>(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const id = getActiveGabineteId();
+        const uid = auth.currentUser?.uid ?? null;
+        const meta = id ? await getGabineteMeta(id) : null;
+        if (!cancelled) setRole(deriveRole(meta, uid));
+      } catch { if (!cancelled) setRole(null); }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  const effectiveRole: GabineteRole = role ?? 'admin';
+  // Indicador de sincronização — escritas locais primeiro, outbox com repetição.
+  const [sync, setSync] = useState<SyncSnapshot>(() => getSyncSnapshot());
+  React.useEffect(() => subscribeSync(() => setSync(getSyncSnapshot())), []);
+  React.useEffect(() => {
+    const retry = () => { if (getSyncSnapshot().queued > 0) flushOutbox().catch(()=>{}); };
+    window.addEventListener('online', retry);
+    const iv = window.setInterval(retry, 45000);
+    retry();
+    return () => { window.removeEventListener('online', retry); window.clearInterval(iv); };
+  }, []);
+  React.useEffect(() => { migrarAssuntosParaTarefasV1().catch(()=>{}); import('./lib/firebase').then(m=>{ const uid = m.auth?.currentUser?.uid; const email = m.auth?.currentUser?.email; if(uid && email) linkColaboradorPorEmail(email, uid).catch(()=>{}); }).catch(()=>{}); }, []);
   // Catálogos (obrigações/pilares) e filtros: leitura live do Firestore — sem isto
   // um pilar adicionado só existia no localStorage deste browser.
   React.useEffect(() => {
@@ -76,23 +113,48 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
   }, []);
   const clienteAtivo = useMemo(() => {
     if (!activeEmpresaId) return null;
-    const gc = clientes.find(c => c.id === activeEmpresaId);
+    const gc = clientes.find(c => c.id === activeEmpresaId || c.empresaId === activeEmpresaId);
     if (gc) return gc;
-    // Fallback: tenta EmpresaRecord
+    // Ainda só existe na Lista de Empresas — mostra os dados reais do record
+    // enquanto a ficha do gabinete é criada (efeito abaixo).
     try {
       const er = listEmpresas().find(e => e.id === activeEmpresaId);
       if (er) {
-        const parts = (er.nome || '').trim().split(/\s+/);
-        const ini = parts.slice(0,2).map(s=>s[0]?.toUpperCase()||'').join('') || 'CL';
         return {
-          id: er.id, nome: er.nome || 'Empresa', nif: er.nif || '', tipoEntidade: 'LDA' as const,
-          regimeIva: 'trimestral' as const, estado: 'ativo' as const,
-          createdAt: Date.now(), updatedAt: Date.now(), empresaId: er.id,
+          id: er.id, nome: er.nome || '—', nif: er.nif || '',
+          estado: 'ativo' as const, empresaId: er.id,
+          createdAt: er.createdAt || Date.now(), updatedAt: er.updatedAt || Date.now(),
         } as unknown as GabineteCliente;
       }
     } catch {}
     return null;
   }, [clientes, activeEmpresaId]);
+
+  // Cliente que só existe na Lista de Empresas: cria a ficha real no gabinete
+  // (idempotente) para Visão Geral, tarefas e obrigações usarem o mesmo registo.
+  React.useEffect(() => {
+    if (!activeEmpresaId || !can(effectiveRole, 'editar-clientes')) return;
+    if (clientesAll.some(c => c.id === activeEmpresaId || c.empresaId === activeEmpresaId)) return;
+    const er = listEmpresas().find(e => e.id === activeEmpresaId);
+    if (!er) return;
+    const nifDigits = (er.nif || '').replace(/\D/g, '');
+    const porNif = nifDigits ? clientesAll.find(c => (c.nif || '').replace(/\D/g, '') === nifDigits) : undefined;
+    if (porNif) {
+      if (porNif.empresaId !== er.id) upsertCliente({ ...porNif, empresaId: er.id, updatedAt: Date.now() }).catch(() => {});
+      return;
+    }
+    upsertCliente({
+      id: er.id,
+      nome: er.nome || 'Sem nome',
+      nif: er.nif || '',
+      tipoEntidade: 'LDA',
+      regimeIva: 'trimestral',
+      estado: 'ativo',
+      empresaId: er.id,
+      createdAt: er.createdAt || Date.now(),
+      updatedAt: Date.now(),
+    } as GabineteCliente).catch(() => {});
+  }, [activeEmpresaId, clientesAll, effectiveRole]);
 
   // Por defeito, se o App não passar callback, navega para o dashboard (no-op)
   const startTour = (v: ViewKey) => onStartTour?.(v);
@@ -154,7 +216,21 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
             <span className="opacity-30">•</span>
             <span>{tarefas.filter(t=>t.estado!=='done').length} tarefas abertas</span>
             <span className="opacity-30">•</span>
-            <span>{cofre.length} acessos</span>
+            {can(effectiveRole, 'ver-cofre') ? <span>{cofre.length} acessos</span> : <span>cargo: {effectiveRole}</span>}
+            <span className="opacity-30">•</span>
+            {sync.queued > 0 || sync.error ? (
+              <button
+                onClick={() => flushOutbox().catch(()=>{})}
+                title={sync.error || 'Operações à espera de envio'}
+                className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 font-semibold text-amber-800 hover:bg-amber-100"
+              >
+                {sync.queued > 0 ? `${sync.queued} por enviar — Repetir` : 'Falha — Repetir'}
+              </button>
+            ) : sync.pending > 0 ? (
+              <span className="text-[#0677FF]">A sincronizar…</span>
+            ) : (
+              <span className="text-emerald-700">Sincronizado ✓</span>
+            )}
           </div>
           <button onClick={clearGabineteAndReload} className="sm:hidden inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-700">Trocar</button>
           <div className="sm:hidden text-right text-[11px] leading-tight text-zinc-500">
@@ -176,13 +252,16 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
         {tab === 'gallery' && <GabineteGallery onOpen={goFunction} />}
         {tab !== 'gallery' && (
           <>
-            {tab === 'visao-geral' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolha um cliente na lista para ver a visão geral.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <VisaoGeralView cliente={clienteAtivo} contactos={contactosF} assuntos={assuntosF} alertas={alertasF} ocorrencias={ocorrenciasF} tarefas={tarefas} obrigacoes={obrigacoes} cofre={cofre} documentos={documentosF} colaboradores={colaboradores} onEditCliente={()=>{}} onGo={(tab)=>setTab(tab as GabineteTab)} onOpenCofre={()=>setTab('cofre')} />)}
-            {tab === 'dashboard' && <Dashboard clientes={clientes} tarefas={tarefasRaw} obrigacoes={obrigacoesRaw} cofre={cofre} onGo={goFunction} />}
-            {tab === 'mapa-rh' && <MapaRHView clientes={clientes} obrigacoes={obrigacoesRaw} />}
-            {tab === 'mapa-controlo' && <MapaControloView clientes={clientes} obrigacoes={obrigacoesRaw} />}
-            {tab === 'tarefas' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolha um cliente na lista para ver as tarefas.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <TarefasView tarefas={tarefas} clientes={clientes} obrigacoes={obrigacoes} activeEmpresaId={activeEmpresaId} activeEmpresaNome={activeEmpresaNome} />)}
-            {tab === 'equipa' && <GabineteEquipa />}
-            {tab === 'cofre' && <CofreView cofre={cofre} clientes={clientes} />}
+            {tab === 'visao-geral' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolha um cliente na lista para ver a visão geral.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <VisaoGeralView cliente={clienteAtivo} contactos={contactosF} alertas={alertasF} ocorrencias={ocorrenciasF} tarefas={tarefas} obrigacoes={obrigacoes} cofre={cofre} documentos={documentosF} colaboradores={colaboradores} role={effectiveRole} onGo={(tab)=>setTab(tab as GabineteTab)} onOpenCofre={()=>setTab('cofre')} />)}
+            {tab === 'dashboard' && <Dashboard clientes={clientes} tarefas={tarefasRaw} obrigacoes={obrigacoesRaw} cofre={cofre} onGo={goFunction} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
+            {tab === 'mapa-rh' && <MapaRHView clientes={clientes} obrigacoes={obrigacoesRaw} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
+            {tab === 'mapa-controlo' && <MapaControloView clientes={clientes} obrigacoes={obrigacoesRaw} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
+            {tab === 'tarefas' && (!activeEmpresaId ? <div className="bg-white rounded-2xl border p-8 text-center"><p className="text-sm text-zinc-600">Escolha um cliente na lista para ver as tarefas.</p><button onClick={()=>onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button></div> : <TarefasView tarefas={tarefas} clientes={clientes} obrigacoes={obrigacoes} activeEmpresaId={activeEmpresaId} activeEmpresaNome={activeEmpresaNome} canDelete={can(effectiveRole, 'apagar')} canGerirObrigacoes={can(effectiveRole, 'gerir-obrigacoes')} />)}
+            {tab === 'equipa' && (can(effectiveRole, 'gerir-equipa') ? <GabineteEquipa /> : <SemPermissao titulo="Equipa" />)}
+            {tab === 'agenda' && <AgendaView tarefas={tarefas} obrigacoes={obrigacoes} alertas={alertasF} clientes={clientes} />}
+            {tab === 'obrigacoes' && <ObrigacoesView obrigacoes={obrigacoesRaw} clientes={clientes} activeEmpresaId={activeEmpresaId} canGerirObrigacoes={can(effectiveRole, 'gerir-obrigacoes')} />}
+            {tab === 'lixeira' && (can(effectiveRole, 'restaurar') ? <LixeiraView clientesAll={clientesAll} tarefasAll={tarefasAll} obrigacoesAll={obrigacoesAll} contactosAll={contactosAll} alertasAll={alertasAll} ocorrenciasAll={ocorrenciasAll} documentosAll={documentosAll} canPurgar={can(effectiveRole, 'purgar')} /> : <SemPermissao titulo="Lixeira" />)}
+            {tab === 'cofre' && (can(effectiveRole, 'ver-cofre') ? <CofreView cofre={cofre} clientes={clientes} /> : <SemPermissao titulo="Cofre" />)}
           </>
         )}
       </div>
@@ -213,7 +292,7 @@ function Kpi({ label, value, sub, icon: Icon, tone = 'blue' }: { label:string; v
   );
 }
 
-function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:GabineteCliente[]; tarefas:Tarefa[]; obrigacoes:Obrigacao[]; cofre:CofreEntrada[]; onGo:(t:GabTab)=>void }) {
+function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true }: { clientes:GabineteCliente[]; tarefas:Tarefa[]; obrigacoes:Obrigacao[]; cofre:CofreEntrada[]; onGo:(t:GabTab)=>void; canEdit?: boolean }) {
   const colaboradores = useGabineteColaboradores();
   const meses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'] as const;
 
@@ -309,7 +388,8 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
 
   const grupos = useMemo(() => Array.from(new Set(clientes.flatMap(c=> (c.tags||[])))).sort(), [clientes]);
 
-  const calcCellStatus = (cli: GabineteCliente, linha: LinhaDef, mes: number, anoNum: number): 'concluido'|'nao_concluido' => {
+  type CellStatus = 'concluido' | 'nao_concluido' | 'sem_dados';
+  const calcCellStatus = (cli: GabineteCliente, linha: LinhaDef, mes: number, anoNum: number): CellStatus => {
     const hits = obrigacoes.filter(o => {
       if (o.clienteId !== cli.id) return false;
       const d = new Date(o.vencimento);
@@ -320,20 +400,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
     let best: Obrigacao | undefined;
     for (const o of hits) { if (!best) best=o; else { const prio=(s:ObrigacaoEstado)=> s==='entregue'?0:s==='atrasada'?1:2; if(prio(o.estado)<prio(best.estado)) best=o; } }
     if (best) return best.estado==='entregue' ? 'concluido' : 'nao_concluido';
-    const hasData = obrigacoes.length>0;
-    if (!hasData) {
-      switch(linha.id) {
-        case 'modelo44': return mes===1 ? 'concluido' : 'nao_concluido';
-        case 'saft': return mes<=8 ? 'concluido' : 'nao_concluido';
-        case 'iva': return [2,5,8].includes(mes) ? 'concluido' : 'nao_concluido';
-        case 'ies': return mes===7 ? 'concluido' : 'nao_concluido';
-        case 'modelo10': return mes===2 ? 'concluido' : 'nao_concluido';
-        case 'dmr': return mes<=8 ? 'concluido' : 'nao_concluido';
-        case 'ss': return mes<=8 ? 'concluido' : 'nao_concluido';
-        default: return 'nao_concluido';
-      }
-    }
-    return 'nao_concluido';
+    return 'sem_dados';
   };
 
   // Filtragem de clientes — todos os filtros combinam (AND)
@@ -370,21 +437,6 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
   const isEmptyGlobal = clientes.length === 0 && tarefas.length === 0 && obrigacoes.length === 0;
   const hasAlgumaObrigacao = obrigacoes.length > 0;
 
-  // —— Estado da célula ——
-  type CellStatus = 'concluido' | 'nao_concluido';
-  const getStatusExemplo = (linhaId: string, mes: number): CellStatus => {
-    switch(linhaId) {
-      case 'modelo44': return mes === 1 ? 'concluido' : 'nao_concluido';
-      case 'saft': if (mes <= 8) return 'concluido'; return 'nao_concluido';
-      case 'iva': if ([2,5,8].includes(mes)) return 'concluido'; return 'nao_concluido';
-      case 'ies': return mes === 7 ? 'concluido' : 'nao_concluido';
-      case 'modelo10': return mes === 2 ? 'concluido' : 'nao_concluido';
-      case 'dmr': return mes <= 8 ? 'concluido' : 'nao_concluido';
-      case 'ss': return mes <= 8 ? 'concluido' : 'nao_concluido';
-      default: return 'nao_concluido';
-    }
-  };
-
   const getCellStatus = (cli: GabineteCliente, linha: LinhaDef, mes: number, anoNum: number): CellStatus => {
     const hits = obrigacoes.filter(o => {
       if (o.clienteId !== cli.id) return false;
@@ -403,13 +455,11 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
       if (best.estado === 'entregue') return 'concluido';
       return 'nao_concluido';
     }
-    if (!hasAlgumaObrigacao) {
-      return getStatusExemplo(linha.id, mes);
-    }
-    return 'nao_concluido';
+    return 'sem_dados';
   };
 
   const toggleCell = async (cli: GabineteCliente, linha: LinhaDef, mes: number) => {
+    if (!canEdit) { showToast('O teu cargo não permite editar obrigações.'); return; }
     const status = getCellStatus(cli, linha, mes, ano);
     const nextStatus: CellStatus = status === 'concluido' ? 'nao_concluido' : 'concluido';
     let nextEstado: ObrigacaoEstado | null = null;
@@ -441,6 +491,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
 
   const renderIcon = (s: CellStatus, withBg = false) => {
     if (s === 'concluido') return <span title="Concluído" className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] leading-none rounded ${withBg ? 'bg-emerald-600 text-white' : 'text-emerald-600 bg-emerald-50 border border-emerald-200'}`}>✓</span>;
+    if (s === 'sem_dados') return <span title="Sem registo — clica para registar" className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] leading-none rounded ${withBg ? 'bg-white text-zinc-400 border border-zinc-300' : 'text-zinc-400 bg-white border border-zinc-200'}`}>—</span>;
     return <span title="Não Concluído" className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] leading-none rounded ${withBg ? 'bg-red-600 text-white' : 'text-red-600 bg-red-50 border border-red-200'}`}>✕</span>;
   };
 
@@ -454,7 +505,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
       for (const linha of linhasFiltradas.filter(l => ativasExp.has(l.id))) {
         const cells = meses.map((_, i) => {
           const st = getCellStatus(cli, linha, i+1, ano);
-          const map: Record<CellStatus,string> = { concluido:'Concluído', nao_concluido:'Não Concluído' } as Record<CellStatus,string>;
+          const map: Record<CellStatus,string> = { concluido:'Concluído', nao_concluido:'Não Concluído', sem_dados:'—' };
           return map[st];
         });
         rows.push([cli.nome, linha.label, ...cells].join(';'));
@@ -666,28 +717,27 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
           <button onClick={colapsarTodos} className="px-3 py-1.5 rounded border border-zinc-400 bg-gradient-to-b from-white to-zinc-100 hover:from-zinc-50 hover:to-zinc-200 text-zinc-800 font-medium shadow-sm">Colapsar todos</button>
           <div className="ml-auto flex flex-wrap items-center gap-4 text-[12px] text-zinc-700">
             <span className="inline-flex items-center gap-1.5"><span className="text-emerald-600 font-bold">✓</span> Concluído</span>
-            <span className="inline-flex items-center gap-1.5"><span className="text-zinc-900">●</span> Não Aplicável</span>
-            <span className="inline-flex items-center gap-1.5"><span className="text-zinc-600">∅</span> Inexistente</span>
             <span className="inline-flex items-center gap-1.5"><span className="text-red-600 font-bold">✕</span> Não Concluído</span>
+            <span className="inline-flex items-center gap-1.5"><span className="text-zinc-400 font-bold">—</span> Sem registo</span>
           </div>
         </div>
       </div>
 
       {isEmptyGlobal && (
         <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs text-blue-900 flex gap-2">
-          <span className="font-bold">Exemplo:</span>
-          <span>Sem clientes ainda — a mostrar como fica com dados. Crie clientes e as obrigações ganham estado real (clique numa célula para alternar: ✓ → ✕ → ● → ∅).</span>
+          <span className="font-bold">Sem dados:</span>
+          <span>Cria o primeiro cliente para começar a preencher o quadro. As células mostram “—” até existir registo real; clicar numa célula cria a obrigação desse mês.</span>
         </div>
       )}
       <div className="text-[11px] text-zinc-500 px-1">
-        Clica numa célula para alternar o estado. Filtros: cliente / gestor / ano / obrigação. O quadro guarda em Firestore e atualiza live para toda a equipa.
+        Clica numa célula para registar/alternar o estado (✓ → ✕; “—” cria o registo). Filtros: cliente / gestor / ano / obrigação. O quadro guarda em Firestore e atualiza live para toda a equipa.
       </div>
     </div>
   );
 }
 
 // ─── Mapa de Controlo Contabilidade — 7 pilares por trimestre ──────────────
-function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obrigacoes:Obrigacao[] }) {
+function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:GabineteCliente[]; obrigacoes:Obrigacao[]; canEdit?: boolean }) {
   const colabs = useGabineteColaboradores();
   const meses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'] as const;
 
@@ -742,6 +792,15 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
     return [0,1,2,3,4,5,6,7,8,9,10,11];
   })();
 
+  type MapaStatus = 'concluido'|'nao_concluido'|'sem_dados';
+  const getStatus = (cli:GabineteCliente, pilar:Pilar, mes:number): MapaStatus => {
+    const hits = obrigacoes.filter(o=> o.clienteId===cli.id && new Date(o.vencimento).getFullYear()===ano && new Date(o.vencimento).getMonth()+1===mes && pilar.tipos.includes(o.tipo as any));
+    let best: Obrigacao | undefined;
+    for(const o of hits){ if(!best) best=o; else { const prio=(s:ObrigacaoEstado)=> s==='entregue'?0:s==='atrasada'?1:2; if(prio(o.estado)<prio(best.estado)) best=o; } }
+    if(best){ if(best.estado==='entregue') return 'concluido'; return 'nao_concluido'; }
+    return 'sem_dados';
+  };
+
   const clientesFiltrados = (() => {
     let list=[...clientes];
     const t=filtroCliente.trim().toLowerCase();
@@ -763,19 +822,8 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
     return list;
   })();
 
-  const getStatus = (cli:GabineteCliente, pilar:Pilar, mes:number): 'concluido'|'nao_concluido' => {
-    const hits = obrigacoes.filter(o=> o.clienteId===cli.id && new Date(o.vencimento).getFullYear()===ano && new Date(o.vencimento).getMonth()+1===mes && pilar.tipos.includes(o.tipo as any));
-    let best: Obrigacao | undefined;
-    for(const o of hits){ if(!best) best=o; else { const prio=(s:ObrigacaoEstado)=> s==='entregue'?0:s==='atrasada'?1:2; if(prio(o.estado)<prio(best.estado)) best=o; } }
-    if(best){ if(best.estado==='entregue') return 'concluido'; return 'nao_concluido'; }
-    if(obrigacoes.length===0){
-      const h=(cli.id.charCodeAt(0)+mes*7)%2;
-      return (['concluido','nao_concluido'] as const)[h];
-    }
-    return 'nao_concluido';
-  };
-
   const toggleCell = async (cli:GabineteCliente, pilar:Pilar, mes:number) => {
+    if (!canEdit) { showToastMC('O teu cargo não permite editar obrigações.'); return; }
     const cur=getStatus(cli,pilar,mes);
     const next: 'concluido'|'nao_concluido' = cur==='concluido' ? 'nao_concluido' : 'concluido';
     const estado: ObrigacaoEstado = next==='concluido'?'entregue':'atrasada';
@@ -796,12 +844,13 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
 
   const renderIcon = (st:string, withBg=false) => {
     if(st==='concluido') return <span className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] rounded ${withBg?'bg-emerald-600 text-white':'text-emerald-600 bg-emerald-50 border border-emerald-200'}`}>✓</span>;
+    if(st==='sem_dados') return <span title="Sem registo — clica para registar" className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] rounded ${withBg?'bg-white text-zinc-400 border border-zinc-300':'text-zinc-400 bg-white border border-zinc-200'}`}>—</span>;
     return <span className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] rounded ${withBg?'bg-red-600 text-white':'text-red-600 bg-red-50 border border-red-200'}`}>✕</span>;
   };
 
   const exportCSV = () => {
     const rows:string[]=[]; const mesesVisiveis=visMeses.map(i=>meses[i]); const header=['Cliente','Nº','Pilar',...mesesVisiveis].join(';'); rows.push(header);
-    for(const cli of clientesFiltrados){ for(const pi of pilaresVisiveis){ const cells=visMeses.map(mi=>{ const mes=mi+1; const st=getStatus(cli,pi,mes); const map:any={concluido:'Concluído',nao_concluido:'Não Concluído'}; return map[st]; }); rows.push([cli.nome, cli.nif||'', pi.labelFull, ...cells].join(';')); } }
+    for(const cli of clientesFiltrados){ for(const pi of pilaresVisiveis){ const cells=visMeses.map(mi=>{ const mes=mi+1; const st=getStatus(cli,pi,mes); const map:Record<MapaStatus,string>={concluido:'Concluído',nao_concluido:'Não Concluído',sem_dados:'—'}; return map[st]; }); rows.push([cli.nome, cli.nif||'', pi.labelFull, ...cells].join(';')); } }
     const csv=rows.join('\n'); const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`Mapa_Controlo_${ano}${trim?'_T'+trim:''}.csv`; a.click(); URL.revokeObjectURL(url);
   };
 
@@ -1009,7 +1058,7 @@ function MapaControloView({ clientes, obrigacoes }: { clientes:GabineteCliente[]
   );
 }
 
-function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obrigacoes:Obrigacao[] }) {
+function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:GabineteCliente[]; obrigacoes:Obrigacao[]; canEdit?: boolean }) {
   const colabs = useGabineteColaboradores();
   const meses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'] as const;
 
@@ -1060,6 +1109,15 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
     return [0,1,2,3,4,5,6,7,8,9,10,11];
   })();
 
+  type MapaStatus = 'concluido'|'nao_concluido'|'sem_dados';
+  const getStatus = (cli:GabineteCliente, pilar:Pilar, mes:number): MapaStatus => {
+    const hits = obrigacoes.filter(o=> o.clienteId===cli.id && new Date(o.vencimento).getFullYear()===ano && new Date(o.vencimento).getMonth()+1===mes && pilar.tipos.includes(o.tipo as any));
+    let best: Obrigacao | undefined;
+    for(const o of hits){ if(!best) best=o; else { const prio=(s:ObrigacaoEstado)=> s==='entregue'?0:s==='atrasada'?1:2; if(prio(o.estado)<prio(best.estado)) best=o; } }
+    if(best){ if(best.estado==='entregue') return 'concluido'; return 'nao_concluido'; }
+    return 'sem_dados';
+  };
+
   const clientesFiltrados = (() => {
     let list=[...clientes];
     const t=filtroCliente.trim().toLowerCase();
@@ -1081,19 +1139,8 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
     return list;
   })();
 
-  const getStatus = (cli:GabineteCliente, pilar:Pilar, mes:number): 'concluido'|'nao_concluido' => {
-    const hits = obrigacoes.filter(o=> o.clienteId===cli.id && new Date(o.vencimento).getFullYear()===ano && new Date(o.vencimento).getMonth()+1===mes && pilar.tipos.includes(o.tipo as any));
-    let best: Obrigacao | undefined;
-    for(const o of hits){ if(!best) best=o; else { const prio=(s:ObrigacaoEstado)=> s==='entregue'?0:s==='atrasada'?1:2; if(prio(o.estado)<prio(best.estado)) best=o; } }
-    if(best){ if(best.estado==='entregue') return 'concluido'; return 'nao_concluido'; }
-    if(obrigacoes.length===0){
-      const h=(cli.id.charCodeAt(0)+mes*7)%2;
-      return (['concluido','nao_concluido'] as const)[h];
-    }
-    return 'nao_concluido';
-  };
-
   const toggleCell = async (cli:GabineteCliente, pilar:Pilar, mes:number) => {
+    if (!canEdit) { showToastRH('O teu cargo não permite editar obrigações.'); return; }
     const cur=getStatus(cli,pilar,mes);
     const next: 'concluido'|'nao_concluido' = cur==='concluido' ? 'nao_concluido' : 'concluido';
     const estado: ObrigacaoEstado = next==='concluido'?'entregue':'atrasada';
@@ -1114,12 +1161,13 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
 
   const renderIcon = (st:string, withBg=false) => {
     if(st==='concluido') return <span className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] rounded ${withBg?'bg-emerald-600 text-white':'text-emerald-600 bg-emerald-50 border border-emerald-200'}`}>✓</span>;
+    if(st==='sem_dados') return <span title="Sem registo — clica para registar" className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] rounded ${withBg?'bg-white text-zinc-400 border border-zinc-300':'text-zinc-400 bg-white border border-zinc-200'}`}>—</span>;
     return <span className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] rounded ${withBg?'bg-red-600 text-white':'text-red-600 bg-red-50 border border-red-200'}`}>✕</span>;
   };
 
   const exportCSV = () => {
     const rows:string[]=[]; const mesesVisiveis=visMeses.map(i=>meses[i]); const header=['Cliente','Nº','Pilar',...mesesVisiveis].join(';'); rows.push(header);
-    for(const cli of clientesFiltrados){ for(const pi of pilaresVisiveis){ const cells=visMeses.map(mi=>{ const mes=mi+1; const st=getStatus(cli,pi,mes); const map:any={concluido:'Concluído',nao_concluido:'Não Concluído'}; return map[st]; }); rows.push([cli.nome, cli.nif||'', pi.labelFull, ...cells].join(';')); } }
+    for(const cli of clientesFiltrados){ for(const pi of pilaresVisiveis){ const cells=visMeses.map(mi=>{ const mes=mi+1; const st=getStatus(cli,pi,mes); const map:Record<MapaStatus,string>={concluido:'Concluído',nao_concluido:'Não Concluído',sem_dados:'—'}; return map[st]; }); rows.push([cli.nome, cli.nif||'', pi.labelFull, ...cells].join(';')); } }
     const csv=rows.join('\n'); const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`Mapa_RH_${ano}${trim?'_T'+trim:''}.csv`; a.click(); URL.revokeObjectURL(url);
   };
 
@@ -1330,7 +1378,7 @@ function MapaRHView({ clientes, obrigacoes }: { clientes:GabineteCliente[]; obri
 
 
 // ─── Agenda — Fase 1 ────────────────────────────────────────────────────────
-function AgendaView({ tarefas, obrigacoes, clientes }: { tarefas: Tarefa[]; obrigacoes: Obrigacao[]; clientes: GabineteCliente[] }) {
+function AgendaView({ tarefas, obrigacoes, alertas, clientes }: { tarefas: Tarefa[]; obrigacoes: Obrigacao[]; alertas: AlertaGabinete[]; clientes: GabineteCliente[] }) {
   // Agenda com padding extra no mobile para não tapar com a pill
 
   const [cur, setCur] = useState(() => { const d = new Date(); d.setDate(1); return d; });
@@ -1340,18 +1388,20 @@ function AgendaView({ tarefas, obrigacoes, clientes }: { tarefas: Tarefa[]; obri
   const startWeek = new Date(cur.getFullYear(), cur.getMonth(), 1).getDay(); // 0 Sun
   const startMon = (startWeek + 6) % 7; // 0 Mon
   const eventsByDay = useMemo(() => {
-    const map: Record<number, { tarefas: Tarefa[]; obrs: Obrigacao[] }> = {};
-    const add = (d: number, t?: Tarefa, o?: Obrigacao) => {
-      if (!map[d]) map[d] = { tarefas: [], obrs: [] };
+    const map: Record<number, { tarefas: Tarefa[]; obrs: Obrigacao[]; alertas: AlertaGabinete[] }> = {};
+    const add = (d: number, t?: Tarefa, o?: Obrigacao, a?: AlertaGabinete) => {
+      if (!map[d]) map[d] = { tarefas: [], obrs: [], alertas: [] };
       if (t) map[d].tarefas.push(t);
       if (o) map[d].obrs.push(o);
+      if (a) map[d].alertas.push(a);
     };
     const y = cur.getFullYear(), m = cur.getMonth();
     tarefas.forEach(t => { if (!t.dataVencimento) return; const d = new Date(t.dataVencimento); if (d.getFullYear()===y && d.getMonth()===m) add(d.getDate(), t); });
     obrigacoes.forEach(o => { const d = new Date(o.vencimento); if (d.getFullYear()===y && d.getMonth()===m) add(d.getDate(), undefined, o); });
+    alertas.forEach(a => { if (!a.vencimento || (a.estado ?? 'aberto') !== 'aberto') return; const d = new Date(a.vencimento); if (d.getFullYear()===y && d.getMonth()===m) add(d.getDate(), undefined, undefined, a); });
     return map;
-  }, [tarefas, obrigacoes, cur]);
-  const selEvents = sel ? (eventsByDay[sel] || { tarefas: [], obrs: [] }) : { tarefas: [], obrs: [] };
+  }, [tarefas, obrigacoes, alertas, cur]);
+  const selEvents = sel ? (eventsByDay[sel] || { tarefas: [], obrs: [], alertas: [] }) : { tarefas: [], obrs: [], alertas: [] };
   const weekDays = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
   const mesLabel = cur.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
   return (
@@ -1372,7 +1422,7 @@ function AgendaView({ tarefas, obrigacoes, clientes }: { tarefas: Tarefa[]; obri
             {Array.from({length: daysInMonth}).map((_,i)=> {
               const d = i+1;
               const ev = eventsByDay[d];
-              const count = ev ? ev.tarefas.length + ev.obrs.length : 0;
+              const count = ev ? ev.tarefas.length + ev.obrs.length + ev.alertas.length : 0;
               const isSel = sel===d;
               const isToday = new Date().getFullYear()===cur.getFullYear() && new Date().getMonth()===cur.getMonth() && new Date().getDate()===d;
               return (
@@ -1382,6 +1432,7 @@ function AgendaView({ tarefas, obrigacoes, clientes }: { tarefas: Tarefa[]; obri
                     <div className="space-y-0.5">
                       {ev.tarefas.slice(0,2).map(t=> <div key={t.id} className={`text-[10px] truncate px-1.5 py-0.5 rounded-full ${isSel ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'}`}>{t.titulo.slice(0,18)}</div>)}
                       {ev.obrs.slice(0,2).map(o=> <div key={o.id} className={`text-[10px] truncate px-1.5 py-0.5 rounded-full ${isSel ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'}`}>{o.tipo.toUpperCase()}</div>)}
+                      {ev.alertas.slice(0,2).map(a=> <div key={a.id} className={`text-[10px] truncate px-1.5 py-0.5 rounded-full ${isSel ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-800'}`}>{a.texto.slice(0,18)}</div>)}
                       {count>4 && <div className={`text-[10px] ${isSel? 'text-white/70':'text-zinc-500'}`}>+{count-4} mais</div>}
                     </div>
                   )}
@@ -1391,8 +1442,8 @@ function AgendaView({ tarefas, obrigacoes, clientes }: { tarefas: Tarefa[]; obri
           </div>
         </div>
         <div className="bg-white rounded-2xl border border-zinc-200 p-4">
-          <h3 className="font-semibold flex items-center gap-2">{sel ? `${sel} de ${mesLabel}` : 'Seleciona um dia'} {sel && <span className="text-xs font-normal text-zinc-500">({(selEvents.tarefas.length+selEvents.obrs.length)} itens)</span>}</h3>
-          {!sel ? <div className="py-12 text-center text-sm text-zinc-500">Clique num dia do calendário</div> : (selEvents.tarefas.length+selEvents.obrs.length===0 ? <div className="py-12 text-center text-sm text-zinc-500 border-2 border-dashed border-zinc-200 rounded-xl mt-3">Nada para este dia. Cria uma tarefa para {sel}/{cur.getMonth()+1}</div> : (
+          <h3 className="font-semibold flex items-center gap-2">{sel ? `${sel} de ${mesLabel}` : 'Seleciona um dia'} {sel && <span className="text-xs font-normal text-zinc-500">({(selEvents.tarefas.length+selEvents.obrs.length+selEvents.alertas.length)} itens)</span>}</h3>
+          {!sel ? <div className="py-12 text-center text-sm text-zinc-500">Clique num dia do calendário</div> : (selEvents.tarefas.length+selEvents.obrs.length+selEvents.alertas.length===0 ? <div className="py-12 text-center text-sm text-zinc-500 border-2 border-dashed border-zinc-200 rounded-xl mt-3">Nada para este dia. Cria uma tarefa para {sel}/{cur.getMonth()+1}</div> : (
             <div className="space-y-2 mt-3">
               {selEvents.tarefas.map(t=> (
                 <div key={t.id} className="p-3 rounded-xl border border-zinc-200 hover:bg-zinc-50">
@@ -1406,11 +1457,17 @@ function AgendaView({ tarefas, obrigacoes, clientes }: { tarefas: Tarefa[]; obri
                   <div className="text-xs text-zinc-600">{o.clienteNome||'—'} • {o.tipo} • {o.estado}</div>
                 </div>
               ))}
+              {selEvents.alertas.map(a=> (
+                <div key={a.id} className="p-3 rounded-xl border border-rose-200 bg-rose-50/50">
+                  <div className="text-sm font-medium">{a.texto}</div>
+                  <div className="text-xs text-zinc-600">{a.clienteNome||'—'} • alerta • {a.estado ?? 'aberto'}</div>
+                </div>
+              ))}
             </div>
           ))}
           <div className="mt-4 p-3 rounded-xl bg-zinc-50 border border-zinc-200">
             <div className="text-xs font-bold text-zinc-700 flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Legenda</div>
-            <div className="text-xs text-zinc-600 mt-1 space-y-1"><div><span className="inline-block w-2 h-2 rounded-full bg-amber-400 mr-2" />Tarefas</div><div><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-2" />Obrigações fiscais</div></div>
+            <div className="text-xs text-zinc-600 mt-1 space-y-1"><div><span className="inline-block w-2 h-2 rounded-full bg-amber-400 mr-2" />Tarefas</div><div><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-2" />Obrigações fiscais</div><div><span className="inline-block w-2 h-2 rounded-full bg-rose-500 mr-2" />Alertas</div></div>
           </div>
         </div>
       </div>
@@ -1419,7 +1476,7 @@ function AgendaView({ tarefas, obrigacoes, clientes }: { tarefas: Tarefa[]; obri
 }
 
 // ─── Tarefas (Lista) ──────────────────────────────────────────────────────────
-function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmpresaNome }: { tarefas:Tarefa[]; clientes:GabineteCliente[]; obrigacoes:Obrigacao[]; activeEmpresaId?: string|null; activeEmpresaNome?: string|null }) {
+function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmpresaNome, canDelete = true, canGerirObrigacoes = true }: { tarefas:Tarefa[]; clientes:GabineteCliente[]; obrigacoes:Obrigacao[]; activeEmpresaId?: string|null; activeEmpresaNome?: string|null; canDelete?: boolean; canGerirObrigacoes?: boolean }) {
   const [q, setQ] = useState('');
   const [filtroCli, setFiltroCli] = useState<string>('todos');
   const [filtroEstado, setFiltroEstado] = useState<string>('todos');
@@ -1565,7 +1622,7 @@ function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmp
                     <div className="text-xs text-zinc-500 truncate">{t.clienteNome || '—'} • {t.dataVencimento ? new Date(t.dataVencimento).toLocaleDateString('pt-PT') : 'sem prazo'}</div>
                   </div>
                   <button onClick={()=>upsertTarefa({...t, arquivada:false})} className="px-3 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs">Restaurar</button>
-                  <button onClick={()=>deleteTarefa(t.id)} className="p-1.5 rounded-lg hover:bg-zinc-50 border border-transparent hover:border-zinc-200"><Trash2 className="w-3.5 h-3.5 text-zinc-500" /></button>
+                  {canDelete && <button onClick={()=>deleteTarefa(t.id)} className="p-1.5 rounded-lg hover:bg-zinc-50 border border-transparent hover:border-zinc-200"><Trash2 className="w-3.5 h-3.5 text-zinc-500" /></button>}
                 </div>
               ))}
             </div>
@@ -1595,7 +1652,7 @@ function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmp
                         <td className="px-3 py-3 text-xs text-zinc-600">{item.dataVencimento ? new Date(item.dataVencimento).toLocaleDateString('pt-PT') : '—'}</td>
                         <td className="px-4 py-3">
                           <div className="flex justify-end gap-1">
-                            {o.estado !== 'entregue' && <button onClick={()=>upsertObrigacao({...o, estado:'entregue'})} className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs">Entregue</button>}
+                            {canGerirObrigacoes && o.estado !== 'entregue' && <button onClick={()=>upsertObrigacao({...o, estado:'entregue'})} className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs">Entregue</button>}
                             {o.estado === 'entregue' && <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs">✓ Entregue</span>}
                           </div>
                         </td>
@@ -1619,7 +1676,7 @@ function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmp
                           {t.estado!=='todo' && t.estado!=='done' && <button onClick={()=>upsertTarefa({...t, estado:'todo'})} className="px-2 py-1 rounded-lg bg-white border border-zinc-200 text-xs">A fazer</button>}
                           {t.estado==='todo' && <button onClick={()=>upsertTarefa({...t, estado:'doing'})} className="px-2 py-1 rounded-lg bg-white border border-zinc-200 text-xs">Em curso</button>}
                           <button onClick={()=>{ setForm({...t}); setShowNew(true); }} className="p-1.5 rounded-lg hover:bg-zinc-100 border border-transparent hover:border-zinc-200"><Pencil className="w-3.5 h-3.5 text-zinc-500" /></button>
-                          <button onClick={()=>deleteTarefa(t.id)} className="p-1.5 rounded-lg hover:bg-zinc-100 border border-transparent hover:border-zinc-200"><Trash2 className="w-3.5 h-3.5 text-zinc-500" /></button>
+                          {canDelete && <button onClick={()=>deleteTarefa(t.id)} className="p-1.5 rounded-lg hover:bg-zinc-100 border border-transparent hover:border-zinc-200"><Trash2 className="w-3.5 h-3.5 text-zinc-500" /></button>}
                         </div>
                       </td>
                     </tr>
@@ -1670,7 +1727,7 @@ function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmp
 }
 
 // ─── Obrigações ───────────────────────────────────────────────────────────────
-function ObrigacoesView({ obrigacoes, clientes, activeEmpresaId }: { obrigacoes:Obrigacao[]; clientes:GabineteCliente[]; activeEmpresaId?: string|null }) {
+function ObrigacoesView({ obrigacoes, clientes, activeEmpresaId, canGerirObrigacoes = true }: { obrigacoes:Obrigacao[]; clientes:GabineteCliente[]; activeEmpresaId?: string|null; canGerirObrigacoes?: boolean }) {
   const [mes, setMes] = useState(()=> new Date().toISOString().slice(0,7)); // YYYY-MM
   const [filtroCli, setFiltroCli] = useState('todos');
   const filtered = useMemo(()=> {
@@ -1711,8 +1768,8 @@ function ObrigacoesView({ obrigacoes, clientes, activeEmpresaId }: { obrigacoes:
                       {o.origem === 'calendario_fiscal'
                         ? <span className="px-2 py-1.5 rounded-lg bg-blue-50 border border-blue-100 text-blue-700 text-xs whitespace-nowrap">Referência</span>
                         : <>
-                            {o.estado!=='entregue' && <button onClick={()=>upsertObrigacao({...o, estado:'entregue'})} className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs">Entregue</button>}
-                            {o.estado!=='dispensada' && <button onClick={()=>upsertObrigacao({...o, estado:'dispensada'})} className="px-3 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs">Dispensar</button>}
+                            {canGerirObrigacoes && o.estado!=='entregue' && <button onClick={()=>upsertObrigacao({...o, estado:'entregue'})} className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs">Entregue</button>}
+                            {canGerirObrigacoes && o.estado!=='dispensada' && <button onClick={()=>upsertObrigacao({...o, estado:'dispensada'})} className="px-3 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs">Dispensar</button>}
                           </>}
                     </div>
                   </td>
@@ -2025,6 +2082,99 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
       {passModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={()=>setPassModal(false)}><div onClick={e=>e.stopPropagation()} className="bg-white rounded-2xl p-6 w-full max-w-sm"><h3 className="font-semibold">Desbloquear cofre</h3><p className="text-xs text-zinc-600 mt-1">Sem esta passphrase ninguém lê. Se a perder, perde o cofre.</p><input autoFocus type="password" value={passInput} onChange={e=>setPassInput(e.target.value)} placeholder="Passphrase" className="w-full mt-3 px-3 py-2.5 rounded-xl border text-sm"/><div className="flex justify-end gap-2 mt-4"><button onClick={()=>setPassModal(false)} className="px-4 py-2 rounded-full border text-sm">Cancelar</button><button onClick={async()=>{ const { setCofrePassphrase, decryptSecret }=await import('./lib/cofreCrypto'); setCofrePassphrase(passInput); const c=(selected as unknown as {cipher:never}).cipher as never; try{ const pt=await decryptSecret(c as never, passInput); setPlain(pt); setPassModal(false); setPassInput(''); }catch{ alert('Passphrase errada.'); } }} className="px-4 py-2 rounded-full bg-[#0B57D0] text-white text-sm">Desbloquear</button></div></div></div>
       )}
+    </div>
+  );
+}
+
+// ─── Sem permissão — cargo sem acesso a esta função ─────────────────────────
+function SemPermissao({ titulo }: { titulo: string }) {
+  return (
+    <div className="bg-white rounded-2xl border border-zinc-200 p-8 text-center">
+      <Shield className="w-6 h-6 text-zinc-400 mx-auto" />
+      <p className="mt-2 text-sm font-semibold text-zinc-700">{titulo} — sem permissão</p>
+      <p className="text-xs text-zinc-500 mt-1">O teu cargo não dá acesso a esta área. Pede ao admin do gabinete para te dar acesso.</p>
+    </div>
+  );
+}
+
+// ─── Lixeira — registos com deletedAt; restaurar (admin+contab.) / purgar (admin)
+type LixeiraRegisto = { tipo: LixeiraColKey; id: string; titulo: string; clienteNome?: string; deletedAt: number };
+
+function LixeiraView({ clientesAll, tarefasAll, obrigacoesAll, contactosAll, alertasAll, ocorrenciasAll, documentosAll, canPurgar }: {
+  clientesAll: GabineteCliente[]; tarefasAll: Tarefa[]; obrigacoesAll: Obrigacao[]; contactosAll: ContactoGabinete[];
+  alertasAll: AlertaGabinete[]; ocorrenciasAll: OcorrenciaGabinete[]; documentosAll: GabineteDocumento[]; canPurgar: boolean;
+}) {
+  const [ocultos, setOcultos] = useState<Set<string>>(new Set());
+  const esconder = (tipo: LixeiraColKey, id: string) => setOcultos(prev => { const n = new Set(prev); n.add(`${tipo}:${id}`); return n; });
+
+  const entradas: LixeiraRegisto[] = useMemo(() => {
+    const list: LixeiraRegisto[] = [];
+    for (const c of clientesAll) if (c.deletedAt) list.push({ tipo: 'clientes', id: c.id, titulo: c.nome, deletedAt: c.deletedAt });
+    for (const t of tarefasAll) if (t.deletedAt) list.push({ tipo: 'tarefas', id: t.id, titulo: t.titulo, clienteNome: t.clienteNome, deletedAt: t.deletedAt });
+    for (const o of obrigacoesAll) if (o.deletedAt) list.push({ tipo: 'obrigacoes', id: o.id, titulo: o.titulo, clienteNome: o.clienteNome, deletedAt: o.deletedAt });
+    for (const c of contactosAll) if (c.deletedAt) list.push({ tipo: 'contactos', id: c.id, titulo: c.nome, clienteNome: c.clienteNome, deletedAt: c.deletedAt });
+    for (const a of alertasAll) if (a.deletedAt) list.push({ tipo: 'alertas', id: a.id, titulo: a.texto, clienteNome: a.clienteNome, deletedAt: a.deletedAt });
+    for (const o of ocorrenciasAll) if (o.deletedAt) list.push({ tipo: 'ocorrencias', id: o.id, titulo: o.descricao, clienteNome: o.clienteNome, deletedAt: o.deletedAt });
+    for (const d of documentosAll) if (d.deletedAt) list.push({ tipo: 'documentos', id: d.id, titulo: d.nome, clienteNome: d.clienteNome, deletedAt: d.deletedAt });
+    return list.filter(r => !ocultos.has(`${r.tipo}:${r.id}`)).sort((a, b) => b.deletedAt - a.deletedAt);
+  }, [clientesAll, tarefasAll, obrigacoesAll, contactosAll, alertasAll, ocorrenciasAll, documentosAll, ocultos]);
+
+  const restaurar = (r: LixeiraRegisto) => {
+    restaurarGabineteItem(r.tipo, r.id);
+    esconder(r.tipo, r.id);
+  };
+  const purgar = async (r: LixeiraRegisto) => {
+    if (!confirm(`Apagar definitivamente “${r.titulo}”? Não há volta a dar.`)) return;
+    await purgarGabineteItem(r.tipo, r.id);
+    esconder(r.tipo, r.id);
+  };
+
+  const tipoLabel: Record<LixeiraColKey, string> = {
+    clientes: 'Cliente', tarefas: 'Tarefa', obrigacoes: 'Obrigação', contactos: 'Contacto', alertas: 'Alerta', ocorrencias: 'Ocorrência', documentos: 'Documento',
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 className="text-lg font-bold flex items-center gap-2"><Trash2 className="w-5 h-5 text-zinc-500" /> Lixeira</h2>
+          <p className="text-xs text-zinc-500 mt-0.5">O que apagas fica aqui — podes restaurar quando quiseres. Apagar definitivamente é só para admin.</p>
+        </div>
+        {canPurgar && entradas.length > 0 && (
+          <button
+            onClick={async () => {
+              if (!confirm(`Esvaziar a lixeira (${entradas.length} registos)? Não há volta a dar.`)) return;
+              for (const r of entradas) { await purgarGabineteItem(r.tipo, r.id); esconder(r.tipo, r.id); }
+            }}
+            className="px-3 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-sm font-semibold hover:bg-rose-100"
+          >
+            Esvaziar lixeira
+          </button>
+        )}
+      </div>
+      <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-zinc-50 text-zinc-600"><tr><th className="text-left px-4 py-3">Tipo</th><th className="text-left px-4 py-3">Registo</th><th className="text-left px-4 py-3">Cliente</th><th className="text-left px-4 py-3">Apagado</th><th className="text-right px-4 py-3">Ações</th></tr></thead>
+            <tbody className="divide-y divide-zinc-200">
+              {entradas.length === 0 ? <tr><td colSpan={5} className="px-4 py-12 text-center text-zinc-500">Lixeira vazia — nada apagado.</td></tr> : entradas.map(r => (
+                <tr key={`${r.tipo}:${r.id}`} className="hover:bg-zinc-50">
+                  <td className="px-4 py-3"><span className="px-2 py-1 rounded-full bg-zinc-100 border border-zinc-200 text-xs">{tipoLabel[r.tipo]}</span></td>
+                  <td className="px-4 py-3 font-medium max-w-[320px] truncate">{r.titulo || r.id}</td>
+                  <td className="px-4 py-3 text-zinc-600">{r.clienteNome || '—'}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-zinc-500">{new Date(r.deletedAt).toLocaleString('pt-PT')}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-1">
+                      <button onClick={() => restaurar(r)} className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs">Restaurar</button>
+                      {canPurgar && <button onClick={() => purgar(r)} className="px-3 py-1.5 rounded-lg bg-white border border-rose-200 text-rose-700 text-xs hover:bg-rose-50">Apagar definitivo</button>}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

@@ -5,16 +5,19 @@ import {
   ArrowRight,
   Calendar,
   CheckSquare,
+  Clock,
+  ListChecks,
   LayoutDashboard,
   Lock,
   Play,
+  Trash2,
   Users,
   Table2,
   FileSpreadsheet,
 } from 'lucide-react';
 
 /** Tabs funcionais do Gabinete. `gallery` é apenas a porta de entrada visual. */
-export type GabTab = 'dashboard' | 'mapa-controlo' | 'mapa-rh' | 'visao-geral' | 'equipa' | 'tarefas' | 'cofre';
+export type GabTab = 'dashboard' | 'mapa-controlo' | 'mapa-rh' | 'visao-geral' | 'equipa' | 'tarefas' | 'cofre' | 'agenda' | 'obrigacoes' | 'lixeira';
 
 export type GabineteTab = GabTab | 'gallery';
 
@@ -41,7 +44,10 @@ export const GABINET_FUNCTIONS: GabineteFunction[] = [
   { id: 'mapa-rh', label: 'Mapa RH', icon: Users, desc: '6 colunas RH - Salários, Ticket, IRS, DMR-AT/SS, Encargos' },
   { id: 'equipa', label: 'Equipa', icon: Users, desc: 'Funcionários' },
   { id: 'tarefas', label: 'Tarefas', icon: CheckSquare, desc: 'Lista por urgência e estado' },
+  { id: 'agenda', label: 'Agenda', icon: Clock, desc: 'Calendário mensal: tarefas, obrigações e alertas' },
+  { id: 'obrigacoes', label: 'Obrigações', icon: ListChecks, desc: 'Entregas, prazos e referências fiscais' },
   { id: 'cofre', label: 'Cofre', icon: Lock, desc: 'Acessos protegidos' },
+  { id: 'lixeira', label: 'Lixeira', icon: Trash2, desc: 'Restaurar registos apagados' },
 ];
 
 /**
@@ -74,7 +80,7 @@ export const GABINET_INTROS: Record<GabTab, GabineteIntroDef> = {
   'visao-geral': {
     titulo: 'Visão geral do cliente',
     Icon: LayoutDashboard,
-    resumo: 'Ficha completa do cliente: dados, situação, alertas, assuntos, documentos, contactos e histórico.',
+    resumo: 'Ficha completa do cliente: dados, situação, tarefas, prazos, alertas, documentos, contactos e histórico.',
     dados: ['NIF e CAE', 'Gerentes e trabalhadores', 'Contactos e acessos'],
     resultado: 'Painel 360 com tudo o que precisa para trabalhar com o cliente.',
   },
@@ -92,12 +98,33 @@ export const GABINET_INTROS: Record<GabTab, GabineteIntroDef> = {
     dados: ['Título e cliente associado', 'Estado (por fazer/em curso/feito/concluído)', 'Prioridade (baixa/normal/alta/urgente)'],
     resultado: 'Lista operacional filtrável - sem Kanban, direta e sincronizada.',
   },
+  agenda: {
+    titulo: 'Agenda',
+    Icon: Clock,
+    resumo: 'Calendário mensal com tudo o que tem data: tarefas, obrigações dos clientes e alertas abertos. Clica num dia para ver os itens.',
+    dados: ['Tarefas com prazo', 'Obrigações do mês', 'Alertas com vencimento'],
+    resultado: 'Visão do mês com o que está marcado, por dia - sincronizada com os restantes módulos.',
+  },
+  obrigacoes: {
+    titulo: 'Obrigações',
+    Icon: ListChecks,
+    resumo: 'Lista de obrigações do mês por cliente: marca Entregue ou Dispensar; inclui o calendário fiscal nacional como referência.',
+    dados: ['Vencimento e cliente', 'Tipo de obrigação', 'Estado: pendente, entregue, dispensada'],
+    resultado: 'Controlo mensal de entregas - os estados alimentam o Quadro, os mapas e a Visão geral.',
+  },
   cofre: {
     titulo: 'Cofre de Acessos',
     Icon: Lock,
     resumo: 'Guarda referências de acessos do cliente com proteção local e registo de quem consultou cada entrada.',
     dados: ['Serviço ou entidade', 'Utilizador e segredo', 'Cliente associado'],
     resultado: 'Cofre protegido com desbloqueio por palavra-passe e auditoria de visualizações.',
+  },
+  lixeira: {
+    titulo: 'Lixeira',
+    Icon: Trash2,
+    resumo: 'Tudo o que é apagado fica aqui: clientes, tarefas, obrigações, contactos, alertas, ocorrências e documentos. Restaurar repõe no módulo original.',
+    dados: ['Tipo e nome do registo', 'Quem apagou e quando', 'Restaurar ou apagar definitivamente'],
+    resultado: 'Nada se perde por engano - apagar definitivamente é só para admin.',
   },
 };
 

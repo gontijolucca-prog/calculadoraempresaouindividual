@@ -261,8 +261,8 @@ export const GUIAS: Record<ViewKey, Guia> = {
 
   'gab-visao-geral': {
     titulo: 'Visão geral do cliente',
-    intro: 'Ficha 360 do cliente: dados, situação, alertas, assuntos e histórico — tudo o que precisa para trabalhar com o cliente.',
-    acao: 'Completa a ficha e acompanha os assuntos.',
+    intro: 'Ficha 360 do cliente: dados, situação, tarefas, prazos, alertas e histórico — tudo o que precisa para trabalhar com o cliente.',
+    acao: 'Completa a ficha e acompanha as tarefas e prazos.',
     passos: [
       { titulo: 'Resumo', corpo: 'Dados do cliente, NIF, CAE, regime e equipa responsável.', alvo: { texto: 'Resumo da empresa' } },
       { titulo: 'Situação', corpo: 'Estado documental, IVA, contabilidade e salários — com dots de estado.', alvo: { texto: 'Situação atual' } },
