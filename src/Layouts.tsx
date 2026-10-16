@@ -227,7 +227,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
     <div className="h-full flex flex-col bg-white">
       <div className="px-4 pt-4 pb-3 border-b border-slate-100">
         <div className="flex items-center justify-between">
-          <button type="button" onClick={() => go('profile')} className="flex items-center gap-2.5 rounded-[8px] hover:bg-slate-50 px-1 py-1 -mx-1 transition-colors" aria-label="Ir para o Perfil">
+          <button type="button" onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }} className="flex items-center gap-2.5 rounded-[8px] hover:bg-slate-50 px-1 py-1 -mx-1 transition-colors" aria-label="Ir para a Lista de Empresas">
             <Logo className="w-9 h-9" />
             <div className="text-left leading-none">
               <div className="text-[14px] font-[800] text-[#0B1D2D] tracking-[-0.2px]">ESTUDO<span className="text-[#0677FF]">360°</span></div>
@@ -374,10 +374,10 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
           <button type="button" onClick={() => setDrawerOpen(true)} className="p-3 -ml-1 rounded-[8px] text-slate-600 hover:bg-slate-100" aria-label="Abrir menu" aria-expanded={drawerOpen}>
             <Menu className="w-5 h-5" />
           </button>
-          <div className="flex items-center gap-2">
+          <button type="button" onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }} className="flex items-center gap-2 rounded-[8px] px-1 py-1 -ml-1 hover:bg-slate-50 transition-colors" aria-label="Ir para a Lista de Empresas">
             <Logo className="w-7 h-7" />
             <span className="text-[13px] font-[800] text-[#0B1D2D]">ESTUDO<span className="text-[#0677FF]">360°</span></span>
-          </div>
+          </button>
         </div>
 
         <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto pb-28">
