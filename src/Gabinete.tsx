@@ -579,7 +579,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo }: { clientes:Ga
       )}
 
       {/* Tabela — sem contorno: o fundo da página já delimita o quadro */}
-      <div className="bg-white rounded-[10px] shadow-sm overflow-hidden print:shadow-none">
+      <div className="bg-white rounded-[10px] overflow-hidden">
         <div className="overflow-auto max-h-[62vh] print:max-h-none print:overflow-visible">
           <table className="w-full text-[13px] border-collapse">
             <thead className="sticky top-0 z-10">

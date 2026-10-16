@@ -35,10 +35,10 @@ export interface GabineteIntroDef {
 
 /** Ordem e texto partilhados pela galeria, pelo header e pela navegação. */
 export const GABINET_FUNCTIONS: GabineteFunction[] = [
+  { id: 'visao-geral', label: 'Visão geral', icon: LayoutDashboard, desc: 'Ficha 360' },
   { id: 'dashboard', label: 'Quadro resumo obrigações', icon: Calendar, desc: 'JAN-DEZ por cliente: v Concluído · * Não concluído' },
   { id: 'mapa-controlo', label: 'Mapa de controlo', icon: Table2, desc: '7 fases · JAN-DEZ colorido - Doc. Falta -> Balancete' },
   { id: 'mapa-rh', label: 'Mapa RH', icon: Users, desc: '6 colunas RH - Salários, Ticket, IRS, DMR-AT/SS, Encargos' },
-  { id: 'visao-geral', label: 'Visão geral', icon: LayoutDashboard, desc: 'Ficha 360' },
   { id: 'equipa', label: 'Equipa', icon: Users, desc: 'Funcionários' },
   { id: 'tarefas', label: 'Tarefas', icon: CheckSquare, desc: 'Lista por urgência e estado' },
   { id: 'cofre', label: 'Cofre', icon: Lock, desc: 'Acessos protegidos' },

@@ -142,10 +142,10 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
   // Auto-fechar desativado a pedido — dropdowns só fecham ao clicar na seta
 
   const GAB_TABS = [
+  { id: 'visao-geral', label: 'Visão geral', Icon: LayoutDashboard, desc: 'Ficha 360' },
   { id: 'dashboard', label: 'Quadro de obrigações', Icon: Calendar, desc: 'JAN-DEZ: v Concluído · ✕ Não concluído' },
   { id: 'mapa-controlo', label: 'Mapa de controlo', Icon: Table2, desc: '7 fases · JAN-DEZ colorido - Doc. Falta -> Balancete' },
   { id: 'mapa-rh', label: 'Mapa RH', Icon: Users, desc: '6 colunas RH - Salários, Ticket, IRS, DMR-AT/SS, Encargos' },
-  { id: 'visao-geral', label: 'Visão geral', Icon: LayoutDashboard, desc: 'Ficha 360' },
   { id: 'equipa', label: 'Equipa', Icon: Users, desc: 'Funcionários' },
   { id: 'tarefas', label: 'Tarefas', Icon: CheckSquare, desc: 'Lista por urgência e estado' },
   { id: 'cofre', label: 'Cofre', Icon: Lock, desc: 'Acessos protegidos' },
@@ -282,7 +282,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
               <div className="overflow-hidden">
               <div className="mt-0.5 ml-2.5 space-y-0.5 border-l-2 border-slate-200 pl-2">
                 {(() => {
-                  const qd = GAB_TABS.find(t => t.id === 'dashboard');
+                  const qd = GAB_TABS.find(t => t.id === 'visao-geral');
                   return qd ? (
                     <button key={qd.id} type="button" onClick={() => goGabinete(qd.id)} title={qd.desc} aria-current={active==='gabinete' && gabineteTab===qd.id ? 'page' : undefined} className={`w-full flex items-center gap-2.5 px-3 py-[7px] rounded-[10px] text-[12.5px] font-[700] transition-colors text-left border ${active==='gabinete' && gabineteTab===qd.id ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
                       <qd.Icon className="w-[15px] h-[15px] shrink-0" />
@@ -290,7 +290,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                     </button>
                   ) : null;
                 })()}
-                {GAB_TABS.filter(t => t.id !== 'dashboard').map(t => (
+                {GAB_TABS.filter(t => t.id !== 'visao-geral').map(t => (
                   <ClientNavItem key={t.id} label={t.label} Icon={t.Icon} onClick={() => goGabinete(t.id)} current={active==='gabinete' && gabineteTab===t.id} title={t.desc} />
                 ))}
               </div>
