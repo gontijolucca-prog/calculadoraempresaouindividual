@@ -4,7 +4,7 @@ import {
   ClipboardList, Upload, LogOut, Receipt,
   ChevronDown, ChevronRight, TrendingUp, Settings, UserPlus, Building2,
   Menu, X, Clock, Briefcase, ListOrdered, Package, History, FileDown, LayoutDashboard, LayoutGrid, Table2,
-  CheckSquare, Calendar, Lock, Users,
+  CheckSquare, Calendar, Lock, Users, Presentation,
 } from 'lucide-react';
 import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
 import { cn } from './lib/utils';
@@ -14,7 +14,7 @@ type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal'
   | 'previsa' | 'office-settings' | 'empresas' | 'historico' | 'exportar' | 'hub'
-  | 'gabinete';
+  | 'gabinete' | 'proposta-gamma';
 
 export interface LayoutProps {
   view: ViewType;
@@ -339,6 +339,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
         {hasSaftData && onOpenSaftViewer && (
           <NavItem label="Ver dados SAF-T" Icon={Clock} onClick={() => runAction(onOpenSaftViewer)} />
         )}
+        <NavItem label="Proposta Gamma" Icon={Presentation} onClick={() => go('proposta-gamma')} current={view === 'proposta-gamma'} title="Proposta do escritório pronta para o gamma.app — por cliente ou geral" />
         <NavItem label="Base Legal" Icon={Info} onClick={() => runAction(openLegal)} current={view === 'legal'} />
       </nav>
 

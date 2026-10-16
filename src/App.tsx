@@ -8,6 +8,7 @@ import { useUnsavedEdits } from './hooks/useUnsavedEdits';
 import { initVersionChecker, stopVersionChecker } from './lib/version-checker';
 import { logAudit, flushAuditQueue } from './lib/audit';
 import LegalInfo from './LegalInfo';
+import PropostaGamaView from './PropostaGamaView';
 import LandingPage from './LandingPage';
 import AuthView, { VerifyEmailGate } from './AuthView';
 import EmpresasList from './EmpresasList';
@@ -93,7 +94,7 @@ type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal'
   | 'previsa' | 'office-settings' | 'empresas' | 'historico' | 'exportar' | 'hub'
-  | 'gabinete';
+  | 'gabinete' | 'proposta-gamma';
 
 // Default landing view when the user picks a mode.
 const DEFAULT_VIEW_BY_MODE: Record<AppMode, ViewType> = {
@@ -117,6 +118,7 @@ const VIEW_TITLES: Record<ViewType, string> = {
   legal: 'Base Legal & Referências',
   previsa: 'Simulador Previsa',
   'office-settings': 'Definições do Escritório',
+  'proposta-gamma': 'Proposta Gamma',
   historico: 'Histórico de Simulações',
   exportar: 'Relatórios',
   hub: 'Menu do Cliente',
@@ -1523,6 +1525,13 @@ function AppContent() {
             onOfficeChange={setOfficeSettings}
             honorarios={honorariosConfig}
             onHonorariosChange={setHonorariosConfig}
+          />
+        )}
+        {view === 'proposta-gamma' && (
+          <PropostaGamaView
+            office={officeSettings}
+            honorarios={honorariosConfig}
+            onGoToOfficeSettings={() => setView('office-settings')}
           />
         )}
       </PageTransition>
