@@ -5,6 +5,7 @@ import {
   History, RotateCcw,
   Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote, Receipt, TrendingUp,
   LayoutDashboard, UserCircle,
+  Files, Loader2, CheckCircle, AlertTriangle,
 } from 'lucide-react';
 import {
   listEmpresas, listSimulacoes, deleteSimulacao,
@@ -14,6 +15,7 @@ import { SIM_LABELS, type SimView } from './lib/simSummary';
 import { cn } from './lib/utils';
 import TOCOnlineImport from './components/TOCOnlineImport';
 import { consumeTocOpen, type TocCustomerDraft } from './lib/toconline';
+import type { SaftLoteResumo } from './lib/saftLote';
 
 type NavOpts = { openPackage?: boolean; toggleFlow?: boolean };
 
@@ -44,12 +46,14 @@ interface Props {
   onHistoricoChanged: () => void;
   /** Importa rascunhos vindos do TOConline; devolve quantos criou. */
   onImportTOCOnline?: (drafts: TocCustomerDraft[]) => number;
+  /** Importa um lote de SAF-Ts (um ficheiro → uma empresa). Devolve o resumo. */
+  onImportSAFTLote?: (files: File[], onProgress?: (feitos: number, total: number) => void) => Promise<SaftLoteResumo>;
   refreshKey?: number;
   /** Cliente ativo — cartão fica destacado. */
   currentEmpresaId?: string | null;
 }
 
-export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual, onNovaEmpresaFromSAFT, onSAFTUpload, onDeleteEmpresa, onRestoreSimulacao, onHistoricoChanged, onImportTOCOnline, refreshKey, currentEmpresaId }: Props) {
+export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual, onNovaEmpresaFromSAFT, onSAFTUpload, onDeleteEmpresa, onRestoreSimulacao, onHistoricoChanged, onImportTOCOnline, onImportSAFTLote, refreshKey, currentEmpresaId }: Props) {
   const [empresas, setEmpresas] = useState<EmpresaRecord[]>(() => listEmpresas());
   const [query, setQuery] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<EmpresaRecord | null>(null);
@@ -68,6 +72,9 @@ export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual
   // Acordeão: um cartão expandido de cada vez. Inicia sempre FECHADO.
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const novaSaftInputRef = useRef<HTMLInputElement>(null);
+  const loteSaftInputRef = useRef<HTMLInputElement>(null);
+  // Progresso/resultado do "Importar lote de SAF-Ts" — null quando fechado.
+  const [lote, setLote] = useState<{ fase: 'correr' | 'fim'; feitos: number; total: number; resumo?: SaftLoteResumo } | null>(null);
 
   useEffect(() => {
     setEmpresas(listEmpresas());
@@ -102,6 +109,27 @@ export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual
   const handleNovaFromSAFT = (file: File) => {
     setShowNovaModal(false);
     onNovaEmpresaFromSAFT(file);
+  };
+
+  const handleImportLote = (files: File[]) => {
+    if (!onImportSAFTLote || files.length === 0) return;
+    setShowNovaModal(false);
+    setLote({ fase: 'correr', feitos: 0, total: files.length });
+    void onImportSAFTLote(files, (feitos, total) => setLote(l => (l ? { ...l, feitos, total } : l)))
+      .then(resumo => {
+        setEmpresas(listEmpresas());
+        setLote({ fase: 'fim', feitos: files.length, total: files.length, resumo });
+      })
+      .catch(err => {
+        setEmpresas(listEmpresas());
+        setLote({
+          fase: 'fim', feitos: files.length, total: files.length,
+          resumo: {
+            criadas: [], repetidas: [],
+            erros: files.map(f => ({ fileName: f.name, erro: err instanceof Error ? err.message : 'Falha inesperada na importação.' })),
+          },
+        });
+      });
   };
 
   const handleDelete = (emp: EmpresaRecord) => {
@@ -275,6 +303,24 @@ export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual
                 </button>
               </div>
 
+              {onImportSAFTLote && (
+                <button
+                  type="button"
+                  onClick={() => loteSaftInputRef.current?.click()}
+                  className="mt-3 w-full text-left p-5 rounded-[14px] border-2 border-dashed border-[#E5E9F0] hover:border-[#0677FF] hover:bg-[#0677FF]/4 transition-all group focus-visible:border-[#0677FF] flex items-center gap-4"
+                >
+                  <div className="w-10 h-10 shrink-0 rounded-[10px] bg-[#0677FF]/12 text-[#0677FF] flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <Files className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-[15px] font-[800] text-[#0B1D2D]">Importar lote de SAF-Ts</div>
+                    <p className="text-[12px] text-[#6B7280] font-[500] mt-1 leading-snug">
+                      Vários ficheiros de uma vez — uma empresa por ficheiro. NIFs já na carteira são ignorados.
+                    </p>
+                  </div>
+                </button>
+              )}
+
               <input
                 ref={novaSaftInputRef}
                 type="file"
@@ -286,6 +332,99 @@ export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual
                   e.target.value = '';
                 }}
               />
+              <input
+                ref={loteSaftInputRef}
+                type="file"
+                accept=".xml,application/xml,text/xml"
+                multiple
+                className="hidden"
+                onChange={e => {
+                  const files = Array.from(e.target.files ?? []) as File[];
+                  e.target.value = '';
+                  if (files.length) handleImportLote(files);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lote de SAF-Ts: progresso e resultado */}
+      {lote && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="lote-saft-title"
+          className="fixed inset-0 z-[1100] flex items-center justify-center p-6"
+        >
+          <button
+            type="button"
+            aria-label="Fechar"
+            onClick={() => { if (lote.fase === 'fim') setLote(null); }}
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
+          />
+          <div className="relative bg-white rounded-[22px] shadow-2xl max-w-lg w-full overflow-hidden">
+            <div className="h-1.5 bg-gradient-to-r from-[#0677FF] to-[#00C2FF] w-full" />
+            <div className="p-7">
+              <h2 id="lote-saft-title" className="text-[22px] font-[800] text-[#0B1D2D] leading-tight mb-1">
+                {lote.fase === 'correr' ? 'A importar SAF-Ts…' : 'Lote de SAF-Ts importado'}
+              </h2>
+
+              {lote.fase === 'correr' ? (
+                <div className="flex items-center gap-3 py-6">
+                  <Loader2 className="w-5 h-5 text-[#0677FF] animate-spin shrink-0" />
+                  <p className="text-[14px] font-[700] text-[#0B1D2D]">
+                    {lote.feitos} de {lote.total} ficheiro{lote.total === 1 ? '' : 's'} processado{lote.total === 1 ? '' : 's'}…
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-[13px] text-[#6B7280] font-[600] mb-4">
+                    {lote.resumo?.criadas.length ?? 0} criada{(lote.resumo?.criadas.length ?? 0) === 1 ? '' : 's'} ·{' '}
+                    {lote.resumo?.repetidas.length ?? 0} ignorada{(lote.resumo?.repetidas.length ?? 0) === 1 ? '' : 's'} (já existiam) ·{' '}
+                    {lote.resumo?.erros.length ?? 0} com erro
+                  </p>
+
+                  <div className="max-h-60 overflow-auto space-y-1.5 pr-1">
+                    {lote.resumo?.criadas.map(c => (
+                      <div key={c.id} className="flex items-start gap-2 text-[12px] font-[600] text-[#0B1D2D]">
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                        <span>{c.nome}{c.nif ? ` — ${c.nif}` : ''}</span>
+                      </div>
+                    ))}
+                    {lote.resumo?.repetidas.map((r, i) => (
+                      <div key={`rep-${i}`} className="flex items-start gap-2 text-[12px] font-[600] text-[#8A6D1D]">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                        <span>{r.fileName} — já na carteira{r.nome ? ` (${r.nome})` : ''}</span>
+                      </div>
+                    ))}
+                    {lote.resumo?.erros.map((e, i) => (
+                      <div key={`err-${i}`} className="flex items-start gap-2 text-[12px] font-[600] text-[#B42318]">
+                        <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
+                        <span>{e.fileName} — {e.erro}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {(() => {
+                    const semXml = lote.resumo?.criadas.filter(c => !c.xmlGuardado).length ?? 0;
+                    if (semXml === 0) return null;
+                    return (
+                      <p className="mt-4 text-[12px] font-[500] text-[#6B7280]">
+                        {semXml} SAF-T{semXml === 1 ? '' : 's'} sem XML guardado no navegador (limite de armazenamento) — os dados importaram na mesma; o ficheiro pode ser adicionado no cartão da empresa.
+                      </p>
+                    );
+                  })()}
+
+                  <button
+                    type="button"
+                    onClick={() => setLote(null)}
+                    className="mt-5 w-full bg-[#0677FF] text-white py-3 rounded-[12px] text-[14px] font-[800] hover:bg-[#0556CC] active:scale-[0.99] transition-all"
+                  >
+                    Fechar
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

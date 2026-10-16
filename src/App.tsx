@@ -48,6 +48,7 @@ import type { ClientProfile as ClientProfileType } from './ClientProfile';
 import { ThemeProvider } from './ThemeContext';
 import { MotionProvider, PageTransition } from './AnimatedPage';
 import { parseSAFT, decodeSaftText, normalizeXmlEncodingToUtf8, type SAFTParseResult } from './lib/saft';
+import { prepararEmpresaSAFT, LOTE_SAFT_XML_BUDGET, type SaftLoteResumo } from './lib/saftLote';
 import { migrarEmpresasParaGabinete } from './lib/gabinete';
 import { enforceProfileRules } from './lib/profileRules';
 import { DOC_TYPES, downloadAsWord } from './lib/wordDocs';
@@ -974,6 +975,59 @@ function AppContent() {
     return n;
   };
 
+  // Importação em lote de SAF-Ts: um ficheiro → uma empresa (dedupe por NIF).
+  // O XML em bruto só fica guardado até um orçamento por lote — o localStorage
+  // tem ~5MB e um lote grande encheria o registry; os dados importados ficam
+  // sempre, o que não couber é reportado no resumo.
+  const handleImportSAFTLote = async (
+    files: File[],
+    onProgress?: (feitos: number, total: number) => void,
+  ): Promise<SaftLoteResumo> => {
+    const existentes = new Set(listEmpresas().map(e => (e.nif || '').replace(/\D/g, '')));
+    const resumo: SaftLoteResumo = { criadas: [], repetidas: [], erros: [] };
+    let orcamento = LOTE_SAFT_XML_BUDGET;
+    let feitos = 0;
+    for (const file of files) {
+      try {
+        const text = decodeSaftText(await file.arrayBuffer());
+        const result = parseSAFT(text);
+        const d = prepararEmpresaSAFT({
+          id: newEmpresaId(),
+          fileName: file.name,
+          text,
+          result,
+          existentes,
+          now: Date.now(),
+          orcamentoXml: orcamento,
+          baseProfile: defaultProfile,
+          basePrevisa: defaultPreviSaState(),
+        });
+        if (d.tipo === 'criada') {
+          upsertEmpresa(d.empresa);
+          if (d.nif) existentes.add(d.nif);
+          if (d.xmlGuardado) orcamento -= text.length;
+          logAudit('import_saft', file.name, { empresa: d.nome, saftWarnings: result.warnings?.length ?? 0 }, d.empresa.id);
+          resumo.criadas.push({ id: d.empresa.id, nome: d.nome, nif: d.nif, xmlGuardado: d.xmlGuardado });
+        } else if (d.tipo === 'repetida') {
+          resumo.repetidas.push({ fileName: file.name, nome: d.nome, nif: d.nif });
+        } else {
+          resumo.erros.push({ fileName: file.name, erro: d.erro });
+        }
+      } catch (err) {
+        resumo.erros.push({ fileName: file.name, erro: err instanceof Error ? err.message : 'Erro ao processar o SAF-T.' });
+      }
+      feitos++;
+      onProgress?.(feitos, files.length);
+    }
+    if (resumo.criadas.length > 0) {
+      // Espelha no gabinete (migração por NIF já evita duplicados); a cloud é
+      // empurrada pelo efeito com debounce que observa empresasRefresh.
+      void migrarEmpresasParaGabinete(listEmpresas().map(e => ({ id: e.id, nome: e.nome, nif: e.nif })));
+      setEmpresasRefresh(x => x + 1);
+    }
+    return resumo;
+  };
+
   const handleNovaEmpresaManual = () => {
     setCurrentEmpresaId(null);
     setCurrentEmpresaIdState(null);
@@ -1461,6 +1515,7 @@ function AppContent() {
             onSAFTUpload={handleEmpresaSAFT}
             onDeleteEmpresa={handleDeleteEmpresa}
             onImportTOCOnline={handleImportTOCOnline}
+            onImportSAFTLote={handleImportSAFTLote}
           />
         )}
         {view === 'profile' && (
