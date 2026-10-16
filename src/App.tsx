@@ -1004,10 +1004,29 @@ function AppContent() {
         });
         if (d.tipo === 'criada') {
           upsertEmpresa(d.empresa);
-          if (d.nif) existentes.add(d.nif);
-          if (d.xmlGuardado) orcamento -= text.length;
-          logAudit('import_saft', file.name, { empresa: d.nome, saftWarnings: result.warnings?.length ?? 0 }, d.empresa.id);
-          resumo.criadas.push({ id: d.empresa.id, nome: d.nome, nif: d.nif, xmlGuardado: d.xmlGuardado });
+          // O saveToStorage falha em silêncio quando o armazenamento enche —
+          // confirma que ficou mesmo gravada. Se não coube, tenta sem o XML em
+          // bruto (os dados do perfil são o essencial e ocupam muito menos).
+          let gravada = listEmpresas().some(e => e.id === d.empresa.id);
+          let xmlGuardado = d.xmlGuardado;
+          if (!gravada && d.empresa.saftXml) {
+            const {
+              saftXml: _saftXml, saftFileName: _saftFileName, saftImportedAt: _saftImportedAt,
+              saftReprocessadoEm: _saftReprocessadoEm, saftReparseRev: _saftReparseRev,
+              ...semXml
+            } = d.empresa;
+            upsertEmpresa(semXml);
+            gravada = listEmpresas().some(e => e.id === d.empresa.id);
+            if (gravada) xmlGuardado = false;
+          }
+          if (!gravada) {
+            resumo.erros.push({ fileName: file.name, erro: 'Sem espaço no armazenamento do navegador — não foi possível guardar.' });
+          } else {
+            if (d.nif) existentes.add(d.nif);
+            if (xmlGuardado) orcamento -= text.length;
+            logAudit('import_saft', file.name, { empresa: d.nome, saftWarnings: result.warnings?.length ?? 0 }, d.empresa.id);
+            resumo.criadas.push({ id: d.empresa.id, nome: d.nome, nif: d.nif, xmlGuardado });
+          }
         } else if (d.tipo === 'repetida') {
           resumo.repetidas.push({ fileName: file.name, nome: d.nome, nif: d.nif });
         } else {
