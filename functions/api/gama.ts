@@ -18,7 +18,11 @@ const ALLOWED_HOST_SUFFIXES = [
 const GAMMA_BASE = 'https://public-api.gamma.app/v0.2/generations';
 const MAX_INPUT_CHARS = 60_000;
 const RL_WINDOW_MS = 60_000;
-const RL_MAX = 30;
+// Limites por ação: o poll de uma geração faz ~20 pedidos/min (1 a cada 3s);
+// o limite do status tem de aguentar várias gerações em paralelo no mesmo IP,
+// por isso é bem mais alto do que o do create.
+const RL_MAX_CREATE = 30;
+const RL_MAX_STATUS = 150;
 const rlHits = new Map<string, number[]>();
 
 function hostAllowed(value: string | null): boolean {
@@ -46,13 +50,13 @@ function json(body: unknown, status: number, origin: string | null): Response {
   });
 }
 
-function rateLimited(ip: string): boolean {
+function rateLimited(key: string, max: number): boolean {
   const now = Date.now();
-  const arr = (rlHits.get(ip) ?? []).filter((t) => now - t < RL_WINDOW_MS);
+  const arr = (rlHits.get(key) ?? []).filter((t) => now - t < RL_WINDOW_MS);
   arr.push(now);
-  rlHits.set(ip, arr);
+  rlHits.set(key, arr);
   if (rlHits.size > 5000) rlHits.clear();
-  return arr.length > RL_MAX;
+  return arr.length > max;
 }
 
 function gammaHeaders(key: string): Record<string, string> {
@@ -77,14 +81,16 @@ export const onRequestPost = async (ctx: { request: Request }) => {
   if (!hostAllowed(origin) && !hostAllowed(referer)) {
     return json({ error: 'origem_nao_autorizada' }, 403, origin);
   }
-  const ip = request.headers.get('CF-Connecting-IP') || 'desconhecido';
-  if (rateLimited(ip)) return json({ error: 'rate_limit' }, 429, origin);
-
   let body: any;
   try { body = await request.json(); } catch { return json({ error: 'json_invalido' }, 400, origin); }
 
   const action = String(body.action || '').trim();
   if (!['create', 'status'].includes(action)) return json({ error: 'acao_invalida' }, 400, origin);
+
+  const ip = request.headers.get('CF-Connecting-IP') || 'desconhecido';
+  if (rateLimited(`${ip}:${action}`, action === 'create' ? RL_MAX_CREATE : RL_MAX_STATUS)) {
+    return json({ error: 'rate_limit' }, 429, origin);
+  }
 
   const key = String(body.key || '').trim();
   if (!key) return json({ error: 'key_em_falta' }, 400, origin);
