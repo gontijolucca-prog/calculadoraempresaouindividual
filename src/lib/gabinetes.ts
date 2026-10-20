@@ -59,6 +59,22 @@ export function clearActiveGabineteId() {
   clearStorage('gabinete:officeId');
 }
 
+/** Volta à lista de gabinetes: limpa o gabinete ativo e recarrega para abrir o selector. */
+export function clearActiveGabineteAndReload() {
+  try {
+    clearActiveGabineteId();
+  } catch {
+    try {
+      localStorage.removeItem('estudo360:v1:gabinete:activeId');
+      localStorage.removeItem('estudo360:v1:gabinete:officeId');
+    } catch { /* noop */ }
+  }
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('estudo360:gabinete-switch', { detail: { id: null } } as any));
+    window.location.reload();
+  }
+}
+
 function newGabineteId(): string {
   return `gab_${Math.random().toString(36).slice(2, 9)}${Date.now().toString(36).slice(-4)}`;
 }

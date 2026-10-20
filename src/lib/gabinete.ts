@@ -93,6 +93,15 @@ function writeCache<T>(col: string, data: T[]): void {
   saveToStorage(lsKey(col), data);
 }
 
+/** Avisa a UI local (offline/sem snapshot) de que o cache mudou. */
+function notificarAtualizacaoLocal(col: string): void {
+  try {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('estudo360:gabinete-local-update', { detail: { col } }));
+    }
+  } catch {}
+}
+
 /** Remove campos `undefined` (o Firestore rejeita) e serializa valores limpos. */
 function sanitizeForFirestore<T>(obj: T): T {
   if (obj === null || typeof obj !== 'object') return obj;
@@ -230,6 +239,8 @@ export interface GabineteCliente {
   avencaPeriodicidade?: 'mensal' | 'trimestral' | 'anual';
   /** Obrigações fiscais ativas deste cliente (ids do OBRIGACOES_CATALOGO). Ausente = todas. */
   obrigacoesAtivas?: string[];
+  /** Pilares próprios dos mapas (copy-on-write do catálogo global). Ausente = usa o global. */
+  mapas?: { controlo?: PilarCliente[]; rh?: PilarCliente[] };
   createdAt: number;
   updatedAt: number;
   createdBy?: string;
@@ -483,6 +494,8 @@ export function resetCatalogo(): void { setCatalogo([...OBRIGACOES_CATALOGO_DEFA
 
 // ─── Mapas — catálogos persistentes dos pilares ──────────────────────────────
 export interface MapaPilarDef { id: string; labelShort: string; labelFull: string; tipos: ObrigacaoTipo[] }
+/** Pilar no contexto de um cliente: pode ser desligado sem apagar. */
+export interface PilarCliente extends MapaPilarDef { ativo: boolean }
 export const MAPA_CONTROLO_DEFAULT: MapaPilarDef[] = [
   { id:'docfalta',  labelShort:'Gestão Doc.',  labelFull:'Gestão Doc. em Falta',     tipos:['dossier','outro'] },
   { id:'vendas',    labelShort:'Vendas',       labelFull:'Vendas/Recebimentos',      tipos:['iva','dossier'] },
@@ -539,6 +552,96 @@ export function getMapaRHPilares(): MapaPilarDef[] {
   }
   return [...MAPA_RH_DEFAULT];
 }
+// ─── Pilares por cliente (mapas RH/Controlo) ─────────────────────────────────
+// Cliente sem `mapas.<mapa>` usa o catálogo global. Ao editar pela primeira vez,
+// copia o global para o cliente (copy-on-write) — os outros não mudam.
+export function getPilaresCliente(cli: GabineteCliente, mapa: 'controlo' | 'rh'): PilarCliente[] {
+  const propria = cli.mapas?.[mapa];
+  if (propria && propria.length) {
+    return propria.filter(p => p && typeof p.id === 'string' && typeof p.labelShort === 'string')
+      .map(p => ({ ...p, ativo: p.ativo !== false }));
+  }
+  const globais = mapa === 'controlo' ? getMapaControloPilares() : getMapaRHPilares();
+  const visiveis = mapa === 'controlo' ? getMapaControloVisiveis() : getMapaRHVisiveis();
+  return globais.map(p => ({ ...p, ativo: visiveis === null || visiveis.includes(p.id) }));
+}
+
+export async function setPilaresCliente(
+  cli: GabineteCliente, mapa: 'controlo' | 'rh', lista: PilarCliente[],
+): Promise<GabineteCliente> {
+  const clean = lista
+    .filter(p => p && typeof p.id === 'string' && typeof p.labelShort === 'string' && p.labelShort.trim())
+    .map(p => ({ ...p, labelShort: p.labelShort.trim(), labelFull: (p.labelFull || p.labelShort).trim() }));
+  if (!clean.some(p => p.ativo)) throw new Error('O cliente tem de ter pelo menos um pilar ativo');
+  const next = await upsertCliente({ ...cli, mapas: { ...(cli.mapas || {}), [mapa]: clean } });
+  try { logAudit('save_pilares_cliente', `${cli.nome}: ${mapa} (${clean.filter(p=>p.ativo).length} ativos)`, { mapa, ids: clean.map(p=>p.id) }, cli.id); } catch {}
+  return next;
+}
+
+function slugPilar(label: string, existentes: PilarCliente[]): string {
+  const base = label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 22) || `pilar_${Date.now().toString(36)}`;
+  let id = base; let n = 2;
+  while (existentes.some(p => p.id === id)) id = `${base}_${n++}`;
+  return id;
+}
+
+export async function addPilarCliente(
+  cli: GabineteCliente, mapa: 'controlo' | 'rh', labelShort: string, labelFull?: string,
+): Promise<GabineteCliente> {
+  const s = labelShort.trim();
+  if (!s) throw new Error('Nome curto vazio');
+  if (s.length > 28) throw new Error('Nome curto máximo 28 caracteres');
+  const cur = getPilaresCliente(cli, mapa);
+  if (cur.some(p => p.labelShort.toLowerCase() === s.toLowerCase())) throw new Error('Já existe pilar com esse nome');
+  const def: PilarCliente = { id: slugPilar(s, cur), labelShort: s, labelFull: (labelFull?.trim() || s), tipos: ['outro'], ativo: true };
+  return setPilaresCliente(cli, mapa, [...cur, def]);
+}
+
+export async function renamePilarCliente(
+  cli: GabineteCliente, mapa: 'controlo' | 'rh', id: string, labelShort: string, labelFull?: string,
+): Promise<GabineteCliente> {
+  const s = labelShort.trim();
+  if (!s) throw new Error('Nome curto vazio');
+  if (s.length > 28) throw new Error('Nome curto máximo 28 caracteres');
+  const cur = getPilaresCliente(cli, mapa);
+  if (cur.some(p => p.id !== id && p.labelShort.toLowerCase() === s.toLowerCase())) throw new Error('Já existe pilar com esse nome');
+  let achou = false;
+  const next = cur.map(p => {
+    if (p.id !== id) return p;
+    achou = true;
+    return { ...p, labelShort: s, labelFull: (labelFull?.trim() || s) };
+  });
+  if (!achou) throw new Error('Pilar não encontrado');
+  return setPilaresCliente(cli, mapa, next);
+}
+
+export async function togglePilarCliente(
+  cli: GabineteCliente, mapa: 'controlo' | 'rh', id: string,
+): Promise<GabineteCliente> {
+  const cur = getPilaresCliente(cli, mapa);
+  const next = cur.map(p => (p.id === id ? { ...p, ativo: !(p.ativo !== false) } : p));
+  return setPilaresCliente(cli, mapa, next);
+}
+
+export async function removePilarCliente(
+  cli: GabineteCliente, mapa: 'controlo' | 'rh', id: string,
+): Promise<GabineteCliente> {
+  const cur = getPilaresCliente(cli, mapa);
+  if (cur.length <= 1) throw new Error('Tem de ficar pelo menos um pilar');
+  const next = cur.filter(p => p.id !== id);
+  if (next.length === cur.length) throw new Error('Pilar não encontrado');
+  return setPilaresCliente(cli, mapa, next);
+}
+
+export async function resetPilaresCliente(cli: GabineteCliente, mapa: 'controlo' | 'rh'): Promise<GabineteCliente> {
+  const next = { ...(cli.mapas || {}) };
+  delete next[mapa];
+  const saved = await upsertCliente({ ...cli, mapas: Object.keys(next).length ? next : undefined });
+  try { logAudit('reset_pilares_cliente', `${cli.nome}: ${mapa} volta ao global`, { mapa }, cli.id); } catch {}
+  return saved;
+}
+
 export function setMapaRHPilares(list: MapaPilarDef[]): void {
   const clean = list.filter(x=> x && typeof x.id==='string' && typeof x.labelShort==='string');
   writeMeta('catalogoMapaRH', clean);
@@ -573,7 +676,13 @@ export async function setObrigacoesAtivas(cli: GabineteCliente, ids: string[]): 
   const valid = new Set(catalogo.map(o => o.id));
   const clean = [...new Set(ids)].filter(id => valid.has(id));
   if (clean.length===0) throw new Error('Tem de ficar pelo menos uma obrigação');
-  return upsertCliente({ ...cli, obrigacoesAtivas: clean });
+  const saved = await upsertCliente({ ...cli, obrigacoesAtivas: clean });
+  try {
+    logAudit('save_obrigacoes_cliente', cli.nome, {
+      antes: cli.obrigacoesAtivas ?? null, depois: clean,
+    }, cli.id);
+  } catch {}
+  return saved;
 }
 export interface Obrigacao {
   id: string;
@@ -589,6 +698,12 @@ export interface Obrigacao {
   /** Obrigações importadas do calendário anual nacional são referência
    *  transversal, não pertencem a um cliente específico. */
   origem?: 'cliente' | 'calendario_fiscal';
+  /** Id da linha do Quadro Resumo a que esta célula pertence. */
+  catalogoId?: string;
+  /** Mapa a que a célula pertence (ausente = não é célula de mapa). */
+  mapa?: 'controlo' | 'rh';
+  /** Pilar do mapa a que a célula pertence. */
+  pilarId?: string;
   createdAt: number;
   updatedAt: number;
   deletedAt?: number;
@@ -692,6 +807,7 @@ export async function upsertCliente(c: GabineteCliente): Promise<GabineteCliente
   const next = stamp({ ...c });
   if (idx >= 0) list[idx] = next; else list.push(next);
   saveClientesCache(list);
+  notificarAtualizacaoLocal('clientes');
   queueSet(colPath('clientes'), c.id, next);
   logAudit(idx >= 0 ? 'edit_cliente' : 'create_cliente', c.nome || c.id, { nif: (c.nif || '').slice(0, 9) }, c.id);
   return next;
@@ -724,6 +840,7 @@ export async function upsertTarefa(t: Tarefa): Promise<Tarefa> {
   }
   if (idx >= 0) list[idx] = next; else list.unshift(next);
   saveTarefasCache(list);
+  notificarAtualizacaoLocal('tarefas');
   queueSet(colPath('tarefas'), t.id, next);
   logAudit('save_tarefa', t.titulo?.slice(0, 80) || t.id, { estado: (next as Tarefa).estado }, t.clienteId);
   return next;
@@ -756,6 +873,7 @@ export async function upsertObrigacao(o: Obrigacao): Promise<Obrigacao> {
   const next = stamp({ ...o });
   if (idx >= 0) list[idx] = next; else list.push(next);
   saveObrigacoesCache(list);
+  notificarAtualizacaoLocal('obrigacoes');
   queueSet(colPath('obrigacoes'), o.id, next);
   logAudit('save_obrigacao', o.titulo?.slice(0, 80) || o.id, { estado: (next as Obrigacao).estado }, o.clienteId);
   return next;
@@ -1082,7 +1200,7 @@ export function newContactoGabineteId():string{ return newId('cgc'); }
 export function listAlertasCache(): AlertaGabinete[] { return readCache<AlertaGabinete>('alertasGeral', []); }
 export function saveAlertasCache(list: AlertaGabinete[]): void { writeCache('alertasGeral', list); }
 export async function upsertAlertaGabinete(a: AlertaGabinete): Promise<AlertaGabinete> {
-  const list=listAlertasCache(); const idx=list.findIndex(x=>x.id===a.id); const next=stamp({...a}); if(idx>=0) list[idx]=next; else list.unshift(next); saveAlertasCache(list); queueSet(colPath('alertasGeral'), a.id, next); logAudit('save_alerta', a.texto?.slice(0,80) || a.id, undefined, a.clienteId); return next;
+  const list=listAlertasCache(); const idx=list.findIndex(x=>x.id===a.id); const next=stamp({...a}); if(idx>=0) list[idx]=next; else list.unshift(next); saveAlertasCache(list); notificarAtualizacaoLocal('alertasGeral'); queueSet(colPath('alertasGeral'), a.id, next); logAudit('save_alerta', a.texto?.slice(0,80) || a.id, undefined, a.clienteId); return next;
 }
 export async function deleteAlertaGabinete(id: string): Promise<void> {
   const alvo = listAlertasCache().find(x => x.id === id);
@@ -1294,11 +1412,13 @@ export async function migrarAssuntosParaTarefasV1(): Promise<number> {
 // Idempotente: não duplica se já existe mesmo (clienteId+tipo+periodo).
 export function gerarObrigacoesParaCliente(cli: GabineteCliente, ano = new Date().getFullYear()): Obrigacao[] {
   const existentes = listObrigacoesCache();
-  const key = (t: ObrigacaoTipo, periodo: string) => `${cli.id}:${t}:${periodo}`;
-  const jaExiste = new Set(existentes.map(o => `${o.clienteId}:${o.tipo}:${o.periodo}`));
+  // Chave inclui a célula (catálogo/pilar) para não colidir quando o tipo é 'dossier'.
+  const chaveObr = (o: Pick<Obrigacao, 'clienteId' | 'tipo' | 'periodo' | 'catalogoId' | 'mapa' | 'pilarId'>) =>
+    `${o.clienteId}:${o.tipo}:${o.periodo}:${o.catalogoId || ''}:${o.mapa || ''}:${o.pilarId || ''}`;
+  const jaExiste = new Set(existentes.map(chaveObr));
   const novas: Obrigacao[] = [];
   const push = (o: Omit<Obrigacao, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const k = key(o.tipo, o.periodo);
+    const k = chaveObr(o as Pick<Obrigacao, 'clienteId' | 'tipo' | 'periodo' | 'catalogoId' | 'mapa' | 'pilarId'>);
     if (jaExiste.has(k)) return;
     jaExiste.add(k);
     novas.push({ ...o, id: newObrigacaoId(), createdAt: Date.now(), updatedAt: Date.now() });
@@ -1363,6 +1483,24 @@ export function gerarObrigacoesParaCliente(cli: GabineteCliente, ano = new Date(
     vencimento: new Date(ano, 6, 15).getTime(), // 15 julho
     estado: new Date(ano, 6, 15).getTime() < Date.now() ? 'atrasada' : 'pendente',
   });
+
+  // SAF-T de faturação (online): entrega até ao dia 5 do mês seguinte.
+  if (ativas.has('saft')) {
+    for (let m = 1; m <= 12; m++) {
+      const mm = String(m).padStart(2, '0');
+      const venc = new Date(ano, m, 5).getTime(); // m 0-index → mês seguinte, dia 5
+      push({
+        tipo: 'dossier',
+        catalogoId: 'saft',
+        titulo: `SAF-T Faturação ${mm}/${ano} — ${cli.nome}`,
+        clienteId: cli.id,
+        clienteNome: cli.nome,
+        periodo: `${ano}-${mm}`,
+        vencimento: venc,
+        estado: venc < Date.now() ? 'atrasada' : 'pendente',
+      });
+    }
+  }
 
   // Persiste as novas (cache + Firestore fire-and-forget)
   if (novas.length) {

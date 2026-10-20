@@ -1,9 +1,11 @@
 import React, { createContext, useContext } from 'react';
-import { Printer } from 'lucide-react';
+import { Download, Printer } from 'lucide-react';
 import { printViaPaged, printHtmlViaPaged } from './lib/printPaged';
 import { detailSimulacao, type SimView } from './lib/simSummary';
 import { resultSimulacao } from './lib/simResults';
 import { calcViatura } from './lib/viaturas';
+import { compararModos, ETIQUETA_MODO, MODOS, type FinanciamentoInput } from './lib/viaturasFinanciamento';
+import { RelatorioPdf } from './lib/reportPdf';
 import { calcIMT, type TipoImovel, type Localizacao } from './lib/imt';
 import type { ClientProfile } from './ClientProfile';
 import type { OfficeSettings } from './lib/officeSettings';
@@ -228,6 +230,71 @@ function buildReport(ctx: SimulatorPrintContextValue): string {
 export function SimulatorPrintButton({ compact = false }: { compact?: boolean }) {
   const ctx = useContext(PrintContext);
   if (!ctx?.view) return null;
+
+  const onPdf = () => {
+    const v = ctx.view!;
+    const txt = PRINT_TITLES[v];
+    const office = ctx.office || ({} as OfficeSettings);
+    const profile = ctx.profile || ({} as ClientProfile);
+    const pdf = new RelatorioPdf({
+      titulo: txt,
+      subtitulo: 'Relatório resumido da simulação efetuada.',
+      cliente: profile.nomeCliente?.trim() || 'Por preencher',
+      nif: profile.nif?.trim() || 'Por preencher',
+      escritorio: { nome: office.nome, corPrimaria: office.corPrimaria, logoDataUrl: office.logoDataUrl },
+      nomeFicheiro: `Estudo360_${txt}_${profile.nomeCliente || ''}`,
+    });
+    const inputs = [...detailSimulacao(v, ctx.state), ...extraInputs(v, ctx.state)];
+    const results = [...resultSimulacao(v, ctx.state, profile), ...extraResults(v, ctx.state, profile)];
+    pdf.seccao('Parâmetros da simulação').tabela(inputs);
+    pdf.seccao('Resultado da simulação').tabela(results, { destaquePrimeira: true });
+
+    if (v === 'vehicle') {
+      const s = (ctx.state || {}) as Record<string, unknown>;
+      const num = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? x : 0);
+      const fin = (s.financiamento || {}) as Record<string, unknown>;
+      const input: FinanciamentoInput = {
+        preco: num(s.price),
+        duracaoMeses: fin.duracaoMeses !== undefined ? num(fin.duracaoMeses) : 48,
+        entrada: fin.entrada !== undefined ? num(fin.entrada) : num(s.price) * 0.2,
+        valorResidual: num(fin.valorResidual),
+        tanPercent: fin.tanPercent !== undefined ? num(fin.tanPercent) : 6,
+        mensalidadeManual: num(fin.mensalidadeManual) || undefined,
+        incluiManutencao: fin.incluiManutencao !== false,
+        incluiSeguro: fin.incluiSeguro !== false,
+        rentingDiscriminada: fin.rentingDiscriminada !== false,
+        maintenanceCost: num(s.maintenanceCost),
+        insuranceCost: num(s.insuranceCost),
+        fuelCost: num(s.fuelCost),
+        fiscal: {
+          category: String(s.category || 'passageiros'),
+          engineType: String(s.engineType || 'diesel'),
+          ivaRegime: String(s.ivaRegime || 'normal'),
+          activity: String(s.activity || 'other'),
+          exemptTA: !!s.exemptTA,
+          phevCompliant: !!s.phevCompliant,
+          agravamentoTA: !!s.agravamentoTA,
+          usoPercentagem: (s.usoPercentagem as number | undefined) ?? 100,
+        },
+      };
+      if (input.preco > 0) {
+        const { resultados } = compararModos(input);
+        const linhas = [
+          { label: 'Mensalidade', valor: MODOS.map(m => `${ETIQUETA_MODO[m]}: ${resultados[m].mensalidade > 0 ? eur(resultados[m].mensalidade) : '—'}`).join(' · ') },
+          { label: 'Custo total', valor: MODOS.map(m => `${ETIQUETA_MODO[m]}: ${eur(resultados[m].custoTotal)}`).join(' · ') },
+          { label: 'Custo líquido após IVA', valor: MODOS.map(m => `${ETIQUETA_MODO[m]}: ${eur(resultados[m].custoLiquido)}`).join(' · ') },
+          { label: 'Gasto aceite', valor: MODOS.map(m => `${ETIQUETA_MODO[m]}: ${eur(resultados[m].gastoAceite)}`).join(' · ') },
+          { label: 'Tributação Autónoma', valor: MODOS.map(m => `${ETIQUETA_MODO[m]}: ${eur(resultados[m].taValue)}`).join(' · ') },
+        ];
+        pdf.seccao('Comparação de aquisição (compra · crédito · leasing · renting)').tabela(linhas);
+      }
+    }
+
+    pdf.seccao('Como se calcula').paragrafo(PRINT_METHOD[v]);
+    pdf.nota('Cálculos indicativos — confirme os valores e o enquadramento com o seu Contabilista Certificado.');
+    pdf.save();
+  };
+
   const onPrint = () => {
     // Preferir impressão fiel ao que o utilizador vê: clonar o nó dos resultados (mesmas cores/cards/gradientes)
     try {
@@ -285,15 +352,27 @@ export function SimulatorPrintButton({ compact = false }: { compact?: boolean })
     });
   };
   return (
-    <button
-      type="button"
-      onClick={onPrint}
-      title="Imprimir esta simulação em A4 / Guardar PDF"
-      aria-label="Imprimir simulação em A4"
-      className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[9px] border border-[#D7E2EE] bg-white px-3 py-2.5 text-[12px] font-[700] text-[#475569] transition-colors hover:border-[var(--brand-bordeaux-neon)] hover:bg-[var(--brand-bordeaux-soft)] hover:text-[var(--brand-bordeaux)] ${compact ? 'sm:px-2.5' : ''}`}
-    >
-      <Printer className="h-4 w-4 text-[#0677FF]" />
-      <span className="hidden sm:inline">Imprimir A4</span>
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={onPdf}
+        title="Descarregar esta simulação em PDF"
+        aria-label="Descarregar simulação em PDF"
+        className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[9px] bg-[#0677FF] px-3 py-2.5 text-[12px] font-[700] text-white transition-colors hover:bg-blue-600 ${compact ? 'sm:px-2.5' : ''}`}
+      >
+        <Download className="h-4 w-4" />
+        <span className="hidden sm:inline">Descarregar PDF</span>
+      </button>
+      <button
+        type="button"
+        onClick={onPrint}
+        title="Imprimir esta simulação em A4"
+        aria-label="Imprimir simulação em A4"
+        className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[9px] border border-[#D7E2EE] bg-white px-3 py-2.5 text-[12px] font-[700] text-[#475569] transition-colors hover:border-[var(--brand-bordeaux-neon)] hover:bg-[var(--brand-bordeaux-soft)] hover:text-[var(--brand-bordeaux)] ${compact ? 'sm:px-2.5' : ''}`}
+      >
+        <Printer className="h-4 w-4 text-[#0677FF]" />
+        <span className="hidden sm:inline">Imprimir A4</span>
+      </button>
+    </>
   );
 }

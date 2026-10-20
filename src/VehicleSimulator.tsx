@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { Car, Euro, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { cn } from './lib/utils';
 import { calcViatura } from './lib/viaturas';
+import ComparadorAquisicao from './components/ComparadorAquisicao';
 import { useTheme } from './ThemeContext';
 import { Tip } from './Tip';
 import { FlowWizard } from './FlowWizard';
@@ -24,6 +25,11 @@ interface VehicleSimulatorState {
   fuelCost: number;
   exemptTA: boolean;
   phevCompliant: boolean;
+  modoAquisicao?: 'compra' | 'credito' | 'leasing' | 'renting';
+  financiamento?: {
+    entrada?: number; duracaoMeses?: number; tanPercent?: number; valorResidual?: number;
+    mensalidadeManual?: number; rentingDiscriminada?: boolean; incluiManutencao?: boolean; incluiSeguro?: boolean;
+  };
   agravamentoTA?: boolean;
   co2Emissions?: number;
   autonomiaEletrica?: number;
@@ -71,7 +77,7 @@ function AutoScale({ children, className }: { children: React.ReactNode; classNa
   );
 }
 
-function VehicleResults({ state, results, flow = false }: { state: VehicleSimulatorState; results: ReturnType<typeof useVehicleResults>; flow?: boolean }) {
+function VehicleResults({ state, results, flow = false, onChange }: { state: VehicleSimulatorState; results: ReturnType<typeof useVehicleResults>; flow?: boolean; onChange: (patch: Partial<VehicleSimulatorState>) => void }) {
   const { category } = state;
   const ptEur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(v || 0);
 
@@ -149,6 +155,10 @@ function VehicleResults({ state, results, flow = false }: { state: VehicleSimula
               Viaturas comerciais não sujeitas a TA.
             </div>
           )}
+        </div>
+
+        <div className="lg:col-span-2">
+          <ComparadorAquisicao state={state as unknown as Record<string, unknown>} onChange={(p) => onChange(p as Partial<VehicleSimulatorState>)} />
         </div>
       </div>
     );
@@ -231,6 +241,10 @@ function VehicleResults({ state, results, flow = false }: { state: VehicleSimula
             As viaturas comerciais ligeiras (lotação 2/3) não estão sujeitas ao agravamento por Tributação Autónoma.
           </div>
         )}
+      </div>
+
+      <div className="xl:col-span-2">
+        <ComparadorAquisicao state={state as unknown as Record<string, unknown>} onChange={(p) => onChange(p as Partial<VehicleSimulatorState>)} />
       </div>
     </div>
   );
@@ -489,7 +503,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
       label: 'Resultados da Simulação',
       description: 'Aqui estão os cálculos de IVA recuperável e Tributação Autónoma.',
       isVisible: () => true,
-      render: () => <VehicleResults state={initialState} results={results} flow />,
+      render: () => <VehicleResults state={initialState} results={results} flow onChange={(p) => onStateChange({ ...initialState, ...p })} />,
     },
   ];
 
@@ -636,7 +650,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
       onSimulate={() => setSimulated(true)}
       onBack={() => setSimulated(false)}
       inputs={vehicleInputs}
-      results={<VehicleResults state={initialState} results={results} />}
+      results={<VehicleResults state={initialState} results={results} onChange={(p) => onStateChange({ ...initialState, ...p })} />}
     />
   );
 }

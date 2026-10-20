@@ -15,12 +15,20 @@ import {
   OBRIGACOES_CATALOGO, OBRIGACOES_CATALOGO_DEFAULT, getCatalogo, setCatalogo, addCatalogoDef, deleteCatalogoDef, resetCatalogo, getQuadroVisiveis, setQuadroVisiveis, getObrigacoesAtivas, setObrigacoesAtivas,
   MAPA_CONTROLO_DEFAULT, MAPA_RH_DEFAULT, getMapaControloPilares, setMapaControloPilares, addMapaControloPilar, deleteMapaControloPilar, resetMapaControloPilares, getMapaControloVisiveis, setMapaControloVisiveis,
   getMapaRHPilares, setMapaRHPilares, addMapaRHPilar, deleteMapaRHPilar, resetMapaRHPilares, getMapaRHVisiveis, setMapaRHVisiveis,
+  getPilaresCliente, setPilaresCliente, addPilarCliente, renamePilarCliente, togglePilarCliente, removePilarCliente, resetPilaresCliente,
   startGabineteMetaSync,
-  type GabineteCliente, type Tarefa, type Obrigacao, type ObrigacaoTipo, type ObrigacaoEstado, type CofreEntrada, type ObrigacaoDef, type MapaPilarDef,
+  type GabineteCliente, type Tarefa, type Obrigacao, type ObrigacaoTipo, type ObrigacaoEstado, type CofreEntrada, type ObrigacaoDef, type MapaPilarDef, type PilarCliente,
   type AlertaGabinete, type ContactoGabinete, type OcorrenciaGabinete, type GabineteDocumento, type LixeiraColKey,
 } from './lib/gabinete';
 import { listEmpresas } from './lib/empresas';
-import { getActiveGabineteId, clearActiveGabineteId, getGabineteMeta } from './lib/gabinetes';
+import { getActiveGabineteId, getGabineteMeta, clearActiveGabineteAndReload } from './lib/gabinetes';
+import { logAudit } from './lib/audit';
+import { toast as notificar } from './lib/toast';
+import { ToastHost } from './components/ToastHost';
+import NotificacoesBell from './components/NotificacoesBell';
+import PilaresEditor from './components/PilaresEditor';
+import { obterObrigacaoCelula, estadoCelula, construirObrigacaoDaCelula, chaveCelula, resolverPilarLegado, type CellKey } from './lib/mapaCelulas';
+import { RelatorioPdf } from './lib/reportPdf';
 import { loadOfficeSettings } from './lib/officeSettings';
 // Cofre simples (sem cifra) — Firestore só visível pela própria conta (gabinete/{uid}/cofre/*)
 import GuiaSugestao from './components/GuiaSugestao';
@@ -182,13 +190,6 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
     return () => { cancelled = true; };
   }, [activeGabineteIdForHeader]);
   const guideView = tab === 'gallery' ? null : GAB_TAB_GUIA[tab];
-  const clearGabineteAndReload = () => {
-    try { clearActiveGabineteId(); } catch {
-      try { localStorage.removeItem('estudo360:v1:gabinete:activeId'); localStorage.removeItem('estudo360:v1:gabinete:officeId'); } catch {}
-    }
-    window.dispatchEvent(new CustomEvent('estudo360:gabinete-switch', { detail: { id: null } } as any));
-    window.location.reload();
-  };
   const functionLabel = activeFunction?.label ?? 'Centro de operação';
   const functionDesc = activeFunction?.desc ?? 'Escolha uma função para começar';
   const goFunction = (target: GabTab) => setTab(target);
@@ -208,9 +209,12 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
               <div className="hidden text-xs text-zinc-500 sm:block">{functionLabel} · {functionDesc}</div>
             </div>
           </div>
-          <button onClick={clearGabineteAndReload} className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">
+          <div className="flex items-center gap-2">
+            <NotificacoesBell clientes={clientes} obrigacoes={obrigacoesRaw} alertas={alertasAll} onGo={(t) => setTab(t as GabineteTab)} />
+            <button onClick={clearActiveGabineteAndReload} className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">
               {(activeGabineteNome || 'Gabinete').slice(0, 28)} · Trocar
             </button>
+          </div>
           <div className="hidden sm:flex items-center gap-2 text-right text-xs text-zinc-500">
             <span>{clientes.length} clientes</span>
             <span className="opacity-30">•</span>
@@ -232,7 +236,7 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
               <span className="text-emerald-700">Sincronizado ✓</span>
             )}
           </div>
-          <button onClick={clearGabineteAndReload} className="sm:hidden inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-700">Trocar</button>
+          <button onClick={clearActiveGabineteAndReload} className="sm:hidden inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-700">Trocar</button>
           <div className="sm:hidden text-right text-[11px] leading-tight text-zinc-500">
             <div>{clientes.length} clientes</div>
             <div>{tarefas.filter(t=>t.estado!=='done').length} abertas</div>
@@ -265,6 +269,7 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
           </>
         )}
       </div>
+      <ToastHost />
     </div>
   );
 }
@@ -290,6 +295,13 @@ function Kpi({ label, value, sub, icon: Icon, tone = 'blue' }: { label:string; v
       {sub && <div className="text-xs text-zinc-500">{sub}</div>}
     </div>
   );
+}
+
+const simboloStatus = (s: 'concluido'|'nao_concluido'|'sem_dados') => (s === 'concluido' ? '✓' : s === 'nao_concluido' ? '✕' : '—');
+
+function escritorioPdf() {
+  const o = loadOfficeSettings();
+  return { nome: o.nome, corPrimaria: o.corPrimaria, logoDataUrl: o.logoDataUrl };
 }
 
 function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true }: { clientes:GabineteCliente[]; tarefas:Tarefa[]; obrigacoes:Obrigacao[]; cofre:CofreEntrada[]; onGo:(t:GabTab)=>void; canEdit?: boolean }) {
@@ -343,8 +355,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
   const [obrEditingId, setObrEditingId] = useState<string | null>(null);
   const [showGerir, setShowGerir] = useState(false);
   const [novaObrLabel, setNovaObrLabel] = useState('');
-  const [toast, setToast] = useState<string | null>(null);
-  const showToast = (msg: string) => { setToast(msg); setTimeout(()=>setToast(null), 2200); };
+  const showToast = (msg: string) => notificar(msg);
   const handleAddObr = async () => {
     const v = novaObrLabel.trim();
     if (!v) { alert('Escreve o nome da obrigação'); return; }
@@ -389,19 +400,12 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
   const grupos = useMemo(() => Array.from(new Set(clientes.flatMap(c=> (c.tags||[])))).sort(), [clientes]);
 
   type CellStatus = 'concluido' | 'nao_concluido' | 'sem_dados';
-  const calcCellStatus = (cli: GabineteCliente, linha: LinhaDef, mes: number, anoNum: number): CellStatus => {
-    const hits = obrigacoes.filter(o => {
-      if (o.clienteId !== cli.id) return false;
-      const d = new Date(o.vencimento);
-      if (d.getFullYear() !== anoNum) return false;
-      if (d.getMonth() + 1 !== mes) return false;
-      return linha.tipos.includes(o.tipo as ObrigacaoTipo) || linha.tipos.includes(o.tipo as any);
-    });
-    let best: Obrigacao | undefined;
-    for (const o of hits) { if (!best) best=o; else { const prio=(s:ObrigacaoEstado)=> s==='entregue'?0:s==='atrasada'?1:2; if(prio(o.estado)<prio(best.estado)) best=o; } }
-    if (best) return best.estado==='entregue' ? 'concluido' : 'nao_concluido';
-    return 'sem_dados';
+  const cellStatusOf = (cli: GabineteCliente, linha: LinhaDef, mes: number, anoNum: number): CellStatus => {
+    const o = obterObrigacaoCelula(obrigacoes, { clienteId: cli.id, mapa: 'quadro', refId: linha.id, ano: anoNum, mes }, linha.tipos);
+    return estadoCelula(o);
   };
+  const calcCellStatus = (cli: GabineteCliente, linha: LinhaDef, mes: number, anoNum: number): CellStatus =>
+    cellStatusOf(cli, linha, mes, anoNum);
 
   // Filtragem de clientes — todos os filtros combinam (AND)
   const clientesFiltrados = useMemo(() => {
@@ -437,56 +441,30 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
   const isEmptyGlobal = clientes.length === 0 && tarefas.length === 0 && obrigacoes.length === 0;
   const hasAlgumaObrigacao = obrigacoes.length > 0;
 
-  const getCellStatus = (cli: GabineteCliente, linha: LinhaDef, mes: number, anoNum: number): CellStatus => {
-    const hits = obrigacoes.filter(o => {
-      if (o.clienteId !== cli.id) return false;
-      const d = new Date(o.vencimento);
-      if (d.getFullYear() !== anoNum) return false;
-      if (d.getMonth() + 1 !== mes) return false;
-      return linha.tipos.includes(o.tipo as ObrigacaoTipo) || linha.tipos.includes(o.tipo as any);
-    });
-    let best: Obrigacao | undefined;
-    for (const o of hits) {
-      if (!best) { best = o; continue; }
-      const prio = (s: ObrigacaoEstado) => s === 'entregue' ? 0 : s === 'atrasada' ? 1 : 2;
-      if (prio(o.estado) < prio(best.estado)) best = o;
-    }
-    if (best) {
-      if (best.estado === 'entregue') return 'concluido';
-      return 'nao_concluido';
-    }
-    return 'sem_dados';
-  };
+  const getCellStatus = (cli: GabineteCliente, linha: LinhaDef, mes: number, anoNum: number): CellStatus =>
+    cellStatusOf(cli, linha, mes, anoNum);
 
+  const [pendingCells, setPendingCells] = useState<Set<string>>(() => new Set());
   const toggleCell = async (cli: GabineteCliente, linha: LinhaDef, mes: number) => {
     if (!canEdit) { showToast('O teu cargo não permite editar obrigações.'); return; }
-    const status = getCellStatus(cli, linha, mes, ano);
-    const nextStatus: CellStatus = status === 'concluido' ? 'nao_concluido' : 'concluido';
-    let nextEstado: ObrigacaoEstado | null = null;
-    if (nextStatus === 'concluido') nextEstado = 'entregue';
-    else if (nextStatus === 'nao_concluido') nextEstado = 'atrasada';
-
-    // cria ou atualiza
-    const venc = new Date(ano, mes - 1, 20).getTime();
-    // procura existente para update
-    const existing = obrigacoes.find(o => o.clienteId === cli.id && new Date(o.vencimento).getMonth()+1 === mes && new Date(o.vencimento).getFullYear() === ano && linha.tipos.includes(o.tipo as any));
-    const tituloMap: Record<string,string> = { modelo44:'Modelo 44', saft:'Envio SAFT', iva: cli.regimeIva === 'mensal' ? 'IVA Mensal' : 'IVA Trimestral', ies:'IES', modelo10:'Modelo 10', dmr:'DMR', ss:'Segurança Social' };
-    const titulo = `${tituloMap[linha.id] || linha.label} ${String(mes).padStart(2,'0')}/${ano} — ${cli.nome}`;
-    const payload: Obrigacao = {
-      id: existing?.id || ('obr_' + Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-4)),
-      tipo: (linha.tipos[0] as ObrigacaoTipo) || 'outro',
-      titulo,
-      clienteId: cli.id,
-      clienteNome: cli.nome,
-      periodo: `${ano}-${String(mes).padStart(2,'0')}`,
-      vencimento: venc,
-      estado: nextEstado!,
-      origem: 'cliente',
-      createdAt: existing?.createdAt || Date.now(),
-      updatedAt: Date.now(),
-    };
-    await upsertObrigacao(payload);
-    showToast(`✓ ${linha.label} ${String(mes).padStart(2,'0')}/${ano} — gravado`);
+    const k = chaveCelula({ clienteId: cli.id, mapa: 'quadro', refId: linha.id, ano, mes });
+    if (pendingCells.has(k)) return;
+    const mm = String(mes).padStart(2, '0');
+    const key: CellKey = { clienteId: cli.id, mapa: 'quadro', refId: linha.id, ano, mes };
+    setPendingCells(prev => new Set(prev).add(k));
+    try {
+      const existing = obterObrigacaoCelula(obrigacoes, key, linha.tipos);
+      const payload = construirObrigacaoDaCelula(key, { id: linha.id, label: linha.label, tipos: linha.tipos }, { id: cli.id, nome: cli.nome }, existing);
+      await upsertObrigacao(payload);
+      logAudit('save_obrigacao_celula', `${linha.label} ${mm}/${ano} — ${cli.nome}`, {
+        mapa: 'quadro', refId: linha.id, ano, mes, antes: existing?.estado ?? null, depois: payload.estado,
+      }, cli.id);
+      showToast(`✓ ${linha.label} ${mm}/${ano} — gravado`);
+    } catch (e) {
+      notificar(`Não gravou: ${e instanceof Error ? e.message : String(e)}`, 'erro');
+    } finally {
+      setPendingCells(prev => { const n = new Set(prev); n.delete(k); return n; });
+    }
   };
 
   const renderIcon = (s: CellStatus, withBg = false) => {
@@ -519,6 +497,27 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
     a.download = `Quadro_Resumo_Obrigacoes_${ano}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleExportPdf = () => {
+    const cab = ['Cliente', 'Obrigação', ...meses];
+    const linhas: string[][] = [];
+    for (const cli of clientesFiltrados) {
+      const ativas = new Set(getObrigacoesAtivas(cli));
+      for (const linha of linhasFiltradas.filter(l => ativas.has(l.id))) {
+        linhas.push([cli.nome, linha.label, ...meses.map((_, i) => simboloStatus(getCellStatus(cli, linha, i + 1, ano)))]);
+      }
+    }
+    const pdf = new RelatorioPdf({
+      titulo: 'Quadro Resumo de Obrigações',
+      subtitulo: `Ano ${ano} · ${linhas.length} linha(s) · ✓ concluído · ✕ não concluído · — sem registo`,
+      escritorio: escritorioPdf(),
+      paisagem: true,
+      nomeFicheiro: `Quadro-Resumo-${ano}`,
+    });
+    pdf.matriz(cab, linhas);
+    pdf.nota('Cada célula corresponde a uma obrigação do cliente naquele mês, registada no gabinete.');
+    pdf.save();
   };
 
   const showVazio = clientesFiltrados.length === 0;
@@ -623,11 +622,6 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
           </div>
         )}
       </div>
-      {toast && (
-        <div className="fixed bottom-4 right-4 z-50 bg-zinc-900 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 animate-in slide-in-from-bottom-2 duration-200">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> {toast}
-        </div>
-      )}
 
       {/* Tabela — sem contorno: o fundo da página já delimita o quadro */}
       <div className="bg-white rounded-[10px] overflow-hidden">
@@ -713,6 +707,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
         <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 bg-[#F1F1F1] border-t border-zinc-300 text-xs print:bg-white">
           <button onClick={handleImprimir} className="px-3 py-1.5 rounded border border-zinc-400 bg-gradient-to-b from-white to-zinc-100 hover:from-zinc-50 hover:to-zinc-200 text-zinc-800 font-medium shadow-sm">Imprimir</button>
           <button onClick={handleExportExcel} className="px-3 py-1.5 rounded border border-zinc-400 bg-gradient-to-b from-white to-zinc-100 hover:from-zinc-50 hover:to-zinc-200 text-zinc-800 font-medium shadow-sm">Exportar Excel</button>
+          <button onClick={handleExportPdf} className="px-3 py-1.5 rounded border border-[#0677FF] bg-[#0677FF] text-white font-medium shadow-sm hover:bg-blue-600">Exportar PDF</button>
           <button onClick={expandirTodos} className="px-3 py-1.5 rounded border border-zinc-400 bg-gradient-to-b from-white to-zinc-100 hover:from-zinc-50 hover:to-zinc-200 text-zinc-800 font-medium shadow-sm">Expandir todos</button>
           <button onClick={colapsarTodos} className="px-3 py-1.5 rounded border border-zinc-400 bg-gradient-to-b from-white to-zinc-100 hover:from-zinc-50 hover:to-zinc-200 text-zinc-800 font-medium shadow-sm">Colapsar todos</button>
           <div className="ml-auto flex flex-wrap items-center gap-4 text-[12px] text-zinc-700">
@@ -755,10 +750,10 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
   }, []);
   const pilares: Pilar[] = pilaresRaw.map(p => ({ key: p.id, labelShort: p.labelShort, labelFull: p.labelFull, color:'#374151', bgHeader:'bg-white', tipos: p.tipos }));
   const [showGerirMC, setShowGerirMC] = useState(false);
+  const [showPilaresMC, setShowPilaresMC] = useState(false);
   const [novaMCLabel, setNovaMCLabel] = useState('');
   const [novaMCFull, setNovaMCFull] = useState('');
-  const [toastMC, setToastMC] = useState<string | null>(null);
-  const showToastMC = (m:string) => { setToastMC(m); setTimeout(()=>setToastMC(null), 2200); };
+  const showToastMC = (m:string) => notificar(m);
   const handleAddMC = async () => { const s=novaMCLabel.trim(); if(!s){alert('Escreve o nome curto');return;} try{ const d=await addMapaControloPilar(s, novaMCFull.trim()||s); setPilaresRaw(getMapaControloPilares()); setNovaMCLabel(''); setNovaMCFull(''); showToastMC(`✓ “${d.labelShort}” adicionado — gravado`);}catch(e:unknown){alert((e as Error).message);} };
   const handleDelMC = async (id:string) => { const lab=pilaresRaw.find(p=>p.id===id)?.labelShort||id; if(!confirm(`Apagar “${lab}”?`))return; try{ await deleteMapaControloPilar(id); setPilaresRaw(getMapaControloPilares()); showToastMC(`✓ “${lab}” apagado — gravado`);}catch(e:unknown){alert((e as Error).message);} };
 
@@ -793,12 +788,24 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
   })();
 
   type MapaStatus = 'concluido'|'nao_concluido'|'sem_dados';
-  const getStatus = (cli:GabineteCliente, pilar:Pilar, mes:number): MapaStatus => {
-    const hits = obrigacoes.filter(o=> o.clienteId===cli.id && new Date(o.vencimento).getFullYear()===ano && new Date(o.vencimento).getMonth()+1===mes && pilar.tipos.includes(o.tipo as any));
-    let best: Obrigacao | undefined;
-    for(const o of hits){ if(!best) best=o; else { const prio=(s:ObrigacaoEstado)=> s==='entregue'?0:s==='atrasada'?1:2; if(prio(o.estado)<prio(best.estado)) best=o; } }
-    if(best){ if(best.estado==='entregue') return 'concluido'; return 'nao_concluido'; }
-    return 'sem_dados';
+  const pilaresDoCliente = (cli: GabineteCliente): Pilar[] =>
+    getPilaresCliente(cli, 'controlo')
+      .filter(p => p.ativo)
+      .filter(p => !filtroPilar || p.id === filtroPilar)
+      .filter(p => !(mcVisiveis && mcVisiveis.length) || mcVisiveis.includes(p.id))
+      .map(p => ({ key: p.id, labelShort: p.labelShort, labelFull: p.labelFull, color: '#374151', bgHeader: 'bg-white', tipos: p.tipos }));
+
+  const legadoDe = (cli: GabineteCliente): Map<string, string> =>
+    resolverPilarLegado(obrigacoes.filter(o => o.clienteId === cli.id), pilaresDoCliente(cli).map(p => ({ id: p.key, label: p.labelShort, labelFull: p.labelFull, tipos: p.tipos })));
+
+  const getStatus = (cli:GabineteCliente, pilar:Pilar, mes:number, legado?: Map<string,string>): MapaStatus => {
+    const o = obterObrigacaoCelula(
+      obrigacoes,
+      { clienteId: cli.id, mapa: 'controlo', refId: pilar.key, ano, mes },
+      pilar.tipos,
+      legado ?? legadoDe(cli),
+    );
+    return estadoCelula(o);
   };
 
   const clientesFiltrados = (() => {
@@ -810,7 +817,7 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
     if(filtroRegime){ list=list.filter(c=> c.regimeIva===filtroRegime); }
     if(filtroEstado){
       list=list.filter(c=> {
-        for(const pi of pilaresVisiveis){
+        for(const pi of pilaresDoCliente(c)){
           for(const mi of visMeses){
             const mes=mi+1; const st=getStatus(c,pi,mes);
             if(st===filtroEstado) return true;
@@ -822,24 +829,28 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
     return list;
   })();
 
+  const [pendingMC, setPendingMC] = useState<Set<string>>(() => new Set());
   const toggleCell = async (cli:GabineteCliente, pilar:Pilar, mes:number) => {
     if (!canEdit) { showToastMC('O teu cargo não permite editar obrigações.'); return; }
-    const cur=getStatus(cli,pilar,mes);
-    const next: 'concluido'|'nao_concluido' = cur==='concluido' ? 'nao_concluido' : 'concluido';
-    const estado: ObrigacaoEstado = next==='concluido'?'entregue':'atrasada';
-    const venc=new Date(ano,mes-1,20).getTime();
-    const existing=obrigacoes.find(o=> o.clienteId===cli.id && new Date(o.vencimento).getMonth()+1===mes && new Date(o.vencimento).getFullYear()===ano && pilar.tipos.includes(o.tipo as any));
-    const payload: Obrigacao = {
-      id: existing?.id || ('obr_'+Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4)),
-      tipo: pilar.tipos[0] as any || 'outro',
-      titulo: `${pilar.labelFull} ${String(mes).padStart(2,'0')}/${ano} — ${cli.nome}`,
-      clienteId: cli.id, clienteNome: cli.nome,
-      periodo: `${ano}-${String(mes).padStart(2,'0')}`,
-      vencimento: venc, estado, origem:'cliente',
-      createdAt: existing?.createdAt || Date.now(), updatedAt: Date.now(),
-    };
-    await upsertObrigacao(payload);
-    showToastMC(`✓ ${pilar.labelShort} ${String(mes).padStart(2,'0')}/${ano} — gravado`);
+    const key: CellKey = { clienteId: cli.id, mapa: 'controlo', refId: pilar.key, ano, mes };
+    const k = chaveCelula(key);
+    if (pendingMC.has(k)) return;
+    const mm = String(mes).padStart(2, '0');
+    setPendingMC(prev => new Set(prev).add(k));
+    try {
+      const legado = legadoDe(cli);
+      const existing = obterObrigacaoCelula(obrigacoes, key, pilar.tipos, legado);
+      const payload = construirObrigacaoDaCelula(key, { id: pilar.key, label: pilar.labelShort, labelFull: pilar.labelFull, tipos: pilar.tipos }, { id: cli.id, nome: cli.nome }, existing);
+      await upsertObrigacao(payload);
+      logAudit('save_obrigacao_celula', `${pilar.labelShort} ${mm}/${ano} — ${cli.nome}`, {
+        mapa: 'controlo', pilarId: pilar.key, ano, mes, antes: existing?.estado ?? null, depois: payload.estado,
+      }, cli.id);
+      showToastMC(`✓ ${pilar.labelShort} ${mm}/${ano} — gravado`);
+    } catch (e) {
+      notificar(`Não gravou: ${e instanceof Error ? e.message : String(e)}`, 'erro');
+    } finally {
+      setPendingMC(prev => { const n = new Set(prev); n.delete(k); return n; });
+    }
   };
 
   const renderIcon = (st:string, withBg=false) => {
@@ -850,8 +861,28 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
 
   const exportCSV = () => {
     const rows:string[]=[]; const mesesVisiveis=visMeses.map(i=>meses[i]); const header=['Cliente','Nº','Pilar',...mesesVisiveis].join(';'); rows.push(header);
-    for(const cli of clientesFiltrados){ for(const pi of pilaresVisiveis){ const cells=visMeses.map(mi=>{ const mes=mi+1; const st=getStatus(cli,pi,mes); const map:Record<MapaStatus,string>={concluido:'Concluído',nao_concluido:'Não Concluído',sem_dados:'—'}; return map[st]; }); rows.push([cli.nome, cli.nif||'', pi.labelFull, ...cells].join(';')); } }
+    for(const cli of clientesFiltrados){ for(const pi of pilaresDoCliente(cli)){ const cells=visMeses.map(mi=>{ const mes=mi+1; const st=getStatus(cli,pi,mes); const map:Record<MapaStatus,string>={concluido:'Concluído',nao_concluido:'Não Concluído',sem_dados:'—'}; return map[st]; }); rows.push([cli.nome, cli.nif||'', pi.labelFull, ...cells].join(';')); } }
     const csv=rows.join('\n'); const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`Mapa_Controlo_${ano}${trim?'_T'+trim:''}.csv`; a.click(); URL.revokeObjectURL(url);
+  };
+
+  const exportPDF = () => {
+    const cab = ['Cliente', 'Pilar', ...visMeses.map(i => meses[i])];
+    const linhas: string[][] = [];
+    for (const cli of clientesFiltrados) {
+      for (const pi of pilaresDoCliente(cli)) {
+        linhas.push([cli.nome, pi.labelFull, ...visMeses.map(mi => simboloStatus(getStatus(cli, pi, mi + 1)))]);
+      }
+    }
+    const pdf = new RelatorioPdf({
+      titulo: 'Mapa de Controlo',
+      subtitulo: `Ano ${ano}${trim ? ` · T${trim}` : ''} · ${clientesFiltrados.length} cliente(s) · ${linhas.length} linha(s)`,
+      escritorio: escritorioPdf(),
+      paisagem: true,
+      nomeFicheiro: `Mapa-Controlo-${ano}${trim ? `-T${trim}` : ''}`,
+    });
+    pdf.matriz(cab, linhas);
+    pdf.nota('Cada célula guarda a obrigação do pilar no mês. ✓ concluído · ✕ não concluído · — sem registo.');
+    pdf.save();
   };
 
   const grupos = Array.from(new Set(clientes.flatMap(c=> c.tags||[])));
@@ -926,6 +957,7 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-200 mt-2">
+          <button onClick={()=>setShowPilaresMC(true)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-300 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50" title="Escolher pilares por empresa (nomes e visibilidade) — grava permanente">Pilares por empresa</button>
           <button onClick={()=>setShowGerirMC(!showGerirMC)} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerirMC ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
             <Plus className="w-3.5 h-3.5" /> Gerir pilares
           </button>
@@ -1009,7 +1041,7 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
                     </tr>
                     
                     <AnimatePresence initial={false}>
-                    {isExpanded && pilaresVisiveis.map(pi=> (
+                    {isExpanded && pilaresDoCliente(cli).map(pi=> (
                       <motion.tr key={pi.key} initial={{opacity:0, y:-6}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-6}} transition={{duration:0.28, ease:[0.4,0,0.2,1]}} className="border-t border-zinc-200 hover:bg-zinc-50/70 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
                         <td className="px-2 py-1.5 pl-7 flex items-center gap-1.5 sticky left-0 bg-white z-[5] border-r border-zinc-200">
                           <span className="w-4 h-4 rounded-[3px] border flex items-center justify-center shrink-0" style={{borderColor: pi.color, background: pi.color+'18'}}><span className="w-2 h-2 rounded-[1px] block" style={{background: pi.color}} /></span>
@@ -1037,6 +1069,7 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
           <div className="flex gap-1.5">
             <button onClick={()=>window.print()} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Imprimir</button>
             <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Exportar XLS</button>
+            <button onClick={exportPDF} className="px-3 py-1.5 rounded border border-[#0677FF] bg-[#0677FF] text-white">Exportar PDF</button>
             <button onClick={()=>{ const s=new Set<string>(); clientesFiltrados.forEach(c=>s.add(c.id)); setCollapsed(new Set()); }} className="hidden sm:inline-flex px-3 py-1.5 rounded border border-zinc-400 bg-white">Expandir todos</button>
             <button onClick={()=>setCollapsed(new Set(clientesFiltrados.map(c=>c.id)))} className="hidden sm:inline-flex px-3 py-1.5 rounded border border-zinc-400 bg-white">Colapsar todos</button>
           </div>
@@ -1049,10 +1082,8 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
 
       <p className="text-[11px] text-zinc-500 px-1">Mapa de controlo por gabinete isolado: cada célula guarda uma obrigação (clica para alternar: ∅ → ✓ → ✕ → ●). Filtros por cliente, gestor, grupo e trimestre. Cores vivas por fase da contabilidade.</p>
 
-      {toastMC && (
-        <div className="fixed bottom-4 right-4 z-50 bg-zinc-900 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 animate-in slide-in-from-bottom-2 duration-200">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> {toastMC}
-        </div>
+      {showPilaresMC && (
+        <PilaresEditor mapa="controlo" clientes={clientes} onClose={() => setShowPilaresMC(false)} onChanged={() => { setPilaresRaw(getMapaControloPilares()); }} />
       )}
     </div>
   );
@@ -1072,10 +1103,10 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
   },[]);
   const pilares: Pilar[] = pilaresRaw.map(p=> ({ key:p.id, labelShort:p.labelShort, labelFull:p.labelFull, color:'#374151', bgHeader:'bg-white', tipos:p.tipos }));
   const [showGerirRH, setShowGerirRH] = useState(false);
+  const [showPilaresRH, setShowPilaresRH] = useState(false);
   const [novaRHLabel, setNovaRHLabel] = useState('');
   const [novaRHFull, setNovaRHFull] = useState('');
-  const [toastRH, setToastRH] = useState<string | null>(null);
-  const showToastRH=(m:string)=>{ setToastRH(m); setTimeout(()=>setToastRH(null),2200); };
+  const showToastRH=(m:string)=> notificar(m);
   const handleAddRH=async()=>{ const s=novaRHLabel.trim(); if(!s){alert('Escreve o nome curto');return;} try{ const d=await addMapaRHPilar(s, novaRHFull.trim()||s); setPilaresRaw(getMapaRHPilares()); setNovaRHLabel(''); setNovaRHFull(''); showToastRH(`✓ “${d.labelShort}” adicionado — gravado`);}catch(e:unknown){alert((e as Error).message);} };
   const handleDelRH=async(id:string)=>{ const lab=pilaresRaw.find(p=>p.id===id)?.labelShort||id; if(!confirm(`Apagar “${lab}”?`))return; try{ await deleteMapaRHPilar(id); setPilaresRaw(getMapaRHPilares()); showToastRH(`✓ “${lab}” apagado — gravado`);}catch(e:unknown){alert((e as Error).message);} };
 
@@ -1110,12 +1141,24 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
   })();
 
   type MapaStatus = 'concluido'|'nao_concluido'|'sem_dados';
-  const getStatus = (cli:GabineteCliente, pilar:Pilar, mes:number): MapaStatus => {
-    const hits = obrigacoes.filter(o=> o.clienteId===cli.id && new Date(o.vencimento).getFullYear()===ano && new Date(o.vencimento).getMonth()+1===mes && pilar.tipos.includes(o.tipo as any));
-    let best: Obrigacao | undefined;
-    for(const o of hits){ if(!best) best=o; else { const prio=(s:ObrigacaoEstado)=> s==='entregue'?0:s==='atrasada'?1:2; if(prio(o.estado)<prio(best.estado)) best=o; } }
-    if(best){ if(best.estado==='entregue') return 'concluido'; return 'nao_concluido'; }
-    return 'sem_dados';
+  const pilaresDoCliente = (cli: GabineteCliente): Pilar[] =>
+    getPilaresCliente(cli, 'rh')
+      .filter(p => p.ativo)
+      .filter(p => !filtroPilar || p.id === filtroPilar)
+      .filter(p => !(rhVisiveis && rhVisiveis.length) || rhVisiveis.includes(p.id))
+      .map(p => ({ key: p.id, labelShort: p.labelShort, labelFull: p.labelFull, color: '#374151', bgHeader: 'bg-white', tipos: p.tipos }));
+
+  const legadoDe = (cli: GabineteCliente): Map<string, string> =>
+    resolverPilarLegado(obrigacoes.filter(o => o.clienteId === cli.id), pilaresDoCliente(cli).map(p => ({ id: p.key, label: p.labelShort, labelFull: p.labelFull, tipos: p.tipos })));
+
+  const getStatus = (cli:GabineteCliente, pilar:Pilar, mes:number, legado?: Map<string,string>): MapaStatus => {
+    const o = obterObrigacaoCelula(
+      obrigacoes,
+      { clienteId: cli.id, mapa: 'rh', refId: pilar.key, ano, mes },
+      pilar.tipos,
+      legado ?? legadoDe(cli),
+    );
+    return estadoCelula(o);
   };
 
   const clientesFiltrados = (() => {
@@ -1127,7 +1170,7 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
     if(filtroRegime){ list=list.filter(c=> c.regimeIva===filtroRegime); }
     if(filtroEstado){
       list=list.filter(c=> {
-        for(const pi of pilaresVisiveis){
+        for(const pi of pilaresDoCliente(c)){
           for(const mi of visMeses){
             const mes=mi+1; const st=getStatus(c,pi,mes);
             if(st===filtroEstado) return true;
@@ -1139,24 +1182,28 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
     return list;
   })();
 
+  const [pendingRH, setPendingRH] = useState<Set<string>>(() => new Set());
   const toggleCell = async (cli:GabineteCliente, pilar:Pilar, mes:number) => {
     if (!canEdit) { showToastRH('O teu cargo não permite editar obrigações.'); return; }
-    const cur=getStatus(cli,pilar,mes);
-    const next: 'concluido'|'nao_concluido' = cur==='concluido' ? 'nao_concluido' : 'concluido';
-    const estado: ObrigacaoEstado = next==='concluido'?'entregue':'atrasada';
-    const venc=new Date(ano,mes-1,20).getTime();
-    const existing=obrigacoes.find(o=> o.clienteId===cli.id && new Date(o.vencimento).getMonth()+1===mes && new Date(o.vencimento).getFullYear()===ano && pilar.tipos.includes(o.tipo as any));
-    const payload: Obrigacao = {
-      id: existing?.id || ('obr_'+Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4)),
-      tipo: pilar.tipos[0] as any || 'outro',
-      titulo: `${pilar.labelFull} ${String(mes).padStart(2,'0')}/${ano} — ${cli.nome}`,
-      clienteId: cli.id, clienteNome: cli.nome,
-      periodo: `${ano}-${String(mes).padStart(2,'0')}`,
-      vencimento: venc, estado, origem:'cliente',
-      createdAt: existing?.createdAt || Date.now(), updatedAt: Date.now(),
-    };
-    await upsertObrigacao(payload);
-    showToastRH(`✓ ${pilar.labelShort} ${String(mes).padStart(2,'0')}/${ano} — gravado`);
+    const key: CellKey = { clienteId: cli.id, mapa: 'rh', refId: pilar.key, ano, mes };
+    const k = chaveCelula(key);
+    if (pendingRH.has(k)) return;
+    const mm = String(mes).padStart(2, '0');
+    setPendingRH(prev => new Set(prev).add(k));
+    try {
+      const legado = legadoDe(cli);
+      const existing = obterObrigacaoCelula(obrigacoes, key, pilar.tipos, legado);
+      const payload = construirObrigacaoDaCelula(key, { id: pilar.key, label: pilar.labelShort, labelFull: pilar.labelFull, tipos: pilar.tipos }, { id: cli.id, nome: cli.nome }, existing);
+      await upsertObrigacao(payload);
+      logAudit('save_obrigacao_celula', `${pilar.labelShort} ${mm}/${ano} — ${cli.nome}`, {
+        mapa: 'rh', pilarId: pilar.key, ano, mes, antes: existing?.estado ?? null, depois: payload.estado,
+      }, cli.id);
+      showToastRH(`✓ ${pilar.labelShort} ${mm}/${ano} — gravado`);
+    } catch (e) {
+      notificar(`Não gravou: ${e instanceof Error ? e.message : String(e)}`, 'erro');
+    } finally {
+      setPendingRH(prev => { const n = new Set(prev); n.delete(k); return n; });
+    }
   };
 
   const renderIcon = (st:string, withBg=false) => {
@@ -1167,8 +1214,28 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
 
   const exportCSV = () => {
     const rows:string[]=[]; const mesesVisiveis=visMeses.map(i=>meses[i]); const header=['Cliente','Nº','Pilar',...mesesVisiveis].join(';'); rows.push(header);
-    for(const cli of clientesFiltrados){ for(const pi of pilaresVisiveis){ const cells=visMeses.map(mi=>{ const mes=mi+1; const st=getStatus(cli,pi,mes); const map:Record<MapaStatus,string>={concluido:'Concluído',nao_concluido:'Não Concluído',sem_dados:'—'}; return map[st]; }); rows.push([cli.nome, cli.nif||'', pi.labelFull, ...cells].join(';')); } }
+    for(const cli of clientesFiltrados){ for(const pi of pilaresDoCliente(cli)){ const cells=visMeses.map(mi=>{ const mes=mi+1; const st=getStatus(cli,pi,mes); const map:Record<MapaStatus,string>={concluido:'Concluído',nao_concluido:'Não Concluído',sem_dados:'—'}; return map[st]; }); rows.push([cli.nome, cli.nif||'', pi.labelFull, ...cells].join(';')); } }
     const csv=rows.join('\n'); const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`Mapa_RH_${ano}${trim?'_T'+trim:''}.csv`; a.click(); URL.revokeObjectURL(url);
+  };
+
+  const exportPDF = () => {
+    const cab = ['Cliente', 'Pilar', ...visMeses.map(i => meses[i])];
+    const linhas: string[][] = [];
+    for (const cli of clientesFiltrados) {
+      for (const pi of pilaresDoCliente(cli)) {
+        linhas.push([cli.nome, pi.labelFull, ...visMeses.map(mi => simboloStatus(getStatus(cli, pi, mi + 1)))]);
+      }
+    }
+    const pdf = new RelatorioPdf({
+      titulo: 'Mapa RH',
+      subtitulo: `Ano ${ano}${trim ? ` · T${trim}` : ''} · ${clientesFiltrados.length} cliente(s) · ${linhas.length} linha(s)`,
+      escritorio: escritorioPdf(),
+      paisagem: true,
+      nomeFicheiro: `Mapa-RH-${ano}${trim ? `-T${trim}` : ''}`,
+    });
+    pdf.matriz(cab, linhas);
+    pdf.nota('Cada célula guarda a obrigação do pilar no mês. ✓ concluído · ✕ não concluído · — sem registo.');
+    pdf.save();
   };
 
   const grupos = Array.from(new Set(clientes.flatMap(c=> c.tags||[])));
@@ -1243,6 +1310,7 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-200 mt-2">
+          <button onClick={()=>setShowPilaresRH(true)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-300 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50" title="Escolher pilares por empresa (nomes e visibilidade) — grava permanente">Pilares por empresa</button>
           <button onClick={()=>setShowGerirRH(!showGerirRH)} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerirRH ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
             <Plus className="w-3.5 h-3.5" /> Gerir pilares
           </button>
@@ -1326,7 +1394,7 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
                     </tr>
                     
                     <AnimatePresence initial={false}>
-                    {isExpanded && pilaresVisiveis.map(pi=> (
+                    {isExpanded && pilaresDoCliente(cli).map(pi=> (
                       <motion.tr key={pi.key} initial={{opacity:0, y:-6}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-6}} transition={{duration:0.28, ease:[0.4,0,0.2,1]}} className="border-t border-zinc-200 hover:bg-zinc-50/70 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
                         <td className="px-2 py-1.5 pl-7 flex items-center gap-1.5 sticky left-0 bg-white z-[5] border-r border-zinc-200">
                           <span className="w-4 h-4 rounded-[3px] border flex items-center justify-center shrink-0" style={{borderColor: pi.color, background: pi.color+'18'}}><span className="w-2 h-2 rounded-[1px] block" style={{background: pi.color}} /></span>
@@ -1354,6 +1422,7 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
           <div className="flex gap-1.5">
             <button onClick={()=>window.print()} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Imprimir</button>
             <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Exportar XLS</button>
+            <button onClick={exportPDF} className="px-3 py-1.5 rounded border border-[#0677FF] bg-[#0677FF] text-white">Exportar PDF</button>
             <button onClick={()=>{ const s=new Set<string>(); clientesFiltrados.forEach(c=>s.add(c.id)); setCollapsed(new Set()); }} className="hidden sm:inline-flex px-3 py-1.5 rounded border border-zinc-400 bg-white">Expandir todos</button>
             <button onClick={()=>setCollapsed(new Set(clientesFiltrados.map(c=>c.id)))} className="hidden sm:inline-flex px-3 py-1.5 rounded border border-zinc-400 bg-white">Colapsar todos</button>
           </div>
@@ -1365,10 +1434,9 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
       </div>
 
       <p className="text-[11px] text-zinc-500 px-1">Mapa de controlo por gabinete isolado: cada célula guarda uma obrigação (clica para alternar: ∅ → ✓ → ✕ → ●). Filtros por cliente, gestor, grupo e trimestre. Cores vivas por fase da contabilidade.</p>
-      {toastRH && (
-        <div className="fixed bottom-4 right-4 z-50 bg-zinc-900 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 animate-in slide-in-from-bottom-2 duration-200">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> {toastRH}
-        </div>
+
+      {showPilaresRH && (
+        <PilaresEditor mapa="rh" clientes={clientes} onClose={() => setShowPilaresRH(false)} onChanged={() => { setPilaresRaw(getMapaRHPilares()); }} />
       )}
     </div>
   );

@@ -13,6 +13,9 @@ import {
   upsertObrigacao,
 } from './lib/gabinete';
 import { mergePrazos } from './lib/gabineteSelectors';
+import { toast } from './lib/toast';
+import { RelatorioPdf } from './lib/reportPdf';
+import { loadOfficeSettings } from './lib/officeSettings';
 import { can } from './lib/permissions';
 import type { GabineteRole } from './lib/gabinetes';
 import type { GabineteCliente, Tarefa, Obrigacao, ObrigacaoDef, CofreEntrada, GabineteDocumento, ContactoGabinete, AlertaGabinete, OcorrenciaGabinete, Colaborador } from './lib/gabinete';
@@ -145,6 +148,53 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
   const [showEditOrient, setShowEditOrient] = useState(false);
   const [orientEdit, setOrientEdit] = useState(orientacoes);
 
+  const handleExportFichaPdf = () => {
+    if (!cliente) return;
+    const office = loadOfficeSettings();
+    const fmt = (ms?: number) => (ms ? new Intl.DateTimeFormat('pt-PT').format(new Date(ms)) : '—');
+    const pdf = new RelatorioPdf({
+      titulo: 'Ficha do cliente',
+      subtitulo: 'Visão 360 · resumo operacional do gabinete',
+      cliente: cliente.nome,
+      nif: cliente.nif,
+      escritorio: { nome: office.nome, corPrimaria: office.corPrimaria, logoDataUrl: office.logoDataUrl },
+      nomeFicheiro: `Ficha-${cliente.nome}`,
+    });
+    pdf.seccao('Identificação').tabela([
+      { label: 'Nome', valor: cliente.nome },
+      { label: 'NIF', valor: cliente.nif || '—' },
+      { label: 'CAE', valor: cliente.caes ? `${cliente.caes}${cliente.caeDescricao ? ` – ${cliente.caeDescricao}` : ''}` : '—' },
+      { label: 'Regime de IVA', valor: cliente.regimeIva || '—' },
+      { label: 'IRC', valor: cliente.regimeIrc || '—' },
+      { label: 'Tipo de sociedade', valor: cliente.tipoSociedade || '—' },
+      { label: 'Início de atividade', valor: fmt(cliente.inicioAtividade) },
+      { label: 'N.º trabalhadores', valor: cliente.nrTrabalhadores != null ? String(cliente.nrTrabalhadores) : '—' },
+      { label: 'Gerentes', valor: Array.isArray(cliente.gerentes) ? cliente.gerentes.join(', ') : '—' },
+      { label: 'Responsável interno', valor: cliente.responsavelInterno?.nome || '—' },
+      { label: 'Supervisor', valor: cliente.supervisor?.nome || '—' },
+      { label: 'Apoio administrativo', valor: cliente.apoioAdministrativo?.nome || '—' },
+    ]);
+    const obrs = obrigacoes.filter(o => o.clienteId === cliente.id && !o.deletedAt).sort((a, b) => a.vencimento - b.vencimento);
+    pdf.seccao('Obrigações').tabela(obrs.slice(0, 40).map(o => ({
+      label: `${fmt(o.vencimento)} · ${o.titulo}`,
+      valor: o.estado === 'entregue' ? 'Entregue' : o.estado === 'atrasada' ? 'Atrasada' : o.estado === 'dispensada' ? 'Dispensada' : 'Pendente',
+    })));
+    const al = alertas.filter(a => a.clienteId === cliente.id && (a.estado ?? 'aberto') === 'aberto');
+    pdf.seccao('Alertas abertos').tabela(al.map(a => ({ label: a.texto, valor: a.vencimento ? fmt(a.vencimento) : 'sem prazo' })));
+    pdf.seccao('Contactos').tabela(contactos.filter(c => c.clienteId === cliente.id).map(c => ({
+      label: `${c.nome}${c.cargo ? ` · ${c.cargo}` : ''}`,
+      valor: [c.telefone, c.email].filter(Boolean).join(' · ') || '—',
+    })));
+    const tf = tarefas.filter(t => t.clienteId === cliente.id && t.estado !== 'done');
+    pdf.seccao('Tarefas em aberto').tabela(tf.map(t => ({ label: t.titulo, valor: t.dataVencimento ? fmt(t.dataVencimento) : t.estado })));
+    if (cliente.situacaoAtual?.length) {
+      pdf.seccao('Situação atual').tabela(cliente.situacaoAtual.map(s => ({ label: s.texto, valor: '' })));
+    }
+    if (cliente.orientacoes?.trim()) pdf.seccao('Orientações à equipa').paragrafo(cliente.orientacoes);
+    pdf.nota('Documento interno do gabinete. Dados pessoais e fiscais — trate conforme o RGPD.');
+    pdf.save();
+  };
+
   const handleEditClienteOpen = () => {
     if (!cliente) return;
     setFormCliente({ nome: cliente.nome, nif: cliente.nif, caes: cliente.caes, caeDescricao: cliente.caeDescricao, tipoSociedade: cliente.tipoSociedade, gerentes: cliente.gerentes, nrTrabalhadores: cliente.nrTrabalhadores, inicioAtividade: cliente.inicioAtividade, responsavelId: cliente.responsavelId, responsavelInterno: cliente.responsavelInterno, apoioId: cliente.apoioId, apoioAdministrativo: cliente.apoioAdministrativo, supervisorId: cliente.supervisorId, supervisor: cliente.supervisor, obrigacoesAtivas: getObrigacoesAtivas(cliente) });
@@ -155,6 +205,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
     const upd: GabineteCliente = { ...cliente, ...formCliente, gerentes: typeof formCliente.gerentes === 'string' ? (formCliente.gerentes as unknown as string).split(',').map(s=>s.trim()).filter(Boolean) : formCliente.gerentes, updatedAt: Date.now() };
     await upsertCliente(upd);
     try { gerarObrigacoesParaCliente(upd); } catch {}
+    toast(`✓ ${upd.nome}: ficha gravada`);
     await upsertOcorrencia({ id: newOcorrenciaId(), clienteId: cliente.id, clienteNome: upd.nome, data: Date.now(), autorNome: upd.responsavelInterno?.nome || 'Equipa', autorInitials: upd.responsavelInterno?.initials || 'EQ', descricao: 'Ficha atualizada', createdAt: Date.now() });
     setShowEditCliente(false);
   };
@@ -168,6 +219,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
       createdAt: Date.now(), updatedAt: Date.now(),
     });
     setAlertaTexto(''); setAlertaVenc(''); setShowAddAlerta(false);
+    toast('✓ Alerta gravado');
   };
   const handleAddTarefa = async () => {
     if (!cliente || !tarefaTitulo.trim()) return;
@@ -179,29 +231,39 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
       createdAt: now, updatedAt: now,
     });
     setTarefaTitulo(''); setTarefaEstado('todo'); setTarefaPrazo(''); setShowAddTarefa(false);
+    toast('✓ Tarefa gravada');
   };
   const handleAddContacto = async () => {
     if (!cliente || !contactoForm.nome?.trim()) return;
     await upsertContactoGabinete({ id: newContactoGabineteId(), clienteId: cliente.id, clienteNome: cliente.nome, nome: contactoForm.nome!.trim(), cargo: contactoForm.cargo?.trim(), telefone: contactoForm.telefone?.trim(), email: contactoForm.email?.trim(), initials: initialsOf(contactoForm.nome!.trim()), createdAt: Date.now(), updatedAt: Date.now() });
     setContactoForm({}); setShowAddContacto(false);
+    toast('✓ Contacto gravado');
   };
   const handleAddDoc = async () => {
     if (!cliente || !docNome.trim()) return;
     await upsertDocumentoGeral({ id: newDocumentoGeralId(), clienteId: cliente.id, clienteNome: cliente.nome, nome: docNome.trim().endsWith('.pdf') ? docNome.trim() : docNome.trim()+'.pdf', tipo: 'OUTRO', dataUpload: Date.now() });
     setDocNome(''); setShowAddDoc(false);
+    toast('✓ Documento gravado');
   };
   const handleAddOcorr = async () => {
     if (!cliente || !ocorrDesc.trim()) return;
     await upsertOcorrencia({ id: newOcorrenciaId(), clienteId: cliente.id, clienteNome: cliente.nome, data: Date.now(), autorNome: cliente.responsavelInterno?.nome || 'Equipa', autorInitials: cliente.responsavelInterno?.initials || 'EQ', descricao: ocorrDesc.trim(), createdAt: Date.now() });
     setOcorrDesc(''); setShowAddOcorr(false);
+    toast('✓ Ocorrência gravada');
   };
   const resolverObrigacao = async (id: string, estado: 'entregue' | 'dispensada') => {
     const o = obrigacoes.find(x => x.id === id);
-    if (o) await upsertObrigacao({ ...o, estado });
+    if (o) {
+      await upsertObrigacao({ ...o, estado });
+      toast(`✓ ${estado === 'entregue' ? 'Marcada como entregue' : 'Dispensada'}: ${o.titulo}`);
+    }
   };
   const resolverAlerta = async (id: string) => {
     const a = alertas.find(x => x.id === id);
-    if (a) await upsertAlertaGabinete({ ...a, estado: 'resolvido', resolvidoEm: Date.now() });
+    if (a) {
+      await upsertAlertaGabinete({ ...a, estado: 'resolvido', resolvidoEm: Date.now() });
+      toast('✓ Alerta resolvido');
+    }
   };
 
   const tabs = [
@@ -241,6 +303,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
           </div>
           {canEditFicha && (
             <div className="hidden sm:flex items-center gap-2 shrink-0">
+              <button onClick={handleExportFichaPdf} className="px-3.5 py-1.5 rounded-lg border border-[#0F172A] bg-white text-[#0F172A] text-[13px] font-[600] flex items-center gap-1.5">⤓ PDF</button>
               <button onClick={handleEditClienteOpen} className="px-3.5 py-1.5 rounded-lg bg-[#0F172A] text-white text-[13px] font-[600] flex items-center gap-1.5">✎ Editar</button>
             </div>
           )}
@@ -704,6 +767,8 @@ function ObrigacoesCard({ cliente, catalogo, readOnly }: { cliente: GabineteClie
     try {
       await setObrigacoesAtivas(cliente, next);
       if (!ativas.includes(id)) gerar({ ...cliente, obrigacoesAtivas: next });
+      const label = catalogo.find(c => c.id === id)?.label || id;
+      toast(`✓ ${label} ${ativas.includes(id) ? 'desligada' : 'ligada'} em ${cliente.nome} — gravado`);
     } finally { setSaving(null); }
   };
   const handleAdd = async () => {
@@ -714,6 +779,7 @@ function ObrigacoesCard({ cliente, catalogo, readOnly }: { cliente: GabineteClie
       const def = await addCatalogoDef(label);
       const next = [...new Set([...ativas, def.id])];
       await setObrigacoesAtivas(cliente, next);
+      toast(`✓ “${label}” criada e ligada a ${cliente.nome} — gravado`);
       setNovoLabel(''); setShowAdd(false);
     } catch (e) { alert(e instanceof Error ? e.message : String(e)); }
     finally { setAdding(false); }

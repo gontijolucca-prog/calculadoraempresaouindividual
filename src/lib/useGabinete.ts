@@ -6,18 +6,32 @@ import {
   type GabineteCliente, type Tarefa, type Obrigacao, type CofreEntrada, type Colaborador, type ContactoGabinete, type AlertaGabinete, type OcorrenciaGabinete, type GabineteDocumento, type Conversa, type ModeloComunicacao, type EnvioComunicacao, type Tempo, type Acta,
 } from './gabinete';
 
+function useLocalUpdates<T>(col: string, read: () => T[], setItems: (v: T[]) => void): void {
+  useEffect(() => {
+    const h = (e: Event) => {
+      const detail = (e as CustomEvent<{ col?: string }>).detail;
+      if (detail?.col === col) setItems(read());
+    };
+    window.addEventListener('estudo360:gabinete-local-update', h as EventListener);
+    return () => window.removeEventListener('estudo360:gabinete-local-update', h as EventListener);
+  }, [col, read, setItems]);
+}
+
 export function useGabineteClientes(): GabineteCliente[] {
   const [items, setItems] = useState<GabineteCliente[]>(() => listClientesCache());
   useEffect(() => subscribeClientes(setItems), []);
+  useLocalUpdates('clientes', listClientesCache, setItems);
   return items;
 }
 export function useGabineteTarefas(): Tarefa[] {
   const [items, setItems] = useState<Tarefa[]>(() => listTarefasCache());
   useEffect(() => subscribeTarefas(setItems), []);
+  useLocalUpdates('tarefas', listTarefasCache, setItems);
   return items;
 }
 export function useGabineteObrigacoes(): Obrigacao[] {
   const [items, setItems] = useState<Obrigacao[]>(() => listObrigacoesCache());
+  useLocalUpdates('obrigacoes', listObrigacoesCache, setItems);
   useEffect(() => {
     let alive = true;
     const unsubscribe = subscribeObrigacoes(setItems);
@@ -72,6 +86,7 @@ export function useGabineteContactosGeral(): ContactoGabinete[] {
 export function useGabineteAlertas(): AlertaGabinete[] {
   const [items, setItems] = useState<AlertaGabinete[]>(() => listAlertasCache());
   useEffect(() => subscribeAlertasGeral(setItems), []);
+  useLocalUpdates('alertasGeral', listAlertasCache, setItems);
   return items;
 }
 export function useGabineteOcorrencias(): OcorrenciaGabinete[] {
