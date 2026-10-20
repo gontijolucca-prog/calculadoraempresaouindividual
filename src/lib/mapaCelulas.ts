@@ -70,6 +70,8 @@ export function correspondeCelula(
   if (k.mapa === 'quadro') {
     if (o.catalogoId) return o.catalogoId === k.refId;
     if (o.mapa && o.pilarId) return false; // célula de mapa, não do quadro
+    // Legado: só a linha atribuída (a mais específica) pode reclamar a obrigação.
+    if (legado) return legado.get(o.id) === k.refId;
     if (tiposLegado.length === 0) return false;
     return tiposLegado.includes(o.tipo);
   }
@@ -84,6 +86,18 @@ export function correspondeCelula(
 
 const prioridade = (s: ObrigacaoEstado): number => (s === 'entregue' ? 0 : s === 'atrasada' ? 1 : 2);
 
+/** Todas as obrigações que reclamam a célula (duplicados antigos incluídos). */
+export function obterObrigacoesCelula(
+  obrigacoes: Obrigacao[],
+  k: CellKey,
+  tiposLegado: readonly ObrigacaoTipo[] = [],
+  legado?: Map<string, string>,
+): Obrigacao[] {
+  return obrigacoes
+    .filter(o => correspondeCelula(o, k, tiposLegado, legado))
+    .sort((a, b) => prioridade(a.estado) - prioridade(b.estado) || (b.updatedAt || 0) - (a.updatedAt || 0));
+}
+
 /** A obrigação efectiva da célula, com desempate estável (entregue > atrasada > pendente). */
 export function obterObrigacaoCelula(
   obrigacoes: Obrigacao[],
@@ -91,25 +105,25 @@ export function obterObrigacaoCelula(
   tiposLegado: readonly ObrigacaoTipo[] = [],
   legado?: Map<string, string>,
 ): Obrigacao | undefined {
-  let best: Obrigacao | undefined;
-  for (const o of obrigacoes) {
-    if (!correspondeCelula(o, k, tiposLegado, legado)) continue;
-    if (!best) { best = o; continue; }
-    const p = prioridade(o.estado);
-    const pb = prioridade(best.estado);
-    if (p < pb || (p === pb && (o.updatedAt || 0) > (best.updatedAt || 0))) best = o;
-  }
-  return best;
+  return obterObrigacoesCelula(obrigacoes, k, tiposLegado, legado)[0];
 }
 
+/** Pendente = ainda sem decisão → mostra neutro. Só 'atrasada' é vermelho. */
 export function estadoCelula(o?: Obrigacao): CelulaStatus {
   if (!o) return 'sem_dados';
-  return o.estado === 'entregue' ? 'concluido' : 'nao_concluido';
+  if (o.estado === 'entregue') return 'concluido';
+  if (o.estado === 'atrasada') return 'nao_concluido';
+  return 'sem_dados';
 }
 
-/** Próximo estado ao clicar: sem registo → concluído; concluído → não concluído; resto → concluído. */
+/**
+ * Ciclo de 3 estados ao clicar: — → ✓ → ✕ → — .
+ * O neutro mantém o registo como 'pendente' (não apaga a obrigação).
+ */
 export function proximoEstado(status: CelulaStatus): ObrigacaoEstado {
-  return status === 'concluido' ? 'atrasada' : 'entregue';
+  if (status === 'concluido') return 'atrasada';
+  if (status === 'nao_concluido') return 'pendente';
+  return 'entregue';
 }
 
 const tituloMap: Record<string, string> = {

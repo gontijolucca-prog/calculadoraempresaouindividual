@@ -11,7 +11,7 @@ import { SIM_INTROS } from './SimIntro';
  */
 
 // Mesma ordem dos simuladores na sidebar (NAV_ITEMS group 'sim').
-const SIM_ORDER = ['tax', 'vehicle', 'ticket', 'selfss', 'diagnostico', 'imoveis', 'imt', 'salario', 'irs', 'previsa'];
+const SIM_ORDER = ['tax', 'vehicle', 'aquisicao', 'ticket', 'selfss', 'diagnostico', 'imoveis', 'imt', 'salario', 'irs', 'previsa'];
 
 export default function ClientHub({ clientName, onNavigate }: {
   clientName: string;

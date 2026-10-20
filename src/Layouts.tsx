@@ -4,14 +4,14 @@ import {
   ClipboardList, Upload, LogOut, Receipt,
   ChevronDown, ChevronRight, TrendingUp, Settings, UserPlus, Building2,
   Menu, X, Clock, Briefcase, ListOrdered, Package, History, FileDown, LayoutDashboard, LayoutGrid, Table2,
-  CheckSquare, Calendar, Lock, Users, Presentation, ListChecks, Trash2,
+  CheckSquare, Calendar, Lock, Users, Presentation, ListChecks, Trash2, Scale,
 } from 'lucide-react';
 import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
 import { cn } from './lib/utils';
 import type { AppMode } from './ModeSelector';
 
 type ViewType =
-  | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
+  | 'profile' | 'tax' | 'vehicle' | 'aquisicao' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal'
   | 'previsa' | 'office-settings' | 'empresas' | 'historico' | 'exportar' | 'hub'
   | 'gabinete' | 'proposta-gamma';
@@ -46,7 +46,7 @@ export interface LayoutProps {
 // Which simulator views are reachable from each mode (besides legal which is always open).
 const VIEWS_BY_MODE: Record<AppMode, ViewType[]> = {
   'novo-cliente': ['profile'],
-  empresa: ['gabinete', 'empresas', 'profile', 'historico', 'tax', 'vehicle', 'ticket', 'selfss', 'imoveis', 'imt', 'salario', 'irs', 'diagnostico', 'previsa'],
+  empresa: ['gabinete', 'empresas', 'profile', 'historico', 'tax', 'vehicle', 'aquisicao', 'ticket', 'selfss', 'imoveis', 'imt', 'salario', 'irs', 'diagnostico', 'previsa'],
 };
 
 const MODE_META: Record<AppMode, { label: string; Icon: typeof Building2; color: string; soft: string }> = {
@@ -63,6 +63,7 @@ const NAV_ITEMS = [
   { id: 'profile'    as ViewType, label: 'Perfil',      Icon: UserCircle, group: 'profile' },
   { id: 'tax'        as ViewType, label: 'Fiscal',       Icon: Calculator, group: 'sim'     },
   { id: 'vehicle'    as ViewType, label: 'Viaturas',     Icon: Car,        group: 'sim'     },
+  { id: 'aquisicao'  as ViewType, label: 'Aquisição',    Icon: Scale,      group: 'sim'     },
   { id: 'ticket'     as ViewType, label: 'Tickets',      Icon: Ticket,     group: 'sim'     },
   { id: 'selfss'     as ViewType, label: 'SS Indep.',    Icon: User,       group: 'sim'     },
   { id: 'diagnostico'as ViewType, label: 'Diagnóstico',  Icon: BarChart2,  group: 'sim'     },
@@ -85,6 +86,7 @@ const NAV_TIPS: Record<string, string> = {
   profile: 'Perfil do cliente em 6 passos: identificação, dados empresariais, fiscais & família, custos & investimento, viaturas/sócios/dívidas, objetivos & documentos. Alimenta todos os simuladores.',
   tax: 'Simulador fiscal: compara a carga de IRS/IRC entre ENI (recibos verdes) e Lda para a sua situação.',
   vehicle: 'Calcula o IVA recuperável na compra/manutenção de viaturas e a Tributação Autónoma sobre encargos.',
+  aquisicao: 'Compara compra, crédito, leasing e renting (ALU) da mesma viatura: mensalidade, custo total, IVA e Tributação Autónoma.',
   ticket: 'Subsídio de alimentação em vales: isento de IRS e SS até ao limite legal. Calcula a poupança anual.',
   selfss: 'Segurança Social de Independente — contribuições à SS para trabalhadores a recibos verdes ou ENI.',
   diagnostico: 'Avalia a solidez da empresa em 5 pilares: autonomia financeira, tesouraria, rentabilidade, dependência e maturidade operacional.',

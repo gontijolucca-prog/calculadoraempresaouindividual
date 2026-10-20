@@ -93,6 +93,34 @@ const lerObr = (page) => page.evaluate(() => {
   await ctx.close();
 }
 
+// ─── Quadro: legado com tipos partilhados não acende duas linhas ───────────
+{
+  const legado = [{
+    id: 'leg1', tipo: 'dossier', titulo: 'Dossier 03/2026', clienteId: 'c1', clienteNome: 'Empresa Alfa',
+    periodo: '2026-03', vencimento: new Date(2026, 2, 20).getTime(), estado: 'atrasada', origem: 'cliente',
+    createdAt: 1, updatedAt: 1,
+  }];
+  const extra = `localStorage.setItem('estudo360:v1:gabinete:shared:obrigacoes', ${JSON.stringify(env(legado))});`;
+  const { ctx, page } = await abrir('dashboard', { width: 1440, height: 1000 }, extra);
+  await page.waitForTimeout(1200);
+  const linhaM44 = page.locator('table tbody tr').filter({ hasText: 'Modelo 44' }).first();
+  const linhaSaft = page.locator('table tbody tr').filter({ hasText: 'Envio SAFT' }).first();
+  const txtM44 = await linhaM44.innerText();
+  const txtSaft = await linhaSaft.innerText();
+  const acesos = [txtM44, txtSaft].filter(t => t.includes('✓') || t.includes('✕')).length;
+  check('Legado dossier acende só uma linha', acesos === 1, `modelo44=${JSON.stringify(txtM44.slice(0, 40))} saft=${JSON.stringify(txtSaft.slice(0, 40))}`);
+  check('Legado fica na linha mais específica (Modelo 44)', txtM44.includes('✕'), JSON.stringify(txtM44.slice(0, 40)));
+
+  // Clicar SAF-T cria uma obrigação própria e não muda a de Modelo 44
+  await linhaSaft.locator('td').nth(3).locator('button').first().click();
+  await page.waitForTimeout(900);
+  const todas = (await lerObr(page)).filter(o => o.clienteId === 'c1');
+  check('Clique em SAF-T cria obrigação própria', todas.some(o => o.catalogoId === 'saft'), todas.map(o => o.catalogoId || 'legado').join(','));
+  const txtM44Depois = await linhaM44.innerText();
+  check('Modelo 44 mantém o estado do legado', txtM44Depois.includes('✕'), JSON.stringify(txtM44Depois.slice(0, 40)));
+  await ctx.close();
+}
+
 // ─── Viaturas: comparador ──────────────────────────────────────────────────
 {
   const empresas = [{
@@ -161,6 +189,63 @@ const lerObr = (page) => page.evaluate(() => {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   check('Visão Geral sem overflow', overflow <= 1, `${overflow}px`);
   await page.screenshot({ path: '/tmp/estudo360-visao.png' });
+  await ctx.close();
+}
+
+// ─── Novo simulador: Aquisição (leasing / renting / crédito / compra) ──────
+{
+  const empresas = [{
+    id: 'e1', nome: 'Empresa Teste', nif: '501234567', createdAt: 1, updatedAt: 1,
+    profile: { nomeCliente: 'Empresa Teste', nif: '501234567' },
+    sims: {
+      aquisicao: {
+        categoria: 'passageiros', motor: 'diesel', ivaRegime: 'normal', activity: 'other', regimeTributario: 'irc',
+        price: 30000, maintenanceCost: 1230, insuranceCost: 500, fuelCost: 1230,
+        financiamento: { entrada: 6000, duracaoMeses: 48, tanPercent: 6, valorResidual: 0 },
+      },
+    },
+  }];
+  const extra = `
+    localStorage.setItem('estudo360:v1:lastView', ${JSON.stringify(env('aquisicao'))});
+    localStorage.setItem('estudo360:v1:empresas', ${JSON.stringify(env(empresas))});
+    localStorage.setItem('estudo360:v1:currentEmpresaId', ${JSON.stringify(env('e1'))});
+  `;
+  const { ctx, page } = await abrir('dashboard', { width: 1440, height: 1000 }, extra);
+  check('Simulador Aquisição abre', await page.getByText('Aquisição de viatura').count() >= 1);
+  const tabela = page.locator('table').filter({ hasText: 'Custo líquido' }).first();
+  const txt = await tabela.innerText().catch(() => '');
+  check('Aquisição: 4 modos', ['Compra', 'Crédito', 'Leasing', 'Renting'].every(m => txt.includes(m)), '');
+  check('Aquisição: recomendação presente', await page.getByText('Recomendação:').count() >= 1);
+  // N/A: desativa o campo e zera o valor
+  const checkNa = page.locator('input.accent-slate-500').first();
+  if (await checkNa.count()) {
+    await checkNa.check();
+    await page.waitForTimeout(400);
+    const input = page.locator('input[placeholder="ex: 30000"]').first();
+    const guardado = await page.evaluate(() => {
+      const raw = localStorage.getItem('estudo360:v1:empresas');
+      const list = raw ? JSON.parse(raw).data : [];
+      return list.find(e => e.id === 'e1')?.sims?.aquisicao || {};
+    });
+    check('N/A grava o campo e zera o valor', (guardado.na || []).includes('maintenanceCost') && guardado.maintenanceCost === 0, JSON.stringify(guardado.na || []));
+  } else check('Checkbox N/A presente na manutenção', false);
+
+  const btn = page.locator('button').filter({ hasText: 'Descarregar PDF' }).first();
+  if (await btn.count()) {
+    const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 15000 }).catch(() => null), btn.click()]);
+    if (dl) {
+      const p = '/tmp/estudo360-aquisicao.pdf';
+      await dl.saveAs(p);
+      check('Aquisição: PDF descarrega', fs.statSync(p).size > 3000, `${fs.statSync(p).size} bytes`);
+    } else check('Aquisição: PDF descarrega', false, 'sem download');
+  } else check('Aquisição: botão PDF', false);
+  for (const [w, h] of [[375, 812], [1024, 900], [1440, 1000]]) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.waitForTimeout(350);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    check(`Aquisição sem overflow a ${w}px`, overflow <= 1, `${overflow}px`);
+  }
+  await page.screenshot({ path: '/tmp/estudo360-aquisicao.png' });
   await ctx.close();
 }
 

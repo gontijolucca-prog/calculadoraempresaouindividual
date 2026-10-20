@@ -89,7 +89,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
                 step="50"
                 value={state.salarioBruto === 0 ? '' : state.salarioBruto}
                 onChange={e => setSt({ salarioBruto: numInput(e.target.value) })}
-                className={cn(inputCls, "pl-9")}
+                className={cn(inputCls, "campo-com-icone")}
                 placeholder="ex: 2000"
               />
             </div>
@@ -468,7 +468,7 @@ export default function SalarioLiquidoSimulator({ initialState, onStateChange }:
                 step="50"
                 value={s.salarioBruto === 0 ? '' : s.salarioBruto}
                 onChange={e => setState({ salarioBruto: numInput(e.target.value) })}
-                className={cn(inputCls, "pl-9")}
+                className={cn(inputCls, "campo-com-icone")}
                 placeholder="ex: 2000"
               />
             </div>

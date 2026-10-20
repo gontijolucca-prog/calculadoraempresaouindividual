@@ -256,3 +256,7 @@ textarea:focus-visible,
 @media (prefers-reduced-motion: reduce) {
   .guia-destaque, .guia-card-destaque, .bordeaux-neon-pulse { animation: none; }
 }
+
+/* Campos com ícone à esquerda: garante que o padding vence o px-* do input. */
+.campo-com-icone { padding-left: 2.4rem !important; }
+.campo-com-icone-lg { padding-left: 2.9rem !important; }

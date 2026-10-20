@@ -62,10 +62,12 @@ const dmrSs = PIP('dmr_ss', ['ss']);
 {
   is('D: sem registo', estadoCelula(undefined), 'sem_dados');
   is('D: entregue', estadoCelula(obr({ id: 'x', clienteId: 'c', tipo: 'iva', vencimento: 0, estado: 'entregue' })), 'concluido');
-  is('D: pendente', estadoCelula(obr({ id: 'x', clienteId: 'c', tipo: 'iva', vencimento: 0 })), 'nao_concluido');
-  is('D: clique em concluído → atrasada', proximoEstado('concluido'), 'atrasada');
-  is('D: clique em vazio → entregue', proximoEstado('sem_dados'), 'entregue');
-  is('D: clique em falha → entregue', proximoEstado('nao_concluido'), 'entregue');
+  is('D: pendente é neutro', estadoCelula(obr({ id: 'x', clienteId: 'c', tipo: 'iva', vencimento: 0 })), 'sem_dados');
+  is('D: dispensada é neutra', estadoCelula(obr({ id: 'x', clienteId: 'c', tipo: 'iva', vencimento: 0, estado: 'dispensada' })), 'sem_dados');
+  is('D: ciclo ∅ → ✓', proximoEstado('sem_dados'), 'entregue');
+  is('D: ciclo ✓ → ✕', proximoEstado('concluido'), 'atrasada');
+  is('D: ciclo ✕ → ∅', proximoEstado('nao_concluido'), 'pendente');
+  is('D: ciclo completo fecha', proximoEstado(estadoCelula({ id: 'x', clienteId: 'c', tipo: 'iva', vencimento: 0, periodo: '2026-03', titulo: 'x', estado: proximoEstado('nao_concluido'), createdAt: 1, updatedAt: 1 })), 'entregue');
 }
 
 // ── E: construção da obrigação preserva identidade e grava a célula
@@ -124,6 +126,24 @@ const dmrSs = PIP('dmr_ss', ['ss']);
   const best = obterObrigacaoCelula([p, e], { clienteId: 'c1', mapa: 'quadro', refId: 'iva', ano: 2026, mes: 3 }, ['iva']);
   is('I: entregue vence pendente', best?.id, 'e');
   is('I: chave', chaveCelula({ clienteId: 'c1', mapa: 'rh', refId: 'dmr_at', ano: 2026, mes: 3 }), 'c1|rh|dmr_at|2026-03');
+}
+
+// ── J: legado do Quadro com tipos partilhados acende SÓ uma linha
+{
+  const legadoDossier = obr({
+    id: 'q-leg', clienteId: 'c1', tipo: 'dossier', vencimento: new Date(2026, 2, 20).getTime(),
+  });
+  const catalogo = [
+    { id: 'modelo44', label: 'Modelo 44', tipos: ['modelo22', 'dossier'] as Obrigacao['tipo'][] },
+    { id: 'saft', label: 'Envio SAFT', tipos: ['dossier', 'outro'] as Obrigacao['tipo'][] },
+    { id: 'banco', label: 'Banco', tipos: ['dossier', 'outro'] as Obrigacao['tipo'][] },
+  ];
+  const mapa = resolverPilarLegado([legadoDossier], catalogo);
+  is('J: legado do Quadro vai para uma linha', mapa.get('q-leg'), 'modelo44');
+  const k = (refId: string): CellKey => ({ clienteId: 'c1', mapa: 'quadro', refId, ano: 2026, mes: 3 });
+  ok('J: acende Modelo 44', correspondeCelula(legadoDossier, k('modelo44'), catalogo[0].tipos, mapa));
+  ok('J: NÃO acende SAFT', !correspondeCelula(legadoDossier, k('saft'), catalogo[1].tipos, mapa));
+  ok('J: NÃO acende Banco', !correspondeCelula(legadoDossier, k('banco'), catalogo[2].tipos, mapa));
 }
 
 if (fails > 0) { console.error(`\n${fails} falha(s)`); process.exit(1); }

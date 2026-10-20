@@ -10,7 +10,7 @@ import type { GabineteRole } from './lib/gabinetes';
 import { auth } from './lib/firebase';
 import {
   upsertTarefa, deleteTarefa, marcarTarefaFeita, newTarefaId,
-  upsertObrigacao,
+  upsertObrigacao, deleteObrigacao,
   upsertCofre, deleteCofre, registarVistaCofre, newCofreId, listCofreVazias, purgeCofreVazias,
   OBRIGACOES_CATALOGO, OBRIGACOES_CATALOGO_DEFAULT, getCatalogo, setCatalogo, addCatalogoDef, deleteCatalogoDef, resetCatalogo, getQuadroVisiveis, setQuadroVisiveis, getObrigacoesAtivas, setObrigacoesAtivas,
   MAPA_CONTROLO_DEFAULT, MAPA_RH_DEFAULT, getMapaControloPilares, setMapaControloPilares, addMapaControloPilar, deleteMapaControloPilar, resetMapaControloPilares, getMapaControloVisiveis, setMapaControloVisiveis,
@@ -27,7 +27,7 @@ import { toast as notificar } from './lib/toast';
 import { ToastHost } from './components/ToastHost';
 import NotificacoesBell from './components/NotificacoesBell';
 import PilaresEditor from './components/PilaresEditor';
-import { obterObrigacaoCelula, estadoCelula, construirObrigacaoDaCelula, chaveCelula, resolverPilarLegado, type CellKey } from './lib/mapaCelulas';
+import { obterObrigacaoCelula, obterObrigacoesCelula, estadoCelula, construirObrigacaoDaCelula, chaveCelula, resolverPilarLegado, type CellKey } from './lib/mapaCelulas';
 import { RelatorioPdf } from './lib/reportPdf';
 import { loadOfficeSettings } from './lib/officeSettings';
 // Cofre simples (sem cifra) — Firestore só visível pela própria conta (gabinete/{uid}/cofre/*)
@@ -304,6 +304,17 @@ function escritorioPdf() {
   return { nome: o.nome, corPrimaria: o.corPrimaria, logoDataUrl: o.logoDataUrl };
 }
 
+/** Duplicados antigos da mesma célula: mantém só o que o clique atualiza. */
+async function limparDuplicadosCelula(
+  obrigacoes: Obrigacao[], key: CellKey, tipos: readonly ObrigacaoTipo[],
+  legado: Map<string, string> | undefined, manterId: string,
+): Promise<void> {
+  const dups = obterObrigacoesCelula(obrigacoes, key, tipos, legado).filter(o => o.id !== manterId);
+  for (const d of dups) {
+    try { await deleteObrigacao(d.id); } catch {}
+  }
+}
+
 function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true }: { clientes:GabineteCliente[]; tarefas:Tarefa[]; obrigacoes:Obrigacao[]; cofre:CofreEntrada[]; onGo:(t:GabTab)=>void; canEdit?: boolean }) {
   const colaboradores = useGabineteColaboradores();
   const meses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'] as const;
@@ -400,8 +411,19 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
   const grupos = useMemo(() => Array.from(new Set(clientes.flatMap(c=> (c.tags||[])))).sort(), [clientes]);
 
   type CellStatus = 'concluido' | 'nao_concluido' | 'sem_dados';
+  // Legado (sem catalogoId): cada obrigação pertence a UMA linha — a mais
+  // específica. Sem isto, 'dossier' acendia Modelo 44 e Envio SAFT ao mesmo tempo.
+  const legadoQuadro = useMemo(
+    () => resolverPilarLegado(obrigacoes, catalogo.map(c => ({ id: c.id, label: c.label, tipos: c.tipos }))),
+    [obrigacoes, catalogo],
+  );
   const cellStatusOf = (cli: GabineteCliente, linha: LinhaDef, mes: number, anoNum: number): CellStatus => {
-    const o = obterObrigacaoCelula(obrigacoes, { clienteId: cli.id, mapa: 'quadro', refId: linha.id, ano: anoNum, mes }, linha.tipos);
+    const o = obterObrigacaoCelula(
+      obrigacoes,
+      { clienteId: cli.id, mapa: 'quadro', refId: linha.id, ano: anoNum, mes },
+      linha.tipos,
+      legadoQuadro,
+    );
     return estadoCelula(o);
   };
   const calcCellStatus = (cli: GabineteCliente, linha: LinhaDef, mes: number, anoNum: number): CellStatus =>
@@ -453,9 +475,10 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
     const key: CellKey = { clienteId: cli.id, mapa: 'quadro', refId: linha.id, ano, mes };
     setPendingCells(prev => new Set(prev).add(k));
     try {
-      const existing = obterObrigacaoCelula(obrigacoes, key, linha.tipos);
+      const existing = obterObrigacaoCelula(obrigacoes, key, linha.tipos, legadoQuadro);
       const payload = construirObrigacaoDaCelula(key, { id: linha.id, label: linha.label, tipos: linha.tipos }, { id: cli.id, nome: cli.nome }, existing);
       await upsertObrigacao(payload);
+      await limparDuplicadosCelula(obrigacoes, key, linha.tipos, legadoQuadro, payload.id);
       logAudit('save_obrigacao_celula', `${linha.label} ${mm}/${ano} — ${cli.nome}`, {
         mapa: 'quadro', refId: linha.id, ano, mes, antes: existing?.estado ?? null, depois: payload.estado,
       }, cli.id);
@@ -725,7 +748,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
         </div>
       )}
       <div className="text-[11px] text-zinc-500 px-1">
-        Clica numa célula para registar/alternar o estado (✓ → ✕; “—” cria o registo). Filtros: cliente / gestor / ano / obrigação. O quadro guarda em Firestore e atualiza live para toda a equipa.
+        Clica numa célula para alternar: — → ✓ → ✕ → —. Cada clique grava logo. Filtros: cliente / gestor / ano / obrigação. O quadro guarda em Firestore e atualiza live para toda a equipa.
       </div>
     </div>
   );
@@ -796,7 +819,12 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
       .map(p => ({ key: p.id, labelShort: p.labelShort, labelFull: p.labelFull, color: '#374151', bgHeader: 'bg-white', tipos: p.tipos }));
 
   const legadoDe = (cli: GabineteCliente): Map<string, string> =>
-    resolverPilarLegado(obrigacoes.filter(o => o.clienteId === cli.id), pilaresDoCliente(cli).map(p => ({ id: p.key, label: p.labelShort, labelFull: p.labelFull, tipos: p.tipos })));
+    resolverPilarLegado(
+      obrigacoes.filter(o => o.clienteId === cli.id),
+      // Atribuição estável: usa TODOS os pilares ativos, não só os filtrados na UI.
+      getPilaresCliente(cli, 'controlo').filter(p => p.ativo)
+        .map(p => ({ id: p.id, label: p.labelShort, labelFull: p.labelFull, tipos: p.tipos })),
+    );
 
   const getStatus = (cli:GabineteCliente, pilar:Pilar, mes:number, legado?: Map<string,string>): MapaStatus => {
     const o = obterObrigacaoCelula(
@@ -842,6 +870,7 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
       const existing = obterObrigacaoCelula(obrigacoes, key, pilar.tipos, legado);
       const payload = construirObrigacaoDaCelula(key, { id: pilar.key, label: pilar.labelShort, labelFull: pilar.labelFull, tipos: pilar.tipos }, { id: cli.id, nome: cli.nome }, existing);
       await upsertObrigacao(payload);
+      await limparDuplicadosCelula(obrigacoes, key, pilar.tipos, legado, payload.id);
       logAudit('save_obrigacao_celula', `${pilar.labelShort} ${mm}/${ano} — ${cli.nome}`, {
         mapa: 'controlo', pilarId: pilar.key, ano, mes, antes: existing?.estado ?? null, depois: payload.estado,
       }, cli.id);
@@ -1080,7 +1109,7 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
         </div>
       </div>
 
-      <p className="text-[11px] text-zinc-500 px-1">Mapa de controlo por gabinete isolado: cada célula guarda uma obrigação (clica para alternar: ∅ → ✓ → ✕ → ●). Filtros por cliente, gestor, grupo e trimestre. Cores vivas por fase da contabilidade.</p>
+      <p className="text-[11px] text-zinc-500 px-1">Mapa de controlo por gabinete isolado: cada célula guarda uma obrigação (clica para alternar: — → ✓ → ✕ → —). Filtros por cliente, gestor, grupo e trimestre. Cores vivas por fase da contabilidade.</p>
 
       {showPilaresMC && (
         <PilaresEditor mapa="controlo" clientes={clientes} onClose={() => setShowPilaresMC(false)} onChanged={() => { setPilaresRaw(getMapaControloPilares()); }} />
@@ -1149,7 +1178,12 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
       .map(p => ({ key: p.id, labelShort: p.labelShort, labelFull: p.labelFull, color: '#374151', bgHeader: 'bg-white', tipos: p.tipos }));
 
   const legadoDe = (cli: GabineteCliente): Map<string, string> =>
-    resolverPilarLegado(obrigacoes.filter(o => o.clienteId === cli.id), pilaresDoCliente(cli).map(p => ({ id: p.key, label: p.labelShort, labelFull: p.labelFull, tipos: p.tipos })));
+    resolverPilarLegado(
+      obrigacoes.filter(o => o.clienteId === cli.id),
+      // Atribuição estável: usa TODOS os pilares ativos, não só os filtrados na UI.
+      getPilaresCliente(cli, 'rh').filter(p => p.ativo)
+        .map(p => ({ id: p.id, label: p.labelShort, labelFull: p.labelFull, tipos: p.tipos })),
+    );
 
   const getStatus = (cli:GabineteCliente, pilar:Pilar, mes:number, legado?: Map<string,string>): MapaStatus => {
     const o = obterObrigacaoCelula(
@@ -1195,6 +1229,7 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
       const existing = obterObrigacaoCelula(obrigacoes, key, pilar.tipos, legado);
       const payload = construirObrigacaoDaCelula(key, { id: pilar.key, label: pilar.labelShort, labelFull: pilar.labelFull, tipos: pilar.tipos }, { id: cli.id, nome: cli.nome }, existing);
       await upsertObrigacao(payload);
+      await limparDuplicadosCelula(obrigacoes, key, pilar.tipos, legado, payload.id);
       logAudit('save_obrigacao_celula', `${pilar.labelShort} ${mm}/${ano} — ${cli.nome}`, {
         mapa: 'rh', pilarId: pilar.key, ano, mes, antes: existing?.estado ?? null, depois: payload.estado,
       }, cli.id);
@@ -1433,7 +1468,7 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
         </div>
       </div>
 
-      <p className="text-[11px] text-zinc-500 px-1">Mapa de controlo por gabinete isolado: cada célula guarda uma obrigação (clica para alternar: ∅ → ✓ → ✕ → ●). Filtros por cliente, gestor, grupo e trimestre. Cores vivas por fase da contabilidade.</p>
+      <p className="text-[11px] text-zinc-500 px-1">Mapa de controlo por gabinete isolado: cada célula guarda uma obrigação (clica para alternar: — → ✓ → ✕ → —). Filtros por cliente, gestor, grupo e trimestre. Cores vivas por fase da contabilidade.</p>
 
       {showPilaresRH && (
         <PilaresEditor mapa="rh" clientes={clientes} onClose={() => setShowPilaresRH(false)} onChanged={() => { setPilaresRaw(getMapaRHPilares()); }} />

@@ -5,6 +5,7 @@ import { Car, Euro, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { cn } from './lib/utils';
 import { calcViatura } from './lib/viaturas';
 import ComparadorAquisicao from './components/ComparadorAquisicao';
+import { NaoAplicavel, patchNaoAplicavel } from './components/NaoAplicavel';
 import { useTheme } from './ThemeContext';
 import { Tip } from './Tip';
 import { FlowWizard } from './FlowWizard';
@@ -25,6 +26,8 @@ interface VehicleSimulatorState {
   fuelCost: number;
   exemptTA: boolean;
   phevCompliant: boolean;
+  /** Campos marcados como "não aplicável" (desativados e a 0). */
+  na?: string[];
   modoAquisicao?: 'compra' | 'credito' | 'leasing' | 'renting';
   financiamento?: {
     entrada?: number; duracaoMeses?: number; tanPercent?: number; valorResidual?: number;
@@ -257,6 +260,7 @@ function useVehicleResults(state: VehicleSimulatorState) {
 
 export default function VehicleSimulator({ initialState, onStateChange }: Props) {
   const { category, engineType, price, ivaRegime, activity, maintenanceCost, insuranceCost, fuelCost, exemptTA, phevCompliant } = initialState;
+  const naCampos = initialState.na ?? [];
   const sState = initialState as any;
   const [simulated, setSimulated] = React.useState(false);
   const ready = isSimReady('vehicle', sState);
@@ -399,7 +403,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
       render: (s, setS) => (
         <div className="relative">
           <Euro className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
-          <input type="number" value={s.price === 0 ? '' : s.price} onChange={e => setS({ price: numInput(e.target.value) })} className={cn(inputClass, "pl-[40px]")} />
+          <input type="number" value={s.price === 0 ? '' : s.price} onChange={e => setS({ price: numInput(e.target.value) })} className={cn(inputClass, "campo-com-icone-lg")} />
         </div>
       ),
       skipValue: 0,
@@ -459,9 +463,15 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
       label: 'Manutenção & Oficinas (anual c/ IVA)',
       description: 'Total estimado gasto por ano em revisões, reparações e pneus.',
       isVisible: () => true,
-      render: (s, setS) => (
-        <input type="number" value={s.maintenanceCost === 0 ? '' : s.maintenanceCost} onChange={e => setS({ maintenanceCost: numInput(e.target.value) })} className={cn(inputClass, "py-[8px] px-[12px]")} />
-      ),
+      render: (s, setS) => {
+        const na = (s.na ?? []).includes('maintenanceCost');
+        return (
+          <div className="space-y-1">
+            <div className="flex justify-end"><NaoAplicavel ativo={na} onChange={v => setS(patchNaoAplicavel(s, 'maintenanceCost', v))} /></div>
+            <input type="number" disabled={na} value={na || s.maintenanceCost === 0 ? '' : s.maintenanceCost} onChange={e => setS({ maintenanceCost: numInput(e.target.value) })} className={cn(inputClass, "py-[8px] px-[12px]", na && "opacity-50")} />
+          </div>
+        );
+      },
       skipValue: 0,
     },
     {
@@ -469,9 +479,15 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
       label: 'Seguro & Portagens (anual c/ IVA)',
       description: 'Prémio anual do seguro automóvel e portagens.',
       isVisible: () => true,
-      render: (s, setS) => (
-        <input type="number" value={s.insuranceCost === 0 ? '' : s.insuranceCost} onChange={e => setS({ insuranceCost: numInput(e.target.value) })} className={cn(inputClass, "py-[8px] px-[12px]")} />
-      ),
+      render: (s, setS) => {
+        const na = (s.na ?? []).includes('insuranceCost');
+        return (
+          <div className="space-y-1">
+            <div className="flex justify-end"><NaoAplicavel ativo={na} onChange={v => setS(patchNaoAplicavel(s, 'insuranceCost', v))} /></div>
+            <input type="number" disabled={na} value={na || s.insuranceCost === 0 ? '' : s.insuranceCost} onChange={e => setS({ insuranceCost: numInput(e.target.value) })} className={cn(inputClass, "py-[8px] px-[12px]", na && "opacity-50")} />
+          </div>
+        );
+      },
       skipValue: 0,
     },
     {
@@ -479,9 +495,15 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
       label: 'Combustível / Carga (anual c/ IVA)',
       description: 'Total estimado gasto em combustível ou energia elétrica por ano.',
       isVisible: () => true,
-      render: (s, setS) => (
-        <input type="number" value={s.fuelCost === 0 ? '' : s.fuelCost} onChange={e => setS({ fuelCost: numInput(e.target.value) })} className={cn(inputClass, "py-[8px] px-[12px]")} />
-      ),
+      render: (s, setS) => {
+        const na = (s.na ?? []).includes('fuelCost');
+        return (
+          <div className="space-y-1">
+            <div className="flex justify-end"><NaoAplicavel ativo={na} onChange={v => setS(patchNaoAplicavel(s, 'fuelCost', v))} /></div>
+            <input type="number" disabled={na} value={na || s.fuelCost === 0 ? '' : s.fuelCost} onChange={e => setS({ fuelCost: numInput(e.target.value) })} className={cn(inputClass, "py-[8px] px-[12px]", na && "opacity-50")} />
+          </div>
+        );
+      },
       skipValue: 0,
     },
     {
@@ -557,7 +579,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
             <label className={labelClass}>Custo Aquisição (Base s/ IVA) <RequiredMark /> <Tip>O preço de compra da viatura (sem IVA). Determina os limites de dedução e amortização permitidos.</Tip></label>
             <div className="relative">
               <Euro className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
-              <input type="number" value={price === 0 ? '' : price} onChange={e=>setState({price: numInput(e.target.value)})} className={cn(inputClass, "pl-[40px]")} />
+              <input type="number" value={price === 0 ? '' : price} onChange={e=>setState({price: numInput(e.target.value)})} className={cn(inputClass, "campo-com-icone-lg")} />
             </div>
           </div>
           <div>
@@ -590,16 +612,16 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
             <h3 className="text-[12px] font-[800] text-[#0F172A] mb-4">ENCARGOS ANUAIS (COM IVA) <Tip>Os custos anuais de operação da viatura (manutenção, seguro e combustível) com IVA incluído. São usados para calcular a base da Tributação Autónoma.</Tip></h3>
             <div className="space-y-[16px]">
               <div>
-                <label className="text-[11px] font-[700] text-[#64748B] uppercase">Manutenção & Oficinas <Tip>O total gasto por ano em revisões, reparações, pneus e outros serviços de manutenção.</Tip></label>
-                <input type="number" value={maintenanceCost === 0 ? '' : maintenanceCost} onChange={e=>setState({maintenanceCost: numInput(e.target.value)})} className={cn(inputClass, "py-[8px] px-[12px] mt-1")} />
+                <div className="text-[11px] font-[700] text-[#64748B] uppercase">Manutenção & Oficinas <Tip>O total gasto por ano em revisões, reparações, pneus e outros serviços de manutenção.</Tip><NaoAplicavel ativo={naCampos.includes('maintenanceCost')} onChange={v => setState(patchNaoAplicavel(initialState, 'maintenanceCost', v))} /></div>
+                <input type="number" disabled={naCampos.includes('maintenanceCost')} value={naCampos.includes('maintenanceCost') || maintenanceCost === 0 ? '' : maintenanceCost} onChange={e=>setState({maintenanceCost: numInput(e.target.value)})} className={cn(inputClass, "py-[8px] px-[12px] mt-1", naCampos.includes('maintenanceCost') && "opacity-50")} />
               </div>
               <div>
-                <label className="text-[11px] font-[700] text-[#64748B] uppercase">Seguro & Portagens <Tip>O prémio anual do seguro automóvel. Geralmente dedutível como gasto da empresa.</Tip></label>
-                <input type="number" value={insuranceCost === 0 ? '' : insuranceCost} onChange={e=>setState({insuranceCost: numInput(e.target.value)})} className={cn(inputClass, "py-[8px] px-[12px] mt-1")} />
+                <div className="text-[11px] font-[700] text-[#64748B] uppercase">Seguro & Portagens <Tip>O prémio anual do seguro automóvel. Geralmente dedutível como gasto da empresa.</Tip><NaoAplicavel ativo={naCampos.includes('insuranceCost')} onChange={v => setState(patchNaoAplicavel(initialState, 'insuranceCost', v))} /></div>
+                <input type="number" disabled={naCampos.includes('insuranceCost')} value={naCampos.includes('insuranceCost') || insuranceCost === 0 ? '' : insuranceCost} onChange={e=>setState({insuranceCost: numInput(e.target.value)})} className={cn(inputClass, "py-[8px] px-[12px] mt-1", naCampos.includes('insuranceCost') && "opacity-50")} />
               </div>
               <div>
-                <label className="text-[11px] font-[700] text-[#64748B] uppercase">Combustível / Carga <Tip>O total gasto em combustível por ano. Parcialmente dedutível consoante o tipo de viatura.</Tip></label>
-                <input type="number" value={fuelCost === 0 ? '' : fuelCost} onChange={e=>setState({fuelCost: numInput(e.target.value)})} className={cn(inputClass, "py-[8px] px-[12px] mt-1")} />
+                <div className="text-[11px] font-[700] text-[#64748B] uppercase">Combustível / Carga <Tip>O total gasto em combustível por ano. Parcialmente dedutível consoante o tipo de viatura.</Tip><NaoAplicavel ativo={naCampos.includes('fuelCost')} onChange={v => setState(patchNaoAplicavel(initialState, 'fuelCost', v))} /></div>
+                <input type="number" disabled={naCampos.includes('fuelCost')} value={naCampos.includes('fuelCost') || fuelCost === 0 ? '' : fuelCost} onChange={e=>setState({fuelCost: numInput(e.target.value)})} className={cn(inputClass, "py-[8px] px-[12px] mt-1", naCampos.includes('fuelCost') && "opacity-50")} />
               </div>
             </div>
           </div>

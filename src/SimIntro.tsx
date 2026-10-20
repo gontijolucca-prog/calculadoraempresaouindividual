@@ -2,7 +2,7 @@ import { motion } from 'motion/react';
 import React from 'react';
 import {
   Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote,
-  Receipt, TrendingUp, ArrowLeft, Play,
+  Receipt, TrendingUp, ArrowLeft, Play, Scale,
 } from 'lucide-react';
 
 /**
@@ -37,6 +37,13 @@ export const SIM_INTROS: Record<string, SimIntroDef> = {
     resumo: 'Mostra quanto IVA consegues recuperar na compra e utilização de uma viatura e quanto pagas de Tributação Autónoma sobre os encargos.',
     dados: ['Tipo de viatura (passageiros, comercial, elétrica…)', 'Preço de aquisição', 'Custos anuais (combustível, manutenção)'],
     resultado: 'IVA dedutível, Tributação Autónoma estimada e limites de depreciação aceites fiscalmente.',
+  },
+  aquisicao: {
+    titulo: 'Comprar ou alugar a viatura?',
+    Icon: Scale,
+    resumo: 'Compara as quatro formas de ter a viatura na empresa — compra, crédito, leasing e renting (ALU) — com o mesmo enquadramento fiscal.',
+    dados: ['Preço da viatura e motor', 'Entrada, prazo, TAN e valor residual', 'Manutenção, seguro e combustível anuais'],
+    resultado: 'Mensalidade, custo total e custo líquido após IVA de cada opção, com IVA recuperável e Tributação Autónoma. O modo mais barato fica destacado.',
   },
   ticket: {
     titulo: 'Tickets e Benefícios',

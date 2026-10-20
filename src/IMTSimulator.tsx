@@ -71,7 +71,7 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
             <label className={labelCls}>Valor de Aquisição (€) <RequiredMark /> <Tip>O preço de compra do imóvel em euros. É a base de cálculo do IMT e do Imposto de Selo.</Tip></label>
             <div className="relative">
               <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
-              <input type="number" min="0" step="1000" value={st.valor === 0 ? '' : st.valor} onChange={e => setSt({ valor: numInput(e.target.value) })} className={cn(inputCls, "pl-9")} placeholder="ex: 250000" />
+              <input type="number" min="0" step="1000" value={st.valor === 0 ? '' : st.valor} onChange={e => setSt({ valor: numInput(e.target.value) })} className={cn(inputCls, "campo-com-icone")} placeholder="ex: 250000" />
             </div>
           </div>
           <div>
@@ -95,7 +95,7 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
             <label className={labelCls}>Localização <Tip>Nos Açores e Madeira os escalões do IMT são 25% mais elevados.</Tip></label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
-              <select value={st.localizacao} onChange={e => setSt({ localizacao: e.target.value as Localizacao })} className={cn(inputCls, "pl-9")}>
+              <select value={st.localizacao} onChange={e => setSt({ localizacao: e.target.value as Localizacao })} className={cn(inputCls, "campo-com-icone")}>
                 <option value="continente">Continente</option>
                 <option value="madeira">Madeira (+25%)</option>
                 <option value="acores">Açores (+25%)</option>
@@ -215,7 +215,7 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
                 step="1000"
                 value={s.valor === 0 ? '' : s.valor}
                 onChange={e => setState({ valor: numInput(e.target.value) })}
-                className={cn(inputCls, "pl-9")}
+                className={cn(inputCls, "campo-com-icone")}
                 placeholder="ex: 250000"
               />
             </div>
@@ -236,7 +236,7 @@ export default function IMTSimulator({ initialState, onStateChange }: Props) {
             <label className={labelCls}>Localização <Tip>O local onde fica o imóvel. Nos Açores e Madeira os escalões do IMT são 25% mais elevados.</Tip></label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
-              <select value={s.localizacao} onChange={e => setState({ localizacao: e.target.value as Localizacao })} className={cn(inputCls, "pl-9")}>
+              <select value={s.localizacao} onChange={e => setState({ localizacao: e.target.value as Localizacao })} className={cn(inputCls, "campo-com-icone")}>
                 <option value="continente">Continente</option>
                 <option value="madeira">Madeira (+25%)</option>
                 <option value="acores">Açores (+25%)</option>

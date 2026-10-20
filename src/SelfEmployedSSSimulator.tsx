@@ -71,7 +71,7 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
               step="0.01"
               value={st.income === 0 ? '' : st.income}
               onChange={e => setSt({ income: numInput(e.target.value) })}
-              className={cn(inputClass, "pl-[40px]")}
+              className={cn(inputClass, "campo-com-icone-lg")}
               required
             />
           </div>
@@ -274,7 +274,7 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
             <label className={labelClass}>Rendimento Mensal (€) <RequiredMark /> <Tip>O rendimento que serve de base para calcular a contribuição de SS. Para prestadores de serviços, são os honorários mensais. Para comerciantes, é o lucro.</Tip></label>
             <div className="relative">
               <Wallet className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
-              <input type="number" min="0" step="0.01" value={income === 0 ? '' : income} onChange={e => setState({ income: numInput(e.target.value) })} className={cn(inputClass, "pl-[40px]")} required />
+              <input type="number" min="0" step="0.01" value={income === 0 ? '' : income} onChange={e => setState({ income: numInput(e.target.value) })} className={cn(inputClass, "campo-com-icone-lg")} required />
             </div>
           </div>
           <div>

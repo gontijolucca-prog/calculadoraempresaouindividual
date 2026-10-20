@@ -75,6 +75,8 @@ const IMTSimulator = lazy(() => import('./IMTSimulator'));
 const SalarioLiquidoSimulator = lazy(() => import('./SalarioLiquidoSimulator'));
 const IRSSimulator = lazy(() => import('./IRSSimulator'));
 const PreviSaSimulator = lazy(() => import('./PreviSaSimulator'));
+const AquisicaoSimulator = lazy(() => import('./AquisicaoSimulator'));
+import { defaultAquisicaoState, type AquisicaoState } from './AquisicaoSimulator';
 const OfficeSettingsView = lazy(() => import('./OfficeSettingsView'));
 const Gabinete = lazy(() => import('./Gabinete'));
 const GabineteSelector = lazy(() => import('./GabineteSelector'));
@@ -94,7 +96,7 @@ const AIContabilista = lazy(() => import('./ai/AIContabilista'));
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal'
-  | 'previsa' | 'office-settings' | 'empresas' | 'historico' | 'exportar' | 'hub'
+  | 'previsa' | 'aquisicao' | 'office-settings' | 'empresas' | 'historico' | 'exportar' | 'hub'
   | 'gabinete' | 'proposta-gamma';
 
 // Default landing view when the user picks a mode.
@@ -118,6 +120,7 @@ const VIEW_TITLES: Record<ViewType, string> = {
   irs: 'Simulador de IRS',
   legal: 'Base Legal & Referências',
   previsa: 'Simulador Previsa',
+  aquisicao: 'Aquisição de viatura',
   'office-settings': 'Definições do Escritório',
   'proposta-gamma': 'Proposta Gamma',
   historico: 'Histórico de Simulações',
@@ -495,6 +498,7 @@ function AppContent() {
   })();
   const [taxState, setTaxState] = useState<TaxSimulatorState>(() => (initSims.tax as TaxSimulatorState) ?? getInitialTaxState(clientProfile));
   const [vehicleState, setVehicleState] = useState<VehicleSimulatorState>(() => (initSims.vehicle as VehicleSimulatorState) ?? getInitialVehicleState(clientProfile));
+  const [aquisicaoState, setAquisicaoState] = useState<AquisicaoState>(() => ({ ...defaultAquisicaoState, ...((initSims.aquisicao as Partial<AquisicaoState>) || {}) }));
   const [ticketState, setTicketState] = useState<TicketSimulatorState>(() => (initSims.ticket as TicketSimulatorState) ?? getInitialTicketState(clientProfile));
   const [ssState, setSSState] = useState<SSState>(() => (initSims.selfss as SSState) ?? getInitialSSState(clientProfile));
   const [diagnosticoState, setDiagnosticoState] = useState<DiagnosticoState>(() => (initSims.diagnostico as DiagnosticoState) ?? getInitialDiagnosticoState(clientProfile, (initSims.tax as TaxSimulatorState) ?? getInitialTaxState(clientProfile)));
@@ -607,12 +611,12 @@ function AppContent() {
         sims: {
           tax: taxState, vehicle: vehicleState, ticket: ticketState, selfss: ssState,
           diagnostico: diagnosticoState, imoveis: imoveisState, imt: imtState,
-          salario: salarioState, irs: irsState,
+          salario: salarioState, irs: irsState, aquisicao: aquisicaoState,
         },
       });
     }, 400);
     return () => window.clearTimeout(t);
-  }, [taxState, vehicleState, ticketState, ssState, diagnosticoState, imoveisState, imtState, salarioState, irsState, currentEmpresaId]);
+  }, [taxState, vehicleState, ticketState, ssState, diagnosticoState, imoveisState, imtState, salarioState, irsState, aquisicaoState, currentEmpresaId]);
 
   // Auto-guarda no histórico do cliente a simulação ativa (quando tem dados),
   // ~1,2s após a última edição. Mantém UM só registo automático por simulador
@@ -1565,6 +1569,9 @@ function AppContent() {
           : simGate)}
         {view === 'vehicle' && (currentEmpresaId
           ? <VehicleSimulator initialState={vehicleState} onStateChange={handleVehicleStateChange} />
+          : simGate)}
+        {view === 'aquisicao' && (currentEmpresaId
+          ? <AquisicaoSimulator initialState={aquisicaoState} onStateChange={setAquisicaoState} cliente={clientProfile.nomeCliente} nif={clientProfile.nif} />
           : simGate)}
         {view === 'ticket' && (currentEmpresaId
           ? <TicketSimulator initialState={ticketState} onStateChange={handleTicketStateChange} profile={clientProfile} />

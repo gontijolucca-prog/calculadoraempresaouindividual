@@ -89,6 +89,24 @@ const pagamentos = depois.find(o => o.pilarId === 'pagamentos');
 check('Desmarcar Salários → atrasada', salarios?.estado === 'atrasada', salarios?.estado || 'ausente');
 check('Pagamentos mantém-se entregue', pagamentos?.estado === 'entregue', pagamentos?.estado || 'ausente');
 
+// Ciclo de 3 estados: ✕ → — (pendente) → ✓
+await linhaSalarios.locator('td').nth(3).locator('button').first().click();
+await page.waitForTimeout(900);
+const terceiro = (await page.evaluate(() => {
+  const raw = localStorage.getItem('estudo360:v1:gabinete:shared:obrigacoes');
+  return raw ? JSON.parse(raw).data.filter(o => o.clienteId === 'c1') : [];
+})).find(o => o.pilarId === 'salarios');
+check('Ciclo: ✕ → neutro', terceiro?.estado === 'pendente', terceiro?.estado || 'ausente');
+check('Ciclo: célula neutra mostra —', !(await linhaSalarios.locator('td').nth(3).innerText()).includes('✕'), '');
+
+await linhaSalarios.locator('td').nth(3).locator('button').first().click();
+await page.waitForTimeout(900);
+const quarto = (await page.evaluate(() => {
+  const raw = localStorage.getItem('estudo360:v1:gabinete:shared:obrigacoes');
+  return raw ? JSON.parse(raw).data.filter(o => o.clienteId === 'c1') : [];
+})).find(o => o.pilarId === 'salarios');
+check('Ciclo: neutro → ✓', quarto?.estado === 'entregue', quarto?.estado || 'ausente');
+
 // Abrir o editor de pilares por empresa
 await page.getByText('Pilares por empresa').first().click();
 await page.waitForTimeout(400);

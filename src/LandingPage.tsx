@@ -172,7 +172,7 @@ function SimulatorsBento() {
     <section id="simuladores" className="max-w-[1220px] mx-auto px-5 md:px-6 py-6 md:py-10 border-t border-[#1A1A18]/[0.05]">
       <div className="flex items-end justify-between gap-4">
         <h2 className="text-[20px] font-[600] tracking-[-0.02em]" style={{fontFamily:'Geist'}}>O que pode calcular</h2>
-        <span className="hidden md:inline text-[11px] tracking-[1.2px] uppercase font-[600] text-[#1A1A18]/25" style={{fontFamily:'Geist'}}>Arraste — 10 simuladores</span>
+        <span className="hidden md:inline text-[11px] tracking-[1.2px] uppercase font-[600] text-[#1A1A18]/25" style={{fontFamily:'Geist'}}>Arraste — 11 simuladores</span>
       </div>
       <div className="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-3 auto-rows-[120px]">
         {sims.map(([title, desc, Icon, span])=>(

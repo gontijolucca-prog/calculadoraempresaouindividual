@@ -492,7 +492,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
                     type="number" min="0" step="0.01"
                     value={s.ticketValue === 0 ? '' : s.ticketValue}
                     onChange={e => setState({ ticketValue: numInput(e.target.value) })}
-                    className={cn(inputCls, "pl-9", calc?.excedeNorma && "border-amber-400 bg-amber-50/30")}
+                    className={cn(inputCls, "campo-com-icone", calc?.excedeNorma && "border-amber-400 bg-amber-50/30")}
                   />
                 </div>
                 {calc && (
@@ -558,7 +558,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
                   type="number" min="0" step="50"
                   value={s.valorAnualPorPessoa === 0 ? '' : s.valorAnualPorPessoa}
                   onChange={e => setState({ valorAnualPorPessoa: numInput(e.target.value) })}
-                  className={cn(inputCls, "pl-9")}
+                  className={cn(inputCls, "campo-com-icone")}
                   placeholder={tipo === 'infancia' ? 'ex: 3 600' : tipo === 'saude' ? 'ex: 1 200' : tipo === 'educacao' ? 'ex: 2 400' : tipo === 'car' ? 'ex: 3 600' : 'ex: 150'}
                 />
               </div>
@@ -612,7 +612,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
               <label className={labelCls}>Valor Diário (€) <RequiredMark /> <Tip>Valor por dia de trabalho pago a cada funcionário. O excedente ao limite legal fica sujeito a SS e IRS.</Tip></label>
               <div className="relative">
                 <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
-                <input type="number" min="0" step="0.01" value={s.ticketValue === 0 ? '' : s.ticketValue} onChange={e => setState({ ticketValue: numInput(e.target.value) })} className={cn(inputCls, "pl-9", calc?.excedeNorma && "border-amber-400 bg-amber-50/30")} />
+                <input type="number" min="0" step="0.01" value={s.ticketValue === 0 ? '' : s.ticketValue} onChange={e => setState({ ticketValue: numInput(e.target.value) })} className={cn(inputCls, "campo-com-icone", calc?.excedeNorma && "border-amber-400 bg-amber-50/30")} />
               </div>
               {calc && (
                 <div className={cn("mt-2 flex items-center gap-2 text-[12px] font-[600] px-3 py-1.5 rounded-[8px]", calc.excedeNorma ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200")}>
@@ -643,7 +643,7 @@ export default function TicketSimulator({ initialState, onStateChange }: Props) 
             <label className={labelCls}>{isOferta ? 'Valor por destinatário (€/ano)' : isCar ? 'Custo anual por viatura (€)' : 'Valor anual por funcionário (€)'} <RequiredMark />{' '}<Tip>{isCar ? 'Custo anual total com combustível e assistência por viatura (inclui IVA).' : 'Montante total anual atribuído a cada beneficiário.'}</Tip></label>
             <div className="relative">
               <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
-              <input type="number" min="0" step="50" value={s.valorAnualPorPessoa === 0 ? '' : s.valorAnualPorPessoa} onChange={e => setState({ valorAnualPorPessoa: numInput(e.target.value) })} className={cn(inputCls, "pl-9")} placeholder={tipo === 'infancia' ? 'ex: 3 600' : tipo === 'saude' ? 'ex: 1 200' : tipo === 'educacao' ? 'ex: 2 400' : tipo === 'car' ? 'ex: 3 600' : 'ex: 150'} />
+              <input type="number" min="0" step="50" value={s.valorAnualPorPessoa === 0 ? '' : s.valorAnualPorPessoa} onChange={e => setState({ valorAnualPorPessoa: numInput(e.target.value) })} className={cn(inputCls, "campo-com-icone")} placeholder={tipo === 'infancia' ? 'ex: 3 600' : tipo === 'saude' ? 'ex: 1 200' : tipo === 'educacao' ? 'ex: 2 400' : tipo === 'car' ? 'ex: 3 600' : 'ex: 150'} />
             </div>
           </div>
         )}
