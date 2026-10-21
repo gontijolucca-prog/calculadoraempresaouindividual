@@ -93,11 +93,16 @@ function extraResults(view: SimView, state: unknown, profile: ClientProfile): { 
   try {
     if (view === 'vehicle' && (num(s.price) > 0 || num(s.maintenanceCost) > 0 || num(s.fuelCost) > 0)) {
       const r = calcViatura({
-        category: s.category === 'comercial' ? 'comercial' : 'passageiros',
+        // Categoria real (passageiros/comercial/comercial_n1/moto) — não colapsar em
+        // passageiros, senão o PDF mostra IVA/TA diferentes do ecrã.
+        category: (['passageiros', 'comercial', 'comercial_n1', 'moto'].includes(String(s.category)) ? s.category : 'passageiros'),
         engineType: String(s.engineType || 'diesel'), price: num(s.price),
         ivaRegime: String(s.ivaRegime || 'normal'), activity: String(s.activity || 'other'),
         maintenanceCost: num(s.maintenanceCost), insuranceCost: num(s.insuranceCost), fuelCost: num(s.fuelCost),
         exemptTA: !!s.exemptTA, phevCompliant: !!s.phevCompliant, agravamentoTA: !!s.agravamentoTA,
+        co2Emissions: s.co2Emissions, autonomiaEletrica: s.autonomiaEletrica, euro6eBis: !!s.euro6eBis,
+        rentingDiscriminada: s.rentingDiscriminada, regimeTributario: s.regimeTributario,
+        usoPercentagem: s.usoPercentagem, cilindrada: s.cilindrada,
       });
       return [
         { label: 'IVA total dedutível', valor: eur(r.ivaTotalDedutivel) },

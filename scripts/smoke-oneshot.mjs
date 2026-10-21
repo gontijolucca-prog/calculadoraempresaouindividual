@@ -115,7 +115,7 @@ check('Editor de pilares abre', await page.getByText('Âmbito').count() >= 1);
 // Escolher a Empresa Alfa e renomear Salários → Vencimentos
 await page.locator('select').filter({ hasText: 'Gabinete (todos os clientes)' }).first().selectOption('c1');
 await page.waitForTimeout(300);
-const btnRenomear = page.locator('button[title="Renomear neste âmbito"]').first();
+const btnRenomear = page.locator('button[title="Renomear neste cliente"]').first();
 if (await btnRenomear.count()) {
   await btnRenomear.click();
   const inputCurto = page.locator('input[placeholder="Nome curto"]').first();

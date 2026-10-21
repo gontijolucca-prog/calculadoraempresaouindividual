@@ -152,11 +152,13 @@ export function PilaresEditor({
                     <span className="hidden text-[11px] text-zinc-500 sm:inline">{p.longo !== p.curto ? p.longo : ''}</span>
                   </label>
                   <div className="ml-auto flex items-center gap-1">
-                    <button
-                      onClick={() => { setEditarId(p.id); setEditCurto(p.curto); setEditLongo(p.longo); setErro(null); }}
-                      title="Renomear neste âmbito"
-                      className="rounded p-1 text-zinc-500 hover:bg-white"
-                    ><Pencil className="h-3.5 w-3.5" /></button>
+                    {cliente && (
+                      <button
+                        onClick={() => { setEditarId(p.id); setEditCurto(p.curto); setEditLongo(p.longo); setErro(null); }}
+                        title="Renomear neste cliente"
+                        className="rounded p-1 text-zinc-500 hover:bg-white"
+                      ><Pencil className="h-3.5 w-3.5" /></button>
+                    )}
                     <button onClick={() => apagar(p.id, p.curto)} title="Apagar" className="rounded p-1 text-zinc-500 hover:bg-white"><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
                 </div>

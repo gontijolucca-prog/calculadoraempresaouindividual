@@ -174,7 +174,7 @@ export class RelatorioPdf {
       d.setFontSize(9.5);
       d.setTextColor(15, 23, 42);
       d.text(d.splitTextToSize(sanitizePdf(this.opts.cliente || '—'), this.largura - this.margem * 2 - 50)[0], this.margem + 3, this.y + 9.2);
-      d.text(this.opts.nif || '—', this.largura - this.margem - 40, this.y + 9.2);
+      d.text(sanitizePdf(this.opts.nif || '—'), this.largura - this.margem - 40, this.y + 9.2);
       this.y += boxH + 6;
     }
     this.y += 2;

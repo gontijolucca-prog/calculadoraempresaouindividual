@@ -1831,22 +1831,29 @@ function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmp
 
 // ─── Obrigações ───────────────────────────────────────────────────────────────
 function ObrigacoesView({ obrigacoes, clientes, activeEmpresaId, canGerirObrigacoes = true }: { obrigacoes:Obrigacao[]; clientes:GabineteCliente[]; activeEmpresaId?: string|null; canGerirObrigacoes?: boolean }) {
-  const [mes, setMes] = useState(()=> new Date().toISOString().slice(0,7)); // YYYY-MM
+  // Data local, nunca toISOString: em Portugal (UTC+1) o dia 1 às 00:30 caía no mês anterior.
+  const ymLocal = (ms: number) => {
+    const d = new Date(ms);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  };
+  const [mes, setMes] = useState(() => ymLocal(Date.now())); // YYYY-MM
   const [filtroCli, setFiltroCli] = useState('todos');
+  // Com um cliente ativo, a página segue esse cliente mesmo que o filtro diga "todos".
+  const filtroEfetivo = activeEmpresaId || filtroCli;
   const filtered = useMemo(()=> {
     return obrigacoes.filter(o=>{
-      if (filtroCli === 'fiscal' && o.origem !== 'calendario_fiscal') return false;
-      if (filtroCli !== 'todos' && filtroCli !== 'fiscal' && o.clienteId!==filtroCli) return false;
-      const ym = new Date(o.vencimento).toISOString().slice(0,7);
+      if (filtroEfetivo === 'fiscal' && o.origem !== 'calendario_fiscal') return false;
+      if (filtroEfetivo !== 'todos' && filtroEfetivo !== 'fiscal' && o.clienteId !== filtroEfetivo) return false;
+      const ym = ymLocal(o.vencimento);
       return ym===mes;
     }).sort((a,b)=>a.vencimento-b.vencimento);
-  }, [obrigacoes,mes,filtroCli]);
+  }, [obrigacoes,mes,filtroEfetivo]);
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-3 items-center">
         <input type="month" value={mes} onChange={e=>setMes(e.target.value)} className="px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm" />
-        <select value={filtroCli} onChange={e=>setFiltroCli(e.target.value)} disabled={!!activeEmpresaId} className={`px-3 py-2.5 rounded-xl border text-sm ${activeEmpresaId ? "bg-zinc-100 text-zinc-500" : "bg-white border-zinc-200"}`}>
+        <select value={filtroEfetivo} onChange={e=>setFiltroCli(e.target.value)} disabled={!!activeEmpresaId} className={`px-3 py-2.5 rounded-xl border text-sm ${activeEmpresaId ? "bg-zinc-100 text-zinc-500" : "bg-white border-zinc-200"}`}>
           <option value="todos">Todos clientes</option>
           <option value="fiscal">Calendário fiscal 2026</option>
           {clientes.map(c=> <option key={c.id} value={c.id}>{c.nome}</option>)}
