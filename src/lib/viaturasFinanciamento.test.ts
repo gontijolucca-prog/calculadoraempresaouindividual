@@ -42,6 +42,8 @@ const base: FinanciamentoInput = {
   ok('B: crédito custa mais que a compra', credito.custoTotal > compra.custoTotal);
   ok('B: crédito tem juros', credito.jurosTotais > 3000);
   ok('B: crédito aceita mais gasto (juros)', credito.gastoAceite > compra.gastoAceite);
+  approx('B: IVA igual à compra (aquisição 1x)', credito.ivaDedutivel, compra.ivaDedutivel, 0.01);
+  approx('B: TA igual à compra (juros fora da base)', credito.taValue, compra.taValue, 0.01);
 }
 
 // ── C: leasing/renting

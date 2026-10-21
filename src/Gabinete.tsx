@@ -75,12 +75,20 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
   const alertasAllAtivos = useMemo(() => filterActive(alertasAll), [alertasAll]);
   const ocorrenciasAllAtivas = useMemo(() => filterActive(ocorrenciasAll), [ocorrenciasAll]);
   const documentosAllAtivos = useMemo(() => filterActive(documentosAll), [documentosAll]);
-  const tarefas = useMemo(() => activeEmpresaId ? tarefasRaw.filter(t => !t.clienteId || t.clienteId === activeEmpresaId) : tarefasRaw, [tarefasRaw, activeEmpresaId]);
-  const obrigacoes = useMemo(() => activeEmpresaId ? obrigacoesRaw.filter(o => !o.clienteId || o.clienteId === activeEmpresaId) : obrigacoesRaw, [obrigacoesRaw, activeEmpresaId]);
-  const contactosF = useMemo(() => activeEmpresaId ? contactosAllAtivos.filter(c => c.clienteId === activeEmpresaId) : contactosAllAtivos, [contactosAllAtivos, activeEmpresaId]);
-  const alertasF = useMemo(() => activeEmpresaId ? alertasAllAtivos.filter(a => a.clienteId === activeEmpresaId) : alertasAllAtivos, [alertasAllAtivos, activeEmpresaId]);
-  const ocorrenciasF = useMemo(() => activeEmpresaId ? ocorrenciasAllAtivas.filter(o => o.clienteId === activeEmpresaId) : ocorrenciasAllAtivas, [ocorrenciasAllAtivas, activeEmpresaId]);
-  const documentosF = useMemo(() => activeEmpresaId ? documentosAllAtivos.filter(d => d.clienteId === activeEmpresaId) : documentosAllAtivos, [documentosAllAtivos, activeEmpresaId]);
+  // `activeEmpresaId` é o id da empresa no registo; as coleções do gabinete
+  // guardam o id da FICHA do cliente. Quando são diferentes (empresas migradas),
+  // filtrar pelo id da empresa deixava agenda/tarefas/obrigações vazias.
+  const activeClienteId = useMemo(() => {
+    if (!activeEmpresaId) return null;
+    const c = clientesAll.find(x => x.id === activeEmpresaId || x.empresaId === activeEmpresaId);
+    return c?.id ?? activeEmpresaId;
+  }, [activeEmpresaId, clientesAll]);
+  const tarefas = useMemo(() => activeClienteId ? tarefasRaw.filter(t => !t.clienteId || t.clienteId === activeClienteId) : tarefasRaw, [tarefasRaw, activeClienteId]);
+  const obrigacoes = useMemo(() => activeClienteId ? obrigacoesRaw.filter(o => !o.clienteId || o.clienteId === activeClienteId) : obrigacoesRaw, [obrigacoesRaw, activeClienteId]);
+  const contactosF = useMemo(() => activeClienteId ? contactosAllAtivos.filter(c => c.clienteId === activeClienteId) : contactosAllAtivos, [contactosAllAtivos, activeClienteId]);
+  const alertasF = useMemo(() => activeClienteId ? alertasAllAtivos.filter(a => a.clienteId === activeClienteId) : alertasAllAtivos, [alertasAllAtivos, activeClienteId]);
+  const ocorrenciasF = useMemo(() => activeClienteId ? ocorrenciasAllAtivas.filter(o => o.clienteId === activeClienteId) : ocorrenciasAllAtivas, [ocorrenciasAllAtivas, activeClienteId]);
+  const documentosF = useMemo(() => activeClienteId ? documentosAllAtivos.filter(d => d.clienteId === activeClienteId) : documentosAllAtivos, [documentosAllAtivos, activeClienteId]);
   const colaboradores = useGabineteColaboradores();
   // Cargo do utilizador no gabinete ativo (dono = admin; membro sem role = contabilista).
   const [role, setRole] = useState<GabineteRole | null>(null);
@@ -121,7 +129,7 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
   }, []);
   const clienteAtivo = useMemo(() => {
     if (!activeEmpresaId) return null;
-    const gc = clientes.find(c => c.id === activeEmpresaId || c.empresaId === activeEmpresaId);
+    const gc = clientes.find(c => c.id === activeClienteId || c.empresaId === activeEmpresaId);
     if (gc) return gc;
     // Ainda só existe na Lista de Empresas — mostra os dados reais do record
     // enquanto a ficha do gabinete é criada (efeito abaixo).
@@ -136,7 +144,7 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
       }
     } catch {}
     return null;
-  }, [clientes, activeEmpresaId]);
+  }, [clientes, activeEmpresaId, activeClienteId]);
 
   // Cliente que só existe na Lista de Empresas: cria a ficha real no gabinete
   // (idempotente) para Visão Geral, tarefas e obrigações usarem o mesmo registo.
@@ -260,10 +268,10 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
             {tab === 'dashboard' && <Dashboard clientes={clientes} tarefas={tarefasRaw} obrigacoes={obrigacoesRaw} cofre={cofre} onGo={goFunction} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
             {tab === 'mapa-rh' && <MapaRHView clientes={clientes} obrigacoes={obrigacoesRaw} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
             {tab === 'mapa-controlo' && <MapaControloView clientes={clientes} obrigacoes={obrigacoesRaw} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
-            {tab === 'tarefas' && (!activeEmpresaId ? <EscolherCliente clientes={clientes} onSelect={onSelectEmpresa} onGoEmpresas={onGoEmpresas} /> : <TarefasView tarefas={tarefas} clientes={clientes} obrigacoes={obrigacoes} activeEmpresaId={activeEmpresaId} activeEmpresaNome={activeEmpresaNome} canDelete={can(effectiveRole, 'apagar')} canGerirObrigacoes={can(effectiveRole, 'gerir-obrigacoes')} />)}
+            {tab === 'tarefas' && (!activeEmpresaId ? <EscolherCliente clientes={clientes} onSelect={onSelectEmpresa} onGoEmpresas={onGoEmpresas} /> : <TarefasView tarefas={tarefas} clientes={clientes} obrigacoes={obrigacoes} activeEmpresaId={activeClienteId} activeEmpresaNome={activeEmpresaNome} canDelete={can(effectiveRole, 'apagar')} canGerirObrigacoes={can(effectiveRole, 'gerir-obrigacoes')} />)}
             {tab === 'equipa' && (can(effectiveRole, 'gerir-equipa') ? <GabineteEquipa /> : <SemPermissao titulo="Equipa" />)}
             {tab === 'agenda' && <AgendaView tarefas={tarefas} obrigacoes={obrigacoes} alertas={alertasF} clientes={clientes} />}
-            {tab === 'obrigacoes' && <ObrigacoesView obrigacoes={obrigacoesRaw} clientes={clientes} activeEmpresaId={activeEmpresaId} canGerirObrigacoes={can(effectiveRole, 'gerir-obrigacoes')} />}
+            {tab === 'obrigacoes' && <ObrigacoesView obrigacoes={obrigacoesRaw} clientes={clientes} activeEmpresaId={activeClienteId} canGerirObrigacoes={can(effectiveRole, 'gerir-obrigacoes')} />}
             {tab === 'lixeira' && (can(effectiveRole, 'restaurar') ? <LixeiraView clientesAll={clientesAll} tarefasAll={tarefasAll} obrigacoesAll={obrigacoesAll} contactosAll={contactosAll} alertasAll={alertasAll} ocorrenciasAll={ocorrenciasAll} documentosAll={documentosAll} canPurgar={can(effectiveRole, 'purgar')} /> : <SemPermissao titulo="Lixeira" />)}
             {tab === 'cofre' && (can(effectiveRole, 'ver-cofre') ? <CofreView cofre={cofre} clientes={clientes} /> : <SemPermissao titulo="Cofre" />)}
           </>
@@ -412,17 +420,26 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
 
   type CellStatus = 'concluido' | 'nao_concluido' | 'sem_dados';
   // Legado (sem catalogoId): cada obrigação pertence a UMA linha — a mais
-  // específica. Sem isto, 'dossier' acendia Modelo 44 e Envio SAFT ao mesmo tempo.
-  const legadoQuadro = useMemo(
-    () => resolverPilarLegado(obrigacoes, catalogo.map(c => ({ id: c.id, label: c.label, tipos: c.tipos }))),
-    [obrigacoes, catalogo],
-  );
+  // específica ENTRE AS ATIVAS do cliente. Sem isto, 'dossier' acendia várias
+  // linhas; e se a linha escolhida não estivesse ativa no cliente, o registo
+  // desaparecia do quadro.
+  const legadoQuadroPorCliente = useMemo(() => {
+    const out = new Map<string, Map<string, string>>();
+    for (const cli of clientes) {
+      const ativas = new Set(getObrigacoesAtivas(cli));
+      const defs = catalogo.filter(c => ativas.has(c.id)).map(c => ({ id: c.id, label: c.label, tipos: c.tipos }));
+      const base = defs.length ? defs : catalogo.map(c => ({ id: c.id, label: c.label, tipos: c.tipos }));
+      out.set(cli.id, resolverPilarLegado(obrigacoes.filter(o => o.clienteId === cli.id), base));
+    }
+    return out;
+  }, [obrigacoes, catalogo, clientes]);
+  const legadoDoCliente = (cli: GabineteCliente) => legadoQuadroPorCliente.get(cli.id);
   const cellStatusOf = (cli: GabineteCliente, linha: LinhaDef, mes: number, anoNum: number): CellStatus => {
     const o = obterObrigacaoCelula(
       obrigacoes,
       { clienteId: cli.id, mapa: 'quadro', refId: linha.id, ano: anoNum, mes },
       linha.tipos,
-      legadoQuadro,
+      legadoDoCliente(cli),
     );
     return estadoCelula(o);
   };
@@ -475,10 +492,11 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
     const key: CellKey = { clienteId: cli.id, mapa: 'quadro', refId: linha.id, ano, mes };
     setPendingCells(prev => new Set(prev).add(k));
     try {
-      const existing = obterObrigacaoCelula(obrigacoes, key, linha.tipos, legadoQuadro);
+      const legado = legadoDoCliente(cli);
+      const existing = obterObrigacaoCelula(obrigacoes, key, linha.tipos, legado);
       const payload = construirObrigacaoDaCelula(key, { id: linha.id, label: linha.label, tipos: linha.tipos }, { id: cli.id, nome: cli.nome }, existing);
       await upsertObrigacao(payload);
-      await limparDuplicadosCelula(obrigacoes, key, linha.tipos, legadoQuadro, payload.id);
+      await limparDuplicadosCelula(obrigacoes, key, linha.tipos, legado, payload.id);
       logAudit('save_obrigacao_celula', `${linha.label} ${mm}/${ano} — ${cli.nome}`, {
         mapa: 'quadro', refId: linha.id, ano, mes, antes: existing?.estado ?? null, depois: payload.estado,
       }, cli.id);
@@ -986,7 +1004,7 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-200 mt-2">
-          <button onClick={()=>setShowPilaresMC(true)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-300 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50" title="Escolher pilares por empresa (nomes e visibilidade) — grava permanente">Pilares por empresa</button>
+          {canEdit && <button onClick={()=>setShowPilaresMC(true)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-300 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50" title="Escolher pilares por empresa (nomes e visibilidade) — grava permanente">Pilares por empresa</button>}
           <button onClick={()=>setShowGerirMC(!showGerirMC)} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerirMC ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
             <Plus className="w-3.5 h-3.5" /> Gerir pilares
           </button>
@@ -1345,7 +1363,7 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-200 mt-2">
-          <button onClick={()=>setShowPilaresRH(true)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-300 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50" title="Escolher pilares por empresa (nomes e visibilidade) — grava permanente">Pilares por empresa</button>
+          {canEdit && <button onClick={()=>setShowPilaresRH(true)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-300 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50" title="Escolher pilares por empresa (nomes e visibilidade) — grava permanente">Pilares por empresa</button>}
           <button onClick={()=>setShowGerirRH(!showGerirRH)} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerirRH ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
             <Plus className="w-3.5 h-3.5" /> Gerir pilares
           </button>
@@ -1580,6 +1598,11 @@ function AgendaView({ tarefas, obrigacoes, alertas, clientes }: { tarefas: Taref
 
 // ─── Tarefas (Lista) ──────────────────────────────────────────────────────────
 function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmpresaNome, canDelete = true, canGerirObrigacoes = true }: { tarefas:Tarefa[]; clientes:GabineteCliente[]; obrigacoes:Obrigacao[]; activeEmpresaId?: string|null; activeEmpresaNome?: string|null; canDelete?: boolean; canGerirObrigacoes?: boolean }) {
+  const dataInput = (ms?: number) => {
+    if (!ms) return '';
+    const d = new Date(ms);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
   const [q, setQ] = useState('');
   const [filtroCli, setFiltroCli] = useState<string>('todos');
   const [filtroEstado, setFiltroEstado] = useState<string>('todos');
@@ -1680,7 +1703,7 @@ function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmp
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
           <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Pesquisar tarefa ou cliente..." className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm" />
         </div>
-        <select value={filtroCli} onChange={e=>setFiltroCli(e.target.value)} disabled={!!activeEmpresaId} className={`px-3 py-2.5 rounded-xl border text-sm ${activeEmpresaId ? "bg-zinc-100 text-zinc-500" : "bg-white border-zinc-200"}`}>
+        <select value={activeEmpresaId || filtroCli} onChange={e=>setFiltroCli(e.target.value)} disabled={!!activeEmpresaId} className={`px-3 py-2.5 rounded-xl border text-sm ${activeEmpresaId ? "bg-zinc-100 text-zinc-500" : "bg-white border-zinc-200"}`}>
           <option value="todos">Todos clientes</option>
           {clientes.map(c=> <option key={c.id} value={c.id}>{c.nome}</option>)}
         </select>
@@ -1812,7 +1835,7 @@ function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmp
                 </div>
                 <div>
                   <label className="block text-[11px] font-[700] uppercase tracking-[1px] text-zinc-500 mb-1">Vencimento</label>
-                  <input type="date" value={form.dataVencimento ? new Date(form.dataVencimento as unknown as number).toISOString().slice(0,10) : ''} onChange={e=>setForm({...form, dataVencimento: e.target.value ? new Date(e.target.value).getTime() as unknown as typeof form.dataVencimento : undefined})} className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
+                  <input type="date" value={dataInput(form.dataVencimento as unknown as number)} onChange={e=>setForm({...form, dataVencimento: e.target.value ? new Date(e.target.value).getTime() as unknown as typeof form.dataVencimento : undefined})} className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-3">

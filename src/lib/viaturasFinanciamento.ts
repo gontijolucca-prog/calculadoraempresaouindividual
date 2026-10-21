@@ -151,7 +151,8 @@ export function calcularModo(modo: ModoAquisicao, input: FinanciamentoInput): Fi
   if (modo === 'compra') {
     cashInicial = input.preco;
     custoTotal = input.preco + encargosPrazo;
-    ivaDedutivel = v.ivaTotalDedutivel * anos;
+    // IVA da aquisição só uma vez; manutenção/combustível repetem-se por ano.
+    ivaDedutivel = v.ivaAquisicaoDedutivel + (v.ivaRecupManutencao + v.ivaRecupCombustivel) * anos;
     gastoAceite = depAceitePrazo + encargoFiscalPrazo;
     taBaseAnual = v.totalEncsTA;
   } else if (modo === 'credito') {
@@ -159,9 +160,10 @@ export function calcularModo(modo: ModoAquisicao, input: FinanciamentoInput): Fi
     jurosTotais = Math.max(0, mensalidade * n + residual - (input.preco - entrada));
     cashInicial = entrada;
     custoTotal = entrada + mensalidade * n + residual + encargosPrazo;
-    ivaDedutivel = v.ivaTotalDedutivel * anos;
+    ivaDedutivel = v.ivaAquisicaoDedutivel + (v.ivaRecupManutencao + v.ivaRecupCombustivel) * anos;
     gastoAceite = depAceitePrazo + jurosTotais + encargoFiscalPrazo;
-    taBaseAnual = v.totalEncsTA + jurosTotais / Math.max(1, anos);
+    // Juros não entram na base da TA (CIRC art. 88.º): só depreciação + encargos.
+    taBaseAnual = v.totalEncsTA;
   } else {
     const manual = input.mensalidadeManual && input.mensalidadeManual > 0 ? input.mensalidadeManual : 0;
     const mensalidadeCalculada = pmt(input.preco, entrada, input.tanPercent, n, residual);

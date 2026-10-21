@@ -80,7 +80,7 @@ export function ComparadorAquisicao({ state, onChange }: { state: SimState; onCh
 
   const linhas: { label: string; valor: (m: ModoAquisicao) => string; forte?: boolean }[] = [
     { label: 'Mensalidade', valor: m => (resultados[m].mensalidade > 0 ? eur(resultados[m].mensalidade) : '—') },
-    { label: 'Entrada', valor: m => eur(resultados[m].cashInicial) },
+    { label: 'Pagamento inicial', valor: m => eur(resultados[m].cashInicial) },
     { label: 'Custo total', valor: m => eur(resultados[m].custoTotal), forte: true },
     { label: 'Custo líquido (após IVA)', valor: m => eur(resultados[m].custoLiquido), forte: true },
     { label: 'Gasto aceite fiscalmente', valor: m => eur(resultados[m].gastoAceite) },

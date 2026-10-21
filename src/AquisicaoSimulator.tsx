@@ -209,10 +209,12 @@ export default function AquisicaoSimulator({
               state={s as unknown as Record<string, unknown>}
               onChange={(p) => set(p as Partial<AquisicaoState>)}
             />
-            <div className="rounded-[14px] border border-[#E2E8F0] bg-white p-4 text-[12px] leading-relaxed text-[#64748B]">
-              <strong className="text-[#0F172A]">Recomendação:</strong> {ETIQUETA_MODO[melhor]} — custo líquido de {eur(resultados[melhor].custoLiquido)} após IVA, com {eur(resultados[melhor].gastoAceite)} aceites fiscalmente.
-              {' '}Clicar no nome de um modo usa-o como referência.
-            </div>
+            {s.price > 0 && (
+              <div className="rounded-[14px] border border-[#E2E8F0] bg-white p-4 text-[12px] leading-relaxed text-[#64748B]">
+                <strong className="text-[#0F172A]">Recomendação:</strong> {ETIQUETA_MODO[melhor]} — custo líquido de {eur(resultados[melhor].custoLiquido)} após IVA, com {eur(resultados[melhor].gastoAceite)} aceites fiscalmente.
+                {' '}Clicar no nome de um modo usa-o como referência.
+              </div>
+            )}
           </section>
         </div>
       </div>
