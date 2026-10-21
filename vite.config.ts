@@ -110,33 +110,41 @@ function devChatProxy(): Plugin {
   };
 }
 
-// Dev-only: serve o /api/gama (geração de apresentações no Gamma) fora do
-// browser, como em produção quem serve é a Cloudflare Pages Function
-// (functions/api/gama.ts). A chave do gabinete vem no corpo do pedido.
-function devGamaProxy(): Plugin {
+// Dev-only: serve o /api/deck (gerador de propostas) com a mesma lógica da
+// Function de produção. A chave vem do auth.json do opencode — como no /api/chat.
+function devDeckProxy(): Plugin {
   return {
-    name: 'dev-gama-proxy',
+    name: 'dev-deck-proxy',
     configureServer(server) {
-      server.middlewares.use('/api/gama', async (req, res) => {
-        if (req.method === 'OPTIONS') { res.statusCode = 204; res.setHeader('Access-Control-Allow-Origin', '*'); res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); res.end(); return; }
+      server.middlewares.use('/api/deck', async (req, res) => {
         if (req.method !== 'POST') { res.statusCode = 405; res.end('{"error":"metodo"}'); return; }
         try {
-          let body = ''; for await (const chunk of req) body += chunk;
-          const j = JSON.parse(body || '{}');
-          const key = String(j.key || '').trim();
-          if (!key) { res.statusCode = 400; res.end(JSON.stringify({ error: 'key_em_falta' })); return; }
-          const base = 'https://public-api.gamma.app/v0.2/generations';
-          const headers = { 'X-API-KEY': key, Authorization: `Bearer ${key}` };
-          let r: Response | null = null;
-          if (j.action === 'create') {
-            r = await fetch(base, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify({ inputText: String(j.inputText || ''), textMode: 'generate', format: 'presentation', cardOptions: { dimensions: '16x9' }, sharingOptions: { workspaceAccess: 'view' } }) });
-          } else if (j.action === 'status' && j.generationId) {
-            r = await fetch(`${base}/${encodeURIComponent(String(j.generationId))}`, { headers });
+          let body = '';
+          for await (const chunk of req) body += chunk;
+          let key = process.env.OPENCODE_GO_KEY || '';
+          if (!key) {
+            try {
+              const authPath = join(homedir(), '.local/share/opencode/auth.json');
+              key = JSON.parse(readFileSync(authPath, 'utf8'))?.['opencode-go']?.key || '';
+            } catch { /* sem auth local — a Function responde config */ }
           }
-          if (!r) { res.statusCode = 400; res.end(JSON.stringify({ error: 'acao_invalida' })); return; }
-          const text = await r.text();
-          res.statusCode = r.status; res.setHeader('Content-Type', 'application/json'); res.end(text);
-        } catch (e: any) { res.statusCode = 502; res.end(JSON.stringify({ error: 'proxy_dev', detail: String(e?.message || e) })); }
+          const { onRequestPost } = await import('./functions/api/deck');
+          const request = new Request('http://localhost/api/deck', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Origin: 'http://localhost:3000' },
+            body,
+          });
+          const t0 = Date.now();
+          const response = await onRequestPost({ request, env: { OPENCODE_GO_KEY: key } });
+          const text = await response.text();
+          console.log(`[dev-deck] ${response.status} em ${Date.now() - t0}ms (brief ${body.length} chars)`);
+          res.statusCode = response.status;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(text);
+        } catch (e: any) {
+          res.statusCode = 502;
+          res.end(JSON.stringify({ error: 'proxy_dev', detail: String(e?.message || e) }));
+        }
       });
     },
   };
@@ -150,7 +158,7 @@ export default defineConfig(({mode}) => {
 
   return {
     base: basePath,
-    plugins: [react(), tailwindcss(), vitePluginVersion(), devTocProxy(), devChatProxy(), devGamaProxy(), devEmulatorCsp()],
+    plugins: [react(), tailwindcss(), vitePluginVersion(), devTocProxy(), devChatProxy(), devDeckProxy(), devEmulatorCsp()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

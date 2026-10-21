@@ -1,0 +1,3 @@
+# Link público da proposta — SPA fallback para /p/<slug>
+# As Functions (/api/*) correm antes dos assets, por isso não são afetadas.
+/p/*  /index.html  200

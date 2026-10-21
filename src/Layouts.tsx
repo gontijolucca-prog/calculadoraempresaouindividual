@@ -14,7 +14,7 @@ type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'aquisicao' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal'
   | 'previsa' | 'office-settings' | 'empresas' | 'historico' | 'exportar' | 'hub'
-  | 'gabinete' | 'proposta-gamma';
+  | 'gabinete' | 'proposta';
 
 export interface LayoutProps {
   view: ViewType;
@@ -344,7 +344,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
         {hasSaftData && onOpenSaftViewer && (
           <NavItem label="Ver dados SAF-T" Icon={Clock} onClick={() => runAction(onOpenSaftViewer)} />
         )}
-        <NavItem label="Proposta Gamma" Icon={Presentation} onClick={() => go('proposta-gamma')} current={view === 'proposta-gamma'} title="Proposta do escritório pronta para o gamma.app — por cliente ou geral" />
+        <NavItem label="Fazer Proposta" Icon={Presentation} onClick={() => go('proposta')} current={view === 'proposta'} title="Proposta comercial com AI, PDF e link público" />
         <NavItem label="Base Legal" Icon={Info} onClick={() => runAction(openLegal)} current={view === 'legal'} />
       </nav>
 

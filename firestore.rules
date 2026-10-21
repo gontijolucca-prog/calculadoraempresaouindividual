@@ -138,6 +138,18 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
 
+    // ——— Propostas públicas (link só-leitura) ———
+    // Snapshot mínimo (cards + branding + expiração). O documento do gabinete
+    // nunca é exposto: só o autor publica, qualquer pessoa lê até expirar.
+    match /publicPropostas/{slug} {
+      allow read: if request.time.toMillis() < resource.data.expiresAt.toMillis();
+      allow create: if isPublicDeck(request.resource.data, slug);
+      allow update: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid
+        && isPublicDeck(request.resource.data, slug);
+      allow delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
+    }
+
     // Registo de acessos (quem entra na app): cada utilizador só pode CRIAR
     // eventos próprios; só o admin os lê. Update/delete bloqueados (imutável).
     match /auth_events/{eventId} {
@@ -240,6 +252,20 @@ function isValidEmpresaDoc(data, empresaId) {
       // saftXml nunca deve ir para a cloud (1 MiB limit) — bloqueia se estiver presente e grande
       && (!('saftXml' in data) || data.saftXml.size() < 5000)
       && data.keys().hasAny(['nome', 'nif', 'profile']);
+}
+
+/** Snapshot público de uma proposta: campos fechados, slug = id do doc, expiração obrigatória. */
+function isPublicDeck(d, slug) {
+  return request.auth != null
+      && d.keys().hasOnly(['slug','titulo','cards','tema','clienteNome','escritorio','expiresAt','updatedAt','ownerUid'])
+      && d.slug is string && d.slug == slug
+      && d.titulo is string && d.titulo.size() > 0 && d.titulo.size() < 300
+      && d.cards is list && d.cards.size() > 0 && d.cards.size() <= 14
+      && d.tema in ['claro','escuro','brand']
+      && d.escritorio is map
+      && d.expiresAt is timestamp
+      && d.updatedAt is number
+      && d.ownerUid == request.auth.uid;
 }
 
 function isValidGabineteDoc(data) {

@@ -218,6 +218,8 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
         const headers: Record<string, string> = {
           'Authorization': `Bearer ${authKey}`,
           'Content-Type': 'application/json',
+          // OpenCode Go exige um id de sessão; sem isto responde 400 MissingSessionID.
+          'x-opencode-session': `estudo360-chat-${crypto.randomUUID()}`,
         };
         if (isOpenRouter) {
           headers['HTTP-Referer'] = 'https://estudo360.pt';

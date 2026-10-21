@@ -8,7 +8,10 @@ import { useUnsavedEdits } from './hooks/useUnsavedEdits';
 import { initVersionChecker, stopVersionChecker } from './lib/version-checker';
 import { logAudit, flushAuditQueue } from './lib/audit';
 import LegalInfo from './LegalInfo';
-import PropostaGamaView from './PropostaGamaView';
+import PropostaView from './PropostaView';
+import PropostaEditor from './PropostaEditor';
+import type { DeckDoc } from './lib/deck/types';
+import type { DeckCliente } from './lib/deck/build';
 import LandingPage from './LandingPage';
 import AuthView, { VerifyEmailGate } from './AuthView';
 import EmpresasList from './EmpresasList';
@@ -97,7 +100,7 @@ type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal'
   | 'previsa' | 'aquisicao' | 'office-settings' | 'empresas' | 'historico' | 'exportar' | 'hub'
-  | 'gabinete' | 'proposta-gamma';
+  | 'gabinete' | 'proposta';
 
 // Default landing view when the user picks a mode.
 const DEFAULT_VIEW_BY_MODE: Record<AppMode, ViewType> = {
@@ -122,7 +125,7 @@ const VIEW_TITLES: Record<ViewType, string> = {
   previsa: 'Simulador Previsa',
   aquisicao: 'Aquisição de viatura',
   'office-settings': 'Definições do Escritório',
-  'proposta-gamma': 'Proposta Gamma',
+  'proposta': 'Fazer Proposta',
   historico: 'Histórico de Simulações',
   exportar: 'Relatórios',
   hub: 'Menu do Cliente',
@@ -383,6 +386,9 @@ function AppContent() {
     return DEFAULT_VIEW_BY_MODE[initialMode];
   });
   const [prevView, setPrevView] = useState<ViewType>('profile');
+  // Editor de proposta aberto (null = lista). Vive no App para sobreviver a
+  // mudanças de vista sem perder o deck em edição.
+  const [propostaEdit, setPropostaEdit] = useState<{ deck: DeckDoc; cliente: DeckCliente | null; autoAi: boolean } | null>(null);
   // Gabinete: tab ativa dentro do dropdown da sidebar
   const VALID_GAB_TABS = new Set(['dashboard','mapa-controlo','mapa-rh','visao-geral','equipa','tarefas','cofre','gallery','agenda','obrigacoes','lixeira']);
   const [gabineteTab, setGabineteTab] = useState<string>(() => {
@@ -1638,12 +1644,24 @@ function AppContent() {
             onHonorariosChange={setHonorariosConfig}
           />
         )}
-        {view === 'proposta-gamma' && (
-          <PropostaGamaView
-            office={officeSettings}
-            honorarios={honorariosConfig}
-            onGoToOfficeSettings={() => setView('office-settings')}
-          />
+        {view === 'proposta' && (
+          propostaEdit ? (
+            <PropostaEditor
+              deck={propostaEdit.deck}
+              cliente={propostaEdit.cliente}
+              autoAi={propostaEdit.autoAi}
+              office={officeSettings}
+              honorarios={honorariosConfig}
+              onBack={() => setPropostaEdit(null)}
+            />
+          ) : (
+            <PropostaView
+              office={officeSettings}
+              honorarios={honorariosConfig}
+              onOpen={(deck, cliente, autoAi) => setPropostaEdit({ deck, cliente, autoAi })}
+              onGoToOfficeSettings={() => setView('office-settings')}
+            />
+          )
         )}
       </PageTransition>
       {/* Folga no fim do scroll para a barra fixa "Guardar cliente" não tapar

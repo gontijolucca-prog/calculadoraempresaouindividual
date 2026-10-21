@@ -10,3 +10,8 @@
 
 /docs-candidatura-svat/*
   X-Robots-Tag: noindex
+
+# Proposta pública: link privado, nunca indexar
+/p/*
+  X-Robots-Tag: noindex
+  Cache-Control: no-store
