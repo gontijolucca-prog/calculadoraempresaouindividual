@@ -260,3 +260,50 @@ textarea:focus-visible,
 /* Campos com ícone à esquerda: garante que o padding vence o px-* do input. */
 .campo-com-icone { padding-left: 2.4rem !important; }
 .campo-com-icone-lg { padding-left: 2.9rem !important; }
+
+/* ── Impressão de um só bloco (mapas e quadros) ─────────────────────────────
+   `imprimirElemento()` em src/lib/printElement.ts clona o mapa para
+   #print-holder e põe `printing-target` no body: só o clone vai para o papel.
+   O contentor fica fora do ecrã para poder ser medido antes de imprimir. */
+.print-holder {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 1100px;
+  pointer-events: none;
+}
+
+@media print {
+  body.printing-target > *:not(#print-holder) { display: none !important; }
+  body.printing-target { background: #fff !important; }
+
+  #print-holder {
+    position: static !important;
+    left: auto;
+    top: auto;
+    width: auto !important;
+    display: block !important;
+    pointer-events: auto;
+  }
+
+  /* A regra global da ficha (`body > * { visibility: hidden }`) também apanha
+     este contentor — repõe-se a visibilidade do clone e dos filhos. */
+  #print-holder,
+  #print-holder * { visibility: visible !important; }
+
+  /* Nas barras dos mapas só os botões saem; a legenda continua no papel. */
+  #print-holder [data-print-toolbar] button { display: none !important; }
+
+  #print-holder .print-clone { width: 100%; }
+  #print-holder .print-clone [class*="overflow"] { overflow: visible !important; }
+  #print-holder .print-clone [class*="max-h"] { max-height: none !important; }
+  #print-holder table { border-collapse: collapse !important; width: 100% !important; }
+  #print-holder th,
+  #print-holder td { border: 1px solid #CBD5E1 !important; padding: 2px 4px !important; }
+  #print-holder tr { break-inside: avoid; page-break-inside: avoid; }
+  #print-holder .print-clone > div { box-shadow: none !important; }
+  #print-holder * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

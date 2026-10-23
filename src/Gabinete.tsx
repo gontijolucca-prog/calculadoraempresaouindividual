@@ -30,6 +30,7 @@ import PilaresEditor from './components/PilaresEditor';
 import { obterObrigacaoCelula, obterObrigacoesCelula, estadoCelula, construirObrigacaoDaCelula, chaveCelula, resolverPilarLegado, type CellKey } from './lib/mapaCelulas';
 import { RelatorioPdf } from './lib/reportPdf';
 import { loadOfficeSettings } from './lib/officeSettings';
+import { imprimirElemento } from './lib/printElement';
 // Cofre simples (sem cifra) — Firestore só visível pela própria conta (gabinete/{uid}/cofre/*)
 import GuiaSugestao from './components/GuiaSugestao';
 import type { ViewKey } from './lib/guias';
@@ -307,6 +308,18 @@ function Kpi({ label, value, sub, icon: Icon, tone = 'blue' }: { label:string; v
 
 const simboloStatus = (s: 'concluido'|'nao_concluido'|'sem_dados') => (s === 'concluido' ? '✓' : s === 'nao_concluido' ? '✕' : '—');
 
+/**
+ * Imprime só o mapa/quadro onde o botão vive.
+ * O contentor da vista tem `data-print-scope`; o cartão do mapa tem
+ * `data-print-map`. Assim o papel leva a tabela e não a app inteira.
+ */
+function imprimirMapa(ev: React.MouseEvent<HTMLButtonElement>, titulo: string): void {
+  const scope = ev.currentTarget.closest('[data-print-scope]');
+  const alvo = (scope?.querySelector('[data-print-map]') as HTMLElement | null)
+    ?? document.querySelector<HTMLElement>('[data-print-map]');
+  imprimirElemento(alvo, titulo, { paisagem: true });
+}
+
 function escritorioPdf() {
   const o = loadOfficeSettings();
   return { nome: o.nome, corPrimaria: o.corPrimaria, logoDataUrl: o.logoDataUrl };
@@ -514,7 +527,6 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
     return <span title="Não Concluído" className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] leading-none rounded ${withBg ? 'bg-red-600 text-white' : 'text-red-600 bg-red-50 border border-red-200'}`}>✕</span>;
   };
 
-  const handleImprimir = () => window.print();
   const handleExportExcel = () => {
     const rows: string[] = [];
     const header = ['Cliente','Obrigação',...meses].join(';');
@@ -564,7 +576,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
   const showVazio = clientesFiltrados.length === 0;
 
   return (
-    <div className="space-y-3 print:space-y-2">
+    <div data-print-scope className="space-y-3 print:space-y-2">
       {/* Barra de filtros — todos combinam (AND), live sem Ok */}
       <div className="bg-white rounded-[10px] border border-zinc-300 shadow-sm overflow-hidden print:shadow-none">
         <div className="px-3 py-2.5 border-b border-zinc-200 bg-[#F8FAFC] flex flex-wrap items-center gap-2.5">
@@ -665,7 +677,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
       </div>
 
       {/* Tabela — sem contorno: o fundo da página já delimita o quadro */}
-      <div className="bg-white rounded-[10px] overflow-hidden">
+      <div data-print-map className="bg-white rounded-[10px] overflow-hidden">
         <div className="overflow-auto max-h-[62vh] print:max-h-none print:overflow-visible">
           <table className="w-full text-[13px] border-collapse">
             <thead className="sticky top-0 z-10">
@@ -745,8 +757,8 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
         </div>
 
         {/* Rodapé — botões + legenda (igual à imagem) */}
-        <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 bg-[#F1F1F1] border-t border-zinc-300 text-xs print:bg-white">
-          <button onClick={handleImprimir} className="px-3 py-1.5 rounded border border-zinc-400 bg-gradient-to-b from-white to-zinc-100 hover:from-zinc-50 hover:to-zinc-200 text-zinc-800 font-medium shadow-sm">Imprimir</button>
+        <div data-print-toolbar className="flex flex-wrap items-center gap-2 px-3 py-2.5 bg-[#F1F1F1] border-t border-zinc-300 text-xs print:bg-white">
+          <button onClick={e=>imprimirMapa(e,'Quadro Resumo de Obrigações')} className="px-3 py-1.5 rounded border border-zinc-400 bg-gradient-to-b from-white to-zinc-100 hover:from-zinc-50 hover:to-zinc-200 text-zinc-800 font-medium shadow-sm">Imprimir</button>
           <button onClick={handleExportExcel} className="px-3 py-1.5 rounded border border-zinc-400 bg-gradient-to-b from-white to-zinc-100 hover:from-zinc-50 hover:to-zinc-200 text-zinc-800 font-medium shadow-sm">Exportar Excel</button>
           <button onClick={handleExportPdf} className="px-3 py-1.5 rounded border border-[#0677FF] bg-[#0677FF] text-white font-medium shadow-sm hover:bg-blue-600">Exportar PDF</button>
           <button onClick={expandirTodos} className="px-3 py-1.5 rounded border border-zinc-400 bg-gradient-to-b from-white to-zinc-100 hover:from-zinc-50 hover:to-zinc-200 text-zinc-800 font-medium shadow-sm">Expandir todos</button>
@@ -935,7 +947,7 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
   const grupos = Array.from(new Set(clientes.flatMap(c=> c.tags||[])));
 
   return (
-    <div className="space-y-3">
+    <div data-print-scope className="space-y-3">
       {/* Filtros — réplica imagem 2 (Nº Mapa, Ano, Trimestre, Cliente, Gestor, Grupo) + ano local */}
       <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-3 space-y-2.5">
         <div className="flex flex-wrap items-center gap-2">
@@ -952,7 +964,7 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
           </select>
           <button onClick={()=>{}} className="px-4 py-1.5 rounded border border-zinc-300 bg-white text-zinc-700 font-semibold text-sm">Ok</button>
           <div className="ml-auto flex gap-1.5">
-            <button onClick={()=>window.print()} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Imprimir</button>
+            <button onClick={e=>imprimirMapa(e,'Mapa de Controlo')} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Imprimir</button>
             <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Exportar XLS</button>
           </div>
         </div>
@@ -1060,7 +1072,7 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
 
 
       {/* Tabela — estilo Quadro Resumo: colunas JAN-DEZ fixas, linhas por pilar (dropdown filtra) */}
-      <div className="bg-white rounded-[10px] border border-zinc-300 shadow-sm overflow-hidden">
+      <div data-print-map className="bg-white rounded-[10px] border border-zinc-300 shadow-sm overflow-hidden">
         <div className="overflow-auto max-h-[62vh]">
           <table className="w-full text-[13px] border-collapse">
             <thead className="sticky top-0 z-10">
@@ -1112,9 +1124,9 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
             </tbody>
           </table>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 bg-[#F1F1F1] border-t border-zinc-300 text-xs">
+        <div data-print-toolbar className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 bg-[#F1F1F1] border-t border-zinc-300 text-xs">
           <div className="flex gap-1.5">
-            <button onClick={()=>window.print()} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Imprimir</button>
+            <button onClick={e=>imprimirMapa(e,'Mapa de Controlo')} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Imprimir</button>
             <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Exportar XLS</button>
             <button onClick={exportPDF} className="px-3 py-1.5 rounded border border-[#0677FF] bg-[#0677FF] text-white">Exportar PDF</button>
             <button onClick={()=>{ const s=new Set<string>(); clientesFiltrados.forEach(c=>s.add(c.id)); setCollapsed(new Set()); }} className="hidden sm:inline-flex px-3 py-1.5 rounded border border-zinc-400 bg-white">Expandir todos</button>
@@ -1294,7 +1306,7 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
   const grupos = Array.from(new Set(clientes.flatMap(c=> c.tags||[])));
 
   return (
-    <div className="space-y-3">
+    <div data-print-scope className="space-y-3">
       {/* Filtros — réplica imagem 2 (Nº Mapa, Ano, Trimestre, Cliente, Gestor, Grupo) + ano local */}
       <div className="bg-white rounded-xl border border-zinc-200 shadow-sm p-3 space-y-2.5">
         <div className="flex flex-wrap items-center gap-2">
@@ -1311,7 +1323,7 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
           </select>
           <button onClick={()=>{}} className="px-4 py-1.5 rounded border border-zinc-300 bg-white text-zinc-700 font-semibold text-sm">Ok</button>
           <div className="ml-auto flex gap-1.5">
-            <button onClick={()=>window.print()} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Imprimir</button>
+            <button onClick={e=>imprimirMapa(e,'Mapa RH')} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Imprimir</button>
             <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Exportar XLS</button>
           </div>
         </div>
@@ -1419,7 +1431,7 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
 
 
       {/* Tabela — estilo Quadro Resumo: colunas JAN-DEZ fixas, linhas por pilar (dropdown filtra) */}
-      <div className="bg-white rounded-[10px] border border-zinc-300 shadow-sm overflow-hidden">
+      <div data-print-map className="bg-white rounded-[10px] border border-zinc-300 shadow-sm overflow-hidden">
         <div className="overflow-auto max-h-[62vh]">
           <table className="w-full text-[13px] border-collapse">
             <thead className="sticky top-0 z-10">
@@ -1471,9 +1483,9 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
             </tbody>
           </table>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 bg-[#F1F1F1] border-t border-zinc-300 text-xs">
+        <div data-print-toolbar className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 bg-[#F1F1F1] border-t border-zinc-300 text-xs">
           <div className="flex gap-1.5">
-            <button onClick={()=>window.print()} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Imprimir</button>
+            <button onClick={e=>imprimirMapa(e,'Mapa RH')} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Imprimir</button>
             <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Exportar XLS</button>
             <button onClick={exportPDF} className="px-3 py-1.5 rounded border border-[#0677FF] bg-[#0677FF] text-white">Exportar PDF</button>
             <button onClick={()=>{ const s=new Set<string>(); clientesFiltrados.forEach(c=>s.add(c.id)); setCollapsed(new Set()); }} className="hidden sm:inline-flex px-3 py-1.5 rounded border border-zinc-400 bg-white">Expandir todos</button>

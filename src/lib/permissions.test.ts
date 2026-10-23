@@ -47,3 +47,54 @@ describe('permissions — deriveRole', () => {
     assert.equal(deriveRole({ ownerUid: 'u1', memberUids: ['u1'], members: {} }, 'zzz'), null);
   });
 });
+
+/**
+ * Matriz completa, célula a célula. Se alguém alargar um cargo por engano, este
+ * teste falha e obriga a olhar para as firestore.rules antes de mexer.
+ */
+describe('permissions — matriz completa (espelho das firestore.rules)', () => {
+  const acoes = [
+    'editar-operacional', 'editar-clientes', 'gerir-obrigacoes',
+    'ver-cofre', 'editar-cofre', 'apagar', 'restaurar', 'purgar',
+    'gerir-equipa', 'gerir-gabinete',
+  ] as const;
+
+  const esperado: Record<string, Record<string, boolean>> = {
+    admin: Object.fromEntries(acoes.map(a => [a, true])),
+    contabilista: {
+      'editar-operacional': true, 'editar-clientes': true, 'gerir-obrigacoes': true,
+      'ver-cofre': true, 'editar-cofre': true, 'apagar': true, 'restaurar': true,
+      'purgar': false, 'gerir-equipa': false, 'gerir-gabinete': false,
+    },
+    estagiaria: {
+      'editar-operacional': true, 'editar-clientes': false, 'gerir-obrigacoes': false,
+      'ver-cofre': false, 'editar-cofre': false, 'apagar': false, 'restaurar': false,
+      'purgar': false, 'gerir-equipa': false, 'gerir-gabinete': false,
+    },
+  };
+
+  for (const [cargo, linha] of Object.entries(esperado)) {
+    it(`${cargo}: ${Object.entries(linha).filter(([, v]) => v).map(([k]) => k).join(', ') || 'nada'}`, () => {
+      for (const acao of acoes) {
+        assert.equal(
+          can(cargo as 'admin' | 'contabilista' | 'estagiaria', acao),
+          linha[acao],
+          `${cargo} × ${acao}`,
+        );
+      }
+    });
+  }
+});
+
+describe('permissions — cargo desconhecido não abre nada', () => {
+  it('role fora da lista é negado', () => {
+    assert.equal(can('estagiario' as never, 'editar-operacional'), false);
+    assert.equal(can('' as never, 'editar-operacional'), false);
+  });
+  it('deriveRole ignora role inválido e cai no membro legado', () => {
+    assert.equal(
+      deriveRole({ ownerUid: 'u1', memberUids: ['u1', 'u2'], members: { u2: { role: 'chefe' as never } } }, 'u2'),
+      'contabilista',
+    );
+  });
+});
