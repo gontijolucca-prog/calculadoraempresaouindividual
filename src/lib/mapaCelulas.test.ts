@@ -1,6 +1,7 @@
 // Testes do modelo de célula dos mapas. Correr: npx tsx src/lib/mapaCelulas.test.ts
 import {
   resolverPilarLegado, correspondeCelula, obterObrigacaoCelula, estadoCelula,
+  deduplicarCelulas, identidadeCelula,
   proximoEstado, construirObrigacaoDaCelula, chaveCelula, type CellKey,
 } from './mapaCelulas';
 import type { Obrigacao } from './gabinete';
@@ -124,8 +125,32 @@ const dmrSs = PIP('dmr_ss', ['ss']);
   const p = obr({ id: 'p', clienteId: 'c1', tipo: 'iva', vencimento: new Date(2026, 2, 20).getTime(), catalogoId: 'iva', estado: 'pendente', updatedAt: 10 });
   const e = obr({ id: 'e', clienteId: 'c1', tipo: 'iva', vencimento: new Date(2026, 2, 20).getTime(), catalogoId: 'iva', estado: 'entregue', updatedAt: 5 });
   const best = obterObrigacaoCelula([p, e], { clienteId: 'c1', mapa: 'quadro', refId: 'iva', ano: 2026, mes: 3 }, ['iva']);
-  is('I: entregue vence pendente', best?.id, 'e');
+  is('I: último a gravar ganha (pendente 10 > entregue 5)', best?.id, 'p');
+
+  // Mesma hora: o estado desempata para não perder a conclusão.
+  const p2 = obr({ id: 'p2', clienteId: 'c1', tipo: 'iva', vencimento: new Date(2026, 2, 20).getTime(), catalogoId: 'iva', estado: 'pendente', updatedAt: 7 });
+  const e2 = obr({ id: 'e2', clienteId: 'c1', tipo: 'iva', vencimento: new Date(2026, 2, 20).getTime(), catalogoId: 'iva', estado: 'entregue', updatedAt: 7 });
+  is('I: empate no mesmo ms → entregue', obterObrigacaoCelula([p2, e2], { clienteId: 'c1', mapa: 'quadro', refId: 'iva', ano: 2026, mes: 3 }, ['iva'])?.id, 'e2');
   is('I: chave', chaveCelula({ clienteId: 'c1', mapa: 'rh', refId: 'dmr_at', ano: 2026, mes: 3 }), 'c1|rh|dmr_at|2026-03');
+}
+
+// ── I-bis: duas gravações offline da mesma célula (leitura)
+{
+  const velha = obr({ id: 'v', clienteId: 'c1', tipo: 'iva', vencimento: new Date(2026, 2, 20).getTime(), catalogoId: 'iva', estado: 'entregue', updatedAt: 100 });
+  const nova = obr({ id: 'n', clienteId: 'c1', tipo: 'iva', vencimento: new Date(2026, 2, 20).getTime(), catalogoId: 'iva', estado: 'pendente', updatedAt: 200 });
+  const outraCelula = obr({ id: 'o', clienteId: 'c1', tipo: 'iva', vencimento: new Date(2026, 3, 20).getTime(), catalogoId: 'iva', periodo: '2026-04', estado: 'pendente', updatedAt: 150 });
+  const legado = obr({ id: 'l', clienteId: 'c1', tipo: 'iva', vencimento: new Date(2026, 2, 20).getTime(), estado: 'pendente', updatedAt: 1 });
+  const apagada = obr({ id: 'a', clienteId: 'c1', tipo: 'iva', vencimento: new Date(2026, 2, 20).getTime(), catalogoId: 'iva', estado: 'pendente', updatedAt: 300, deletedAt: 300 });
+
+  const r = deduplicarCelulas([velha, nova, outraCelula, legado, apagada]);
+  is('I-bis: ficou a mais recente', r.lista.find(o => o.id === 'n')?.id, 'n');
+  is('I-bis: a antiga saiu da lista', r.lista.some(o => o.id === 'v'), false);
+  is('I-bis: contou 1 removida', r.removidos, 1);
+  is('I-bis: outra célula intacta', r.lista.some(o => o.id === 'o'), true);
+  is('I-bis: legado intacto', r.lista.some(o => o.id === 'l'), true);
+  is('I-bis: lixeira intacta', r.lista.some(o => o.id === 'a'), true);
+  is('I-bis: identidade da célula', identidadeCelula(nova), 'c1|quadro|iva|2026-03');
+  is('I-bis: legado sem identidade', identidadeCelula(legado), null);
 }
 
 // ── J: legado do Quadro com tipos partilhados acende SÓ uma linha

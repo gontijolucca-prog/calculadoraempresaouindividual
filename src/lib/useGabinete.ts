@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { deduplicarCelulas } from './mapaCelulas';
+import { toast } from './toast';
 import {
   subscribeClientes, subscribeTarefas, subscribeObrigacoes, subscribeCofre, subscribeColaboradores, subscribeContactosGeral, subscribeAlertasGeral, subscribeOcorrencias, subscribeDocumentosGeral, subscribeConversas, subscribeModelos, subscribeEnvios, subscribeTempos, subscribeActas,
   listClientesCache, listTarefasCache, listObrigacoesCache, listCofreCache, listColaboradoresCache, listContactosCache, listAlertasCache, listOcorrenciasCache, listDocumentosGeralCache, listConversasCache, listModelosCache, listEnviosCache, listTemposCache, listActasCache,
@@ -29,8 +31,24 @@ export function useGabineteTarefas(): Tarefa[] {
   useLocalUpdates('tarefas', listTarefasCache, setItems);
   return items;
 }
+/** Duas gravações offline da mesma célula: mostra só a mais recente. */
+const AVISO_CELULAS_KEY = 'estudo360:lww:avisado';
+
+function aplicarLww(lista: Obrigacao[]): Obrigacao[] {
+  const { lista: limpa, removidos } = deduplicarCelulas(lista);
+  if (removidos > 0) {
+    try {
+      if (!sessionStorage.getItem(AVISO_CELULAS_KEY)) {
+        sessionStorage.setItem(AVISO_CELULAS_KEY, '1');
+        toast(`${removidos} célula(s) com edição em dois dispositivos — ficou a mais recente.`, 'info');
+      }
+    } catch { /* sessionStorage bloqueado: sem aviso, o resto funciona */ }
+  }
+  return limpa;
+}
+
 export function useGabineteObrigacoes(): Obrigacao[] {
-  const [items, setItems] = useState<Obrigacao[]>(() => listObrigacoesCache());
+  const [items, setItems] = useState<Obrigacao[]>(() => aplicarLww(listObrigacoesCache()));
   useLocalUpdates('obrigacoes', listObrigacoesCache, setItems);
   useEffect(() => {
     let alive = true;
@@ -45,7 +63,7 @@ export function useGabineteObrigacoes(): Obrigacao[] {
       unsubscribe();
     };
   }, []);
-  return items;
+  return useMemo(() => aplicarLww(items), [items]);
 }
 export function useGabineteCofre(): CofreEntrada[] {
   const [items, setItems] = useState<CofreEntrada[]>(() => listCofreCache());

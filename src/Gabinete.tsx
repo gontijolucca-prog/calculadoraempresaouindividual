@@ -10,7 +10,7 @@ import type { GabineteRole } from './lib/gabinetes';
 import { auth } from './lib/firebase';
 import {
   upsertTarefa, deleteTarefa, marcarTarefaFeita, newTarefaId,
-  upsertObrigacao, deleteObrigacao,
+  upsertObrigacao, deleteObrigacao, listObrigacoesCache,
   upsertCofre, deleteCofre, registarVistaCofre, newCofreId, listCofreVazias, purgeCofreVazias,
   OBRIGACOES_CATALOGO, OBRIGACOES_CATALOGO_DEFAULT, getCatalogo, setCatalogo, addCatalogoDef, deleteCatalogoDef, resetCatalogo, getQuadroVisiveis, setQuadroVisiveis, getObrigacoesAtivas, setObrigacoesAtivas,
   MAPA_CONTROLO_DEFAULT, MAPA_RH_DEFAULT, getMapaControloPilares, setMapaControloPilares, addMapaControloPilar, deleteMapaControloPilar, resetMapaControloPilares, getMapaControloVisiveis, setMapaControloVisiveis,
@@ -327,10 +327,13 @@ function escritorioPdf() {
 
 /** Duplicados antigos da mesma célula: mantém só o que o clique atualiza. */
 async function limparDuplicadosCelula(
-  obrigacoes: Obrigacao[], key: CellKey, tipos: readonly ObrigacaoTipo[],
+  key: CellKey, tipos: readonly ObrigacaoTipo[],
   legado: Map<string, string> | undefined, manterId: string,
 ): Promise<void> {
-  const dups = obterObrigacoesCelula(obrigacoes, key, tipos, legado).filter(o => o.id !== manterId);
+  // A lista da UI já vem sem duplicados (LWW na leitura); para limpar é preciso
+  // ver os registos crus, senão o perdedor ficava escondido para sempre.
+  const todos = listObrigacoesCache();
+  const dups = obterObrigacoesCelula(todos, key, tipos, legado).filter(o => o.id !== manterId);
   for (const d of dups) {
     try { await deleteObrigacao(d.id); } catch {}
   }
@@ -509,7 +512,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
       const existing = obterObrigacaoCelula(obrigacoes, key, linha.tipos, legado);
       const payload = construirObrigacaoDaCelula(key, { id: linha.id, label: linha.label, tipos: linha.tipos }, { id: cli.id, nome: cli.nome }, existing);
       await upsertObrigacao(payload);
-      await limparDuplicadosCelula(obrigacoes, key, linha.tipos, legado, payload.id);
+      await limparDuplicadosCelula(key, linha.tipos, legado, payload.id);
       logAudit('save_obrigacao_celula', `${linha.label} ${mm}/${ano} — ${cli.nome}`, {
         mapa: 'quadro', refId: linha.id, ano, mes, antes: existing?.estado ?? null, depois: payload.estado,
       }, cli.id);
@@ -900,7 +903,7 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
       const existing = obterObrigacaoCelula(obrigacoes, key, pilar.tipos, legado);
       const payload = construirObrigacaoDaCelula(key, { id: pilar.key, label: pilar.labelShort, labelFull: pilar.labelFull, tipos: pilar.tipos }, { id: cli.id, nome: cli.nome }, existing);
       await upsertObrigacao(payload);
-      await limparDuplicadosCelula(obrigacoes, key, pilar.tipos, legado, payload.id);
+      await limparDuplicadosCelula(key, pilar.tipos, legado, payload.id);
       logAudit('save_obrigacao_celula', `${pilar.labelShort} ${mm}/${ano} — ${cli.nome}`, {
         mapa: 'controlo', pilarId: pilar.key, ano, mes, antes: existing?.estado ?? null, depois: payload.estado,
       }, cli.id);
@@ -1259,7 +1262,7 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
       const existing = obterObrigacaoCelula(obrigacoes, key, pilar.tipos, legado);
       const payload = construirObrigacaoDaCelula(key, { id: pilar.key, label: pilar.labelShort, labelFull: pilar.labelFull, tipos: pilar.tipos }, { id: cli.id, nome: cli.nome }, existing);
       await upsertObrigacao(payload);
-      await limparDuplicadosCelula(obrigacoes, key, pilar.tipos, legado, payload.id);
+      await limparDuplicadosCelula(key, pilar.tipos, legado, payload.id);
       logAudit('save_obrigacao_celula', `${pilar.labelShort} ${mm}/${ano} — ${cli.nome}`, {
         mapa: 'rh', pilarId: pilar.key, ano, mes, antes: existing?.estado ?? null, depois: payload.estado,
       }, cli.id);

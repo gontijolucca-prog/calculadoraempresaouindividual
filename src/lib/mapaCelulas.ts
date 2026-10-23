@@ -95,7 +95,9 @@ export function obterObrigacoesCelula(
 ): Obrigacao[] {
   return obrigacoes
     .filter(o => correspondeCelula(o, k, tiposLegado, legado))
-    .sort((a, b) => prioridade(a.estado) - prioridade(b.estado) || (b.updatedAt || 0) - (a.updatedAt || 0));
+    // Último a gravar ganha: se dois dispositivos mexeram na mesma célula, vale
+    // o `updatedAt` mais recente. O estado só desempata gravações no mesmo ms.
+    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0) || prioridade(a.estado) - prioridade(b.estado));
 }
 
 /** A obrigação efectiva da célula, com desempate estável (entregue > atrasada > pendente). */
@@ -130,6 +132,40 @@ const tituloMap: Record<string, string> = {
   modelo44: 'Modelo 44', saft: 'Envio SAF-T', iva: 'IVA', ies: 'IES',
   modelo10: 'Modelo 10', dmr: 'DMR', ss: 'Segurança Social',
 };
+
+/**
+ * Identidade da célula de uma obrigação. `null` = legado/sem identidade (nunca
+ * é deduplicado, porque não sabemos a que linha pertence).
+ */
+export function identidadeCelula(o: Obrigacao): string | null {
+  if (o.deletedAt) return null;
+  if (!o.clienteId || !o.periodo) return null;
+  if (o.catalogoId) return `${o.clienteId}|quadro|${o.catalogoId}|${o.periodo}`;
+  if (o.mapa && o.pilarId) return `${o.clienteId}|${o.mapa}|${o.pilarId}|${o.periodo}`;
+  return null;
+}
+
+/**
+ * Duas gravações offline da mesma célula criam dois documentos. Na leitura fica
+ * só o mais recente (último a gravar ganha); os outros não desaparecem — são
+ * movidos para a Lixeira no próximo clique nessa célula.
+ */
+export function deduplicarCelulas(obrigacoes: Obrigacao[]): { lista: Obrigacao[]; removidos: number } {
+  const vencedor = new Map<string, Obrigacao>();
+  for (const o of obrigacoes) {
+    const id = identidadeCelula(o);
+    if (!id) continue;
+    const atual = vencedor.get(id);
+    if (!atual || (o.updatedAt || 0) > (atual.updatedAt || 0)) vencedor.set(id, o);
+  }
+  if (vencedor.size === 0) return { lista: obrigacoes, removidos: 0 };
+  const manter = new Set(Array.from(vencedor.values()).map(o => o.id));
+  const lista = obrigacoes.filter(o => {
+    const id = identidadeCelula(o);
+    return !id || manter.has(o.id);
+  });
+  return { lista, removidos: obrigacoes.length - lista.length };
+}
 
 export interface ClienteRef { id: string; nome: string }
 
