@@ -1610,6 +1610,18 @@ function AgendaView({ tarefas, obrigacoes, alertas, clientes }: { tarefas: Taref
 
 // ─── Tarefas (Lista) ──────────────────────────────────────────────────────────
 function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmpresaNome, canDelete = true, canGerirObrigacoes = true }: { tarefas:Tarefa[]; clientes:GabineteCliente[]; obrigacoes:Obrigacao[]; activeEmpresaId?: string|null; activeEmpresaNome?: string|null; canDelete?: boolean; canGerirObrigacoes?: boolean }) {
+
+  // Confirmação por alteração: apagar uma tarefa manda-a para a Lixeira, mas
+  // nunca sem o utilizador saber qual está a apagar.
+  const apagarTarefa = async (t: Tarefa) => {
+    if (!confirm(`Apagar a tarefa “${t.titulo}”? Vai para a Lixeira e pode ser restaurada.`)) return;
+    try {
+      await deleteTarefa(t.id);
+      notificar('✓ Tarefa apagada — está na Lixeira');
+    } catch (e) {
+      notificar(`Não apagou: ${e instanceof Error ? e.message : String(e)}`, 'erro');
+    }
+  };
   const dataInput = (ms?: number) => {
     if (!ms) return '';
     const d = new Date(ms);
@@ -1760,7 +1772,7 @@ function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmp
                     <div className="text-xs text-zinc-500 truncate">{t.clienteNome || '—'} • {t.dataVencimento ? new Date(t.dataVencimento).toLocaleDateString('pt-PT') : 'sem prazo'}</div>
                   </div>
                   <button onClick={()=>upsertTarefa({...t, arquivada:false})} className="px-3 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs">Restaurar</button>
-                  {canDelete && <button onClick={()=>deleteTarefa(t.id)} className="p-1.5 rounded-lg hover:bg-zinc-50 border border-transparent hover:border-zinc-200"><Trash2 className="w-3.5 h-3.5 text-zinc-500" /></button>}
+                  {canDelete && <button onClick={()=>apagarTarefa(t)} className="p-1.5 rounded-lg hover:bg-zinc-50 border border-transparent hover:border-zinc-200"><Trash2 className="w-3.5 h-3.5 text-zinc-500" /></button>}
                 </div>
               ))}
             </div>
@@ -1814,7 +1826,7 @@ function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmp
                           {t.estado!=='todo' && t.estado!=='done' && <button onClick={()=>upsertTarefa({...t, estado:'todo'})} className="px-2 py-1 rounded-lg bg-white border border-zinc-200 text-xs">A fazer</button>}
                           {t.estado==='todo' && <button onClick={()=>upsertTarefa({...t, estado:'doing'})} className="px-2 py-1 rounded-lg bg-white border border-zinc-200 text-xs">Em curso</button>}
                           <button onClick={()=>{ setForm({...t}); setShowNew(true); }} className="p-1.5 rounded-lg hover:bg-zinc-100 border border-transparent hover:border-zinc-200"><Pencil className="w-3.5 h-3.5 text-zinc-500" /></button>
-                          {canDelete && <button onClick={()=>deleteTarefa(t.id)} className="p-1.5 rounded-lg hover:bg-zinc-100 border border-transparent hover:border-zinc-200"><Trash2 className="w-3.5 h-3.5 text-zinc-500" /></button>}
+                          {canDelete && <button onClick={()=>apagarTarefa(t)} className="p-1.5 rounded-lg hover:bg-zinc-100 border border-transparent hover:border-zinc-200"><Trash2 className="w-3.5 h-3.5 text-zinc-500" /></button>}
                         </div>
                       </td>
                     </tr>
