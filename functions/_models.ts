@@ -6,6 +6,24 @@
 // Fallback: quando o OpenCode Go falha (429/limite semanal, 5xx), o proxy
 // tenta o OpenRouter com modelos gratuitos (:free) para nunca deixar o bot
 // em baixo. A cadeia está ordenada por fiabilidade/preferência.
+// Kilo AI Gateway — OpenAI-compatible. Os modelos `kilo-auto/*` são routers:
+// `free` escolhe um modelo gratuito (sem chave, 200 req/h por IP) e `small`
+// resolve num modelo pequeno e rápido (gemma free). Vêm primeiro porque
+// respondem em ~2–4 s, contra dezenas de segundos dos modelos de raciocínio.
+export const KILO_ENDPOINT = 'https://ai-gateway.kilo.ai/api/v1/chat/completions';
+
+// Ordem por velocidade medida (23/10, mesma pergunta fiscal):
+//   kilo-auto/small ~2,0 s (gemma-4-26b) · kilo-auto/free ~5,5 s (dots-3, reasoning)
+// O `free` fica como segundo: se o `small` falhar, ainda respondemos de graça.
+export const KILO_MODELS: string[] = [
+  'kilo-auto/small',
+  'kilo-auto/free',
+];
+
+// Nota de privacidade: o `kilo-auto/free` pode encaminhar para fornecedores que
+// registam os pedidos. O contexto da app vai anonimizado; não enviar dados de
+// clientes (NIF, moradas, valores) no texto da pergunta.
+
 export const GO_MODELS: string[] = [
   'mimo-v2.5',
 ];

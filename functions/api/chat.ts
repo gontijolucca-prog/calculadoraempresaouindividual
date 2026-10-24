@@ -2,8 +2,9 @@
 // fallback para OpenRouter (:free) e OmniRoute (gateway multi-provider)
 // quando o Go está em limite/indisponível.
 //
-// Cadeia: 1) OpenCode Go (mimo-v2.5) → 2) OpenRouter (:free) →
-//         3) OmniRoute (modelo "auto" — roteia por 90+ providers free).
+// Cadeia: 1) Kilo Gateway (kilo-auto/free → small, ~2–4 s, custo zero) →
+//         2) OpenCode Go (mimo-v2.5) → 3) OpenRouter (:free) →
+//         4) OmniRoute (modelo "auto" — roteia por 90+ providers free).
 //
 // Porquê um proxy: a chave da API NUNCA pode ir para o cliente (site estático).
 // Aqui ela vive como secret do Cloudflare Pages (env.OPENCODE_GO_KEY) e o
@@ -17,11 +18,12 @@
 // Defesas (o bot é público): allowlist de origem, limites de payload, rate-limit
 // best-effort por IP.
 
-import { GO_MODELS, OPENROUTER_FALLBACK_MODELS, OMNIROUTE_MODELS } from '../_models';
+import { KILO_ENDPOINT, KILO_MODELS, GO_MODELS, OPENROUTER_FALLBACK_MODELS, OMNIROUTE_MODELS } from '../_models';
 import { SYSTEM_PROMPT } from '../_systemPrompt';
 import { KNOWLEDGE_BASE } from '../_kb';
 
 interface Env {
+  KILO_API_KEY?: string;       // opcional: sem chave usa o free anónimo
   OPENCODE_GO_KEY?: string;
   OPENROUTER_API_KEY?: string; // fallback legado
   OMNIROUTE_URL?: string;      // gateway OmniRoute (ex.: https://media.pontofinal.site/__omni)
@@ -164,9 +166,8 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
   const hasGo = !!env.OPENCODE_GO_KEY;
   const hasOpenRouter = !!env.OPENROUTER_API_KEY;
   const hasOmni = !!(env.OMNIROUTE_URL && env.OMNIROUTE_API_KEY);
-  if (!hasGo && !hasOpenRouter && !hasOmni) {
-    return json({ error: 'config', reply: 'O AI Contabilista ainda não está configurado neste ambiente. Avisa a equipa.' }, 503, origin);
-  }
+  // Sem guarda de configuração: o Kilo (kilo-auto/free) responde sem chave.
+  // Se todos os providers falharem, o pedido acaba com a mensagem de "ocupado".
 
   // 3) Rate-limit best-effort.
   const ip = request.headers.get('CF-Connecting-IP') || 'desconhecido';
@@ -203,7 +204,7 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
 
   const finalMessages: Msg[] = [{ role: 'system', content: systemContent }, ...messages];
 
-  // 6) Percorre os providers: OpenCode Go → OpenRouter (:free) → OmniRoute.
+  // 6) Se o Kilo falhar, os providers antigos: OpenCode Go → OpenRouter (:free) → OmniRoute.
   //    Salta em 429/erro/corpo vazio e passa ao próximo modelo da cadeia.
   let lastErr = 'sem_resposta';
 
@@ -212,15 +213,20 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
     authKey: string,
     models: string[],
     isOpenRouter: boolean,
+    extraHeaders: Record<string, string> = {},
   ): Promise<{ ok: boolean; reply?: string; model?: string }> => {
     for (const model of models) {
       try {
         const headers: Record<string, string> = {
-          'Authorization': `Bearer ${authKey}`,
           'Content-Type': 'application/json',
-          // OpenCode Go exige um id de sessão; sem isto responde 400 MissingSessionID.
-          'x-opencode-session': `estudo360-chat-${crypto.randomUUID()}`,
+          ...extraHeaders,
         };
+        // Kilo responde sem chave (free anónimo); os outros exigem Bearer.
+        if (authKey) headers['Authorization'] = `Bearer ${authKey}`;
+        if (!endpoint.includes('kilo.ai')) {
+          // OpenCode Go exige um id de sessão; sem isto responde 400 MissingSessionID.
+          headers['x-opencode-session'] = `estudo360-chat-${crypto.randomUUID()}`;
+        }
         if (isOpenRouter) {
           headers['HTTP-Referer'] = 'https://estudo360.pt';
           headers['X-Title'] = 'Estudo 360 — AI Contabilista';
@@ -269,11 +275,32 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
         return { ok: true, reply, model };
       } catch (e) {
         lastErr = e instanceof Error ? e.message : 'excecao';
+        // Log do servidor (não vai para o cliente): ajuda a ver qual provider caiu.
+        console.warn(`[chat] ${model} falhou: ${lastErr}`);
         continue;
       }
     }
     return { ok: false };
   };
+
+  // Kilo Gateway primeiro: routers `kilo-auto/*` respondem em segundos e o free
+  // não custa nada. Sem chave configurada usa o modo anónimo (200/h por IP).
+  //
+  // Privacidade: o free pode passar por fornecedores que registam os pedidos.
+  // Se a pergunta traz dados de cliente (NIF de 9 dígitos), não vai para lá —
+  // segue para os providers com contrato.
+  const ultimaPergunta = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
+  const temDadosCliente = /\b\d{9}\b/.test(ultimaPergunta);
+  const kiloKey = (env.KILO_API_KEY || '').trim();
+  const kilo = temDadosCliente
+    ? { ok: false }
+    : await tryProvider(KILO_ENDPOINT, kiloKey, KILO_MODELS, false, {
+      'HTTP-Referer': 'https://estudo360.pt',
+      'X-Title': 'Estudo 360 - AI Contabilista', // ASCII: cabeçalho não aceita travessão
+    });
+  if (kilo.ok && kilo.reply) {
+    return json({ reply: kilo.reply, model: kilo.model, provider: 'kilo' }, 200, origin);
+  }
 
   // OpenCode Go (preferido).
   if (hasGo) {
