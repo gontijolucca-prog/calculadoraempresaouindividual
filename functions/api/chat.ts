@@ -19,6 +19,7 @@
 // best-effort por IP.
 
 import { KILO_ENDPOINT, KILO_MODELS, GO_MODELS, OPENROUTER_FALLBACK_MODELS, OMNIROUTE_MODELS } from '../_models';
+import { pareceTerDadosCliente } from '../_privacidade';
 import { SYSTEM_PROMPT } from '../_systemPrompt';
 import { KNOWLEDGE_BASE } from '../_kb';
 
@@ -38,11 +39,13 @@ const OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 
 type Msg = { role: 'user' | 'assistant' | 'system'; content: string };
 
+
 // ── Limites (proteção da chave partilhada) ────────────────────────────────
 const MAX_MESSAGES = 24;        // turnos de conversa aceites
 const MAX_CHARS_PER_MSG = 4000; // por mensagem
 const MAX_CONTEXT_CHARS = 6000; // contexto-app anonimizado
-const MAX_OUTPUT_TOKENS = 1600; // reasoning + resposta (mimo-v2.5 é modelo de reasoning)
+const MAX_OUTPUT_TOKENS = 1600;
+const PROVIDER_TIMEOUT_MS = 20_000; // por tentativa; abaixo do limite da Pages Function // reasoning + resposta (mimo-v2.5 é modelo de reasoning)
 
 // Origens autorizadas a usar o proxy.
 const ALLOWED_HOST_SUFFIXES = [
@@ -216,6 +219,7 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
     extraHeaders: Record<string, string> = {},
   ): Promise<{ ok: boolean; reply?: string; model?: string }> => {
     for (const model of models) {
+      let timer: ReturnType<typeof setTimeout> | undefined;
       try {
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
@@ -229,10 +233,15 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
         }
         if (isOpenRouter) {
           headers['HTTP-Referer'] = 'https://estudo360.pt';
-          headers['X-Title'] = 'Estudo 360 — AI Contabilista';
+          headers['X-Title'] = 'Estudo 360 - AI Contabilista'; // ASCII: headers não aceitam travessão
         }
+        // Timeout por tentativa: um provider pendurado não pode comer o pedido
+        // todo e impedir o fallback seguinte.
+        const ctrl = new AbortController();
+        timer = setTimeout(() => ctrl.abort(), PROVIDER_TIMEOUT_MS);
         const r = await fetch(endpoint, {
           method: 'POST',
+          signal: ctrl.signal,
           headers,
           body: JSON.stringify({
             model,
@@ -278,6 +287,8 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
         // Log do servidor (não vai para o cliente): ajuda a ver qual provider caiu.
         console.warn(`[chat] ${model} falhou: ${lastErr}`);
         continue;
+      } finally {
+        if (timer) clearTimeout(timer);
       }
     }
     return { ok: false };
@@ -287,10 +298,10 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
   // não custa nada. Sem chave configurada usa o modo anónimo (200/h por IP).
   //
   // Privacidade: o free pode passar por fornecedores que registam os pedidos.
-  // Se a pergunta traz dados de cliente (NIF de 9 dígitos), não vai para lá —
-  // segue para os providers com contrato.
-  const ultimaPergunta = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
-  const temDadosCliente = /\b\d{9}\b/.test(ultimaPergunta);
+  // Se a pergunta (ou o contexto da app) traz dados de cliente — NIF/NIPC com
+  // 9 dígitos, mesmo com pontos/espaços, ou IBAN — não vai para lá: segue para
+  // os providers com contrato.
+  const temDadosCliente = pareceTerDadosCliente(finalMessages, appContext);
   const kiloKey = (env.KILO_API_KEY || '').trim();
   const kilo = temDadosCliente
     ? { ok: false }
@@ -312,8 +323,12 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
     }
   }
 
+  // Os fallbacks seguintes são gratuitos (registam pedidos). Com dados de
+  // cliente no texto não são usados: sem Go, dizemos que não enviamos.
+  const podeGratuitos = !temDadosCliente;
+
   // Fallback 1: OpenRouter (:free) — mantém o bot vivo quando o Go está em limite.
-  if (hasOpenRouter) {
+  if (hasOpenRouter && podeGratuitos) {
     const or = await tryProvider(OPENROUTER_ENDPOINT, env.OPENROUTER_API_KEY!, OPENROUTER_FALLBACK_MODELS, true);
     if (or.ok) {
       const sugs = extractSuggestions(or.reply!);
@@ -324,7 +339,7 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
 
   // Fallback 2: OmniRoute (gateway multi-provider) — modelo "auto" roteia por
   // 90+ providers free; quota esgotada num, desliza para o próximo. Última rede.
-  if (env.OMNIROUTE_URL && env.OMNIROUTE_API_KEY) {
+  if (env.OMNIROUTE_URL && env.OMNIROUTE_API_KEY && podeGratuitos) {
     const orUrl = env.OMNIROUTE_URL.replace(/\/$/, '') + '/v1/chat/completions';
     const omni = await tryProvider(orUrl, env.OMNIROUTE_API_KEY, OMNIROUTE_MODELS, false);
     if (omni.ok) {
@@ -332,6 +347,17 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
       if (sugs.length) await relaySuggestions(env, sugs);
       return json({ reply: omni.reply, model: omni.model, provider: 'omniroute' }, 200, origin);
     }
+  }
+
+  if (temDadosCliente) {
+    return json(
+      {
+        error: 'privacidade',
+        reply: 'Esta pergunta tem dados de cliente (NIF/IBAN). Por privacidade não a envio para modelos gratuitos — tire os dados identificativos e tente de novo.',
+      },
+      503,
+      origin,
+    );
   }
 
   return json(

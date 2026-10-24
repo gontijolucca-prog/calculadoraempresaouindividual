@@ -1520,7 +1520,9 @@ function AppContent() {
         `Vista aberta: ${VIEW_TITLES[view]}`,
         `Cliente ativo: ${activeName ? `"${activeName}"` : 'nenhum — os simuladores e os documentos precisam de um cliente ativo'}`,
         `Nº de clientes guardados: ${all.length}`,
-        all.length ? `Clientes guardados (nomes): ${all.map((e) => e.nome || 'Sem nome').join('; ')}` : 'Ainda não há clientes guardados.',
+        // Privacidade: os nomes NÃO saem daqui. O AI (incl. Kilo free, que pode
+        // registar pedidos) só precisa de saber quantos são.
+        all.length ? 'Clientes guardados: nomes não enviados (privacidade).' : 'Ainda não há clientes guardados.',
         `Definições do escritório: ${officeSettings.nome?.trim() ? 'preenchidas' : 'por preencher (nome/NIF/IBAN)'}`,
       ];
       if (currentEmpresaId) {
