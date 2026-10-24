@@ -21,3 +21,18 @@ export function pareceTerDadosCliente(mensagens: MensagemParaAnalise[], contexto
   if (contexto) textos.push(contexto);
   return textos.some((t) => RE_NIF.test(t) || RE_IBAN.test(t));
 }
+
+/**
+ * Mascara os dados de cliente antes de enviar para providers gratuitos.
+ * A resposta raramente precisa do número em si; o modelo continua a perceber a
+ * pergunta ("o cliente [NIF] tem IVA em atraso?").
+ */
+export function mascararDados(texto: string): string {
+  return texto
+    .replace(/\bPT\d{2}(?:[ ]?\d{4}){5}(?:[ ]?\d{1,3})\b/gi, '[IBAN]')
+    .replace(/\b\d{3}[ .]?\d{3}[ .]?\d{3}\b/g, '[NIF]');
+}
+
+export function mascararMensagens<T extends { content: string }>(mensagens: T[]): T[] {
+  return mensagens.map((m) => ({ ...m, content: mascararDados(m.content) }));
+}

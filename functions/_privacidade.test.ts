@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { pareceTerDadosCliente } from './_privacidade';
+import { pareceTerDadosCliente, mascararDados, mascararMensagens } from './_privacidade';
 
 const msg = (content: string) => ({ role: 'user', content });
 
@@ -35,5 +35,28 @@ describe('privacidade — dados de cliente antes de providers free', () => {
   it('números que não são NIF não bloqueiam', () => {
     assert.equal(pareceTerDadosCliente([msg('Faturei 25000 euros e paguei 1200 de IVA')]), false);
     assert.equal(pareceTerDadosCliente([msg('Artigo 53 permite até 15000 euros')]), false);
+  });
+});
+
+describe('privacidade — mascarar antes de providers gratuitos', () => {
+  it('mascara NIF e IBAN sem estragar o resto da frase', () => {
+    const t = mascararDados('O cliente 501234567, IBAN PT50 0002 0123 1234 5678 9015 4, tem IVA em atraso?');
+    assert.ok(!/\d{9}/.test(t), 'não pode sobrar NIF');
+    assert.ok(!/PT50/.test(t), 'não pode sobrar IBAN');
+    assert.ok(t.includes('[NIF]') && t.includes('[IBAN]'));
+    assert.ok(t.includes('tem IVA em atraso?'), 'o resto da pergunta fica');
+  });
+  it('mascara em todas as mensagens', () => {
+    const msgs = mascararMensagens([
+      { role: 'user', content: 'NIF 501.234.567' },
+      { role: 'assistant', content: 'Certo.' },
+      { role: 'user', content: 'E o IVA?' },
+    ]);
+    assert.equal(msgs[0].content, 'NIF [NIF]');
+    assert.equal(msgs[1].content, 'Certo.');
+  });
+  it('não mexe em números que não são NIF', () => {
+    const t = 'Faturei 25000 euros e o artigo 53 permite 15000.';
+    assert.equal(mascararDados(t), t);
   });
 });

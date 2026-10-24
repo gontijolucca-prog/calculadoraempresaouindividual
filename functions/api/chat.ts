@@ -19,7 +19,7 @@
 // best-effort por IP.
 
 import { KILO_ENDPOINT, KILO_MODELS, GO_MODELS, OPENROUTER_FALLBACK_MODELS, OMNIROUTE_MODELS } from '../_models';
-import { pareceTerDadosCliente } from '../_privacidade';
+import { pareceTerDadosCliente, mascararMensagens } from '../_privacidade';
 import { SYSTEM_PROMPT } from '../_systemPrompt';
 import { KNOWLEDGE_BASE } from '../_kb';
 
@@ -217,6 +217,7 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
     models: string[],
     isOpenRouter: boolean,
     extraHeaders: Record<string, string> = {},
+    msgs: Msg[] = finalMessages,
   ): Promise<{ ok: boolean; reply?: string; model?: string }> => {
     for (const model of models) {
       let timer: ReturnType<typeof setTimeout> | undefined;
@@ -245,7 +246,7 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
           headers,
           body: JSON.stringify({
             model,
-            messages: finalMessages,
+            messages: msgs,
             max_tokens: MAX_OUTPUT_TOKENS,
             temperature: 0.4,
             stream: false, // OmniRoute devolve SSE por omissão; queremos JSON
@@ -297,18 +298,17 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
   // Kilo Gateway primeiro: routers `kilo-auto/*` respondem em segundos e o free
   // não custa nada. Sem chave configurada usa o modo anónimo (200/h por IP).
   //
-  // Privacidade: o free pode passar por fornecedores que registam os pedidos.
-  // Se a pergunta (ou o contexto da app) traz dados de cliente — NIF/NIPC com
-  // 9 dígitos, mesmo com pontos/espaços, ou IBAN — não vai para lá: segue para
-  // os providers com contrato.
+  // Privacidade: os providers gratuitos (Kilo, OpenRouter :free, OmniRoute)
+  // podem registar pedidos. Se o texto traz dados de cliente (NIF/NIPC/IBAN),
+  // esses números são mascarados antes de sair — o modelo continua a responder
+  // à pergunta e o número nunca chega ao fornecedor.
   const temDadosCliente = pareceTerDadosCliente(finalMessages, appContext);
+  const mensagensGratuitas = temDadosCliente ? mascararMensagens(finalMessages) : finalMessages;
   const kiloKey = (env.KILO_API_KEY || '').trim();
-  const kilo = temDadosCliente
-    ? { ok: false }
-    : await tryProvider(KILO_ENDPOINT, kiloKey, KILO_MODELS, false, {
-      'HTTP-Referer': 'https://estudo360.pt',
-      'X-Title': 'Estudo 360 - AI Contabilista', // ASCII: cabeçalho não aceita travessão
-    });
+  const kilo = await tryProvider(KILO_ENDPOINT, kiloKey, KILO_MODELS, false, {
+    'HTTP-Referer': 'https://estudo360.pt',
+    'X-Title': 'Estudo 360 - AI Contabilista', // ASCII: cabeçalho não aceita travessão
+  }, mensagensGratuitas);
   if (kilo.ok && kilo.reply) {
     return json({ reply: kilo.reply, model: kilo.model, provider: 'kilo' }, 200, origin);
   }
@@ -323,13 +323,9 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
     }
   }
 
-  // Os fallbacks seguintes são gratuitos (registam pedidos). Com dados de
-  // cliente no texto não são usados: sem Go, dizemos que não enviamos.
-  const podeGratuitos = !temDadosCliente;
-
   // Fallback 1: OpenRouter (:free) — mantém o bot vivo quando o Go está em limite.
-  if (hasOpenRouter && podeGratuitos) {
-    const or = await tryProvider(OPENROUTER_ENDPOINT, env.OPENROUTER_API_KEY!, OPENROUTER_FALLBACK_MODELS, true);
+  if (hasOpenRouter) {
+    const or = await tryProvider(OPENROUTER_ENDPOINT, env.OPENROUTER_API_KEY!, OPENROUTER_FALLBACK_MODELS, true, {}, mensagensGratuitas);
     if (or.ok) {
       const sugs = extractSuggestions(or.reply!);
       if (sugs.length) await relaySuggestions(env, sugs);
@@ -339,25 +335,14 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
 
   // Fallback 2: OmniRoute (gateway multi-provider) — modelo "auto" roteia por
   // 90+ providers free; quota esgotada num, desliza para o próximo. Última rede.
-  if (env.OMNIROUTE_URL && env.OMNIROUTE_API_KEY && podeGratuitos) {
+  if (env.OMNIROUTE_URL && env.OMNIROUTE_API_KEY) {
     const orUrl = env.OMNIROUTE_URL.replace(/\/$/, '') + '/v1/chat/completions';
-    const omni = await tryProvider(orUrl, env.OMNIROUTE_API_KEY, OMNIROUTE_MODELS, false);
+    const omni = await tryProvider(orUrl, env.OMNIROUTE_API_KEY, OMNIROUTE_MODELS, false, {}, mensagensGratuitas);
     if (omni.ok) {
       const sugs = extractSuggestions(omni.reply!);
       if (sugs.length) await relaySuggestions(env, sugs);
       return json({ reply: omni.reply, model: omni.model, provider: 'omniroute' }, 200, origin);
     }
-  }
-
-  if (temDadosCliente) {
-    return json(
-      {
-        error: 'privacidade',
-        reply: 'Esta pergunta tem dados de cliente (NIF/IBAN). Por privacidade não a envio para modelos gratuitos — tire os dados identificativos e tente de novo.',
-      },
-      503,
-      origin,
-    );
   }
 
   return json(
