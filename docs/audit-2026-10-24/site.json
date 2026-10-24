@@ -1,0 +1,354 @@
+{
+ "data": "2026-10-24T11:23:30.435Z",
+ "resumo": [
+  {
+   "ecra": "empresas",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "profile",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "tax",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "vehicle",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "ticket",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "selfss",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "diagnostico",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "imoveis",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "imt",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "salario",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "irs",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "legal",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "previsa",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "aquisicao",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "office-settings",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "proposta",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "historico",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "exportar",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "hub",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "gabinete/dashboard",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "gabinete/visao-geral",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "gabinete/mapa-controlo",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "gabinete/mapa-rh",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "gabinete/equipa",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "gabinete/tarefas",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "gabinete/agenda",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "gabinete/obrigacoes",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "gabinete/cofre",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  },
+  {
+   "ecra": "gabinete/lixeira",
+   "erros": [],
+   "overflow": {
+    "375": 0,
+    "1024": 0,
+    "1440": 0
+   },
+   "texto": {},
+   "imagens": 0,
+   "vazio": false
+  }
+ ],
+ "problemas": []
+}

@@ -1,0 +1,33 @@
+{
+ "data": "2026-10-24T11:30:29.006Z",
+ "passos": [
+  {
+   "ok": false,
+   "msg": "exportar: 0 página(s) paginadas no iframe ([{\"paginas\":0,\"texto\":0}])"
+  },
+  {
+   "ok": false,
+   "msg": "exportar: conteúdo no documento (0 caracteres)"
+  },
+  {
+   "ok": true,
+   "msg": "proposta: PDF dispara impressão (1)"
+  },
+  {
+   "ok": true,
+   "msg": "proposta: cards presentes (17)"
+  },
+  {
+   "ok": true,
+   "msg": "offline: célula gravada localmente (entregue)"
+  },
+  {
+   "ok": true,
+   "msg": "sem exceções nossas (nenhuma)"
+  }
+ ],
+ "erros": [],
+ "errosTerceiros": [
+  "TypeError: Cannot read properties of undefined (reading 'includes')\n    at Tu.constructor.onAtMedia (http://localhost:3000/paged.polyfill.js?v=0.4.3:4:437794)\n    at http://localhost:3000/paged.polyfill.js?v=0.4.3:4:4186\n    at Array.forEach (<anonymous>)\n    at B.trigger (http://localhost:3000/paged.polyfill.js?v=0.4.3:4:4157)\n    at Object.enter (http://localhost:3000/paged.polyfill.js?v=0.4.3:4:407229)\n    at Object.<anonymous> (http://localhost:3000/paged.polyfill.js?v=0.4.3:4:98545)\n    at d (http://localhost:3000/paged.polyfill.js?v=0.4.3:4:105878)\n    at Ee.p (http://localhost:3000/paged.polyfill.js?v=0.4.3:4:106006)\n    at Ee.reduce (http://localhost:3000/paged.polyfill.js?v=0.4.3:4:37782)\n    at Object.Block (http://localhost:3000/paged.polyfill.js?v=0.4.3:4:99169)"
+ ]
+}
