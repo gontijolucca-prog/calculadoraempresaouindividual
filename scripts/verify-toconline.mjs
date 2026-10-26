@@ -53,10 +53,10 @@ const temRedirect = await page.evaluate(() => Array.from(document.querySelectorA
 ok(temRedirect, 'campo do endereço de retorno presente');
 const temCodigo = await page.evaluate(() => /Já tenho um código de autorização/i.test(document.body.innerText));
 const temAbrir = await page.evaluate(() => /Abrir autorização TOConline|Entrar pelo site do TOConline/i.test(document.body.innerText));
-const naoTemLigarSozinho = await page.evaluate(() => !/Ligar e importar/i.test(document.body.innerText));
+const temLigar = await page.evaluate(() => /Ligar e importar/i.test(document.body.innerText));
 ok(temCodigo, 'alternativa "colar código" presente (não obriga a mudar o redirect)');
 ok(temAbrir, 'botão para abrir a autorização TOConline');
-ok(naoTemLigarSozinho, 'sem botão enganador de ligação automática');
+ok(temLigar, 'botão "Ligar e importar" presente (fluxo documentado)');
 
 await page.screenshot({ path: path.join(OUT, 'toconline-modal.png') });
 await browser.close();

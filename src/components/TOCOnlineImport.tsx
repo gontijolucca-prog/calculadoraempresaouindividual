@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { X, Link2, Unlink, Download, Loader2, CheckCircle, AlertTriangle, Copy, Check } from 'lucide-react';
 import {
   getTocConfig, saveTocConfig, clearTocConfig, isTocConnected, tocRedirectUri,
-  buildTocAuthUrl, setTocPending, getTocDraft, clearTocDraft, exchangeTocCode,
+  buildTocAuthUrl, setTocPending, getTocDraft, clearTocDraft, exchangeTocCode, connectToc,
   fetchTocCustomers, getValidTocToken, getLastTocDebug, getTocError, clearTocError,
   type TocConfig, type TocCustomerDraft,
 } from '../lib/toconline';
@@ -21,7 +21,7 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
     apiUrl: 'https://api32.toconline.pt',
     clientId: '',
     secret: '',
-    redirectUri: typeof window !== 'undefined' ? window.location.origin + '/' : 'https://estudo360.pt/',
+    redirectUri: 'https://oauth.pstmn.io/v1/callback',
   });
   const [connected, setConnected] = useState(() => isTocConnected());
   const [step, setStep] = useState<Step>(() => (getTocDraft().length ? 'preview' : 'config'));
@@ -43,6 +43,9 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
     const redirect = typeof window !== 'undefined' ? window.location.origin + '/' : 'https://estudo360.pt/';
     if (/unauthorized_client|redirect_uri_nao_registado|unauthorized/i.test(msg)) {
       return `O TOConline recusou o pedido porque o endereço de returno não coincide. Em TOConline → Empresa › Configurações › Dados API, ponha exatamente ${redirect} e grave. Depois repita. (${msg})`;
+    }
+    if (/sem_code|invalid_request/i.test(msg)) {
+      return `O TOConline recusou o endereço de retorno. Use exatamente https://oauth.pstmn.io/v1/callback (é o que vem pré-fixado na documentação). (${msg})`;
     }
     if (/invalid_grant|codigo_expirado/i.test(msg)) {
       return 'O código de autorização expirou (vale poucos minutos). Carregue outra vez em “Entrar com TOConline”.';
@@ -219,6 +222,25 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
               <div className="flex flex-wrap gap-2 pt-1">
                 {!connected ? (
                   <>
+                    <button
+                      onClick={async () => {
+                        const c = { ...cfg, oauthUrl: cfg.oauthUrl.trim(), apiUrl: cfg.apiUrl.trim(), clientId: cfg.clientId.trim(), secret: cfg.secret.trim() };
+                        if (!c.clientId || !c.secret || !c.oauthUrl || !c.apiUrl) { setError('Preencha OAuth, API, Client ID e Segredo.'); return; }
+                        setError(null); setLoading(true);
+                        try {
+                          saveTocConfig(c);
+                          await connectToc(c);
+                          setConnected(true);
+                          await handleFetch();
+                        } catch (e) {
+                          setError(erroComDica(e instanceof Error ? e.message : 'Falha ao ligar.'));
+                        } finally { setLoading(false); }
+                      }}
+                      disabled={loading}
+                      className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#0B1D2D] text-white text-[14px] font-[700] hover:bg-black disabled:opacity-60"
+                    >
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />} Ligar e importar
+                    </button>
                     <button onClick={handleConnect} className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-[#E2E8F0] text-[13px] font-[600] text-[#475569] hover:bg-zinc-50">
                       Entrar pelo site do TOConline
                     </button>

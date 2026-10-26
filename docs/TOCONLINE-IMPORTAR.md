@@ -34,11 +34,20 @@
 | `codigo_expirado` | O código vale poucos minutos | Clicar outra vez em Entrar |
 | 0 clientes | Conta sem clientes ou sem módulo comercial ativo | Confirmar no TOConline |
 
-## Porque não há botão "ligar sozinho"
-Testei o fluxo documentado sem browser (pedido a `/oauth/auth` sem seguir o redirect):
-o TOConline devolve 302 com um `code`, mas a troca por token responde **403 access_denied**.
-Ou seja: o código só é válido quando obtido numa sessão autenticada no TOConline — daí o
-passo de abrir a autorização e copiar o código.
+## Ligação automática (funciona)
+`Ligar e importar` faz tudo no servidor, como na documentação:
+1. `GET /oauth/auth` com `client_id`, `redirect_uri` **fixo** (`https://oauth.pstmn.io/v1/callback`),
+   `response_type=code`, `scope=commercial` — **sem seguir** o 302; o `code` vem no `Location`.
+2. `POST /oauth/token` com Basic `client_id:secret`, `grant_type=authorization_code`, `code`,
+   `scope=commercial` — **sem `redirect_uri`** (enviá-lo devolve `401 unauthorized_client`).
+3. `GET {API}/customers?page[number]=N&page[size]=100` com Bearer.
+
+Testado a 26/10 com a conta real: token válido (4 h) e **466 empresas** listadas em 5 páginas.
+
+### Porque dava 403 antes
+O segredo estava inválido/expirado. A troca respondia `403 access_denied`; com o segredo novo,
+o mesmo pedido devolve 200. (Um `redirect_uri` diferente do fixo dá `error=invalid_request`
+no 302, e enviá-lo no token dá `401 unauthorized_client`.)
 
 ## Segurança
 - O segredo que foi partilhado por captura de ecrã deve ser **regenerado** no TOConline (ícone de recarregar) depois de ligar.

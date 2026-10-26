@@ -92,7 +92,8 @@ export function isTocConnected(): boolean {
 }
 
 export function tocRedirectUri(cfg?: TocConfig | null): string {
-  const def = window.location.origin + '/';
+  // A documentação fixa este endereço; trocá-lo sem registo dá invalid_request.
+  const def = 'https://oauth.pstmn.io/v1/callback';
   const custom = (cfg?.redirectUri || '').trim();
   return custom || def;
 }

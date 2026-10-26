@@ -175,7 +175,8 @@ export const onRequestPost = async (ctx: { request: Request }) => {
       params.set('grant_type', 'authorization_code');
       params.set('code', code);
       params.set('scope', 'commercial');
-      if (body.redirectUri) params.set('redirect_uri', String(body.redirectUri));
+      // A documentação NÃO inclui redirect_uri na troca do código; enviá-lo
+      // provoca 401 unauthorized_client no TOConline.
     } else {
       const rt = String(body.refreshToken || '').trim();
       if (!rt) return json({ error: 'refresh_em_falta' }, 400, origin);
