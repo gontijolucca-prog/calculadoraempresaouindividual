@@ -204,6 +204,15 @@ export async function acceptInvite(gabineteId: string): Promise<void> {
       updatedAt: Date.now(),
     } as any, { merge: true });
   });
+  // Confirmar no servidor: sem isto a app entrava num gabinete onde as regras
+  // ainda não reconhecem o membro (tudo dava 403 depois, em silêncio).
+  const confirmacao = await getDoc(ref).catch(() => null);
+  const metaFinal = confirmacao?.data() as GabineteMeta | undefined;
+  const eMembro = !!metaFinal && (metaFinal.ownerUid === u.uid || (metaFinal.memberUids || []).includes(u.uid));
+  if (!eMembro) {
+    throw new Error('O convite não foi aceite no servidor. Peça ao admin do gabinete para o enviar novamente.');
+  }
+
   // também limpar invites array
   try {
     const fresh = await getDoc(ref);

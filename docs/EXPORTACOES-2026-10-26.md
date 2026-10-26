@@ -70,3 +70,9 @@ node scripts/audit-emulator.mjs
 ```
 Resultado: conta criada + email confirmado + gabinete criado + proposta publicada
 (slug real) + link público aberto sem login + revogar disponível. PASS.
+
+## Permissões com convite (emuladores)
+`node scripts/audit-permissions.mjs` → PASS: dono cria gabinete e convida estagiária;
+ela cria conta, confirma email, aceita o convite e entra. Prova nas regras: leitura do
+cofre devolve 403 (negado) e a dos clientes é permitida. `acceptInvite` passou a
+confirmar no servidor que o membro ficou registado — sem confirmação, falha com aviso.
