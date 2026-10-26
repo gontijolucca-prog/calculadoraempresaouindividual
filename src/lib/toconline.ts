@@ -15,6 +15,8 @@ export interface TocConfig {
   apiUrl: string;
   clientId: string;
   secret: string;
+  /** Endereço de retorno registado no TOConline (pode não ser o do site). */
+  redirectUri?: string;
 }
 
 export interface TocTokens {
@@ -89,8 +91,10 @@ export function isTocConnected(): boolean {
   return !!t && !!t.accessToken;
 }
 
-function redirectUri(): string {
-  return window.location.origin + '/';
+export function tocRedirectUri(cfg?: TocConfig | null): string {
+  const def = window.location.origin + '/';
+  const custom = (cfg?.redirectUri || '').trim();
+  return custom || def;
 }
 
 export function buildTocAuthUrl(cfg: TocConfig, state: string): string {
@@ -98,7 +102,7 @@ export function buildTocAuthUrl(cfg: TocConfig, state: string): string {
   if (!base.toLowerCase().includes('/auth')) base = base + '/auth';
   const p = new URLSearchParams({
     client_id: cfg.clientId,
-    redirect_uri: redirectUri(),
+    redirect_uri: tocRedirectUri(cfg),
     response_type: 'code',
     scope: 'commercial',
     state,
@@ -128,7 +132,7 @@ export async function exchangeTocCode(cfg: TocConfig, code: string): Promise<Toc
     clientId: cfg.clientId,
     secret: cfg.secret,
     code,
-    redirectUri: redirectUri(),
+    redirectUri: tocRedirectUri(cfg),
   });
   if (!j.access_token) throw new Error('TOConline não devolveu access_token.');
   const tokens: TocTokens = {
@@ -263,4 +267,4 @@ export function clearTocError(): void {
   try { clearStorage(k(ERR_KEY)); } catch {}
   try { localStorage.removeItem('estudo360:v1:toconline:lastError'); } catch {}
 }
-export function tocRedirectUri(): string { return redirectUri(); }
+

@@ -23,6 +23,8 @@ const pass = 'Teste12345!';
 const browser = await chromium.launch({ executablePath: CHROME, headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 980 } });
 page.on('pageerror', (e) => falhas.push('pageerror: ' + (e.stack || '').split('\n')[0]));
+const consola = [];
+page.on('console', (m) => consola.push(m.text()));
 
 async function verificar(email) {
   for (let i = 0; i < 8; i++) {
@@ -60,6 +62,11 @@ async function criarConta(nome, email) {
   return okVer;
 }
 
+// 0) Confirmar que o dev está ligado aos emuladores (nunca à produção)
+await page.goto(BASE, { waitUntil: 'load' });
+await page.waitForTimeout(2500);
+ok(consola.some((l) => /emuladores locais ligados/i.test(l)), 'dev ligado aos emuladores (auth/firestore)');
+
 // 1) Dono
 ok(await criarConta('Dono QA', donoEmail), 'dono: conta criada e email confirmado');
 const criarGab = page.getByRole('button', { name: /Criar gabinete/i }).first();
@@ -74,7 +81,6 @@ if (await criarGab.count()) {
   await page.waitForTimeout(3000);
 }
 ok(await page.evaluate(() => !/Em que gabinete pretende/i.test(document.body.innerText)), 'dono: gabinete ativo');
-
 // 2) Convidar estagiária
 await page.evaluate(() => {
   localStorage.setItem('estudo360:v1:lastView', JSON.stringify({ v: 1, data: 'gabinete' }));

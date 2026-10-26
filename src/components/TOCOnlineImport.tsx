@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X, Link2, Unlink, Download, Loader2, CheckCircle, AlertTriangle, Copy, Check } from 'lucide-react';
 import {
-  getTocConfig, saveTocConfig, clearTocConfig, isTocConnected,
-  buildTocAuthUrl, setTocPending, getTocDraft, clearTocDraft,
+  getTocConfig, saveTocConfig, clearTocConfig, isTocConnected, tocRedirectUri,
+  buildTocAuthUrl, setTocPending, getTocDraft, clearTocDraft, exchangeTocCode,
   fetchTocCustomers, getValidTocToken, getLastTocDebug, getTocError, clearTocError,
   type TocConfig, type TocCustomerDraft,
 } from '../lib/toconline';
@@ -21,6 +21,7 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
     apiUrl: 'https://api32.toconline.pt',
     clientId: '',
     secret: '',
+    redirectUri: typeof window !== 'undefined' ? window.location.origin + '/' : 'https://estudo360.pt/',
   });
   const [connected, setConnected] = useState(() => isTocConnected());
   const [step, setStep] = useState<Step>(() => (getTocDraft().length ? 'preview' : 'config'));
@@ -90,6 +91,27 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
       }, 1200);
     } catch (e: any) {
       setError(erroComDica('Falha ao iniciar login: ' + (e?.message || String(e))));
+    }
+  };
+
+  const [codigoManual, setCodigoManual] = useState('');
+
+  /** Alternativa ao redirect: troca já o código colado por tokens. */
+  const handleCodigo = async () => {
+    const c = { ...cfg, oauthUrl: cfg.oauthUrl.trim(), apiUrl: cfg.apiUrl.trim(), clientId: cfg.clientId.trim(), secret: cfg.secret.trim() };
+    if (!c.clientId || !c.secret || !c.oauthUrl || !c.apiUrl) { setError('Preencha primeiro OAuth, API, Client ID e Segredo.'); return; }
+    setError(null);
+    setLoading(true);
+    try {
+      saveTocConfig(c);
+      await exchangeTocCode(c, codigoManual.trim());
+      setConnected(true);
+      setCodigoManual('');
+      await handleFetch();
+    } catch (e) {
+      setError(erroComDica(e instanceof Error ? e.message : 'Código inválido.'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -174,6 +196,26 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
                 <label className="block"><span className="text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B]">Client ID</span><input value={cfg.clientId} onChange={e => setCfg({ ...cfg, clientId: e.target.value })} className={inputCls + ' mt-1'} /></label>
                 <label className="block"><span className="text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B]">Segredo</span><input type="password" value={cfg.secret} onChange={e => setCfg({ ...cfg, secret: e.target.value })} className={inputCls + ' mt-1'} /></label>
               </div>
+              <label className="block">
+                <span className="text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B]">Endereço de retorno registado</span>
+                <input value={cfg.redirectUri || ''} onChange={e => setCfg({ ...cfg, redirectUri: e.target.value })} placeholder="https://oauth.pstmn.io/v1/callback" className={inputCls + ' mt-1'} />
+                <span className="block mt-1 text-[11px] text-[#94A3B8]">Tem de ser exatamente o que está em TOConline → Dados API. Se ainda tiver o do Postman, cole-o aqui.</span>
+              </label>
+
+              <details className="rounded-xl border border-[#E2E8F0] bg-white p-3">
+                <summary className="cursor-pointer text-[12.5px] font-[700] text-[#334155]">Já tenho um código de autorização (sem mudar o redirect)</summary>
+                <p className="mt-1.5 text-[11.5px] text-[#64748B]">Autorize no TOConline: o browser vai parar ao endereço registado (por exemplo a página do Postman). Copie o valor de <code>code=</code> no endereço e cole aqui.</p>
+                <div className="mt-2 flex gap-2">
+                  <input value={codigoManual} onChange={e => setCodigoManual(e.target.value)} placeholder="cole aqui o code=…" className={inputCls + ' flex-1'} />
+                  <button
+                    type="button"
+                    disabled={!codigoManual.trim() || !validCfg}
+                    onClick={handleCodigo}
+                    className="shrink-0 px-4 py-2.5 rounded-xl bg-[#0677FF] text-white text-[12.5px] font-[700] disabled:opacity-50"
+                  >Usar código</button>
+                </div>
+              </details>
+
               <div className="flex flex-wrap gap-2 pt-1">
                 {!connected ? (
                   <button onClick={handleConnect} className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#0B1D2D] text-white text-[14px] font-[700] hover:bg-black">

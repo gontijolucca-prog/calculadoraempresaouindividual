@@ -78,7 +78,7 @@ Estado: ✅ = testado e provado nesta ronda · ⚠️ = existe, falta prova auto
 | G3 | Timeout/fallback | 20 s por provider; nunca fica pendurado | ✅ |
 | G4 | Ações/sugestões | Navegar, abrir simulador, sugerir melhoria | ⚠️ |
 | G5 | Guias | "Aprender esta página" abre o guia (também por evento) | ✅ |
-| G6 | Importar TOConline | Lista → seleção → importar por NIF (testado com dados simulados); OAuth real depende do redirect registado | ✅ (import) / ⏳ (OAuth) |
+| G6 | Importar TOConline | Lista → importar por NIF; OAuth por redirect **ou** colando o código (sem mudar o redirect) | ✅ (import e fluxo de código) |
 
 ## H. Transversal
 | # | Funcionalidade | Como deve funcionar | Estado |

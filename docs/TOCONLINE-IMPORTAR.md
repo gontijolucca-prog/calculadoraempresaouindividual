@@ -24,6 +24,15 @@
 | `codigo_expirado` | O código vale poucos minutos | Clicar outra vez em Entrar |
 | 0 clientes | Conta sem clientes ou sem módulo comercial ativo | Confirmar no TOConline |
 
+## Caminho sem mudar o redirect (já disponível)
+1. Autorize no TOConline: o browser vai parar ao endereço registado (p. ex. a página
+   do Postman) e o endereço dessa página tem `?code=...`.
+2. Copie só o valor de `code`.
+3. No modal, abra **«Já tenho um código de autorização»**, cole e carregue em
+   **Usar código**. A app troca o código por sessão e importa a lista.
+   O campo **Endereço de retorno registado** tem de ter exatamente o mesmo valor
+   que está no TOConline.
+
 ## Segurança
 - O segredo que foi partilhado por captura de ecrã deve ser **regenerado** no TOConline (ícone de recarregar) depois de ligar.
 - O proxy só aceita origens estudo360.pt / localhost e tem limite de 30 pedidos/min por IP.
