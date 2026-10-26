@@ -6,6 +6,7 @@ import {
   fetchTocCustomers, getValidTocToken, getLastTocDebug, getTocError, clearTocError,
   type TocConfig, type TocCustomerDraft,
 } from '../lib/toconline';
+import { classificarNif, filtrarClientes, localidadesDe, nifsDuplicados, primeiroDigito, ROTULO_TIPO, type TipoCliente } from '../lib/tocFiltros';
 
 interface Props {
   onClose: () => void;
@@ -59,13 +60,42 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  // Filtros da lista: a mesma conta TOConline junta negócios diferentes.
+  const [fq, setFq] = useState('');
+  const [ftipos, setFtipos] = useState<TipoCliente[]>([]);
+  const [fdig, setFdig] = useState<string[]>([]);
+  const [floc, setFloc] = useState('');
+  const [soNovos, setSoNovos] = useState(true);
+
   const novos = useMemo(() => list.filter(d => d.nif && !existingNifs.has(d.nif)), [list, existingNifs]);
   const jaExistem = list.length - novos.length;
+
+  const duplicados = useMemo(() => nifsDuplicados(list), [list]);
+  const localidades = useMemo(() => localidadesDe(list), [list]);
+  const visiveis = useMemo(
+    () => filtrarClientes(list, { q: fq, tipos: ftipos, digitos: fdig, localidade: floc, soNovos }, existingNifs)
+      .map((c) => ({ c, i: list.indexOf(c) }))
+      .filter((x) => x.i >= 0),
+    [list, fq, ftipos, fdig, floc, soNovos, existingNifs],
+  );
+  const podeEscolher = (c: { nif?: string }) => !!c.nif && !existingNifs.has(c.nif) && !duplicados.has(c.nif);
+  const selecionados = [...sel].filter((i) => podeEscolher(list[i] || {}));
+  const marcarVisiveis = () => setSel((prev) => {
+    const n = new Set(prev);
+    visiveis.forEach(({ c, i }) => { if (podeEscolher(c)) n.add(i); });
+    return n;
+  });
+  const limparSelecao = () => setSel(new Set());
+  const limparFiltros = () => { setFq(''); setFtipos([]); setFdig([]); setFloc(''); setSoNovos(true); };
+  const alterna = <T,>(lista: T[], v: T): T[] => (lista.includes(v) ? lista.filter((x) => x !== v) : [...lista, v]);
+  const contaTipo = (tp: TipoCliente) => list.filter((c) => classificarNif(c.nif) === tp).length;
+  const digitosPresentes = Array.from(new Set(list.map((c) => primeiroDigito(c.nif)).filter((d) => d && d !== '0'))).sort();
 
   useEffect(() => {
     if (step === 'preview') {
       const idx = new Set<number>();
-      list.forEach((d, i) => { if (d.nif && !existingNifs.has(d.nif)) idx.add(i); });
+      const dups = nifsDuplicados(list);
+      list.forEach((d, i) => { if (d.nif && !existingNifs.has(d.nif) && !dups.has(d.nif)) idx.add(i); });
       setSel(idx);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -155,7 +185,9 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
   };
 
   const handleImport = () => {
-    const chosen = [...sel].map(i => list[i]).filter(d => d && d.nif && !existingNifs.has(d.nif));
+    const chosen = [...sel]
+      .map((i) => list[i])
+      .filter((d) => d && d.nif && !existingNifs.has(d.nif) && !duplicados.has(d.nif));
     if (!chosen.length) { setError('Selecione pelo menos um cliente novo.'); return; }
     const n = onImport(chosen);
     setDone(n);
@@ -266,29 +298,89 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
 
           {step === 'preview' && done === null && (
             <div className="mt-4">
-              <p className="text-[13px] text-[#475569]"><strong className="text-[#0B1D2D]">{novos.length}</strong> novo{novos.length === 1 ? '' : 's'} · {jaExistem} já na lista (ignorados).</p>
-              {debug && (
-                <div className="mt-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] font-mono text-amber-900 leading-relaxed">
-                  <div>Debug: {debug.total ?? 0} recebidos · {debug.semNif ?? 0} sem NIF · {debug.pagesFetched ?? 0} páginas</div>
-                  {debug.firstRawAttributesKeys?.length ? <div className="mt-1">Campos: {debug.firstRawAttributesKeys.join(', ')}</div> : null}
-                  {debug.firstRawSample && <details className="mt-1"><summary className="cursor-pointer text-[#0677FF]">ver exemplo raw</summary><pre className="mt-1 whitespace-pre-wrap break-all text-[10px] bg-white p-2 rounded border">{debug.firstRawSample}</pre></details>}
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <p className="text-[13px] text-[#475569]"><strong className="text-[#0B1D2D]">{novos.length}</strong> novo{novos.length === 1 ? '' : 's'} · {jaExistem} já na lista</p>
+                <p className="text-[12px] text-[#94A3B8]">{visiveis.length} a mostrar · <b className="text-[#0B1D2D]">{selecionados.length}</b> selecionado(s)</p>
+              </div>
+
+              <div className="mt-3 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 space-y-2.5">
+                <div className="flex flex-wrap gap-2">
+                  <input value={fq} onChange={(e) => setFq(e.target.value)} placeholder="Procurar nome, NIF, email ou localidade…" className="flex-1 min-w-[220px] px-3 py-2 rounded-lg border border-[#E2E8F0] text-[13px] bg-white focus:outline-none focus:border-[#0677FF]" />
+                  <select value={floc} onChange={(e) => setFloc(e.target.value)} className="px-3 py-2 rounded-lg border border-[#E2E8F0] text-[13px] bg-white">
+                    <option value="">Todas as localidades</option>
+                    {localidades.map((l) => <option key={l} value={l}>{l}</option>)}
+                  </select>
+                  <label className="inline-flex items-center gap-1.5 px-3 py-2 text-[12.5px] font-[600] text-[#334155]">
+                    <input type="checkbox" checked={soNovos} onChange={(e) => setSoNovos(e.target.checked)} className="w-4 h-4 accent-[#0677FF]" /> Só novos
+                  </label>
                 </div>
-              )}
-              <div className="mt-3 max-h-[320px] overflow-y-auto border border-[#E2E8F0] rounded-xl divide-y divide-zinc-100">
-                {list.map((d, i) => {
-                  const dup = !d.nif || existingNifs.has(d.nif);
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="mr-1 text-[10.5px] font-[800] uppercase tracking-[1px] text-[#94A3B8]">Tipo</span>
+                  {(['empresa', 'particular', 'outro', 'sem-nif'] as TipoCliente[]).filter((tp) => contaTipo(tp) > 0).map((tp) => {
+                    const on = ftipos.includes(tp);
+                    return (
+                      <button key={tp} type="button" onClick={() => setFtipos((prev) => alterna(prev, tp))}
+                        className={`px-2.5 py-1 rounded-full border text-[11.5px] font-[700] transition-colors ${on ? 'bg-[#0677FF] text-white border-[#0677FF]' : 'bg-white text-[#475569] border-[#E2E8F0] hover:border-[#0677FF]/50'}`}>
+                        {ROTULO_TIPO[tp]} <span className="font-[600] opacity-70">{contaTipo(tp)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="mr-1 text-[10.5px] font-[800] uppercase tracking-[1px] text-[#94A3B8]">NIF começa por</span>
+                  {digitosPresentes.map((d) => {
+                    const on = fdig.includes(d);
+                    return (
+                      <button key={d} type="button" onClick={() => setFdig((prev) => alterna(prev, d))}
+                        className={`w-7 h-7 rounded-lg border text-[11.5px] font-[700] ${on ? 'bg-[#0B1D2D] text-white border-[#0B1D2D]' : 'bg-white text-[#475569] border-[#E2E8F0]'}`}>{d}</button>
+                    );
+                  })}
+                  <button type="button" onClick={limparFiltros} className="ml-1 text-[11.5px] font-[700] text-[#0677FF]">Limpar filtros</button>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                  <button type="button" onClick={marcarVisiveis} className="px-3 py-1.5 rounded-lg bg-[#0B1D2D] text-white text-[11.5px] font-[700] hover:bg-black">
+                    Selecionar visíveis ({visiveis.filter((v) => podeEscolher(v.c)).length})
+                  </button>
+                  <button type="button" onClick={limparSelecao} className="px-3 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-[11.5px] font-[700] text-[#475569]">Limpar seleção</button>
+                </div>
+              </div>
+
+              <div className="mt-3 max-h-[320px] overflow-y-auto border border-[#E2E8F0] rounded-xl divide-y divide-zinc-100 bg-white">
+                {visiveis.length === 0 && <p className="px-4 py-8 text-center text-[12.5px] text-[#94A3B8]">Nada corresponde aos filtros.</p>}
+                {visiveis.map(({ c: d, i }) => {
+                  const existe = !!d.nif && existingNifs.has(d.nif);
+                  const repetido = !!d.nif && duplicados.has(d.nif);
+                  const bloqueado = !d.nif || existe || repetido;
                   return (
-                    <label key={i} className={`flex items-center gap-3 px-3.5 py-2.5 text-[13px] ${dup ? 'opacity-40' : 'hover:bg-zinc-50 cursor-pointer'}`}>
-                      <input type="checkbox" checked={sel.has(i)} disabled={dup} onChange={() => setSel(prev => { const n = new Set(prev); if (n.has(i)) n.delete(i); else n.add(i); return n; })} className="w-4 h-4 accent-[#0677FF]" />
-                      <span className="flex-1 min-w-0"><span className="font-[600] text-[#0B1D2D] truncate block">{d.nome || '—'}</span><span className="text-[#64748B] text-[12px]">NIF {d.nif || '—'}{d.email ? ` · ${d.email}` : ''}</span></span>
-                      {dup && <span className="text-[11px] text-[#94A3B8]">já existe</span>}
+                    <label key={i} className={`flex items-center gap-3 px-3.5 py-2.5 text-[13px] ${bloqueado ? 'opacity-45' : 'hover:bg-zinc-50 cursor-pointer'}`}>
+                      <input type="checkbox" checked={sel.has(i)} disabled={bloqueado} onChange={() => setSel((prev) => { const n = new Set(prev); if (n.has(i)) n.delete(i); else n.add(i); return n; })} className="w-4 h-4 accent-[#0677FF]" />
+                      <span className="flex-1 min-w-0">
+                        <span className="font-[600] text-[#0B1D2D] truncate block">{d.nome || '—'}</span>
+                        <span className="text-[#64748B] text-[12px]">NIF {d.nif || '—'}{d.localidade ? ` · ${d.localidade}` : ''}{d.email ? ` · ${d.email}` : ''}</span>
+                      </span>
+                      <span className="shrink-0 rounded-full border border-[#E2E8F0] bg-[#F1F5F9] px-2 py-0.5 text-[10.5px] font-[700] uppercase tracking-[0.4px] text-[#64748B]">{ROTULO_TIPO[classificarNif(d.nif)]}</span>
+                      {bloqueado && <span className="shrink-0 text-[11px] text-[#94A3B8]">{!d.nif ? 'sem NIF' : repetido ? 'repetido' : 'já existe'}</span>}
                     </label>
                   );
                 })}
               </div>
-              <div className="flex justify-end gap-2 mt-4">
+
+              {debug && (
+                <details className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] font-mono text-amber-900">
+                  <summary className="cursor-pointer text-[11.5px] font-[700]">Detalhes técnicos ({debug.total ?? 0} recebidos · {debug.pagesFetched ?? 0} páginas · {debug.semNif ?? 0} sem NIF)</summary>
+                  {debug.firstRawAttributesKeys?.length ? <div className="mt-1">Campos: {debug.firstRawAttributesKeys.join(', ')}</div> : null}
+                  {debug.firstRawSample && <pre className="mt-1 whitespace-pre-wrap break-all text-[10px] bg-white p-2 rounded border">{debug.firstRawSample}</pre>}
+                </details>
+              )}
+
+              <div className="flex flex-wrap justify-end gap-2 mt-4">
                 <button onClick={() => { setStep('config'); }} className="px-4 py-2.5 rounded-xl border border-[#E2E8F0] text-[13px] font-[600]">Voltar</button>
-                <button onClick={handleImport} className="px-5 py-2.5 rounded-xl bg-[#0677FF] text-white text-[13px] font-[700] hover:bg-[#0556CC]">Importar selecionados</button>
+                <button onClick={handleImport} disabled={selecionados.length === 0} className="px-5 py-2.5 rounded-xl bg-[#0677FF] text-white text-[13px] font-[700] hover:bg-[#0556CC] disabled:opacity-50">
+                  Importar {selecionados.length} selecionado{selecionados.length === 1 ? '' : 's'}
+                </button>
               </div>
             </div>
           )}

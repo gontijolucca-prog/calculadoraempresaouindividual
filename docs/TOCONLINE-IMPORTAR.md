@@ -27,6 +27,17 @@
    **Usar código**. A app troca por sessão e importa a lista.
 4. Marcar os que quer importar → **Importar** (os que já existem por NIF ficam desativados).
 
+## Filtros da importação
+A mesma conta TOConline pode misturar negócios (contabilidade, condomínios, gestão).
+Antes de importar:
+- **Pesquisa** por nome, NIF, email ou localidade (ignora acentos).
+- **Tipo**: Empresas (NIF 5), Particulares (1/2/3), Outros (6/7/9), Sem NIF.
+- **NIF começa por**: 1, 2, 3, 5, 7, 9 (o 0 fica de fora por não ser NIF português válido).
+- **Localidade**: lista das localidades presentes.
+- **Só novos**: esconde quem já está na carteira.
+- **Selecionar visíveis** / **Limpar seleção**; o botão mostra quantos vai importar.
+- NIF repetido dentro da própria lista é ignorado (marcado “repetido”).
+
 ## Erros comuns
 | Erro | Causa | Correção |
 |---|---|---|
