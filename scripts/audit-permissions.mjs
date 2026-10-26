@@ -8,11 +8,26 @@ import { chromium } from 'playwright-core';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const BASE = 'http://localhost:3000/';
+const BASE = process.env.BASE || 'http://localhost:3000/';
 const OUT = path.resolve('docs/audit-2026-10-26');
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const falhas = [];
 const ok = (c, m) => { console.log(`${c ? '✓' : '✗'} ${m}`); if (!c) falhas.push(m); };
+
+/** Tabs do Gabinete visíveis; abre o submenu se estiver fechado. */
+async function tabsDoGabinete(page) {
+  const ler = () => page.evaluate(() => Array.from(document.querySelectorAll('button'))
+    .filter((b) => b.getClientRects().length)
+    .map((b) => (b.innerText || '').trim().split('\n')[0])
+    .filter((s) => ['Visão geral', 'Quadro de obrigações', 'Mapa de controlo', 'Mapa RH', 'Equipa', 'Tarefas', 'Agenda', 'Obrigações', 'Cofre', 'Lixeira'].includes(s)));
+  let tabs = await ler();
+  if (tabs.length) return tabs;
+
+  const grupo = page.locator('aside button:visible').filter({ hasText: /Gabinete/ }).first();
+  if (await grupo.count()) { await grupo.click(); await page.waitForTimeout(700); }
+  return ler();
+}
+
 fs.mkdirSync(OUT, { recursive: true });
 
 const stamp = Date.now();
@@ -81,6 +96,8 @@ if (await criarGab.count()) {
   await page.waitForTimeout(3000);
 }
 ok(await page.evaluate(() => !/Em que gabinete pretende/i.test(document.body.innerText)), 'dono: gabinete ativo');
+const tabsDono = await tabsDoGabinete(page);
+ok(['Cofre', 'Equipa', 'Lixeira'].every((x) => tabsDono.includes(x)), `dono vê todas as tabs (${tabsDono.length}/10)`);
 // 2) Convidar estagiária
 await page.evaluate(() => {
   localStorage.setItem('estudo360:v1:lastView', JSON.stringify({ v: 1, data: 'gabinete' }));
@@ -138,6 +155,11 @@ const cofreStatus = await lerDoc('cofre');
 const clientesStatus = await lerDoc('clientes');
 ok(cofreStatus === 403, `estagiária: regras negam o cofre (HTTP ${cofreStatus})`);
 ok(clientesStatus === 200 || clientesStatus === 404, `estagiária: clientes permitidos (HTTP ${clientesStatus})`);
+
+const tabsEst = await tabsDoGabinete(page);
+ok(!tabsEst.includes('Cofre'), `estagiária: sem Cofre no menu (${tabsEst.length} tabs)`);
+ok(!tabsEst.includes('Equipa'), 'estagiária: sem Equipa no menu');
+ok(!tabsEst.includes('Lixeira'), 'estagiária: sem Lixeira no menu');
 
 // E o dono lê o cofre (comparação)
 const tokenDono = null; void tokenDono;

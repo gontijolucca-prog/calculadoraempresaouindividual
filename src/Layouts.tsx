@@ -38,6 +38,8 @@ export interface LayoutProps {
   onNavigateClient?: (empId: string, view: ViewType, opts?: NavOpts) => void;
   /** Abre a vista Relatórios com um documento pré-selecionado. */
   onOpenRelatorios?: (docId: string) => void;
+  /** Tabs do Gabinete que este cargo pode ver (null = todas). */
+  gabTabsPermitidos?: string[] | null;
   /** Tab ativa do Gabinete (quando view === 'gabinete') */
   gabineteTab?: string;
   onGabineteTab?: (tab: string) => void;
@@ -110,7 +112,7 @@ function Logo({ className = 'w-7 h-7' }: { className?: string }) {
   );
 }
 
-export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload, onLogout, hasSaftData, onOpenSaftViewer, mode, onSelectMode, activeClientName, currentEmpresaId, onNavigateClient, children , onOpenRelatorios, gabineteTab, onGabineteTab}: LayoutProps) {
+export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload, onLogout, hasSaftData, onOpenSaftViewer, mode, onSelectMode, activeClientName, currentEmpresaId, onNavigateClient, children , onOpenRelatorios, gabineteTab, onGabineteTab, gabTabsPermitidos}: LayoutProps) {
   const active = view === 'legal' ? prevView : view;
   const saftInputRef = useRef<HTMLInputElement>(null);
 
@@ -156,6 +158,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
   { id: 'cofre', label: 'Cofre', Icon: Lock, desc: 'Acessos protegidos' },
   { id: 'lixeira', label: 'Lixeira', Icon: Trash2, desc: 'Restaurar registos apagados' },
 ] as const;
+  const gabTabsVisiveis = gabTabsPermitidos ? GAB_TABS.filter((x) => gabTabsPermitidos.includes(x.id)) : GAB_TABS;
   const goGabinete = (tab: string) => {
     onGabineteTab?.(tab);
     if (active !== 'gabinete') setView('gabinete');
@@ -288,7 +291,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
               <div className="overflow-hidden">
               <div className="mt-0.5 ml-2.5 space-y-0.5 border-l-2 border-slate-200 pl-2">
                 {(() => {
-                  const qd = GAB_TABS.find(t => t.id === 'visao-geral');
+                  const qd = gabTabsVisiveis.find(t => t.id === 'visao-geral');
                   return qd ? (
                     <button key={qd.id} type="button" onClick={() => goGabinete(qd.id)} title={qd.desc} aria-current={active==='gabinete' && gabineteTab===qd.id ? 'page' : undefined} className={`w-full flex items-center gap-2.5 px-3 py-[7px] rounded-[10px] text-[12.5px] font-[700] transition-colors text-left border ${active==='gabinete' && gabineteTab===qd.id ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
                       <qd.Icon className="w-[15px] h-[15px] shrink-0" />
@@ -296,7 +299,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                     </button>
                   ) : null;
                 })()}
-                {GAB_TABS.filter(t => t.id !== 'visao-geral').map(t => (
+                {gabTabsVisiveis.filter(t => t.id !== 'visao-geral').map(t => (
                   <ClientNavItem key={t.id} label={t.label} Icon={t.Icon} onClick={() => goGabinete(t.id)} current={active==='gabinete' && gabineteTab===t.id} title={t.desc} />
                 ))}
               </div>

@@ -49,3 +49,17 @@ export function deriveRole(meta: RoleSource | null | undefined, uid: string | nu
   if (meta.memberUids?.includes(uid)) return 'contabilista';
   return null;
 }
+
+/**
+ * Tabs do Gabinete visíveis para um cargo. `null` = ainda não se sabe o cargo,
+ * por isso mostram-se todas (nunca esconder por dúvida).
+ * Ordem igual à da navegação em Layouts.
+ */
+export function tabsGabinete(role: GabineteRole | null | undefined): string[] | null {
+  if (!role) return null;
+  const tabs = ['visao-geral', 'dashboard', 'mapa-controlo', 'mapa-rh', 'tarefas', 'agenda', 'obrigacoes'];
+  if (can(role, 'ver-cofre')) tabs.push('cofre');
+  if (can(role, 'gerir-equipa')) tabs.push('equipa');
+  if (can(role, 'restaurar')) tabs.push('lixeira');
+  return tabs;
+}

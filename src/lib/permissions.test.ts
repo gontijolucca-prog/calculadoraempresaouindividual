@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { can, deriveRole } from './permissions';
+import { can, deriveRole, tabsGabinete } from './permissions';
 
 describe('permissions — matriz por cargo', () => {
   it('admin pode tudo', () => {
@@ -96,5 +96,26 @@ describe('permissions — cargo desconhecido não abre nada', () => {
       deriveRole({ ownerUid: 'u1', memberUids: ['u1', 'u2'], members: { u2: { role: 'chefe' as never } } }, 'u2'),
       'contabilista',
     );
+  });
+});
+
+describe('permissions — tabs do gabinete', () => {
+  it('admin vê tudo', () => {
+    const t = tabsGabinete('admin')!;
+    assert.deepEqual(t, ['visao-geral', 'dashboard', 'mapa-controlo', 'mapa-rh', 'tarefas', 'agenda', 'obrigacoes', 'cofre', 'equipa', 'lixeira']);
+  });
+  it('contabilista vê cofre e lixeira, não vê equipa', () => {
+    const t = tabsGabinete('contabilista')!;
+    assert.ok(t.includes('cofre') && t.includes('lixeira'));
+    assert.ok(!t.includes('equipa'));
+  });
+  it('estagiária só vê o operacional', () => {
+    const t = tabsGabinete('estagiaria')!;
+    assert.ok(t.includes('tarefas'));
+    for (const escondida of ['cofre', 'equipa', 'lixeira']) assert.ok(!t.includes(escondida));
+  });
+  it('sem cargo não esconde nada', () => {
+    assert.equal(tabsGabinete(null), null);
+    assert.equal(tabsGabinete(undefined), null);
   });
 });

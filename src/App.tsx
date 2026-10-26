@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect, useRef, lazy, Suspense } from 'react';
+import React, { useMemo, useCallback, useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Loader2, Save, Calculator, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { useAuth } from './lib/auth';
 import ErrorBoundary from './ErrorBoundary';
@@ -63,6 +63,8 @@ import MiniDock from './components/MiniDock';
 import type { ViewKey } from './lib/guias';
 import { marcarGuiaDesativado } from './lib/guias';
 import { LAYOUTS } from './Layouts';
+import { deriveRole, tabsGabinete } from './lib/permissions';
+import type { GabineteRole } from './lib/gabinetes';
 import { loadFromStorage, saveToStorage, clearStorage } from './lib/storage';
 import { loadOfficeSettings, saveOfficeSettings, type OfficeSettings } from './lib/officeSettings';
 import { loadHonorariosConfig, saveHonorariosConfig, type HonorariosConfig } from './lib/honorarios';
@@ -396,6 +398,31 @@ function AppContent() {
     return VALID_GAB_TABS.has(raw) ? raw : 'gallery';
   });
   useEffect(() => { if (VALID_GAB_TABS.has(gabineteTab)) saveToStorage('gabineteTab', gabineteTab); else saveToStorage('gabineteTab', 'gallery'); }, [gabineteTab]);
+
+  // Cargo no gabinete ativo — decide que tabs do Gabinete aparecem no menu.
+  // Enquanto não se sabe (null), mostram-se todas: nunca esconder por dúvida.
+  const [gabRole, setGabRole] = useState<GabineteRole | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    const atualizar = async () => {
+      try {
+        const { getActiveGabineteId, getGabineteMeta } = await import('./lib/gabinetes');
+        const { auth } = await import('./lib/firebase');
+        const id = getActiveGabineteId();
+        if (!id) { if (vivo) setGabRole(null); return; }
+        const meta = await getGabineteMeta(id).catch(() => null);
+        if (vivo) setGabRole(deriveRole(meta, auth.currentUser?.uid ?? null));
+      } catch { if (vivo) setGabRole(null); }
+    };
+    void atualizar();
+    // O login/entrada no gabinete pode terminar depois do primeiro render.
+    const timer = window.setInterval(atualizar, 1500);
+    const parar = window.setTimeout(() => window.clearInterval(timer), 15000);
+    const onSwitch = () => { void atualizar(); };
+    window.addEventListener('estudo360:gabinete-switch', onSwitch);
+    return () => { vivo = false; window.clearInterval(timer); window.clearTimeout(parar); window.removeEventListener('estudo360:gabinete-switch', onSwitch); };
+  }, [view]);
+  const gabTabsPermitidos = useMemo(() => tabsGabinete(gabRole), [gabRole]);
   // Bump para forçar refresh da Lista de Empresas após mutações (criar/eliminar/SAFT).
   const [empresasRefresh, setEmpresasRefresh] = useState(0);
   const [currentEmpresaId, setCurrentEmpresaIdState] = useState<string | null>(() => getCurrentEmpresaId());
@@ -1702,6 +1729,9 @@ function AppContent() {
     </main>
   );
 
+
+
+
   const CurrentLayout = LAYOUTS[0].component;
 
   return (
@@ -1947,6 +1977,7 @@ function AppContent() {
           activeClientName={currentEmpresaId ? (clientProfile.nomeCliente?.trim() || 'Cliente sem nome') : ''}
           currentEmpresaId={currentEmpresaId}
           onNavigateClient={navigateClient}
+          gabTabsPermitidos={gabTabsPermitidos}
           gabineteTab={gabineteTab}
           onGabineteTab={setGabineteTab}
         >
