@@ -68,7 +68,7 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
               <ArrowRight className="w-3.5 h-3.5 rotate-180" /> Voltar
             </button>
           ) : null}
-          <img src="/logo.svg" alt="" className="w-8 h-8 object-contain" />
+          <img src="/logo.svg" alt="" className="w-8 h-8 object-contain logo-orb" />
           <span className="text-[16px] font-[700] tracking-[-0.2px] text-[#1A1A18]">estudo<span className="font-[400] text-[#B06D35]">360</span></span>
         </div>
         <div className="hidden sm:flex items-center gap-2 text-[11px] font-[500] text-[#1A1A18]/40">

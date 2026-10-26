@@ -103,7 +103,7 @@ function Logo({ className = 'w-7 h-7' }: { className?: string }) {
     <img
       src="/logo.svg"
       alt=""
-      className={`${className} object-contain select-none shrink-0`}
+      className={`${className} object-contain select-none shrink-0 logo-orb`}
       draggable={false}
       aria-hidden="true"
     />

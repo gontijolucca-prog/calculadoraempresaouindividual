@@ -95,7 +95,7 @@ export default function GabineteSelector({ onChosen }: Props) {
     <div className="min-h-screen w-full bg-[#F5F7FA] flex flex-col">
       <header className="px-6 py-4 flex items-center justify-between max-w-6xl mx-auto w-full">
         <div className="flex items-center gap-2.5">
-          <img src="/logo.svg" alt="" className="w-8 h-8 object-contain" />
+          <img src="/logo.svg" alt="" className="w-8 h-8 object-contain logo-orb" />
           <span className="text-[16px] font-[800] tracking-[-0.2px] text-[#0B1D2D]">ESTUDO<span className="text-[#0677FF]">360°</span></span>
           <span className="ml-2 text-[11px] font-[700] tracking-[1px] uppercase px-2 py-1 rounded-full bg-white border border-[#E2E8F0] text-[#64748B]">Gabinetes</span>
         </div>

@@ -323,10 +323,30 @@ textarea:focus-visible,
 }
 
 @keyframes orb-pulse {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.14); }
+  0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(225,29,72,.35); }
+  40%  { transform: scale(1.18); box-shadow: 0 0 0 5px rgba(225,29,72,.18); }
+  100% { transform: scale(1);    box-shadow: 0 0 0 9px rgba(225,29,72,0); }
 }
 
+/* Bola do logótipo: respira devagar, com um brilho ténue da marca. */
+@keyframes logo-breathe {
+  0%, 100% { transform: scale(1);    filter: drop-shadow(0 0 0 rgba(6,119,255,0)); }
+  50%      { transform: scale(1.055); filter: drop-shadow(0 0 7px rgba(6,119,255,.32)); }
+}
+.logo-orb { animation: logo-breathe 2.8s ease-in-out infinite; transform-origin: 50% 50%; }
+
+/* Nota: o macOS do utilizador tem «Reduzir movimento» ligado e isso desligava
+   estas duas animações. São pedidos explícitos e muito pequenas (escala + halo),
+   por isso ficam sempre ativas. */
+
+/* Exceção ao "reduce": estas duas são pequenas, pedidas e fazem parte da marca. */
 @media (prefers-reduced-motion: reduce) {
-  .orb-status--pulse { animation: none; }
+  .logo-orb {
+    animation-duration: 2.8s !important;
+    animation-iteration-count: infinite !important;
+  }
+  .orb-status--pulse {
+    animation-duration: 2s !important;
+    animation-iteration-count: infinite !important;
+  }
 }

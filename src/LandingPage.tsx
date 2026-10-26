@@ -280,7 +280,7 @@ function Final({ onSignup }: { onSignup: () => void }) {
 }
 
 function BrandMark({ size=26 }: { size?: number }) {
-  return <img src="/logo.svg" alt="" width={size} height={size} className="object-contain shrink-0" style={{width:size,height:size}} draggable={false} aria-hidden="true" />;
+  return <img src="/logo.svg" alt="" width={size} height={size} className="object-contain shrink-0 logo-orb" style={{width:size,height:size}} draggable={false} aria-hidden="true" />;
 }
 
 function Footer() {

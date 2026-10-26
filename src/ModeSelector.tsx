@@ -49,7 +49,7 @@ function BrandMark({ className = 'w-10 h-10' }: { className?: string }) {
     <img
       src="/logo.svg"
       alt=""
-      className={`${className} object-contain select-none shrink-0`}
+      className={`${className} object-contain select-none shrink-0 logo-orb`}
       draggable={false}
       aria-hidden="true"
     />
