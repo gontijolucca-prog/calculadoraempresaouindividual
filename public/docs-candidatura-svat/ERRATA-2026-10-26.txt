@@ -1,0 +1,11 @@
+ERRATA — 26/10/2026
+
+Os PDFs 01 (Memória Descritiva), 02 (Matriz de Conformidade) e 09 (Anexos)
+foram gerados em 02/10/2026 e mostram no cabeçalho «PORTARIA N.º 293/2017».
+
+Essa referência NÃO foi confirmada em fonte oficial a 26/10/2026. Vale esta errata:
+a base legal está por confirmar com a AT e nenhum desses PDFs deve ser enviado
+como candidatura a um «selo» antes da resposta.
+
+O conteúdo técnico (funcionalidades, requisitos, dados, auditoria) mantém-se válido.
+Antes de qualquer envio, usar o texto PERGUNTA-AT.txt no E-balcão.

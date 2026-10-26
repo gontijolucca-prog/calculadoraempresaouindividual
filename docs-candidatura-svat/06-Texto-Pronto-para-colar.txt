@@ -1,37 +1,36 @@
-Assunto: Pedido de Selo de Validação AT (SVAT) — Portaria n.º 293/2017 — Estudo360.pt
+Assunto: Certificação de software — pedido de enquadramento (Estudo360.pt)
 
 Exmos. Senhores,
 
-Na qualidade de produtores do software Estudo360.pt, vimos solicitar o Selo de Validação AT (SVAT) previsto na Portaria n.º 293/2017, de 2 de outubro.
+Na qualidade de produtores do software Estudo360.pt, vimos solicitar o
+enquadramento aplicável antes de submeter qualquer candidatura.
 
 1. Identificação do produtor
 - Denominação: Recofatima — [substituir pela razão social completa]
 - NIF: [NIF da Recofatima]
 - Contacto: [email + telefone]
 - Software: Estudo360.pt — https://estudo360.pt
-- Versão candidata: 02/10/2026 (commit f846c07) — React + Firebase, alojamento Cloudflare Pages
+- Versão: 02/10/2026 (commit f846c07) — React + Firebase, alojamento Cloudflare Pages
 
-2. Objeto do software
-Plataforma web de simulação fiscal (10 simuladores) e gestão de gabinete (clientes, tarefas, obrigações, cofre de acessos, documentos, demonstrações financeiras). Lê ficheiros SAF-T para análise; não emite faturas nem documentos de transporte e não efetua escrituração contabilística (sem diário, sem contas SNC, sem exportação de SAF-T de contabilidade). Por esse motivo, os requisitos de lançamentos, numeração sequencial e contas agregadoras não têm objeto — conforme detalhado na Matriz de Conformidade anexa.
+2. O que o software faz
+- Simulação de impostos e salários (motores próprios);
+- Gestão de clientes, tarefas, obrigações fiscais e gabinete;
+- Leitura e análise de ficheiros SAF-T;
+- Cofre de acessos e auditoria de alterações.
 
-3. Conformidade evidenciada
-- Gestão de utilizadores com controlo de acesso por gabinete (Firebase Auth + Firestore rules por gabinete/{id})
-- Rasto de auditoria completo e imutável (coleção audit_events) em todas as criações, edições e eliminações, com retrato prévio nas eliminações e carimbo de autor/data em cada escrita (G1+G2+G3 implementados)
-- Eventos de acesso imutáveis (auth_events) e cofre com registo de consulta (quem e quando, sem expor segredo)
-- Regras Firestore com update/delete bloqueados em audit_events/auth_events (imutabilidade verificada)
+3. O que o software NÃO faz
+- Não emite faturas, recibos, notas de crédito/débito nem documentos de transporte;
+- Não substitui software de faturação certificado.
 
-4. Anexos
-- 01-Memoria-Descritiva.pdf
-- 02-Matriz-Conformidade.pdf (9 requisitos com evidência no código)
-- 03-Dicionario-Dados.pdf
-- 04-Checklist-Submissao.pdf
-- 07-Declaracao-Produtor.pdf (declaração do produtor)
-- 09-Anexos-Tecnicos.pdf (excerto de firestore.rules + exemplo audit_events)
+4. Questões
+a) Por não emitir faturas, confirma-se que a aplicação está fora do âmbito da
+   certificação de programas de faturação?
+b) Se estiver fora, é exigido algum documento ou registo?
+c) Se estiver dentro, qual o diploma aplicável e a lista de requisitos/documentos
+   exigidos para a candidatura?
 
-5. Disponibilidade para testes
-Facultamos acesso de demonstração à AT (utilizador demo a criar sob pedido) e toda a documentação técnica para testes de conformidade. Ficamos a aguardar indicação de diligências adicionais.
+Agradecemos a indicação do enquadramento correto. Ficamos a aguardar resposta
+antes de submeter o dossier descritivo que já temos preparado.
 
 Com os melhores cumprimentos,
-[Nome do representante legal]
-Recofatima — [cargo]
-[Assinatura + carimbo]
+Recofatima — Estudo360.pt
