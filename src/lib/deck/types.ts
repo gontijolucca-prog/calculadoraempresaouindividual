@@ -51,6 +51,20 @@ export interface DeckDoc {
   updatedAt: number;
   slug?: string;
   expiresAt?: number;
+  /** Respostas do briefing (4 perguntas) — guardadas para reutilizar. */
+  respostas?: {
+    setor?: string;
+    dimensao?: string;
+    faturacao?: string;
+    objetivo?: string;
+  };
+  /** Ajuste manual ao preço da tabela, com motivo e autor (auditoria). */
+  ajuste?: {
+    mensal?: number;
+    motivo?: string;
+    por?: string;
+    em?: number;
+  };
 }
 
 export const MIN_CARDS = 3;

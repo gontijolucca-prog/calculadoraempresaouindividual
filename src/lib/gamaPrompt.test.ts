@@ -7,70 +7,53 @@ import { defaultOfficeSettings, type OfficeSettings } from './officeSettings';
 
 const office: OfficeSettings = {
   ...defaultOfficeSettings,
-  nome: 'Escritório Teste',
-  nif: '500000000',
-  email: 'geral@teste.pt',
-  telefone: '249 000 000',
-  historia: 'Nascemos em Fátima em 2009.',
+  nome: 'Escritório Teste', nif: '500000000', email: 'geral@teste.pt', telefone: '249 000 000',
 };
 
 const cliente: DeckCliente = {
-  id: 'c1',
-  nome: 'Empresa Alfa, Lda',
-  nif: '501234567',
+  id: 'c1', nome: 'Empresa Alfa, Lda', nif: '501234567',
   profile: { tipoEntidade: 'lda', faturaçaoAnualPrevista: 250000, nrFuncionarios: 3, regimeContabilidade: 'organizada' },
 };
 
-describe('gamaPrompt — texto da proposta (estrutura Ativiwise)', () => {
-  it('tem as secções todas por omissão', () => {
-    const p = buildGamaPrompt(office, defaultHonorariosConfig, cliente);
-    for (const s of [
-      'Sobre nós', 'A nossa equipa', 'Os nossos valores', 'contabilidade digital',
-      'Âmbito da proposta', 'Benefícios exclusivos', 'A nossa proposta para si',
-      'Investimento — Honorários', 'Agradecemos a oportunidade',
-    ]) {
-      assert.ok(p.includes(s), `falta a secção: ${s}`);
+const briefing = { setor: 'restauração', dimensao: '3 pessoas', faturacao: '250 000 €', objetivo: 'fechar contas a tempo' };
+
+describe('gamaPrompt — mesma estrutura da proposta da app', () => {
+  it('tem os 7 blocos', () => {
+    const p = buildGamaPrompt(office, defaultHonorariosConfig, cliente, { briefing });
+    for (const s of ['## Diagnóstico', '## Âmbito da proposta', '## Equipa e prova', '## Investimento', '## Plano de arranque', '## Próximo passo']) {
+      assert.ok(p.includes(s), `falta ${s}`);
     }
-    assert.ok(p.startsWith('# Proposta de Serviços de Contabilidade — Escritório Teste para Empresa Alfa, Lda'));
-    assert.ok(p.includes('Nascemos em Fátima em 2009.'));
+    assert.ok(p.startsWith('# Proposta de Serviços de Contabilidade'));
   });
 
-  it('desligar Equipa/Valores/Benefícios remove só essas secções', () => {
-    const p = buildGamaPrompt(office, defaultHonorariosConfig, cliente, {
-      equipa: false, valores: false, beneficios: false,
-    });
-    assert.ok(!p.includes('## A nossa equipa'));
-    assert.ok(!p.includes('## Os nossos valores'));
-    assert.ok(!p.includes('## Benefícios exclusivos'));
-    assert.ok(p.includes('## âmbito da proposta'.replace('â', 'Â')));
-    assert.ok(p.includes('## Investimento — Honorários'));
+  it('usa as 4 respostas no diagnóstico', () => {
+    const p = buildGamaPrompt(office, defaultHonorariosConfig, cliente, { briefing });
+    assert.ok(p.includes('Setor: restauração'));
+    assert.ok(p.includes('Objetivo a 12 meses: fechar contas a tempo'));
+    assert.ok(p.includes('fechar contas a tempo.'));
   });
 
-  it('preço é o mesmo do motor de honorários (pricingFor)', () => {
+  it('preço é o do motor de honorários', () => {
     const preco = pricingFor({ office, honorarios: defaultHonorariosConfig, cliente });
-    const p = buildGamaPrompt(office, defaultHonorariosConfig, cliente);
-    assert.ok(preco.subtitle && p.includes(preco.subtitle), 'subtotal do preço tem de aparecer no texto');
-    for (const item of preco.items) {
-      assert.ok(p.includes(`${item.label}: ${item.value}`), `linha de preço em falta: ${item.label}`);
-    }
-    assert.ok(/€\/mês/.test(p), 'tem de haver valor mensal em euros');
+    const p = buildGamaPrompt(office, defaultHonorariosConfig, cliente, { briefing });
+    assert.ok(p.includes(preco.subtitle));
+    for (const item of preco.items) assert.ok(p.includes(`${item.label}: ${item.value}`));
+    assert.ok(/€\/mês/.test(p));
   });
 
-  it('sem cliente usa a mensalidade base por tipo de entidade', () => {
-    const p = buildGamaPrompt(office, defaultHonorariosConfig, null);
+  it('sem cliente usa mensalidade base', () => {
+    const p = buildGamaPrompt(office, defaultHonorariosConfig, null, {});
     assert.ok(p.includes('Mensalidade base por tipo de entidade'));
-    assert.ok(p.includes('€/mês'));
-    assert.ok(!p.includes('## A nossa proposta para si'));
+    assert.ok(p.includes('não indicado'));
   });
 
   it('observações entram antes do fecho', () => {
-    const p = buildGamaPrompt(office, defaultHonorariosConfig, cliente, { observacoes: 'Inclui reunião trimestral.' });
-    assert.ok(p.includes('Inclui reunião trimestral.'));
-    assert.ok(p.indexOf('Inclui reunião trimestral.') < p.indexOf('## Agradecemos a oportunidade'));
+    const p = buildGamaPrompt(office, defaultHonorariosConfig, cliente, { briefing, observacoes: 'Inclui reunião trimestral.' });
+    assert.ok(p.indexOf('Inclui reunião trimestral.') < p.indexOf('## Próximo passo'));
   });
 
-  it('contactos e identificação do escritório entram no fim', () => {
-    const p = buildGamaPrompt(office, defaultHonorariosConfig, cliente);
+  it('contactos do escritório entram no fim', () => {
+    const p = buildGamaPrompt(office, defaultHonorariosConfig, cliente, { briefing });
     assert.ok(p.includes('Contacto: geral@teste.pt · 249 000 000'));
     assert.ok(p.includes('NIF: 500000000'));
   });

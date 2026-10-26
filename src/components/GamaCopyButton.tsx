@@ -11,24 +11,20 @@ import type { DeckCliente } from '../lib/deck/build';
  * chave. O preço vem de `pricingFor()`, igual ao deck.
  */
 export default function GamaCopyButton({
-  office, honorarios, cliente,
+  office, honorarios, cliente, briefing,
 }: {
   office: OfficeSettings;
   honorarios: HonorariosConfig;
   cliente: DeckCliente | null;
+  briefing?: { setor?: string; dimensao?: string; faturacao?: string; objetivo?: string };
 }) {
   const [aberto, setAberto] = useState(false);
-  const [equipa, setEquipa] = useState(true);
-  const [valores, setValores] = useState(true);
-  const [beneficios, setBeneficios] = useState(true);
   const [obs, setObs] = useState('');
   const [copiado, setCopiado] = useState(false);
 
   const prompt = useMemo(
-    () => buildGamaPrompt(office, honorarios, cliente, {
-      equipa, valores, beneficios, observacoes: obs,
-    }),
-    [office, honorarios, cliente, equipa, valores, beneficios, obs],
+    () => buildGamaPrompt(office, honorarios, cliente, { briefing, observacoes: obs }),
+    [office, honorarios, cliente, briefing, obs],
   );
 
   const copiar = () => {
@@ -57,17 +53,11 @@ export default function GamaCopyButton({
         <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-[340px] rounded-xl border border-[#E2E8F0] bg-white p-3 shadow-xl">
           <div className="flex items-start justify-between gap-2">
             <p className="text-[11.5px] leading-snug text-[#64748B]">
-              Copia o texto e abre o Gamma em “Paste text”. Base fixa: Sobre nós, Digital, Âmbito, Investimento, Fecho.
+              Copia o texto e abre o Gamma em “Paste text”. Mesma estrutura da proposta: diagnóstico, âmbito, equipa, investimento, plano e fecho.
             </p>
             <button type="button" onClick={() => setAberto(false)} className="p-1 rounded hover:bg-[#F5F7FA] text-[#94A3B8]" aria-label="Fechar">
               <X className="w-3.5 h-3.5" />
             </button>
-          </div>
-
-          <div className="mt-2 flex flex-wrap gap-3 text-[12px] font-[600] text-[#334155]">
-            <label className="inline-flex items-center gap-1.5"><input type="checkbox" checked={equipa} onChange={e => setEquipa(e.target.checked)} /> Equipa</label>
-            <label className="inline-flex items-center gap-1.5"><input type="checkbox" checked={valores} onChange={e => setValores(e.target.checked)} /> Valores</label>
-            <label className="inline-flex items-center gap-1.5"><input type="checkbox" checked={beneficios} onChange={e => setBeneficios(e.target.checked)} /> Benefícios</label>
           </div>
 
           <textarea

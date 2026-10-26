@@ -249,7 +249,7 @@ export default function PropostaEditor({ deck: initial, office, honorarios, clie
           <button onClick={rewriteCard} disabled={busyAi || !card} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-[700] text-[#334155] hover:border-[#0677FF] disabled:opacity-50">
             {busyAi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Regerar card
           </button>
-          <GamaCopyButton office={office} honorarios={honorarios} cliente={cliente} />
+          <GamaCopyButton office={office} honorarios={honorarios} cliente={cliente} briefing={deck.respostas} />
           <button onClick={print} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-[700] text-[#334155] hover:border-[#0677FF]">
             <Printer className="w-4 h-4" /> PDF
           </button>
