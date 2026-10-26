@@ -96,7 +96,7 @@ const TabelasRetencaoFonte = () => (
         </div>
       </div>
       <p className="text-[12px] text-amber-700 font-[600]">
-        ⚠ Açores: as tabelas regionais 2026 não foram localizadas em fonte oficial à data de 11/06/2026 — o simulador apresenta
+        ⚠ Açores: as tabelas regionais 2026 continuam sem publicação oficial localizada à data de 26/10/2026 — o simulador apresenta
         uma estimativa sinalizada até as tabelas serem publicadas/confirmadas.
       </p>
     </div>
@@ -314,7 +314,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
         </div>
         <div className="ml-auto flex items-center gap-3">
           <span className="text-[11px] font-[700] bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full">
-            ✓ Atualizado Outubro 2026
+            ✓ Revisão 26/10/2026
           </span>
         </div>
       </div>
@@ -330,7 +330,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
         <div className="bg-amber-50 border border-amber-200 rounded-[16px] p-5 flex gap-4">
           <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-[13px] text-amber-900 font-[500] leading-relaxed">
-            <strong>Nota:</strong> Esta página apresenta a legislação em que os cálculos dos simuladores se baseiam, com dados válidos para <strong>outubro de 2026</strong>. A lei fiscal pode sofrer alterações. Este simulador não substitui o aconselhamento de um <strong>contabilista certificado (OCC)</strong>.
+            <strong>Nota:</strong> Esta página apresenta a legislação em que os cálculos dos simuladores se baseiam, com os valores em vigor a <strong>26 de outubro de 2026</strong> (mantêm-se até 31/12/2026). A lei fiscal pode sofrer alterações. Este simulador não substitui o aconselhamento de um <strong>contabilista certificado (OCC)</strong>.
           </p>
         </div>
 
@@ -1217,7 +1217,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
               <div className="space-y-2">
                 <LegalRow label="Continente — Despacho SEAF de 05/01/2026" value="Tabelas I–VII (trabalho dependente), vigência 01/01–31/12/2026" note="Extraídas do ficheiro oficial do Portal das Finanças; n.º do despacho a confirmar na publicação em DR" />
                 <LegalRow label="Madeira — Despacho n.º 19/2026, de 20 de janeiro" value="Tabelas regionais próprias (AT-RAM)" note="JORAM, II Série, n.º 13, 4.º Suplemento — não é um simples fator sobre o Continente" />
-                <LegalRow label="Açores — tabelas 2026" value="Em validação — o simulador apresenta estimativa sinalizada" note="Tabelas regionais 2026 não localizadas em fonte oficial à data de 11/06/2026" />
+                <LegalRow label="Açores — tabelas 2026" value="Em validação — o simulador apresenta estimativa sinalizada" note="Tabelas regionais 2026 sem publicação oficial localizada à data de 26/10/2026" />
                 <LegalRow label="Seleção da tabela" value="I: não casado s/ dep. ou casado 2 titulares · II: não casado c/ dep. · III: casado único titular · IV–VII: pessoa com deficiência" />
                 <LegalRow label="Subsídios de férias e Natal" value="Retenção autónoma — CIRS Art. 99.º-C n.º 5" note="Pagos em duodécimos: retém-se mensalmente a parte proporcional do imposto de cada subsídio" />
                 <LegalRow label="IRS Jovem na retenção — CIRS Art. 99.º-F" value="A taxa efetiva da remuneração total aplica-se apenas à parte não isenta" />
@@ -1369,7 +1369,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
             <Article code="CIRS Art. 99.º-C" description="Retenção na fonte Cat. A — remuneração mensal; retenção autónoma de subsídios de férias/Natal (n.º 5) e duodécimos" />
             <Article code="CIRS Art. 99.º-F" description="Tabelas de retenção aprovadas por despacho; aplicação da taxa efetiva à parte não isenta (IRS Jovem)" />
             <Article code="DL n.º 139/2025" description="Salário Mínimo Nacional 2026: €920/mês" />
-            <Article code="Portaria 480-A/2025" description="IAS 2026: €537,13" />
+            <Article code="Portaria n.º 480-A/2025/1, de 30/12" description="IAS 2026: €537,13 (Diário da República, 30 de dezembro de 2025)" />
             <Article code="Lei n.º 98/2009" description="Seguro obrigatório de acidentes de trabalho" />
             <Article code="DL 115/2023" description="FGCT — Fundo de Garantia de Compensação do Trabalho (taxa 0,075%)" />
             <Article code="CIRS Art. 8.º" description="Rendimentos da Categoria F — rendas e arrendamento de imóveis" />
@@ -1384,7 +1384,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
         <section id="legal-fontes" className="bg-white rounded-[24px] p-8 shadow-sm border border-[#E2E8F0] scroll-mt-24">
           <SectionHeader icon={BookOpen} title="Fontes Web Consultadas (validação OE 2026)" color="#475569" />
           <p className="text-[13px] text-[#475569] mb-5 leading-relaxed">
-            Os valores fiscais hardcoded nos simuladores foram cruzados com as fontes abaixo (Outubro 2026). Antes de produção, validar contra a publicação oficial no <a href="https://info.portaldasfinancas.gov.pt" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Portal das Finanças</a> e no <a href="https://dre.pt" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Diário da República (dre.pt)</a>.
+            Os valores fiscais hardcoded nos simuladores foram cruzados com as fontes abaixo (Outubro 2026). Antes de produção, validar contra a publicação oficial no <a href="https://info.portaldasfinancas.gov.pt" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Portal das Finanças</a> e no <a href="https://diariodarepublica.pt" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Diário da República</a>.
           </p>
 
           <div className="space-y-5">
@@ -1394,10 +1394,12 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
                 <li>• <a href="https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/codigos_tributarios/cirs_rep/Pages/irs68.aspx" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Portal das Finanças — Art. 68.º CIRS (escalões IRS)</a></li>
                 <li>• <a href="https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/codigos_tributarios/CIRC_2R/Pages/irc88.aspx" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Portal das Finanças — Art. 88.º CIRC (Tributação Autónoma viaturas)</a></li>
                 <li>• <a href="https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/codigos_tributarios/cimt/Pages/cimt17.aspx" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Portal das Finanças — Art. 17.º CIMT (escalões IMT)</a></li>
-                <li>• <a href="https://info.portaldasfinancas.gov.pt/pt/apoio_contribuinte/questoes_frequentes/Pages/faqs-00053.aspx" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Portal das Finanças — FAQ IRS Jovem</a></li>
                 <li>• <a href="https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/legislacao/Despachos_SEAF/Documents/Despacho-SEAF-2026-01-05-XXV.pdf" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Despacho SEAF 2026 — Tabelas de Retenção na Fonte (Janeiro 2026)</a></li>
                 <li>• <a href="https://www.oe.gov.pt/" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Orçamento do Estado 2026 — Portal oficial do Governo</a></li>
                 <li>• <a href="https://at.madeira.gov.pt/Ficheiros/NL/AFJaneiro2026.pdf" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">AT Madeira — Agenda Fiscal Janeiro 2026 (PDF)</a></li>
+              
+                <li>• <a href="https://diariodarepublica.pt/dr/detalhe/portaria/480-a-2025" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Diário da República — Portaria n.º 480-A/2025/1 (IAS 2026 = €537,13)</a></li>
+                <li>• <a href="https://diariodarepublica.pt/dr/detalhe/lei/73-a-2025" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Diário da República — Lei n.º 73-A/2025 (Orçamento do Estado 2026)</a></li>
               </ul>
             </div>
 
@@ -1421,7 +1423,6 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
                 <li>• <a href="https://economiafinancas.com/2025/escaloes-irs-2026/" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Economia e Finanças — Tabela escalões IRS 2026</a></li>
                 <li>• <a href="https://contasconnosco.cofidis.pt/impostos/escaloes-irs" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Cofidis (Contas Connosco) — Escalões IRS 2026</a></li>
                 <li>• <a href="https://www.coverflex.com/pt/tabelas-irs" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Coverflex — Tabelas IRS 2026</a></li>
-                <li>• <a href="https://crncontabilidade.pt/blog/escaloes-de-irs-em-2026-tabela-atualizada-e-como-calcular-o-seu-imposto/" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">CRN-Contabilidade — Escalões IRS 2026</a></li>
                 <li>• <a href="https://ricavida.pt/escaloes-irs-2026-tabela-atualizada/" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Rica Vida — Escalões IRS 2026 (retenção)</a></li>
                 <li>• <a href="https://www.pwc.pt/pt/pwcinforfisco/flash/imi-imt-e-selo/imt-novas-tabelas-praticas-imt-vigorar-janeiro-2026.html" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">PwC — Tabelas práticas IMT Janeiro 2026</a></li>
                 <li>• <a href="https://www.coverflex.com/pt/blog/tributacao-autonoma" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Coverflex — Tributação Autónoma 2026</a></li>
@@ -1447,7 +1448,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
           </div>
 
           <p className="text-[11px] text-[#94A3B8] mt-6 font-[500] leading-relaxed">
-            Última verificação cruzada: <strong>2 de Outubro de 2026</strong>. Os valores hardcoded em <code className="bg-slate-100 px-1 py-0.5 rounded text-[10px]">src/lib/pt2026.ts</code>, <code className="bg-slate-100 px-1 py-0.5 rounded text-[10px]">src/lib/imt.ts</code> e <code className="bg-slate-100 px-1 py-0.5 rounded text-[10px]">src/lib/salario.ts</code> foram validados contra ≥2 fontes independentes e re-verificados por cálculo matemático (parcelas a abater do Art. 68.º CIRS calculadas escalão-a-escalão, erro &lt;€0,10).
+            Última verificação cruzada: <strong>26 de Outubro de 2026</strong>. Os valores hardcoded em <code className="bg-slate-100 px-1 py-0.5 rounded text-[10px]">src/lib/pt2026.ts</code>, <code className="bg-slate-100 px-1 py-0.5 rounded text-[10px]">src/lib/imt.ts</code> e <code className="bg-slate-100 px-1 py-0.5 rounded text-[10px]">src/lib/salario.ts</code> foram validados contra ≥2 fontes independentes e re-verificados por cálculo matemático (parcelas a abater do Art. 68.º CIRS calculadas escalão-a-escalão, erro &lt;€0,10).
           </p>
         </section>
 
