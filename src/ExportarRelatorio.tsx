@@ -16,6 +16,7 @@ import MinutaContrato from './MinutaContrato';
 import { defaultProfile, type ClientProfile } from './ClientProfile';
 import { printViaPaged, printHtmlUmaFolha } from './lib/printPaged';
 import { imprimirUmaFolha } from './lib/printElement';
+import { buildMinutaResumoHtml } from './lib/minutaResumo';
 import { downloadPrevisaPdf } from './lib/previsaPdf';
 import { defaultPreviSaState, type PreviSaState } from './previSaState';
 import { calculate } from './lib/previsaCalc';
@@ -450,13 +451,32 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
     const root = pkgWrapRef.current?.querySelector(`#${PKG_ROOT_ID[docId]}`) as HTMLElement | null;
     if (!root) { window.print(); return; }
 
-    // Proposta e Minuta: uma folha A4 (zoom medido), sem paginação do paged.js.
-    if (docId === 'proposta' || docId === 'minuta') {
+    // Minuta: versão resumida de 1 página (o contrato integral tem 2–3 páginas
+    // a 6 pt — numa folha ficaria ilegível). O texto completo continua na app
+    // e no download em Word.
+    if (docId === 'minuta') {
       setPrintingPkg(true);
       try {
-        imprimirUmaFolha(PKG_ROOT_ID[docId], { piso: docId === 'minuta' ? 0.4 : 0.45 });
-      } finally {
+        const html = buildMinutaResumoHtml(office, honorarios, profile);
+        const fechar = () => setPrintingPkg(false);
+        window.addEventListener('afterprint', fechar, { once: true });
+        printHtmlUmaFolha(html, { title: docLabel, piso: 0.8, onSettled: fechar });
+      } catch {
+        imprimirUmaFolha(PKG_ROOT_ID[docId], { piso: 0.45 });
         setTimeout(() => setPrintingPkg(false), 1800);
+      }
+      return;
+    }
+
+    // Proposta: uma folha A4 (zoom medido), sem paginação do paged.js.
+    if (docId === 'proposta') {
+      setPrintingPkg(true);
+      const fechar = () => setPrintingPkg(false);
+      window.addEventListener('afterprint', fechar, { once: true });
+      try {
+        imprimirUmaFolha(PKG_ROOT_ID[docId], { piso: 0.45 });
+      } finally {
+        setTimeout(fechar, 800);
       }
       return;
     }

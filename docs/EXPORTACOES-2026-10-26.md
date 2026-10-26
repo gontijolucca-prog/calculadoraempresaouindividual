@@ -22,7 +22,7 @@
 | Item | Estado |
 |---|---|
 | Proposta de Honorários | 1 página (zoom 0,69; PDF real com 1 página, 98 KB) |
-| Minuta de Contrato | 1 página (fluxo contínuo, zoom 0,40; PDF com 1 página) |
+| Minuta de Contrato | 1 página em versão resumida (Partes, Objeto, Serviços, Honorários, Obrigações, Foro, Assinaturas); integral continua em Word |
 | 7 documentos Word | 1 página cada (DR, Alterações, Fluxos, Balanço em 0,97; pacote DF em 0,42) |
 | Testes | `audit-pkg-pdfs.mjs` PASS · `audit-word-pdfs.mjs` PASS |
 

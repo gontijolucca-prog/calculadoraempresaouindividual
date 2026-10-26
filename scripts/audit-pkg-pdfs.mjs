@@ -63,18 +63,26 @@ for (const [doc, botaoNome, root, ficheiro] of [
   const botao = page.getByRole('button', { name: /Imprimir \/ Guardar PDF/i }).first();
   if (!(await botao.count())) { ok(false, `${doc}: botão de imprimir não encontrado`); continue; }
   await botao.click();
-  await page.waitForTimeout(350);
-
-  const medida = await page.evaluate((sel) => {
-    const el = document.querySelector(sel);
-    const zoom = Number(getComputedStyle(el).zoom || '1');
-    const paginas = Array.from(el.querySelectorAll('.pp-page, .mc-page')).map((p) => p.scrollHeight);
-    return { zoom, altura: Math.max(0, ...paginas), prints: window.__prints || 0 };
-  }, root);
+  await page.waitForTimeout(1300);
 
   const A4 = (297 * 96) / 25.4; // px
-  ok(medida.prints >= 1, `${doc}: impressão disparada`);
-  ok(medida.zoom <= 1 && medida.zoom >= 0.4, `${doc}: zoom aplicado (${medida.zoom.toFixed(2)})`);
+  const iframeInfo = await page.evaluate(() => (window.__ifsInfo || []).slice(-1)[0] || null);
+  let medida;
+  if (iframeInfo) {
+    // Minuta: documento próprio, versão resumida de 1 folha.
+    medida = { zoom: iframeInfo.zoom, altura: iframeInfo.altura, prints: 1, texto: iframeInfo.texto };
+    ok(/Versão resumida|Contrato de Prestação/i.test(medida.texto), `${doc}: versão resumida de 1 página`);
+  } else {
+    medida = await page.evaluate((sel) => {
+      const el = document.querySelector(sel);
+      const zoom = Number(getComputedStyle(el).zoom || '1');
+      const paginas = Array.from(el.querySelectorAll('.pp-page, .mc-page')).map((p) => p.scrollHeight);
+      return { zoom, altura: paginas.reduce((s, h) => s + h, 0), prints: window.__prints || 0 };
+    }, root);
+    ok(medida.prints >= 1, `${doc}: impressão disparada`);
+  }
+  const pisoDoc = doc === 'Minuta de Contrato' ? 0.79 : 0.4;
+  ok(medida.zoom <= 1 && medida.zoom >= pisoDoc, `${doc}: zoom ${medida.zoom.toFixed(2)}`);
   ok(medida.altura * medida.zoom <= A4 + 4, `${doc}: cabe na A4 (${Math.round(medida.altura * medida.zoom)}px de ${Math.round(A4)}px)`);
 
   // PDF real: repõe o zoom medido e imprime em modo print
@@ -84,6 +92,7 @@ for (const [doc, botaoNome, root, ficheiro] of [
   }, [root, medida.zoom]);
   await page.emulateMedia({ media: 'print' });
   await page.waitForTimeout(400);
+  await page.waitForTimeout(1200);
   const pdfPath = path.join(OUT, `${ficheiro}.pdf`);
   await page.pdf({ path: pdfPath, format: 'A4', printBackground: true });
   await page.emulateMedia({ media: 'screen' });

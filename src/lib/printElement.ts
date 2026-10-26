@@ -110,7 +110,12 @@ export function imprimirUmaFolha(
         min-height: 0 !important; height: auto !important;
         page-break-after: auto !important; break-after: auto !important;
         margin: 0 !important; box-shadow: none !important;
-      }`;
+      }
+      /* Versão condensada: documento longo cabe numa folha sem virar miniatura. */
+      .uma-folha-flow .mc-page { font-size: var(--uma-folha-pt, 9pt) !important; line-height: 1.28 !important; padding: 12mm 16mm !important; width: 210mm !important; }
+      .uma-folha-flow .mc-page h1 { font-size: 13pt !important; margin: 0 0 3mm !important; }
+      .uma-folha-flow .mc-page h2 { font-size: 10pt !important; margin: 2.5mm 0 1mm !important; }
+      .uma-folha-flow .mc-page *.mc-kicker { margin: 1mm 0 2mm !important; }`;
       document.head.appendChild(style);
     }
   }
@@ -120,23 +125,57 @@ export function imprimirUmaFolha(
     ? paginas.reduce((soma, p) => soma + p.scrollHeight, 0)
     : (paginas[0]?.scrollHeight ?? root.scrollHeight);
 
-  // 0.97 dá folga para arredondamentos do zoom (evita 1 linha na 2.ª página).
-  let fator = Math.min(1, Math.max(piso, (alvoPx * 0.97) / Math.max(1, altura)));
-  const zoomAnterior = root.style.zoom;
-  root.style.zoom = String(fator);
+  // Compensa a largura: o zoom encolhe a folha de 210 mm e deixaria metade da
+  // página em branco. Alargar na proporção 1/zoom faz o conteúdo voltar a
+  // ocupar a largura toda da A4 (e o texto reflui, ocupando menos altura).
+  const larguraOriginal = paginas.map((p) => p.style.width);
+  const compensar = (z: number) => {
+    paginas.forEach((p) => {
+      if (z < 1) {
+        p.style.width = `calc(210mm / ${z.toFixed(4)})`;
+        p.style.maxWidth = 'none';
+      } else {
+        p.style.width = '';
+        p.style.maxWidth = '';
+      }
+    });
+  };
 
-  // O zoom estreita a largura e o texto pode passar a ocupar mais linhas: mede
-  // outra vez e afina até caber (2 passagens chegam).
-  for (let i = 0; i < 3; i++) {
-    // scrollHeight = conteúdo real (o `min-height` da folha corta o rect).
+  // Documento com várias folhas (contrato): a prioridade é a tipografia — um
+  // contrato a 3 pt é ilegível. Desce-se o corpo do texto até caber; o zoom só
+  // entra como último recurso.
+  let fator = Math.min(1, Math.max(piso, (alvoPx * 0.97) / Math.max(1, altura)));
+  if (paginas.length > 1) {
+    const medir = () => paginas.reduce((s, p) => s + p.scrollHeight, 0);
+    for (const pt of [9, 8.4, 7.8, 7.2, 6.6, 6.0]) {
+      root.style.setProperty('--uma-folha-pt', `${pt}pt`);
+      root.classList.add('uma-folha-texto');
+      if (medir() <= alvoPx * 0.97) { fator = 1; break; }
+    }
+    root.style.zoom = String(fator);
+    if (fator < 1) compensar(fator);
+  } else {
+    const zoomAnterior0 = root.style.zoom;
+    void zoomAnterior0;
+    root.style.zoom = String(fator);
+    compensar(fator);
+  }
+  const zoomAnterior = root.style.zoom;
+
+  // O zoom estreita a largura e o texto reflui; alargar compensa, mas a altura
+  // muda outra vez. Itera até o conteúdo encher ~97% da A4 (cresce e encolhe).
+  const pretendido = alvoPx * 0.97;
+  for (let i = 0; i < 5; i++) {
     const alturaReal = paginas.length > 1
       ? paginas.reduce((soma, p) => soma + p.scrollHeight, 0)
       : (paginas[0]?.scrollHeight ?? root.scrollHeight);
     const ocupado = alturaReal * fator;
-    const pretendido = alvoPx * 0.97;
-    if (ocupado <= pretendido) break;
-    fator = Math.max(piso, fator * (pretendido / ocupado) * 0.99);
+    if (Math.abs(ocupado - pretendido) <= 12) break;
+    const novo = Math.min(1, Math.max(piso, pretendido / Math.max(1, alturaReal)));
+    if (Math.abs(novo - fator) < 0.005) break;
+    fator = novo;
     root.style.zoom = String(fator);
+    compensar(fator);
   }
 
   // Duas frames para o browser aplicar o zoom antes de imprimir.
@@ -145,7 +184,11 @@ export function imprimirUmaFolha(
       try {
         window.print();
       } finally {
-        setTimeout(() => { root.style.zoom = zoomAnterior; }, 1500);
+        setTimeout(() => {
+          root.style.zoom = zoomAnterior;
+          root.style.removeProperty('--uma-folha-pt');
+          paginas.forEach((p, i) => { p.style.width = larguraOriginal[i] || ''; p.style.maxWidth = ''; });
+        }, 1500);
       }
     });
   });

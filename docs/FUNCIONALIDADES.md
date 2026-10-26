@@ -52,7 +52,7 @@ Estado: ✅ = testado e provado nesta ronda · ⚠️ = existe, falta prova auto
 | E1–E11 | 11 relatórios de simulação | 1 folha A4, com enquadramento e escritório completos | ✅ |
 | E12 | Quadro/Mapa Controlo/Mapa RH | 1 folha A4 (paisagem), filtros respeitados | ✅ |
 | E13 | Proposta de Honorários | 1 folha, zoom medido, sem cortar texto | ✅ |
-| E14 | Minuta de Contrato | 1 folha (fluxo contínuo, escala ≥0,40) | ✅ |
+| E14 | Minuta de Contrato | 1 folha em versão resumida (cláusulas essenciais + nota); integral em Word | ✅ |
 | E15–E21 | DR, Alterações, Fluxos, Balanço, DF, Ata, Declaração | 1 folha cada (DF completo a 0,42) | ✅ |
 | E22 | Proposta comercial (deck) | 3–8 páginas; máx. 8 cards | ✅ (limite) · ⚠️ (paginação 2/página por fazer) |
 | E23 | CSV/Excel | Exporta o que está no ecrã, sem perder linhas | ⚠️ |
