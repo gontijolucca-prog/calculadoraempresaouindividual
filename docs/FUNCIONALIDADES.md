@@ -31,7 +31,7 @@ Estado: ✅ = testado e provado nesta ronda · ⚠️ = existe, falta prova auto
 | C6 | Obrigações | Criar/editar/concluir; filtro por cliente ativo e mês local | ✅ |
 | C7 | Tarefas | Criar, concluir, apagar (pede confirmação) e vai para a Lixeira | ✅ |
 | C8 | Agenda | Prazos de obrigações, tarefas e alertas por data | ✅ |
-| C9 | Cofre | Entradas por cliente; cifra AES-GCM com passphrase; só admin/contabilista | ⚠️ (UI com duplicados responsivos; cifra testada) |
+| C9 | Cofre | Entradas por cliente; cifra AES-GCM com passphrase; só admin/contabilista | ⚠️ cifra testada; formulário com duplicados responsivos não é fiável por script |
 | C10 | Lixeira | Restaurar e purgar (purga só admin); nada desaparece sem rasto | ✅ |
 | C11 | Equipa | Convidar por email, remover, cargos; isolamento por gabinete | ⚠️ (sem contas reais) |
 | C12 | Permissões | admin > contabilista > estagiária; matriz espelhada nas rules | ✅ (matriz) / ⛔ (contas reais) |
