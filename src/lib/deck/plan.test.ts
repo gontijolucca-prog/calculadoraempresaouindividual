@@ -48,7 +48,7 @@ const input: DeckInput = { office, honorarios: defaultHonorariosConfig, cliente 
 
 // ── Template ────────────────────────────────────────────────────────────────
 const template = buildTemplateCards(input);
-check('template tem entre 3 e 14 cards', template.length >= 3 && template.length <= MAX_CARDS);
+check('template tem entre 3 e 8 cards', template.length >= 3 && template.length <= MAX_CARDS);
 check('template começa na capa', template[0].kind === 'cover');
 check('template fecha com contacto', template[template.length - 1].kind === 'contact');
 check('template tem preço', template.some((c) => c.kind === 'pricing'));
