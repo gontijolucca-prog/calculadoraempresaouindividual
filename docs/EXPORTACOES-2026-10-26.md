@@ -55,3 +55,8 @@
 | `audit-minuta-resumo.mjs` | PASS (1 página + 7 cláusulas) |
 | `audit-word-pdfs.mjs` | PASS 7/7 (1 página cada) |
 | `audit-pdf-portability.mjs` | PASS 15/15 (A4, metadados, sem URLs externas, fontes standard/embutidas) |
+
+## Design dos PDFs (27/10)
+- Filete dourado `#B06D35` no topo, ponto de secção dourado, título em tinta `#1A1A18`
+  e cartão de cliente em bege `#FDFBF7` — alinhado com o site.
+- Cabeçalho com logo/360 + nome do escritório; rodapé com aviso legal e contactos.

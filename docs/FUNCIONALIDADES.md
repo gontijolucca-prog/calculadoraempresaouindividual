@@ -32,7 +32,7 @@ Estado: ✅ = testado e provado nesta ronda · ⚠️ = existe, falta prova auto
 | C7 | Tarefas | Criar, concluir, apagar (pede confirmação) e vai para a Lixeira | ✅ |
 | C8 | Agenda | Prazos de obrigações, tarefas e alertas por data | ✅ |
 | C9 | Cofre | Entradas por cliente; cifra AES-GCM com passphrase; só admin/contabilista | ⚠️ cifra testada; formulário com duplicados responsivos não é fiável por script |
-| C10 | Lixeira | Restaurar e purgar (purga só admin); nada desaparece sem rasto | ✅ |
+| C10 | Lixeira | Restaurar (deletedAt removido) e purgar; nada desaparece sem rasto | ✅ |
 | C11 | Equipa | Convidar por email, remover, cargos; isolamento por gabinete | ⚠️ (sem contas reais) |
 | C12 | Permissões | admin > contabilista > estagiária; matriz espelhada nas rules | ✅ (matriz) / ⛔ (contas reais) |
 | C13 | Offline | Grava local, sincroniza ao voltar a rede; nada falha em silêncio | ✅ |
@@ -65,7 +65,7 @@ Estado: ✅ = testado e provado nesta ronda · ⚠️ = existe, falta prova auto
 | F2 | 4 perguntas | Setor, Dimensão, Faturação, Objetivo; pré-preenchidas do perfil | ✅ |
 | F3 | Proposta tailored | 7 blocos: capa, diagnóstico, âmbito, equipa/prova, investimento, plano, fecho | ✅ |
 | F4 | Preço | Da tabela; ajuste manual com motivo e registo de auditoria | ✅ (unidade) |
-| F5 | Editor | Cards, temas, autosave, regerar card | ✅ |
+| F5 | Editor | Adicionar card (com tipo), mudar tema, autosave, regerar | ✅ |
 | F6 | PDF | 1 card por página, máx. 8 | ⚠️ |
 | F7 | Publicar/link | `/p/<slug>` 90 dias, revogável, sem dados internos | ⚠️ (sem Firestore) |
 | F8 | Gamma | Mesmo conteúdo em texto; copiar + abrir gamma.app | ✅ |
@@ -78,7 +78,7 @@ Estado: ✅ = testado e provado nesta ronda · ⚠️ = existe, falta prova auto
 | G3 | Timeout/fallback | 20 s por provider; nunca fica pendurado | ✅ |
 | G4 | Ações/sugestões | Navegar, abrir simulador, sugerir melhoria | ⚠️ |
 | G5 | Guias | "Aprender esta página" abre o guia (também por evento) | ✅ |
-| G6 | Importar TOConline | OAuth → lista de empresas/clientes → importar por NIF, sem duplicar | ⚠️ (falta o utilizador registar o redirect) |
+| G6 | Importar TOConline | Lista → seleção → importar por NIF (testado com dados simulados); OAuth real depende do redirect registado | ✅ (import) / ⏳ (OAuth) |
 
 ## H. Transversal
 | # | Funcionalidade | Como deve funcionar | Estado |

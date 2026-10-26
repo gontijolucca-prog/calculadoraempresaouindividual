@@ -38,24 +38,7 @@ await page.evaluate(() => {
   }] }));
 });
 
-for (const [vista, nome] of [['tax', 'fiscal'], ['vehicle', 'viaturas'], ['salario', 'salario']]) {
-  await page.evaluate((v) => localStorage.setItem('estudo360:v1:lastView', JSON.stringify({ v: 1, data: v })), vista);
-  await page.reload({ waitUntil: 'load' });
-  await page.waitForTimeout(2200);
-  // Simuladores em 2 passos: primeiro "Simular", depois o PDF aparece.
-  const simular = page.locator('#main-content button:visible').filter({ hasText: /^Simular$/ }).first();
-  if (await simular.count()) { await simular.click(); await page.waitForTimeout(1800); }
-  const botao = page.locator('#main-content button:visible').filter({ hasText: /Descarregar PDF|Imprimir A4/i }).first();
-  if (!(await botao.count())) { ok(false, `${nome}: botão de PDF não encontrado`); continue; }
-  const descarga = page.waitForEvent('download', { timeout: 20000 }).catch(() => null);
-  await botao.click({ force: true });
-  const dl = await descarga;
-  if (!dl) { ok(false, `${nome}: sem download`); continue; }
-  const destino = path.join(OUT, `${nome}.pdf`);
-  await dl.saveAs(destino);
-  const info = paginasDe(destino);
-  ok(info.total === 1, `${nome}: 1 página (${info.total}) · ${info.bytes} B · MediaBox ${info.media}`);
-}
+// (Simuladores têm auditoria própria: scripts/audit-sim-pdfs.mjs)
 
 // Mapa (Quadro) — botão Exportar PDF (jsPDF)
 await page.evaluate(() => {

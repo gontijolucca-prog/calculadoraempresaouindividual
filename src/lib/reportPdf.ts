@@ -30,6 +30,14 @@ export interface PdfOptions {
 
 export interface LinhaTabela { label: string; valor: string }
 
+/** Paleta do site: tinta, dourado e bege calmo. */
+const MARCA = {
+  tinta: [26, 26, 24] as [number, number, number],
+  dourado: [176, 109, 53] as [number, number, number],
+  bege: [253, 251, 247] as [number, number, number],
+  areia: [231, 224, 213] as [number, number, number],
+};
+
 const MM = {
   margem: 16,
   topo: 14,
@@ -172,6 +180,10 @@ export class RelatorioPdf {
       this.largura - this.margem, this.y + 4.6, { align: 'right' },
     );
 
+    // Filete dourado da marca, acima do filete da cor do escritório.
+    d.setFillColor(MARCA.dourado[0], MARCA.dourado[1], MARCA.dourado[2]);
+    d.rect(0, 0, this.largura, 2.2, 'F');
+
     this.y += this.v(16);
     d.setDrawColor(this.cor[0], this.cor[1], this.cor[2]);
     d.setLineWidth(0.7);
@@ -196,8 +208,8 @@ export class RelatorioPdf {
 
     if (this.opts.cliente || this.opts.nif) {
       const boxH = this.v(13);
-      d.setFillColor(245, 247, 250);
-      d.setDrawColor(226, 232, 240);
+      d.setFillColor(MARCA.bege[0], MARCA.bege[1], MARCA.bege[2]);
+      d.setDrawColor(MARCA.areia[0], MARCA.areia[1], MARCA.areia[2]);
       d.setLineWidth(0.3);
       d.roundedRect(this.margem, this.y, this.largura - this.margem * 2, boxH, 2, 2, 'FD');
       d.setFontSize(this.fs(6.8));
@@ -268,11 +280,11 @@ export class RelatorioPdf {
   private _seccao(titulo: string): this {
     if (!this.garantirAltura(this.v(14))) return this;
     const d = this.doc;
-    d.setFillColor(this.cor[0], this.cor[1], this.cor[2]);
+    d.setFillColor(MARCA.dourado[0], MARCA.dourado[1], MARCA.dourado[2]);
     d.circle(this.margem + 1.4, this.y + this.v(1.6), 1.2, 'F');
     d.setFont('helvetica', 'bold');
     d.setFontSize(this.fs(8.6));
-    this.setCor(this.corPrimaria);
+    d.setTextColor(MARCA.tinta[0], MARCA.tinta[1], MARCA.tinta[2]);
     d.text(titulo.toUpperCase(), this.margem + 5, this.y + this.v(2.8));
     this.y += this.v(5);
     d.setDrawColor(220, 231, 242);
