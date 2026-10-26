@@ -1,5 +1,5 @@
 # Candidatura SVAT — Estudo360.pt
-**Dossier 02/10/2026 v3 — base legal POR CONFIRMAR (ver VERIFICACAO-2026-10-26.md)**
+**Dossier 02/10/2026 v3 — base legal confirmada; enquadramento do Estudo360 provavelmente fora do âmbito (ver ENCAMINHAMENTO-SVAT.md)**
 
 ## Para a reunião de hoje 17h com a Sandrine
 1. Abrir `00-LEIA-PRIMEIRO.pdf` (2 minutos) — explica tudo
@@ -24,7 +24,7 @@
 | 09 | Anexos-Tecnicos.pdf | firestore.rules + exemplo audit_events |
 
 ## E-balcão
-`https://sitfiscal.portaldasfinancas.gov.pt/ebalcao` → Outras Obrigações → Certificação de Software → Questões técnicas
+`https://sitfiscal.portaldasfinancas.gov.pt/ebalcao` → Outras Obrigações → SVAT → Submissão (confirmado na página oficial em 26/10/2026)
 Alternativa email: `certificacao.software@at.gov.pt`
 
 > **Antes de enviar:** confirmar o âmbito com a AT (texto em `PERGUNTA-AT.txt`).

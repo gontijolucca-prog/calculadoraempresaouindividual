@@ -1,11 +1,16 @@
-ERRATA — 26/10/2026
+ERRATA — 26/10/2026 (revista após consulta da página oficial da AT)
 
-Os PDFs 01 (Memória Descritiva), 02 (Matriz de Conformidade) e 09 (Anexos)
-foram gerados em 02/10/2026 e mostram no cabeçalho «PORTARIA N.º 293/2017».
+1. BASE LEGAL: confirmada. Portaria n.º 293/2017, de 2 de outubro, cria o Selo de
+   Validação AT (SVAT) para programas de contabilidade quanto à produção do
+   ficheiro SAF-T (PT). Fonte: Portal das Finanças > Apoio ao Contribuinte >
+   Negócios > Faturação > SAF-T (PT) > Selo de Validação AT (SVAT).
 
-Essa referência NÃO foi confirmada em fonte oficial a 26/10/2026. Vale esta errata:
-a base legal está por confirmar com a AT e nenhum desses PDFs deve ser enviado
-como candidatura a um «selo» antes da resposta.
+2. CANAL ERRADO: o dossier dizia «Certificação de Software > Questões técnicas».
+   O canal oficial é e-balcão > Outras Obrigações > SVAT > Submissão.
 
-O conteúdo técnico (funcionalidades, requisitos, dados, auditoria) mantém-se válido.
-Antes de qualquer envio, usar o texto PERGUNTA-AT.txt no E-balcão.
+3. ÂMBITO: o Estudo360 lê SAF-T mas não produz SAF-T nem escrituração. É provável
+   que esteja fora do âmbito do SVAT. Antes de submeter o dossier, enviar a
+   pergunta PERGUNTA-AT.txt no e-balcão.
+
+4. Os PDFs 01–09 continuam a ser a versão de 02/10/2026 e podem referir o canal
+   antigo. Vale esta errata.

@@ -1,21 +1,21 @@
-Assunto: Certificação de software — âmbito para plataforma que não emite faturas
+Assunto: SVAT — enquadramento de plataforma que lê SAF-T mas não produz contabilidade
 
 Exmos. Senhores,
 
-A Recofatima (NIF 510 770 460) desenvolve o Estudo360.pt, uma aplicação web para
-gabinetes de contabilidade que faz simulação fiscal, gestão de clientes, tarefas,
-obrigações e cofre de acessos, e que lê ficheiros SAF-T. A aplicação NÃO emite
-faturas, recibos ou outros documentos de transporte — não substitui software de
-faturação.
+A Recofatima (NIF 510 770 460) desenvolve o Estudo360.pt, aplicação web para
+gabinetes de contabilidade com simulação fiscal, gestão de clientes, tarefas,
+obrigações e cofre de acessos. A aplicação LÊ ficheiros SAF-T (PT), mas não
+produz escrituração nem gera o ficheiro SAF-T (PT) de auditoria.
 
-1. Confirma-se que, por não emitir faturas, esta aplicação está fora do âmbito da
-   certificação de programas de faturação?
-2. Em caso afirmativo, que documento/devem ser submetidos, se algum?
-3. Em caso negativo, qual o diploma aplicável e a lista de requisitos e documentos
-   exigidos para a candidatura?
+Tendo em conta a Portaria n.º 293/2017, de 2 de outubro (Selo de Validação AT — SVAT):
 
-Agradecemos a indicação do enquadramento correto antes de submetermos qualquer
-dossier.
+1. Confirma-se que esta aplicação, por não produzir o ficheiro SAF-T (PT) nem
+   escrituração, está fora do âmbito do SVAT?
+2. Em caso afirmativo, é necessária alguma declaração ou registo?
+3. Em caso negativo, quais os requisitos e o formulário (Declaração SVAT) a
+   apresentar, e em que opção do e-balcão deve ser submetido?
+
+Agradecemos a confirmação antes de apresentarmos qualquer pedido.
 
 Com os melhores cumprimentos,
 Recofatima — Estudo360.pt
