@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Estudo360 · Novidades da semana de 26/10</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Fraunces:opsz,wght@9..144,300;9..144,700;9..144,900&display=swap" rel="stylesheet">
+<style>
+  /* ── Minimal: papel, tinta, uma cor ─────────────────────────── */
+  :root{
+    --paper:#FFFFFF; --paper-2:#FAFAF7; --ink:#14181E; --muted:#6B7280; --soft:#9AA1AB;
+    --line:#E7E6E1; --line-2:#DAD9D3;
+    --accent:#0677FF; --accent-soft:#EBF3FF;
+    --green:#0E9F6E; --amber:#B45309; --rose:#BE123C;
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--paper-2); color:var(--ink);
+    font-family:"Montserrat","Helvetica Neue",Helvetica,sans-serif;
+    font-weight:400; line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  .menos{font-weight:300}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+  .serif{font-family:"Fraunces",Georgia,serif}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+
+  /* ── Barra de topo ─────────────────────────────────────────── */
+  .top{position:sticky;top:0;z-index:50;background:var(--paper);border-bottom:1px solid var(--line)}
+  .top-in{display:flex;align-items:center;gap:12px;padding:12px 0}
+  .top .logo{width:30px;height:30px;flex:none}
+  .top .brand{font-weight:600;letter-spacing:-.2px;font-size:14.5px}
+  .top .brand span{color:var(--accent)}
+  .top nav{margin-left:auto;display:flex;gap:2px}
+  .top nav a{
+    font-size:12.5px;font-weight:500;color:var(--muted);text-decoration:none;
+    padding:8px 12px;border-radius:8px;transition:color .2s,background .2s;
+  }
+  .top nav a:hover{color:var(--ink);background:var(--paper-2)}
+
+  /* ── Hero ──────────────────────────────────────────────────── */
+  .hero{background:var(--paper);border-bottom:1px solid var(--line)}
+  .hero::before,.hero::after{display:none}
+  .grain{display:none}
+  .hero-in{display:grid;grid-template-columns:1.3fr .7fr;gap:44px;align-items:center;padding:64px 0 60px}
+  .kicker{display:inline-flex;align-items:center;gap:8px;font-family:"JetBrains Mono",monospace;font-size:10.5px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+  .kicker i{width:7px;height:7px;background:var(--accent);border-radius:2px}
+  h1{font-family:"Fraunces",Georgia,serif;font-weight:700;font-size:clamp(30px,4.2vw,50px);line-height:1.06;letter-spacing:-1px;margin:16px 0 14px}
+  h1 em{font-style:italic;color:var(--accent)}
+  .hero p.sub{max-width:560px;color:var(--muted);font-weight:400;font-size:15.5px;margin:0}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
+  .chip{display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--muted);font-size:12px;font-weight:500}
+  .chip b{color:var(--ink);font-weight:600}
+  .hero-card{border:1px solid var(--line);background:var(--paper);border-radius:12px;padding:22px 22px 16px}
+  .hero-card .num{font-family:"Fraunces",Georgia,serif;font-weight:700;font-size:44px;line-height:1;letter-spacing:-1.5px}
+  .hero-card .num small{font-size:22px;color:var(--accent);letter-spacing:0}
+  .hero-card .lbl{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .hero-card hr{border:0;border-top:1px solid var(--line);margin:16px 0 6px}
+  .hero-card .row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);padding:6px 0;border-top:1px solid var(--line)}
+  .hero-card .row:first-of-type{border-top:0}
+  .hero-card .row b{color:var(--ink);font-weight:600}
+  .scroll-hint{display:inline-flex;align-items:center;gap:8px;margin-top:28px;color:var(--accent);font-size:12.5px;font-weight:600;text-decoration:none}
+  .scroll-hint svg{transition:transform .25s}
+  .scroll-hint:hover svg{transform:translateY(3px)}
+
+  /* ── Secções ───────────────────────────────────────────────── */
+  section{padding:60px 0 14px;scroll-margin-top:70px}
+  .sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:26px}
+  .sec-head h2{font-family:"Fraunces",Georgia,serif;font-weight:700;font-size:clamp(24px,2.8vw,34px);letter-spacing:-.7px;line-height:1.1;margin:6px 0 0}
+  .sec-head .side{font-size:12px;color:var(--soft);font-weight:500;white-space:nowrap;padding-bottom:5px}
+  .overline{font-family:"JetBrains Mono",monospace;font-size:10.5px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+  .counter{display:flex;gap:8px}
+  .pill{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:500;padding:6px 11px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+  .pill .dot{width:6px;height:6px;border-radius:99px}
+  .dot.g{background:var(--green)} .dot.b{background:var(--accent)} .dot.o{background:var(--amber)}
+
+  /* ── Timeline ──────────────────────────────────────────────── */
+  .timeline{position:relative;margin-top:4px}
+  .timeline::before{content:"";position:absolute;left:22px;top:12px;bottom:40px;width:1px;background:var(--line)}
+  .day{position:relative;padding-left:64px;margin-bottom:40px}
+  .day .when{position:absolute;left:0;top:0;width:46px;display:flex;flex-direction:column;align-items:center;gap:5px}
+  .day .when .knob{width:31px;height:31px;border-radius:50%;background:var(--paper);border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:500;color:var(--ink)}
+  .day .when .fulldate{font-family:"JetBrains Mono",monospace;font-size:9.5px;font-weight:600;letter-spacing:.4px;color:#6B7280;background:var(--paper);padding:1px 4px;border-radius:4px;position:relative;z-index:2;white-space:nowrap}
+  .day h3{margin:3px 0 2px;font-size:15.5px;font-weight:600;letter-spacing:-.2px}
+  .day .note{font-size:12.5px;color:var(--muted);font-weight:400;margin:0 0 14px}
+  .card{
+    background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px 16px;display:flex;gap:13px;align-items:flex-start;
+    transition:border-color .25s, background .25s;
+  }
+  .card + .card{margin-top:8px}
+  .card:hover{border-color:var(--line-2);background:#FDFDFB}
+  .ic{flex:none;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-top:1px;background:#F4F4F0;border:1px solid var(--line);color:var(--ink)}
+  .ic.g,.ic.b,.ic.o,.ic.r{background:#F4F4F0;border-color:var(--line);color:var(--ink)}
+  .card .body{min-width:0}
+  .card .tag{
+    display:inline-flex;align-items:center;font-family:"JetBrains Mono",monospace;
+    font-size:9.5px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;
+    padding:3px 9px;border-radius:999px;margin-bottom:6px;border:1px solid var(--line);color:var(--muted);
+  }
+  .card .tag::before{content:"";width:5px;height:5px;border-radius:99px;margin-right:6px;background:var(--soft)}
+  .tag.g::before{background:var(--green)}
+  .tag.b::before{background:var(--accent)}
+  .tag.o::before{background:var(--amber)}
+  .card .txt{font-size:13.5px;color:var(--ink);font-weight:400}
+  .card .txt b{font-weight:600}
+  .card .extra{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .hero-day .card{border-left:2px solid var(--accent)}
+
+  /* ── SVAT ──────────────────────────────────────────────────── */
+  .svat{margin-top:40px;border:1px solid var(--line);background:var(--paper);border-radius:14px;padding:40px 38px 34px}
+  .svat::before{display:none}
+  .svat .seal{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .seal-badge{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;border:1.5px solid var(--ink);background:var(--paper)}
+  .seal-badge .in{font-family:"JetBrains Mono",monospace;font-weight:500;font-size:13px;letter-spacing:.5px;color:var(--ink)}
+  .svat h2{font-family:"Fraunces",Georgia,serif;font-weight:700;font-size:clamp(24px,2.8vw,36px);letter-spacing:-.7px;margin:18px 0 10px;line-height:1.08}
+  .svat .lead{color:var(--muted);font-weight:400;max-width:720px;font-size:14.5px}
+  .svat .overline{color:var(--muted)}
+  .status{margin:24px 0 8px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .status .st{border:1px solid var(--line);border-radius:10px;padding:12px 13px 10px;background:var(--paper-2)}
+  .status .st b{display:block;font-size:12.5px;font-weight:600}
+  .status .st span{font-size:11.5px;color:var(--muted)}
+  .status .st .mark{font-size:13px;margin-bottom:5px;display:block}
+  .steps{margin:26px 0 0;display:grid;gap:0;counter-reset:passo}
+  .step{
+    counter-increment:passo;display:flex;gap:16px;align-items:flex-start;
+    border:0;border-top:1px solid var(--line);border-radius:0;padding:15px 2px;
+    background:none;transition:background .2s;
+  }
+  .step:hover{background:var(--paper-2)}
+  .step::before{
+    content:counter(passo,decimal-leading-zero);flex:none;width:34px;padding-top:2px;
+    font-family:"JetBrains Mono",monospace;font-weight:500;font-size:11px;color:var(--accent);
+  }
+  .step > div > b{font-size:13.5px;font-weight:600;display:block}
+  .step p{margin:3px 0 0;font-size:13px;color:var(--muted)}
+  .step a{color:var(--accent);font-weight:500;text-decoration:none;border-bottom:1px solid rgba(6,119,255,.35)}
+  .step a:hover{border-color:var(--accent)}
+  .code-line{
+    display:inline-flex;gap:8px;align-items:center;margin-top:8px;padding:6px 11px;border-radius:8px;
+    background:var(--paper-2);border:1px solid var(--line);
+    font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--ink);
+  }
+  .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:8px;
+    font-size:13px;font-weight:600;text-decoration:none;transition:background .2s,border-color .2s,color .2s;letter-spacing:.1px;
+  }
+  .btn.primary{background:var(--ink);color:#fff}
+  .btn.primary:hover{background:#000}
+  .btn.ghost{border:1px solid var(--line-2);color:var(--ink);background:var(--paper)}
+  .btn.ghost:hover{background:var(--paper-2)}
+  .honest{margin-top:24px;border:1px solid var(--line);border-left:2px solid var(--accent);background:var(--paper-2);border-radius:0 10px 10px 0;padding:14px 16px;font-size:12.5px;color:var(--muted)}
+  .honest b{color:var(--ink);font-weight:600}
+
+  /* ── Dossier: lista de ficheiros ───────────────────────────── */
+  .dossier{margin-top:34px;border-top:1px solid var(--line);padding-top:24px}
+  .dossier-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:13px}
+  .dossier-head b{font-size:14.5px;font-weight:600;letter-spacing:-.1px}
+  .dossier-head span{font-size:11.5px;color:var(--muted);font-weight:400}
+  .files{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .f{display:flex;gap:11px;align-items:flex-start;text-decoration:none;color:inherit;cursor:pointer;border:1px solid var(--line);background:var(--paper);border-radius:10px;padding:10px 12px;transition:background .2s,border-color .2s,transform .2s}
+  .f:hover{background:var(--paper-2);border-color:var(--line-2);transform:translateY(-1px)}
+  .f .fc{min-width:0;flex:1}
+  .f .fn{flex:none;font-size:10px;font-weight:500;color:var(--ink);background:var(--paper-2);border:1px solid var(--line);border-radius:6px;padding:2px 6px;margin-top:1px}
+  .f .ff{font-size:11.5px;font-weight:600;color:var(--ink);word-break:break-word}
+  .f .fo{flex:none;font-size:11px;font-weight:500;color:var(--accent);margin-top:2px;opacity:.55;transition:opacity .2s,transform .2s}
+  .f:hover .fo{opacity:1;transform:translateX(2px)}
+  .f .fd{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.45}
+  .f .ftag{flex:none;font-family:"JetBrains Mono",monospace;font-size:8.5px;font-weight:500;letter-spacing:.9px;text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;margin-top:1px}
+  .f .ftag.g{border-color:var(--line);color:var(--soft)}
+  .dossier-note{margin:13px 0 0;font-size:12px;color:var(--muted)}
+  .dossier-note b{color:var(--ink);font-weight:600}
+
+  /* ── Próximos passos ───────────────────────────────────────── */
+  .next-card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:22px 22px 18px}
+  .next-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:13px}
+  .next-lead{margin:0;font-size:13px;color:var(--muted);max-width:660px}
+  .np-status{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:500;color:var(--muted);white-space:nowrap;padding-top:2px}
+  .dotk{width:7px;height:7px;border-radius:99px;background:#C6CBD3;flex:none}
+  .dotk.ok{background:var(--green)}
+  .dotk.warm{background:var(--amber)}
+  .dotk.err{background:var(--rose)}
+  #npText{display:block;width:100%;min-height:220px;resize:vertical;border:1px solid var(--line);border-radius:10px;background:var(--paper-2);padding:15px 16px;font-family:"Montserrat","Helvetica Neue",Helvetica,sans-serif;font-size:13.5px;line-height:1.7;color:var(--ink);outline:none;transition:border-color .2s,box-shadow .2s,background .2s}
+  #npText::placeholder{color:var(--soft)}
+  #npText:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(6,119,255,.12);background:var(--paper)}
+  .next-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:13px}
+  .npbtn{border:0;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:8px;font-family:"Montserrat","Helvetica Neue",Helvetica,sans-serif;font-size:12.5px;font-weight:600;transition:background .2s,border-color .2s,color .2s}
+  .npbtn.primary{background:var(--ink);color:#fff}
+  .npbtn.primary:hover{background:#000}
+  .npbtn.ghost{background:var(--paper);border:1px solid var(--line-2);color:var(--ink)}
+  .npbtn.ghost:hover{background:var(--paper-2)}
+  .np-file{font-size:11px;color:var(--soft)}
+
+  footer{padding:30px 0 54px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;border-top:1px solid var(--line);margin-top:40px}
+  footer b{color:var(--ink);font-weight:600}
+
+  /* Reveal */
+  .reveal{opacity:0;transform:translateY(12px);transition:opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1);transition-delay:var(--d,0ms)}
+  .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion: reduce){.reveal{opacity:1;transform:none;transition:none}.f:hover{transform:none}}
+
+  @media (max-width:860px){
+    .hero-in{grid-template-columns:1fr;gap:28px;padding:44px 0 44px}
+    .hero-card{max-width:460px}
+    .status{grid-template-columns:1fr 1fr}
+    .svat{padding:28px 20px 24px;border-radius:12px}
+    .sec-head{flex-direction:column;align-items:flex-start}
+    .files{grid-template-columns:1fr}
+  }
+  @media (max-width:640px){
+    .top-in{flex-wrap:wrap;padding:9px 0;gap:4px 10px}
+    .top nav{margin-left:0;width:100%;gap:0;overflow-x:auto;scrollbar-width:none}
+    .top nav::-webkit-scrollbar{display:none}
+    .top nav a{white-space:nowrap;font-size:11.5px;padding:6px 9px}
+    .wrap{padding:0 18px}
+  }
+  @media print{
+    .top,.scroll-hint,.next-actions{display:none}
+    body{background:#fff}
+    .card,.step,.f,.next-card{break-inside:avoid}
+  }
+  /* telemóvel: os passos da candidatura não podem sair da página */
+  @media (max-width: 760px){
+    .steps{grid-template-columns:minmax(0,1fr) !important}
+    .step{max-width:100%}
+    .step *{min-width:0}
+    .step p, .step li{overflow-wrap:anywhere}
+    .code-line{max-width:100%;white-space:normal;overflow-wrap:anywhere;flex-wrap:wrap}
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Topo ─────────────────────────────────────────────────────── -->
+<div class="top">
+  <div class="wrap top-in">
+    <svg class="logo" viewBox="0 0 120 120" aria-hidden="true">
+      <defs>
+        <radialGradient id="orb" cx="42%" cy="42%" r="58%">
+          <stop offset="0%" stop-color="#9FE2FF"/><stop offset="35%" stop-color="#00C2FF"/>
+          <stop offset="70%" stop-color="#0677FF"/><stop offset="100%" stop-color="#0B1D2D"/>
+        </radialGradient>
+        <linearGradient id="ring-h" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#0B1D2D"/><stop offset="50%" stop-color="#0677FF"/><stop offset="100%" stop-color="#0B1D2D"/>
+        </linearGradient>
+        <style>
+          @keyframes roda { to { transform: rotate(360deg); } }
+          .dial{transform-box:fill-box;transform-origin:center;animation:roda 36s linear infinite}
+          @media (prefers-reduced-motion: reduce){.dial{animation:none}}
+        </style>
+      </defs>
+      <circle cx="60" cy="60" r="44" fill="none" stroke="#0677FF" stroke-width="3.6" stroke-dasharray="14 6" stroke-linecap="round" class="dial"/>
+      <g stroke="#0677FF" stroke-width="3" stroke-linecap="round">
+        <line x1="60" y1="6" x2="60" y2="14"/><line x1="60" y1="106" x2="60" y2="114"/>
+        <line x1="6" y1="60" x2="14" y2="60"/><line x1="106" y1="60" x2="114" y2="60"/>
+      </g>
+      <ellipse cx="60" cy="60" rx="52" ry="15" fill="none" stroke="url(#ring-h)" stroke-width="4" transform="rotate(-22 60 60)"/>
+      <circle cx="60" cy="60" r="20" fill="url(#orb)"/>
+      <ellipse cx="53" cy="52" rx="5" ry="3.2" fill="#fff" opacity=".75"/>
+      <circle cx="50" cy="50" r="1.6" fill="#fff" opacity=".9"/>
+    </svg>
+    <div class="brand">Estudo<span>360</span></div>
+    <nav>
+      <a href="#novidades">Novidades</a>
+      <a href="estudo360-novidades-e-svat">Atualizações anteriores</a>
+      <a href="#proximos">Próximos passos</a>
+    </nav>
+  </div>
+</div>
+
+<!-- ── Hero ─────────────────────────────────────────────────────── -->
+<header class="hero">
+  <div class="grain"></div>
+  <div class="wrap hero-in">
+    <div>
+      <span class="kicker"><i></i>Atualizações · semana de 26/10</span>
+      <h1>O que mudou esta <em>semana</em>.</h1>
+      <p class="sub">As novidades da semana em linguagem simples: importar empresas do TOConline, todos os documentos numa folha A4 e propostas à medida do cliente.</p>
+      <div class="chips">
+        <span class="chip"><b>466</b> empresas importadas</span>
+        <span class="chip">Documentos a <b>1 folha</b></span>
+        <span class="chip">Já tudo <b>no ar</b></span>
+      </div>
+      <div class="cta">
+        <a class="btn primary" href="#novidades">Ver o que mudou</a>
+        <a class="btn ghost" href="estudo360-novidades-e-svat">Ver atualizações anteriores</a>
+      </div>
+    </div>
+    <aside class="hero-card reveal">
+      <div class="num">6<small></small></div>
+      <div class="lbl">novidades desta semana, explicadas em português simples</div>
+      <hr>
+      <div class="row"><span>Empresas do TOConline</span><b>466</b></div>
+      <div class="row"><span>Documentos a 1 folha</span><b>15/15</b></div>
+      <div class="row"><span>Testes automáticos</span><b>135 ✓</b></div>
+      <div class="row"><span>Assistente</span><b>2–6 s</b></div>
+    </aside>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ── Novidades ───────────────────────────────────────────── -->
+  <section id="novidades">
+    <div class="sec-head reveal">
+      <div>
+        <div class="overline">Novidades do produto</div>
+        <h2>O que mudou, por ordem</h2>
+      </div>
+      <div class="counter">
+        <span class="pill"><span class="dot g"></span>Novidades</span>
+        <span class="pill"><span class="dot b"></span>Melhorias</span>
+        <span class="pill"><span class="dot o"></span>Correções</span>
+      </div>
+    </div>
+
+    <div class="timeline">
+
+      <!-- ESTA SEMANA -->
+      <div class="day hero-day">
+        <div class="when"><div class="knob">01</div><div class="fulldate">26/10</div></div>
+        <h3>Importar o TOConline e PDFs numa folha</h3>
+        <p class="note">A semana em que a papelada ficou mais simples: as empresas entram sozinhas do TOConline e todos os documentos passaram a caber numa folha A4.</p>
+
+        <div class="card reveal">
+          <div class="ic g"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></div>
+          <div class="body"><span class="tag g">TOConline</span>
+            <div class="txt"><b>As empresas entram do TOConline com um clique.</b> Liga-se à conta, aparece a lista e escolhes quais queres trazer. Os clientes que já tens são ignorados, para não ficarem duplicados.</div>
+            <div class="extra"><b>466 empresas</b> encontradas na primeira ligação real — 5 páginas, todas com NIF.</div>
+          </div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic b"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M9 13h6M9 17h6"/></svg></div>
+          <div class="body"><span class="tag b">Documentos</span>
+            <div class="txt"><b>Todos os documentos passaram a caber numa folha A4.</b> Relatórios das 11 ferramentas, proposta, contrato e os 7 documentos de contas — completos, com o nome do escritório e os teus contactos.</div>
+            <div class="extra">Aberto em qualquer computador: o PDF leva tudo dentro (letras e imagens), sem depender de internet.</div>
+          </div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic b"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10"/></svg></div>
+          <div class="body"><span class="tag b">Propostas</span>
+            <div class="txt"><b>Fazer proposta tem agora dois caminhos, à escolha.</b> Podes gerar dentro do Estudo360 ou levar o texto para o Gamma. Em ambos respondes a 4 perguntas rápidas e a proposta sai à medida do cliente.</div>
+            <div class="extra">O preço vem sempre da tua tabela; se fizeres um ajuste, fica registado quem mudou e porquê.</div>
+          </div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic g"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></div>
+          <div class="body"><span class="tag g">Assistente</span>
+            <div class="txt"><b>O assistente responde em 2 a 6 segundos.</b> E deixou de receber nomes de clientes: as perguntas com NIF ou IBAN são limpas antes de saírem.</div>
+          </div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic o"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div class="body"><span class="tag o">Segurança</span>
+            <div class="txt"><b>Testámos as permissões a sério</b>, com duas contas: o dono convida, a estagiária aceita, e o cofre fica fechado para ela — confirmado do lado do servidor, não só no ecrã.</div>
+          </div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic g"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <div class="body"><span class="tag g">Qualidade</span>
+            <div class="txt"><b>Percorremos o site todo à procura de erros.</b> 29 ecrãs em três tamanhos (telemóvel, tablet e computador): zero erros, zero sobreposições, zero números estragados.</div>
+            <div class="extra">Dois computadores a editar a mesma célula já não se atrapalham: ganha a última alteração e o resto vai para a Lixeira.</div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- HOJE -->
+      
+    </div>
+  </section>
+
+  <section id="proximos">
+    <div class="sec-head reveal">
+      <div>
+        <div class="overline">Organização</div>
+        <h2>Próximos passos</h2>
+      </div>
+      <div class="side">Escreve · fica guardado sozinho · grava no teu Mac</div>
+    </div>
+
+    <div class="next-card reveal">
+      <div class="next-top">
+        <p class="next-lead">Escreve aqui o que falta fazer — uma linha por passo. Fica guardado automaticamente neste navegador e, com um clique, também num ficheiro do teu Mac: escolhes o ficheiro uma vez e depois grava sempre sozinho.</p>
+        <div class="np-status"><span class="dotk warm" id="npDot"></span><span id="npStatus">A ligar…</span></div>
+      </div>
+      <textarea id="npText" spellcheck="false" placeholder="Ex.:&#10;- Assinar a declaração 07 e enviar o pedido SVAT">- Validar os 12 valores fiscais com o contabilista
+- Publicar as regras de acesso na base de dados principal
+- Trocar o segredo do TOConline que foi partilhado por captura
+- Esconder Cofre/Equipa/Lixeira do menu para quem não tem acesso
+- Revisão visual página a página dos PDFs com o Lucca
+- Fechar o dossier SVAT no E-balcão</textarea>
+      <div class="next-actions">
+        <button type="button" id="npSave" class="npbtn primary">Ligar ficheiro no Mac</button>
+        <button type="button" id="npDownload" class="npbtn ghost">Descarregar cópia</button>
+        <span class="np-file mono" id="npFile"></span>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span><b>Estudo360</b> · Novidades da semana de 26/10 · <a href="estudo360-novidades-e-svat">ver atualizações anteriores</a></span>
+    <span class="mono">estudo360.pt</span>
+  </footer>
+</main>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  }, { threshold: .12 });
+  document.querySelectorAll('.reveal').forEach((el, i) => {
+    el.style.setProperty('--d', (i % 6) * 55 + 'ms');
+    io.observe(el);
+  });
+
+  // ── Próximos passos: gravação automática + ficheiro no Mac ──
+  (function () {
+    var KEY = 'estudo360:novidades:proximos-passos:v1';
+    var ta = document.getElementById('npText');
+    var statusEl = document.getElementById('npStatus');
+    var dot = document.getElementById('npDot');
+    var fileEl = document.getElementById('npFile');
+    var saveBtn = document.getElementById('npSave');
+    var dlBtn = document.getElementById('npDownload');
+    if (!ta || !saveBtn) return;
+
+    var canPick = typeof window.showSaveFilePicker === 'function';
+    var handle = null;
+
+    function fmtTime(d) { return d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }); }
+    function setStatus(kind, msg) { dot.className = 'dotk ' + kind; statusEl.textContent = msg; }
+
+    try { var saved = localStorage.getItem(KEY); if (saved) ta.value = saved; } catch (e) {}
+
+    function saveLocal() {
+      try {
+        localStorage.setItem(KEY, ta.value);
+        setStatus('ok', 'Guardado automaticamente às ' + fmtTime(new Date()));
+      } catch (e) {
+        setStatus('err', 'Sem espaço neste navegador — usa o botão para gravar no Mac');
+      }
+    }
+
+    function buildFile() {
+      var body = ta.value.replace(/\s+$/, '');
+      return '# Estudo360 — Próximos passos\n\n_Última gravação: ' + new Date().toLocaleString('pt-PT') + '_\n\n' + (body || '(sem passos escritos)') + '\n';
+    }
+
+    function openDb() {
+      return new Promise(function (res, rej) {
+        var r = indexedDB.open('estudo360-proximos-passos', 1);
+        r.onupgradeneeded = function () { r.result.createObjectStore('h'); };
+        r.onsuccess = function () { res(r.result); };
+        r.onerror = function () { rej(r.error); };
+      });
+    }
+    function dbGet(k) {
+      return openDb().then(function (d) {
+        return new Promise(function (res, rej) {
+          var q = d.transaction('h', 'readonly').objectStore('h').get(k);
+          q.onsuccess = function () { res(q.result); };
+          q.onerror = function () { rej(q.error); };
+        });
+      });
+    }
+    function dbSet(k, v) {
+      return openDb().then(function (d) {
+        return new Promise(function (res, rej) {
+          var q = d.transaction('h', 'readwrite').objectStore('h').put(v, k);
+          q.onsuccess = function () { res(); };
+          q.onerror = function () { rej(q.error); };
+        });
+      });
+    }
+
+    function permState() {
+      if (!handle) return Promise.resolve('none');
+      if (!handle.queryPermission) return Promise.resolve('granted');
+      return handle.queryPermission({ mode: 'readwrite' }).catch(function () { return 'prompt'; });
+    }
+
+    function writeFile() {
+      if (!handle) return Promise.resolve(false);
+      return permState().then(function (p) {
+        if (p !== 'granted') return false;
+        return handle.createWritable().then(function (w) {
+          return w.write(buildFile()).then(function () { return w.close(); });
+        }).then(function () {
+          setStatus('ok', 'Guardado no Mac (' + handle.name + ') às ' + fmtTime(new Date()));
+          return true;
+        });
+      }).catch(function () {
+        setStatus('err', 'Falhou a gravação no Mac — carrega em Guardar');
+        return false;
+      });
+    }
+
+    var tFile = null;
+    function scheduleFileWrite() {
+      if (!handle) return;
+      clearTimeout(tFile);
+      tFile = setTimeout(function () { writeFile(); }, 1200);
+    }
+
+    function updateBtn() {
+      if (!canPick) { saveBtn.textContent = 'Descarregar para o Mac'; return; }
+      if (!handle) { saveBtn.textContent = 'Ligar ficheiro no Mac'; return; }
+      permState().then(function (p) {
+        saveBtn.textContent = p === 'granted' ? 'Guardar agora no Mac' : 'Religar ficheiro no Mac';
+      });
+    }
+
+    saveBtn.addEventListener('click', function () {
+      if (!canPick) { downloadCopy(); return; }
+      var chain = handle ? Promise.resolve(handle) : window.showSaveFilePicker({
+        suggestedName: 'Estudo360-Proximos-Passos.md',
+        types: [{ description: 'Markdown', accept: { 'text/markdown': ['.md'] } }]
+      }).then(function (h) {
+        handle = h;
+        dbSet('fileHandle', h);
+        fileEl.textContent = 'Ficheiro: ' + h.name;
+        return h;
+      });
+      chain.then(function (h) {
+        return permState().then(function (p) {
+          if (p === 'granted') return true;
+          return h.requestPermission ? h.requestPermission({ mode: 'readwrite' }).then(function (np) { return np === 'granted'; }) : true;
+        });
+      }).then(function (ok) {
+        if (!ok) { setStatus('err', 'Permissão recusada — o ficheiro não foi gravado'); updateBtn(); return; }
+        return writeFile().then(function () { updateBtn(); });
+      }).catch(function (err) {
+        if (err && err.name === 'AbortError') return;
+        setStatus('err', 'Não foi possível ligar o ficheiro — usa "Descarregar cópia"');
+      });
+    });
+
+    function downloadCopy() {
+      var blob = new Blob([buildFile()], { type: 'text/markdown' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'Estudo360-Proximos-Passos.md';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 3000);
+      setStatus('ok', 'Cópia descarregada (pasta Transferências) às ' + fmtTime(new Date()));
+    }
+    dlBtn.addEventListener('click', downloadCopy);
+
+    var tLocal = null;
+    ta.addEventListener('input', function () {
+      setStatus('warm', 'A guardar…');
+      clearTimeout(tLocal);
+      tLocal = setTimeout(saveLocal, 300);
+      scheduleFileWrite();
+    });
+    window.addEventListener('beforeunload', function () { try { localStorage.setItem(KEY, ta.value); } catch (e) {} });
+
+    if (canPick) {
+      dbGet('fileHandle').then(function (h) {
+        if (!h) { updateBtn(); return; }
+        handle = h;
+        fileEl.textContent = 'Ficheiro: ' + h.name;
+        permState().then(function (p) {
+          if (p === 'granted') setStatus('ok', 'Ligado a ' + h.name);
+          else setStatus('warm', 'Ligado a ' + h.name + ' — carrega em "Religar" para voltar a gravar sozinho');
+          updateBtn();
+        });
+      }).catch(function () { updateBtn(); });
+    } else {
+      updateBtn();
+    }
+
+    if (ta.value) {
+      if (statusEl.textContent.indexOf('A ligar') !== -1) setStatus('ok', 'Guardado neste navegador');
+    } else {
+      setStatus('warm', canPick ? 'Liga um ficheiro no Mac para gravar aí também' : 'Escreve — depois podes descarregar para o Mac');
+    }
+  })();
+</script>
+</body>
+</html>

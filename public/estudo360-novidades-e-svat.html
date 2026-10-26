@@ -84,7 +84,7 @@
   .day{position:relative;padding-left:64px;margin-bottom:40px}
   .day .when{position:absolute;left:0;top:0;width:46px;display:flex;flex-direction:column;align-items:center;gap:5px}
   .day .when .knob{width:31px;height:31px;border-radius:50%;background:var(--paper);border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:500;color:var(--ink)}
-  .day .when .fulldate{font-family:"JetBrains Mono",monospace;font-size:9.5px;font-weight:600;letter-spacing:.4px;color:#6B7280;background:var(--paper);padding:1px 4px;border-radius:4px;position:relative;z-index:2;white-space:nowrap}
+  .day .when .fulldate{font-family:"JetBrains Mono",monospace;font-size:9.5px;font-weight:500;letter-spacing:.4px;color:var(--soft)}
   .day h3{margin:3px 0 2px;font-size:15.5px;font-weight:600;letter-spacing:-.2px}
   .day .note{font-size:12.5px;color:var(--muted);font-weight:400;margin:0 0 14px}
   .card{
@@ -224,14 +224,6 @@
     body{background:#fff}
     .card,.step,.f,.next-card{break-inside:avoid}
   }
-  /* telemóvel: os passos da candidatura não podem sair da página */
-  @media (max-width: 760px){
-    .steps{grid-template-columns:minmax(0,1fr) !important}
-    .step{max-width:100%}
-    .step *{min-width:0}
-    .step p, .step li{overflow-wrap:anywhere}
-    .code-line{max-width:100%;white-space:normal;overflow-wrap:anywhere;flex-wrap:wrap}
-  }
 </style>
 </head>
 <body>
@@ -280,23 +272,26 @@
     <div>
       <span class="kicker"><i></i>Atualizações · mais recentes primeiro</span>
       <h1>Tudo o que melhorámos, corrigimos e <em>construímos</em>.</h1>
-      <p class="sub">O resumo simples das últimas semanas — do novo visual à importação do TOConline. Sem termos técnicos: só o que mudou na prática, para ti.</p>
+      <p class="sub">O resumo simples das últimas semanas — do novo visual à grande revisão a fundo. Sem termos técnicos: só o que mudou na prática, para ti.</p>
       <div class="chips">
-        <span class="chip"><b>466</b> empresas importadas</span>
+        <span class="chip"><b>20+</b> melhorias e correções</span>
         <span class="chip">Já tudo <b>no ar</b> em estudo360.pt</span>
         <span class="chip">Dossier <b>SVAT</b> pronto</span>
       </div>
       <a class="scroll-hint" href="#novidades">Ver as novidades
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
       </a>
+      <div class="cta" style="margin-top:14px">
+        <a class="btn primary" href="estudo360-novidades-semana-26-10">Ver as novidades desta semana →</a>
+      </div>
     </div>
     <aside class="hero-card reveal">
-      <div class="num">26<small>+</small></div>
+      <div class="num">20<small>+</small></div>
       <div class="lbl">melhorias e correções, da mais recente para a mais antiga</div>
       <hr>
-      <div class="row"><span>Testes automáticos</span><b>135 ✓</b></div>
-      <div class="row"><span>Documentos a 1 folha</span><b>15/15</b></div>
-      <div class="row"><span>Importar do TOConline</span><b>1 clique</b></div>
+      <div class="row"><span>Testes automáticos</span><b>25/25 ✓</b></div>
+      <div class="row"><span>Registos que se perdem</span><b>Zero</b></div>
+      <div class="row"><span>Cofre de senhas</span><b>Só tu vês</b></div>
       <div class="row"><span>Selo SVAT</span><b>Dossier pronto</b></div>
     </aside>
   </div>
@@ -320,63 +315,9 @@
 
     <div class="timeline">
 
-      <!-- ESTA SEMANA -->
-      <div class="day hero-day">
-        <div class="when"><div class="knob">01</div><div class="fulldate">26/10</div></div>
-        <h3>Importar o TOConline e PDFs numa folha</h3>
-        <p class="note">A semana em que a papelada ficou mais simples: as empresas entram sozinhas do TOConline e todos os documentos passaram a caber numa folha A4.</p>
-
-        <div class="card reveal">
-          <div class="ic g"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></div>
-          <div class="body"><span class="tag g">TOConline</span>
-            <div class="txt"><b>As empresas entram do TOConline com um clique.</b> Liga-se à conta, aparece a lista e escolhes quais queres trazer. Os clientes que já tens são ignorados, para não ficarem duplicados.</div>
-            <div class="extra"><b>466 empresas</b> encontradas na primeira ligação real — 5 páginas, todas com NIF.</div>
-          </div>
-        </div>
-
-        <div class="card reveal">
-          <div class="ic b"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M9 13h6M9 17h6"/></svg></div>
-          <div class="body"><span class="tag b">Documentos</span>
-            <div class="txt"><b>Todos os documentos passaram a caber numa folha A4.</b> Relatórios das 11 ferramentas, proposta, contrato e os 7 documentos de contas — completos, com o nome do escritório e os teus contactos.</div>
-            <div class="extra">Aberto em qualquer computador: o PDF leva tudo dentro (letras e imagens), sem depender de internet.</div>
-          </div>
-        </div>
-
-        <div class="card reveal">
-          <div class="ic b"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10"/></svg></div>
-          <div class="body"><span class="tag b">Propostas</span>
-            <div class="txt"><b>Fazer proposta tem agora dois caminhos, à escolha.</b> Podes gerar dentro do Estudo360 ou levar o texto para o Gamma. Em ambos respondes a 4 perguntas rápidas e a proposta sai à medida do cliente.</div>
-            <div class="extra">O preço vem sempre da tua tabela; se fizeres um ajuste, fica registado quem mudou e porquê.</div>
-          </div>
-        </div>
-
-        <div class="card reveal">
-          <div class="ic g"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></div>
-          <div class="body"><span class="tag g">Assistente</span>
-            <div class="txt"><b>O assistente responde em 2 a 6 segundos.</b> E deixou de receber nomes de clientes: as perguntas com NIF ou IBAN são limpas antes de saírem.</div>
-          </div>
-        </div>
-
-        <div class="card reveal">
-          <div class="ic o"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-          <div class="body"><span class="tag o">Segurança</span>
-            <div class="txt"><b>Testámos as permissões a sério</b>, com duas contas: o dono convida, a estagiária aceita, e o cofre fica fechado para ela — confirmado do lado do servidor, não só no ecrã.</div>
-          </div>
-        </div>
-
-        <div class="card reveal">
-          <div class="ic g"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
-          <div class="body"><span class="tag g">Qualidade</span>
-            <div class="txt"><b>Percorremos o site todo à procura de erros.</b> 29 ecrãs em três tamanhos (telemóvel, tablet e computador): zero erros, zero sobreposições, zero números estragados.</div>
-            <div class="extra">Dois computadores a editar a mesma célula já não se atrapalham: ganha a última alteração e o resto vai para a Lixeira.</div>
-          </div>
-        </div>
-      </div>
-
-
       <!-- HOJE -->
-      <div class="day">
-        <div class="when"><div class="knob">02</div><div class="fulldate">16/10</div></div>
+      <div class="day hero-day">
+        <div class="when"><div class="knob">01</div><div class="fulldate">16/10</div></div>
         <h3>Revisão a fundo de tudo</h3>
         <p class="note">Testámos o site de ponta a ponta como se fosse um utilizador real: criar conta, gabinete, clientes, trabalho do dia a dia, cofre, equipa e até sem internet.</p>
 
@@ -430,7 +371,7 @@
 
       <!-- 15/10 -->
       <div class="day">
-        <div class="when"><div class="knob">03</div><div class="fulldate">15/10</div></div>
+        <div class="when"><div class="knob">02</div><div class="fulldate">15/10</div></div>
         <h3>Listas e mapas à prova de mudanças</h3>
         <p class="note">Pequenas correções com grande impacto no dia a dia.</p>
 
@@ -451,7 +392,7 @@
 
       <!-- 13/10 -->
       <div class="day">
-        <div class="when"><div class="knob">04</div><div class="fulldate">13/10</div></div>
+        <div class="when"><div class="knob">03</div><div class="fulldate">13/10</div></div>
         <h3>Simuladores mais certos</h3>
         <p class="note">Os simuladores foram revistos ao detalhe para os números baterem certo ao cêntimo.</p>
         <div class="card reveal">
@@ -464,7 +405,7 @@
 
       <!-- 09/10 -->
       <div class="day">
-        <div class="when"><div class="knob">05</div><div class="fulldate">09/10</div></div>
+        <div class="when"><div class="knob">04</div><div class="fulldate">09/10</div></div>
         <h3>TOConline ligado e os 3 mapas completos</h3>
         <p class="note">A ligação ao TOConline passou a funcionar de ponta a ponta — e os três mapas do gabinete ficaram completos.</p>
         <div class="card reveal">
@@ -483,7 +424,7 @@
 
       <!-- 08/10 -->
       <div class="day">
-        <div class="when"><div class="knob">06</div><div class="fulldate">08/10</div></div>
+        <div class="when"><div class="knob">05</div><div class="fulldate">08/10</div></div>
         <h3>Guia verificado e navegação mais calma</h3>
         <p class="note">Revisão completa do Guia e uma limpeza geral no gabinete: menos ruído visual, caminho mais direto.</p>
         <div class="card reveal">
@@ -503,7 +444,7 @@
 
       <!-- 03/10 -->
       <div class="day">
-        <div class="when"><div class="knob">07</div><div class="fulldate">03/10</div></div>
+        <div class="when"><div class="knob">06</div><div class="fulldate">03/10</div></div>
         <h3>Auditoria de qualidade</h3>
         <p class="note">Uma passagem completa pelo produto para confirmar o que está pronto — e dizer com honestidade o que ainda falta.</p>
         <div class="card reveal">
@@ -516,7 +457,7 @@
 
       <!-- 02/10 -->
       <div class="day">
-        <div class="when"><div class="knob">08</div><div class="fulldate">02/10</div></div>
+        <div class="when"><div class="knob">07</div><div class="fulldate">02/10</div></div>
         <h3>Cofre cifrado e auditoria para a AT</h3>
         <p class="note">Dois marcos importantes: o cofre passou a ter cifra a sério e o rasto de auditoria que a AT exige ficou completo.</p>
         <div class="card reveal">
@@ -537,7 +478,7 @@
 
       <!-- 25/09 -->
       <div class="day">
-        <div class="when"><div class="knob">09</div><div class="fulldate">25/09</div></div>
+        <div class="when"><div class="knob">08</div><div class="fulldate">25/09</div></div>
         <h3>Ligações, obrigações e linguagem</h3>
         <p class="note">Integrações novas, o quadro de obrigações renovado e uma limpeza da linguagem em todo o site.</p>
         <div class="card reveal">
@@ -562,7 +503,7 @@
 
       <!-- 24/09 -->
       <div class="day">
-        <div class="when"><div class="knob">010</div><div class="fulldate">24/09</div></div>
+        <div class="when"><div class="knob">09</div><div class="fulldate">24/09</div></div>
         <h3>Novo visual e base do produto</h3>
         <p class="note">O início do Estudo360 atual: nova cara, simuladores revistos e as bases de tudo o que veio depois.</p>
         <div class="card reveal">
@@ -696,12 +637,20 @@
         <p class="next-lead">Escreve aqui o que falta fazer — uma linha por passo. Fica guardado automaticamente neste navegador e, com um clique, também num ficheiro do teu Mac: escolhes o ficheiro uma vez e depois grava sempre sozinho.</p>
         <div class="np-status"><span class="dotk warm" id="npDot"></span><span id="npStatus">A ligar…</span></div>
       </div>
-      <textarea id="npText" spellcheck="false" placeholder="Ex.:&#10;- Assinar a declaração 07 e enviar o pedido SVAT">- Validar os 12 valores fiscais com o contabilista
-- Publicar as regras de acesso na base de dados principal
-- Trocar o segredo do TOConline que foi partilhado por captura
-- Esconder Cofre/Equipa/Lixeira do menu para quem não tem acesso
-- Revisão visual página a página dos PDFs com o Lucca
-- Fechar o dossier SVAT no E-balcão</textarea>
+      <textarea id="npText" spellcheck="false" placeholder="Ex.:&#10;- Assinar a declaração 07 e enviar o pedido SVAT">- quadros de rh e controle devem ter parametros individuais por empresa como as obrigaçoes
+- Os vistos teem de ser individuas por obrigação pois de momento estão a ativar varios ao carregar em apenas um, outros aleatorios se ligam
+- adicionar confirmação por alteção
+
+
+VIATURAS
+- possibilidade de simular entre leasing/renting/credito
+
+
+PDF
+- Exportação pdf e melhora
+
+ALERTA
+-alertas saft-online como receber as notificaçoes e datas</textarea>
       <div class="next-actions">
         <button type="button" id="npSave" class="npbtn primary">Ligar ficheiro no Mac</button>
         <button type="button" id="npDownload" class="npbtn ghost">Descarregar cópia</button>
@@ -711,7 +660,7 @@
   </section>
 
   <footer>
-    <span><b>Estudo360</b> · Resumo de novidades · da mais recente para a mais antiga · atualizado a 26/10/2026</span>
+    <span><b>Estudo360</b> · Resumo de novidades · da mais recente para a mais antiga · atualizado a 16/10/2026</span>
     <span class="mono">estudo360.pt</span>
   </footer>
 </main>
