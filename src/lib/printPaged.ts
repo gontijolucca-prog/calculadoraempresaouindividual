@@ -281,3 +281,67 @@ function runPagedIframe(fullDoc: string, foot: { left: string; right: string }, 
   };
   setTimeout(poll, 200);
 }
+
+
+/**
+ * Imprime um documento HTML numa única folha A4.
+ *
+ * Ao contrário do paged.js (que pagina por desenho), aqui mede-se a altura real
+ * do conteúdo dentro de um iframe isolado e aplica-se `zoom` até caber. Nunca
+ * há segunda página. Piso de escala configurável (omissão 0.45).
+ */
+export function printHtmlUmaFolha(
+  fullHtml: string,
+  opts: { title: string; paisagem?: boolean; piso?: number; onSettled?: () => void },
+): void {
+  const piso = opts.piso ?? 0.45;
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:210mm;height:297mm;border:0;opacity:0;pointer-events:none;z-index:-1;';
+  document.body.appendChild(iframe);
+
+  let styleCss = '';
+  let bodyHtml = fullHtml;
+  try {
+    const parsed = new DOMParser().parseFromString(fullHtml, 'text/html');
+    parsed.querySelectorAll('style').forEach((s) => { styleCss += (s.textContent || '') + '\n'; });
+    bodyHtml = parsed.body ? parsed.body.innerHTML : fullHtml;
+  } catch {
+    /* usa o html cru */
+  }
+  styleCss = stripAtPage(styleCss);
+  styleCss = stripAtMedia(styleCss, 'print');
+
+  const A4 = (297 * 96) / 25.4;
+  const doc = iframe.contentDocument!;
+  doc.open();
+  doc.write(`<!doctype html><html><head><meta charset="utf-8">${fontLink}<title>${esc(opts.title)}</title>
+<style>${styleCss}
+html, body { margin: 0; padding: 0; background: #fff; }
+@page { size: A4 ${opts.paisagem ? 'landscape' : 'portrait'}; margin: 0; }
+</style></head><body>${bodyHtml}</body></html>`);
+  doc.close();
+
+  const alvo = (opts.paisagem ? 210 : 297) * 96 / 25.4;
+  setTimeout(() => {
+    try {
+      const altura = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight);
+      let fator = Math.min(1, Math.max(piso, (alvo * 0.97) / Math.max(1, altura)));
+      doc.body.style.zoom = String(fator);
+      // Afina: com zoom o texto reflui e a altura muda.
+      for (let i = 0; i < 3; i++) {
+        const h = doc.body.scrollHeight;
+        if (h * fator <= alvo * 0.97) break;
+        fator = Math.max(piso, fator * ((alvo * 0.97) / (h * fator)) * 0.99);
+        doc.body.style.zoom = String(fator);
+      }
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+    } finally {
+      opts.onSettled?.();
+      setTimeout(() => iframe.remove(), 1200);
+    }
+  }, 600);
+
+  void A4;
+}

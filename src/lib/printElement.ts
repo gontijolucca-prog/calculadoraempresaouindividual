@@ -98,13 +98,46 @@ export function imprimirUmaFolha(
   }
 
   const paginas = Array.from(root.querySelectorAll<HTMLElement>(seletor));
-  const altura = paginas.length
-    ? Math.max(...paginas.map((p) => p.scrollHeight))
-    : root.scrollHeight;
 
-  const fator = Math.min(1, Math.max(piso, alvoPx / Math.max(1, altura)));
+  // Documentos com várias "folhas" (ex.: contrato) passam a fluxo contínuo:
+  // sem quebras nem altura mínima, para caber tudo numa só A4.
+  if (paginas.length > 1) {
+    root.classList.add('uma-folha-flow');
+    if (!document.getElementById('uma-folha-flow-css')) {
+      const style = document.createElement('style');
+      style.id = 'uma-folha-flow-css';
+      style.textContent = `.uma-folha-flow .pp-page, .uma-folha-flow .mc-page {
+        min-height: 0 !important; height: auto !important;
+        page-break-after: auto !important; break-after: auto !important;
+        margin: 0 !important; box-shadow: none !important;
+      }`;
+      document.head.appendChild(style);
+    }
+  }
+
+  // Com várias folhas o que conta é a altura total; com uma, a altura dela.
+  const altura = paginas.length > 1
+    ? paginas.reduce((soma, p) => soma + p.scrollHeight, 0)
+    : (paginas[0]?.scrollHeight ?? root.scrollHeight);
+
+  // 0.97 dá folga para arredondamentos do zoom (evita 1 linha na 2.ª página).
+  let fator = Math.min(1, Math.max(piso, (alvoPx * 0.97) / Math.max(1, altura)));
   const zoomAnterior = root.style.zoom;
   root.style.zoom = String(fator);
+
+  // O zoom estreita a largura e o texto pode passar a ocupar mais linhas: mede
+  // outra vez e afina até caber (2 passagens chegam).
+  for (let i = 0; i < 3; i++) {
+    // scrollHeight = conteúdo real (o `min-height` da folha corta o rect).
+    const alturaReal = paginas.length > 1
+      ? paginas.reduce((soma, p) => soma + p.scrollHeight, 0)
+      : (paginas[0]?.scrollHeight ?? root.scrollHeight);
+    const ocupado = alturaReal * fator;
+    const pretendido = alvoPx * 0.97;
+    if (ocupado <= pretendido) break;
+    fator = Math.max(piso, fator * (pretendido / ocupado) * 0.99);
+    root.style.zoom = String(fator);
+  }
 
   // Duas frames para o browser aplicar o zoom antes de imprimir.
   requestAnimationFrame(() => {

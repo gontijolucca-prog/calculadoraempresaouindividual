@@ -18,8 +18,20 @@
 | Conteúdo dos simuladores | Passaram a levar **Enquadramento da empresa** (tipo, regime, atividade, faturação, funcionários, ano fiscal) e **Escritório** (NIF, cédula/OCC, contactos, morada) |
 | Preenchimento automático do teste | `scripts/audit-sim-pdfs.mjs` preenche os formulários (setter nativo do React) e simula cada ferramenta |
 
+## Também já feito
+| Item | Estado |
+|---|---|
+| Proposta de Honorários | 1 página (zoom 0,69; PDF real com 1 página, 98 KB) |
+| Minuta de Contrato | 1 página (fluxo contínuo, zoom 0,40; PDF com 1 página) |
+| 7 documentos Word | 1 página cada (DR, Alterações, Fluxos, Balanço em 0,97; pacote DF em 0,42) |
+| Testes | `audit-pkg-pdfs.mjs` PASS · `audit-word-pdfs.mjs` PASS |
+
 ## Falta (ordem de execução)
 1. ~~11 simuladores~~ feito.
+2. ~~Proposta e Minuta~~ feito.
+3. ~~7 documentos Word~~ feito.
+4. Deck da proposta: passa a ser substituído pela proposta de 7 blocos (3–8 páginas) na fase seguinte.
+5. Checkfinal de design/densidade e revisão visual de cada PDF.
 2. **Documentos Word (7) e pacote cliente**: hoje passam pelo paged.js, que pagina por desenho; têm de passar pelo mesmo pipeline de escala (ou gerar via jsPDF).
 3. **Deck da proposta**: 17 cards → 1 página A4 paisagem resumida (layout novo).
 4. **Ficha de diagnóstico** (`#ficha-root`): aplicar o mesmo `imprimirUmaFolha`.

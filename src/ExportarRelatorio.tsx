@@ -14,7 +14,8 @@ import {
 import Proposta from './Proposta';
 import MinutaContrato from './MinutaContrato';
 import { defaultProfile, type ClientProfile } from './ClientProfile';
-import { printViaPaged, printHtmlViaPaged } from './lib/printPaged';
+import { printViaPaged, printHtmlUmaFolha } from './lib/printPaged';
+import { imprimirUmaFolha } from './lib/printElement';
 import { downloadPrevisaPdf } from './lib/previsaPdf';
 import { defaultPreviSaState, type PreviSaState } from './previSaState';
 import { calculate } from './lib/previsaCalc';
@@ -426,10 +427,11 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
       return;
     }
     setPrintingPkg(true);
-    printHtmlViaPaged(html, {
+    // Uma só folha A4: mede e encolhe em vez de paginar (paged.js faria 2–8).
+    printHtmlUmaFolha(html, {
       title: docLabel,
-      footerLeft: office.nome || office.contabilistaResponsavel || '',
-      footerRight: '',
+      // O pacote completo junta 7 demonstrações: precisa de encolher mais.
+      piso: docId === 'df' ? 0.42 : 0.45,
       onSettled: () => setPrintingPkg(false),
     });
   };
@@ -447,6 +449,18 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
     if (!isPkg(docId) || printingPkg) return;
     const root = pkgWrapRef.current?.querySelector(`#${PKG_ROOT_ID[docId]}`) as HTMLElement | null;
     if (!root) { window.print(); return; }
+
+    // Proposta e Minuta: uma folha A4 (zoom medido), sem paginação do paged.js.
+    if (docId === 'proposta' || docId === 'minuta') {
+      setPrintingPkg(true);
+      try {
+        imprimirUmaFolha(PKG_ROOT_ID[docId], { piso: docId === 'minuta' ? 0.4 : 0.45 });
+      } finally {
+        setTimeout(() => setPrintingPkg(false), 1800);
+      }
+      return;
+    }
+
     setPrintingPkg(true);
     printViaPaged(root, {
       title: docLabel,
