@@ -11,8 +11,15 @@
 | Minuta de Contrato | idem, piso 0.4 | idem |
 | Orbe "A trabalhar em" com pulso | Feito | `verify-orb.mjs` PASS: `orb-pulse` 2 s, gradiente radial, `prefers-reduced-motion` desliga |
 
+## Feito depois do primeiro relatório
+| Item | Estado |
+|---|---|
+| 11 simuladores | **1 página A4 (595,28 × 841,89)** cada, sem "Por preencher" (prova: `scripts/audit-sim-pdfs.mjs`, PDFs em `docs/audit-2026-10-26/pdf/`) |
+| Conteúdo dos simuladores | Passaram a levar **Enquadramento da empresa** (tipo, regime, atividade, faturação, funcionários, ano fiscal) e **Escritório** (NIF, cédula/OCC, contactos, morada) |
+| Preenchimento automático do teste | `scripts/audit-sim-pdfs.mjs` preenche os formulários (setter nativo do React) e simula cada ferramenta |
+
 ## Falta (ordem de execução)
-1. **11 simuladores**: cada um tem um formulário em 2 passos; o PDF só existe depois de preencher e calcular. É preciso um guião por ferramenta (valores de teste → "Continuar" → "Descarregar PDF") e confirmar 1 folha.
+1. ~~11 simuladores~~ feito.
 2. **Documentos Word (7) e pacote cliente**: hoje passam pelo paged.js, que pagina por desenho; têm de passar pelo mesmo pipeline de escala (ou gerar via jsPDF).
 3. **Deck da proposta**: 17 cards → 1 página A4 paisagem resumida (layout novo).
 4. **Ficha de diagnóstico** (`#ficha-root`): aplicar o mesmo `imprimirUmaFolha`.

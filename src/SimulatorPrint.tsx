@@ -295,8 +295,31 @@ export function SimulatorPrintButton({ compact = false }: { compact?: boolean })
       }
     }
 
+    // Enquadramento e identificação: informação que faltava nos PDFs.
+    const o = office as unknown as Record<string, string | undefined>;
+    const p = profile as unknown as Record<string, unknown>;
+    const eurOuTraco = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) && x > 0
+      ? new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(x)
+      : 'Por preencher');
+    pdf.seccao('Enquadramento da empresa').tabela([
+      { label: 'Tipo de entidade', valor: String(p.tipoEntidade || 'Por definir').toUpperCase() },
+      { label: 'Regime de contabilidade', valor: p.regimeContabilidade ? String(p.regimeContabilidade) : 'Por definir' },
+      { label: 'Atividade principal', valor: p.atividadePrincipal ? String(p.atividadePrincipal) : 'Por definir' },
+      { label: 'Faturação anual prevista', valor: eurOuTraco(p['faturaçaoAnualPrevista'] ?? p['faturacaoAnualPrevista']) },
+      { label: 'Nº de funcionários', valor: String(p.nrFuncionarios ?? '—') },
+      { label: 'Ano fiscal', valor: '2026 (OE 2026)' },
+    ]);
+
+    pdf.seccao('Escritório').tabela([
+      { label: 'Nome', valor: o.nome || 'Estudo 360' },
+      { label: 'NIF', valor: o.nif || 'Por preencher' },
+      { label: 'Cédula / OCC', valor: [o.cedulaProfissional, o.numeroInscricaoOCC].filter(Boolean).join(' · ') || 'Por preencher' },
+      { label: 'Contacto', valor: [o.email, o.telefone].filter(Boolean).join(' · ') || 'Por preencher' },
+      { label: 'Morada', valor: [o.morada, o.codigoPostal, o.localidade].filter(Boolean).join(', ') || 'Por preencher' },
+    ]);
+
     pdf.seccao('Como se calcula').paragrafo(PRINT_METHOD[v]);
-    pdf.nota('Cálculos indicativos — confirme os valores e o enquadramento com o seu Contabilista Certificado.');
+    pdf.nota('Pressupostos: valores calculados com as taxas e escalões de 2026 e com os dados introduzidos na simulação. Cálculos indicativos — confirme os valores e o enquadramento com o seu Contabilista Certificado.');
     pdf.save();
   };
 
