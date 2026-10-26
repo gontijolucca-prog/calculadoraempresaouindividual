@@ -89,8 +89,75 @@ export const onRequestPost = async (ctx: { request: Request }) => {
   try { body = await request.json(); } catch { return json({ error: 'json_invalido' }, 400, origin); }
 
   const action = String(body.action || '').trim();
-  if (!['exchange', 'refresh', 'customers'].includes(action)) {
+  if (!['connect', 'exchange', 'refresh', 'customers'].includes(action)) {
     return json({ error: 'acao_invalida' }, 400, origin);
+  }
+
+  // ── connect: faz o pedido /auth SEM seguir o redirect e lê o `code` do
+  // header Location (processo documentado pela TOConline). Não precisa de
+  // browser, de login nem de mudar o redirect registado.
+  if (action === 'connect') {
+    const oauthUrl = String(body.oauthUrl || '').trim().replace(/\/$/, '');
+    const clientId = String(body.clientId || '').trim();
+    const secret = String(body.secret || '').trim();
+    const redirectUri = String(body.redirectUri || 'https://oauth.pstmn.io/v1/callback').trim();
+    if (!oauthUrl || !clientId || !secret) return json({ error: 'credenciais_em_falta' }, 400, origin);
+    if (!isAllowedTocUrl(oauthUrl)) return json({ error: 'oauth_url_invalido' }, 400, origin);
+
+    let authUrl = oauthUrl;
+    if (!authUrl.toLowerCase().endsWith('/auth')) authUrl = authUrl + '/auth';
+    const qs = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: 'commercial',
+    });
+
+    let r: Response;
+    try {
+      r = await fetch(`${authUrl}?${qs.toString()}`, {
+        method: 'GET',
+        redirect: 'manual',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      });
+    } catch (e: any) {
+      return json({ error: 'rede', detail: String(e?.message || e) }, 502, origin);
+    }
+    const location = r.headers.get('Location') || r.headers.get('location') || '';
+    const code = (() => {
+      try { return new URL(location, authUrl).searchParams.get('code') || ''; } catch { return ''; }
+    })();
+    if (!code) {
+      return json({ error: 'sem_code', status: r.status, detail: location.slice(0, 200) }, 502, origin);
+    }
+
+    // Troca o code por token (Basic auth), como no passo 3 da documentação.
+    const params = new URLSearchParams();
+    params.set('grant_type', 'authorization_code');
+    params.set('code', code);
+    params.set('scope', 'commercial');
+    let tokenUrl = oauthUrl;
+    if (!tokenUrl.toLowerCase().includes('/token')) tokenUrl = tokenUrl + '/token';
+    let tr: Response;
+    try {
+      tr = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Accept: 'application/json',
+          Authorization: basicAuth(clientId, secret),
+        },
+        body: params.toString(),
+      });
+    } catch (e: any) {
+      return json({ error: 'rede', detail: String(e?.message || e) }, 502, origin);
+    }
+    const text = await tr.text();
+    let j: any;
+    try { j = JSON.parse(text); } catch { j = { raw: text.slice(0, 400) }; }
+    if (!tr.ok) return json({ error: 'toconline_recusou', motivo: explicarErroOauth(tr.status, j), status: tr.status, detail: j }, tr.status, origin);
+    if (!j.access_token) return json({ error: 'sem_access_token', detail: j }, 502, origin);
+    return json(j, 200, origin);
   }
 
   // ── exchange / refresh ──

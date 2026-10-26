@@ -45,17 +45,18 @@ const valores = await page.evaluate(() => {
 });
 ok(valores.oauth.includes('app32.toconline.pt/oauth'), `OAuth pré-preenchido (${valores.oauth})`);
 ok(valores.api.includes('api32.toconline.pt'), `API pré-preenchida (${valores.api})`);
-const temRetorno = await page.evaluate(() => {
-  const code = Array.from(document.querySelectorAll('code')).map((c) => c.textContent || '');
-  return code.some((v) => /localhost|estudo360\.pt/.test(v));
-});
-ok(temRetorno, 'endereço de retorno indicado para registar no TOConline');
+const temRetorno = await page.evaluate(() => /oauth\.pstmn\.io\/v1\/callback/.test(document.body.innerText));
+ok(temRetorno, 'explica o endereço de retorno pré-fixado (oauth.pstmn.io)');
 
 // Campo do redirect + alternativa de código manual
 const temRedirect = await page.evaluate(() => Array.from(document.querySelectorAll('label')).some((l) => /Endereço de retorno/i.test(l.textContent || '')));
 ok(temRedirect, 'campo do endereço de retorno presente');
 const temCodigo = await page.evaluate(() => /Já tenho um código de autorização/i.test(document.body.innerText));
+const temAbrir = await page.evaluate(() => /Abrir autorização TOConline|Entrar pelo site do TOConline/i.test(document.body.innerText));
+const naoTemLigarSozinho = await page.evaluate(() => !/Ligar e importar/i.test(document.body.innerText));
 ok(temCodigo, 'alternativa "colar código" presente (não obriga a mudar o redirect)');
+ok(temAbrir, 'botão para abrir a autorização TOConline');
+ok(naoTemLigarSozinho, 'sem botão enganador de ligação automática');
 
 await page.screenshot({ path: path.join(OUT, 'toconline-modal.png') });
 await browser.close();

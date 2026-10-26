@@ -125,6 +125,29 @@ async function callTocProxy(payload: Record<string, unknown>): Promise<any> {
   return j;
 }
 
+/**
+ * Liga sem browser: o servidor pede /auth sem seguir o redirect e lê o `code`
+ * do header Location (processo documentado pela TOConline). Não exige mudar o
+ * redirect registado nem colar códigos.
+ */
+export async function connectToc(cfg: TocConfig): Promise<TocTokens> {
+  const j = await callTocProxy({
+    action: 'connect',
+    oauthUrl: cfg.oauthUrl,
+    clientId: cfg.clientId,
+    secret: cfg.secret,
+    redirectUri: tocRedirectUri(cfg),
+  });
+  if (!j.access_token) throw new Error('TOConline não devolveu access_token.');
+  const tokens: TocTokens = {
+    accessToken: j.access_token,
+    refreshToken: j.refresh_token || '',
+    expiresAt: Date.now() + (Number(j.expires_in) || 14400) * 1000,
+  };
+  saveTocTokens(tokens);
+  return tokens;
+}
+
 export async function exchangeTocCode(cfg: TocConfig, code: string): Promise<TocTokens> {
   const j = await callTocProxy({
     action: 'exchange',

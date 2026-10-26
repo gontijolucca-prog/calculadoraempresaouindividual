@@ -186,9 +186,9 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
             <div className="mt-4 space-y-3">
               <div className="bg-[#F5F7FA] border border-[#E2E8F0] rounded-xl p-3.5 text-[12.5px] text-[#475569] leading-relaxed space-y-2">
                 <div><strong className="text-[#0B1D2D]">Passo 1 —</strong> no TOConline, entre na empresa com conta de Empresário → <strong>Empresa › Configurações › Dados API</strong> → indique o seu email → abra o link de 72h que recebe.</div>
-                <div><strong className="text-[#0B1D2D]">Passo 2 —</strong> nessa página, ponha este endereço de retorno:</div>
-                <CopyRow value={typeof window !== 'undefined' ? window.location.origin + '/' : 'https://estudo360.pt/'} />
-                <div><strong className="text-[#0B1D2D]">Passo 3 —</strong> cole abaixo os 4 dados e carregue em <strong>Entrar com TOConline</strong>. Vai entrar no site deles e voltar sozinho.</div>
+                <div><strong className="text-[#0B1D2D]">Passo 2 —</strong> carregue em <strong>Abrir autorização TOConline</strong>. Vai entrar no site deles e voltar ao endereço de retorno registado (<code>https://oauth.pstmn.io/v1/callback</code>).</div>
+                <div><strong className="text-[#0B1D2D]">Passo 3 —</strong> copie o valor de <code>code=</code> do endereço dessa página e cole em <strong>Já tenho um código</strong>. A app troca-o por sessão e importa.</div>
+                <div className="text-[11.5px] text-[#94A3B8]">O endereço de retorno vem <strong>pré-fixado</strong> pela TOConline (documentação, autenticação detalhada). Só é outro se pedir a alteração no passo 1.</div>
               </div>
               <label className="block"><span className="text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B]">Endereço OAuth</span><input value={cfg.oauthUrl} onChange={e => setCfg({ ...cfg, oauthUrl: e.target.value })} placeholder="https://…" className={inputCls + ' mt-1'} /></label>
               <label className="block"><span className="text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B]">Endereço da API</span><input value={cfg.apiUrl} onChange={e => setCfg({ ...cfg, apiUrl: e.target.value })} placeholder="https://…" className={inputCls + ' mt-1'} /></label>
@@ -202,7 +202,7 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
                 <span className="block mt-1 text-[11px] text-[#94A3B8]">Tem de ser exatamente o que está em TOConline → Dados API. Se ainda tiver o do Postman, cole-o aqui.</span>
               </label>
 
-              <details className="rounded-xl border border-[#E2E8F0] bg-white p-3">
+              <details open className="rounded-xl border border-[#E2E8F0] bg-white p-3">
                 <summary className="cursor-pointer text-[12.5px] font-[700] text-[#334155]">Já tenho um código de autorização (sem mudar o redirect)</summary>
                 <p className="mt-1.5 text-[11.5px] text-[#64748B]">Autorize no TOConline: o browser vai parar ao endereço registado (por exemplo a página do Postman). Copie o valor de <code>code=</code> no endereço e cole aqui.</p>
                 <div className="mt-2 flex gap-2">
@@ -218,9 +218,11 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
 
               <div className="flex flex-wrap gap-2 pt-1">
                 {!connected ? (
-                  <button onClick={handleConnect} className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#0B1D2D] text-white text-[14px] font-[700] hover:bg-black">
-                    <Link2 className="w-4 h-4" /> Entrar com TOConline
-                  </button>
+                  <>
+                    <button onClick={handleConnect} className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-[#E2E8F0] text-[13px] font-[600] text-[#475569] hover:bg-zinc-50">
+                      Entrar pelo site do TOConline
+                    </button>
+                  </>
                 ) : (
                   <>
                     <button onClick={handleFetch} disabled={loading} className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#0677FF] text-white text-[14px] font-[700] hover:bg-[#0556CC] disabled:opacity-60">
