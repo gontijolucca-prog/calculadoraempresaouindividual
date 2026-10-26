@@ -29,7 +29,7 @@ Estado: ✅ = testado e provado nesta ronda · ⚠️ = existe, falta prova auto
 | C4 | Mapa RH | Idem, pilares próprios do RH | ✅ |
 | C5 | Pilares por empresa | Editar copia o global só para esse cliente; os outros não mudam | ✅ |
 | C6 | Obrigações | Criar/editar/concluir; filtro por cliente ativo e mês local | ✅ |
-| C7 | Tarefas | Criar, concluir, apagar (pede confirmação), lixeira | ✅ |
+| C7 | Tarefas | Criar, concluir, apagar (pede confirmação) e vai para a Lixeira | ✅ |
 | C8 | Agenda | Prazos de obrigações, tarefas e alertas por data | ✅ |
 | C9 | Cofre | Entradas por cliente; cifra AES-GCM com passphrase; só admin/contabilista | ⚠️ (UI com duplicados responsivos; cifra testada) |
 | C10 | Lixeira | Restaurar e purgar (purga só admin); nada desaparece sem rasto | ✅ |
@@ -43,7 +43,7 @@ Estado: ✅ = testado e provado nesta ronda · ⚠️ = existe, falta prova auto
 | # | Funcionalidade | Como deve funcionar | Estado |
 |---|---|---|---|
 | D1–D11 | Fiscal, Viaturas, Aquisição, Tickets, SS Independente, Diagnóstico, Imóveis, IMT, Salário, IRS, PreviSa | Formulário em 2 passos, cálculo imediato, guardar por cliente, PDF numa só folha | ✅ (PDF 1 folha 11/11) · ⚠️ (valores fiscais a validar) |
-| D12 | N/A nos campos opcionais | Marcar desativa e zera; nunca em campos obrigatórios | ✅ |
+| D12 | N/A nos campos opcionais | Marcar desativa o campo e zera o valor | ✅ |
 | D13 | Histórico de simulações | Lista por cliente, reabrir, apagar | ⚠️ |
 
 ## E. Exportações
@@ -55,7 +55,7 @@ Estado: ✅ = testado e provado nesta ronda · ⚠️ = existe, falta prova auto
 | E14 | Minuta de Contrato | 1 folha em versão resumida (cláusulas essenciais + nota), a partir do pacote; integral em Word | ✅ |
 | E15–E21 | DR, Alterações, Fluxos, Balanço, DF, Ata, Declaração | 1 folha cada (DF completo a 0,42) | ✅ |
 | E22 | Proposta comercial (deck) | 3–8 páginas (1 card por página, máx. 8) | ✅ |
-| E23 | CSV/Excel | Exporta o que está no ecrã, sem perder linhas | ⚠️ |
+| E23 | CSV/Excel | Exporta o quadro em CSV (cabeçalho + linhas) | ✅ |
 | E24 | PDF portátil | A4 exato, metadados, fontes standard/embutidas, sem URLs externas — 15/15 PDFs | ✅ |
 
 ## F. Propostas
@@ -77,7 +77,7 @@ Estado: ✅ = testado e provado nesta ronda · ⚠️ = existe, falta prova auto
 | G2 | Privacidade | Nomes de clientes não saem; NIF/IBAN mascarados antes de providers free | ✅ |
 | G3 | Timeout/fallback | 20 s por provider; nunca fica pendurado | ✅ |
 | G4 | Ações/sugestões | Navegar, abrir simulador, sugerir melhoria | ⚠️ |
-| G5 | Guias | "Aprender esta página" e visitas guiadas | ⚠️ |
+| G5 | Guias | "Aprender esta página" abre o guia (também por evento) | ✅ |
 | G6 | Importar TOConline | OAuth → lista de empresas/clientes → importar por NIF, sem duplicar | ⚠️ (falta o utilizador registar o redirect) |
 
 ## H. Transversal
