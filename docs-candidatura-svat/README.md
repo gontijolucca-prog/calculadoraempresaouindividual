@@ -1,5 +1,5 @@
 # Candidatura SVAT — Estudo360.pt
-**Portaria n.º 293/2017 — Selo de Validação AT — Dossier 02/10/2026 v3**
+**Dossier 02/10/2026 v3 — base legal POR CONFIRMAR (ver VERIFICACAO-2026-10-26.md)**
 
 ## Para a reunião de hoje 17h com a Sandrine
 1. Abrir `00-LEIA-PRIMEIRO.pdf` (2 minutos) — explica tudo
@@ -26,6 +26,9 @@
 ## E-balcão
 `https://sitfiscal.portaldasfinancas.gov.pt/ebalcao` → Outras Obrigações → Certificação de Software → Questões técnicas
 Alternativa email: `certificacao.software@at.gov.pt`
+
+> **Antes de enviar:** confirmar o âmbito com a AT (texto em `PERGUNTA-AT.txt`).
+> A referência «Portaria 293/2017» não foi confirmada em fonte oficial a 26/10/2026.
 
 ## Após envio
 Guardar comprovativo como `10-Comprovativo-Envio.pdf` nesta pasta. AT responde em 30 dias.

@@ -1,0 +1,21 @@
+Assunto: Certificação de software — âmbito para plataforma que não emite faturas
+
+Exmos. Senhores,
+
+A Recofatima (NIF 510 770 460) desenvolve o Estudo360.pt, uma aplicação web para
+gabinetes de contabilidade que faz simulação fiscal, gestão de clientes, tarefas,
+obrigações e cofre de acessos, e que lê ficheiros SAF-T. A aplicação NÃO emite
+faturas, recibos ou outros documentos de transporte — não substitui software de
+faturação.
+
+1. Confirma-se que, por não emitir faturas, esta aplicação está fora do âmbito da
+   certificação de programas de faturação?
+2. Em caso afirmativo, que documento/devem ser submetidos, se algum?
+3. Em caso negativo, qual o diploma aplicável e a lista de requisitos e documentos
+   exigidos para a candidatura?
+
+Agradecemos a indicação do enquadramento correto antes de submetermos qualquer
+dossier.
+
+Com os melhores cumprimentos,
+Recofatima — Estudo360.pt
