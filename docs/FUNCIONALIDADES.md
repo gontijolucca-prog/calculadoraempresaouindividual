@@ -6,8 +6,8 @@ Estado: ✅ = testado e provado nesta ronda · ⚠️ = existe, falta prova auto
 | # | Funcionalidade | Como deve funcionar | Estado |
 |---|---|---|---|
 | A1 | Landing | Página pública, 0 erros de consola, sem overflow a 375/1024/1440 | ✅ |
-| A2 | Criar conta / entrar | Email+password no Firebase; erros claros; "lembrar-me" | ⚠️ (sem conta de teste) |
-| A3 | Escolher gabinete | Pergunta sempre ao entrar; sem gabinete, cria o primeiro | ✅ |
+| A2 | Criar conta / entrar | Email+password, confirmação de email, sessão — testado nos emuladores | ✅ (emulador) |
+| A3 | Escolher gabinete | Pergunta ao entrar; criação pede nome+NIF e entra | ✅ (emulador) |
 | A4 | Sair | Termina sessão e volta à landing | ⚠️ |
 
 ## B. Carteira e perfil
@@ -67,7 +67,7 @@ Estado: ✅ = testado e provado nesta ronda · ⚠️ = existe, falta prova auto
 | F4 | Preço | Da tabela; ajuste manual com motivo e registo de auditoria | ✅ (unidade) |
 | F5 | Editor | Adicionar card (com tipo), mudar tema, autosave, regerar | ✅ |
 | F6 | PDF | 1 card por página, máx. 8 | ⚠️ |
-| F7 | Publicar/link | `/p/<slug>` 90 dias, revogável, sem dados internos | ⚠️ (sem Firestore) |
+| F7 | Publicar/link | `/p/<slug>` abre sem login; revogar disponível — testado nos emuladores | ✅ (emulador) |
 | F8 | Gamma | Mesmo conteúdo em texto; copiar + abrir gamma.app | ✅ |
 
 ## G. AI Contabilista

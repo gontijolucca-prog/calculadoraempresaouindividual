@@ -60,3 +60,13 @@
 - Filete dourado `#B06D35` no topo, ponto de secção dourado, título em tinta `#1A1A18`
   e cartão de cliente em bege `#FDFBF7` — alinhado com o site.
 - Cabeçalho com logo/360 + nome do escritório; rodapé com aviso legal e contactos.
+
+## Testes com Firebase (emuladores)
+```
+export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
+firebase emulators:start --only firestore,auth --project demo-estudo360
+VITE_FIREBASE_EMULATORS=1 npm run dev
+node scripts/audit-emulator.mjs
+```
+Resultado: conta criada + email confirmado + gabinete criado + proposta publicada
+(slug real) + link público aberto sem login + revogar disponível. PASS.
