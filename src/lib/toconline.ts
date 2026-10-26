@@ -26,13 +26,28 @@ export interface TocTokens {
 }
 
 export interface TocCustomerDraft {
+  /** Id do cliente no TOConline. */
+  tocId?: string;
   nome: string;
   nif: string;
   email?: string;
   telefone?: string;
+  telefone2?: string;
+  website?: string;
   morada?: string;
   localidade?: string;
   codigoPostal?: string;
+  regiao?: string;
+  pais?: string;
+  /** Nome da pessoa de contacto. */
+  contacto?: string;
+  observacoes?: string;
+  observacoesInternas?: string;
+  isencaoIva?: boolean;
+  naoClienteFinal?: boolean;
+  ativo?: boolean;
+  saftImportId?: string;
+  taxCountryRegion?: string;
 }
 
 // Isolamento por gabinete: as credenciais e o rascunho ficam presos ao gabinete

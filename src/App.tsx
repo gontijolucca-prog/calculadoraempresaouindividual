@@ -973,7 +973,7 @@ function AppContent() {
   // "Inserir à mão": NÃO cria já a empresa. Abre um rascunho limpo no modo
   // "Novo Cliente" para o utilizador preencher; só entra na lista ao "Guardar".
   // Importação em lote do TOConline: cria registos (ignora NIFs já existentes).
-  const handleImportTOCOnline = (drafts: { nome: string; nif: string; email?: string; telefone?: string; morada?: string; localidade?: string; codigoPostal?: string }[]) => {
+  const handleImportTOCOnline = (drafts: import('./lib/toconline').TocCustomerDraft[]) => {
     const existentes = new Set(listEmpresas().map(e => (e.nif || '').replace(/\D/g, '')));
     const now = Date.now();
     let n = 0;
@@ -991,9 +991,37 @@ function AppContent() {
         morada: d.morada || '',
         localidade: d.localidade || '',
         codigoPostal: d.codigoPostal || '',
+        // Isenção de IVA do TOConline → regime "isento"; caso contrário mantém-se o padrão.
+        ...(d.isencaoIva ? { regimeIva: 'isento' as const } : {}),
       };
-      upsertEmpresa({ id, nome: profile.nomeCliente, nif, createdAt: now, updatedAt: now, profile });
-      logAudit('import_toconline', profile.nomeCliente, { nif }, id);
+      upsertEmpresa({
+        id,
+        nome: profile.nomeCliente,
+        nif,
+        createdAt: now,
+        updatedAt: now,
+        profile,
+        // O que não cabe no perfil fica guardado no registo do cliente.
+        toc: {
+          id: d.tocId,
+          website: d.website,
+          telefone2: d.telefone2,
+          regiao: d.regiao,
+          pais: d.pais,
+          contacto: d.contacto,
+          observacoes: d.observacoes,
+          observacoesInternas: d.observacoesInternas,
+          isencaoIva: d.isencaoIva,
+          naoClienteFinal: d.naoClienteFinal,
+          ativo: d.ativo,
+          saftImportId: d.saftImportId,
+          taxCountryRegion: d.taxCountryRegion,
+          importadoEm: now,
+        },
+      });
+      logAudit('import_toconline', profile.nomeCliente, {
+        nif, temMorada: !!d.morada, temEmail: !!d.email, temTelefone: !!d.telefone, tocId: d.tocId,
+      }, id);
       n++;
     }
     // Espelha no gabinete (migração por NIF já evita duplicados)

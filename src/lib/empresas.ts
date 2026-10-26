@@ -63,6 +63,23 @@ export interface EmpresaRecord {
   // para outro. DENTRO da mesma empresa os dados continuam transversais, porque
   // todos derivam do mesmo `profile`. (O Previsa fica em `previsa`, à parte.)
   sims?: Record<string, unknown>;
+  /** Dados extra vindos do TOConline (não cabem no perfil). */
+  toc?: {
+    id?: string;
+    website?: string;
+    telefone2?: string;
+    regiao?: string;
+    pais?: string;
+    contacto?: string;
+    observacoes?: string;
+    observacoesInternas?: string;
+    isencaoIva?: boolean;
+    naoClienteFinal?: boolean;
+    ativo?: boolean;
+    saftImportId?: string;
+    taxCountryRegion?: string;
+    importadoEm?: number;
+  };
 }
 
 // Revisão atual do re-parse do SAF-T guardado. Subir quando o parser passa a

@@ -359,7 +359,13 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
                       <input type="checkbox" checked={sel.has(i)} disabled={bloqueado} onChange={() => setSel((prev) => { const n = new Set(prev); if (n.has(i)) n.delete(i); else n.add(i); return n; })} className="w-4 h-4 accent-[#0677FF]" />
                       <span className="flex-1 min-w-0">
                         <span className="font-[600] text-[#0B1D2D] truncate block">{d.nome || '—'}</span>
-                        <span className="text-[#64748B] text-[12px]">NIF {d.nif || '—'}{d.localidade ? ` · ${d.localidade}` : ''}{d.email ? ` · ${d.email}` : ''}</span>
+                        <span className="text-[#64748B] text-[12px]">
+                          NIF {d.nif || '—'}
+                          {d.localidade ? ` · ${d.localidade}` : ''}
+                          {d.telefone ? ` · ${d.telefone}` : ''}
+                          {d.email ? ` · ${d.email}` : ''}
+                          {d.contacto ? ` · ${d.contacto}` : ''}
+                        </span>
                       </span>
                       <span className="shrink-0 rounded-full border border-[#E2E8F0] bg-[#F1F5F9] px-2 py-0.5 text-[10.5px] font-[700] uppercase tracking-[0.4px] text-[#64748B]">{ROTULO_TIPO[classificarNif(d.nif)]}</span>
                       {bloqueado && <span className="shrink-0 text-[11px] text-[#94A3B8]">{!d.nif ? 'sem NIF' : repetido ? 'repetido' : 'já existe'}</span>}
@@ -371,6 +377,7 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
               {debug && (
                 <details className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] font-mono text-amber-900">
                   <summary className="cursor-pointer text-[11.5px] font-[700]">Detalhes técnicos ({debug.total ?? 0} recebidos · {debug.pagesFetched ?? 0} páginas · {debug.semNif ?? 0} sem NIF)</summary>
+                  <div className="mt-1">Com morada: {debug.comMorada ?? 0} · com localidade: {debug.comLocalidade ?? 0} · com email: {debug.comEmail ?? 0} · com telefone: {debug.comTelefone ?? 0} · com contacto: {debug.comContacto ?? 0} · isentos de IVA: {debug.isentosIva ?? 0}</div>
                   {debug.firstRawAttributesKeys?.length ? <div className="mt-1">Campos: {debug.firstRawAttributesKeys.join(', ')}</div> : null}
                   {debug.firstRawSample && <pre className="mt-1 whitespace-pre-wrap break-all text-[10px] bg-white p-2 rounded border">{debug.firstRawSample}</pre>}
                 </details>
