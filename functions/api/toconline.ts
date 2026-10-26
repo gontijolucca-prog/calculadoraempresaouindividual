@@ -12,6 +12,8 @@
 //  - {action:'refresh', oauthUrl, clientId, secret, refreshToken}
 //  - {action:'customers', apiUrl, accessToken}
 
+import { urlClientes, mapTocCustomer, explicarErroOauth } from '../_toc';
+
 const ALLOWED_HOST_SUFFIXES = [
   'estudo360.pt',
   'estudo360.pages.dev',
@@ -68,20 +70,6 @@ function isAllowedTocUrl(raw: string): boolean {
 
 function basicAuth(clientId: string, secret: string): string {
   return 'Basic ' + btoa(`${clientId}:${secret}`);
-}
-
-function mapTocCustomer(it: any) {
-  const a = it?.attributes ?? it ?? {};
-  const rawNif = a.tax_registration_number ?? a.fiscal_id ?? a.nif ?? a.vat_number ?? a.tax_number ?? a.vat ?? a.nif_api ?? '';
-  return {
-    nome: String(a.business_name ?? a.name ?? a.client_name ?? a.designation ?? a.display_name ?? '').trim(),
-    nif: String(rawNif).replace(/\D/g, ''),
-    email: a.email ?? a.e_mail ?? undefined,
-    telefone: a.mobile_number ?? a.phone_number ?? a.phone ?? a.telephone ?? undefined,
-    morada: a.address_detail ?? a.address ?? a.street ?? undefined,
-    localidade: a.city ?? a.locality ?? undefined,
-    codigoPostal: a.postcode ?? a.zip_code ?? a.postal_code ?? undefined,
-  };
 }
 
 export const onRequestOptions = async ({ request }: { request: Request }) =>
@@ -148,7 +136,10 @@ export const onRequestPost = async (ctx: { request: Request }) => {
     const text = await r.text();
     let j: any;
     try { j = JSON.parse(text); } catch { j = { raw: text }; }
-    if (!r.ok) return json({ error: 'toconline_recusou', status: r.status, detail: j }, r.status, origin);
+    if (!r.ok) {
+      const explicado = explicarErroOauth(r.status, j);
+      return json({ error: 'toconline_recusou', motivo: explicado, status: r.status, detail: j }, r.status, origin);
+    }
     if (!j.access_token) return json({ error: 'sem_access_token', detail: j }, 502, origin);
     return json(j, 200, origin);
   }
@@ -166,11 +157,10 @@ export const onRequestPost = async (ctx: { request: Request }) => {
     let lastMeta: any = null;
     let page = 1;
     for (let guard = 0; guard < 25; guard++) {
-      let customersBase = apiUrl.replace(/\/$/, '');
-      if (!customersBase.toLowerCase().includes('/customers')) customersBase = customersBase + '/customers';
+      const url = urlClientes(apiUrl, page);
       let r: Response;
       try {
-        r = await fetch(`${customersBase}?page[number]=${page}&page[size]=100`, {
+        r = await fetch(url, {
           headers: {
             'Content-Type': 'application/vnd.api+json',
             Accept: 'application/json',

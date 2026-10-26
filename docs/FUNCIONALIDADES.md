@@ -78,6 +78,7 @@ Estado: ✅ = testado e provado nesta ronda · ⚠️ = existe, falta prova auto
 | G3 | Timeout/fallback | 20 s por provider; nunca fica pendurado | ✅ |
 | G4 | Ações/sugestões | Navegar, abrir simulador, sugerir melhoria | ⚠️ |
 | G5 | Guias | "Aprender esta página" e visitas guiadas | ⚠️ |
+| G6 | Importar TOConline | OAuth → lista de empresas/clientes → importar por NIF, sem duplicar | ⚠️ (falta o utilizador registar o redirect) |
 
 ## H. Transversal
 | # | Funcionalidade | Como deve funcionar | Estado |

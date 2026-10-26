@@ -30,43 +30,28 @@ function devTocProxy(): Plugin {
   return {
     name: 'dev-toc-proxy',
     configureServer(server) {
+      // Usa a Function real (dev == produção), como o /api/chat e o /api/deck.
       server.middlewares.use('/api/toconline', async (req, res) => {
         if (req.method === 'OPTIONS') { res.statusCode = 204; res.setHeader('Access-Control-Allow-Origin', '*'); res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); res.end(); return; }
         if (req.method !== 'POST') { res.statusCode = 405; res.end('{"error":"metodo"}'); return; }
         try {
-          let body = ''; for await (const chunk of req) body += chunk;
-          const j = JSON.parse(body || '{}');
-          const action = String(j.action || '');
-          if (action === 'exchange' || action === 'refresh') {
-            const oauthUrl = String(j.oauthUrl || '').replace(/\/$/, '');
-            const clientId = String(j.clientId || '').trim();
-            const secret = String(j.secret || '').trim();
-            if (!oauthUrl || !clientId || !secret) { res.statusCode = 400; res.end(JSON.stringify({ error: 'credenciais_em_falta' })); return; }
-            const p = new URLSearchParams();
-            if (action === 'exchange') { if (!j.code) { res.statusCode = 400; res.end(JSON.stringify({ error: 'code_em_falta' })); return; } p.set('grant_type', 'authorization_code'); p.set('code', String(j.code)); p.set('scope', 'commercial'); if (j.redirectUri) p.set('redirect_uri', String(j.redirectUri)); }
-            else { if (!j.refreshToken) { res.statusCode = 400; res.end(JSON.stringify({ error: 'refresh_em_falta' })); return; } p.set('grant_type', 'refresh_token'); p.set('refresh_token', String(j.refreshToken)); p.set('scope', 'commercial'); }
-            let tokenUrl = oauthUrl.replace(/\/$/, ''); if (!tokenUrl.toLowerCase().includes('/token')) tokenUrl = tokenUrl + '/token';
-            const r = await fetch(tokenUrl, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json', Authorization: 'Basic ' + Buffer.from(`${clientId}:${secret}`).toString('base64') }, body: p.toString() });
-            const text = await r.text(); let data: any; try { data = JSON.parse(text); } catch { data = { raw: text }; }
-            res.statusCode = r.status; res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(data)); return;
-          }
-          if (action === 'customers') {
-            const apiUrl = String(j.apiUrl || '').replace(/\/$/, ''); const token = String(j.accessToken || '').trim();
-            if (!apiUrl || !token) { res.statusCode = 400; res.end(JSON.stringify({ error: 'parametros_em_falta' })); return; }
-            const out: any[] = []; let page = 1; let firstRaw: any = null; let pagesFetched = 0; let lastMeta: any = null;
-            for (let guard = 0; guard < 25; guard++) {
-              const r = await fetch(`${apiUrl}/customers?page[number]=${page}&page[size]=100`, { headers: { 'Content-Type': 'application/vnd.api+json', Accept: 'application/json', Authorization: `Bearer ${token}` } });
-              if (r.status === 401) { res.statusCode = 401; res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ error: 'nao_autorizado', status: 401 })); return; }
-              if (!r.ok) { const t = await r.text(); res.statusCode = r.status; res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ error: 'toconline_erro', status: r.status, detail: t.slice(0, 2000) })); return; }
-              const data: any = await r.json(); lastMeta = data.meta ?? null; const items = Array.isArray(data.data) ? data.data : Array.isArray(data.customers) ? data.customers : Array.isArray(data) ? data : []; if (!firstRaw && items.length) firstRaw = items[0]; if (!items.length) break;
-              for (const it of items) { const a = it?.attributes ?? it ?? {}; const rawNif = a.tax_registration_number ?? a.fiscal_id ?? a.nif ?? a.vat_number ?? a.tax_number ?? ''; out.push({ nome: String(a.business_name ?? a.name ?? a.client_name ?? a.designation ?? '').trim(), nif: String(rawNif).replace(/\D/g, ''), email: a.email ?? undefined, telefone: a.mobile_number ?? a.phone_number ?? undefined, morada: a.address_detail ?? a.address ?? undefined, localidade: a.city ?? undefined, codigoPostal: a.postcode ?? undefined }); }
-              pagesFetched++; const tp = data.meta?.totalPages ?? data.meta?.['total-pages']; if (items.length < 100 || (typeof tp === 'number' && page >= tp)) break; page++;
-            }
-            const debug = { pagesFetched, total: out.length, semNif: out.filter((x:any)=>!x.nif).length, firstRawAttributesKeys: firstRaw?.attributes ? Object.keys(firstRaw.attributes).slice(0,30) : firstRaw ? Object.keys(firstRaw).slice(0,30) : [], firstRawSample: firstRaw ? JSON.stringify(firstRaw).slice(0,1200) : null, meta: lastMeta };
-            res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ data: out, debug })); return;
-          }
-          res.statusCode = 400; res.end(JSON.stringify({ error: 'acao_invalida' }));
-        } catch (e: any) { res.statusCode = 500; res.end(JSON.stringify({ error: 'proxy_dev', detail: String(e?.message || e) })); }
+          let body = '';
+          for await (const chunk of req) body += chunk;
+          const { onRequestPost } = await import('./functions/api/toconline');
+          const request = new Request('http://localhost/api/toconline', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Origin: 'http://localhost:3000', Referer: 'http://localhost:3000/' },
+            body,
+          });
+          const response = await onRequestPost({ request });
+          const text = await response.text();
+          res.statusCode = response.status;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(text);
+        } catch (e: any) {
+          res.statusCode = 502;
+          res.end(JSON.stringify({ error: 'proxy_dev', detail: String(e?.message || e) }));
+        }
       });
     },
   };

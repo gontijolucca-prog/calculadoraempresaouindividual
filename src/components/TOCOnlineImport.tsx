@@ -16,7 +16,12 @@ interface Props {
 type Step = 'config' | 'fetching' | 'preview';
 
 export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Props) {
-  const [cfg, setCfg] = useState<TocConfig>(() => getTocConfig() ?? { oauthUrl: '', apiUrl: '', clientId: '', secret: '' });
+  const [cfg, setCfg] = useState<TocConfig>(() => getTocConfig() ?? {
+    oauthUrl: 'https://app32.toconline.pt/oauth',
+    apiUrl: 'https://api32.toconline.pt',
+    clientId: '',
+    secret: '',
+  });
   const [connected, setConnected] = useState(() => isTocConnected());
   const [step, setStep] = useState<Step>(() => (getTocDraft().length ? 'preview' : 'config'));
   const [list, setList] = useState<TocCustomerDraft[]>(() => getTocDraft());
@@ -31,6 +36,18 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
     return null;
   });
   const [done, setDone] = useState<number | null>(null);
+
+  // Erros de OAuth com instrução acionável (o mais comum: redirect não registado).
+  const erroComDica = (msg: string): string => {
+    const redirect = typeof window !== 'undefined' ? window.location.origin + '/' : 'https://estudo360.pt/';
+    if (/unauthorized_client|redirect_uri_nao_registado|unauthorized/i.test(msg)) {
+      return `O TOConline recusou o pedido porque o endereço de returno não coincide. Em TOConline → Empresa › Configurações › Dados API, ponha exatamente ${redirect} e grave. Depois repita. (${msg})`;
+    }
+    if (/invalid_grant|codigo_expirado/i.test(msg)) {
+      return 'O código de autorização expirou (vale poucos minutos). Carregue outra vez em “Entrar com TOConline”.';
+    }
+    return msg;
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -72,7 +89,7 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
         }
       }, 1200);
     } catch (e: any) {
-      setError('Falha ao iniciar login: ' + (e?.message || String(e)));
+      setError(erroComDica('Falha ao iniciar login: ' + (e?.message || String(e))));
     }
   };
 
@@ -95,7 +112,7 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
       setConnected(isTocConnected());
       if (!items.length) setError(d ? `TOConline devolveu 0 clientes. Páginas: ${d.pagesFetched ?? 0}. Sem NIF: ${d.semNif ?? 0}. Verifique se a empresa tem clientes e se o token tem scope commercial.` : 'TOConline devolveu 0 clientes.');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Falha ao buscar clientes.');
+      setError(erroComDica(e instanceof Error ? e.message : 'Falha ao buscar clientes.'));
       setStep('config');
     } finally {
       setLoading(false);
