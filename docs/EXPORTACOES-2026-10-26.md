@@ -46,3 +46,12 @@
 ## Riscos conhecidos
 - Escala mínima 0.55 no jsPDF e 0.4–0.45 nos HTML: abaixo disto o texto fica pequeno; a alternativa é a versão condensada (decidir por documento).
 - O `paged.js` (terceiros) lança um `TypeError` em `onAtMedia`; não afetou os fluxos testados.
+
+## Verificação automática (27/10)
+| Teste | Resultado |
+|---|---|
+| `audit-sim-pdfs.mjs` | PASS 11/11 (1 página + sem campos em falta) |
+| `audit-pkg-pdfs.mjs` | PASS (proposta 1 página; minuta delega no teste próprio) |
+| `audit-minuta-resumo.mjs` | PASS (1 página + 7 cláusulas) |
+| `audit-word-pdfs.mjs` | PASS 7/7 (1 página cada) |
+| `audit-pdf-portability.mjs` | PASS 15/15 (A4, metadados, sem URLs externas, fontes standard/embutidas) |

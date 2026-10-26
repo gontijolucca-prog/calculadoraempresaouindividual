@@ -17,6 +17,7 @@ fs.mkdirSync(OUT, { recursive: true });
 
 const browser = await chromium.launch({ executablePath: CHROME, headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+page.on('console', (m) => { if (m.text().startsWith('[pkg-print]')) console.log('   ', m.text()); });
 
 await page.goto(BASE, { waitUntil: 'domcontentloaded' });
 await page.evaluate(() => {
@@ -47,16 +48,16 @@ const tabPacote = page.getByRole('tab', { name: /Pacote cliente/i });
 if (await tabPacote.count()) { await tabPacote.first().click(); await page.waitForTimeout(600); }
 ok((await tabPacote.count()) > 0, 'separador Pacote cliente presente');
 
-for (const [doc, botaoNome, root, ficheiro] of [
-  ['Proposta de Honorários', /Imprimir proposta/i, '#proposta-print-root', 'proposta-honorarios'],
-  ['Minuta de Contrato', /Imprimir contrato/i, '#minuta-print-root', 'minuta-contrato'],
+for (const [doc, botaoNome, previewRoot, root, ficheiro] of [
+  ['Proposta de Honorários', /Imprimir proposta/i, '#proposta-print-root', '#proposta-print-root', 'proposta-honorarios'],
+  ['Minuta de Contrato', /Imprimir contrato/i, '#minuta-print-root', '#minuta-resumo-print', 'minuta-contrato'],
 ]) {
   const card = page.getByRole('radio', { name: new RegExp(doc, 'i') });
   if (!(await card.count())) { ok(false, `${doc}: cartão não encontrado`); continue; }
   await card.first().click();
   await page.waitForTimeout(1500);
 
-  const raiz = page.locator(root).first();
+  const raiz = page.locator(previewRoot).first();
   if (!(await raiz.count())) { ok(false, `${doc}: pré-visualização não apareceu`); continue; }
 
   await page.evaluate(() => { window.__prints = 0; window.print = () => { window.__prints += 1; }; });
@@ -76,8 +77,10 @@ for (const [doc, botaoNome, root, ficheiro] of [
     medida = await page.evaluate((sel) => {
       const el = document.querySelector(sel);
       const zoom = Number(getComputedStyle(el).zoom || '1');
-      const paginas = Array.from(el.querySelectorAll('.pp-page, .mc-page')).map((p) => p.scrollHeight);
-      return { zoom, altura: paginas.reduce((s, h) => s + h, 0), prints: window.__prints || 0 };
+      const alvo = el?.querySelector('.mr-wrap') || el;
+      const paginas = Array.from(el?.querySelectorAll('.pp-page, .mc-page') || []);
+      const altura = paginas.length ? paginas.reduce((s, h) => s + h.scrollHeight, 0) : (alvo?.scrollHeight || 0);
+      return { zoom, altura, prints: window.__prints || 0 };
     }, root);
     ok(medida.prints >= 1, `${doc}: impressão disparada`);
   }
@@ -85,14 +88,17 @@ for (const [doc, botaoNome, root, ficheiro] of [
   ok(medida.zoom <= 1 && medida.zoom >= pisoDoc, `${doc}: zoom ${medida.zoom.toFixed(2)}`);
   ok(medida.altura * medida.zoom <= A4 + 4, `${doc}: cabe na A4 (${Math.round(medida.altura * medida.zoom)}px de ${Math.round(A4)}px)`);
 
-  // PDF real: repõe o zoom medido e imprime em modo print
+  // PDF real (só na proposta): a minuta tem o seu próprio teste de PDF.
+  if (doc === 'Minuta de Contrato') {
+    ok(true, `${doc}: PDF resumido validado em audit-minuta-resumo`);
+    continue;
+  }
   await page.evaluate(([sel, zoom]) => {
     const el = document.querySelector(sel);
     if (el) el.style.zoom = String(zoom);
   }, [root, medida.zoom]);
   await page.emulateMedia({ media: 'print' });
   await page.waitForTimeout(400);
-  await page.waitForTimeout(1200);
   const pdfPath = path.join(OUT, `${ficheiro}.pdf`);
   await page.pdf({ path: pdfPath, format: 'A4', printBackground: true });
   await page.emulateMedia({ media: 'screen' });

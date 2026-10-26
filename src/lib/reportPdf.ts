@@ -106,6 +106,16 @@ export class RelatorioPdf {
     this.y = MM.topo;
     this.corPrimaria = /^#[0-9A-Fa-f]{6}$/.test(opts.escritorio?.corPrimaria || '') ? opts.escritorio!.corPrimaria! : '#0677FF';
     this.cor = this.hexParaRgb(this.corPrimaria);
+    // Metadados: o PDF fica identificável em qualquer leitor (portabilidade).
+    try {
+      this.doc.setProperties({
+        title: opts.titulo,
+        subject: opts.subtitulo || 'Relatório Estudo 360',
+        author: (opts.escritorio?.nome || 'Estudo 360').trim(),
+        creator: 'Estudo 360',
+        keywords: 'Estudo 360, relatório, PDF',
+      });
+    } catch { /* versões antigas do jsPDF sem setProperties */ }
     this.cabecalho();
   }
 

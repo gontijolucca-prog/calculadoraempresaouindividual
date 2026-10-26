@@ -446,8 +446,13 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
   // Imprime o documento do pacote via paged.js: margens em todas as páginas,
   // rodapé repetido e numeração "Página X de Y". Cai para window.print() se o
   // root ainda não estiver montado. Mostra "a preparar" enquanto pagina (~1-2s).
+  // Guard com tempo: se um print anterior ficou "preso", não bloqueia o próximo
+  // documento para sempre (aconteceu com Proposta → Minuta).
+  const ultimoPrintRef = useRef(0);
   const handlePrintPkg = () => {
-    if (!isPkg(docId) || printingPkg) return;
+    const agora = Date.now();
+    if (!isPkg(docId) || (printingPkg && agora - ultimoPrintRef.current < 2500)) return;
+    ultimoPrintRef.current = agora;
     const root = pkgWrapRef.current?.querySelector(`#${PKG_ROOT_ID[docId]}`) as HTMLElement | null;
     if (!root) { window.print(); return; }
 
@@ -456,11 +461,31 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
     // e no download em Word.
     if (docId === 'minuta') {
       setPrintingPkg(true);
+      const fechar = () => setPrintingPkg(false);
       try {
         const html = buildMinutaResumoHtml(office, honorarios, profile);
-        const fechar = () => setPrintingPkg(false);
-        window.addEventListener('afterprint', fechar, { once: true });
-        printHtmlUmaFolha(html, { title: docLabel, piso: 0.8, onSettled: fechar });
+        // Monta o resumo num contentor próprio e usa o zoom já provado da
+        // Proposta (imprimirUmaFolha), em vez de um iframe à parte.
+        const parsed = new DOMParser().parseFromString(html, 'text/html');
+        const antigo = document.getElementById('minuta-resumo-print');
+        antigo?.remove();
+        const holder = document.createElement('div');
+        holder.id = 'minuta-resumo-print';
+        const estilo = document.createElement('style');
+        estilo.textContent = `@media print {
+          body > *:not(#minuta-resumo-print) { display: none !important; }
+          #minuta-resumo-print { display: block !important; background: #fff; }
+        }`;
+        holder.appendChild(estilo);
+        parsed.head.querySelectorAll('style').forEach((s2) => holder.appendChild(s2.cloneNode(true)));
+        const wrap = document.createElement('div');
+        wrap.className = 'mr-wrap';
+        wrap.innerHTML = parsed.body.innerHTML;
+        holder.appendChild(wrap);
+        document.body.appendChild(holder);
+        window.addEventListener('afterprint', () => { fechar(); holder.remove(); }, { once: true });
+        imprimirUmaFolha('minuta-resumo-print', { piso: 0.8, seletor: '.mr-wrap' });
+        setTimeout(() => { fechar(); holder.remove(); }, 1500);
       } catch {
         imprimirUmaFolha(PKG_ROOT_ID[docId], { piso: 0.45 });
         setTimeout(() => setPrintingPkg(false), 1800);
