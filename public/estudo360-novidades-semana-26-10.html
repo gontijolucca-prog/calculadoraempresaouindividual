@@ -516,28 +516,38 @@
   <section id="proximos">
     <div class="sec-head reveal">
       <div>
-        <div class="overline">Organização</div>
+        <div class="overline">Reunião</div>
         <h2>Próximos passos</h2>
       </div>
-      <div class="side">Escreve · fica guardado sozinho · grava no teu Mac</div>
+      <div class="side">Escrito na reunião · fica guardado no site · todos veem</div>
     </div>
 
     <div class="next-card reveal">
       <div class="next-top">
-        <p class="next-lead">Escreve aqui o que falta fazer — uma linha por passo. Fica guardado automaticamente neste navegador e, com um clique, também num ficheiro do teu Mac: escolhes o ficheiro uma vez e depois grava sempre sozinho.</p>
-        <div class="np-status"><span class="dotk warm" id="npDot"></span><span id="npStatus">A ligar…</span></div>
+        <p class="next-lead">Esta lista é preenchida na reunião desta semana. Cada gravação fica guardada no site — não se perde e é substituída pela mais recente.</p>
+        <div class="np-status"><span class="dotk warm" id="npDot"></span><span id="npStatus">A carregar…</span></div>
       </div>
-      <textarea id="npText" spellcheck="false" placeholder="Ex.:&#10;- Assinar a declaração 07 e enviar o pedido SVAT">- Validar os 12 valores fiscais com o contabilista
-- Publicar as regras de acesso na base de dados principal
-- Trocar o segredo do TOConline que foi partilhado por captura
-- Esconder Cofre/Equipa/Lixeira do menu para quem não tem acesso
-- Revisão visual página a página dos PDFs com o Lucca
-- Fechar o dossier SVAT no E-balcão</textarea>
-      <div class="next-actions">
-        <button type="button" id="npSave" class="npbtn primary">Ligar ficheiro no Mac</button>
-        <button type="button" id="npDownload" class="npbtn ghost">Descarregar cópia</button>
-        <span class="np-file mono" id="npFile"></span>
+
+      <div id="npView" class="np-view" style="white-space:pre-wrap;font-size:15px;line-height:1.65;color:#1A1A18;min-height:64px;padding:14px 16px;border:1px solid #E2E8F0;border-radius:12px;background:#FDFBF7">Ainda não há passos desta semana. Serão escritos na reunião.</div>
+      <p id="npMeta" class="np-meta" style="margin:8px 0 0;font-size:12px;color:#94A3B8"></p>
+
+      <div id="npEditor" style="display:none;margin-top:14px">
+        <textarea id="npText" spellcheck="false" maxlength="1000" placeholder="Escreve aqui, uma linha por passo…" style="width:100%;min-height:150px;padding:14px 16px;border:1px solid #E2E8F0;border-radius:12px;font:inherit;font-size:15px;line-height:1.6;color:#1A1A18;background:#fff;resize:vertical"></textarea>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap">
+          <button type="button" id="npSave" class="npbtn primary">Guardar no site</button>
+          <span id="npCount" class="mono" style="font-size:11.5px;color:#94A3B8">0/1000</span>
+          <span id="npMsg" style="font-size:12.5px;color:#64748B"></span>
+        </div>
       </div>
+
+      <p id="npLocked" style="margin:10px 0 0;font-size:12.5px;color:#64748B">
+        Para escrever, entre primeiro em <a href="/" style="color:#0677FF;font-weight:600">estudo360.pt</a> nesta mesma janela (com a sua conta). A lista continua visível para todos.
+      </p>
+
+      <details id="npHist" style="margin-top:12px;display:none">
+        <summary style="cursor:pointer;font-size:12px;color:#64748B">Versões anteriores</summary>
+        <div id="npHistList" style="margin-top:8px;font-size:13px;color:#475569"></div>
+      </details>
     </div>
   </section>
 
@@ -556,172 +566,123 @@
     io.observe(el);
   });
 
-  // ── Próximos passos: gravação automática + ficheiro no Mac ──
-  (function () {
-    var KEY = 'estudo360:novidades:proximos-passos:v1';
-    var ta = document.getElementById('npText');
-    var statusEl = document.getElementById('npStatus');
-    var dot = document.getElementById('npDot');
-    var fileEl = document.getElementById('npFile');
-    var saveBtn = document.getElementById('npSave');
-    var dlBtn = document.getElementById('npDownload');
-    if (!ta || !saveBtn) return;
 
-    var canPick = typeof window.showSaveFilePicker === 'function';
-    var handle = null;
+</script>
 
-    function fmtTime(d) { return d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }); }
-    function setStatus(kind, msg) { dot.className = 'dotk ' + kind; statusEl.textContent = msg; }
+<script type="module">
+  // Próximos passos guardados no Firestore: cada gravação é uma versão nova
+  // (nunca se perde) e o site mostra sempre a mais recente a qualquer pessoa.
+  const CFG = {
+    apiKey: 'AIzaSyBxc-JFWwxlauY6U4A3IKTxxd5UFiDzjhI',
+    authDomain: 'recofatima-ferramenta.firebaseapp.com',
+    projectId: 'recofatima-ferramenta',
+    storageBucket: 'recofatima-ferramenta.firebasestorage.app',
+    messagingSenderId: '561979864363',
+    appId: '1:561979864363:web:4577c584f4802261c0016e',
+  };
+  const MARKER = 'proximos:semana-26-10';
+  const el = (id) => document.getElementById(id);
+  const view = el('npView'), meta = el('npMeta'), editor = el('npEditor'), ta = el('npText');
+  const msg = el('npMsg'), count = el('npCount'), status = el('npStatus'), dot = el('npDot');
+  const locked = el('npLocked'), hist = el('npHist'), histList = el('npHistList');
 
-    try { var saved = localStorage.getItem(KEY); if (saved) ta.value = saved; } catch (e) {}
+  const setStatus = (kind, text) => { if (dot) dot.className = 'dotk ' + kind; if (status) status.textContent = text; };
+  const fmt = (ms) => new Intl.DateTimeFormat('pt-PT', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(ms));
 
-    function saveLocal() {
+  try {
+    const [{ initializeApp }, authMod, fsMod] = await Promise.all([
+      import('https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js'),
+      import('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js'),
+      import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js'),
+    ]);
+    const app = initializeApp(CFG);
+    let auth;
+    try { auth = authMod.initializeAuth(app, { persistence: authMod.browserLocalPersistence }); }
+    catch { auth = authMod.getAuth(app); }
+    const db = fsMod.getFirestore(app);
+    const emu = new URLSearchParams(location.search).has('emu');
+    if (emu) {
+      authMod.connectAuthEmulator(auth, 'http://127.0.0.1:9199', { disableWarnings: true });
+      fsMod.connectFirestoreEmulator(db, '127.0.0.1', 8180);
+    }
+
+    let docs = [];
+    const ler = async () => {
       try {
-        localStorage.setItem(KEY, ta.value);
-        setStatus('ok', 'Guardado automaticamente às ' + fmtTime(new Date()));
+        const q = fsMod.query(fsMod.collection(db, 'updates'), fsMod.where('autor', '==', MARKER));
+        const snap = await fsMod.getDocs(q);
+        docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+          .filter((d) => typeof d.text === 'string' && d.text.trim())
+          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       } catch (e) {
-        setStatus('err', 'Sem espaço neste navegador — usa o botão para gravar no Mac');
+        docs = [];
+        setStatus('err', 'Não consegui ler do site — mostra a cópia local');
+        try { const local = localStorage.getItem('estudo360:np:' + MARKER); if (local) view.textContent = local; } catch {}
+        return;
       }
-    }
+      const ultimo = docs[0];
+      if (ultimo) {
+        view.textContent = ultimo.text;
+        meta.textContent = 'Guardado a ' + fmt(ultimo.createdAt || 0) + ' · ' + docs.length + ' versão(ões) guardada(s)';
+        try { localStorage.setItem('estudo360:np:' + MARKER, ultimo.text); } catch {}
+      } else {
+        view.textContent = 'Ainda não há passos desta semana. Serão escritos na reunião.';
+        meta.textContent = '';
+      }
+      if (docs.length > 1) {
+        hist.style.display = '';
+        histList.innerHTML = docs.slice(1, 6).map((d) =>
+          '<div style="padding:8px 0;border-top:1px solid #F1F5F9"><div class="mono" style="font-size:11px;color:#94A3B8">' +
+          fmt(d.createdAt || 0) + '</div><div style="white-space:pre-wrap">' + (d.text || '').replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c])) + '</div></div>'
+        ).join('');
+      } else {
+        hist.style.display = 'none';
+      }
+      setStatus('ok', ultimo ? 'Ligado ao site' : 'Pronto');
+    };
 
-    function buildFile() {
-      var body = ta.value.replace(/\s+$/, '');
-      return '# Estudo360 — Próximos passos\n\n_Última gravação: ' + new Date().toLocaleString('pt-PT') + '_\n\n' + (body || '(sem passos escritos)') + '\n';
-    }
-
-    function openDb() {
-      return new Promise(function (res, rej) {
-        var r = indexedDB.open('estudo360-proximos-passos', 1);
-        r.onupgradeneeded = function () { r.result.createObjectStore('h'); };
-        r.onsuccess = function () { res(r.result); };
-        r.onerror = function () { rej(r.error); };
-      });
-    }
-    function dbGet(k) {
-      return openDb().then(function (d) {
-        return new Promise(function (res, rej) {
-          var q = d.transaction('h', 'readonly').objectStore('h').get(k);
-          q.onsuccess = function () { res(q.result); };
-          q.onerror = function () { rej(q.error); };
-        });
-      });
-    }
-    function dbSet(k, v) {
-      return openDb().then(function (d) {
-        return new Promise(function (res, rej) {
-          var q = d.transaction('h', 'readwrite').objectStore('h').put(v, k);
-          q.onsuccess = function () { res(); };
-          q.onerror = function () { rej(q.error); };
-        });
-      });
-    }
-
-    function permState() {
-      if (!handle) return Promise.resolve('none');
-      if (!handle.queryPermission) return Promise.resolve('granted');
-      return handle.queryPermission({ mode: 'readwrite' }).catch(function () { return 'prompt'; });
-    }
-
-    function writeFile() {
-      if (!handle) return Promise.resolve(false);
-      return permState().then(function (p) {
-        if (p !== 'granted') return false;
-        return handle.createWritable().then(function (w) {
-          return w.write(buildFile()).then(function () { return w.close(); });
-        }).then(function () {
-          setStatus('ok', 'Guardado no Mac (' + handle.name + ') às ' + fmtTime(new Date()));
-          return true;
-        });
-      }).catch(function () {
-        setStatus('err', 'Falhou a gravação no Mac — carrega em Guardar');
-        return false;
-      });
-    }
-
-    var tFile = null;
-    function scheduleFileWrite() {
-      if (!handle) return;
-      clearTimeout(tFile);
-      tFile = setTimeout(function () { writeFile(); }, 1200);
-    }
-
-    function updateBtn() {
-      if (!canPick) { saveBtn.textContent = 'Descarregar para o Mac'; return; }
-      if (!handle) { saveBtn.textContent = 'Ligar ficheiro no Mac'; return; }
-      permState().then(function (p) {
-        saveBtn.textContent = p === 'granted' ? 'Guardar agora no Mac' : 'Religar ficheiro no Mac';
-      });
-    }
-
-    saveBtn.addEventListener('click', function () {
-      if (!canPick) { downloadCopy(); return; }
-      var chain = handle ? Promise.resolve(handle) : window.showSaveFilePicker({
-        suggestedName: 'Estudo360-Proximos-Passos.md',
-        types: [{ description: 'Markdown', accept: { 'text/markdown': ['.md'] } }]
-      }).then(function (h) {
-        handle = h;
-        dbSet('fileHandle', h);
-        fileEl.textContent = 'Ficheiro: ' + h.name;
-        return h;
-      });
-      chain.then(function (h) {
-        return permState().then(function (p) {
-          if (p === 'granted') return true;
-          return h.requestPermission ? h.requestPermission({ mode: 'readwrite' }).then(function (np) { return np === 'granted'; }) : true;
-        });
-      }).then(function (ok) {
-        if (!ok) { setStatus('err', 'Permissão recusada — o ficheiro não foi gravado'); updateBtn(); return; }
-        return writeFile().then(function () { updateBtn(); });
-      }).catch(function (err) {
-        if (err && err.name === 'AbortError') return;
-        setStatus('err', 'Não foi possível ligar o ficheiro — usa "Descarregar cópia"');
-      });
+    authMod.onAuthStateChanged(auth, (user) => {
+      if (user) {
+        editor.style.display = '';
+        locked.style.display = 'none';
+        if (ta && !ta.value && docs[0]) ta.value = docs[0].text;
+      } else {
+        editor.style.display = 'none';
+        locked.style.display = '';
+      }
     });
 
-    function downloadCopy() {
-      var blob = new Blob([buildFile()], { type: 'text/markdown' });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = 'Estudo360-Proximos-Passos.md';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(function () { URL.revokeObjectURL(url); }, 3000);
-      setStatus('ok', 'Cópia descarregada (pasta Transferências) às ' + fmtTime(new Date()));
+    if (ta) {
+      const upd = () => { if (count) count.textContent = ta.value.length + '/1000'; };
+      ta.addEventListener('input', upd); upd();
     }
-    dlBtn.addEventListener('click', downloadCopy);
 
-    var tLocal = null;
-    ta.addEventListener('input', function () {
-      setStatus('warm', 'A guardar…');
-      clearTimeout(tLocal);
-      tLocal = setTimeout(saveLocal, 300);
-      scheduleFileWrite();
-    });
-    window.addEventListener('beforeunload', function () { try { localStorage.setItem(KEY, ta.value); } catch (e) {} });
-
-    if (canPick) {
-      dbGet('fileHandle').then(function (h) {
-        if (!h) { updateBtn(); return; }
-        handle = h;
-        fileEl.textContent = 'Ficheiro: ' + h.name;
-        permState().then(function (p) {
-          if (p === 'granted') setStatus('ok', 'Ligado a ' + h.name);
-          else setStatus('warm', 'Ligado a ' + h.name + ' — carrega em "Religar" para voltar a gravar sozinho');
-          updateBtn();
+    el('npSave')?.addEventListener('click', async () => {
+      const user = auth.currentUser;
+      const text = (ta?.value || '').trim();
+      if (!user) { msg.textContent = 'Entre em estudo360.pt para escrever.'; return; }
+      if (!text) { msg.textContent = 'Escreve primeiro os passos.'; return; }
+      msg.textContent = 'A guardar…';
+      try {
+        await fsMod.addDoc(fsMod.collection(db, 'updates'), {
+          text,
+          atualizado: false,
+          aprovado: false,
+          createdAt: Date.now(),
+          autor: MARKER,
         });
-      }).catch(function () { updateBtn(); });
-    } else {
-      updateBtn();
-    }
+        msg.textContent = 'Guardado no site ✓';
+        await ler();
+      } catch (e) {
+        msg.textContent = 'Não guardou: ' + (e?.message || 'erro');
+      }
+    });
 
-    if (ta.value) {
-      if (statusEl.textContent.indexOf('A ligar') !== -1) setStatus('ok', 'Guardado neste navegador');
-    } else {
-      setStatus('warm', canPick ? 'Liga um ficheiro no Mac para gravar aí também' : 'Escreve — depois podes descarregar para o Mac');
-    }
-  })();
+    await ler();
+  } catch (e) {
+    setStatus('err', 'Sem ligação ao site — a mostrar o que está guardado neste computador');
+    try { const local = localStorage.getItem('estudo360:np:' + MARKER); if (local) view.textContent = local; } catch {}
+  }
 </script>
 </body>
 </html>
