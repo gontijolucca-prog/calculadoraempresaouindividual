@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import type { ClientProfile } from './ClientProfile';
 import type { OfficeSettings } from './lib/officeSettings';
 import { calcularProposta, type HonorariosConfig } from './lib/honorarios';
+import { imprimirUmaFolha } from './lib/printElement';
 
 interface Props {
   profile: ClientProfile;
@@ -149,7 +150,7 @@ export default function Proposta({ profile, office, honorarios, servicosIds, onS
             <span style={{ fontSize: 16, fontWeight: 900, color: '#0677FF' }}>{eur(mensalComIVA)}</span>
           </div>
           <div style={{ textAlign: 'center', marginTop: 12 }}>
-            <button onClick={() => window.print()} style={{ background: '#0677FF', color: 'white', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Imprimir proposta</button>
+            <button onClick={() => imprimirUmaFolha(printRootId)} style={{ background: '#0677FF', color: 'white', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Imprimir proposta</button>
           </div>
         </div>
       </div>

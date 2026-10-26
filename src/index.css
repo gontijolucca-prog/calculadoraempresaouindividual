@@ -307,3 +307,26 @@ textarea:focus-visible,
     print-color-adjust: exact !important;
   }
 }
+
+/* ── Orbe de estado (indicador "A trabalhar em") ───────────────────────────
+   Pulso suave de escala + halo, 2 s, só transform/box-shadow (não mexe layout).
+   Espelha a bola do logótipo. Com movimento reduzido fica estático. */
+.orb-status {
+  display: inline-block;
+  border-radius: 9999px;
+  vertical-align: middle;
+  will-change: transform;
+}
+
+.orb-status--pulse {
+  animation: orb-pulse 2s ease-in-out infinite;
+}
+
+@keyframes orb-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.14); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orb-status--pulse { animation: none; }
+}

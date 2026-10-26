@@ -43,5 +43,34 @@ ok('C: inválido vira 0', formatarEuros(Number.NaN).includes('0'));
   ok('D: cresce para várias páginas', pdf.numeroPaginas > 1);
 }
 
+// ── E: regra "uma folha" — o save() encolhe até caber
+{
+  const grande = new RelatorioPdf({ titulo: 'Simulação grande', cliente: 'Empresa A', nif: '501234567' });
+  grande.seccao('Parâmetros');
+  for (let i = 0; i < 45; i++) grande.tabela([{ label: `Parâmetro ${i}`, valor: `${i * 10} €` }]);
+  grande.seccao('Mapa');
+  grande.matriz(['Cliente', 'JAN', 'FEV'], [['A', 'OK', 'X'], ['B', 'X', 'OK']]);
+  grande.nota('Valores indicativos.');
+  ok('E: em tamanho normal passaria de uma página', grande.numeroPaginas > 1);
+  eq('E: página final = 1', grande.paginasFinais(), 1);
+  ok('E: fator dentro do piso', grande.fatorFinal() >= 0.55 && grande.fatorFinal() <= 1);
+}
+
+// ── F: relatório curto fica no tamanho normal
+{
+  const curto = new RelatorioPdf({ titulo: 'Curto' });
+  curto.seccao('Resumo').tabela([{ label: 'Total', valor: '100 €' }]);
+  eq('F: curto continua em fator 1', curto.fatorFinal(), 1);
+  eq('F: curto numa página', curto.paginasFinais(), 1);
+}
+
+// ── G: matriz gigante nunca sai em 2 páginas (trunca com aviso)
+{
+  const m = new RelatorioPdf({ titulo: 'Mapa enorme', paisagem: true });
+  const linhas = Array.from({ length: 120 }, (_, i) => [`Cliente ${i}`, 'OK', 'X', 'OK']);
+  m.matriz(['Cliente', 'JAN', 'FEV', 'MAR'], linhas);
+  eq('G: matriz de 120 linhas fica numa folha', m.paginasFinais(), 1);
+}
+
 if (fails > 0) { console.error(`\n${fails} falha(s)`); process.exit(1); }
 console.log('\nTodos os testes do PDF passaram.');

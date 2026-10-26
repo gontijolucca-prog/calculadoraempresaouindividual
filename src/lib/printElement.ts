@@ -76,3 +76,46 @@ export function imprimirElemento(
     });
   });
 }
+
+/**
+ * Imprime um documento A4 de uma só folha (Proposta, Minuta, deck).
+ *
+ * Mede a altura real do conteúdo e aplica `zoom` até caber na altura da A4;
+ * nunca corta texto nem abre segunda página. Repõe o zoom no fim.
+ */
+export function imprimirUmaFolha(
+  rootId: string,
+  opcoes: { paisagem?: boolean; piso?: number; seletor?: string } = {},
+): { fator: number } {
+  const root = document.getElementById(rootId);
+  const piso = opcoes.piso ?? 0.45;
+  const seletor = opcoes.seletor ?? '.pp-page, .mc-page, .deck-page';
+  const alvoPx = ((opcoes.paisagem ? 210 : 297) * 96) / 25.4;
+
+  if (!root) {
+    window.print();
+    return { fator: 1 };
+  }
+
+  const paginas = Array.from(root.querySelectorAll<HTMLElement>(seletor));
+  const altura = paginas.length
+    ? Math.max(...paginas.map((p) => p.scrollHeight))
+    : root.scrollHeight;
+
+  const fator = Math.min(1, Math.max(piso, alvoPx / Math.max(1, altura)));
+  const zoomAnterior = root.style.zoom;
+  root.style.zoom = String(fator);
+
+  // Duas frames para o browser aplicar o zoom antes de imprimir.
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      try {
+        window.print();
+      } finally {
+        setTimeout(() => { root.style.zoom = zoomAnterior; }, 1500);
+      }
+    });
+  });
+
+  return { fator };
+}
