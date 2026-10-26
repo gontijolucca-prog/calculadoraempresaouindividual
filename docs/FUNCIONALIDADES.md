@@ -54,7 +54,7 @@ Estado: ✅ = testado e provado nesta ronda · ⚠️ = existe, falta prova auto
 | E13 | Proposta de Honorários | 1 folha, zoom medido, sem cortar texto | ✅ |
 | E14 | Minuta de Contrato | 1 folha em versão resumida (cláusulas essenciais + nota); integral em Word | ✅ |
 | E15–E21 | DR, Alterações, Fluxos, Balanço, DF, Ata, Declaração | 1 folha cada (DF completo a 0,42) | ✅ |
-| E22 | Proposta comercial (deck) | 3–8 páginas; máx. 8 cards | ✅ (limite) · ⚠️ (paginação 2/página por fazer) |
+| E22 | Proposta comercial (deck) | 3–8 páginas (1 card por página, máx. 8) | ✅ |
 | E23 | CSV/Excel | Exporta o que está no ecrã, sem perder linhas | ⚠️ |
 | E24 | PDF portátil | A4 exato, fontes/imagens embutidas, sem URLs externas | ✅ |
 

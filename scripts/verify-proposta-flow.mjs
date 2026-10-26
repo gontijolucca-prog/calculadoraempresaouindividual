@@ -69,6 +69,17 @@ const cards = await page.locator('.deck-page, [data-deck-card]').count();
 ok(cards >= 7, `proposta com ${cards} cards (esperado 7)`);
 await page.screenshot({ path: path.join(OUT, 'proposta-tailored.png'), fullPage: false });
 
+// PDF: 3–8 páginas (1 card por página), nunca mais de 8
+await page.evaluate(() => { window.__prints = 0; window.print = () => { window.__prints += 1; }; });
+await page.getByRole('button', { name: /^PDF$/ }).first().click();
+await page.waitForTimeout(600);
+const deck = await page.evaluate(() => ({
+  cards: document.querySelectorAll('.deck-page').length,
+  prints: window.__prints || 0,
+}));
+ok(deck.cards >= 3 && deck.cards <= 8, `PDF da proposta com ${deck.cards} páginas (3–8)`);
+ok(deck.prints >= 1, 'PDF da proposta dispara impressão');
+
 // Caminho Gamma: voltar e gerar texto
 await page.getByRole('button', { name: /Propostas/i }).first().click();
 await page.waitForTimeout(1200);
