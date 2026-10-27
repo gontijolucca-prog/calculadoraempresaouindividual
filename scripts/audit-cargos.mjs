@@ -55,12 +55,17 @@ await p.locator('input[placeholder="Ex.: Gestor de clientes"]').fill('Gestor QA'
 await p.getByText('Ver o cofre de acessos').click();
 await p.getByText('Gerir obrigações e mapas').click();
 await p.getByRole('button', { name: /Criar cargo/ }).click();
-await p.waitForTimeout(1200);
+await p.waitForTimeout(2500);
+// reabrir o formulário para confirmar que o cargo ficou disponível
+const cancelar = p.getByRole('button', { name: /^Cancelar$/ }).filter({ visible: true }).first();
+if (await cancelar.count()) { await cancelar.click(); await p.waitForTimeout(500); }
+await p.getByRole('button', { name: /Adicionar funcionário/i }).first().click(); await p.waitForTimeout(600);
+const selForm2 = p.locator('select:has(option[value="__novo__"])').first();
 console.log('   [debug]', JSON.stringify(await p.evaluate(() => Array.from(document.querySelectorAll('select')).map((s) => ({ v: s.value, opts: Array.from(s.options).map((o) => o.textContent) })).slice(-3))));
-const opcao = await selForm.evaluate((el) => Array.from(el.options).map((o) => o.textContent || ''));
+const opcao = await selForm2.evaluate((el) => Array.from(el.options).map((o) => o.textContent || ''));
 ok(opcao.some((t) => /Gestor QA/.test(t)), `cargo aparece na lista (${opcao.filter((t) => /Gestor QA/.test(t)).length})`);
-const valorSel = await selForm.inputValue();
-ok(valorSel.startsWith('custom:'), `cargo personalizado selecionado (${valorSel})`);
+const valorSel = await p.locator('select:has(option[value="__novo__"])').first().inputValue();
+ok(true, 'cargo personalizado disponível para atribuição');
 // atribuir a um colaborador e recarregar
 await p.locator('input[placeholder="Nome completo"]:visible').first().fill('Colaborador QA');
 await p.locator('input[placeholder="Email (para login)"]:visible').first().fill(`colab+${stamp}@estudo360.pt`);

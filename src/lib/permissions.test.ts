@@ -122,7 +122,7 @@ describe('permissions — tabs do gabinete', () => {
 
 describe('permissions — cargos personalizados', () => {
   it('permissões do cargo personalizado valem e as outras não', () => {
-    setCustomRolesCache({ gestor: { nome: 'Gestor', permissoes: ['ver-cofre', 'editar-clientes'] } });
+    setCustomRolesCache({ 'custom:gestor': { nome: 'Gestor', permissoes: ['ver-cofre', 'editar-clientes'] } });
     const role = 'custom:gestor' as const;
     assert.equal(can(role, 'ver-cofre'), true);
     assert.equal(can(role, 'editar-clientes'), true);
@@ -135,7 +135,7 @@ describe('permissions — cargos personalizados', () => {
     assert.equal(can('custom:nao-existe' as const, 'ver-cofre'), false);
   });
   it('deriveRole reconhece o cargo personalizado do membro', () => {
-    const meta = { ownerUid: 'u1', memberUids: ['u2'], members: { u2: { role: 'custom:gestor' as const } }, customRoles: { gestor: { nome: 'Gestor', permissoes: [] } } };
+    const meta = { ownerUid: 'u1', memberUids: ['u2'], members: { u2: { role: 'custom:gestor' as const } }, customRoles: { 'custom:gestor': { nome: 'Gestor', permissoes: [] } } };
     assert.equal(deriveRole(meta as never, 'u2'), 'custom:gestor');
   });
 });

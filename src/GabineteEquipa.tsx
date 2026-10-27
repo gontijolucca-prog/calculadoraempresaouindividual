@@ -15,7 +15,7 @@ const ROLE_BASE_LABEL: Record<string, string> = {
 };
 const roleLabel: Record<string, string> = ROLE_BASE_LABEL;
 function labelDoCargo(role: string, meta?: GabineteMeta | null): string {
-  if (role.startsWith('custom:')) return meta?.customRoles?.[role.slice(7)]?.nome || 'Cargo personalizado';
+  if (role.startsWith('custom:')) return meta?.customRoles?.[role]?.nome || meta?.customRoles?.[role.slice(7)]?.nome || 'Cargo personalizado';
   return ROLE_BASE_LABEL[role] || role;
 }
 function styleDoCargo(role: string): string {
@@ -78,12 +78,11 @@ export default function GabineteEquipa() {
     if (!gabId) { setRoleErro('Sem gabinete ativo.'); return; }
     setRoleSaving(true); setRoleErro('');
     try {
-      const id = Math.random().toString(36).slice(2, 10);
-      const roleId = `custom:${id}`;
+      const roleId = `custom:${Math.random().toString(36).slice(2, 10)}`;
       // Lê o estado atual do gabinete para não apagar cargos já existentes
       // (a cache local pode ainda não ter carregado quando o formulário abre).
       const atual = await getGabineteMeta(gabId).catch(() => null);
-      const customRoles = { ...(atual?.customRoles || gabMeta?.customRoles || {}), [id]: { nome, permissoes: rolePerms, createdAt: Date.now(), createdBy: 'owner' } };
+      const customRoles = { ...(atual?.customRoles || gabMeta?.customRoles || {}), [roleId]: { nome, permissoes: rolePerms, createdAt: Date.now(), createdBy: 'owner' } };
       await updateDoc(doc(db, 'gabinetes', gabId), { customRoles });
       setCustomRolesCache(customRoles);
       const fresco = await getGabineteMeta(gabId).catch(() => null);
@@ -294,8 +293,8 @@ export default function GabineteEquipa() {
             <option value="admin">Admin</option>
             <option value="contabilista">Contabilista</option>
             <option value="estagiaria">Estagiária</option>
-            {Object.entries((gabMeta?.customRoles || {}) as Record<string, { nome: string }>).map(([id, r]) => (
-              <option key={id} value={`custom:${id}`}>{r.nome}</option>
+            {Object.entries((gabMeta?.customRoles || {}) as Record<string, { nome: string }>).map(([key, r]) => (
+              <option key={key} value={key}>{r.nome}</option>
             ))}
           </select>
         </div>
@@ -534,8 +533,8 @@ export default function GabineteEquipa() {
                 <option value="admin">Admin — dono do gabinete</option>
                 <option value="contabilista">Contabilista</option>
                 <option value="estagiaria">Estagiária</option>
-                {Object.entries((gabMeta?.customRoles || {}) as Record<string, { nome: string }>).map(([id, r]) => (
-                  <option key={id} value={`custom:${id}`}>{r.nome} (personalizado)</option>
+                {Object.entries((gabMeta?.customRoles || {}) as Record<string, { nome: string }>).map(([key, r]) => (
+                  <option key={key} value={key}>{r.nome} (personalizado)</option>
                 ))}
                 <option value="__novo__">＋ Criar novo cargo…</option>
               </select>

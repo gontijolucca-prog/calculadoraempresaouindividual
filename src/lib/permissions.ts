@@ -59,8 +59,9 @@ export function isCargoCustom(role: string | null | undefined): boolean {
 export function can(role: GabineteRole | null | undefined, action: PermissionAction): boolean {
   if (!role) return false;
   if (isCargoCustom(role)) {
-    const id = role.slice('custom:'.length);
-    return (customRoles[id]?.permissoes || []).includes(action);
+    const direto = customRoles[role]?.permissoes;
+    const legado = customRoles[role.slice('custom:'.length)]?.permissoes;
+    return (direto || legado || []).includes(action);
   }
   return MATRIX[role as GabineteRoleBase]?.includes(action) ?? false;
 }
@@ -77,7 +78,7 @@ export function deriveRole(meta: RoleSource | null | undefined, uid: string | nu
   if (meta.ownerUid && meta.ownerUid === uid) return 'admin';
   const direct = meta.members?.[uid]?.role;
   if (direct === 'admin' || direct === 'contabilista' || direct === 'estagiaria') return direct;
-  if (direct && direct.startsWith('custom:') && (meta as RoleSource & { customRoles?: Record<string, unknown> }).customRoles?.[direct.slice('custom:'.length)]) return direct;
+  if (direct && direct.startsWith('custom:') && (meta as RoleSource & { customRoles?: Record<string, unknown> }).customRoles?.[direct]) return direct;
   if (meta.memberUids?.includes(uid)) return 'contabilista';
   return null;
 }
