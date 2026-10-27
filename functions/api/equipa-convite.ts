@@ -29,7 +29,7 @@ export function emailValido(v: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v || '').trim());
 }
 
-export function montarEmailConvite(nome: string, email: string, gabinete: string, cargo: string): { subject: string; text: string; html: string } {
+export function montarEmailConvite(nome: string, email: string, gabinete: string, cargo: string, link = 'https://estudo360.pt'): { subject: string; text: string; html: string } {
   const primeiro = String(nome || '').trim().split(/\s+/)[0] || 'olá';
   const cargoTxt = cargo === 'admin' ? 'administrador' : cargo === 'contabilista' ? 'contabilista' : 'estagiária';
   const subject = `Convite para a equipa ${gabinete ? `do gabinete ${gabinete}` : 'do Estudo360'}`;
@@ -37,22 +37,20 @@ export function montarEmailConvite(nome: string, email: string, gabinete: string
 
 Fui convidar-te para a equipa ${gabinete ? `do gabinete ${gabinete} ` : ''}no Estudo360, como ${cargoTxt}.
 
-1. Abre https://estudo360.pt
-2. Cria conta (ou entra) com este email: ${email}
-3. Confirma o email
-4. Em «Gabinete», aceita o convite «Aceitar e entrar»
+1. Abre o link: ${link}
+2. Define uma password forte (duas vezes)
+3. Entras direto no gabinete, pronta a trabalhar
 
-O acesso só fica ativo depois de aceitares. Qualquer dúvida, responde a este email.`;
+A conta fica criada com este email: ${email}. Qualquer dúvida, responde a este email.`;
   const html = `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;color:#1A1A18">
   <h2 style="font-size:18px;margin:0 0 8px">Convite para a equipa${gabinete ? ` do gabinete <b>${escapeHtml(gabinete)}</b>` : ''}</h2>
   <p style="margin:0 0 12px;line-height:1.6">Olá ${escapeHtml(primeiro)}, foi criado um convite para <b>${escapeHtml(email)}</b> como <b>${cargoTxt}</b>.</p>
   <ol style="line-height:1.8;margin:0 0 14px 18px;padding:0">
-    <li>Abre <a href="https://estudo360.pt" style="color:#0677FF">estudo360.pt</a></li>
-    <li>Cria conta (ou entra) com este email</li>
-    <li>Confirma o email</li>
-    <li>Em «Gabinete», aceita o convite «Aceitar e entrar»</li>
+    <li>Abre o <a href="${link}" style="color:#0677FF">link do convite</a></li>
+    <li>Define uma password forte (duas vezes)</li>
+    <li>Entras direto no gabinete, pronta a trabalhar</li>
   </ol>
-  <p style="margin:0;color:#64748B;font-size:13px">O acesso só fica ativo depois de aceitares.</p>
+  <p style="margin:0;color:#64748B;font-size:13px">A conta fica criada com este email.</p>
 </div>`;
   return { subject, text, html };
 }
@@ -96,7 +94,9 @@ export const onRequestPost: PagesFunction = async ({ request, env }) => {
   if (hits.length >= 30) return json({ erro: 'limite_de_convites' }, 429, origin);
   hits.push(now); RL.set(uid, hits);
 
-  const mail = montarEmailConvite(nome, to, gabinete, cargo);
+  const token = String(body.token || '').trim();
+  const link = token ? `https://estudo360.pt/convite?t=${encodeURIComponent(token)}` : 'https://estudo360.pt';
+  const mail = montarEmailConvite(nome, to, gabinete, cargo, link);
   const from = String((env as any).MAIL_FROM || 'Estudo360 <convites@estudo360.pt>');
 
   // 1) Resend

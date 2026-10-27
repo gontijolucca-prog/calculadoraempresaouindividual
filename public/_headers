@@ -3,6 +3,15 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
 
+# Convite por link: tem token no URL, nunca indexar
+/convite
+  X-Robots-Tag: noindex
+  Cache-Control: no-store
+
+/convite.html
+  X-Robots-Tag: noindex
+  Cache-Control: no-store
+
 # Página interna (não listada): novidades + candidatura SVAT
 /estudo360-novidades-e-svat.html
   X-Robots-Tag: noindex

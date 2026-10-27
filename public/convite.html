@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Convite · Estudo360</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" href="/logo.svg" />
+<style>
+  :root{--paper:#FDFBF7;--ink:#1A1A18;--gold:#B06D35;--blue:#0677FF;--line:#E7E2D8}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--paper);color:var(--ink);font-family:Montserrat,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px}
+  .card{width:100%;max-width:460px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:28px;box-shadow:0 20px 50px rgba(26,26,24,.08)}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+  .brand img{width:34px;height:34px}
+  .brand b{font-size:16px;letter-spacing:.2px}
+  h1{font-size:22px;margin:0 0 6px;line-height:1.2}
+  p.sub{margin:0 0 18px;color:#64748B;font-size:13.5px;line-height:1.55}
+  label{display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#64748B;margin:14px 0 6px}
+  input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;font:inherit;font-size:15px;background:#fff;color:var(--ink)}
+  input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(6,119,255,.12)}
+  .mail{background:#F8FAFC;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px;color:#334155}
+  ul.rules{list-style:none;margin:10px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;color:#94A3B8}
+  ul.rules li.ok{color:#047857;font-weight:600}
+  button{margin-top:18px;width:100%;padding:13px;border:0;border-radius:12px;background:var(--ink);color:#fff;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  button.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);margin-top:10px}
+  .msg{margin-top:14px;font-size:13px;line-height:1.5;padding:10px 12px;border-radius:10px;display:none}
+  .msg.err{display:block;background:#FEF2F2;color:#991B1B;border:1px solid #FECACA}
+  .msg.ok{display:block;background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0}
+  .foot{margin-top:18px;font-size:11px;color:#94A3B8;text-align:center}
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand"><img src="/logo.svg" alt="" /><b>ESTUDO<span style="color:var(--blue)">360</span></b></div>
+    <h1>Entrar na equipa do gabinete</h1>
+    <p class="sub" id="sub">A carregar o convite…</p>
+
+    <div id="formWrap" style="display:none">
+      <label>Email do convite</label>
+      <div class="mail" id="email">—</div>
+
+      <label for="p1">Password</label>
+      <input id="p1" type="password" autocomplete="new-password" placeholder="Mínimo 10 caracteres" />
+      <ul class="rules" id="rules">
+        <li data-r="len">10 caracteres</li>
+        <li data-r="upper">1 maiúscula</li>
+        <li data-r="lower">1 minúscula</li>
+        <li data-r="digit">1 número</li>
+      </ul>
+
+      <label for="p2">Repetir password</label>
+      <input id="p2" type="password" autocomplete="new-password" placeholder="Repete a password" />
+
+      <button id="go" disabled>Criar conta e entrar</button>
+      <button id="login" class="secondary" style="display:none">Já tenho conta — entrar</button>
+      <div class="msg" id="msg"></div>
+    </div>
+
+    <div id="dead" style="display:none">
+      <p class="sub">Este convite já não é válido ou expirou. Pede um novo convite ao gabinete.</p>
+      <a href="https://estudo360.pt" style="color:var(--blue);font-weight:600;font-size:14px">Ir para estudo360.pt</a>
+    </div>
+
+    <p class="foot">A conta fica ligada ao gabinete que te convidou.</p>
+  </main>
+
+<script type="module">
+  const params = new URLSearchParams(location.search);
+  const token = (params.get('t') || '').trim();
+  const emu = params.has('emu');
+  const CFG = {
+    apiKey: 'AIzaSyBxc-JFWwxlauY6U4A3IKTxxd5UFiDzjhI',
+    authDomain: 'recofatima-ferramenta.firebaseapp.com',
+    projectId: 'recofatima-ferramenta',
+    storageBucket: 'recofatima-ferramenta.firebasestorage.app',
+    messagingSenderId: '561979864363',
+    appId: '1:561979864363:web:4577c584f4802261c0016e',
+  };
+  const $ = (id) => document.getElementById(id);
+  const show = (id) => { $(id).style.display = 'block'; };
+  const hide = (id) => { $(id).style.display = 'none'; };
+  const setMsg = (txt, kind = 'err') => { const m = $('msg'); m.className = 'msg ' + kind; m.textContent = txt; };
+  const setSub = (txt) => { $('sub').textContent = txt; };
+
+  if (!token) { setSub('Link incompleto.'); show('dead'); }
+  else {
+    try {
+      const [{ initializeApp }, authMod, fsMod] = await Promise.all([
+        import('https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js'),
+        import('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js'),
+        import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js'),
+      ]);
+      const app = initializeApp(CFG);
+      let auth;
+      try { auth = authMod.initializeAuth(app, { persistence: authMod.browserLocalPersistence }); }
+      catch { auth = authMod.getAuth(app); }
+      const db = fsMod.getFirestore(app);
+      if (emu) { authMod.connectAuthEmulator(auth, 'http://127.0.0.1:9199', { disableWarnings: true }); fsMod.connectFirestoreEmulator(db, '127.0.0.1', 8180); }
+
+      const snap = await fsMod.getDoc(fsMod.doc(db, 'convites', token)).catch(() => null);
+      if (!snap || !snap.exists()) { setSub('Convite não encontrado.'); show('dead'); }
+      else {
+        const c = snap.data();
+        if (c.expiresAt && c.expiresAt < Date.now()) { setSub('Convite expirado.'); show('dead'); }
+        else {
+          const email = String(c.email || '').toLowerCase();
+          $('email').textContent = email;
+          setSub(`Convite para o gabinete ${c.gabineteNome || ''} — define a tua password para entrar.`.replace('  ', ' '));
+          show('formWrap');
+
+          const p1 = $('p1'), p2 = $('p2'), go = $('go');
+          const regras = {
+            len: (v) => v.length >= 10,
+            upper: (v) => /[A-ZÁÉÍÓÚÂÊÔÃÕÇ]/.test(v),
+            lower: (v) => /[a-záéíóúâêôãõç]/.test(v),
+            digit: (v) => /\d/.test(v),
+          };
+          const avaliar = () => {
+            const v = p1.value;
+            let todas = true;
+            for (const [k, fn] of Object.entries(regras)) {
+              const ok = fn(v);
+              document.querySelector(`[data-r="${k}"]`).classList.toggle('ok', ok);
+              if (!ok) todas = false;
+            }
+            const iguais = v.length > 0 && v === p2.value;
+            go.disabled = !todas || !iguais;
+            go.textContent = iguais ? 'Criar conta e entrar' : 'Repete a password';
+            return todas && iguais;
+          };
+          p1.addEventListener('input', avaliar); p2.addEventListener('input', avaliar);
+
+          const entrar = async (criar) => {
+            if (!avaliar()) return;
+            go.disabled = true; $('login').disabled = true;
+            setMsg(criar ? 'A criar a conta…' : 'A entrar…', 'ok');
+            try {
+              if (criar) {
+                await authMod.createUserWithEmailAndPassword(auth, email, p1.value);
+              } else {
+                await authMod.signInWithEmailAndPassword(auth, email, p1.value);
+              }
+              location.href = '/?convite=' + encodeURIComponent(token);
+            } catch (e) {
+              const code = e?.code || '';
+              if (code === 'auth/email-already-in-use') {
+                $('login').style.display = 'block';
+                setMsg('Já existe uma conta com este email. Carrega em «Já tenho conta — entrar».');
+              } else if (code === 'auth/weak-password') {
+                setMsg('Password fraca — usa pelo menos 10 caracteres.');
+              } else if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') {
+                setMsg('Password errada para esta conta.');
+              } else {
+                setMsg('Não consegui: ' + (e?.message || code || 'erro'));
+              }
+            } finally {
+              go.disabled = false; $('login').disabled = false;
+            }
+          };
+          go.addEventListener('click', () => entrar(true));
+          $('login').addEventListener('click', () => entrar(false));
+        }
+      }
+    } catch (e) {
+      setSub('Sem ligação. Tenta outra vez.'); show('dead');
+    }
+  }
+</script>
+</body>
+</html>

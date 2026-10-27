@@ -19,7 +19,7 @@ describe('convite por email — conteúdo', () => {
     assert.match(m.text, /Ana/);
     assert.match(m.text, /ana@empresa\.pt/);
     assert.match(m.text, /Silva & Associados/);
-    assert.match(m.text, /Aceitar e entrar/);
+    assert.match(m.text, /password forte/i);
     assert.match(m.html, /ana@empresa\.pt/);
     assert.match(m.html, /estagiária/);
   });

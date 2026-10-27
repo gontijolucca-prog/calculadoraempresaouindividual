@@ -364,7 +364,9 @@ function AppContent() {
   const isTestBypass = typeof window !== 'undefined' && import.meta.env.DEV && window.location.search.includes('test') && localStorage.getItem('estudo360:test-bypass-auth') === '1';
   const isAdminBypass = user?.email === 'admin@estudo360.pt';
   const isAuthenticated = !!user || isTestBypass;
-  const needsVerification = !!user && !user.emailVerified && user.providerData.some(p => p.providerId === 'password') && !isTestBypass && !isAdminBypass;
+  const [conviteToken] = useState<string>(() => (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('convite') || '' : ''));
+  // Quem chega pelo link do convite já provou que tem acesso ao email.
+  const needsVerification = !!user && !user.emailVerified && user.providerData.some(p => p.providerId === 'password') && !isTestBypass && !isAdminBypass && !conviteToken;
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   // Mode is persisted: ao atualizar a página o utilizador continua no mesmo contexto.
@@ -397,6 +399,35 @@ function AppContent() {
     const raw = loadFromStorage<string>('gabineteTab', 'dashboard') || 'dashboard';
     return VALID_GAB_TABS.has(raw) ? raw : 'gallery';
   });
+  // Link do convite (/convite?t=...): aceita sozinho e entra no gabinete.
+  useEffect(() => {
+    if (!user || !conviteToken) return;
+    let vivo = true;
+    (async () => {
+      try {
+        const [{ doc, getDoc }, g] = await Promise.all([import('firebase/firestore'), import('./lib/gabinetes')]);
+        const { db } = await import('./lib/firebase');
+        const snap = await getDoc(doc(db, 'convites', conviteToken));
+        if (!snap.exists()) return;
+        const conv = snap.data() as { gabineteId?: string; email?: string; expiresAt?: number };
+        const mesmoEmail = (conv.email || '').toLowerCase() === (user.email || '').toLowerCase();
+        const valido = !conv.expiresAt || conv.expiresAt > Date.now();
+        if (!conv.gabineteId || !mesmoEmail || !valido) return;
+        await g.acceptInvite(conv.gabineteId);
+        g.setActiveGabineteId(conv.gabineteId);
+        if (vivo) {
+          setView('gabinete');
+          const url = new URL(window.location.href);
+          url.searchParams.delete('convite');
+          window.history.replaceState({}, '', url.toString());
+        }
+      } catch (e) {
+        console.warn('[convite] falhou a aceitação automática', e);
+      }
+    })();
+    return () => { vivo = false; };
+  }, [user, conviteToken]);
+
   useEffect(() => { if (VALID_GAB_TABS.has(gabineteTab)) saveToStorage('gabineteTab', gabineteTab); else saveToStorage('gabineteTab', 'gallery'); }, [gabineteTab]);
 
   // Cargo no gabinete ativo — decide que tabs do Gabinete aparecem no menu.

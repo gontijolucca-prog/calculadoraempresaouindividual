@@ -251,7 +251,14 @@ export async function declineInvite(gabineteId: string): Promise<void> {
   } catch {}
 }
 
-export async function inviteToGabinete(gabineteId: string, email: string, role: GabineteRole = 'contabilista'): Promise<void> {
+export function novoTokenConvite(): string {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** Cria o convite no gabinete e devolve o token para o link/email. */
+export async function inviteToGabinete(gabineteId: string, email: string, role: GabineteRole = 'contabilista'): Promise<{ token: string }> {
   const u = auth.currentUser;
   if (!u) throw new Error('Não autenticado');
   const emailLc = normalizeEmail(email);
@@ -262,17 +269,29 @@ export async function inviteToGabinete(gabineteId: string, email: string, role: 
   const data = snap.data() as GabineteMeta;
   // só membros podem convidar
   if (!data.memberUids?.includes(u.uid) && data.ownerUid !== u.uid) throw new Error('Sem permissão');
+  const token = novoTokenConvite();
+  const expira = Date.now() + 7 * 24 * 60 * 60 * 1000;
   await updateDoc(ref, {
     inviteEmails: arrayUnion(emailLc),
-    invites: arrayUnion({ email: emailLc, role, invitedAt: Date.now(), invitedBy: u.uid, invitedByEmail: u.email || '' }),
+    invites: arrayUnion({ email: emailLc, role, invitedAt: Date.now(), invitedBy: u.uid, invitedByEmail: u.email || '', token, expira }),
     updatedAt: Date.now(),
   } as any).catch(async () => {
     await setDoc(ref, {
       inviteEmails: [...(data.inviteEmails || []), emailLc],
-      invites: [...(data.invites || []), { email: emailLc, role, invitedAt: Date.now(), invitedBy: u.uid, invitedByEmail: u.email || '' }],
+      invites: [...(data.invites || []), { email: emailLc, role, invitedAt: Date.now(), invitedBy: u.uid, invitedByEmail: u.email || '', token, expira }],
       updatedAt: Date.now(),
     } as any, { merge: true });
   });
+
+  // Documento público do convite (id = token secreto) para a página de password.
+  try {
+    await setDoc(doc(db, 'convites', token), {
+      gabineteId, gabineteNome: (data as any).nome || '', email: emailLc, role,
+      invitedBy: u.uid, invitedByEmail: u.email || '', createdAt: Date.now(), expiresAt: expira,
+    });
+  } catch { /* sem convite público o fluxo antigo continua a funcionar */ }
+
+  return { token };
 }
 
 /** Revoga o acesso de um membro/convite (o dono nunca sai). Usado ao remover da equipa. */

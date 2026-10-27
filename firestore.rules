@@ -7,6 +7,18 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Convites por link: o id é o token secreto (aleatório). Leitura pública para
+    // a página de definição de password; criação só por membro autenticado.
+    match /convites/{token} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['gabineteId', 'gabineteNome', 'email', 'role', 'invitedBy', 'invitedByEmail', 'createdAt', 'expiresAt'])
+        && request.resource.data.email is string
+        && request.resource.data.gabineteId is string;
+      allow delete: if request.auth != null && resource.data.invitedBy == request.auth.uid;
+      allow update: if false;
+    }
+
     match /updates/{docId} {
       allow read: if true;
       allow create: if request.auth != null && isValidUpdateCreate(request.resource.data);

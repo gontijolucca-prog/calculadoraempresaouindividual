@@ -27,6 +27,7 @@ export default function GabineteEquipa() {
   const [form, setForm] = useState<Partial<Colaborador>>({ role: 'contabilista' });
   const [convite, setConvite] = useState<Colaborador | null>(null);
   const [envio, setEnvio] = useState<'a-enviar' | 'enviado' | 'sem-servico' | 'falhou' | null>(null);
+  const [tokenConvite, setTokenConvite] = useState<string>('');
   const [error, setError] = useState('');
 
   const filtered = useMemo(() => {
@@ -77,9 +78,12 @@ export default function GabineteEquipa() {
     // Convite real ao gabinete: sem isto o colaborador nunca conseguia entrar
     // (só ficava o registo local na lista da equipa).
     const gabId = getActiveGabineteId();
+    let tokenConviteAtual = '';
     if (gabId) {
       try {
-        await inviteToGabinete(gabId, email, role || 'contabilista');
+        const { token } = await inviteToGabinete(gabId, email, role || 'contabilista');
+        setTokenConvite(token);
+        tokenConviteAtual = token;
       } catch (e) {
         alert('Funcionário guardado, mas o convite ao gabinete falhou: ' + String((e as Error)?.message || e));
       }
@@ -88,11 +92,11 @@ export default function GabineteEquipa() {
     setEditing(null);
     setForm({ role: 'contabilista' });
     setConvite(col);
-    void enviarPeloServidor(col);
+    void enviarPeloServidor(col, tokenConviteAtual);
   };
 
   /** Pede ao servidor (Cloudflare) que envie o email do convite. */
-  const enviarPeloServidor = async (c: Colaborador) => {
+  const enviarPeloServidor = async (c: Colaborador, token: string) => {
     setEnvio('a-enviar');
     try {
       const { auth } = await import('./lib/firebase');
@@ -102,7 +106,7 @@ export default function GabineteEquipa() {
       const r = await fetch('/api/equipa-convite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: c.email, nome: c.nome, gabinete: meta?.nome || '', cargo: c.role, idToken }),
+        body: JSON.stringify({ to: c.email, nome: c.nome, gabinete: meta?.nome || '', cargo: c.role, idToken, token }),
       });
       const j = await r.json().catch(() => ({}));
       if (j?.ok) setEnvio('enviado');
@@ -115,9 +119,10 @@ export default function GabineteEquipa() {
   const handleReenviar = async (c: Colaborador) => {
     await upsertColaborador({ ...c, inviteSentAt: Date.now(), status: 'convite_pendente', updatedAt: Date.now() });
     const gabId = getActiveGabineteId();
+    let tokenConviteAtual = '';
     if (gabId) { try { await inviteToGabinete(gabId, c.email, c.role); } catch { /* já existe ou sem rede */ } }
     setConvite(c);
-    void enviarPeloServidor(c);
+    void enviarPeloServidor(c, tokenConvite);
   };
 
   return (
@@ -307,7 +312,10 @@ Qualquer dúvida, diz-me.`)}`}
                 className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm font-[600]"
               >Abrir no email</a>
             </div>
-            <p className="mt-3 text-[11px] text-[#94A3B8]">O acesso só fica ativo depois de a pessoa aceitar o convite com este email.</p>
+            {tokenConvite && (
+              <p className="mt-2 text-[11px] text-[#64748B]">Link direto: <a href={`https://estudo360.pt/convite?t=${tokenConvite}`} target="_blank" rel="noopener" className="text-[#0677FF] font-[600]">estudo360.pt/convite</a> (a pessoa define a password e entra no gabinete).</p>
+            )}
+            <p className="mt-3 text-[11px] text-[#94A3B8]">O acesso só fica ativo depois de a pessoa definir a password e entrar.</p>
           </div>
         </div>
       )}
