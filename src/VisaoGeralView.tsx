@@ -462,8 +462,8 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
           </div>
 
           <div className="bg-[#EFF6FF] rounded-xl border border-[#BFDBFE] p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#1E40AF]"><Calendar className="w-4 h-4" /> Próximos prazos</h3>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#1E40AF] whitespace-nowrap"><Calendar className="w-4 h-4 shrink-0" /> Próximos prazos</h3>
               <div className="flex items-center gap-2">
                 <button onClick={() => onGo?.('obrigacoes')} className="text-[12px] font-[500] text-[#2563EB]">Ver todos</button>
                 <button onClick={() => setShowAddAlerta(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#BFDBFE] text-[#1E40AF] hover:bg-blue-50">+ Alerta</button>
@@ -476,10 +476,10 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
             ) : (
               <ul className="space-y-2">
                 {prazos.map(p => (
-                  <li key={`${p.kind}-${p.id}`} className="flex items-center gap-2 text-[12.5px] group">
-                    <span className={`w-[48px] shrink-0 font-[700] ${p.atrasado ? 'text-[#B91C1C]' : 'text-[#334155]'}`}>{fmtData(p.vencimento)}</span>
-                    <span className={`flex-1 truncate ${p.atrasado ? 'text-[#B91C1C] font-[600]' : 'text-[#475569]'}`} title={p.titulo}>
-                      {p.kind === 'alerta' ? '⏰ ' : ''}{p.titulo}
+                  <li key={`${p.kind}-${p.id}`} className="flex items-center gap-2.5 text-[12.5px] group">
+                    <span className={`shrink-0 whitespace-nowrap font-[700] tabular-nums ${p.atrasado ? 'text-[#B91C1C]' : 'text-[#334155]'}`}>{fmtData(p.vencimento)}</span>
+                    <span className={`min-w-0 flex-1 truncate ${p.atrasado ? 'text-[#B91C1C] font-[600]' : 'text-[#475569]'}`} title={p.titulo || 'Obrigação sem descrição'}>
+                      {p.kind === 'alerta' ? '⏰ ' : ''}{(p.titulo || '').trim() || 'Obrigação sem descrição'}
                     </span>
                     {p.kind === 'alerta' && (
                       <button onClick={()=>resolverAlerta(p.id)} className="opacity-0 group-hover:opacity-100 text-[11px] font-[600] text-emerald-700 hover:bg-white rounded px-1 shrink-0">Resolver</button>

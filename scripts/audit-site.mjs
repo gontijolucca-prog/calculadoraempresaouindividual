@@ -17,7 +17,7 @@ import { chromium } from 'playwright-core';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const BASE = 'http://localhost:3000/?test';
+const BASE = (process.env.BASE || 'http://localhost:3000/') + '?test';
 const OUT = path.resolve('docs/audit-2026-10-24');
 const SHOTS = path.join(OUT, 'shots');
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
@@ -109,6 +109,77 @@ for (const ecra of ecras) {
       alturaTexto: document.body.innerText.trim().length,
     }));
     resultado.overflow[w] = m.overflow;
+    const overlaps = await page.evaluate(() => {
+      const rec = (el) => {
+        const r = el.getBoundingClientRect();
+        let box = { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+        let n = el.parentElement;
+        while (n && n !== document.body) {
+          const s = getComputedStyle(n);
+          const corta = ['hidden', 'clip'].includes(s.overflow) || ['hidden', 'clip', 'auto', 'scroll'].includes(s.overflowY);
+          if (corta) {
+            const p = n.getBoundingClientRect();
+            box = { left: Math.max(box.left, p.left), top: Math.max(box.top, p.top), right: Math.min(box.right, p.right), bottom: Math.min(box.bottom, p.bottom) };
+          }
+          n = n.parentElement;
+        }
+        return { left: box.left, top: box.top, right: box.right, bottom: box.bottom, width: Math.max(0, box.right - box.left), height: Math.max(0, box.bottom - box.top) };
+      };
+      const visivel = (el) => {
+        const s = getComputedStyle(el); const r = rec(el);
+        return r.width > 4 && r.height > 4 && s.visibility !== 'hidden' && s.display !== 'none' && parseFloat(s.opacity || '1') > 0.15;
+      };
+      const foraDoFluxo = (el) => {
+        let n = el;
+        while (n && n !== document.body) {
+          const s = getComputedStyle(n);
+          if (s.position === 'fixed' || s.position === 'sticky') return true;
+          n = n.parentElement;
+        }
+        return false;
+      };
+      const cortado = (el) => {
+        let n = el.parentElement;
+        const e = el.getBoundingClientRect();
+        while (n && n !== document.body) {
+          const s = getComputedStyle(n);
+          const corta = ['hidden', 'clip'].includes(s.overflow) || ['hidden', 'clip', 'auto', 'scroll'].includes(s.overflowY);
+          if (corta) {
+            const r = n.getBoundingClientRect();
+            if (e.bottom <= r.top + 1 || e.top >= r.bottom - 1 || e.right <= r.left + 1 || e.left >= r.right - 1) return true;
+          }
+          n = n.parentElement;
+        }
+        return false;
+      };
+      const folhas = Array.from(document.querySelectorAll('body *')).filter((el) => {
+        if (!visivel(el) || foraDoFluxo(el) || cortado(el)) return false;
+        if (el.closest('pre,code,svg,script,style')) return false;
+        const txt = Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent.trim()).join('');
+        return txt.length > 1;
+      }).slice(0, 350);
+      const out = [];
+      for (let i = 0; i < folhas.length; i++) {
+        for (let j = i + 1; j < folhas.length; j++) {
+          const a = folhas[i], b = folhas[j];
+          if (a.contains(b) || b.contains(a)) continue;
+          const ra = rec(a), rb = rec(b);
+          const ix = Math.max(0, Math.min(ra.right, rb.right) - Math.max(ra.left, rb.left));
+          const iy = Math.max(0, Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top));
+          const cyA = ra.top + ra.height / 2, cyB = rb.top + rb.height / 2;
+          const mesmaLinha = Math.abs(cyA - cyB) < Math.max(8, 0.35 * Math.min(ra.height, rb.height));
+          if (mesmaLinha && ix > 8 && iy > 0.5 * Math.min(ra.height, rb.height) && ix > 0.25 * Math.min(ra.width, rb.width)) {
+            out.push({ a: (a.textContent || '').trim().slice(0, 36), b: (b.textContent || '').trim().slice(0, 36) });
+          }
+        }
+      }
+      return out.slice(0, 5);
+    });
+    if (overlaps.length) {
+      resultado.overlaps = resultado.overlaps || {};
+      resultado.overlaps[w] = overlaps;
+      problemas.push({ ecra: ecra.id, tipo: 'sobreposicao', valor: overlaps.length, largura: w, exemplo: overlaps[0] });
+    }
     if (m.vistaReal && m.vistaReal !== ecra.vista) resultado.vistaErrada = m.vistaReal;
     resultado.imagens = Math.max(resultado.imagens, m.imagensQuebradas);
     const sujos = m.texto.match(/\b(NaN|undefined|Infinity)\b/g);
@@ -132,7 +203,7 @@ for (const ecra of ecras) {
 
   resumo.push(resultado);
   const estado = resultado.erros.length || Object.values(resultado.overflow).some((v) => v > 1) || resultado.vazio ? 'FALHA' : 'ok';
-  console.log(`${estado === 'ok' ? '✓' : '✗'} ${ecra.id}${resultado.erros.length ? ` · ${resultado.erros.length} erro(s)` : ''}${Object.values(resultado.overflow).some((v) => v > 1) ? ' · overflow' : ''}${resultado.vazio ? ' · vazio' : ''}`);
+  console.log(`${estado === 'ok' ? '✓' : '✗'} ${ecra.id}${resultado.erros.length ? ` · ${resultado.erros.length} erro(s)` : ''}${Object.values(resultado.overflow).some((v) => v > 1) ? ' · overflow' : ''}${resultado.vazio ? ' · vazio' : ''}${resultado.overlaps ? ' · sobreposição' : ''}`);
 }
 
 await browser.close();
