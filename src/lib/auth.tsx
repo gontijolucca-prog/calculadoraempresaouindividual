@@ -34,6 +34,13 @@ export function useAuth() {
   return ctx;
 }
 
+
+/** Continue URL do email: volta ao site certo depois de confirmar. */
+function acoesEmail(): { url: string; handleCodeInApp: boolean } {
+  const base = typeof window !== 'undefined' && import.meta.env.DEV ? window.location.origin : 'https://estudo360.pt';
+  return { url: `${base}/?verificado=1`, handleCodeInApp: false };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await updateProfile(cred.user, { displayName: displayName.trim() });
     }
     if (cred.user) {
-      try { await sendEmailVerification(cred.user); } catch {}
+      try { await sendEmailVerification(cred.user, acoesEmail()); } catch {}
       void logAuthEvent(cred.user, 'signup');
     }
   };
@@ -100,12 +107,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const sendVerificationEmail = async () => {
     if (!auth.currentUser) throw new Error('Sem utilizador autenticado');
     auth.languageCode = 'pt-PT';
-    await sendEmailVerification(auth.currentUser);
+    await sendEmailVerification(auth.currentUser, acoesEmail());
   };
 
   const resetPassword = async (email: string) => {
     auth.languageCode = 'pt-PT';
-    await sendPasswordResetEmail(auth, email);
+    await sendPasswordResetEmail(auth, email, acoesEmail());
   };
 
   const reloadUser = async () => {
