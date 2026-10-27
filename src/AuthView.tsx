@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Mail, Lock, User, Eye, EyeOff, AlertTriangle, CheckCircle, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react';
 import { useAuth } from './lib/auth';
@@ -168,20 +168,139 @@ export function VerifyEmailGate({ email, onResend, onReload, onLogout }: { email
   const [sending, setSending] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+  const [aVerificar, setAVerificar] = useState(true);
+
+  // Contagem para o reenvio (evita emails repetidos) e verificação automática.
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = window.setInterval(() => setCooldown((c) => (c > 0 ? c - 1 : 0)), 1000);
+    return () => window.clearInterval(t);
+  }, [cooldown]);
+
+  useEffect(() => {
+    let vivo = true;
+    const tentar = async () => {
+      try { await onReload(); } catch { /* ainda não confirmado */ }
+      finally { if (vivo) setAVerificar(false); }
+    };
+    const id = window.setInterval(tentar, 8000);
+    return () => { vivo = false; window.clearInterval(id); };
+  }, [onReload]);
+
+  const reenviar = async () => {
+    if (sending || cooldown > 0) return;
+    setSending(true); setError(null); setInfo(null);
+    try {
+      await onResend();
+      setInfo('Email reenviado. Verifique a caixa de entrada e o spam.');
+      setCooldown(45);
+    } catch (e: any) {
+      setError(e?.message || 'Não consegui reenviar agora. Tente outra vez.');
+    } finally { setSending(false); }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7] p-6" style={{fontFamily:'Geist, sans-serif'}}>
-      <div className="bg-white rounded-[20px] border border-[#1A1A18]/[0.06] p-8 max-w-lg w-full text-center shadow-[0_16px_48px_rgba(26,26,24,0.06)]">
-        <div className="w-12 h-12 rounded-full bg-[#F5F0E8] text-[#B06D35] flex items-center justify-center mx-auto"><Mail className="w-6 h-6" /></div>
-        <h1 className="mt-4 text-[20px] font-[600] text-[#1A1A18]" style={{fontFamily:'Cormorant Garamond, serif'}}>Confirme o seu email</h1>
-        <p className="mt-2 text-[14px] leading-relaxed text-[#1A1A18]/50">Enviámos um link para <strong className="text-[#1A1A18]">{email}</strong>. Confirme o email antes de aceder aos seus clientes e ao cofre.</p>
-        {info && <div className="mt-4 bg-[#F5F0E8] border border-[#B06D35]/20 text-[#6B4A2A] px-3 py-2 rounded-xl text-[13px]">{info}</div>}
-        {error && <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-xl text-[13px]">{error}</div>}
-        <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-          <button disabled={sending} onClick={async()=>{ setSending(true); setError(null); try{ await onResend(); setInfo('Reenviámos o email. Verifique também o spam.'); }catch(e:any){ setError(e?.message||'Erro ao reenviar'); } finally{ setSending(false); }}} className="px-5 py-3 rounded-xl bg-[#1A1A18] text-[#FDFBF7] font-[600] disabled:opacity-60">Reenviar email</button>
-          <button onClick={async()=>{ setError(null); try{ await onReload(); }catch(e:any){ setError(e?.message||'Erro'); }}} className="px-5 py-3 rounded-xl bg-white border border-[#1A1A18]/10 font-[600] hover:bg-[#FDFBF7]">Já confirmei — entrar</button>
+    <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center p-4 sm:p-8 relative overflow-hidden" style={{ fontFamily: 'Geist, sans-serif' }}>
+      <div aria-hidden className="pointer-events-none absolute -top-32 -right-24 h-[420px] w-[420px] rounded-full bg-[#B06D35]/10 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-40 -left-24 h-[380px] w-[380px] rounded-full bg-[#0677FF]/8 blur-3xl" />
+
+      <div className="relative w-full max-w-[980px] rounded-[26px] border border-[#1A1A18]/[0.07] bg-white shadow-[0_30px_80px_rgba(26,26,24,0.10)] overflow-hidden grid md:grid-cols-[1.02fr_1fr]">
+        {/* Painel de marca */}
+        <aside className="hidden md:flex flex-col justify-between bg-[#F7F2EA] p-10 border-r border-[#1A1A18]/[0.05]">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <img src="/logo.svg" alt="" className="w-9 h-9 logo-orb" />
+              <div>
+                <div className="text-[15px] font-[800] tracking-[-0.2px] text-[#1A1A18]">ESTUDO<span className="text-[#0677FF]">360°</span></div>
+                <div className="text-[9px] font-[600] uppercase tracking-[2px] text-[#1A1A18]/35">Análise · Estratégia · Decisão</div>
+              </div>
+            </div>
+            <h2 className="mt-10 text-[34px] leading-[1.08] text-[#1A1A18]" style={{ fontFamily: 'Cormorant Garamond, serif', fontWeight: 600 }}>
+              Um passo<br />para entrar.
+            </h2>
+            <p className="mt-3 text-[13.5px] leading-relaxed text-[#1A1A18]/55 max-w-[300px]">
+              Confirmar o email protege a sua conta e garante que só você entra no gabinete, nos clientes e no cofre.
+            </p>
+          </div>
+          <ul className="space-y-2.5 text-[12.5px] text-[#1A1A18]/60">
+            <li className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-[#B06D35]" /> Cofre privado, cifrado no seu computador</li>
+            <li className="flex items-center gap-2"><Mail className="w-4 h-4 text-[#B06D35]" /> Só o link enviado para o seu email abre a conta</li>
+            <li className="flex items-center gap-2"><ArrowRight className="w-4 h-4 text-[#B06D35]" /> Depois de confirmar, entra direto no gabinete</li>
+          </ul>
+        </aside>
+
+        {/* Conteúdo */}
+        <div className="p-6 sm:p-10">
+          <div className="md:hidden flex items-center gap-2.5 mb-6">
+            <img src="/logo.svg" alt="" className="w-8 h-8 logo-orb" />
+            <div className="text-[14px] font-[800] text-[#1A1A18]">ESTUDO<span className="text-[#0677FF]">360°</span></div>
+          </div>
+
+          <span className="inline-flex items-center gap-2 rounded-full bg-[#F5F0E8] px-3 py-1 text-[10.5px] font-[800] uppercase tracking-[1.2px] text-[#8A5426]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#B06D35]" /> Verificação de conta
+          </span>
+
+          <div className="mt-5 flex items-start gap-4">
+            <div className="shrink-0 w-12 h-12 rounded-2xl bg-[#F5F0E8] text-[#B06D35] flex items-center justify-center"><Mail className="w-6 h-6" /></div>
+            <div>
+              <h1 className="text-[26px] leading-tight text-[#1A1A18]" style={{ fontFamily: 'Cormorant Garamond, serif', fontWeight: 600 }}>Confirme o seu email</h1>
+              <p className="mt-1.5 text-[13.5px] leading-relaxed text-[#1A1A18]/55">
+                Enviámos um link de confirmação para{' '}
+                <span className="mx-1 inline-flex max-w-full items-center rounded-md bg-[#F7F2EA] px-2 py-0.5 font-[700] text-[#1A1A18] align-middle break-all">{email}</span>
+              </p>
+            </div>
+          </div>
+
+          <ol className="mt-6 space-y-2.5">
+            {[
+              'Abra o email «Confirme o seu email no Estudo360».',
+              'Carregue no botão «Confirmar email» (ou no link).',
+              'Volte aqui e carregue em «Já confirmei — entrar».',
+            ].map((passo, i) => (
+              <li key={i} className="flex items-start gap-2.5 text-[13px] leading-snug text-[#1A1A18]/70">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#1A1A18] text-[10.5px] font-[800] text-[#FDFBF7]">{i + 1}</span>
+                {passo}
+              </li>
+            ))}
+          </ol>
+
+          <div aria-live="polite">
+            {info && <div role="status" className="mt-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-2 text-[12.5px] font-[600]">{info}</div>}
+            {error && <div role="alert" className="mt-4 rounded-xl bg-red-50 border border-red-200 text-red-700 px-3 py-2 text-[12.5px] font-[600]">{error}</div>}
+          </div>
+
+          <div className="mt-5 flex flex-col sm:flex-row gap-2.5">
+            <button
+              onClick={async () => { setError(null); try { await onReload(); } catch (e: any) { setError(e?.message || 'Ainda não está confirmado. Verifique o email.'); } }}
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#1A1A18] px-4 py-3 text-[13.5px] font-[700] text-[#FDFBF7] hover:bg-black transition-colors"
+            >
+              Já confirmei — entrar <ArrowRight className="w-4 h-4" />
+            </button>
+            <button
+              onClick={reenviar}
+              disabled={sending || cooldown > 0}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1A1A18]/12 bg-white px-4 py-3 text-[13px] font-[700] text-[#1A1A18] hover:bg-[#FDFBF7] disabled:opacity-50"
+            >
+              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              {cooldown > 0 ? `Reenviar em ${cooldown}s` : 'Reenviar email'}
+            </button>
+          </div>
+
+          <div className="mt-4 flex items-center justify-between gap-3 text-[11.5px] text-[#1A1A18]/40">
+            <span className="inline-flex items-center gap-1.5">
+              <span className={`h-1.5 w-1.5 rounded-full ${aVerificar ? 'bg-[#0677FF] animate-pulse' : 'bg-emerald-500'}`} />
+              {aVerificar ? 'À espera da confirmação…' : 'Atualizado automaticamente'}
+            </span>
+            <button onClick={onLogout} className="hover:text-[#1A1A18]/70 hover:underline">Sair e usar outra conta</button>
+          </div>
+
+          <p className="mt-5 border-t border-[#1A1A18]/[0.06] pt-3 text-[11px] leading-relaxed text-[#1A1A18]/35">
+            Não recebeu? Verifique o spam ou confirme que o email está bem escrito. Se continuar, fale com o dono do gabinete.
+          </p>
         </div>
-        <button onClick={onLogout} className="mt-4 text-[13px] text-[#1A1A18]/30 hover:text-[#1A1A18]/60 hover:underline">Sair e usar outra conta</button>
       </div>
     </div>
   );
 }
+
