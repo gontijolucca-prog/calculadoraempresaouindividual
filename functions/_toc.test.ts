@@ -4,10 +4,10 @@ import { urlClientes, mapTocCustomer, explicarErroOauth } from './_toc';
 
 describe('toconline — URL de clientes', () => {
   it('acrescenta /customers quando falta', () => {
-    assert.equal(urlClientes('https://api32.toconline.pt', 2), 'https://api32.toconline.pt/customers?page[number]=2&page[size]=100&include=main_address,main_email_address');
+    assert.equal(urlClientes('https://api32.toconline.pt', 2), 'https://api32.toconline.pt/customers?page[number]=2&page[size]=100&include=main_address,main_email_address,addresses,email_addresses,defaults,tax_exemption_reason');
   });
   it('não duplica /customers', () => {
-    assert.equal(urlClientes('https://api32.toconline.pt/customers/', 1), 'https://api32.toconline.pt/customers?page[number]=1&page[size]=100&include=main_address,main_email_address');
+    assert.equal(urlClientes('https://api32.toconline.pt/customers/', 1), 'https://api32.toconline.pt/customers?page[number]=1&page[size]=100&include=main_address,main_email_address,addresses,email_addresses,defaults,tax_exemption_reason');
   });
 });
 
@@ -81,7 +81,45 @@ describe('toconline — dados completos (included)', () => {
 
   it('URL da página inclui os recursos relacionados', () => {
     const u = urlClientes('https://api32.toconline.pt', 3);
-    assert.ok(u.includes('include=main_address,main_email_address'));
+    assert.ok(u.includes('include=main_address,main_email_address,addresses,email_addresses,defaults,tax_exemption_reason'));
     assert.ok(u.includes('page[number]=3'));
+  });
+});
+
+
+describe('toconline — extras (emails, moradas, isenção, prazo)', () => {
+  it('junta emails (principal primeiro), moradas extra e motivo de isenção', () => {
+    const incluidos = {
+      addresses: new Map([
+        ['10', { attributes: { address_detail: 'Rua Principal 1', city: 'Fátima', postcode: '2495-000' } }],
+        ['11', { attributes: { address_detail: 'Armazém 2', city: 'Leiria', postcode: '2400-000' } }],
+      ]),
+      emails: new Map([
+        ['20', { attributes: { email: 'geral@empresa.pt' } }],
+        ['21', { attributes: { email: 'financeiro@empresa.pt' } }],
+      ]),
+      defaults: new Map([['30', { attributes: { due_days: 30, currency_iso_code: 'EUR', payment_mechanism: 'transferencia' } }]]),
+      isencoes: new Map([['40', { attributes: { code: 'M07', applicable_legislation: 'Artigo 9.º do CIVA' } }]]),
+    };
+    const c = mapTocCustomer({
+      id: '5',
+      attributes: { business_name: 'Empresa Z', tax_registration_number: '501234567', is_tax_exempt: true },
+      relationships: {
+        main_address: { data: { id: '10' } },
+        main_email_address: { data: { id: '21' } },
+        addresses: { data: [{ id: '10' }, { id: '11' }] },
+        email_addresses: { data: [{ id: '20' }, { id: '21' }] },
+        defaults: { data: { id: '30' } },
+        tax_exemption_reason: { data: { id: '40' } },
+      },
+    }, incluidos);
+    assert.equal(c.email, 'financeiro@empresa.pt');
+    assert.deepEqual(c.emails, ['financeiro@empresa.pt', 'geral@empresa.pt']);
+    assert.equal(c.moradasExtra?.length, 1);
+    assert.match(c.moradasExtra![0], /Armazém 2/);
+    assert.equal(c.prazoPagamento, 30);
+    assert.equal(c.moeda, 'EUR');
+    assert.equal(c.isencaoCodigo, 'M07');
+    assert.match(c.isencaoLegislacao!, /CIVA/);
   });
 });

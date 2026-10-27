@@ -1043,6 +1043,13 @@ function AppContent() {
           ativo: d.ativo,
           saftImportId: d.saftImportId,
           taxCountryRegion: d.taxCountryRegion,
+          emails: d.emails,
+          moradasExtra: d.moradasExtra,
+          prazoPagamento: d.prazoPagamento,
+          moeda: d.moeda,
+          mecanismoPagamento: d.mecanismoPagamento,
+          isencaoCodigo: d.isencaoCodigo,
+          isencaoLegislacao: d.isencaoLegislacao,
           importadoEm: now,
         },
       });

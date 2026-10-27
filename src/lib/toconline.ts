@@ -48,6 +48,14 @@ export interface TocCustomerDraft {
   ativo?: boolean;
   saftImportId?: string;
   taxCountryRegion?: string;
+  /** Todos os emails (o [0] é o principal). */
+  emails?: string[];
+  moradasExtra?: string[];
+  prazoPagamento?: number;
+  moeda?: string;
+  mecanismoPagamento?: string;
+  isencaoCodigo?: string;
+  isencaoLegislacao?: string;
 }
 
 // Isolamento por gabinete: as credenciais e o rascunho ficam presos ao gabinete

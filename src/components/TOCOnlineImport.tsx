@@ -377,7 +377,7 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
               {debug && (
                 <details className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] font-mono text-amber-900">
                   <summary className="cursor-pointer text-[11.5px] font-[700]">Detalhes técnicos ({debug.total ?? 0} recebidos · {debug.pagesFetched ?? 0} páginas · {debug.semNif ?? 0} sem NIF)</summary>
-                  <div className="mt-1">Com morada: {debug.comMorada ?? 0} · com localidade: {debug.comLocalidade ?? 0} · com email: {debug.comEmail ?? 0} · com telefone: {debug.comTelefone ?? 0} · com contacto: {debug.comContacto ?? 0} · isentos de IVA: {debug.isentosIva ?? 0}</div>
+                  <div className="mt-1">Com morada: {debug.comMorada ?? 0} · com localidade: {debug.comLocalidade ?? 0} · com email: {debug.comEmail ?? 0} · com telefone: {debug.comTelefone ?? 0} · com contacto: {debug.comContacto ?? 0} · isentos de IVA: {debug.isentosIva ?? 0} · com moradas extra: {debug.comMoradasExtra ?? 0} · com motivo de isenção: {debug.comMotivoIsencao ?? 0} · com prazo de pagamento: {debug.comPrazoPagamento ?? 0}</div>
                   {debug.firstRawAttributesKeys?.length ? <div className="mt-1">Campos: {debug.firstRawAttributesKeys.join(', ')}</div> : null}
                   {debug.firstRawSample && <pre className="mt-1 whitespace-pre-wrap break-all text-[10px] bg-white p-2 rounded border">{debug.firstRawSample}</pre>}
                 </details>

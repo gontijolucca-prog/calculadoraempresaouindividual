@@ -28,8 +28,8 @@
 4. Marcar os que quer importar → **Importar** (os que já existem por NIF ficam desativados).
 
 ## Dados que vêm do TOConline
-Pedimos a listagem com `include=main_address,main_email_address` (1 pedido por página de
-100) e lemos também os recursos relacionados, para não ficar só o nome e o NIF.
+Pedimos a listagem com `include=main_address,main_email_address,addresses,email_addresses,defaults,tax_exemption_reason`
+(1 pedido por página de 100) e lemos todos os recursos relacionados.
 
 | Campo no Estudo360 | Origem no TOConline |
 |---|---|
@@ -51,9 +51,14 @@ Pedimos a listagem com `include=main_address,main_email_address` (1 pedido por p
 | Ativo | `active` |
 | Id TOConline / SAF-T | `id`, `saft_import_id` |
 | Região fiscal | `tax_country_region` |
+| Todos os emails | `email_addresses` (principal + secundários) |
+| Moradas extra | `addresses` (além da principal) |
+| Prazo de pagamento / moeda | `customers_defaults.due_days` / `currency_iso_code` |
+| Motivo de isenção de IVA | `tax_exemption_reasons.code` + `applicable_legislation` |
 
 Cobertura com a conta de testes (466 clientes): **465 com morada**, 461 com localidade,
-57 com email, 36 com pessoa de contacto, 12 com telefone, 47 isentos de IVA.
+59 com email, 36 com pessoa de contacto, 12 com telefone, 47 isentos (45 com motivo —
+ex.: M07, Artigo 9.º do CIVA), **340 com morada extra** e 50 com prazo de pagamento.
 
 ## Filtros da importação
 A mesma conta TOConline pode misturar negócios (contabilidade, condomínios, gestão).

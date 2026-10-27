@@ -78,6 +78,13 @@ export interface EmpresaRecord {
     ativo?: boolean;
     saftImportId?: string;
     taxCountryRegion?: string;
+    emails?: string[];
+    moradasExtra?: string[];
+    prazoPagamento?: number;
+    moeda?: string;
+    mecanismoPagamento?: string;
+    isencaoCodigo?: string;
+    isencaoLegislacao?: string;
     importadoEm?: number;
   };
 }

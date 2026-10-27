@@ -254,11 +254,15 @@ export const onRequestPost = async (ctx: { request: Request }) => {
       // Recursos relacionados vêm em `included`: morada principal e email.
       const addresses = new Map<string, any>();
       const emails = new Map<string, any>();
+      const defaults = new Map<string, any>();
+      const isencoes = new Map<string, any>();
       for (const inc of Array.isArray(j.included) ? j.included : []) {
         if (inc?.type === 'addresses') addresses.set(String(inc.id), inc);
         else if (inc?.type === 'email_addresses') emails.set(String(inc.id), inc);
+        else if (inc?.type === 'customers_defaults') defaults.set(String(inc.id), inc);
+        else if (inc?.type === 'tax_exemption_reasons') isencoes.set(String(inc.id), inc);
       }
-      for (const it of items) out.push(mapTocCustomer(it, { addresses, emails }));
+      for (const it of items) out.push(mapTocCustomer(it, { addresses, emails, defaults, isencoes }));
       pagesFetched++;
       const totalPages = j.meta?.totalPages ?? j.meta?.['total-pages'];
       if (items.length < 100 || (typeof totalPages === 'number' && page >= totalPages)) break;
@@ -274,6 +278,10 @@ export const onRequestPost = async (ctx: { request: Request }) => {
       comTelefone: out.filter((x: any) => !!x.telefone).length,
       comContacto: out.filter((x: any) => !!x.contacto).length,
       isentosIva: out.filter((x: any) => x.isencaoIva).length,
+      comEmailsExtra: out.filter((x: any) => (x.emails || []).length > 1).length,
+      comMoradasExtra: out.filter((x: any) => (x.moradasExtra || []).length > 0).length,
+      comMotivoIsencao: out.filter((x: any) => !!x.isencaoCodigo).length,
+      comPrazoPagamento: out.filter((x: any) => typeof x.prazoPagamento === 'number').length,
       firstRawKeys: firstRaw ? Object.keys(firstRaw).slice(0, 30) : [],
       firstRawAttributesKeys: firstRaw?.attributes ? Object.keys(firstRaw.attributes).slice(0, 30) : [],
       firstRawSample: firstRaw ? JSON.stringify(firstRaw).slice(0, 1200) : null,

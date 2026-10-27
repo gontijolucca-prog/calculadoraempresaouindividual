@@ -99,6 +99,12 @@ const campos = [
   ['toc.regiao', (e) => e.toc?.regiao || '', (c) => c.regiao || ''],
   ['toc.observacoes', (e) => e.toc?.observacoes || '', (c) => c.observacoes || ''],
   ['toc.ativo', (e) => e.toc?.ativo !== false, (c) => c.ativo !== false],
+  ['toc.emails (nº)', (e) => (e.toc?.emails || []).length, (c) => (c.emails || []).length],
+  ['toc.email principal', (e) => e.toc?.emails?.[0] || '', (c) => c.emails?.[0] || ''],
+  ['toc.moradas extra (nº)', (e) => (e.toc?.moradasExtra || []).length, (c) => (c.moradasExtra || []).length],
+  ['toc.isencaoCodigo', (e) => e.toc?.isencaoCodigo || '', (c) => c.isencaoCodigo || ''],
+  ['toc.prazoPagamento', (e) => (typeof e.toc?.prazoPagamento === 'number' ? e.toc.prazoPagamento : ''), (c) => (typeof c.prazoPagamento === 'number' ? c.prazoPagamento : '')],
+  ['toc.moeda', (e) => e.toc?.moeda || '', (c) => c.moeda || ''],
 ];
 const porNif = new Map(guardados.map((e) => [e.nif, e]));
 for (const [nome, getGuardado, getApi] of campos) {
