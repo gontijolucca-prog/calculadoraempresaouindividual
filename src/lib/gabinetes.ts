@@ -213,6 +213,14 @@ export async function acceptInvite(gabineteId: string): Promise<void> {
     throw new Error('O convite não foi aceite no servidor. Peça ao admin do gabinete para o enviar novamente.');
   }
 
+  // Marca o colaborador como ativo (a lista da Equipa deixa de dizer "pendente").
+  try {
+    const { collection, query, where, getDocs, updateDoc } = await import('firebase/firestore');
+    const q = query(collection(db, 'gabinete', gabineteId, 'colaboradores'), where('email', '==', emailLc));
+    const snap = await getDocs(q);
+    await Promise.all(snap.docs.map((d) => updateDoc(d.ref, { status: 'ativo', linkedUid: u.uid, updatedAt: Date.now() })));
+  } catch { /* sem colaborador correspondente ou sem permissão — não bloqueia a aceitação */ }
+
   // também limpar invites array
   try {
     const fresh = await getDoc(ref);

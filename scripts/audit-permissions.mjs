@@ -120,6 +120,12 @@ console.log('   role escolhida:', await selRole.inputValue());
 const guardar = page.locator('button:visible').filter({ hasText: /Adicionar \(convite|Adicionar$/ }).last();
 if (await guardar.count()) { await guardar.click(); await page.waitForTimeout(2000); }
 ok(true, 'dono: convite de estagiária submetido');
+// fechar a janela do convite (não deve bloquear o resto do fluxo)
+await page.mouse.click(6, 6).catch(() => {});
+await page.waitForTimeout(600);
+const modalAberto = await page.locator('div.fixed.inset-0.z-50').count();
+if (modalAberto) await page.evaluate(() => { const m = document.querySelector('div.fixed.inset-0.z-50'); if (m) m.click(); });
+await page.waitForTimeout(400);
 
 // 3) Estagiária entra
 const sair = page.getByRole('button', { name: /Sair/i }).first();

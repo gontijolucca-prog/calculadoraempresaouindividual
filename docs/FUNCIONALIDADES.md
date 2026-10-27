@@ -33,7 +33,7 @@ Estado: ✅ = testado e provado nesta ronda · ⚠️ = existe, falta prova auto
 | C8 | Agenda | Prazos de obrigações, tarefas e alertas por data | ✅ |
 | C9 | Cofre | Entradas por cliente; cifra AES-GCM com passphrase; só admin/contabilista | ⚠️ cifra testada; formulário com duplicados responsivos não é fiável por script |
 | C10 | Lixeira | Restaurar (deletedAt removido) e purgar; nada desaparece sem rasto | ✅ |
-| C11 | Equipa | Convidar por email, escolher cargo, aceitar convite — testado com 2 contas | ✅ (emulador) |
+| C11 | Equipa | Convidar (mensagem pronta copiar/mailto), cargo, aceitar convite e ficar **Ativa** com uid ligado — ciclo completo testado | ✅ (emulador) |
 | C12 | Permissões | estagiária convidada: cofre negado pelas rules (403), clientes permitidos e **Cofre/Equipa/Lixeira fora do menu** (7 tabs vs 10 do dono) | ✅ (emulador) |
 | C13 | Offline | Grava local, sincroniza ao voltar a rede; nada falha em silêncio | ✅ |
 | C14 | Imprimir mapas | Só o quadro/mapa, A4 horizontal, 1 folha | ✅ |
