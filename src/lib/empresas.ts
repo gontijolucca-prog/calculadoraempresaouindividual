@@ -85,6 +85,8 @@ export interface EmpresaRecord {
     mecanismoPagamento?: string;
     isencaoCodigo?: string;
     isencaoLegislacao?: string;
+    isencaoTexto?: string;
+    raw?: Record<string, unknown>;
     importadoEm?: number;
   };
 }

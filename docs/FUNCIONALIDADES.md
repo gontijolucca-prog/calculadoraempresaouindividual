@@ -78,7 +78,7 @@ Estado: ✅ = testado e provado nesta ronda · ⚠️ = existe, falta prova auto
 | G3 | Timeout/fallback | 20 s por provider; nunca fica pendurado | ✅ |
 | G4 | Ações/sugestões | Navegar, abrir simulador, sugerir melhoria | ⚠️ |
 | G5 | Guias | "Aprender esta página" abre o guia (também por evento) | ✅ |
-| G6 | Importar TOConline | Ligar → filtrar → selecionar → importar; **certificado campo a campo** (20 campos × 5 clientes, 5/5 iguais; emails, moradas extra, isenção e prazo incluídos; só entram os selecionados) | ✅ |
+| G6 | Importar TOConline | Ligar → filtrar → selecionar → importar; **certificado campo a campo** (24 campos × 5 clientes, 5/5 iguais, incluindo o registo completo guardado; emails, moradas extra, isenção e prazo incluídos; só entram os selecionados) | ✅ |
 
 ## H. Transversal
 | # | Funcionalidade | Como deve funcionar | Estado |

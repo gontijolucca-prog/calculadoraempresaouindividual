@@ -56,6 +56,10 @@ Pedimos a listagem com `include=main_address,main_email_address,addresses,email_
 | Prazo de pagamento / moeda | `customers_defaults.due_days` / `currency_iso_code` |
 | Motivo de isenção de IVA | `tax_exemption_reasons.code` + `applicable_legislation` |
 
+Além dos campos mapeados, cada cliente importado guarda o **registo completo** que a API
+devolveu (`toc.raw`: cliente, moradas, emails, defaults e motivo de isenção), já sem valores
+vazios — nenhum dado recebido se perde.
+
 Cobertura com a conta de testes (466 clientes): **465 com morada**, 461 com localidade,
 59 com email, 36 com pessoa de contacto, 12 com telefone, 47 isentos (45 com motivo —
 ex.: M07, Artigo 9.º do CIVA), **340 com morada extra** e 50 com prazo de pagamento.

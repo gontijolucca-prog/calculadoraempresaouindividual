@@ -105,6 +105,10 @@ const campos = [
   ['toc.isencaoCodigo', (e) => e.toc?.isencaoCodigo || '', (c) => c.isencaoCodigo || ''],
   ['toc.prazoPagamento', (e) => (typeof e.toc?.prazoPagamento === 'number' ? e.toc.prazoPagamento : ''), (c) => (typeof c.prazoPagamento === 'number' ? c.prazoPagamento : '')],
   ['toc.moeda', (e) => e.toc?.moeda || '', (c) => c.moeda || ''],
+  ['toc.raw.cliente (nº campos)', (e) => Object.keys(e.toc?.raw?.cliente || {}).length, (c) => Object.keys(c.raw?.cliente || {}).length],
+  ['toc.raw.moradas (nº)', (e) => (e.toc?.raw?.moradas || []).length, (c) => (c.raw?.moradas || []).length],
+  ['toc.raw.emails (nº)', (e) => (e.toc?.raw?.emails || []).length, (c) => (c.raw?.emails || []).length],
+  ['toc.raw.isencao.codigo', (e) => e.toc?.raw?.isencao?.code || '', (c) => c.raw?.isencao?.code || ''],
 ];
 const porNif = new Map(guardados.map((e) => [e.nif, e]));
 for (const [nome, getGuardado, getApi] of campos) {
@@ -121,6 +125,7 @@ const depoisReload = await page.evaluate(() => JSON.parse(localStorage.getItem('
 ok(depoisReload.length === 5, `continua com 5 empresas depois de recarregar (${depoisReload.length})`);
 const amostra = depoisReload.find((e) => e.nif === escolhidos[0].nif);
 ok(!!amostra?.profile?.morada && !!amostra?.toc?.id, 'morada e id do TOConline persistem no registo');
+ok(!!amostra?.toc?.raw?.cliente && Object.keys(amostra.toc.raw.cliente).length >= 5, 'registo completo (raw) guardado no cliente');
 
 await page.screenshot({ path: 'docs/toconline-import-completo.png' });
 await browser.close();

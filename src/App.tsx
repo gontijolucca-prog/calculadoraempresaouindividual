@@ -1050,6 +1050,8 @@ function AppContent() {
           mecanismoPagamento: d.mecanismoPagamento,
           isencaoCodigo: d.isencaoCodigo,
           isencaoLegislacao: d.isencaoLegislacao,
+          isencaoTexto: d.isencaoTexto,
+          raw: d.raw,
           importadoEm: now,
         },
       });

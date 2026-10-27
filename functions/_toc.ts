@@ -37,6 +37,9 @@ export interface TocCliente {
   /** Motivo de isenção de IVA (ex.: M07 — Artigo 9.º do CIVA). */
   isencaoCodigo?: string;
   isencaoLegislacao?: string;
+  isencaoTexto?: string;
+  /** Todos os atributos úteis recebidos, já sem vazios (nada se perde). */
+  raw?: Record<string, unknown>;
 }
 
 /** Recursos relacionados que pedimos na listagem (1 pedido por página). */
@@ -104,6 +107,20 @@ export function mapTocCustomer(it: any, incluidos?: { addresses?: Map<string, an
     isencaoIva: a.is_tax_exempt === true,
     isencaoCodigo: isenc?.code ?? undefined,
     isencaoLegislacao: isenc?.applicable_legislation ?? undefined,
+    isencaoTexto: isenc?.document_text ?? undefined,
+    raw: (() => {
+      const limpar = (o: Record<string, unknown>) => Object.fromEntries(Object.entries(o || {}).filter(([, v]) => v !== null && v !== '' && v !== undefined && !(Array.isArray(v) && v.length === 0) && !(typeof v === 'object' && v && !Array.isArray(v) && Object.keys(v).length === 0)));
+      const moradas = ids(rel?.addresses).map((id) => limpar(attr(incluidos?.addresses, id)));
+      const mails = ids(rel?.email_addresses).map((id) => limpar(attr(incluidos?.emails, id)));
+      return limpar({
+        cliente: limpar(a),
+        moradaPrincipal: limpar(addr),
+        moradas,
+        emails: mails,
+        defaults: limpar(def),
+        isencao: limpar(isenc),
+      });
+    })(),
     naoClienteFinal: a.not_final_customer === true,
     ativo: a.active !== false,
     saftImportId: a.saft_import_id ?? undefined,

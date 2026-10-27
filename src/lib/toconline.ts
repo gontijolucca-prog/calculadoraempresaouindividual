@@ -56,6 +56,8 @@ export interface TocCustomerDraft {
   mecanismoPagamento?: string;
   isencaoCodigo?: string;
   isencaoLegislacao?: string;
+  isencaoTexto?: string;
+  raw?: Record<string, unknown>;
 }
 
 // Isolamento por gabinete: as credenciais e o rascunho ficam presos ao gabinete

@@ -103,7 +103,7 @@ describe('toconline — extras (emails, moradas, isenção, prazo)', () => {
     };
     const c = mapTocCustomer({
       id: '5',
-      attributes: { business_name: 'Empresa Z', tax_registration_number: '501234567', is_tax_exempt: true },
+      attributes: { business_name: 'Empresa Z', tax_registration_number: '501234567', is_tax_exempt: true, cashed_vat: true, saft_import_id: 'abc123', observations: '' },
       relationships: {
         main_address: { data: { id: '10' } },
         main_email_address: { data: { id: '21' } },
@@ -121,5 +121,13 @@ describe('toconline — extras (emails, moradas, isenção, prazo)', () => {
     assert.equal(c.moeda, 'EUR');
     assert.equal(c.isencaoCodigo, 'M07');
     assert.match(c.isencaoLegislacao!, /CIVA/);
+    // raw guarda tudo o que veio, mesmo campos sem mapeamento dedicado
+    assert.ok(c.raw && typeof c.raw === 'object');
+    const cli = (c.raw as any).cliente;
+    assert.equal(cli.cashed_vat, true);
+    assert.equal(cli.saft_import_id, 'abc123');
+    assert.equal((c.raw as any).moradas.length, 2);
+    assert.equal((c.raw as any).emails.length, 2);
+    assert.equal((c.raw as any).isencao.code, 'M07');
   });
 });
