@@ -25,6 +25,7 @@ export default function GabineteEquipa() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Colaborador | null>(null);
   const [form, setForm] = useState<Partial<Colaborador>>({ role: 'contabilista' });
+  const [convite, setConvite] = useState<Colaborador | null>(null);
   const [error, setError] = useState('');
 
   const filtered = useMemo(() => {
@@ -84,10 +85,14 @@ export default function GabineteEquipa() {
     setShowForm(false);
     setEditing(null);
     setForm({ role: 'contabilista' });
+    setConvite(col);
   };
 
   const handleReenviar = async (c: Colaborador) => {
     await upsertColaborador({ ...c, inviteSentAt: Date.now(), status: 'convite_pendente', updatedAt: Date.now() });
+    const gabId = getActiveGabineteId();
+    if (gabId) { try { await inviteToGabinete(gabId, c.email, c.role); } catch { /* já existe ou sem rede */ } }
+    setConvite(c);
   };
 
   return (
@@ -216,6 +221,63 @@ export default function GabineteEquipa() {
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[12px] leading-[17px] text-amber-900">
         <strong>Como funciona o convite por email:</strong> ao adicionar um funcionário, criamos o registo com estado <em>Convite pendente</em>. A pessoa deve <strong>criar conta no estudo360 com esse mesmo email</strong> (Registo). Ao fazer login, o gabinete deteta o email e marca o colaborador como <em>Ativo</em> automaticamente (link por email). Cada login/officeId vê a sua própria equipa isolada (Firestore <code>gabinete/{'{'}officeId{'}'}/colaboradores</code>).
       </div>
+
+      {convite && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setConvite(null)}>
+          <div className="w-full max-w-[520px] bg-white rounded-2xl p-6 border shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold">Convite para {convite.nome}</h3>
+              <button onClick={() => setConvite(null)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button>
+            </div>
+            <p className="mt-2 text-[13px] text-[#475569] leading-relaxed">
+              O convite já está registado para <b>{convite.email}</b> com o cargo <b>{roleLabel[convite.role]}</b>.
+              <b> Não enviamos email automático</b> — copia a mensagem abaixo e envia-a (email, WhatsApp ou à frente).
+            </p>
+            <pre className="mt-3 whitespace-pre-wrap rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 text-[12px] leading-5 text-[#334155]">{`Olá ${convite.nome.split(' ')[0]},
+
+Fui convidar-te para a equipa do gabinete no Estudo360.
+
+1. Abre https://estudo360.pt
+2. Cria conta (ou entra) com este email: ${convite.email}
+3. Confirma o email
+4. Em «Gabinete», aceita o convite «Aceitar e entrar»
+
+Qualquer dúvida, diz-me.`}</pre>
+            <div className="mt-4 flex flex-wrap justify-end gap-2">
+              <button
+                onClick={async () => {
+                  const texto = `Olá ${convite.nome.split(' ')[0]},
+
+Fui convidar-te para a equipa do gabinete no Estudo360.
+
+1. Abre https://estudo360.pt
+2. Cria conta (ou entra) com este email: ${convite.email}
+3. Confirma o email
+4. Em «Gabinete», aceita o convite «Aceitar e entrar»
+
+Qualquer dúvida, diz-me.`;
+                  try { await navigator.clipboard.writeText(texto); } catch {}
+                }}
+                className="px-4 py-2 rounded-xl border border-[#E2E8F0] text-sm font-[600]"
+              >Copiar mensagem</button>
+              <a
+                href={`mailto:${convite.email}?subject=${encodeURIComponent('Convite para o gabinete no Estudo360')}&body=${encodeURIComponent(`Olá ${convite.nome.split(' ')[0]},
+
+Fui convidar-te para a equipa do gabinete no Estudo360.
+
+1. Abre https://estudo360.pt
+2. Cria conta (ou entra) com este email: ${convite.email}
+3. Confirma o email
+4. Em «Gabinete», aceita o convite «Aceitar e entrar»
+
+Qualquer dúvida, diz-me.`)}`}
+                className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm font-[600]"
+              >Abrir no email</a>
+            </div>
+            <p className="mt-3 text-[11px] text-[#94A3B8]">O acesso só fica ativo depois de a pessoa aceitar o convite com este email.</p>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
