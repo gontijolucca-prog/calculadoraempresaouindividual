@@ -338,15 +338,17 @@ export async function removeFromGabinete(gabineteId: string, email: string, uid?
     throw new Error('O dono do gabinete não pode ser removido.');
   }
   const members: Record<string, unknown> = { ...(data.members || {}) };
-  if (uid) delete members[uid];
+  const removidos = new Set<string>();
+  if (uid) { removidos.add(uid); delete members[uid]; }
   for (const [k, v] of Object.entries(members)) {
     const em = normalizeEmail((v as { email?: string } | undefined)?.email || '');
-    if (k !== data.ownerUid && em && em === emailLc) delete members[k];
+    if (k !== data.ownerUid && em && em === emailLc) { removidos.add(k); delete members[k]; }
   }
   // updateDoc substitui os campos por inteiro — o merge do setDoc deixaria
   // ficar o membro antigo dentro de `members`.
   await updateDoc(ref, {
-    memberUids: (data.memberUids || []).filter(x => x === data.ownerUid || x !== uid),
+    // Remove todos os uids identificados (por uid e/ou por email), nunca o dono.
+    memberUids: (data.memberUids || []).filter(x => x === data.ownerUid || !removidos.has(x)),
     inviteEmails: (data.inviteEmails || []).filter(e => e !== emailLc),
     invites: (data.invites || []).filter(i => normalizeEmail(i.email) !== emailLc),
     members,

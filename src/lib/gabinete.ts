@@ -1047,7 +1047,15 @@ export async function deleteColaborador(id: string): Promise<void> {
   auditDelete('delete_colaborador', id, alvo && { nome: alvo.nome });
   const list = listColaboradoresCache().filter(x => x.id !== id);
   saveColaboradoresCache(list);
-  queueRemove(colPath('colaboradores'), id);
+  // Tenta apagar já no servidor (para não reaparecer ao recarregar). Se falhar
+  // (sem rede/quota), fica na fila de saída como antes.
+  try {
+    const { deleteDoc, doc } = await import('firebase/firestore');
+    const { db } = await import('./firebase');
+    await deleteDoc(doc(db, colPath('colaboradores'), id));
+  } catch {
+    queueRemove(colPath('colaboradores'), id);
+  }
 }
 export function newColaboradorId(): string { return newId('col'); }
 export function getColaboradorInitials(nome: string): string {
