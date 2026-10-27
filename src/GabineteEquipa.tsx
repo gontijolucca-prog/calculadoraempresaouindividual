@@ -69,6 +69,9 @@ export default function GabineteEquipa() {
   const [rolePerms, setRolePerms] = useState<PermissionAction[]>([]);
   const [roleErro, setRoleErro] = useState('');
   const [roleSaving, setRoleSaving] = useState(false);
+  const [removerAlvo, setRemoverAlvo] = useState<Colaborador | null>(null);
+  const [removendo, setRemovendo] = useState(false);
+  const [aviso, setAviso] = useState<string>('');
 
   const criarCargo = async () => {
     const nome = roleNome.trim();
@@ -265,22 +268,33 @@ export default function GabineteEquipa() {
     await handleReenviar(c); // convite antigo sem token: cria link novo e abre o modal
   };
 
-  /** Remover da equipa: confirmação explícita + revogação do convite pendente. */
-  const handleRemover = async (c: Colaborador) => {
-    if (!window.confirm(`Remover ${c.nome} da equipa?\n\nDeixa de ter acesso a este gabinete e o link do convite pendente deixa de funcionar.`)) return;
+  /** Confirma e remove o colaborador (modal próprio, sem window.confirm). */
+  const confirmarRemocao = async () => {
+    const c = removerAlvo;
+    if (!c || removendo) return;
+    setRemovendo(true); setAviso('');
+    let falhou = false;
     const gabId = getActiveGabineteId();
     if (gabId) {
       try {
-        // removeFromGabinete revoga também os docs `convites` pendentes deste email.
-        await removeFromGabinete(gabId, c.email, c.linkedUid || undefined);
+        const uidCandidato = c.linkedUid || (c.id && c.id.length > 20 ? c.id : undefined);
+        await removeFromGabinete(gabId, c.email, uidCandidato);
       } catch (e) {
-        alert(String((e as Error)?.message || e));
-        return;
+        falhou = true;
+        setAviso('Não consegui revogar o acesso: ' + String((e as Error)?.message || e));
       }
     }
-    await deleteColaborador(c.id);
+    try {
+      await deleteColaborador(c.id);
+    } catch (e) {
+      falhou = true;
+      setAviso('Não consegui apagar o registo: ' + String((e as Error)?.message || e));
+    }
     await recarregarMeta();
     if (convite?.id === c.id) setConvite(null);
+    setRemoverAlvo(null);
+    setRemovendo(false);
+    if (!falhou) setAviso(`${c.nome} removido da equipa.`);
   };
 
   const linkConvite = tokenConvite ? linkDoConvite(tokenConvite) : '';
@@ -381,7 +395,7 @@ export default function GabineteEquipa() {
                             ><Mail className="w-3.5 h-3.5" /></button>
                           </>
                         )}
-                        <button onClick={() => void handleRemover(c)} className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-600" title="Remover da equipa"><Trash2 className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => setRemoverAlvo(c)} className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-600" title="Remover da equipa"><Trash2 className="w-3.5 h-3.5" /></button>
                       </div>
                     </td>
                   </tr>
@@ -432,6 +446,28 @@ export default function GabineteEquipa() {
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[12px] leading-[17px] text-amber-900">
         <strong>Como funciona o convite:</strong> ao adicionar um funcionário criamos o registo e um <strong>link de convite único</strong> (vale 7 dias). Copia o link ou a mensagem e envia tu — <strong>o envio automático de email não está configurado</strong>, por isso não prometemos email. A pessoa abre o link, define a password e entra; a linha passa a <em>Ativa</em>. Reenviar gera um link novo e invalida o antigo; remover da equipa revoga os convites pendentes. Cada gabinete vê a sua própria equipa isolada (Firestore <code>gabinete/{'{'}officeId{'}'}/colaboradores</code>).
       </div>
+
+      {aviso && (
+        <div role="status" className="fixed bottom-4 left-1/2 z-[70] -translate-x-1/2 rounded-xl bg-[#0F172A] px-4 py-2.5 text-[12.5px] font-[600] text-white shadow-xl">
+          {aviso}
+          <button onClick={() => setAviso('')} className="ml-3 text-white/60 hover:text-white">×</button>
+        </div>
+      )}
+
+      {removerAlvo && (
+        <div className="fixed inset-0 z-[65] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => !removendo && setRemoverAlvo(null)}>
+          <div className="w-full max-w-[420px] rounded-2xl bg-white p-6 border shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-semibold">Remover colaborador</h3>
+            <p className="mt-2 text-[13px] leading-relaxed text-[#475569]">
+              Remover <b>{removerAlvo.nome}</b> ({removerAlvo.email}) da equipa? Deixa de ter acesso a este gabinete e o convite pendente deixa de funcionar.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setRemoverAlvo(null)} disabled={removendo} className="px-4 py-2 rounded-xl border border-[#E2E8F0] text-sm">Cancelar</button>
+              <button onClick={confirmarRemocao} disabled={removendo} className="px-4 py-2 rounded-xl bg-rose-600 text-white text-sm font-[600] disabled:opacity-60">{removendo ? 'A remover…' : 'Remover'}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showRoleModal && (
         <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowRoleModal(false)}>

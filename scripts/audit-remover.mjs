@@ -54,7 +54,7 @@ await p.reload({ waitUntil: 'load' });
 await p.waitForTimeout(2600);
 const dbg = await p.evaluate(() => ({ txt: document.body.innerText.slice(0, 150).replace(/\n+/g, ' | '), add: Array.from(document.querySelectorAll('button')).filter((b) => /Adicionar funcionário/i.test(b.innerText || '')).length }));
 console.log('   [debug]', JSON.stringify(dbg));
-const addB = p.getByRole('button', { name: /Adicionar funcionário/i }).first();
+const addB = p.locator('button:visible').filter({ hasText: /Adicionar funcionário/i }).first();
 if (await addB.count()) await addB.click(); else { falhas.push('sem botão Adicionar funcionário'); }
 await p.waitForTimeout(700);
 await p.locator('input[placeholder="Nome completo"]:visible').first().fill('Funcionário Remover');
@@ -80,7 +80,11 @@ const linha = p.locator('tr').filter({ hasText: func }).first();
 ok(await linha.count() === 1, 'linha do colaborador visível');
 const lixo = linha.locator('button[title="Remover da equipa"]').first();
 await lixo.evaluate((el) => el.click());
-await p.waitForTimeout(2500);
+await p.waitForTimeout(600);
+const confirmar = p.getByRole('button', { name: /^Remover$/ }).filter({ visible: true }).first();
+ok(await confirmar.count() === 1, 'modal de confirmação abre');
+if (await confirmar.count()) await confirmar.click();
+await p.waitForTimeout(3000);
 const depois = await p.evaluate(() => document.body.innerText);
 ok(!depois.includes(func), 'colaborador desapareceu da lista');
 
