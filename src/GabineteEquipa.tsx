@@ -222,11 +222,11 @@ export default function GabineteEquipa() {
         tokenConviteAtual = token;
         await recarregarMeta();
       } catch (e) {
-        alert('Funcionário guardado, mas o convite ao gabinete falhou: ' + String((e as Error)?.message || e));
+        setAviso('Colaborador guardado, mas o link do convite falhou: ' + String((e as Error)?.message || e));
       }
     }
-    setConvite(col);
-    void enviarPeloServidor(col, tokenConviteAtual);
+    if (tokenConviteAtual) setConvite(col);
+    else void enviarPeloServidor(col, tokenConviteAtual);
   };
 
   /** Pede ao servidor (Cloudflare) que envie o email do convite. */
@@ -335,7 +335,7 @@ export default function GabineteEquipa() {
             <h2 className="text-[15px] font-[800] flex items-center gap-2 text-[#0B1D2D]"><Users className="w-4 h-4 text-[#2563EB]" /> Equipa do gabinete</h2>
             <p className="text-[12.5px] text-[#64748B] mt-1">Quem trabalha aqui — convida por link e associa a clientes como responsável, apoio ou supervisor.</p>
           </div>
-          <button onClick={openAdd} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm font-[600] flex items-center gap-1.5"><Plus className="w-4 h-4" /> Adicionar funcionário</button>
+          <button onClick={openAdd} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm font-[600] flex items-center gap-1.5"><Plus className="w-4 h-4" /> Adicionar colaborador</button>
         </div>
         <div className="mt-4 flex gap-3">
           <div className="relative flex-1">
@@ -357,9 +357,9 @@ export default function GabineteEquipa() {
       {filtered.length === 0 ? (
         <div className="bg-white rounded-xl border border-[#E2E8F0] p-8 text-center">
           <Users className="w-8 h-8 text-zinc-300 mx-auto mb-2" />
-          <p className="text-sm text-zinc-500">{q || filtroRole !== 'todos' ? 'Nenhum colaborador corresponde à pesquisa.' : 'Ainda sem equipa. Adiciona o primeiro funcionário e recebe um link de convite.'}</p>
+          <p className="text-sm text-zinc-500">{q || filtroRole !== 'todos' ? 'Nenhum colaborador corresponde à pesquisa.' : 'Ainda sem equipa. Adiciona o primeiro colaborador e recebe um link de convite.'}</p>
           {q === '' && filtroRole === 'todos' && (
-            <button onClick={openAdd} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm font-medium">Adicionar funcionário</button>
+            <button onClick={openAdd} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm font-medium">Adicionar colaborador</button>
           )}
         </div>
       ) : (
@@ -468,7 +468,7 @@ export default function GabineteEquipa() {
       </div>
 
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[12px] leading-[17px] text-amber-900">
-        <strong>Como funciona o convite:</strong> ao adicionar um funcionário criamos o registo e um <strong>link de convite único</strong> (vale 7 dias). Copia o link ou a mensagem e envia tu — <strong>o envio automático de email não está configurado</strong>, por isso não prometemos email. A pessoa abre o link, define a password e entra; a linha passa a <em>Ativa</em>. Reenviar gera um link novo e invalida o antigo; remover da equipa revoga os convites pendentes. Cada gabinete vê a sua própria equipa isolada (Firestore <code>gabinete/{'{'}officeId{'}'}/colaboradores</code>).
+        <strong>Como funciona o convite:</strong> ao adicionar um colaborador criamos o registo e um <strong>link de convite único</strong> (vale 7 dias). Copia o link ou a mensagem e envia tu — <strong>o envio automático de email não está configurado</strong>, por isso não prometemos email. A pessoa abre o link, define a password e entra; a linha passa a <em>Ativa</em>. Reenviar gera um link novo e invalida o antigo; remover da equipa revoga os convites pendentes. Cada gabinete vê a sua própria equipa isolada (Firestore <code>gabinete/{'{'}officeId{'}'}/colaboradores</code>).
       </div>
 
       {aviso && (
@@ -599,7 +599,7 @@ export default function GabineteEquipa() {
         <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
           <div className="w-full max-w-[480px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold">{editing ? 'Editar colaborador' : 'Adicionar funcionário'}</h3>
+              <h3 className="font-semibold">{editing ? 'Editar colaborador' : 'Adicionar colaborador'}</h3>
               <button onClick={() => setShowForm(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button>
             </div>
             <div className="space-y-3">

@@ -52,10 +52,10 @@ await p.evaluate(() => {
 });
 await p.reload({ waitUntil: 'load' });
 await p.waitForTimeout(2600);
-const dbg = await p.evaluate(() => ({ txt: document.body.innerText.slice(0, 150).replace(/\n+/g, ' | '), add: Array.from(document.querySelectorAll('button')).filter((b) => /Adicionar funcionário/i.test(b.innerText || '')).length }));
+const dbg = await p.evaluate(() => ({ txt: document.body.innerText.slice(0, 150).replace(/\n+/g, ' | '), add: Array.from(document.querySelectorAll('button')).filter((b) => /Adicionar (funcionário|colaborador)/i.test(b.innerText || '')).length }));
 console.log('   [debug]', JSON.stringify(dbg));
-const addB = p.locator('button:visible').filter({ hasText: /Adicionar funcionário/i }).first();
-if (await addB.count()) await addB.click(); else { falhas.push('sem botão Adicionar funcionário'); }
+const addB = p.locator('button:visible').filter({ hasText: /Adicionar (funcionário|colaborador)/i }).first();
+if (await addB.count()) await addB.click(); else { falhas.push('sem botão Adicionar (funcionário|colaborador)'); }
 await p.waitForTimeout(700);
 await p.locator('input[placeholder="Nome completo"]:visible').first().fill('Funcionário Remover');
 await p.locator('input[placeholder="Email (para login)"]:visible').first().fill(func);

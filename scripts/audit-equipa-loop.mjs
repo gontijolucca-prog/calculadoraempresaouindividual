@@ -61,7 +61,7 @@ const gabId = await p.evaluate(async () => { const g = await import('/src/lib/ga
 ok(!!gabId, 'gabinete ativo');
 
 const abrirForm = async () => {
-  const add = p.locator('button:visible').filter({ hasText: /Adicionar funcionário/i }).first();
+  const add = p.locator('button:visible').filter({ hasText: /Adicionar (funcionário|colaborador)/i }).first();
   if (await add.count()) await add.evaluate((el) => el.click());
   await p.waitForTimeout(500);
 };

@@ -48,7 +48,7 @@ await p.evaluate(() => {
   localStorage.setItem('estudo360:v1:gabineteTab', JSON.stringify({ v: 1, data: 'equipa' }));
 });
 await p.reload({ waitUntil: 'load' }); await p.waitForTimeout(2500);
-await p.getByRole('button', { name: /Adicionar funcionário/i }).first().click(); await p.waitForTimeout(500);
+await p.getByRole('button', { name: /Adicionar (funcionário|colaborador)/i }).first().click(); await p.waitForTimeout(500);
 await p.locator('input[placeholder="Nome completo"]:visible').first().fill('Nome Antigo');
 await p.locator('input[placeholder="Email (para login)"]:visible').first().fill(func);
 await p.getByRole('button', { name: /Adicionar \(convite pendente\)/i }).filter({ visible: true }).first().click();

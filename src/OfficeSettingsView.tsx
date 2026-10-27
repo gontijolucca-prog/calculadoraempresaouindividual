@@ -346,12 +346,12 @@ function HonorariosForm({ config, onChange }: { config: HonorariosConfig; onChan
         </div>
       </section>
 
-      {/* Funcionários */}
+      {/* Colaboradores */}
       <section className="bg-white rounded-[16px] border border-[#E2E8F0] p-6">
-        <h2 className={sectionTitleCls}>Funcionários</h2>
+        <h2 className={sectionTitleCls}>Colaboradores</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Funcionários incluídos no valor base</label>
+            <label className={labelCls}>Colaboradores incluídos no valor base</label>
             <input type="number" min={0} value={config.funcionariosIncluidos === 0 ? '' : config.funcionariosIncluidos} onChange={e => set('funcionariosIncluidos', Number(e.target.value) || 0)} className={inputCls} />
           </div>
           <div>

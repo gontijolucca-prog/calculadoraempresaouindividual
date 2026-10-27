@@ -69,7 +69,7 @@ if (await criarGab.count()) {
 }
 const equipa = page.locator('button:visible').filter({ hasText: /^Equipa$/ }).first();
 if (await equipa.count()) { await equipa.evaluate((el) => el.click()); await page.waitForTimeout(900); }
-await page.getByRole('button', { name: /Adicionar funcionário/i }).first().click();
+await page.getByRole('button', { name: /Adicionar (funcionário|colaborador)/i }).first().click();
 await page.waitForTimeout(500);
 await page.locator('input[placeholder="Nome completo"]:visible').first().fill('Funcionária Link');
 await page.locator('input[placeholder="Email (para login)"]:visible').first().fill(func);
@@ -77,13 +77,8 @@ await page.locator('select:visible').last().selectOption('estagiaria');
 await page.getByRole('button', { name: /Adicionar \(convite pendente\)/i }).filter({ visible: true }).first().click();
 await page.waitForTimeout(4500);
 
-const token = await page.evaluate(async () => {
-  const g = await import('/src/lib/gabinetes.ts');
-  const id = g.getActiveGabineteId();
-  const meta = id ? await g.getGabineteMeta(id) : null;
-  const inv = (meta?.invites || []).filter((i) => i.token).pop();
-  return inv?.token || '';
-});
+const linkVal = await page.locator('div.fixed.inset-0.z-50 input').first().inputValue().catch(() => '');
+const token = (() => { try { return new URL(linkVal).searchParams.get('t') || ''; } catch { return ''; } })();
 ok(!!token, `token do convite gerado (${token ? token.slice(0, 8) + '…' : 'sem token'})`);
 
 // funcionária abre o link num browser limpo

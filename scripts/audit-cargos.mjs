@@ -47,7 +47,7 @@ if (await criarGab.count()) {
 }
 const equipa = p.locator('button:visible').filter({ hasText: /^Equipa$/ }).first();
 if (await equipa.count()) { await equipa.evaluate((el) => el.click()); await p.waitForTimeout(900); }
-await p.getByRole('button', { name: /Adicionar funcionário/i }).first().click(); await p.waitForTimeout(500);
+await p.getByRole('button', { name: /Adicionar (funcionário|colaborador)/i }).first().click(); await p.waitForTimeout(500);
 const selForm = p.locator('select:has(option[value="__novo__"])').first();
 await selForm.selectOption('__novo__'); await p.waitForTimeout(500);
 ok(/Criar novo cargo/.test(await p.evaluate(() => document.body.innerText)), 'modal de criar cargo abre');
@@ -59,7 +59,7 @@ await p.waitForTimeout(2500);
 // reabrir o formulário para confirmar que o cargo ficou disponível
 const cancelar = p.getByRole('button', { name: /^Cancelar$/ }).filter({ visible: true }).first();
 if (await cancelar.count()) { await cancelar.click(); await p.waitForTimeout(500); }
-await p.getByRole('button', { name: /Adicionar funcionário/i }).first().click(); await p.waitForTimeout(600);
+await p.getByRole('button', { name: /Adicionar (funcionário|colaborador)/i }).first().click(); await p.waitForTimeout(600);
 const selForm2 = p.locator('select:has(option[value="__novo__"])').first();
 console.log('   [debug]', JSON.stringify(await p.evaluate(() => Array.from(document.querySelectorAll('select')).map((s) => ({ v: s.value, opts: Array.from(s.options).map((o) => o.textContent) })).slice(-3))));
 const opcao = await selForm2.evaluate((el) => Array.from(el.options).map((o) => o.textContent || ''));

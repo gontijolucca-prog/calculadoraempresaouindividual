@@ -222,8 +222,16 @@ export async function acceptInvite(gabineteId: string): Promise<void> {
     const { collection, query, where, getDocs, updateDoc } = await import('firebase/firestore');
     const q = query(collection(db, 'gabinete', gabineteId, 'colaboradores'), where('email', '==', emailLc));
     const snap = await getDocs(q);
-    await Promise.all(snap.docs.map((d) => updateDoc(d.ref, { status: 'ativo', linkedUid: u.uid, updatedAt: Date.now() })));
-  } catch { /* sem colaborador correspondente ou sem permissão — não bloqueia a aceitação */ }
+    if (snap.empty) {
+      const { setDoc: set } = await import('firebase/firestore');
+      await set(doc(db, 'gabinete', gabineteId, 'colaboradores', u.uid), {
+        id: u.uid, nome: (u.displayName || emailLc.split('@')[0]), email: emailLc, role,
+        status: 'ativo', linkedUid: u.uid, createdAt: Date.now(), updatedAt: Date.now(),
+      }, { merge: true });
+    } else {
+      await Promise.all(snap.docs.map((d) => updateDoc(d.ref, { status: 'ativo', linkedUid: u.uid, updatedAt: Date.now() })));
+    }
+  } catch { /* sem permissão — a aceitação já foi confirmada acima */ }
 
   // também limpar invites array
   try {
@@ -300,6 +308,16 @@ export async function inviteToGabinete(gabineteId: string, email: string, role: 
   await revokeInviteToken(gabineteId, emailLc);
   const token = novoTokenConvite();
   const expira = Date.now() + 7 * 24 * 60 * 60 * 1000;
+  // O link só é mostrado ao utilizador se o documento público existir; sem ele
+  // a página /convite diria "não encontrado" e nunca pedia password.
+  try {
+    await withTimeout(setDoc(doc(db, 'convites', token), {
+      gabineteId, gabineteNome: (data as any).nome || '', email: emailLc, role,
+      invitedBy: u.uid, invitedByEmail: u.email || '', createdAt: Date.now(), expiresAt: expira,
+    }), 6000, 'link do convite');
+  } catch {
+    throw new Error('Não consegui criar o link do convite. Verifique a ligação e tente outra vez.');
+  }
   await withTimeout(updateDoc(ref, {
     inviteEmails: arrayUnion(emailLc),
     invites: arrayUnion({ email: emailLc, role, invitedAt: Date.now(), invitedBy: u.uid, invitedByEmail: u.email || '', token, expira }),
@@ -311,14 +329,6 @@ export async function inviteToGabinete(gabineteId: string, email: string, role: 
       updatedAt: Date.now(),
     } as any, { merge: true }), 6000, 'convite').catch(() => {});
   });
-
-  // Documento público do convite (id = token secreto) para a página de password.
-  try {
-    await withTimeout(setDoc(doc(db, 'convites', token), {
-      gabineteId, gabineteNome: (data as any).nome || '', email: emailLc, role,
-      invitedBy: u.uid, invitedByEmail: u.email || '', createdAt: Date.now(), expiresAt: expira,
-    }), 5000, 'convite');
-  } catch { /* sem convite público o fluxo antigo continua a funcionar */ }
 
   return { token };
 }

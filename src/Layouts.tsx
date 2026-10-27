@@ -181,7 +181,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
   { id: 'dashboard', label: 'Quadro de obrigações', Icon: Calendar, desc: 'JAN-DEZ: v Concluído · ✕ Não concluído' },
   { id: 'mapa-controlo', label: 'Mapa de controlo', Icon: Table2, desc: '7 fases · JAN-DEZ colorido - Doc. Falta -> Balancete' },
   { id: 'mapa-rh', label: 'Mapa RH', Icon: Users, desc: '6 colunas RH - Salários, Ticket, IRS, DMR-AT/SS, Encargos' },
-  { id: 'equipa', label: 'Equipa', Icon: Users, desc: 'Funcionários' },
+  { id: 'equipa', label: 'Equipa', Icon: Users, desc: 'Colaboradores' },
   { id: 'tarefas', label: 'Tarefas', Icon: CheckSquare, desc: 'Lista por urgência e estado' },
   { id: 'agenda', label: 'Agenda', Icon: Clock, desc: 'Tarefas, obrigações e alertas por dia' },
   { id: 'obrigacoes', label: 'Obrigações', Icon: ListChecks, desc: 'Entregas e prazos por cliente' },

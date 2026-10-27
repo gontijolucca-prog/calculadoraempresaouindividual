@@ -110,7 +110,7 @@ console.log('   equipa?', JSON.stringify(await page.evaluate(() => ({
   txt: (document.querySelector('#main-content')?.innerText || '').slice(0, 120).replace(/\n+/g, ' | '),
   botoes: Array.from(document.querySelectorAll('#main-content button')).filter((b) => b.getClientRects().length).map((b) => (b.innerText || '').trim()).filter(Boolean).slice(0, 8),
 }))));
-const add = page.locator('#main-content button:visible').filter({ hasText: /Adicionar funcionário|Novo colaborador/i }).first();
+const add = page.locator('#main-content button:visible').filter({ hasText: /Adicionar (funcionário|colaborador)|Novo colaborador/i }).first();
 if (await add.count()) { await add.click(); await page.waitForTimeout(800); }
 await page.locator('input[placeholder="Nome completo"]').first().fill('Estagiária QA');
 await page.locator('input[placeholder="Email (para login)"]').first().fill(estEmail);

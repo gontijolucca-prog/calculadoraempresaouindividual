@@ -52,7 +52,7 @@ if (!(await equipa.count())) {
   equipa = p.locator('button:visible').filter({ hasText: /^Equipa$/ }).first();
 }
 if (await equipa.count()) { await equipa.evaluate((el) => el.click()); await p.waitForTimeout(1000); }
-const addBtn = p.getByRole('button', { name: /Adicionar funcionário/i }).first();
+const addBtn = p.getByRole('button', { name: /Adicionar (funcionário|colaborador)/i }).first();
 if (await addBtn.count()) await addBtn.click(); else { console.log('   [debug] sem botão adicionar:', (await p.evaluate(()=>document.body.innerText)).slice(0,160)); }
 await p.waitForTimeout(600);
 const sel = p.locator('select:has(option[value="__novo__"])').first();

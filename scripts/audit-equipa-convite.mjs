@@ -1,5 +1,5 @@
 /**
- * Adicionar funcionário: cria registo + convite no gabinete e mostra a mensagem
+ * Adicionar (funcionário|colaborador): cria registo + convite no gabinete e mostra a mensagem
  * pronta (não há email automático). Confirma também que o convite fica no gabinete.
  */
 import { chromium } from 'playwright-core';
@@ -58,7 +58,7 @@ if (await criarGab.count()) {
   await page.waitForTimeout(3000);
 }
 
-// Equipa → Adicionar funcionário
+// Equipa → Adicionar (funcionário|colaborador)
 const equipa = page.locator('button:visible').filter({ hasText: /^Equipa$/ }).first();
 if (await equipa.count()) { await equipa.evaluate((el) => el.click()); await page.waitForTimeout(1200); }
 else {
@@ -67,8 +67,8 @@ else {
   const eq2 = page.locator('button:visible').filter({ hasText: /^Equipa$/ }).first();
   if (await eq2.count()) { await eq2.evaluate((el) => el.click()); await page.waitForTimeout(1200); }
 }
-const add = page.getByRole('button', { name: /Adicionar funcionário/i }).first();
-ok(await add.count() >= 1, 'botão Adicionar funcionário disponível');
+const add = page.getByRole('button', { name: /Adicionar (funcionário|colaborador)/i }).first();
+ok(await add.count() >= 1, 'botão Adicionar (funcionário|colaborador) disponível');
 await add.click();
 await page.waitForTimeout(600);
 await page.locator('input[placeholder="Nome completo"]:visible').first().fill('Funcionária QA');

@@ -66,7 +66,7 @@ if (await criarGab.count()) {
 }
 const equipa = page.locator('button:visible').filter({ hasText: /^Equipa$/ }).first();
 if (await equipa.count()) { await equipa.evaluate((el) => el.click()); await page.waitForTimeout(1000); }
-await page.getByRole('button', { name: /Adicionar funcionário/i }).first().click();
+await page.getByRole('button', { name: /Adicionar (funcionário|colaborador)/i }).first().click();
 await page.waitForTimeout(600);
 await page.locator('input[placeholder="Nome completo"]:visible').first().fill('Funcionária Ciclo');
 await page.locator('input[placeholder="Email (para login)"]:visible').first().fill(func);
