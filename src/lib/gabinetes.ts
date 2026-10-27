@@ -361,10 +361,21 @@ export async function removeFromGabinete(gabineteId: string, email: string, uid?
   await revokeInviteToken(gabineteId, emailLc);
 }
 
-export async function getGabineteMeta(id: string): Promise<GabineteMeta | null> {
+// Cache curta do documento do gabinete: a mesma meta era lida várias vezes
+// por ecrã (cargo, equipa, topo), consumindo leituras sem necessidade.
+const metaCache = new Map<string, { at: number; meta: GabineteMeta | null }>();
+const META_TTL_MS = 15_000;
+
+export async function getGabineteMeta(id: string, opts?: { force?: boolean }): Promise<GabineteMeta | null> {
+  const cached = metaCache.get(id);
+  if (!opts?.force && cached && Date.now() - cached.at < META_TTL_MS) {
+    try { const { setCustomRolesCache } = await import('./permissions'); setCustomRolesCache(cached.meta?.customRoles || {}); } catch {}
+    return cached.meta;
+  }
   const snap = await withTimeout(getDoc(doc(db, 'gabinetes', id)), 5000, 'gabinete').catch(() => null);
-  if (!snap || !snap.exists()) return null;
+  if (!snap || !snap.exists()) { metaCache.set(id, { at: Date.now(), meta: null }); return null; }
   const meta = snap.data() as GabineteMeta;
+  metaCache.set(id, { at: Date.now(), meta });
   // Mantém a matriz de permissões a par dos cargos personalizados deste gabinete.
   try {
     const { setCustomRolesCache } = await import('./permissions');
