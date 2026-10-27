@@ -69,7 +69,12 @@ ok(true, 'cargo personalizado disponível para atribuição');
 // atribuir a um colaborador e recarregar
 await p.locator('input[placeholder="Nome completo"]:visible').first().fill('Colaborador QA');
 await p.locator('input[placeholder="Email (para login)"]:visible').first().fill(`colab+${stamp}@estudo360.pt`);
-await p.getByRole('button', { name: /Adicionar \(convite pendente\)/i }).filter({ visible: true }).first().click();
+await p.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => /Adicionar colaborador|Adicionar funcionário/i.test(x.innerText || '')); b && b.click(); });
+await p.waitForTimeout(700);
+if (!(await p.locator('input[placeholder="Nome completo"]:visible').count())) {
+  await p.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => /Adicionar colaborador|Adicionar funcionário/i.test(x.innerText || '')); b && b.click(); });
+  await p.waitForTimeout(500);
+}
 await p.waitForTimeout(2500);
 // Persistência real: lê o documento do gabinete no emulador (admin).
 const gabId = await p.evaluate(async () => { const g = await import('/src/lib/gabinetes.ts'); return g.getActiveGabineteId(); });

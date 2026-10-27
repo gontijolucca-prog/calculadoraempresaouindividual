@@ -52,20 +52,25 @@ await p.evaluate(() => {
 });
 await p.reload({ waitUntil: 'load' });
 await p.waitForTimeout(2600);
-const dbg = await p.evaluate(() => ({ txt: document.body.innerText.slice(0, 150).replace(/\n+/g, ' | '), add: Array.from(document.querySelectorAll('button')).filter((b) => /Adicionar (funcionário|colaborador)/i.test(b.innerText || '')).length }));
-console.log('   [debug]', JSON.stringify(dbg));
-const addB = p.locator('button:visible').filter({ hasText: /Adicionar (funcionário|colaborador)/i }).first();
-if (await addB.count()) await addB.click(); else { falhas.push('sem botão Adicionar (funcionário|colaborador)'); }
+const dbg = await p.evaluate(() => ({ add: [...document.querySelectorAll('button')].filter((b) => /Adicionar colaborador|Adicionar funcionário/i.test(b.innerText || '')).length }));
+console.log('   [debug] botões adicionar:', JSON.stringify(dbg));
+await p.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => /Adicionar colaborador|Adicionar funcionário/i.test(x.innerText || '')); b && b.click(); });
 await p.waitForTimeout(700);
-await p.locator('input[placeholder="Nome completo"]:visible').first().fill('Funcionário Remover');
+if (!(await p.locator('input[placeholder="Nome completo"]:visible').count())) {
+  await p.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => /Adicionar colaborador|Adicionar funcionário/i.test(x.innerText || '')); b && b.click(); });
+  await p.waitForTimeout(600);
+}
+await p.locator('input[placeholder="Nome completo"]:visible').first().fill('Colaborador Remover');
 await p.locator('input[placeholder="Email (para login)"]:visible').first().fill(func);
 await p.getByRole('button', { name: /Adicionar \(convite pendente\)/i }).filter({ visible: true }).first().click();
-await p.waitForTimeout(2200);
-const token = await p.evaluate(async () => {
-  const g = await import('/src/lib/gabinetes.ts');
-  const id = g.getActiveGabineteId(); const meta = id ? await g.getGabineteMeta(id) : null;
-  return (meta?.invites || []).filter((i) => i.token).pop()?.token || '';
-});
+let linkVal = '';
+for (let i = 0; i < 20; i++) {
+  linkVal = await p.locator('div.fixed.inset-0.z-50 input').first().inputValue().catch(() => '');
+  if (linkVal.includes('convite?t=')) break;
+  await p.waitForTimeout(500);
+}
+const token = (() => { try { return new URL(linkVal).searchParams.get('t') || ''; } catch { return ''; } })();
+ok(!!token, 'link do convite gerado');
 const ctx2 = await b.newContext({ viewport: { width: 420, height: 900 } });
 const p2 = await ctx2.newPage();
 await p2.goto(BASE + 'convite.html?t=' + token + '&emu=1', { waitUntil: 'load' }); await p2.waitForTimeout(3000);

@@ -62,7 +62,12 @@ await p.getByText('Ver o cofre de acessos').click();
 await p.getByRole('button', { name: /Criar cargo/ }).click(); await p.waitForTimeout(1000);
 await p.locator('input[placeholder="Nome completo"]:visible').first().fill('Funcionário Cofre');
 await p.locator('input[placeholder="Email (para login)"]:visible').first().fill(func);
-await p.getByRole('button', { name: /Adicionar \(convite pendente\)/i }).filter({ visible: true }).first().click();
+await p.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => /Adicionar colaborador|Adicionar funcionário/i.test(x.innerText || '')); b && b.click(); });
+await p.waitForTimeout(700);
+if (!(await p.locator('input[placeholder="Nome completo"]:visible').count())) {
+  await p.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => /Adicionar colaborador|Adicionar funcionário/i.test(x.innerText || '')); b && b.click(); });
+  await p.waitForTimeout(500);
+}
 await p.waitForTimeout(2500);
 const token = await p.evaluate(async () => {
   const g = await import('/src/lib/gabinetes.ts');
