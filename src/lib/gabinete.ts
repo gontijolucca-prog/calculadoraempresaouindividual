@@ -917,7 +917,7 @@ export async function seedCalendarioFiscal2026(): Promise<void> {
     id: event.id,
     tipo: event.tipo,
     titulo: event.titulo,
-    descricao: 'Referência do calendário fiscal nacional 2026 (importado de events (7).ics).',
+    descricao: 'Referência do calendário fiscal nacional 2026.',
     clienteId: CALENDARIO_FISCAL_CLIENTE_ID,
     clienteNome: 'Calendário fiscal 2026',
     periodo: event.data.slice(0, 7),
@@ -930,27 +930,16 @@ export async function seedCalendarioFiscal2026(): Promise<void> {
   }));
   const missing = allRecords.filter((item) => !currentIds.has(item.id));
   if (missing.length > 0) saveObrigacoesCache([...current, ...missing]);
+  // Referência nacional: fica SÓ no cache local. Antes eram 313 escritas por
+  // gabinete (312 eventos + marcador), o que esgotava a quota gratuita do
+  // Firestore e fazia falhar convites/colaboradores em silêncio.
+}
 
-  try {
-    const markerRef = doc(db, colPath('meta'), CALENDARIO_FISCAL_MARKER_ID);
-    const marker = await getDoc(markerRef);
-    if (marker.exists() && marker.data()?.version >= CALENDARIO_FISCAL_VERSION) return;
-
-    const batch = writeBatch(db);
-    for (const record of allRecords) {
-      batch.set(doc(db, colPath('obrigacoes'), record.id), record, { merge: true });
-    }
-    batch.set(markerRef, {
-      version: CALENDARIO_FISCAL_VERSION,
-      count: allRecords.length,
-      updatedAt: now,
-      _updatedAt: now,
-    }, { merge: true });
-    await batch.commit();
-  } catch (err) {
-    // O cache local já está preenchido; repetir na próxima abertura é seguro.
-    console.warn('[gabinete] seed do calendário fiscal falhou:', err);
-  }
+/** Junta o calendário local (não gravado) aos registos vindos do Firestore. */
+function comCalendarioLocal(items: Obrigacao[]): Obrigacao[] {
+  const ids = new Set(items.map((i) => i.id));
+  const extras = listObrigacoesCache().filter((o) => o.origem === 'calendario_fiscal' && !ids.has(o.id));
+  return extras.length ? [...items, ...extras] : items;
 }
 
 // ─── CRUD — Cofre ────────────────────────────────────────────────────────────
@@ -1075,6 +1064,18 @@ export async function deleteColaborador(id: string): Promise<void> {
   }
 }
 export function newColaboradorId(): string { return newId('col'); }
+
+/** Confirma se o colaborador chegou ao servidor (para avisar quando a escrita falha). */
+export async function colaboradorNoServidor(id: string): Promise<boolean> {
+  try {
+    const [{ getDoc, doc }, { db }] = await Promise.all([import('firebase/firestore'), import('./firebase')]);
+    const snap = await Promise.race([
+      getDoc(doc(db, colPath('colaboradores'), id)),
+      new Promise<null>((res) => setTimeout(() => res(null), 4000)),
+    ]);
+    return !!snap && snap.exists();
+  } catch { return false; }
+}
 export function getColaboradorInitials(nome: string): string {
   const parts = nome.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return '—';
@@ -1326,7 +1327,9 @@ function makeSubscriber<T>(col: string, mapFn?: (d: unknown) => T) {
 
 export const subscribeClientes = makeSubscriber<GabineteCliente>('clientes');
 export const subscribeTarefas = makeSubscriber<Tarefa>('tarefas');
-export const subscribeObrigacoes = makeSubscriber<Obrigacao>('obrigacoes');
+const subscribeObrigacoesBase = makeSubscriber<Obrigacao>('obrigacoes');
+export const subscribeObrigacoes = (cb: (items: Obrigacao[]) => void) =>
+  subscribeObrigacoesBase((items) => cb(comCalendarioLocal(items)));
 export const subscribeCofre = makeSubscriber<CofreEntrada>('cofre');
 export const subscribeColaboradores = makeSubscriber<Colaborador>('colaboradores');
 export const subscribeContactosGeral = makeSubscriber<ContactoGabinete>('contactosGeral');

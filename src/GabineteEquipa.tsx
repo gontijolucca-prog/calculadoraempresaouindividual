@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Users, Mail, Trash2, Pencil, X, Plus, Search, CheckCircle2, Clock, Shield, Copy, Check } from 'lucide-react';
 import { useGabineteColaboradores, useGabineteClientes } from './lib/useGabinete';
 import { filterActive } from './lib/gabineteSelectors';
-import { upsertColaborador, deleteColaborador, newColaboradorId, getColaboradorInitials, upsertCliente, type Colaborador, type ColaboradorRole } from './lib/gabinete';
+import { upsertColaborador, deleteColaborador, newColaboradorId, getColaboradorInitials, upsertCliente, colaboradorNoServidor, type Colaborador, type ColaboradorRole } from './lib/gabinete';
 import { getActiveGabineteId, getGabineteMeta, inviteToGabinete, removeFromGabinete, atualizarCargoColaborador, type GabineteMeta } from './lib/gabinetes';
 import { PERMISSION_LABELS, type PermissionAction, setCustomRolesCache } from './lib/permissions';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -205,6 +205,11 @@ export default function GabineteEquipa() {
     }
 
     await upsertColaborador(col);
+    // Se o servidor recusou (ex.: quota), o registo só existe localmente e
+    // desapareceria no próximo snapshot — avisa em vez de falhar em silêncio.
+    void colaboradorNoServidor(col.id).then((ok) => {
+      if (!ok) setAviso('Colaborador guardado apenas neste dispositivo: o servidor recusou a gravação (quota/rede). Tente novamente mais tarde.');
+    });
     // Fecha o formulário já; o convite/link é preparado a seguir.
     setShowForm(false);
     setEditing(null);
