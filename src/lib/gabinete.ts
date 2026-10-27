@@ -1039,13 +1039,19 @@ export async function upsertColaborador(c: Colaborador): Promise<void> {
   const withTs = { ...c, updatedAt: now, updatedBy: actor(), initials: c.initials || getColaboradorInitials(c.nome), status: c.status || 'ativo' as const };
   if (idx >= 0) list[idx] = withTs as Colaborador; else list.push(withTs as Colaborador);
   saveColaboradoresCache(list);
-  // Grava já no servidor; se falhar (rede/quota) fica na fila de saída.
-  try {
-    const { setDoc, doc } = await import('firebase/firestore');
-    const { db } = await import('./firebase');
-    await setDoc(doc(db, colPath('colaboradores'), c.id), withTs);
-  } catch {
-    queueSet(colPath('colaboradores'), c.id, withTs);
+  // Cópia local imediata; o servidor é atualizado em segundo plano para a UI
+  // nunca ficar à espera do Firestore.
+  queueSet(colPath('colaboradores'), c.id, withTs);
+  if (typeof navigator !== 'undefined' && navigator.onLine) {
+    void (async () => {
+      try {
+        const [{ setDoc, doc }, { db }] = await Promise.all([import('firebase/firestore'), import('./firebase')]);
+        await Promise.race([
+          setDoc(doc(db, colPath('colaboradores'), c.id), withTs),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('tempo esgotado')), 6000)),
+        ]);
+      } catch { /* fica na fila; o outbox volta a tentar */ }
+    })();
   }
   logAudit('save_colaborador', c.nome || c.id);
 }

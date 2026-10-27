@@ -10,6 +10,7 @@ import {
   query, where, arrayUnion, arrayRemove, serverTimestamp,
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
+import { withTimeout } from './withTimeout';
 import { loadFromStorage, saveToStorage, clearStorage } from './storage';
 
 export type GabineteRoleBase = 'admin' | 'contabilista' | 'estagiaria';
@@ -186,18 +187,18 @@ export async function acceptInvite(gabineteId: string): Promise<void> {
   if (!u) throw new Error('Não autenticado');
   const emailLc = normalizeEmail(u.email || '');
   const ref = doc(db, 'gabinetes', gabineteId);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) throw new Error('Gabinete não encontrado');
+  const snap = await withTimeout(getDoc(ref), 6000, 'gabinete').catch(() => null);
+  if (!snap || !snap.exists()) throw new Error('Gabinete não encontrado');
   const data = snap.data() as GabineteMeta;
   const invite = data.invites?.find(i => normalizeEmail(i.email) === emailLc);
   const role: GabineteRole = (invite?.role as GabineteRole) || 'contabilista';
   // adiciona membro e remove convite
-  await updateDoc(ref, {
+  await withTimeout(updateDoc(ref, {
     memberUids: arrayUnion(u.uid),
     [`members.${u.uid}`]: { role, addedAt: Date.now(), email: u.email || '' },
     inviteEmails: arrayRemove(emailLc),
     updatedAt: Date.now(),
-  } as any).catch(async () => {
+  } as any), 6000, 'aceitar convite').catch(async () => {
     // fallback se campo não existir
     await setDoc(ref, {
       memberUids: [...(data.memberUids || []), u.uid],
@@ -275,8 +276,8 @@ export async function revokeInviteToken(gabineteId: string, email: string): Prom
       where('gabineteId', '==', gabineteId),
       where('email', '==', emailLc),
     );
-    const snap = await getDocs(q);
-    await Promise.all(snap.docs.map((d) => deleteDoc(d.ref).catch(() => {})));
+    const snap = await withTimeout(getDocs(q), 5000, 'convites').catch(() => null);
+    if (snap) await Promise.all(snap.docs.map((d) => withTimeout(deleteDoc(d.ref), 4000, 'convite').catch(() => {})));
   } catch (e) {
     console.warn('[gabinetes] revogar convites antigos falhou', e);
   }
@@ -289,8 +290,8 @@ export async function inviteToGabinete(gabineteId: string, email: string, role: 
   const emailLc = normalizeEmail(email);
   if (!emailLc.includes('@')) throw new Error('Email inválido');
   const ref = doc(db, 'gabinetes', gabineteId);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) throw new Error('Gabinete não encontrado');
+  const snap = await withTimeout(getDoc(ref), 6000, 'gabinete').catch(() => null);
+  if (!snap || !snap.exists()) throw new Error('Gabinete não encontrado');
   const data = snap.data() as GabineteMeta;
   // só membros podem convidar
   if (!data.memberUids?.includes(u.uid) && data.ownerUid !== u.uid) throw new Error('Sem permissão');
@@ -299,24 +300,24 @@ export async function inviteToGabinete(gabineteId: string, email: string, role: 
   await revokeInviteToken(gabineteId, emailLc);
   const token = novoTokenConvite();
   const expira = Date.now() + 7 * 24 * 60 * 60 * 1000;
-  await updateDoc(ref, {
+  await withTimeout(updateDoc(ref, {
     inviteEmails: arrayUnion(emailLc),
     invites: arrayUnion({ email: emailLc, role, invitedAt: Date.now(), invitedBy: u.uid, invitedByEmail: u.email || '', token, expira }),
     updatedAt: Date.now(),
-  } as any).catch(async () => {
-    await setDoc(ref, {
+  } as any), 6000, 'convite').catch(async () => {
+    await withTimeout(setDoc(ref, {
       inviteEmails: [...(data.inviteEmails || []), emailLc],
       invites: [...(data.invites || []), { email: emailLc, role, invitedAt: Date.now(), invitedBy: u.uid, invitedByEmail: u.email || '', token, expira }],
       updatedAt: Date.now(),
-    } as any, { merge: true });
+    } as any, { merge: true }), 6000, 'convite').catch(() => {});
   });
 
   // Documento público do convite (id = token secreto) para a página de password.
   try {
-    await setDoc(doc(db, 'convites', token), {
+    await withTimeout(setDoc(doc(db, 'convites', token), {
       gabineteId, gabineteNome: (data as any).nome || '', email: emailLc, role,
       invitedBy: u.uid, invitedByEmail: u.email || '', createdAt: Date.now(), expiresAt: expira,
-    });
+    }), 5000, 'convite');
   } catch { /* sem convite público o fluxo antigo continua a funcionar */ }
 
   return { token };
@@ -361,7 +362,7 @@ export async function removeFromGabinete(gabineteId: string, email: string, uid?
 }
 
 export async function getGabineteMeta(id: string): Promise<GabineteMeta | null> {
-  const snap = await getDoc(doc(db, 'gabinetes', id)).catch(() => null);
+  const snap = await withTimeout(getDoc(doc(db, 'gabinetes', id)), 5000, 'gabinete').catch(() => null);
   if (!snap || !snap.exists()) return null;
   const meta = snap.data() as GabineteMeta;
   // Mantém a matriz de permissões a par dos cargos personalizados deste gabinete.

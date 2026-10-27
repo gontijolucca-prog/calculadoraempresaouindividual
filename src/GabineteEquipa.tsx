@@ -79,23 +79,27 @@ export default function GabineteEquipa() {
     if (rolePerms.length === 0) { setRoleErro('Escolha pelo menos uma permissão.'); return; }
     const gabId = getActiveGabineteId();
     if (!gabId) { setRoleErro('Sem gabinete ativo.'); return; }
-    setRoleSaving(true); setRoleErro('');
+    const roleId = `custom:${Math.random().toString(36).slice(2, 10)}`;
+    const entrada = { nome, permissoes: rolePerms, createdAt: Date.now(), createdBy: 'owner' };
+    const base = (gabMeta?.customRoles || {}) as Record<string, { nome: string; permissoes: string[] }>;
+    const customRoles = { ...base, [roleId]: entrada };
+    // UI responde já; o servidor atualiza em segundo plano com prazo.
+    setCustomRolesCache(customRoles as never);
+    setGabMeta((m) => (m ? { ...m, customRoles } : ({ customRoles } as GabineteMeta)));
+    setForm((f) => ({ ...f, role: roleId as ColaboradorRole }));
+    setShowRoleModal(false);
+    setRoleNome(''); setRolePerms([]); setRoleErro('');
+    setAviso(`Cargo «${nome}» criado.`);
     try {
-      const roleId = `custom:${Math.random().toString(36).slice(2, 10)}`;
-      // Lê o estado atual do gabinete para não apagar cargos já existentes
-      // (a cache local pode ainda não ter carregado quando o formulário abre).
-      const atual = await getGabineteMeta(gabId).catch(() => null);
-      const customRoles = { ...(atual?.customRoles || gabMeta?.customRoles || {}), [roleId]: { nome, permissoes: rolePerms, createdAt: Date.now(), createdBy: 'owner' } };
-      await updateDoc(doc(db, 'gabinetes', gabId), { customRoles });
-      setCustomRolesCache(customRoles);
-      const fresco = await getGabineteMeta(gabId).catch(() => null);
-      setGabMeta(fresco || (gabMeta ? { ...gabMeta, customRoles } : null));
-      setForm((f) => ({ ...f, role: roleId as ColaboradorRole }));
-      setShowRoleModal(false);
-      setRoleNome(''); setRolePerms([]);
-    } catch (e: any) {
-      setRoleErro(e?.message || 'Não foi possível guardar o cargo.');
-    } finally { setRoleSaving(false); }
+      const { updateDoc: upd, doc: d } = await import('firebase/firestore');
+      const { db } = await import('./lib/firebase');
+      const { withTimeout } = await import('./lib/withTimeout');
+      const atual = await withTimeout(getGabineteMeta(gabId), 5000, 'cargo').catch(() => null);
+      const final = { ...((atual?.customRoles || base) as Record<string, unknown>), [roleId]: entrada };
+      await withTimeout(upd(d(db, 'gabinetes', gabId), { customRoles: final }), 6000, 'cargo');
+    } catch {
+      setAviso(`Cargo «${nome}» criado neste dispositivo, mas ainda não sincronizou. Tente novamente quando tiver rede.`);
+    }
   };
 
   const recarregarMeta = useCallback(async () => {
@@ -117,13 +121,27 @@ export default function GabineteEquipa() {
   }, [gabMeta]);
 
   const copiar = useCallback(async (texto: string, chave: string) => {
+    let ok = false;
     try {
-      await navigator.clipboard.writeText(texto);
-      setCopiado(chave);
-      window.setTimeout(() => setCopiado(atual => (atual === chave ? '' : atual)), 2200);
-    } catch {
-      window.prompt('Copia o texto abaixo:', texto);
+      if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(texto); ok = true; }
+    } catch { /* tenta o fallback */ }
+    if (!ok) {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = texto;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.top = '-1000px';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand('copy');
+        ta.remove();
+      } catch { ok = false; }
     }
+    setCopiado(ok ? chave : '');
+    setAviso(ok ? 'Link copiado.' : 'Não consegui copiar automaticamente. Selecione o link no campo e copie.');
+    window.setTimeout(() => setAviso(atual => (atual === 'Link copiado.' || atual.startsWith('Não consegui copiar') ? '' : atual)), 2600);
   }, []);
 
   const filtered = useMemo(() => {
@@ -187,6 +205,10 @@ export default function GabineteEquipa() {
     }
 
     await upsertColaborador(col);
+    // Fecha o formulário já; o convite/link é preparado a seguir.
+    setShowForm(false);
+    setEditing(null);
+    setForm({ role: 'contabilista' });
     // Convite real ao gabinete: sem isto o colaborador nunca conseguia entrar
     // (só ficava o registo local na lista da equipa).
     setTokenConvite('');
@@ -203,9 +225,6 @@ export default function GabineteEquipa() {
         alert('Funcionário guardado, mas o convite ao gabinete falhou: ' + String((e as Error)?.message || e));
       }
     }
-    setShowForm(false);
-    setEditing(null);
-    setForm({ role: 'contabilista' });
     setConvite(col);
     void enviarPeloServidor(col, tokenConviteAtual);
   };
