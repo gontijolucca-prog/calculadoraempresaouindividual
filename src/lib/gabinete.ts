@@ -1039,7 +1039,14 @@ export async function upsertColaborador(c: Colaborador): Promise<void> {
   const withTs = { ...c, updatedAt: now, updatedBy: actor(), initials: c.initials || getColaboradorInitials(c.nome), status: c.status || 'ativo' as const };
   if (idx >= 0) list[idx] = withTs as Colaborador; else list.push(withTs as Colaborador);
   saveColaboradoresCache(list);
-  queueSet(colPath('colaboradores'), c.id, withTs);
+  // Grava já no servidor; se falhar (rede/quota) fica na fila de saída.
+  try {
+    const { setDoc, doc } = await import('firebase/firestore');
+    const { db } = await import('./firebase');
+    await setDoc(doc(db, colPath('colaboradores'), c.id), withTs);
+  } catch {
+    queueSet(colPath('colaboradores'), c.id, withTs);
+  }
   logAudit('save_colaborador', c.nome || c.id);
 }
 export async function deleteColaborador(id: string): Promise<void> {

@@ -371,3 +371,35 @@ export async function getGabineteMeta(id: string): Promise<GabineteMeta | null> 
   } catch { /* sem cache: os cargos base continuam a funcionar */ }
   return meta;
 }
+
+
+/** Atualiza o cargo de um colaborador já existente (membro ativo ou convite pendente). */
+export async function atualizarCargoColaborador(gabineteId: string, email: string, role: GabineteRole, uid?: string): Promise<void> {
+  const u = auth.currentUser;
+  if (!u) throw new Error('Não autenticado');
+  const emailLc = normalizeEmail(email);
+  const ref = doc(db, 'gabinetes', gabineteId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+  const data = snap.data() as GabineteMeta;
+  if ((uid && data.ownerUid === uid) || normalizeEmail(data.ownerEmail || '') === emailLc) {
+    throw new Error('O cargo do dono do gabinete não pode ser alterado.');
+  }
+  const members: Record<string, { role: GabineteRole; addedAt: number; email: string }> = { ...(data.members || {}) };
+  let alterado = false;
+  for (const [k, v] of Object.entries(members)) {
+    const mesmoUid = !!uid && k === uid;
+    const mesmoEmail = normalizeEmail(v?.email || '') === emailLc;
+    if (membroEhDono(k, data) === false && (mesmoUid || mesmoEmail)) {
+      members[k] = { ...v, role };
+      alterado = true;
+    }
+  }
+  const invites = (data.invites || []).map(i => normalizeEmail(i.email) === emailLc ? { ...i, role } : i);
+  if (!alterado && invites.every(i => normalizeEmail(i.email) !== emailLc)) return;
+  await updateDoc(ref, { members, invites, updatedAt: Date.now() } as any);
+}
+
+function membroEhDono(uid: string, data: GabineteMeta): boolean {
+  return uid === data.ownerUid;
+}

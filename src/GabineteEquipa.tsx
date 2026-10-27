@@ -3,7 +3,7 @@ import { Users, Mail, Trash2, Pencil, X, Plus, Search, CheckCircle2, Clock, Shie
 import { useGabineteColaboradores, useGabineteClientes } from './lib/useGabinete';
 import { filterActive } from './lib/gabineteSelectors';
 import { upsertColaborador, deleteColaborador, newColaboradorId, getColaboradorInitials, upsertCliente, type Colaborador, type ColaboradorRole } from './lib/gabinete';
-import { getActiveGabineteId, getGabineteMeta, inviteToGabinete, removeFromGabinete, type GabineteMeta } from './lib/gabinetes';
+import { getActiveGabineteId, getGabineteMeta, inviteToGabinete, removeFromGabinete, atualizarCargoColaborador, type GabineteMeta } from './lib/gabinetes';
 import { PERMISSION_LABELS, type PermissionAction, setCustomRolesCache } from './lib/permissions';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from './lib/firebase';
@@ -167,6 +167,22 @@ export default function GabineteEquipa() {
       createdAt: editing?.createdAt || Date.now(),
       updatedAt: Date.now(),
     };
+    // Editar: guarda o registo e atualiza o cargo de quem já está no gabinete.
+    // Não cria convite novo (o colaborador já existe) nem mexe no link pendente.
+    if (editing) {
+      await upsertColaborador(col);
+      const gabId = getActiveGabineteId();
+      if (gabId) {
+        try { await atualizarCargoColaborador(gabId, email, col.role, col.linkedUid); }
+        catch (e) { alert('Guardado, mas o cargo no gabinete não atualizou: ' + String((e as Error)?.message || e)); }
+      }
+      await recarregarMeta();
+      setShowForm(false);
+      setEditing(null);
+      setForm({ role: 'contabilista' });
+      return;
+    }
+
     await upsertColaborador(col);
     // Convite real ao gabinete: sem isto o colaborador nunca conseguia entrar
     // (só ficava o registo local na lista da equipa).
