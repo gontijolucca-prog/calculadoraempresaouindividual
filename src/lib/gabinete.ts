@@ -734,7 +734,7 @@ export interface CofreEntrada {
 }
 
 // Colaborador
-export type ColaboradorRole = 'admin' | 'contabilista' | 'estagiaria';
+export type ColaboradorRole = 'admin' | 'contabilista' | 'estagiaria' | `custom:${string}`;
 export interface Colaborador {
   id: string; // uid ou local id
   nome: string;

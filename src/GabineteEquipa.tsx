@@ -4,28 +4,38 @@ import { useGabineteColaboradores, useGabineteClientes } from './lib/useGabinete
 import { filterActive } from './lib/gabineteSelectors';
 import { upsertColaborador, deleteColaborador, newColaboradorId, getColaboradorInitials, upsertCliente, type Colaborador, type ColaboradorRole } from './lib/gabinete';
 import { getActiveGabineteId, getGabineteMeta, inviteToGabinete, removeFromGabinete, type GabineteMeta } from './lib/gabinetes';
+import { PERMISSION_LABELS, type PermissionAction, setCustomRolesCache } from './lib/permissions';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from './lib/firebase';
 
-const roleLabel: Record<ColaboradorRole, string> = {
+const ROLE_BASE_LABEL: Record<string, string> = {
   admin: 'Admin',
   contabilista: 'Contabilista',
   estagiaria: 'Estagiária',
 };
-const roleStyle: Record<ColaboradorRole, string> = {
-  admin: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  contabilista: 'bg-blue-50 text-blue-700 border-blue-200',
-  estagiaria: 'bg-amber-50 text-amber-700 border-amber-200',
-};
+const roleLabel: Record<string, string> = ROLE_BASE_LABEL;
+function labelDoCargo(role: string, meta?: GabineteMeta | null): string {
+  if (role.startsWith('custom:')) return meta?.customRoles?.[role.slice(7)]?.nome || 'Cargo personalizado';
+  return ROLE_BASE_LABEL[role] || role;
+}
+function styleDoCargo(role: string): string {
+  if (role === 'admin') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+  if (role === 'contabilista') return 'bg-blue-50 text-blue-700 border-blue-200';
+  if (role === 'estagiaria') return 'bg-amber-50 text-amber-700 border-amber-200';
+  return 'bg-violet-50 text-violet-700 border-violet-200';
+}
+const TODAS_PERMISSOES = Object.keys(PERMISSION_LABELS) as PermissionAction[];
 
 /** Link público do convite — a página onde a pessoa define a password. */
 const CONVITE_BASE = 'https://estudo360.pt/convite';
 const linkDoConvite = (token: string) => `${CONVITE_BASE}?t=${encodeURIComponent(token)}`;
 
 /** Mensagem pronta a enviar (email, WhatsApp ou à frente) com o link do convite. */
-function mensagemConvite(c: Colaborador, link: string): string {
+function mensagemConvite(c: Colaborador, link: string, meta?: GabineteMeta | null): string {
   const primeiro = c.nome.trim().split(/\s+/)[0] || c.nome;
   return `Olá ${primeiro},
 
-Convidei-te para a equipa do gabinete no Estudo360, como ${roleLabel[c.role]}.
+Convidei-te para a equipa do gabinete no Estudo360, como ${labelDoCargo(c.role, meta)}.
 
 ${link
     ? `Abre este link e define a tua password (vale 7 dias):\n${link}`
@@ -54,6 +64,37 @@ export default function GabineteEquipa() {
   const [gabMeta, setGabMeta] = useState<GabineteMeta | null>(null);
   const [copiado, setCopiado] = useState('');
   const [reenviandoId, setReenviandoId] = useState<string | null>(null);
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [roleNome, setRoleNome] = useState('');
+  const [rolePerms, setRolePerms] = useState<PermissionAction[]>([]);
+  const [roleErro, setRoleErro] = useState('');
+  const [roleSaving, setRoleSaving] = useState(false);
+
+  const criarCargo = async () => {
+    const nome = roleNome.trim();
+    if (!nome) { setRoleErro('Dê um nome ao cargo.'); return; }
+    if (rolePerms.length === 0) { setRoleErro('Escolha pelo menos uma permissão.'); return; }
+    const gabId = getActiveGabineteId();
+    if (!gabId) { setRoleErro('Sem gabinete ativo.'); return; }
+    setRoleSaving(true); setRoleErro('');
+    try {
+      const id = Math.random().toString(36).slice(2, 10);
+      const roleId = `custom:${id}`;
+      // Lê o estado atual do gabinete para não apagar cargos já existentes
+      // (a cache local pode ainda não ter carregado quando o formulário abre).
+      const atual = await getGabineteMeta(gabId).catch(() => null);
+      const customRoles = { ...(atual?.customRoles || gabMeta?.customRoles || {}), [id]: { nome, permissoes: rolePerms, createdAt: Date.now(), createdBy: 'owner' } };
+      await updateDoc(doc(db, 'gabinetes', gabId), { customRoles });
+      setCustomRolesCache(customRoles);
+      const fresco = await getGabineteMeta(gabId).catch(() => null);
+      setGabMeta(fresco || (gabMeta ? { ...gabMeta, customRoles } : null));
+      setForm((f) => ({ ...f, role: roleId as ColaboradorRole }));
+      setShowRoleModal(false);
+      setRoleNome(''); setRolePerms([]);
+    } catch (e: any) {
+      setRoleErro(e?.message || 'Não foi possível guardar o cargo.');
+    } finally { setRoleSaving(false); }
+  };
 
   const recarregarMeta = useCallback(async () => {
     const gabId = getActiveGabineteId();
@@ -253,6 +294,9 @@ export default function GabineteEquipa() {
             <option value="admin">Admin</option>
             <option value="contabilista">Contabilista</option>
             <option value="estagiaria">Estagiária</option>
+            {Object.entries((gabMeta?.customRoles || {}) as Record<string, { nome: string }>).map(([id, r]) => (
+              <option key={id} value={`custom:${id}`}>{r.nome}</option>
+            ))}
           </select>
         </div>
       </div>
@@ -288,7 +332,7 @@ export default function GabineteEquipa() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-[#475569]">{c.email}</td>
-                    <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full border text-[11px] font-[600] ${roleStyle[c.role]}`}>{roleLabel[c.role]}</span></td>
+                    <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full border text-[11px] font-[600] ${styleDoCargo(c.role)}`}>{labelDoCargo(c.role, gabMeta)}</span></td>
                     <td className="px-4 py-3">
                       {c.status === 'ativo' ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-[600] bg-emerald-50 text-emerald-700 border-emerald-200" title={c.linkedUid ? 'Conta ligada a este registo' : 'Conta ainda não ligada a este registo'}>
@@ -362,7 +406,7 @@ export default function GabineteEquipa() {
                   className="flex-1 min-w-[130px] px-2 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-[12px]"
                 >
                   <option value="">{field.label} — nenhum</option>
-                  {colaboradores.map(c => <option key={c.id} value={c.id}>{c.nome} ({roleLabel[c.role]})</option>)}
+                  {colaboradores.map(c => <option key={c.id} value={c.id}>{c.nome} ({labelDoCargo(c.role, gabMeta)})</option>)}
                 </select>
               ))}
             </div>
@@ -373,6 +417,34 @@ export default function GabineteEquipa() {
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[12px] leading-[17px] text-amber-900">
         <strong>Como funciona o convite:</strong> ao adicionar um funcionário criamos o registo e um <strong>link de convite único</strong> (vale 7 dias). Copia o link ou a mensagem e envia tu — <strong>o envio automático de email não está configurado</strong>, por isso não prometemos email. A pessoa abre o link, define a password e entra; a linha passa a <em>Ativa</em>. Reenviar gera um link novo e invalida o antigo; remover da equipa revoga os convites pendentes. Cada gabinete vê a sua própria equipa isolada (Firestore <code>gabinete/{'{'}officeId{'}'}/colaboradores</code>).
       </div>
+
+      {showRoleModal && (
+        <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowRoleModal(false)}>
+          <div className="w-full max-w-[520px] max-h-[88vh] overflow-y-auto bg-white rounded-2xl p-6 border shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold">Criar novo cargo</h3>
+              <button onClick={() => setShowRoleModal(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button>
+            </div>
+            <p className="mt-1 text-[12.5px] text-[#64748B]">O cargo fica guardado no gabinete e pode ser atribuído a qualquer colaborador.</p>
+            <label className="mt-4 block text-[11px] font-[800] uppercase tracking-[1px] text-[#64748B]">Nome do cargo</label>
+            <input value={roleNome} onChange={(e) => setRoleNome(e.target.value)} placeholder="Ex.: Gestor de clientes" className="mt-1 w-full px-3 py-2.5 rounded-xl border border-[#E2E8F0] text-sm" />
+            <label className="mt-4 block text-[11px] font-[800] uppercase tracking-[1px] text-[#64748B]">Permissões</label>
+            <div className="mt-1 space-y-1.5">
+              {TODAS_PERMISSOES.map((perm) => (
+                <label key={perm} className="flex items-start gap-2 rounded-lg border border-[#E2E8F0] px-3 py-2 text-[12.5px] text-[#334155] hover:bg-[#F8FAFC]">
+                  <input type="checkbox" checked={rolePerms.includes(perm)} onChange={() => setRolePerms((prev) => prev.includes(perm) ? prev.filter((x) => x !== perm) : [...prev, perm])} className="mt-0.5 w-4 h-4 accent-[#0677FF]" />
+                  {PERMISSION_LABELS[perm]}
+                </label>
+              ))}
+            </div>
+            {roleErro && <div className="mt-3 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-[12.5px] text-rose-700">{roleErro}</div>}
+            <div className="mt-4 flex justify-end gap-2">
+              <button onClick={() => setShowRoleModal(false)} className="px-4 py-2 rounded-xl border border-[#E2E8F0] text-sm">Cancelar</button>
+              <button onClick={criarCargo} disabled={roleSaving} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm font-[600] disabled:opacity-60">{roleSaving ? 'A guardar…' : 'Criar cargo'}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {convite && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setConvite(null)}>
@@ -458,10 +530,14 @@ export default function GabineteEquipa() {
             <div className="space-y-3">
               <input value={form.nome || ''} onChange={e => setForm({ ...form, nome: e.target.value })} placeholder="Nome completo" className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
               <input value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="Email (para login)" type="email" className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
-              <select value={form.role || 'contabilista'} onChange={e => setForm({ ...form, role: e.target.value as ColaboradorRole })} className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm">
+              <select value={form.role || 'contabilista'} onChange={e => { const v = e.target.value; if (v === '__novo__') { setRoleNome(''); setRolePerms([]); setRoleErro(''); setShowRoleModal(true); return; } setForm({ ...form, role: v as ColaboradorRole }); }} className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm">
                 <option value="admin">Admin — dono do gabinete</option>
                 <option value="contabilista">Contabilista</option>
                 <option value="estagiaria">Estagiária</option>
+                {Object.entries((gabMeta?.customRoles || {}) as Record<string, { nome: string }>).map(([id, r]) => (
+                  <option key={id} value={`custom:${id}`}>{r.nome} (personalizado)</option>
+                ))}
+                <option value="__novo__">＋ Criar novo cargo…</option>
               </select>
               {error && <div className="text-[12px] text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">{error}</div>}
             </div>

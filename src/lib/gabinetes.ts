@@ -12,7 +12,8 @@ import {
 import { db, auth } from './firebase';
 import { loadFromStorage, saveToStorage, clearStorage } from './storage';
 
-export type GabineteRole = 'admin' | 'contabilista' | 'estagiaria';
+export type GabineteRoleBase = 'admin' | 'contabilista' | 'estagiaria';
+export type GabineteRole = GabineteRoleBase | `custom:${string}`;
 
 export interface GabineteMeta {
   id: string;
@@ -24,6 +25,8 @@ export interface GabineteMeta {
   updatedAt: number;
   memberUids: string[];
   members: Record<string, { role: GabineteRole; addedAt: number; email: string }>;
+  /** Cargos personalizados do gabinete: id → { nome, permissoes }. */
+  customRoles?: Record<string, { nome: string; permissoes: string[]; createdAt?: number; createdBy?: string }>;
   inviteEmails: string[]; // lowercased
   invites: Array<{ email: string; role: GabineteRole; invitedAt: number; invitedBy: string; invitedByEmail: string; token?: string; expira?: number }>;
 }
@@ -358,5 +361,11 @@ export async function removeFromGabinete(gabineteId: string, email: string, uid?
 export async function getGabineteMeta(id: string): Promise<GabineteMeta | null> {
   const snap = await getDoc(doc(db, 'gabinetes', id)).catch(() => null);
   if (!snap || !snap.exists()) return null;
-  return snap.data() as GabineteMeta;
+  const meta = snap.data() as GabineteMeta;
+  // Mantém a matriz de permissões a par dos cargos personalizados deste gabinete.
+  try {
+    const { setCustomRolesCache } = await import('./permissions');
+    setCustomRolesCache(meta.customRoles || {});
+  } catch { /* sem cache: os cargos base continuam a funcionar */ }
+  return meta;
 }

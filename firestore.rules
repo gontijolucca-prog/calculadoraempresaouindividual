@@ -98,6 +98,26 @@ service cloud.firestore {
     }
     // Só clientes/obrigações/cofre são restritos a admin+contabilista; os
     // restantes módulos são trabalho de qualquer membro (estagiária incluída).
+    // Cargos personalizados: as permissões vivem em gabinetes/{id}.customRoles.
+    function roleHasPerm(gabineteId, perm) {
+      return gabIsUser(gabineteId)
+        && gabRole(gabineteId) in gabData(gabineteId).customRoles
+        && perm in gabData(gabineteId).customRoles[gabRole(gabineteId)].permissoes;
+    }
+    function podeVerCofre(gabineteId) {
+      return gabRoleIs(gabineteId, ['admin', 'contabilista']) || roleHasPerm(gabineteId, 'ver-cofre');
+    }
+    function podeEditarRestrita(gabineteId) {
+      return gabRoleIs(gabineteId, ['admin', 'contabilista'])
+        || roleHasPerm(gabineteId, 'editar-clientes')
+        || roleHasPerm(gabineteId, 'gerir-obrigacoes')
+        || roleHasPerm(gabineteId, 'editar-cofre');
+    }
+    function podeLixeira(gabineteId) {
+      return gabRoleIs(gabineteId, ['admin', 'contabilista'])
+        || roleHasPerm(gabineteId, 'restaurar')
+        || roleHasPerm(gabineteId, 'apagar');
+    }
     function isColRestrita(col) {
       return col == 'cofre' || col == 'clientes' || col == 'obrigacoes';
     }
@@ -115,22 +135,22 @@ service cloud.firestore {
     match /gabinete/{officeId}/{col}/{docId} {
       // O cofre só é legível por admin/contabilista — a estagiária nem por API.
       allow read: if gabIsUser(officeId)
-        && (col != 'cofre' || gabRoleIs(officeId, ['admin', 'contabilista']));
+        && (col != 'cofre' || podeVerCofre(officeId));
       allow create: if gabIsUser(officeId)
         && isValidGabineteDoc(request.resource.data)
-        && (!isColRestrita(col) || gabRoleIs(officeId, ['admin', 'contabilista']));
+        && (!isColRestrita(col) || podeEditarRestrita(officeId));
       allow update: if gabIsUser(officeId)
         && isValidGabineteDoc(request.resource.data)
         && (
           isColRestrita(col)
-            ? gabRoleIs(officeId, ['admin', 'contabilista'])
-            : (!isLixeiraChange(resource.data, request.resource.data) || gabRoleIs(officeId, ['admin', 'contabilista']))
+            ? podeEditarRestrita(officeId)
+            : (!isLixeiraChange(resource.data, request.resource.data) || podeLixeira(officeId))
         );
       // Purga definitiva: só admin (cofre: admin+contabilista; restantes: membros).
       allow delete: if gabIsUser(officeId) && (
         isColLixeira(col)
-          ? gabRoleIs(officeId, ['admin'])
-          : (col == 'cofre' ? gabRoleIs(officeId, ['admin', 'contabilista']) : true)
+          ? (gabRoleIs(officeId, ['admin']) || roleHasPerm(officeId, 'purgar'))
+          : (col == 'cofre' ? podeVerCofre(officeId) : true)
       );
     }
     match /gabinete/{officeId} {

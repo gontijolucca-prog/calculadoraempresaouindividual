@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { can, deriveRole, tabsGabinete } from './permissions';
+import { can, deriveRole, tabsGabinete, setCustomRolesCache } from './permissions';
 
 describe('permissions — matriz por cargo', () => {
   it('admin pode tudo', () => {
@@ -117,5 +117,25 @@ describe('permissions — tabs do gabinete', () => {
   it('sem cargo não esconde nada', () => {
     assert.equal(tabsGabinete(null), null);
     assert.equal(tabsGabinete(undefined), null);
+  });
+});
+
+describe('permissions — cargos personalizados', () => {
+  it('permissões do cargo personalizado valem e as outras não', () => {
+    setCustomRolesCache({ gestor: { nome: 'Gestor', permissoes: ['ver-cofre', 'editar-clientes'] } });
+    const role = 'custom:gestor' as const;
+    assert.equal(can(role, 'ver-cofre'), true);
+    assert.equal(can(role, 'editar-clientes'), true);
+    assert.equal(can(role, 'purgar'), false);
+    assert.equal(can(role, 'gerir-equipa'), false);
+    setCustomRolesCache({});
+  });
+  it('cargo personalizado inexistente não concede nada', () => {
+    setCustomRolesCache({});
+    assert.equal(can('custom:nao-existe' as const, 'ver-cofre'), false);
+  });
+  it('deriveRole reconhece o cargo personalizado do membro', () => {
+    const meta = { ownerUid: 'u1', memberUids: ['u2'], members: { u2: { role: 'custom:gestor' as const } }, customRoles: { gestor: { nome: 'Gestor', permissoes: [] } } };
+    assert.equal(deriveRole(meta as never, 'u2'), 'custom:gestor');
   });
 });
