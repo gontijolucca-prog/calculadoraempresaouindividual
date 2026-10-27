@@ -78,7 +78,7 @@ Estado: ✅ = testado e provado nesta ronda · ⚠️ = existe, falta prova auto
 | G3 | Timeout/fallback | 20 s por provider; nunca fica pendurado | ✅ |
 | G4 | Ações/sugestões | Navegar, abrir simulador, sugerir melhoria | ⚠️ |
 | G5 | Guias | "Aprender esta página" abre o guia (também por evento) | ✅ |
-| G6 | Importar TOConline | Ligar → lista paginada → **filtrar por tipo/NIF/nome/localidade** → selecionar visíveis → importar (testado com a conta real: 466, 456 importáveis) | ✅ |
+| G6 | Importar TOConline | Ligar → filtrar → selecionar → importar; **certificado campo a campo** (14 campos × 5 clientes, 5/5 iguais; só entram os selecionados; persiste após recarregar) | ✅ |
 
 ## H. Transversal
 | # | Funcionalidade | Como deve funcionar | Estado |
