@@ -37,6 +37,7 @@ const pass = 'Teste12345!';
 
 const browser = await chromium.launch({ executablePath: CHROME, headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 980 } });
+page.on('dialog', (d) => { console.log('   [dialog]', d.message().slice(0, 160)); d.accept(); });
 page.on('pageerror', (e) => falhas.push('pageerror: ' + (e.stack || '').split('\n')[0]));
 const consola = [];
 page.on('console', (m) => consola.push(m.text()));
@@ -117,9 +118,24 @@ await page.locator('input[placeholder="Email (para login)"]').first().fill(estEm
 const selRole = page.locator('select:visible').last();
 await selRole.selectOption('estagiaria');
 console.log('   role escolhida:', await selRole.inputValue());
-const guardar = page.locator('button:visible').filter({ hasText: /Adicionar \(convite|Adicionar$/ }).last();
-if (await guardar.count()) { await guardar.click(); await page.waitForTimeout(2000); }
-ok(true, 'dono: convite de estagiária submetido');
+const guardar = page.getByRole('button', { name: /Adicionar \(convite pendente\)/i }).filter({ visible: true }).first();
+if (await guardar.count()) await guardar.click({ force: true });
+await page.waitForTimeout(2500);
+
+// Confirma no emulador (admin) que o convite ficou gravado no gabinete.
+const conviteGravado = await (async () => {
+  const url = 'http://127.0.0.1:8180/v1/projects/recofatima-ferramenta/databases/(default)/documents:runQuery';
+  const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer owner' }, body: JSON.stringify({ structuredQuery: { from: [{ collectionId: 'gabinetes' }], limit: 50 } }) });
+  const j = await r.json().catch(() => []);
+  for (const row of Array.isArray(j) ? j : []) {
+    const f = row?.document?.fields || null;
+    if (!f) continue;
+    const emails = (f.inviteEmails?.arrayValue?.values || []).map((v) => v.stringValue).filter(Boolean);
+    if (emails.includes(estEmail.toLowerCase())) return true;
+  }
+  return false;
+})();
+ok(conviteGravado, 'dono: convite de estagiária gravado no gabinete');
 // fechar a janela do convite (não deve bloquear o resto do fluxo)
 await page.mouse.click(6, 6).catch(() => {});
 await page.waitForTimeout(600);
@@ -132,15 +148,26 @@ const sair = page.getByRole('button', { name: /Sair/i }).first();
 if (await sair.count()) { await sair.click(); await page.waitForTimeout(1200); }
 ok(await criarConta('Estagiária QA', estEmail), 'estagiária: conta criada e email confirmado');
 
-// 3b) Aceitar o convite (a estagiária vê "Aceitar e entrar")
-const aceitar = page.getByRole('button', { name: /Aceitar e entrar/i }).first();
-if (await aceitar.count()) {
-  await aceitar.click();
-  await page.waitForTimeout(3000);
-  ok(true, 'estagiária: convite aceite');
-} else {
-  ok(false, 'estagiária: sem convite visível para aceitar');
+// 3b) Com o auto-aceite, ao entrar com 1 convite pendente ela deve cair no
+// gabinete sozinha; se tal não acontecer, ainda pode aceitar no cartão.
+let entrou = false;
+for (let i = 0; i < 10; i++) {
+  await page.waitForTimeout(800);
+  const diag = await page.evaluate(async () => {
+    const g = await import('/src/lib/gabinetes.ts');
+    return { active: g.getActiveGabineteId(), txt: document.body.innerText.slice(0, 200) };
+  });
+  if (diag.active) { entrou = true; break; }
+  const aceitar = page.getByRole('button', { name: /Aceitar e entrar/i }).first();
+  if (await aceitar.count()) { await aceitar.click(); await page.waitForTimeout(3000); entrou = true; break; }
 }
+const diagConv = await page.evaluate(async () => {
+  const g = await import('/src/lib/gabinetes.ts');
+  return { active: g.getActiveGabineteId(), texto: document.body.innerText.slice(0, 120).replace(/\s+/g, ' ') };
+});
+console.log('   [diag convites]', JSON.stringify(diagConv));
+ok(entrou, 'estagiária: entrou no gabinete (auto-aceite ou convite)');
+await page.waitForTimeout(2500);
 
 // 4) Prova de segurança nas regras (Firestore emulator): a estagiária não lê o
 // cofre, mas lê os clientes. O token é o dela, autenticado.

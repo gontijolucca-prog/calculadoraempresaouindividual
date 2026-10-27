@@ -428,6 +428,59 @@ function AppContent() {
     return () => { vivo = false; };
   }, [user, conviteToken]);
 
+  // Sem `?convite=` no URL: se o utilizador tem exatamente UM convite pendente
+  // e ainda não tem gabinete ativo, aceita sozinho e entra. O ref trava a
+  // tentativa (uma por login) para não entrar em loop de aceitar/apagar.
+  const autoConviteRef = useRef<string>('');
+  useEffect(() => {
+    if (!user || conviteToken) return; // o link no URL tem o efeito acima
+    if (autoConviteRef.current === user.uid) return;
+    autoConviteRef.current = user.uid; // trava já aqui: uma tentativa por login
+    (async () => {
+      try {
+        const g = await import('./lib/gabinetes');
+        if (g.getActiveGabineteId()) return;
+        const { meus, convites } = await g.listMyGabinetes();
+        // Já é membro de exatamente 1 gabinete e não há convites: entra (útil
+        // quando a adesão ficou feita mas o id ativo não persistiu).
+        if (convites.length === 0) {
+          if (meus.length === 1 && meus[0].id) {
+            g.setActiveGabineteId(meus[0].id);
+            setGabineteNonce(n => n + 1);
+            setView('gabinete');
+          }
+          return;
+        }
+        if (convites.length !== 1) return;
+        const conv = convites[0];
+        const emailLc = (user.email || '').toLowerCase();
+        // O convite mais recente é o último (o array só cresce); é esse o token
+        // que está vivo em `convites/{token}`.
+        const conviteDoEmail = (conv.invites || []).filter(i => (i.email || '').toLowerCase() === emailLc).pop();
+        if (!conviteDoEmail) return;
+        // Captura o token antes de aceitar — acceptInvite limpa `invites`.
+        const token = conviteDoEmail.token || '';
+        await g.acceptInvite(conv.id);
+        g.setActiveGabineteId(conv.id);
+        // O link já foi usado: tenta apagar o doc público (as regras só deixam
+        // ao autor do convite, por isso é best-effort e nunca bloqueia a entrada).
+        if (token) {
+          try {
+            const { doc, deleteDoc } = await import('firebase/firestore');
+            const { db } = await import('./lib/firebase');
+            await deleteDoc(doc(db, 'convites', token));
+          } catch { /* token já apagado ou sem permissão: não bloqueia a entrada */ }
+        }
+        // O gate multi-gabinete lê o id do localStorage: força re-render.
+        setGabineteNonce(n => n + 1);
+        setEmpresasRefresh(n => n + 1);
+        setView('gabinete');
+      } catch (e) {
+        console.warn('[convite] aceitação automática falhou', e);
+      }
+    })();
+  }, [user, conviteToken]);
+
   useEffect(() => { if (VALID_GAB_TABS.has(gabineteTab)) saveToStorage('gabineteTab', gabineteTab); else saveToStorage('gabineteTab', 'gallery'); }, [gabineteTab]);
 
   // Cargo no gabinete ativo — decide que tabs do Gabinete aparecem no menu.

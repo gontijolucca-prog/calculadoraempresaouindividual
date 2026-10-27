@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from 'react';
-import { Users, Mail, Trash2, Pencil, X, Plus, Search, CheckCircle2, Clock, Shield } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Users, Mail, Trash2, Pencil, X, Plus, Search, CheckCircle2, Clock, Shield, Copy, Check } from 'lucide-react';
 import { useGabineteColaboradores, useGabineteClientes } from './lib/useGabinete';
 import { filterActive } from './lib/gabineteSelectors';
 import { upsertColaborador, deleteColaborador, newColaboradorId, getColaboradorInitials, upsertCliente, type Colaborador, type ColaboradorRole } from './lib/gabinete';
-import { getActiveGabineteId, getGabineteMeta, inviteToGabinete, removeFromGabinete } from './lib/gabinetes';
+import { getActiveGabineteId, getGabineteMeta, inviteToGabinete, removeFromGabinete, type GabineteMeta } from './lib/gabinetes';
 
 const roleLabel: Record<ColaboradorRole, string> = {
   admin: 'Admin',
@@ -15,6 +15,26 @@ const roleStyle: Record<ColaboradorRole, string> = {
   contabilista: 'bg-blue-50 text-blue-700 border-blue-200',
   estagiaria: 'bg-amber-50 text-amber-700 border-amber-200',
 };
+
+/** Link público do convite — a página onde a pessoa define a password. */
+const CONVITE_BASE = 'https://estudo360.pt/convite';
+const linkDoConvite = (token: string) => `${CONVITE_BASE}?t=${encodeURIComponent(token)}`;
+
+/** Mensagem pronta a enviar (email, WhatsApp ou à frente) com o link do convite. */
+function mensagemConvite(c: Colaborador, link: string): string {
+  const primeiro = c.nome.trim().split(/\s+/)[0] || c.nome;
+  return `Olá ${primeiro},
+
+Convidei-te para a equipa do gabinete no Estudo360, como ${roleLabel[c.role]}.
+
+${link
+    ? `Abre este link e define a tua password (vale 7 dias):\n${link}`
+    : 'Pede-me um link de convite novo (o anterior já não vale).'}
+
+O email do convite é ${c.email}. Se já tiveres conta Estudo360, na página do link usa «Já tenho conta — entrar».
+
+Qualquer dúvida, diz-me.`;
+}
 
 export default function GabineteEquipa() {
   const colaboradores = useGabineteColaboradores();
@@ -29,6 +49,39 @@ export default function GabineteEquipa() {
   const [envio, setEnvio] = useState<'a-enviar' | 'enviado' | 'sem-servico' | 'falhou' | null>(null);
   const [tokenConvite, setTokenConvite] = useState<string>('');
   const [error, setError] = useState('');
+  // Metadados do gabinete ativo: dão-nos o token guardado em cada convite (para
+  // o botão «Copiar link» das linhas pendentes).
+  const [gabMeta, setGabMeta] = useState<GabineteMeta | null>(null);
+  const [copiado, setCopiado] = useState('');
+  const [reenviandoId, setReenviandoId] = useState<string | null>(null);
+
+  const recarregarMeta = useCallback(async () => {
+    const gabId = getActiveGabineteId();
+    if (!gabId) { setGabMeta(null); return; }
+    const meta = await getGabineteMeta(gabId).catch(() => null);
+    setGabMeta(meta);
+  }, []);
+  useEffect(() => { void recarregarMeta(); }, [recarregarMeta]);
+
+  // Email → token do convite mais recente guardado no gabinete.
+  const tokenPorEmail = useMemo(() => {
+    const porEmail = new Map<string, string>();
+    for (const inv of gabMeta?.invites || []) {
+      const email = (inv.email || '').toLowerCase();
+      if (email && inv.token) porEmail.set(email, inv.token);
+    }
+    return porEmail;
+  }, [gabMeta]);
+
+  const copiar = useCallback(async (texto: string, chave: string) => {
+    try {
+      await navigator.clipboard.writeText(texto);
+      setCopiado(chave);
+      window.setTimeout(() => setCopiado(atual => (atual === chave ? '' : atual)), 2200);
+    } catch {
+      window.prompt('Copia o texto abaixo:', texto);
+    }
+  }, []);
 
   const filtered = useMemo(() => {
     const s = q.toLowerCase().trim();
@@ -77,6 +130,8 @@ export default function GabineteEquipa() {
     await upsertColaborador(col);
     // Convite real ao gabinete: sem isto o colaborador nunca conseguia entrar
     // (só ficava o registo local na lista da equipa).
+    setTokenConvite('');
+    setEnvio(null);
     const gabId = getActiveGabineteId();
     let tokenConviteAtual = '';
     if (gabId) {
@@ -84,6 +139,7 @@ export default function GabineteEquipa() {
         const { token } = await inviteToGabinete(gabId, email, role || 'contabilista');
         setTokenConvite(token);
         tokenConviteAtual = token;
+        await recarregarMeta();
       } catch (e) {
         alert('Funcionário guardado, mas o convite ao gabinete falhou: ' + String((e as Error)?.message || e));
       }
@@ -97,6 +153,7 @@ export default function GabineteEquipa() {
 
   /** Pede ao servidor (Cloudflare) que envie o email do convite. */
   const enviarPeloServidor = async (c: Colaborador, token: string) => {
+    if (!token) { setEnvio(null); return; } // sem link não há email que valha
     setEnvio('a-enviar');
     try {
       const { auth } = await import('./lib/firebase');
@@ -116,14 +173,65 @@ export default function GabineteEquipa() {
     }
   };
 
+  /**
+   * Reenviar = gerar um convite NOVO. `inviteToGabinete` cria outro doc em
+   * `convites/{token}` e apaga os antigos do mesmo email, por isso o link que
+   * já foi partilhado deixa de abrir.
+   */
   const handleReenviar = async (c: Colaborador) => {
-    await upsertColaborador({ ...c, inviteSentAt: Date.now(), status: 'convite_pendente', updatedAt: Date.now() });
     const gabId = getActiveGabineteId();
-    let tokenConviteAtual = '';
-    if (gabId) { try { await inviteToGabinete(gabId, c.email, c.role); } catch { /* já existe ou sem rede */ } }
-    setConvite(c);
-    void enviarPeloServidor(c, tokenConvite);
+    if (!gabId) { alert('Escolhe primeiro o gabinete ativo.'); return; }
+    setReenviandoId(c.id);
+    setEnvio(null);
+    setTokenConvite('');
+    try {
+      const { token } = await inviteToGabinete(gabId, c.email, c.role);
+      setTokenConvite(token);
+      setConvite({ ...c, status: 'convite_pendente' });
+      try {
+        if (c.status !== 'ativo') {
+          await upsertColaborador({ ...c, inviteSentAt: Date.now(), status: 'convite_pendente', updatedAt: Date.now() });
+        }
+      } catch { /* convite já criado; a lista local atualiza à próxima */ }
+      await recarregarMeta();
+      void enviarPeloServidor(c, token);
+    } catch (e) {
+      alert('Não consegui gerar um convite novo: ' + String((e as Error)?.message || e));
+    } finally {
+      setReenviandoId(null);
+    }
   };
+
+  /** Botão «Copiar link» das pendentes: usa o token guardado; se não houver, gera um novo. */
+  const copiarLinkPendente = async (c: Colaborador) => {
+    const token = tokenPorEmail.get(c.email.toLowerCase());
+    if (token) { await copiar(linkDoConvite(token), `link:${c.id}`); return; }
+    await handleReenviar(c); // convite antigo sem token: cria link novo e abre o modal
+  };
+
+  /** Remover da equipa: confirmação explícita + revogação do convite pendente. */
+  const handleRemover = async (c: Colaborador) => {
+    if (!window.confirm(`Remover ${c.nome} da equipa?\n\nDeixa de ter acesso a este gabinete e o link do convite pendente deixa de funcionar.`)) return;
+    const gabId = getActiveGabineteId();
+    if (gabId) {
+      try {
+        // removeFromGabinete revoga também os docs `convites` pendentes deste email.
+        await removeFromGabinete(gabId, c.email, c.linkedUid || undefined);
+      } catch (e) {
+        alert(String((e as Error)?.message || e));
+        return;
+      }
+    }
+    await deleteColaborador(c.id);
+    await recarregarMeta();
+    if (convite?.id === c.id) setConvite(null);
+  };
+
+  const linkConvite = tokenConvite ? linkDoConvite(tokenConvite) : '';
+  const textoConvite = convite ? mensagemConvite(convite, linkConvite) : '';
+  const mailtoConvite = convite
+    ? `mailto:${convite.email}?subject=${encodeURIComponent('Convite para o gabinete no Estudo360')}&body=${encodeURIComponent(textoConvite)}`
+    : '';
 
   return (
     <div className="space-y-4">
@@ -131,7 +239,7 @@ export default function GabineteEquipa() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-[15px] font-[800] flex items-center gap-2 text-[#0B1D2D]"><Users className="w-4 h-4 text-[#2563EB]" /> Equipa do gabinete</h2>
-            <p className="text-[12.5px] text-[#64748B] mt-1">Quem trabalha aqui — convida por email e associa a clientes como responsável, apoio ou supervisor.</p>
+            <p className="text-[12.5px] text-[#64748B] mt-1">Quem trabalha aqui — convida por link e associa a clientes como responsável, apoio ou supervisor.</p>
           </div>
           <button onClick={openAdd} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm font-[600] flex items-center gap-1.5"><Plus className="w-4 h-4" /> Adicionar funcionário</button>
         </div>
@@ -152,7 +260,7 @@ export default function GabineteEquipa() {
       {filtered.length === 0 ? (
         <div className="bg-white rounded-xl border border-[#E2E8F0] p-8 text-center">
           <Users className="w-8 h-8 text-zinc-300 mx-auto mb-2" />
-          <p className="text-sm text-zinc-500">{q || filtroRole !== 'todos' ? 'Nenhum colaborador corresponde à pesquisa.' : 'Ainda sem equipa. Adiciona o primeiro funcionário por email.'}</p>
+          <p className="text-sm text-zinc-500">{q || filtroRole !== 'todos' ? 'Nenhum colaborador corresponde à pesquisa.' : 'Ainda sem equipa. Adiciona o primeiro funcionário e recebe um link de convite.'}</p>
           {q === '' && filtroRole === 'todos' && (
             <button onClick={openAdd} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm font-medium">Adicionar funcionário</button>
           )}
@@ -183,24 +291,38 @@ export default function GabineteEquipa() {
                     <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full border text-[11px] font-[600] ${roleStyle[c.role]}`}>{roleLabel[c.role]}</span></td>
                     <td className="px-4 py-3">
                       {c.status === 'ativo' ? (
-                        <span className="inline-flex items-center gap-1 text-[12px] text-emerald-700"><CheckCircle2 className="w-3.5 h-3.5" /> Ativo{c.linkedUid ? '' : ' (sem link)'}</span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-[600] bg-emerald-50 text-emerald-700 border-emerald-200" title={c.linkedUid ? 'Conta ligada a este registo' : 'Conta ainda não ligada a este registo'}>
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Ativa
+                        </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[12px] text-amber-700"><Clock className="w-3.5 h-3.5" /> Convite pendente</span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-[600] bg-amber-50 text-amber-800 border-amber-200">
+                          <Clock className="w-3.5 h-3.5" /> Convite pendente
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex justify-end gap-1">
+                      <div className="flex flex-wrap items-center justify-end gap-1">
                         <button onClick={() => openEdit(c)} className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-600" title="Editar"><Pencil className="w-3.5 h-3.5" /></button>
-                        {c.status === 'convite_pendente' && <button onClick={() => handleReenviar(c)} className="p-1.5 rounded-lg hover:bg-zinc-100 text-[#2563EB]" title="Reenviar convite"><Mail className="w-3.5 h-3.5" /></button>}
-                        <button onClick={async () => {
-                          if (!confirm(`Remover ${c.nome}? Deixa de ter acesso a este gabinete.`)) return;
-                          const gabId = getActiveGabineteId();
-                          if (gabId) {
-                            try { await removeFromGabinete(gabId, c.email, c.linkedUid || undefined); }
-                            catch (e) { alert(String((e as Error)?.message || e)); return; }
-                          }
-                          await deleteColaborador(c.id);
-                        }} className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-600" title="Remover"><Trash2 className="w-3.5 h-3.5" /></button>
+                        {c.status === 'convite_pendente' && (
+                          <>
+                            <button
+                              onClick={() => void copiarLinkPendente(c)}
+                              disabled={reenviandoId === c.id}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[#E2E8F0] text-[11.5px] font-[600] text-[#2563EB] hover:bg-[#EFF6FF] disabled:opacity-50"
+                              title={tokenPorEmail.has(c.email.toLowerCase()) ? 'Copiar o link do convite pendente' : 'Ainda sem link guardado — gera um novo'}
+                            >
+                              {copiado === `link:${c.id}` ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                              {copiado === `link:${c.id}` ? 'Copiado' : 'Copiar link'}
+                            </button>
+                            <button
+                              onClick={() => void handleReenviar(c)}
+                              disabled={reenviandoId === c.id}
+                              className="p-1.5 rounded-lg hover:bg-zinc-100 text-[#2563EB] disabled:opacity-50"
+                              title="Reenviar — gera um link novo (o antigo deixa de valer)"
+                            ><Mail className="w-3.5 h-3.5" /></button>
+                          </>
+                        )}
+                        <button onClick={() => void handleRemover(c)} className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-600" title="Remover da equipa"><Trash2 className="w-3.5 h-3.5" /></button>
                       </div>
                     </td>
                   </tr>
@@ -249,73 +371,79 @@ export default function GabineteEquipa() {
       </div>
 
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[12px] leading-[17px] text-amber-900">
-        <strong>Como funciona o convite por email:</strong> ao adicionar um funcionário, criamos o registo com estado <em>Convite pendente</em>. A pessoa deve <strong>criar conta no estudo360 com esse mesmo email</strong> (Registo). Ao fazer login, o gabinete deteta o email e marca o colaborador como <em>Ativo</em> automaticamente (link por email). Cada login/officeId vê a sua própria equipa isolada (Firestore <code>gabinete/{'{'}officeId{'}'}/colaboradores</code>).
+        <strong>Como funciona o convite:</strong> ao adicionar um funcionário criamos o registo e um <strong>link de convite único</strong> (vale 7 dias). Copia o link ou a mensagem e envia tu — <strong>o envio automático de email não está configurado</strong>, por isso não prometemos email. A pessoa abre o link, define a password e entra; a linha passa a <em>Ativa</em>. Reenviar gera um link novo e invalida o antigo; remover da equipa revoga os convites pendentes. Cada gabinete vê a sua própria equipa isolada (Firestore <code>gabinete/{'{'}officeId{'}'}/colaboradores</code>).
       </div>
 
       {convite && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setConvite(null)}>
-          <div className="w-full max-w-[520px] bg-white rounded-2xl p-6 border shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold">Convite para {convite.nome}</h3>
-              <button onClick={() => setConvite(null)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button>
+          <div className="w-full max-w-[560px] max-h-[90vh] overflow-y-auto bg-white rounded-2xl p-6 border shadow-xl" role="dialog" aria-modal="true" aria-label={`Convite para ${convite.nome}`} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="font-semibold">Convite para {convite.nome}</h3>
+                <p className="text-[12px] text-[#64748B] mt-0.5">{convite.email} · {roleLabel[convite.role]}</p>
+              </div>
+              <button onClick={() => setConvite(null)} className="p-1 hover:bg-zinc-100 rounded" aria-label="Fechar"><X className="w-4 h-4" /></button>
             </div>
-            {envio && (
-              <div className={`mt-3 rounded-xl px-3 py-2 text-[12.5px] font-[600] ${envio === 'enviado' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : envio === 'a-enviar' ? 'bg-slate-50 text-slate-600 border border-slate-200' : 'bg-amber-50 text-amber-900 border border-amber-200'}`}>
-                {envio === 'enviado' && `Email enviado para ${convite.email} pelo servidor.`}
-                {envio === 'a-enviar' && 'A enviar o email pelo servidor…'}
-                {envio === 'sem-servico' && 'O servidor ainda não tem serviço de email configurado. Usa a mensagem abaixo.'}
-                {envio === 'falhou' && 'Não consegui enviar o email agora. Usa a mensagem abaixo.'}
+
+            {envio === 'enviado' && (
+              <div className="mt-3 rounded-xl px-3 py-2 text-[12.5px] font-[600] bg-emerald-50 text-emerald-800 border border-emerald-200">Email enviado para {convite.email} pelo servidor.</div>
+            )}
+            {envio === 'a-enviar' && (
+              <div className="mt-3 rounded-xl px-3 py-2 text-[12.5px] font-[600] bg-slate-50 text-slate-600 border border-slate-200">A tentar enviar o email pelo servidor…</div>
+            )}
+            {(envio === 'sem-servico' || envio === 'falhou') && (
+              <div className="mt-3 rounded-xl px-3 py-2 text-[12.5px] leading-5 bg-amber-50 text-amber-900 border border-amber-200">
+                <b>O envio automático de email não está configurado.</b> Partilha o link abaixo (email, WhatsApp ou à frente) — é este link que dá acesso.
               </div>
             )}
-            <p className="mt-2 text-[13px] text-[#475569] leading-relaxed">
-              O convite já está registado para <b>{convite.email}</b> com o cargo <b>{roleLabel[convite.role]}</b>.
-              <b> Não enviamos email automático</b> — copia a mensagem abaixo e envia-a (email, WhatsApp ou à frente).
-            </p>
-            <pre className="mt-3 whitespace-pre-wrap rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 text-[12px] leading-5 text-[#334155]">{`Olá ${convite.nome.split(' ')[0]},
 
-Fui convidar-te para a equipa do gabinete no Estudo360.
+            {linkConvite ? (
+              <>
+                <label htmlFor="convite-link" className="mt-4 block text-[11px] font-[700] uppercase tracking-[0.8px] text-[#64748B]">
+                  Link do convite <span className="normal-case tracking-normal font-[500]">· válido 7 dias</span>
+                </label>
+                <div className="mt-1.5 flex flex-wrap gap-2">
+                  <input
+                    id="convite-link"
+                    readOnly
+                    value={linkConvite}
+                    onFocus={e => e.currentTarget.select()}
+                    onClick={e => e.currentTarget.select()}
+                    className="flex-1 min-w-[220px] px-3 py-2 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] text-[12px] text-[#334155]"
+                  />
+                  <button
+                    onClick={() => void copiar(linkConvite, 'modal-link')}
+                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#0F172A] text-white text-[12.5px] font-[600]"
+                  >
+                    {copiado === 'modal-link' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiado === 'modal-link' ? 'Copiado' : 'Copiar link'}
+                  </button>
+                </div>
+                <p className="mt-1.5 text-[11px] text-[#94A3B8]">
+                  <a href={linkConvite} target="_blank" rel="noopener" className="text-[#0677FF] font-[600]">Abrir a página do convite</a> para testar. A pessoa define a password e entra no gabinete.
+                </p>
+              </>
+            ) : (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[12.5px] leading-5 text-amber-900">
+                Ainda não há link para este convite — o convite ao gabinete não foi criado.{' '}
+                <button onClick={() => void handleReenviar(convite)} disabled={reenviandoId === convite.id} className="font-[700] underline disabled:opacity-50">Gerar link novo</button>
+              </div>
+            )}
 
-1. Abre https://estudo360.pt
-2. Cria conta (ou entra) com este email: ${convite.email}
-3. Confirma o email
-4. Em «Gabinete», aceita o convite «Aceitar e entrar»
+            <p className="mt-4 text-[11px] font-[700] uppercase tracking-[0.8px] text-[#64748B]">Mensagem pronta a enviar</p>
+            <pre className="mt-1.5 whitespace-pre-wrap rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 text-[12px] leading-5 text-[#334155] max-h-[180px] overflow-auto">{textoConvite}</pre>
 
-Qualquer dúvida, diz-me.`}</pre>
             <div className="mt-4 flex flex-wrap justify-end gap-2">
               <button
-                onClick={async () => {
-                  const texto = `Olá ${convite.nome.split(' ')[0]},
-
-Fui convidar-te para a equipa do gabinete no Estudo360.
-
-1. Abre https://estudo360.pt
-2. Cria conta (ou entra) com este email: ${convite.email}
-3. Confirma o email
-4. Em «Gabinete», aceita o convite «Aceitar e entrar»
-
-Qualquer dúvida, diz-me.`;
-                  try { await navigator.clipboard.writeText(texto); } catch {}
-                }}
+                onClick={() => void copiar(textoConvite, 'modal-msg')}
                 className="px-4 py-2 rounded-xl border border-[#E2E8F0] text-sm font-[600]"
-              >Copiar mensagem</button>
+              >{copiado === 'modal-msg' ? 'Mensagem copiada' : 'Copiar mensagem'}</button>
               <a
-                href={`mailto:${convite.email}?subject=${encodeURIComponent('Convite para o gabinete no Estudo360')}&body=${encodeURIComponent(`Olá ${convite.nome.split(' ')[0]},
-
-Fui convidar-te para a equipa do gabinete no Estudo360.
-
-1. Abre https://estudo360.pt
-2. Cria conta (ou entra) com este email: ${convite.email}
-3. Confirma o email
-4. Em «Gabinete», aceita o convite «Aceitar e entrar»
-
-Qualquer dúvida, diz-me.`)}`}
-                className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm font-[600]"
-              >Abrir no email</a>
+                href={mailtoConvite}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm font-[600]"
+              ><Mail className="w-4 h-4" /> Abrir no email</a>
             </div>
-            {tokenConvite && (
-              <p className="mt-2 text-[11px] text-[#64748B]">Link direto: <a href={`https://estudo360.pt/convite?t=${tokenConvite}`} target="_blank" rel="noopener" className="text-[#0677FF] font-[600]">estudo360.pt/convite</a> (a pessoa define a password e entra no gabinete).</p>
-            )}
-            <p className="mt-3 text-[11px] text-[#94A3B8]">O acesso só fica ativo depois de a pessoa definir a password e entrar.</p>
+            <p className="mt-3 text-[11px] text-[#94A3B8]">O acesso só fica ativo depois de a pessoa abrir o link e definir a password. Reenviar gera um link novo e invalida o anterior.</p>
           </div>
         </div>
       )}

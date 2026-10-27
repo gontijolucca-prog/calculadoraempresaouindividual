@@ -43,11 +43,15 @@ async function criarConta(nome, addr) {
   const sair2 = page.getByRole('button', { name: /Sair/i }).first();
   if (await sair2.count()) { await sair2.click(); await page.waitForTimeout(900); }
   await page.goto(BASE, { waitUntil: 'load' });
-  await page.waitForTimeout(1300);
-  const entrar = page.getByRole('button', { name: /^Entrar$/ }).first();
-  if (await entrar.count()) await entrar.click();
-  await page.waitForTimeout(400);
-  await page.locator('input[placeholder="nome@empresa.pt"]').first().fill(addr);
+  await page.waitForTimeout(1500);
+  const campoEmail = page.locator('input[placeholder="nome@empresa.pt"]').first();
+  if (!(await campoEmail.count())) {
+    const entrar = page.getByRole('button', { name: /^Entrar$/ }).first();
+    if (await entrar.count()) await entrar.click({ force: true });
+    await page.waitForTimeout(900);
+  }
+  await campoEmail.waitFor({ timeout: 10000 });
+  await campoEmail.fill(addr);
   await page.locator('input[type="password"]').first().fill(pass);
   await page.getByRole('button', { name: /^Entrar$/ }).last().click();
   await page.waitForTimeout(2600);

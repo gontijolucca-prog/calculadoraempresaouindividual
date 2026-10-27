@@ -25,7 +25,7 @@ export interface GabineteMeta {
   memberUids: string[];
   members: Record<string, { role: GabineteRole; addedAt: number; email: string }>;
   inviteEmails: string[]; // lowercased
-  invites: Array<{ email: string; role: GabineteRole; invitedAt: number; invitedBy: string; invitedByEmail: string }>;
+  invites: Array<{ email: string; role: GabineteRole; invitedAt: number; invitedBy: string; invitedByEmail: string; token?: string; expira?: number }>;
 }
 
 const ACTIVE_KEY = 'gabinete:activeId';
@@ -153,7 +153,7 @@ export async function listMyGabinetes(): Promise<{ meus: GabineteMeta[]; convite
   try {
     const q1 = query(collection(db, 'gabinetes'), where('memberUids', 'array-contains', uid));
     const s1 = await getDocs(q1);
-    meus = s1.docs.map(d => d.data() as GabineteMeta);
+    meus = s1.docs.map(d => ({ ...(d.data() as GabineteMeta), id: d.id }));
   } catch (e) {
     console.warn('[gabinetes] list membros falhou', e);
   }
@@ -163,7 +163,7 @@ export async function listMyGabinetes(): Promise<{ meus: GabineteMeta[]; convite
     try {
       const q2 = query(collection(db, 'gabinetes'), where('inviteEmails', 'array-contains', emailLc));
       const s2 = await getDocs(q2);
-      const all = s2.docs.map(d => d.data() as GabineteMeta);
+      const all = s2.docs.map(d => ({ ...(d.data() as GabineteMeta), id: d.id }));
       // filtra os que já sou membro (evita duplicar)
       const meusIds = new Set(meus.map(g => g.id));
       convites = all.filter(g => !meusIds.has(g.id));
@@ -257,6 +257,28 @@ export function novoTokenConvite(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+/**
+ * Apaga os documentos públicos `convites/{token}` deste gabinete para um email.
+ * Usado ao reenviar (o link antigo deixa de valer) e ao remover da equipa.
+ * As regras só deixam apagar a quem convidou; uma falha de permissão/rede nunca
+ * bloqueia o fluxo principal.
+ */
+export async function revokeInviteToken(gabineteId: string, email: string): Promise<void> {
+  const emailLc = normalizeEmail(email);
+  if (!gabineteId || !emailLc) return;
+  try {
+    const q = query(
+      collection(db, 'convites'),
+      where('gabineteId', '==', gabineteId),
+      where('email', '==', emailLc),
+    );
+    const snap = await getDocs(q);
+    await Promise.all(snap.docs.map((d) => deleteDoc(d.ref).catch(() => {})));
+  } catch (e) {
+    console.warn('[gabinetes] revogar convites antigos falhou', e);
+  }
+}
+
 /** Cria o convite no gabinete e devolve o token para o link/email. */
 export async function inviteToGabinete(gabineteId: string, email: string, role: GabineteRole = 'contabilista'): Promise<{ token: string }> {
   const u = auth.currentUser;
@@ -269,6 +291,9 @@ export async function inviteToGabinete(gabineteId: string, email: string, role: 
   const data = snap.data() as GabineteMeta;
   // só membros podem convidar
   if (!data.memberUids?.includes(u.uid) && data.ownerUid !== u.uid) throw new Error('Sem permissão');
+  // Reenviar tem de invalidar os links antigos: apaga os docs `convites` deste
+  // email antes de criar o novo (o token antigo deixa de abrir a página).
+  await revokeInviteToken(gabineteId, emailLc);
   const token = novoTokenConvite();
   const expira = Date.now() + 7 * 24 * 60 * 60 * 1000;
   await updateDoc(ref, {
@@ -301,7 +326,10 @@ export async function removeFromGabinete(gabineteId: string, email: string, uid?
   const emailLc = normalizeEmail(email);
   const ref = doc(db, 'gabinetes', gabineteId);
   const snap = await getDoc(ref);
-  if (!snap.exists()) return;
+  if (!snap.exists()) {
+    await revokeInviteToken(gabineteId, emailLc);
+    return;
+  }
   const data = snap.data() as GabineteMeta;
   if ((uid && data.ownerUid === uid) || normalizeEmail(data.ownerEmail || '') === emailLc) {
     throw new Error('O dono do gabinete não pode ser removido.');
@@ -321,6 +349,10 @@ export async function removeFromGabinete(gabineteId: string, email: string, uid?
     members,
     updatedAt: Date.now(),
   } as any);
+
+  // Sem isto o link do convite pendente continuava a funcionar depois de a
+  // pessoa ser removida da equipa.
+  await revokeInviteToken(gabineteId, emailLc);
 }
 
 export async function getGabineteMeta(id: string): Promise<GabineteMeta | null> {

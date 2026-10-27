@@ -15,7 +15,10 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['gabineteId', 'gabineteNome', 'email', 'role', 'invitedBy', 'invitedByEmail', 'createdAt', 'expiresAt'])
         && request.resource.data.email is string
         && request.resource.data.gabineteId is string;
-      allow delete: if request.auth != null && resource.data.invitedBy == request.auth.uid;
+      allow delete: if request.auth != null && (
+        resource.data.invitedBy == request.auth.uid
+        || (request.auth.token.email is string && request.auth.token.email.lower() == resource.data.email)
+      );
       allow update: if false;
     }
 

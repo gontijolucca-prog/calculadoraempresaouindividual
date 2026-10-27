@@ -102,7 +102,7 @@ for (const ecra of ecras) {
     await page.setViewportSize({ width: w, height: w === 375 ? 812 : 900 });
     await page.waitForTimeout(300);
     const m = await page.evaluate(() => ({
-      vistaReal: document.querySelector('#main-content')?.getAttribute('data-view') || null,
+      vistaReal: document.querySelector('[data-view]')?.getAttribute('data-view') || null,
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       texto: document.body.innerText.slice(0, 20000),
       imagensQuebradas: Array.from(document.images).filter((i) => i.complete && i.naturalWidth === 0).length,

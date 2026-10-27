@@ -25,7 +25,6 @@ import { getActiveGabineteId, getGabineteMeta, clearActiveGabineteAndReload } fr
 import { logAudit } from './lib/audit';
 import { toast as notificar } from './lib/toast';
 import { ToastHost } from './components/ToastHost';
-import NotificacoesBell from './components/NotificacoesBell';
 import PilaresEditor from './components/PilaresEditor';
 import { obterObrigacaoCelula, obterObrigacoesCelula, estadoCelula, construirObrigacaoDaCelula, chaveCelula, resolverPilarLegado, type CellKey } from './lib/mapaCelulas';
 import { RelatorioPdf } from './lib/reportPdf';
@@ -208,50 +207,6 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
       {/* Guia escondido — só acessível pela bola do AI Contabilista (MiniDock), em todas as páginas */}
       {guideView && <div className="hidden-dock-triggers"><GuiaSugestao view={guideView} onStart={startTour} /></div>}
 
-      {/* Header — sem tabs no topo; navegação continua no dropdown da sidebar */}
-      <div className="sticky top-0 z-20 border-b border-zinc-200 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0677FF] text-sm font-bold text-white">360</div>
-            <div>
-              <div className="font-semibold leading-none">Gabinete</div>
-              <div className="hidden text-xs text-zinc-500 sm:block">{functionLabel} · {functionDesc}</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <NotificacoesBell clientes={clientes} obrigacoes={obrigacoesRaw} alertas={alertasAll} onGo={(t) => setTab(t as GabineteTab)} />
-            <button onClick={clearActiveGabineteAndReload} className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">
-              {(activeGabineteNome || 'Gabinete').slice(0, 28)} · Trocar
-            </button>
-          </div>
-          <div className="hidden sm:flex items-center gap-2 text-right text-xs text-zinc-500">
-            <span>{clientes.length} clientes</span>
-            <span className="opacity-30">•</span>
-            <span>{tarefas.filter(t=>t.estado!=='done').length} tarefas abertas</span>
-            <span className="opacity-30">•</span>
-            {can(effectiveRole, 'ver-cofre') ? <span>{cofre.length} acessos</span> : <span>cargo: {effectiveRole}</span>}
-            <span className="opacity-30">•</span>
-            {sync.queued > 0 || sync.error ? (
-              <button
-                onClick={() => flushOutbox().catch(()=>{})}
-                title={sync.error || 'Operações à espera de envio'}
-                className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 font-semibold text-amber-800 hover:bg-amber-100"
-              >
-                {sync.queued > 0 ? `${sync.queued} por enviar — Repetir` : 'Falha — Repetir'}
-              </button>
-            ) : sync.pending > 0 ? (
-              <span className="text-[#0677FF]">A sincronizar…</span>
-            ) : (
-              <span className="text-emerald-700">Sincronizado ✓</span>
-            )}
-          </div>
-          <button onClick={clearActiveGabineteAndReload} className="sm:hidden inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-700">Trocar</button>
-          <div className="sm:hidden text-right text-[11px] leading-tight text-zinc-500">
-            <div>{clientes.length} clientes</div>
-            <div>{tarefas.filter(t=>t.estado!=='done').length} abertas</div>
-          </div>
-        </div>
-      </div>
       {activeEmpresaNome && (
         <div className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-3">
           <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm flex items-center gap-2">

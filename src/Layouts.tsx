@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
 import { cn } from './lib/utils';
+import TopBarGlobal from './components/TopBarGlobal';
 import type { AppMode } from './ModeSelector';
 
 type ViewType =
@@ -16,6 +17,16 @@ type ViewType =
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal'
   | 'previsa' | 'office-settings' | 'empresas' | 'historico' | 'exportar' | 'hub'
   | 'gabinete' | 'proposta';
+
+
+// Títulos usados na barra de topo global (uma por vista).
+const TOPBAR_TITLES: Partial<Record<ViewType, string>> = {
+  empresas: 'Lista de Empresas', profile: 'Perfil do Cliente', tax: 'Fiscal', vehicle: 'Viaturas',
+  aquisicao: 'Aquisição', ticket: 'Tickets', selfss: 'SS Independente', diagnostico: 'Diagnóstico',
+  imoveis: 'Imóveis', imt: 'IMT', salario: 'Salário', irs: 'IRS', previsa: 'Previsa',
+  legal: 'Base Legal', gabinete: 'Gabinete', proposta: 'Fazer Proposta', historico: 'Histórico',
+  exportar: 'Exportar', hub: 'Simuladores', 'office-settings': 'Escritório',
+};
 
 export interface LayoutProps {
   view: ViewType;
@@ -146,6 +157,25 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
   useEffect(() => { if (active === 'gabinete') setGabineteOpen(true); }, [active]);
   // Auto-fechar desativado a pedido — dropdowns só fecham ao clicar na seta
 
+  const [menuFeedback, setMenuFeedback] = useState<string>('');
+  const feedbackTimer = useRef<number | null>(null);
+  const sinalizarMenuAtivo = (btn: HTMLElement, label: string) => {
+    const main = document.getElementById('main-scroll') || document.getElementById('main-content');
+    if (main) {
+      main.scrollTo({ top: 0, behavior: 'smooth' });
+      main.classList.remove('app-refresh');
+      void main.offsetWidth;
+      main.classList.add('app-refresh');
+    }
+    document.body.classList.remove('menu-pulse');
+    void document.body.offsetWidth;
+    document.body.classList.add('menu-pulse');
+    window.setTimeout(() => document.body.classList.remove('menu-pulse'), 1200);
+    setMenuFeedback(`Já estás em «${label}»`);
+    if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
+    feedbackTimer.current = window.setTimeout(() => setMenuFeedback(''), 1600);
+  };
+
   const GAB_TABS = [
   { id: 'visao-geral', label: 'Visão geral', Icon: LayoutDashboard, desc: 'Ficha 360' },
   { id: 'dashboard', label: 'Quadro de obrigações', Icon: Calendar, desc: 'JAN-DEZ: v Concluído · ✕ Não concluído' },
@@ -246,7 +276,18 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
         </div>
       </div>
 
-      <nav aria-label="Navegação principal" className="flex-1 overflow-y-auto px-2 py-1 pb-16">
+      <nav
+        aria-label="Navegação principal"
+        className="flex-1 overflow-y-auto px-2 py-1 pb-16"
+        onClickCapture={(e) => {
+          const btn = (e.target as HTMLElement).closest('button');
+          if (!btn || btn.getAttribute('aria-current') !== 'page') return;
+          // Grupos com seta abrem/fecham o submenu; não são "já estou aqui".
+          if (btn.hasAttribute('aria-expanded')) return;
+          const label = (btn.innerText || '').trim().split('\n')[0] || 'esta área';
+          sinalizarMenuAtivo(btn, label);
+        }}
+      >
         <SectionLabel>Carteira</SectionLabel>
             {/* Lista de Empresas / Trocar de Empresa: sempre a primeira opção e
                 presa ao topo da navegação (sticky). */}
@@ -376,17 +417,19 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
       )}
 
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="md:hidden flex items-center gap-2 bg-white border-b border-slate-200 px-3 min-h-[52px] shrink-0">
-          <button type="button" onClick={() => setDrawerOpen(true)} className="p-3 -ml-1 rounded-[8px] text-slate-600 hover:bg-slate-100" aria-label="Abrir menu" aria-expanded={drawerOpen}>
-            <Menu className="w-5 h-5" />
-          </button>
-          <button type="button" onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }} className="flex items-center gap-2 rounded-[8px] px-1 py-1 -ml-1 hover:bg-slate-50 transition-colors" aria-label="Ir para a Lista de Empresas">
-            <Logo className="w-7 h-7" />
-            <span className="text-[13px] font-[800] text-[#0B1D2D]">ESTUDO<span className="text-[#0677FF]">360°</span></span>
-          </button>
-        </div>
-
-        <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto pb-28">
+        <TopBarGlobal
+          title={view === 'gabinete' ? 'Gabinete' : (TOPBAR_TITLES[view] || 'Estudo360')}
+          subtitle={view === 'gabinete' ? (GAB_TABS.find((x) => x.id === gabineteTab)?.label || 'Centro de operação') : 'Estudo360 · análise e decisão'}
+          onGo={(tab) => { onGabineteTab?.(tab); setView('gabinete' as ViewType); }}
+          onOpenMenu={() => setDrawerOpen(true)}
+        />
+        {menuFeedback && (
+          <div data-menu-feedback="1" role="status" aria-live="polite"
+            className="pointer-events-none fixed left-1/2 top-16 z-40 -translate-x-1/2 rounded-full bg-[#0F172A] px-4 py-2 text-xs font-semibold text-white shadow-lg">
+            {menuFeedback}
+          </div>
+        )}
+        <main id="main-scroll" tabIndex={-1} className="flex-1 overflow-y-auto pb-28">
           {children}
           <div aria-hidden className="h-20" />
         </main>

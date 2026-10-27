@@ -29,6 +29,9 @@
   .msg.err{display:block;background:#FEF2F2;color:#991B1B;border:1px solid #FECACA}
   .msg.ok{display:block;background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0}
   .foot{margin-top:18px;font-size:11px;color:#94A3B8;text-align:center}
+  .home{display:inline-block;margin-top:14px;padding:12px 18px;border-radius:12px;background:var(--ink);color:#fff;text-decoration:none;font-weight:700;font-size:14px}
+  .home:hover{background:#33332f}
+  .hint{margin-top:12px;font-size:12px;color:#64748B;line-height:1.5}
 </style>
 </head>
 <body>
@@ -59,8 +62,9 @@
     </div>
 
     <div id="dead" style="display:none">
-      <p class="sub">Este convite já não é válido ou expirou. Pede um novo convite ao gabinete.</p>
-      <a href="https://estudo360.pt" style="color:var(--blue);font-weight:600;font-size:14px">Ir para estudo360.pt</a>
+      <p class="sub" id="deadReason">Este convite já não é válido ou expirou. Pede um novo link ao gabinete.</p>
+      <a class="home" href="https://estudo360.pt/">Ir para estudo360.pt</a>
+      <p class="hint">Se já tens conta Estudo360, entra normalmente pelo site. Se estavas a aceitar um convite, pede ao gabinete um link novo (os links valem 7 dias e cada reenvio invalida o anterior).</p>
     </div>
 
     <p class="foot">A conta fica ligada ao gabinete que te convidou.</p>
@@ -83,8 +87,15 @@
   const hide = (id) => { $(id).style.display = 'none'; };
   const setMsg = (txt, kind = 'err') => { const m = $('msg'); m.className = 'msg ' + kind; m.textContent = txt; };
   const setSub = (txt) => { $('sub').textContent = txt; };
+  /** Convite inválido: some o formulário e mostra o motivo + saída para o site. */
+  const dead = (motivo) => {
+    $('deadReason').textContent = motivo || 'Este convite já não é válido ou expirou. Pede um novo link ao gabinete.';
+    setSub('Este link de convite já não dá acesso.');
+    hide('formWrap');
+    show('dead');
+  };
 
-  if (!token) { setSub('Link incompleto.'); show('dead'); }
+  if (!token) { dead('O link está incompleto — falta o código do convite. Abre o link completo que recebeste.'); }
   else {
     try {
       const [{ initializeApp }, authMod, fsMod] = await Promise.all([
@@ -99,18 +110,25 @@
       const db = fsMod.getFirestore(app);
       if (emu) { authMod.connectAuthEmulator(auth, 'http://127.0.0.1:9199', { disableWarnings: true }); fsMod.connectFirestoreEmulator(db, '127.0.0.1', 8180); }
 
-      const snap = await fsMod.getDoc(fsMod.doc(db, 'convites', token)).catch(() => null);
-      if (!snap || !snap.exists()) { setSub('Convite não encontrado.'); show('dead'); }
-      else {
+      let falhouLeitura = false;
+      const snap = await fsMod.getDoc(fsMod.doc(db, 'convites', token)).catch(() => { falhouLeitura = true; return null; });
+      if (falhouLeitura) {
+        dead('Não consegui verificar o convite. Verifica a ligação à internet e tenta outra vez.');
+      } else if (!snap || !snap.exists()) {
+        dead('Convite não encontrado. Pode ter sido substituído por um link mais recente ou removido pela equipa — pede um link novo ao gabinete.');
+      } else {
         const c = snap.data();
-        if (c.expiresAt && c.expiresAt < Date.now()) { setSub('Convite expirado.'); show('dead'); }
-        else {
+        if (!c || !c.gabineteId || !c.email) {
+          dead('Convite incompleto ou inválido. Pede um link novo ao gabinete.');
+        } else if (c.expiresAt && c.expiresAt < Date.now()) {
+          dead('Este convite expirou (os links valem 7 dias). Pede um link novo ao gabinete.');
+        } else {
           const email = String(c.email || '').toLowerCase();
           $('email').textContent = email;
           setSub(`Convite para o gabinete ${c.gabineteNome || ''} — define a tua password para entrar.`.replace('  ', ' '));
           show('formWrap');
 
-          const p1 = $('p1'), p2 = $('p2'), go = $('go');
+          const p1 = $('p1'), p2 = $('p2'), go = $('go'), loginBtn = $('login');
           const regras = {
             len: (v) => v.length >= 10,
             upper: (v) => /[A-ZÁÉÍÓÚÂÊÔÃÕÇ]/.test(v),
@@ -133,38 +151,54 @@
           p1.addEventListener('input', avaliar); p2.addEventListener('input', avaliar);
 
           const entrar = async (criar) => {
-            if (!avaliar()) return;
-            go.disabled = true; $('login').disabled = true;
+            const v = p1.value;
+            if (criar) {
+              if (!avaliar()) {
+                setMsg('A password nova precisa de 10 caracteres, com maiúscula, minúscula e número — e a repetição tem de ser igual.');
+                return;
+              }
+            } else if (!v || v !== p2.value) {
+              // Conta que já existe: vale a password antiga (pode ter menos de 10
+              // caracteres), por isso não aplicamos as regras de password nova.
+              setMsg('Escreve a password da tua conta e repete-a igual para entrar.');
+              return;
+            }
+            go.disabled = true; loginBtn.disabled = true;
             setMsg(criar ? 'A criar a conta…' : 'A entrar…', 'ok');
             try {
               if (criar) {
-                await authMod.createUserWithEmailAndPassword(auth, email, p1.value);
+                await authMod.createUserWithEmailAndPassword(auth, email, v);
               } else {
-                await authMod.signInWithEmailAndPassword(auth, email, p1.value);
+                await authMod.signInWithEmailAndPassword(auth, email, v);
               }
               location.href = '/?convite=' + encodeURIComponent(token);
             } catch (e) {
               const code = e?.code || '';
               if (code === 'auth/email-already-in-use') {
-                $('login').style.display = 'block';
-                setMsg('Já existe uma conta com este email. Carrega em «Já tenho conta — entrar».');
+                loginBtn.style.display = 'block';
+                setMsg('Já existe uma conta Estudo360 com este email. Se és tu, carrega em «Já tenho conta — entrar» e usa a tua password atual.');
               } else if (code === 'auth/weak-password') {
                 setMsg('Password fraca — usa pelo menos 10 caracteres.');
-              } else if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') {
-                setMsg('Password errada para esta conta.');
+              } else if (code === 'auth/wrong-password' || code === 'auth/invalid-credential' || code === 'auth/user-not-found') {
+                setMsg('Não entrou: password errada ou conta inexistente para este email. Se ainda não tens conta, usa «Criar conta e entrar».');
+              } else if (code === 'auth/too-many-requests') {
+                setMsg('Demasiadas tentativas. Espera um pouco e tenta outra vez.');
+              } else if (code === 'auth/network-request-failed') {
+                setMsg('Sem ligação à internet. Verifica a rede e tenta outra vez.');
               } else {
                 setMsg('Não consegui: ' + (e?.message || code || 'erro'));
               }
             } finally {
-              go.disabled = false; $('login').disabled = false;
+              avaliar();
+              loginBtn.disabled = false;
             }
           };
           go.addEventListener('click', () => entrar(true));
-          $('login').addEventListener('click', () => entrar(false));
+          loginBtn.addEventListener('click', () => entrar(false));
         }
       }
     } catch (e) {
-      setSub('Sem ligação. Tenta outra vez.'); show('dead');
+      dead('Sem ligação à internet. Verifica a rede e abre outra vez o link do convite.');
     }
   }
 </script>

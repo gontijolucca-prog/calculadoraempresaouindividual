@@ -86,9 +86,9 @@ await page.mouse.click(6, 6).catch(() => {});
 await page.waitForTimeout(500);
 
 ok(await criarConta('Funcionária Ciclo', func), 'funcionária criada');
-const aceitar = page.getByRole('button', { name: /Aceitar e entrar/i }).first();
-ok(await aceitar.count() === 1, 'convite aparece à funcionária');
-if (await aceitar.count()) { await aceitar.click(); await page.waitForTimeout(3000); }
+// Auto-aceite: ao entrar com 1 convite pendente, segue direto para o gabinete.
+await page.waitForTimeout(5000);
+ok(/Gabinete|Lista de Empresas/i.test(await page.evaluate(() => document.body.innerText)), 'auto-aceite e entrada na app');
 
 const colab = await page.evaluate(async (alvo) => {
   const g = await import('/src/lib/gabinetes.ts');
@@ -97,8 +97,9 @@ const colab = await page.evaluate(async (alvo) => {
   const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer owner' }, body: JSON.stringify({ structuredQuery: { from: [{ collectionId: 'colaboradores' }], where: { fieldFilter: { field: { fieldPath: 'email' }, op: 'EQUAL', value: { stringValue: alvo } } }, limit: 1 } }) });
   const j = await r.json().catch(() => []);
   const f = (Array.isArray(j) ? j.find((x) => x.document)?.document?.fields : null) || null;
-  return f ? { status: f.status?.stringValue, linked: !!f.linkedUid?.stringValue } : null;
+  return f ? { status: f.status?.stringValue, linked: !!f.linkedUid?.stringValue, id } : { id, http: r.status, n: Array.isArray(j) ? j.length : -1 };
 }, func);
+console.log('   [colab]', JSON.stringify(colab));
 ok(colab?.status === 'ativo' && colab?.linked, `registo da equipa Ativo com uid (${JSON.stringify(colab)})`);
 await page.screenshot({ path: 'docs/equipa-ciclo.png' });
 await browser.close();
