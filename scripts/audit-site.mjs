@@ -59,6 +59,16 @@ const semear = (page, vista, tab) => page.evaluate((d) => {
 const TAMANHOS = [1440, 1024, 375];
 
 const IGNORAR_CONSOLA = [
+  'Content Security Policy',
+  'cleardot.gif',
+  'client is offline',
+  'FirebaseError',
+  'firestore.googleapis.com',
+  '@firebase/firestore',
+  'resource-exhausted',
+  'Failed to load resource',
+  'net::ERR_FAILED',
+  'unavailable',
   'Missing or insufficient permissions',
   '[vite]',
   'Download the React DevTools',
@@ -73,6 +83,13 @@ fs.mkdirSync(SHOTS, { recursive: true });
 
 const browser = await chromium.launch({ executablePath: CHROME, headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+
+// As auditorias NUNCA falam com o Firestore de produção: cada varrimento
+// consumia milhares de leituras e esgotava a quota diária (Spark, 50k/dia).
+// Bloquear a rede mantém os testes visuais isolados e não afeta clientes.
+await page.route('**://firestore.googleapis.com/**', (r) => r.abort());
+await page.route('**://identitytoolkit.googleapis.com/**', (r) => r.abort());
+await page.route('**://securetoken.googleapis.com/**', (r) => r.abort());
 
 let errosAtuais = [];
 page.on('pageerror', (e) => errosAtuais.push(`pageerror: ${e.message}`));
