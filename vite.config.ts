@@ -57,6 +57,41 @@ function devTocProxy(): Plugin {
   };
 }
 
+function devConviteProxy(): Plugin {
+  return {
+    name: 'dev-convite-proxy',
+    configureServer(server) {
+      server.middlewares.use('/api/equipa-convite', async (req, res) => {
+        if (req.method === 'OPTIONS') { res.statusCode = 204; res.setHeader('Access-Control-Allow-Origin', '*'); res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); res.end(); return; }
+        if (req.method !== 'POST') { res.statusCode = 405; res.end('{"erro":"metodo"}'); return; }
+        try {
+          let body = '';
+          for await (const chunk of req) body += chunk;
+          const { onRequestPost } = await import('./functions/api/equipa-convite');
+          const request = new Request('http://localhost/api/equipa-convite', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Origin: req.headers.origin || 'http://localhost:3400' },
+            body,
+          });
+          const env: Record<string, unknown> = {
+            RESEND_API_KEY: process.env.RESEND_API_KEY || '',
+            MAIL_FROM: process.env.MAIL_FROM || '',
+            SEND_EMAIL: undefined,
+          };
+          const resp = await onRequestPost({ request, env });
+          res.statusCode = resp.status;
+          resp.headers.forEach((v, k) => res.setHeader(k, v));
+          res.end(await resp.text());
+        } catch (e: any) {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ erro: 'dev_proxy', detalhe: String(e?.message || e) }));
+        }
+      });
+    },
+  };
+}
+
 function devChatProxy(): Plugin {
   return {
     name: 'dev-chat-proxy',
@@ -146,7 +181,7 @@ export default defineConfig(({mode}) => {
 
   return {
     base: basePath,
-    plugins: [react(), tailwindcss(), vitePluginVersion(), devTocProxy(), devChatProxy(), devDeckProxy(), devEmulatorCsp()],
+    plugins: [react(), tailwindcss(), vitePluginVersion(), devTocProxy(), devChatProxy(), devDeckProxy(), devConviteProxy(), devEmulatorCsp()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

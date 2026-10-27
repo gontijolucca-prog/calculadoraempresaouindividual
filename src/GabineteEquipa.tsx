@@ -3,7 +3,7 @@ import { Users, Mail, Trash2, Pencil, X, Plus, Search, CheckCircle2, Clock, Shie
 import { useGabineteColaboradores, useGabineteClientes } from './lib/useGabinete';
 import { filterActive } from './lib/gabineteSelectors';
 import { upsertColaborador, deleteColaborador, newColaboradorId, getColaboradorInitials, upsertCliente, type Colaborador, type ColaboradorRole } from './lib/gabinete';
-import { getActiveGabineteId, inviteToGabinete, removeFromGabinete } from './lib/gabinetes';
+import { getActiveGabineteId, getGabineteMeta, inviteToGabinete, removeFromGabinete } from './lib/gabinetes';
 
 const roleLabel: Record<ColaboradorRole, string> = {
   admin: 'Admin',
@@ -26,6 +26,7 @@ export default function GabineteEquipa() {
   const [editing, setEditing] = useState<Colaborador | null>(null);
   const [form, setForm] = useState<Partial<Colaborador>>({ role: 'contabilista' });
   const [convite, setConvite] = useState<Colaborador | null>(null);
+  const [envio, setEnvio] = useState<'a-enviar' | 'enviado' | 'sem-servico' | 'falhou' | null>(null);
   const [error, setError] = useState('');
 
   const filtered = useMemo(() => {
@@ -40,6 +41,7 @@ export default function GabineteEquipa() {
   const openAdd = () => {
     setEditing(null);
     setForm({ role: 'contabilista', status: 'convite_pendente' });
+    setEnvio(null);
     setError('');
     setShowForm(true);
   };
@@ -86,6 +88,28 @@ export default function GabineteEquipa() {
     setEditing(null);
     setForm({ role: 'contabilista' });
     setConvite(col);
+    void enviarPeloServidor(col);
+  };
+
+  /** Pede ao servidor (Cloudflare) que envie o email do convite. */
+  const enviarPeloServidor = async (c: Colaborador) => {
+    setEnvio('a-enviar');
+    try {
+      const { auth } = await import('./lib/firebase');
+      const idToken = await auth.currentUser?.getIdToken();
+      const gabId = getActiveGabineteId();
+      const meta = gabId ? await getGabineteMeta(gabId).catch(() => null) : null;
+      const r = await fetch('/api/equipa-convite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: c.email, nome: c.nome, gabinete: meta?.nome || '', cargo: c.role, idToken }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (j?.ok) setEnvio('enviado');
+      else setEnvio(j?.erro === 'email_nao_configurado' ? 'sem-servico' : 'falhou');
+    } catch {
+      setEnvio('falhou');
+    }
   };
 
   const handleReenviar = async (c: Colaborador) => {
@@ -93,6 +117,7 @@ export default function GabineteEquipa() {
     const gabId = getActiveGabineteId();
     if (gabId) { try { await inviteToGabinete(gabId, c.email, c.role); } catch { /* já existe ou sem rede */ } }
     setConvite(c);
+    void enviarPeloServidor(c);
   };
 
   return (
@@ -229,6 +254,14 @@ export default function GabineteEquipa() {
               <h3 className="font-semibold">Convite para {convite.nome}</h3>
               <button onClick={() => setConvite(null)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button>
             </div>
+            {envio && (
+              <div className={`mt-3 rounded-xl px-3 py-2 text-[12.5px] font-[600] ${envio === 'enviado' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : envio === 'a-enviar' ? 'bg-slate-50 text-slate-600 border border-slate-200' : 'bg-amber-50 text-amber-900 border border-amber-200'}`}>
+                {envio === 'enviado' && `Email enviado para ${convite.email} pelo servidor.`}
+                {envio === 'a-enviar' && 'A enviar o email pelo servidor…'}
+                {envio === 'sem-servico' && 'O servidor ainda não tem serviço de email configurado. Usa a mensagem abaixo.'}
+                {envio === 'falhou' && 'Não consegui enviar o email agora. Usa a mensagem abaixo.'}
+              </div>
+            )}
             <p className="mt-2 text-[13px] text-[#475569] leading-relaxed">
               O convite já está registado para <b>{convite.email}</b> com o cargo <b>{roleLabel[convite.role]}</b>.
               <b> Não enviamos email automático</b> — copia a mensagem abaixo e envia-a (email, WhatsApp ou à frente).
