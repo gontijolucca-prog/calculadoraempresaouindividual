@@ -12,9 +12,11 @@ function ok(label: string, cond: boolean) {
 }
 const is = (label: string, got: unknown, exp: unknown) => ok(`${label} (${String(got)})`, got === exp);
 
-const obr = (p: Partial<Obrigacao> & Pick<Obrigacao, 'id' | 'clienteId' | 'tipo' | 'vencimento'>): Obrigacao => ({
-  titulo: p.id, periodo: '2026-03', estado: 'pendente', createdAt: 1, updatedAt: 1, ...p,
-});
+const obr = (p: Partial<Obrigacao> & Pick<Obrigacao, 'id' | 'clienteId' | 'tipo' | 'vencimento'>): Obrigacao => {
+  const d = new Date(p.vencimento);
+  const periodo = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  return { titulo: p.id, periodo, estado: 'pendente', createdAt: 1, updatedAt: 1, ...p };
+};
 
 const PIP = (id: string, tipos: Obrigacao['tipo'][]) => ({ id, label: id, tipos });
 
@@ -173,3 +175,18 @@ const dmrSs = PIP('dmr_ss', ['ss']);
 
 if (fails > 0) { console.error(`\n${fails} falha(s)`); process.exit(1); }
 console.log('\nTodos os testes de célula passaram.');
+
+
+// ── K: periodo manda, não o vencimento (bug da célula seguinte)
+{
+  const base = { clienteId: 'c1', clienteNome: 'Cliente', catalogoId: 'iva', tipo: 'iva' as const, estado: 'entregue' as const, createdAt: 1, updatedAt: 1 };
+  const jan = obr({ ...base, id: 'k1', titulo: 'IVA 01/2026', periodo: '2026-01', vencimento: new Date(2026, 1, 20).getTime() });
+  const kJan = { clienteId: 'c1', mapa: 'quadro' as const, refId: 'iva', ano: 2026, mes: 1 };
+  const kFev = { clienteId: 'c1', mapa: 'quadro' as const, refId: 'iva', ano: 2026, mes: 2 };
+  ok('K: janeiro com vencimento em fevereiro pertence a janeiro', correspondeCelula(jan, kJan, ['iva']));
+  ok('K: não pertence a fevereiro', !correspondeCelula(jan, kFev, ['iva']));
+  const legado = obr({ ...base, id: 'k2', titulo: 'IVA legado', periodo: '', vencimento: new Date(2026, 1, 20).getTime() });
+  ok('K: legado sem periodo usa o vencimento', correspondeCelula(legado, kFev, ['iva']));
+}
+
+process.exit(fails ? 1 : 0);

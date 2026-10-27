@@ -33,6 +33,12 @@ export function chaveCelula(k: CellKey): string {
 }
 
 const mesmoPeriodo = (o: Obrigacao, ano: number, mes: number): boolean => {
+  // O `periodo` (AAAA-MM) é a identidade da célula. O `vencimento` é o prazo e
+  // pode cair no mês seguinte (ex.: IVA de janeiro paga-se em fevereiro) — usar
+  // o vencimento fazia o clique numa célula alterar a célula seguinte.
+  const mm = String(mes).padStart(2, '0');
+  const periodo = String(o.periodo || '').trim();
+  if (/^\d{4}-\d{2}$/.test(periodo)) return periodo === `${ano}-${mm}`;
   const d = new Date(o.vencimento);
   return d.getFullYear() === ano && d.getMonth() + 1 === mes;
 };
