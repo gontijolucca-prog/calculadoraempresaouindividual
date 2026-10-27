@@ -366,7 +366,25 @@ function AppContent() {
   const isAuthenticated = !!user || isTestBypass;
   const [conviteToken] = useState<string>(() => (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('convite') || '' : ''));
   // Quem chega pelo link do convite já provou que tem acesso ao email.
-  const needsVerification = !!user && !user.emailVerified && user.providerData.some(p => p.providerId === 'password') && !isTestBypass && !isAdminBypass && !conviteToken;
+  // Quem entra por convite prova que controla o email; se já for membro de um
+  // gabinete (ou tiver convite pendente), não fica preso na confirmação.
+  const [acessoPorConvite, setAcessoPorConvite] = useState<boolean>(false);
+  useEffect(() => {
+    if (!user || user.emailVerified) { setAcessoPorConvite(false); return; }
+    let vivo = true;
+    (async () => {
+      try {
+        const g = await import('./lib/gabinetes');
+        if (g.getActiveGabineteId()) { if (vivo) setAcessoPorConvite(true); return; }
+        const { meus, convites } = await g.listMyGabinetes();
+        const emailLc = (user.email || '').toLowerCase();
+        const conviteDoEmail = convites.some((c) => (c.invites || []).some((i) => (i.email || '').toLowerCase() === emailLc));
+        if (vivo) setAcessoPorConvite(meus.length > 0 || conviteDoEmail);
+      } catch { if (vivo) setAcessoPorConvite(false); }
+    })();
+    return () => { vivo = false; };
+  }, [user]);
+  const needsVerification = !!user && !user.emailVerified && user.providerData.some(p => p.providerId === 'password') && !isTestBypass && !isAdminBypass && !conviteToken && !acessoPorConvite;
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   // Mode is persisted: ao atualizar a página o utilizador continua no mesmo contexto.

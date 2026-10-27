@@ -117,6 +117,14 @@ const acesso = await p2.evaluate(async () => {
   return { id: !!id, membro: !!meta?.memberUids?.includes(f.auth.currentUser?.uid || ''), role: meta?.members?.[f.auth.currentUser?.uid || '']?.role || null };
 });
 ok(acesso.id && acesso.membro, `conta ligada ao gabinete (${JSON.stringify(acesso)})`);
+// Recarregar não pode bloquear na confirmação de email (membro por convite).
+await p2.reload({ waitUntil: 'load' });
+await p2.waitForTimeout(3500);
+const depoisReload = await p2.evaluate(() => ({
+  bloqueado: /Confirme o seu email/i.test(document.body.innerText),
+  dentro: /Gabinete|Lista de Empresas/i.test(document.body.innerText),
+}));
+ok(!depoisReload.bloqueado && depoisReload.dentro, `após recarregar continua dentro (${JSON.stringify(depoisReload)})`);
 await p2.screenshot({ path: 'docs/convite-link.png' });
 
 await browser.close();
