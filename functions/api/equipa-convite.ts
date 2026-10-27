@@ -116,6 +116,31 @@ export const onRequestPost: PagesFunction = async ({ request, env }) => {
     }
   }
 
+  // 1b) Brevo (300 emails/dia grátis; aceita qualquer destinatário verificado)
+  const brevo = (env as any).BREVO_API_KEY;
+  if (brevo) {
+    try {
+      const fromAddr = from.match(/<([^>]+)>/)?.[1] || from;
+      const fromName = from.match(/^([^<]+)</)?.[1]?.trim() || 'Estudo360';
+      const r = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: { 'api-key': brevo, 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          sender: { email: fromAddr, name: fromName },
+          to: [{ email: to }],
+          subject: mail.subject,
+          htmlContent: mail.html,
+          textContent: mail.text,
+        }),
+      });
+      const j: any = await r.json().catch(() => ({}));
+      if (!r.ok) return json({ erro: 'brevo_recusou', detalhe: j?.message || r.status }, 502, origin);
+      return json({ ok: true, via: 'brevo', id: j?.messageId || null }, 200, origin);
+    } catch (e: any) {
+      return json({ erro: 'brevo_falhou', detalhe: String(e?.message || e) }, 502, origin);
+    }
+  }
+
   // 2) Binding de email da Cloudflare (se estiver configurada)
   const sendEmail = (env as any).SEND_EMAIL;
   if (sendEmail && typeof sendEmail.send === 'function') {

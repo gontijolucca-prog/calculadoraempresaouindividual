@@ -965,7 +965,6 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
             <option value="">—</option>
             <option value="1">1º Trimestre</option><option value="2">2º Trimestre</option><option value="3">3º Trimestre</option><option value="4">4º Trimestre</option>
           </select>
-          <button onClick={()=>{}} className="px-4 py-1.5 rounded border border-zinc-300 bg-white text-zinc-700 font-semibold text-sm">Ok</button>
           <div className="ml-auto flex gap-1.5">
             <button onClick={e=>imprimirMapa(e,'Mapa de Controlo')} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Imprimir</button>
             <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Exportar XLS</button>
@@ -1324,7 +1323,6 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
             <option value="">—</option>
             <option value="1">1º Trimestre</option><option value="2">2º Trimestre</option><option value="3">3º Trimestre</option><option value="4">4º Trimestre</option>
           </select>
-          <button onClick={()=>{}} className="px-4 py-1.5 rounded border border-zinc-300 bg-white text-zinc-700 font-semibold text-sm">Ok</button>
           <div className="ml-auto flex gap-1.5">
             <button onClick={e=>imprimirMapa(e,'Mapa RH')} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Imprimir</button>
             <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Exportar XLS</button>
