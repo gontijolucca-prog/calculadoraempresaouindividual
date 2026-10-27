@@ -1059,7 +1059,11 @@ export async function deleteColaborador(id: string): Promise<void> {
   try {
     const { deleteDoc, doc } = await import('firebase/firestore');
     const { db } = await import('./firebase');
-    await deleteDoc(doc(db, colPath('colaboradores'), id));
+    // Sem prazo, o SDK pode ficar à espera de rede e a UI fica presa.
+    await Promise.race([
+      deleteDoc(doc(db, colPath('colaboradores'), id)),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('tempo esgotado')), 6000)),
+    ]);
   } catch {
     queueRemove(colPath('colaboradores'), id);
   }

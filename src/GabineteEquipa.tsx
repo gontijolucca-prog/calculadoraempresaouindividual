@@ -273,28 +273,33 @@ export default function GabineteEquipa() {
     const c = removerAlvo;
     if (!c || removendo) return;
     setRemovendo(true); setAviso('');
-    let falhou = false;
-    const gabId = getActiveGabineteId();
-    if (gabId) {
+    const comPrazo = async <T,>(promessa: Promise<T>, ms = 8000): Promise<T | 'tempo'> => {
+      let timer: number | undefined;
       try {
-        const uidCandidato = c.linkedUid || (c.id && c.id.length > 20 ? c.id : undefined);
-        await removeFromGabinete(gabId, c.email, uidCandidato);
-      } catch (e) {
-        falhou = true;
-        setAviso('Não consegui revogar o acesso: ' + String((e as Error)?.message || e));
-      }
-    }
+        return await Promise.race([
+          promessa,
+          new Promise<'tempo'>((res) => { timer = window.setTimeout(() => res('tempo'), ms); }),
+        ]);
+      } finally { if (timer) window.clearTimeout(timer); }
+    };
+    let avisoFinal = `${c.nome} removido da equipa.`;
     try {
-      await deleteColaborador(c.id);
+      const gabId = getActiveGabineteId();
+      if (gabId) {
+        const uidCandidato = c.linkedUid || (c.id && c.id.length > 20 ? c.id : undefined);
+        const r = await comPrazo(removeFromGabinete(gabId, c.email, uidCandidato), 9000);
+        if (r === 'tempo') avisoFinal = 'Removido da lista, mas o servidor demorou a confirmar. O acesso será revisto quando a ligação voltar.';
+      }
+      await comPrazo(deleteColaborador(c.id), 7000);
+      await comPrazo(recarregarMeta(), 5000);
+      if (convite?.id === c.id) setConvite(null);
     } catch (e) {
-      falhou = true;
-      setAviso('Não consegui apagar o registo: ' + String((e as Error)?.message || e));
+      avisoFinal = 'Não consegui concluir a remoção: ' + String((e as Error)?.message || e);
+    } finally {
+      setRemovendo(false);
+      setRemoverAlvo(null);
+      setAviso(avisoFinal);
     }
-    await recarregarMeta();
-    if (convite?.id === c.id) setConvite(null);
-    setRemoverAlvo(null);
-    setRemovendo(false);
-    if (!falhou) setAviso(`${c.nome} removido da equipa.`);
   };
 
   const linkConvite = tokenConvite ? linkDoConvite(tokenConvite) : '';
