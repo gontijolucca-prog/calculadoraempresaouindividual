@@ -47,16 +47,19 @@ async function apagarUser(at, uid) {
 }
 async function apagarGabinete(at, gabId) {
   if (!gabId) return;
-  const base = `https://firestore.googleapis.com/v1/projects/${PROJ}/databases/(default)/documents`;
-  const lid = await fetch(`${base}/gabinetes/${gabId}:listCollectionIds`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${at}` }, body: JSON.stringify({ pageSize: 100 }) }).then((r) => r.json()).catch(() => ({}));
-  for (const col of lid.collectionIds || []) {
-    const docs = await fetch(`${base}/gabinetes/${gabId}/${col}?pageSize=300`, { headers: { Authorization: `Bearer ${at}` } }).then((r) => r.json()).catch(() => ({}));
-    for (const d of docs.documents || []) {
-      await fetch(`https://firestore.googleapis.com/v1/${d.name}`, { method: 'DELETE', headers: { Authorization: `Bearer ${at}` } }).catch(() => {});
+  const root = `https://firestore.googleapis.com/v1/projects/${PROJ}/databases/(default)/documents`;
+  for (const pai of [`gabinete/${gabId}`, `gabinetes/${gabId}`]) {
+    const lid = await fetch(`${root}/${pai}:listCollectionIds`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${at}` }, body: JSON.stringify({ pageSize: 100 }) }).then((r) => r.json()).catch(() => ({}));
+    for (const col of lid.collectionIds || []) {
+      const docs = await fetch(`${root}/${pai}/${col}?pageSize=300`, { headers: { Authorization: `Bearer ${at}` } }).then((r) => r.json()).catch(() => ({}));
+      for (const d of docs.documents || []) {
+        await fetch(`https://firestore.googleapis.com/v1/${d.name}`, { method: 'DELETE', headers: { Authorization: `Bearer ${at}` } }).catch(() => {});
+      }
     }
   }
-  await fetch(`${base}/gabinetes/${gabId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${at}` } }).catch(() => {});
+  await fetch(`${root}/gabinetes/${gabId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${at}` } }).catch(() => {});
 }
+
 async function signInUI(p, email, pass) {
   await p.goto(BASE, { waitUntil: 'load' }); await p.waitForTimeout(2500);
   if (!(await p.locator('input[placeholder="nome@empresa.pt"]').count())) {
