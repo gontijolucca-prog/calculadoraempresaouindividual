@@ -695,6 +695,15 @@ function AppContent() {
   useEffect(() => { saveOfficeSettings(officeSettings); }, [officeSettings]);
   useEffect(() => { saveHonorariosConfig(honorariosConfig); }, [honorariosConfig]);
 
+  // Revogações que ficaram pendentes (quota/rede) são repetidas sozinhas.
+  useEffect(() => {
+    const correr = () => { void import('./lib/gabinetes').then((m) => m.processarRevogacoesPendentes()).catch(() => {}); };
+    const t = window.setTimeout(correr, 4000);
+    const id = window.setInterval(correr, 60000);
+    window.addEventListener('online', correr);
+    return () => { window.clearTimeout(t); window.clearInterval(id); window.removeEventListener('online', correr); };
+  }, []);
+
   // Auto-atualização: arranca o version-checker uma vez. Quando uma nova versão
   // é publicada, mostra o aviso e — se não houver edição de documento por guardar
   // — recarrega sozinho (senão fica o botão "Recarregar agora"). Assim ninguém

@@ -3,7 +3,7 @@ import { Users, Mail, Trash2, Pencil, X, Plus, Search, CheckCircle2, Clock, Shie
 import { useGabineteColaboradores, useGabineteClientes } from './lib/useGabinete';
 import { filterActive } from './lib/gabineteSelectors';
 import { upsertColaborador, deleteColaborador, newColaboradorId, getColaboradorInitials, upsertCliente, colaboradorNoServidor, type Colaborador, type ColaboradorRole } from './lib/gabinete';
-import { getActiveGabineteId, getGabineteMeta, inviteToGabinete, removeFromGabinete, atualizarCargoColaborador, type GabineteMeta } from './lib/gabinetes';
+import { getActiveGabineteId, getGabineteMeta, inviteToGabinete, removeFromGabinete, atualizarCargoColaborador, enfileirarRevogacao, type GabineteMeta } from './lib/gabinetes';
 import { PERMISSION_LABELS, type PermissionAction, setCustomRolesCache } from './lib/permissions';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from './lib/firebase';
@@ -321,7 +321,10 @@ export default function GabineteEquipa() {
       if (gabId) {
         const uidCandidato = c.linkedUid || (c.id && c.id.length > 20 ? c.id : undefined);
         const r = await comPrazo(removeFromGabinete(gabId, c.email, uidCandidato), 8000);
-        if (r === 'tempo') avisoFinal = `${c.nome} saiu da lista; o servidor ainda não confirmou o acesso (quota/rede).`;
+        if (r === 'tempo' || r === undefined) {
+          enfileirarRevogacao(gabId, c.email, uidCandidato);
+          avisoFinal = `${c.nome} saiu da lista. O servidor não confirmou; a revogação do acesso será repetida automaticamente.`;
+        }
       }
       await comPrazo(deleteColaborador(c.id), 5000);
       void recarregarMeta().catch(() => {});

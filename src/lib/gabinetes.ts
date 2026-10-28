@@ -449,3 +449,42 @@ export async function atualizarCargoColaborador(gabineteId: string, email: strin
 function membroEhDono(uid: string, data: GabineteMeta): boolean {
   return uid === data.ownerUid;
 }
+
+// ——— Revogações de acesso em atraso ————————————————————————————————
+// Se o servidor não confirmar a remoção (quota/rede), guardamos o pedido e
+// repetimos automaticamente; caso contrário a pessoa continuaria com acesso.
+export interface RevogacaoPendente {
+  gabineteId: string;
+  email: string;
+  uid?: string;
+  criadoEm: number;
+}
+
+const REVOGACOES_KEY = 'revogacoes-pendentes';
+
+export function listarRevogacoesPendentes(): RevogacaoPendente[] {
+  return loadFromStorage<RevogacaoPendente[]>(REVOGACOES_KEY, []) ?? [];
+}
+
+export function enfileirarRevogacao(gabineteId: string, email: string, uid?: string): void {
+  const emailLc = normalizeEmail(email);
+  const atuais = listarRevogacoesPendentes().filter((r) => !(r.gabineteId === gabineteId && normalizeEmail(r.email) === emailLc));
+  atuais.push({ gabineteId, email: emailLc, uid, criadoEm: Date.now() });
+  saveToStorage(REVOGACOES_KEY, atuais);
+}
+
+/** Tenta concluir as revogações pendentes. Devolve quantas ficaram pendentes. */
+export async function processarRevogacoesPendentes(): Promise<number> {
+  const pendentes = listarRevogacoesPendentes();
+  if (pendentes.length === 0) return 0;
+  const restantes: RevogacaoPendente[] = [];
+  for (const r of pendentes) {
+    try {
+      await removeFromGabinete(r.gabineteId, r.email, r.uid);
+    } catch {
+      restantes.push(r);
+    }
+  }
+  saveToStorage(REVOGACOES_KEY, restantes);
+  return restantes.length;
+}
