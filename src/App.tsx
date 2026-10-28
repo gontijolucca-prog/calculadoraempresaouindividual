@@ -2126,7 +2126,11 @@ function AppContent() {
           <span className="text-[16px] leading-none mt-0.5">⚠</span>
           <div className="text-[13px] font-[600] leading-snug">
             A sincronização com a cloud falhou — as alterações estão guardadas <u>só neste computador</u>.
-            Verifique a ligação à internet; a app volta a tentar automaticamente na próxima alteração.
+            <div className="mt-1 text-[11px] font-[400] text-white/80 break-words">{cloudSyncError.slice(0, 180)}</div>
+            <div className="mt-2 flex gap-2">
+              <button type="button" onClick={() => { void import('./lib/gabinete').then((m) => m.flushOutbox()).catch(() => {}); }} className="rounded-lg bg-white/15 px-2.5 py-1 text-[11px] font-[700] text-white hover:bg-white/25">Tentar agora</button>
+              <button type="button" onClick={() => { void import('./lib/sync').then((m) => m.clearOutbox()).catch(() => {}); setCloudSyncError(null); }} className="rounded-lg bg-white/15 px-2.5 py-1 text-[11px] font-[700] text-white hover:bg-white/25">Limpar fila</button>
+            </div>
           </div>
           <button type="button" onClick={() => setCloudSyncError(null)} className="ml-auto text-white/80 hover:text-white text-[16px] leading-none" aria-label="Fechar aviso">×</button>
         </div>

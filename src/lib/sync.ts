@@ -73,6 +73,8 @@ export function endWrite(error?: unknown): void {
   emit();
 }
 export function clearSyncError(): void { lastError = null; emit(); }
+/** Limpa a fila de operações que o servidor recusou (ex.: após migração). */
+export function clearOutbox(): void { saveToStorage(QUEUE_KEY, []); clearSyncError(); }
 
 export function enqueueOp(op: Omit<OutboxOp, 'id' | 'at' | 'tries'>): void {
   writeQueue(upsertOp(readQueue(), { ...op, id: opId(), at: Date.now(), tries: 0 }));
