@@ -7,13 +7,13 @@ import { connectFirestoreEmulator } from 'firebase/firestore';
 // These are Firebase Web API keys (not secrets), but should still be
 // restricted to specific domains in Firebase Console.
 const firebaseConfig = {
-  apiKey: (import.meta as any)?.env?.VITE_FIREBASE_API_KEY || "AIzaSyBxc-JFWwxlauY6U4A3IKTxxd5UFiDzjhI",
-  authDomain: (import.meta as any)?.env?.VITE_FIREBASE_AUTH_DOMAIN || "recofatima-ferramenta.firebaseapp.com",
-  projectId: (import.meta as any)?.env?.VITE_FIREBASE_PROJECT_ID || "recofatima-ferramenta",
-  storageBucket: (import.meta as any)?.env?.VITE_FIREBASE_STORAGE_BUCKET || "recofatima-ferramenta.firebasestorage.app",
-  messagingSenderId: (import.meta as any)?.env?.VITE_FIREBASE_MESSAGING_SENDER_ID || "561979864363",
-  appId: (import.meta as any)?.env?.VITE_FIREBASE_APP_ID || "1:561979864363:web:4577c584f4802261c0016e",
-  measurementId: (import.meta as any)?.env?.VITE_FIREBASE_MEASUREMENT_ID || "G-D1BG1SJSL7"
+  apiKey: (import.meta as any)?.env?.VITE_FIREBASE_API_KEY || "AIzaSyChJKEBjPKZcRVF4R_n07UoUB9QO0q_EzM",
+  authDomain: (import.meta as any)?.env?.VITE_FIREBASE_AUTH_DOMAIN || "estudo360-app.firebaseapp.com",
+  projectId: (import.meta as any)?.env?.VITE_FIREBASE_PROJECT_ID || "estudo360-app",
+  storageBucket: (import.meta as any)?.env?.VITE_FIREBASE_STORAGE_BUCKET || "estudo360-app.firebasestorage.app",
+  messagingSenderId: (import.meta as any)?.env?.VITE_FIREBASE_MESSAGING_SENDER_ID || "297215704391",
+  appId: (import.meta as any)?.env?.VITE_FIREBASE_APP_ID || "1:297215704391:web:74168b37a27cc99669a062",
+  measurementId: (import.meta as any)?.env?.VITE_FIREBASE_MEASUREMENT_ID || ""
 };
 
 const app = initializeApp(firebaseConfig);
