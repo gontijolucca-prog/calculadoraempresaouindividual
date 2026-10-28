@@ -60,6 +60,17 @@ async function apagarGabinete(at, gabId) {
   await fetch(`${root}/gabinetes/${gabId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${at}` } }).catch(() => {});
 }
 
+async function apagarGabinetesDoEmail(at, email) {
+  const root = `https://firestore.googleapis.com/v1/projects/${PROJ}/databases/(default)/documents`;
+  const gabs = await fetch(`${root}/gabinetes?pageSize=100`, { headers: { Authorization: `Bearer ${at}` } }).then((r) => r.json()).catch(() => ({}));
+  for (const d of gabs.documents || []) {
+    const emailDono = d.fields?.ownerEmail?.stringValue || '';
+    if (emailDono.toLowerCase() !== email.toLowerCase()) continue;
+    const gid = d.name.split('/').pop();
+    await apagarGabinete(at, gid);
+  }
+}
+
 async function signInUI(p, email, pass) {
   await p.goto(BASE, { waitUntil: 'load' }); await p.waitForTimeout(2500);
   if (!(await p.locator('input[placeholder="nome@empresa.pt"]').count())) {
@@ -170,7 +181,7 @@ try {
 } catch (e) {
   notas.push(String(e?.message || e).slice(0, 220));
 } finally {
-  await apagarGabinete(at, gabId);
+  await apagarGabinetesDoEmail(at, ownerEmail);
   await apagarUser(at, ownerUid);
   await apagarUser(at, colabUid);
   await browser.close();
