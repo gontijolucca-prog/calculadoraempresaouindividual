@@ -241,16 +241,19 @@ export default function GabineteEquipa() {
     let tokenConviteAtual = '';
     if (gabId) {
       try {
-        const { token } = await inviteToGabinete(gabId, email, role || 'contabilista');
+        // Modelo «conta primeiro»: regista o email, sem link. Quando a pessoa
+        // criar conta com este email, a app aceita sozinha e o gabinete aparece.
+        const { token } = await inviteToGabinete(gabId, email, role || 'contabilista', { link: false });
         setTokenConvite(token);
         tokenConviteAtual = token;
         await recarregarMeta();
+        setAviso(`Colaborador ${nome} adicionado. Quando criar conta com ${email}, entra automaticamente neste gabinete.`);
       } catch (e) {
         setAviso('Colaborador guardado, mas o link do convite falhou: ' + String((e as Error)?.message || e));
       }
     }
+    // Sem link não há modal de convite; a entrada é automática ao criar conta.
     if (tokenConviteAtual) setConvite(col);
-    else void enviarPeloServidor(col, tokenConviteAtual);
   };
 
   /** Pede ao servidor (Cloudflare) que envie o email do convite. */
@@ -431,7 +434,7 @@ export default function GabineteEquipa() {
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-[600] bg-amber-50 text-amber-800 border-amber-200">
-                          <Clock className="w-3.5 h-3.5" /> Convite pendente
+                          <Clock className="w-3.5 h-3.5" /> Aguarda conta
                         </span>
                       )}
                     </td>

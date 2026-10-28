@@ -310,7 +310,7 @@ function classificarErroConvite(e: unknown): ConviteError {
   return new ConviteError('desconhecido', 'Não consegui criar o link do convite. Tente outra vez.');
 }
 
-export async function inviteToGabinete(gabineteId: string, email: string, role: GabineteRole = 'contabilista'): Promise<{ token: string }> {
+export async function inviteToGabinete(gabineteId: string, email: string, role: GabineteRole = 'contabilista', opts?: { link?: boolean }): Promise<{ token: string }> {
   const u = auth.currentUser;
   if (!u) throw new Error('Não autenticado');
   const emailLc = normalizeEmail(email);
@@ -324,7 +324,8 @@ export async function inviteToGabinete(gabineteId: string, email: string, role: 
   // Reenviar tem de invalidar os links antigos: apaga os docs `convites` deste
   // email antes de criar o novo (o token antigo deixa de abrir a página).
   await revokeInviteToken(gabineteId, emailLc);
-  const token = novoTokenConvite();
+  const comLink = opts?.link !== false;
+  const token = comLink ? novoTokenConvite() : '';
   const expira = Date.now() + 7 * 24 * 60 * 60 * 1000;
   const payloadConvite = {
     gabineteId, gabineteNome: (data as any).nome || '', email: emailLc, role,
@@ -332,7 +333,7 @@ export async function inviteToGabinete(gabineteId: string, email: string, role: 
   };
   // 1) Documento público primeiro (com 2 tentativas). Sem ele o /convite não
   //    pede password, por isso nunca devolvemos um link sem este documento.
-  let criado = false;
+  let criado = !comLink;
   for (let tentativa = 1; tentativa <= 2 && !criado; tentativa++) {
     try {
       await withTimeout(setDoc(doc(db, 'convites', token), payloadConvite), 6000, 'link do convite');
@@ -346,11 +347,14 @@ export async function inviteToGabinete(gabineteId: string, email: string, role: 
   try {
     await withTimeout(updateDoc(ref, {
       inviteEmails: arrayUnion(emailLc),
-      invites: arrayUnion({ email: emailLc, role, invitedAt: Date.now(), invitedBy: u.uid, invitedByEmail: u.email || '', token, expira }),
+      invites: arrayUnion({
+        email: emailLc, role, invitedAt: Date.now(), invitedBy: u.uid, invitedByEmail: u.email || '', expira,
+        ...(token ? { token } : {}),
+      }),
       updatedAt: Date.now(),
     } as any), 6000, 'convite');
   } catch (e) {
-    try { await deleteDoc(doc(db, 'convites', token)); } catch { /* fica órfão; expira em 7 dias */ }
+    if (token) { try { await deleteDoc(doc(db, 'convites', token)); } catch { /* fica órfão; expira em 7 dias */ } }
     throw classificarErroConvite(e);
   }
 
