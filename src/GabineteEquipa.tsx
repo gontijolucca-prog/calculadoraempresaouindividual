@@ -299,12 +299,14 @@ export default function GabineteEquipa() {
     await handleReenviar(c); // sem token válido: cria link novo e abre o modal
   };
 
-  /** Confirma e remove o colaborador (modal próprio, sem window.confirm). */
+  /** Confirma e remove: fecha o modal JÁ e conclui o resto em segundo plano. */
   const confirmarRemocao = async () => {
     const c = removerAlvo;
     if (!c || removendo) return;
-    setRemovendo(true); setAviso('');
-    const comPrazo = async <T,>(promessa: Promise<T>, ms = 8000): Promise<T | 'tempo'> => {
+    setRemovendo(true);
+    setRemoverAlvo(null); // o utilizador não fica preso à espera do servidor
+    setAviso(`${c.nome}: a remover…`);
+    const comPrazo = async <T,>(promessa: Promise<T>, ms: number): Promise<T | 'tempo'> => {
       let timer: number | undefined;
       try {
         return await Promise.race([
@@ -318,17 +320,16 @@ export default function GabineteEquipa() {
       const gabId = getActiveGabineteId();
       if (gabId) {
         const uidCandidato = c.linkedUid || (c.id && c.id.length > 20 ? c.id : undefined);
-        const r = await comPrazo(removeFromGabinete(gabId, c.email, uidCandidato), 9000);
-        if (r === 'tempo') avisoFinal = 'Removido da lista, mas o servidor demorou a confirmar. O acesso será revisto quando a ligação voltar.';
+        const r = await comPrazo(removeFromGabinete(gabId, c.email, uidCandidato), 8000);
+        if (r === 'tempo') avisoFinal = `${c.nome} saiu da lista; o servidor ainda não confirmou o acesso (quota/rede).`;
       }
-      await comPrazo(deleteColaborador(c.id), 7000);
-      await comPrazo(recarregarMeta(), 5000);
+      await comPrazo(deleteColaborador(c.id), 5000);
+      void recarregarMeta().catch(() => {});
       if (convite?.id === c.id) setConvite(null);
     } catch (e) {
       avisoFinal = 'Não consegui concluir a remoção: ' + String((e as Error)?.message || e);
     } finally {
       setRemovendo(false);
-      setRemoverAlvo(null);
       setAviso(avisoFinal);
     }
   };

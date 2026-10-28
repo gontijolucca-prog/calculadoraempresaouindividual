@@ -60,7 +60,11 @@ await linha.locator('button[title="Remover da equipa"]').click();
 await p.waitForTimeout(600);
 const confirmar = p.getByRole('button', { name: /^Remover$/ }).filter({ visible: true }).first();
 ok(await confirmar.count() === 1, 'modal de remoção abre');
+const t0 = Date.now();
 await confirmar.click();
+await p.waitForTimeout(300);
+const modalFechou = (await p.getByRole('button', { name: /^Remover$/ }).filter({ visible: true }).count()) === 0;
+ok(modalFechou, `modal fechou de imediato (${Date.now() - t0} ms)`);
 for (let i = 0; i < 24; i++) {
   if ((await p.locator('tr').filter({ hasText: func }).count()) === 0) break;
   await p.waitForTimeout(500);
