@@ -5,7 +5,7 @@ import { filterActive } from './lib/gabineteSelectors';
 import { upsertColaborador, deleteColaborador, newColaboradorId, getColaboradorInitials, upsertCliente, colaboradorNoServidor, type Colaborador, type ColaboradorRole } from './lib/gabinete';
 import { getActiveGabineteId, getGabineteMeta, inviteToGabinete, removeFromGabinete, atualizarCargoColaborador, type GabineteMeta } from './lib/gabinetes';
 import { PERMISSION_LABELS, type PermissionAction, setCustomRolesCache } from './lib/permissions';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from './lib/firebase';
 
 const ROLE_BASE_LABEL: Record<string, string> = {
@@ -288,8 +288,15 @@ export default function GabineteEquipa() {
   /** Botão «Copiar link» das pendentes: usa o token guardado; se não houver, gera um novo. */
   const copiarLinkPendente = async (c: Colaborador) => {
     const token = tokenPorEmail.get(c.email.toLowerCase());
-    if (token) { await copiar(linkDoConvite(token), `link:${c.id}`); return; }
-    await handleReenviar(c); // convite antigo sem token: cria link novo e abre o modal
+    if (token) {
+      // Um link guardado pode já não existir no servidor (convite antigo,
+      // apagado ou criado quando a escrita falhou). Copiar um link morto é
+      // pior do que gerar outro.
+      const existe = await getDoc(doc(db, 'convites', token)).then((s) => s.exists()).catch(() => false);
+      if (existe) { await copiar(linkDoConvite(token), `link:${c.id}`); return; }
+      setAviso('O link antigo já não existe — a gerar um novo.');
+    }
+    await handleReenviar(c); // sem token válido: cria link novo e abre o modal
   };
 
   /** Confirma e remove o colaborador (modal próprio, sem window.confirm). */
