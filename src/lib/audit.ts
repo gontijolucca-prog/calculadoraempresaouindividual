@@ -61,7 +61,10 @@ export function logAudit(type: string, detail?: string, payload?: unknown, empre
     };
     queueLocal(ev);
     if (!u) return;
-    // best-effort Firestore — o throw síncrono de campos undefined também é apanhado
+    // Só eventos críticos vão para o Firestore: gravar TODAS as ações duplicava
+    // as escritas e esgotava a quota gratuita em horas. O resto fica local.
+    const CRITICO = /(login|signup|logout|delete_|invite|convite|colaborador|cargo|gabinete|cofre|export|restaur|purgar)/i;
+    if (!CRITICO.test(ev.type)) return;
     try { setDoc(doc(db, COL, ev.id), semUndefined(ev) as any).catch(()=>{}); } catch {}
   } catch {}
 }
