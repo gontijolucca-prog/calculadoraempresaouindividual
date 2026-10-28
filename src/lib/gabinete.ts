@@ -1049,6 +1049,7 @@ export async function deleteColaborador(id: string): Promise<void> {
   auditDelete('delete_colaborador', id, alvo && { nome: alvo.nome });
   const list = listColaboradoresCache().filter(x => x.id !== id);
   saveColaboradoresCache(list);
+  colaboradoresRemovidosLocal.add(id);
   // Tenta apagar já no servidor (para não reaparecer ao recarregar). Se falhar
   // (sem rede/quota), fica na fila de saída como antes.
   try {
@@ -1331,7 +1332,23 @@ const subscribeObrigacoesBase = makeSubscriber<Obrigacao>('obrigacoes');
 export const subscribeObrigacoes = (cb: (items: Obrigacao[]) => void) =>
   subscribeObrigacoesBase((items) => cb(comCalendarioLocal(items)));
 export const subscribeCofre = makeSubscriber<CofreEntrada>('cofre');
-export const subscribeColaboradores = makeSubscriber<Colaborador>('colaboradores');
+const colaboradoresRemovidosLocal = new Set<string>();
+const subscribeColaboradoresBase = makeSubscriber<Colaborador>('colaboradores');
+/**
+ * O snapshot do Firestore é a verdade do servidor, mas quando uma escrita
+ * falha (quota/rede) o colaborador acabado de criar só existe no cache e
+ * desaparecia da lista. Aqui mantemos os pendentes locais e escondemos os
+ * que foram removidos nesta sessão (mesmo que o delete ainda não tenha ido).
+ */
+export const subscribeColaboradores = (cb: (items: Colaborador[]) => void) =>
+  subscribeColaboradoresBase((items) => {
+    const mapa = new Map(items.map((c) => [c.id, c] as const));
+    for (const c of listColaboradoresCache()) {
+      if (!mapa.has(c.id)) mapa.set(c.id, c);
+    }
+    for (const id of colaboradoresRemovidosLocal) mapa.delete(id);
+    cb([...mapa.values()]);
+  });
 export const subscribeContactosGeral = makeSubscriber<ContactoGabinete>('contactosGeral');
 export const subscribeAlertasGeral = makeSubscriber<AlertaGabinete>('alertasGeral');
 export const subscribeOcorrencias = makeSubscriber<OcorrenciaGabinete>('ocorrencias');

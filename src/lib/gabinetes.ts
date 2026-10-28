@@ -292,6 +292,18 @@ export async function revokeInviteToken(gabineteId: string, email: string): Prom
 }
 
 /** Cria o convite no gabinete e devolve o token para o link/email. */
+export class ConviteError extends Error {
+  codigo: 'quota' | 'rede' | 'permissao' | 'desconhecido';
+  constructor(codigo: ConviteError['codigo'], mensagem: string) { super(mensagem); this.codigo = codigo; }
+}
+function classificarErroConvite(e: unknown): ConviteError {
+  const raw = String((e as { code?: string; message?: string })?.code || (e as Error)?.message || e);
+  if (/resource-exhausted|quota/i.test(raw)) return new ConviteError('quota', 'O servidor está sem quota de escrita. Tente novamente depois das 07:00.');
+  if (/unavailable|network|offline|tempo esgotado|timeout/i.test(raw)) return new ConviteError('rede', 'Sem ligação estável ao servidor. Verifique a rede e tente outra vez.');
+  if (/permission-denied|insufficient/i.test(raw)) return new ConviteError('permissao', 'A sua conta não tem permissão para convidar neste gabinete.');
+  return new ConviteError('desconhecido', 'Não consegui criar o link do convite. Tente outra vez.');
+}
+
 export async function inviteToGabinete(gabineteId: string, email: string, role: GabineteRole = 'contabilista'): Promise<{ token: string }> {
   const u = auth.currentUser;
   if (!u) throw new Error('Não autenticado');
@@ -308,27 +320,33 @@ export async function inviteToGabinete(gabineteId: string, email: string, role: 
   await revokeInviteToken(gabineteId, emailLc);
   const token = novoTokenConvite();
   const expira = Date.now() + 7 * 24 * 60 * 60 * 1000;
-  // O link só é mostrado ao utilizador se o documento público existir; sem ele
-  // a página /convite diria "não encontrado" e nunca pedia password.
-  try {
-    await withTimeout(setDoc(doc(db, 'convites', token), {
-      gabineteId, gabineteNome: (data as any).nome || '', email: emailLc, role,
-      invitedBy: u.uid, invitedByEmail: u.email || '', createdAt: Date.now(), expiresAt: expira,
-    }), 6000, 'link do convite');
-  } catch {
-    throw new Error('Não consegui criar o link do convite. Verifique a ligação e tente outra vez.');
+  const payloadConvite = {
+    gabineteId, gabineteNome: (data as any).nome || '', email: emailLc, role,
+    invitedBy: u.uid, invitedByEmail: u.email || '', createdAt: Date.now(), expiresAt: expira,
+  };
+  // 1) Documento público primeiro (com 2 tentativas). Sem ele o /convite não
+  //    pede password, por isso nunca devolvemos um link sem este documento.
+  let criado = false;
+  for (let tentativa = 1; tentativa <= 2 && !criado; tentativa++) {
+    try {
+      await withTimeout(setDoc(doc(db, 'convites', token), payloadConvite), 6000, 'link do convite');
+      criado = true;
+    } catch (e) {
+      if (tentativa === 2) throw classificarErroConvite(e);
+      await new Promise((r) => setTimeout(r, 1200));
+    }
   }
-  await withTimeout(updateDoc(ref, {
-    inviteEmails: arrayUnion(emailLc),
-    invites: arrayUnion({ email: emailLc, role, invitedAt: Date.now(), invitedBy: u.uid, invitedByEmail: u.email || '', token, expira }),
-    updatedAt: Date.now(),
-  } as any), 6000, 'convite').catch(async () => {
-    await withTimeout(setDoc(ref, {
-      inviteEmails: [...(data.inviteEmails || []), emailLc],
-      invites: [...(data.invites || []), { email: emailLc, role, invitedAt: Date.now(), invitedBy: u.uid, invitedByEmail: u.email || '', token, expira }],
+  // 2) Registo no gabinete; se falhar, apaga o documento público (rollback).
+  try {
+    await withTimeout(updateDoc(ref, {
+      inviteEmails: arrayUnion(emailLc),
+      invites: arrayUnion({ email: emailLc, role, invitedAt: Date.now(), invitedBy: u.uid, invitedByEmail: u.email || '', token, expira }),
       updatedAt: Date.now(),
-    } as any, { merge: true }), 6000, 'convite').catch(() => {});
-  });
+    } as any), 6000, 'convite');
+  } catch (e) {
+    try { await deleteDoc(doc(db, 'convites', token)); } catch { /* fica órfão; expira em 7 dias */ }
+    throw classificarErroConvite(e);
+  }
 
   return { token };
 }

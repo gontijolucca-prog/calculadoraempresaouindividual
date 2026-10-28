@@ -7,7 +7,7 @@ const stamp = Date.now();
 const dono = `dono+${stamp}@estudo360.pt`, func = `colab+${stamp}@estudo360.pt`, pass = 'Teste12345!';
 
 const b = await chromium.launch({ executablePath: CHROME, headless: true });
-const ctx = await b.newContext({ viewport: { width: 1280, height: 950 } });
+const ctx = await b.newContext({ viewport: { width: 1280, height: 950 }, permissions: ['clipboard-read', 'clipboard-write'] });
 const p = await ctx.newPage();
 p.on('pageerror', (e) => falhas.push('pageerror: ' + (e.stack || '').split('\n')[0]));
 p.on('dialog', (d) => d.accept());
@@ -61,6 +61,15 @@ await p.waitForTimeout(900);
 console.log('   [debug modal]', (await p.locator('div.fixed.inset-0').first().innerText().catch(() => '')).slice(0, 220).replace(/\n+/g, ' | '));
 await p.waitForTimeout(2500);
 console.log('   [debug aviso]', (await p.evaluate(() => document.body.innerText)).match(/[^\n]*(falhou|Não consegui|Sem permissão|tempo esgotado)[^\n]*/gi)?.slice(0,2) || 'sem aviso');
+// Copiar link tem de responder e colocar o URL na área de transferência
+const copiar = p.locator('div.fixed.inset-0.z-50').last().getByRole('button', { name: /Copiar link/i }).first();
+ok(await copiar.count() === 1, 'botão Copiar link visível');
+if (await copiar.count()) {
+  await copiar.click({ force: true }); await p.waitForTimeout(500);
+  const clip = await p.evaluate(() => navigator.clipboard.readText().catch(() => ''));
+  ok(/convite\?t=/.test(clip), `clipboard tem o link (${String(clip).slice(0, 48)}…)`);
+  ok(/copiado/i.test(await p.evaluate(() => document.body.innerText)), 'aviso «Link copiado.»');
+}
 const linkVal = await p.locator('div.fixed.inset-0.z-50 input').first().inputValue().catch(() => '');
 const token = (() => { try { return new URL(linkVal).searchParams.get('t') || ''; } catch { return ''; } })();
 ok(!!token, `link com token no modal (${linkVal.slice(0, 60)}…)`);
