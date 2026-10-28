@@ -305,7 +305,7 @@ function classificarErroConvite(e: unknown): ConviteError {
     return new ConviteError('rede', 'O servidor não respondeu a tempo (6 s). Pode ser a quota gratuita esgotada ou a ligação lenta — tente outra vez daqui a pouco.');
   }
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return new ConviteError('rede', 'Está sem ligação à internet. Verifique a rede e tente outra vez.');
-  if (/unavailable|network|offline/i.test(raw)) return new ConviteError('rede', 'Sem ligação estável ao servidor. Verifique a rede e tente outra vez.');
+  if (/unavailable|network|offline/i.test(raw)) return new ConviteError('rede', 'O servidor não respondeu (pode ser a quota gratuita esgotada ou a rede). Tente outra vez daqui a pouco.');
   if (/permission-denied|insufficient/i.test(raw)) return new ConviteError('permissao', 'A sua conta não tem permissão para convidar neste gabinete.');
   return new ConviteError('desconhecido', 'Não consegui criar o link do convite. Tente outra vez.');
 }
