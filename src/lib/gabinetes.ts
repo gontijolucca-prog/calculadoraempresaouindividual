@@ -488,3 +488,50 @@ export async function processarRevogacoesPendentes(): Promise<number> {
   saveToStorage(REVOGACOES_KEY, restantes);
   return restantes.length;
 }
+
+// ——— Cargos personalizados: gravação com repetição ——————————————————
+export type CargoCustom = { nome: string; permissoes: string[]; createdAt?: number; createdBy?: string };
+export type CargosCustom = Record<string, CargoCustom>;
+
+const CARGOS_PEND_KEY = 'cargos-pendentes';
+
+function lerCargosPendentes(): Record<string, CargosCustom> {
+  return loadFromStorage<Record<string, CargosCustom>>(CARGOS_PEND_KEY, {}) ?? {};
+}
+
+/** Cargos que ainda não chegaram ao servidor para este gabinete (se houver). */
+export function cargosPendentesDe(gabineteId: string): CargosCustom | null {
+  return lerCargosPendentes()[gabineteId] || null;
+}
+
+/** Grava o mapa completo de cargos; se falhar, guarda para repetir depois. */
+export async function guardarCargos(gabineteId: string, cargos: CargosCustom): Promise<boolean> {
+  try {
+    await withTimeout(updateDoc(doc(db, 'gabinetes', gabineteId), { customRoles: cargos, updatedAt: Date.now() } as any), 6000, 'cargos');
+    const pend = lerCargosPendentes();
+    delete pend[gabineteId];
+    saveToStorage(CARGOS_PEND_KEY, pend);
+    return true;
+  } catch {
+    const pend = lerCargosPendentes();
+    pend[gabineteId] = cargos;
+    saveToStorage(CARGOS_PEND_KEY, pend);
+    return false;
+  }
+}
+
+/** Repete as gravações de cargos pendentes; devolve quantos gabinetes falharam. */
+export async function processarCargosPendentes(): Promise<number> {
+  const pend = lerCargosPendentes();
+  const ids = Object.keys(pend);
+  if (ids.length === 0) return 0;
+  let falhas = 0;
+  for (const id of ids) {
+    try {
+      await withTimeout(updateDoc(doc(db, 'gabinetes', id), { customRoles: pend[id], updatedAt: Date.now() } as any), 6000, 'cargos');
+      delete pend[id];
+    } catch { falhas++; }
+  }
+  saveToStorage(CARGOS_PEND_KEY, pend);
+  return falhas;
+}

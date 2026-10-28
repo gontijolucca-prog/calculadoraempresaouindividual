@@ -697,7 +697,7 @@ function AppContent() {
 
   // Revogações que ficaram pendentes (quota/rede) são repetidas sozinhas.
   useEffect(() => {
-    const correr = () => { void import('./lib/gabinetes').then((m) => m.processarRevogacoesPendentes()).catch(() => {}); };
+    const correr = () => { void import('./lib/gabinetes').then((m) => Promise.all([m.processarRevogacoesPendentes(), m.processarCargosPendentes()])).catch(() => {}); };
     const t = window.setTimeout(correr, 4000);
     const id = window.setInterval(correr, 60000);
     window.addEventListener('online', correr);

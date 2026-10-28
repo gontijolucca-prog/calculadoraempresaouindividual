@@ -3,7 +3,7 @@ import { Users, Mail, Trash2, Pencil, X, Plus, Search, CheckCircle2, Clock, Shie
 import { useGabineteColaboradores, useGabineteClientes } from './lib/useGabinete';
 import { filterActive } from './lib/gabineteSelectors';
 import { upsertColaborador, deleteColaborador, newColaboradorId, getColaboradorInitials, upsertCliente, colaboradorNoServidor, type Colaborador, type ColaboradorRole } from './lib/gabinete';
-import { getActiveGabineteId, getGabineteMeta, inviteToGabinete, removeFromGabinete, atualizarCargoColaborador, enfileirarRevogacao, type GabineteMeta } from './lib/gabinetes';
+import { getActiveGabineteId, getGabineteMeta, inviteToGabinete, removeFromGabinete, atualizarCargoColaborador, enfileirarRevogacao, guardarCargos, cargosPendentesDe, type GabineteMeta, type CargosCustom } from './lib/gabinetes';
 import { PERMISSION_LABELS, type PermissionAction, setCustomRolesCache } from './lib/permissions';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from './lib/firebase';
@@ -65,6 +65,8 @@ export default function GabineteEquipa() {
   const [copiado, setCopiado] = useState('');
   const [reenviandoId, setReenviandoId] = useState<string | null>(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
+  const [showCargos, setShowCargos] = useState(false);
+  const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
   const [roleNome, setRoleNome] = useState('');
   const [rolePerms, setRolePerms] = useState<PermissionAction[]>([]);
   const [roleErro, setRoleErro] = useState('');
@@ -73,33 +75,43 @@ export default function GabineteEquipa() {
   const [removendo, setRemovendo] = useState(false);
   const [aviso, setAviso] = useState<string>('');
 
-  const criarCargo = async () => {
+  const salvarCargo = async () => {
     const nome = roleNome.trim();
     if (!nome) { setRoleErro('Dê um nome ao cargo.'); return; }
     if (rolePerms.length === 0) { setRoleErro('Escolha pelo menos uma permissão.'); return; }
     const gabId = getActiveGabineteId();
     if (!gabId) { setRoleErro('Sem gabinete ativo.'); return; }
-    const roleId = `custom:${Math.random().toString(36).slice(2, 10)}`;
-    const entrada = { nome, permissoes: rolePerms, createdAt: Date.now(), createdBy: 'owner' };
-    const base = (gabMeta?.customRoles || {}) as Record<string, { nome: string; permissoes: string[] }>;
-    const customRoles = { ...base, [roleId]: entrada };
-    // UI responde já; o servidor atualiza em segundo plano com prazo.
+    const roleId = editingRoleId || `custom:${Math.random().toString(36).slice(2, 10)}`;
+    const base = (gabMeta?.customRoles || {}) as CargosCustom;
+    const customRoles: CargosCustom = {
+      ...base,
+      [roleId]: { ...(base[roleId] || {}), nome, permissoes: rolePerms, createdAt: base[roleId]?.createdAt || Date.now(), createdBy: 'owner' },
+    };
     setCustomRolesCache(customRoles as never);
     setGabMeta((m) => (m ? { ...m, customRoles } : ({ customRoles } as GabineteMeta)));
     setForm((f) => ({ ...f, role: roleId as ColaboradorRole }));
     setShowRoleModal(false);
+    setShowCargos(false);
+    setEditingRoleId(null);
     setRoleNome(''); setRolePerms([]); setRoleErro('');
-    setAviso(`Cargo «${nome}» criado.`);
-    try {
-      const { updateDoc: upd, doc: d } = await import('firebase/firestore');
-      const { db } = await import('./lib/firebase');
-      const { withTimeout } = await import('./lib/withTimeout');
-      const atual = await withTimeout(getGabineteMeta(gabId), 5000, 'cargo').catch(() => null);
-      const final = { ...((atual?.customRoles || base) as Record<string, unknown>), [roleId]: entrada };
-      await withTimeout(upd(d(db, 'gabinetes', gabId), { customRoles: final }), 6000, 'cargo');
-    } catch {
-      setAviso(`Cargo «${nome}» criado neste dispositivo, mas ainda não sincronizou. Tente novamente quando tiver rede.`);
-    }
+    setAviso(editingRoleId ? `Cargo «${nome}» atualizado.` : `Cargo «${nome}» criado.`);
+    const okRemoto = await guardarCargos(gabId, customRoles);
+    if (!okRemoto) setAviso(`Cargo «${nome}» guardado neste dispositivo; a sincronização será repetida automaticamente.`);
+  };
+
+  const apagarCargo = async (roleId: string) => {
+    const emUso = colaboradores.filter((c) => c.role === roleId).length;
+    if (emUso > 0) { setAviso(`Este cargo está atribuído a ${emUso} colaborador(es). Mude-o antes de apagar.`); return; }
+    if (!window.confirm('Apagar este cargo personalizado?')) return;
+    const gabId = getActiveGabineteId();
+    if (!gabId) return;
+    const customRoles = { ...(gabMeta?.customRoles || {}) } as CargosCustom;
+    delete customRoles[roleId];
+    setCustomRolesCache(customRoles as never);
+    setGabMeta((m) => (m ? { ...m, customRoles } : m));
+    setAviso('Cargo apagado.');
+    const okRemoto = await guardarCargos(gabId, customRoles);
+    if (!okRemoto) setAviso('Cargo apagado neste dispositivo; a sincronização será repetida automaticamente.');
   };
 
   const recarregarMeta = useCallback(async () => {
@@ -351,7 +363,10 @@ export default function GabineteEquipa() {
             <h2 className="text-[15px] font-[800] flex items-center gap-2 text-[#0B1D2D]"><Users className="w-4 h-4 text-[#2563EB]" /> Equipa do gabinete</h2>
             <p className="text-[12.5px] text-[#64748B] mt-1">Quem trabalha aqui — convida por link e associa a clientes como responsável, apoio ou supervisor.</p>
           </div>
-          <button onClick={openAdd} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm font-[600] flex items-center gap-1.5"><Plus className="w-4 h-4" /> Adicionar colaborador</button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowCargos(true)} className="px-3 py-2 rounded-xl border border-[#E2E8F0] text-sm font-[600] text-[#334155] hover:bg-[#F8FAFC]">Gerir cargos</button>
+            <button onClick={openAdd} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm font-[600] flex items-center gap-1.5"><Plus className="w-4 h-4" /> Adicionar colaborador</button>
+          </div>
         </div>
         <div className="mt-4 flex gap-3">
           <div className="relative flex-1">
@@ -509,11 +524,46 @@ export default function GabineteEquipa() {
         </div>
       )}
 
+      {showCargos && (
+        <div className="fixed inset-0 z-[62] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowCargos(false)}>
+          <div className="w-full max-w-[560px] max-h-[86vh] overflow-y-auto rounded-2xl bg-white p-6 border shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold">Gerir cargos</h3>
+              <button onClick={() => setShowCargos(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button>
+            </div>
+            <p className="mt-1 text-[12.5px] text-[#64748B]">Cargos personalizados deste gabinete. Pode editar as permissões ou apagar cargos sem colaboradores.</p>
+            <div className="mt-4 space-y-2">
+              {Object.entries((gabMeta?.customRoles || {}) as CargosCustom).length === 0 && (
+                <p className="rounded-xl border border-dashed border-[#E2E8F0] px-4 py-6 text-center text-[13px] text-[#94A3B8]">Ainda sem cargos personalizados.</p>
+              )}
+              {Object.entries((gabMeta?.customRoles || {}) as CargosCustom).map(([id, r]) => {
+                const usados = colaboradores.filter((c) => c.role === id).length;
+                return (
+                  <div key={id} className="flex items-center justify-between gap-3 rounded-xl border border-[#E2E8F0] px-3 py-2.5">
+                    <div className="min-w-0">
+                      <div className="truncate text-[13.5px] font-[600] text-[#0F172A]">{r.nome}</div>
+                      <div className="text-[11.5px] text-[#64748B]">{r.permissoes.length} permissão(ões) · {usados} colaborador(es)</div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button onClick={() => { setEditingRoleId(id); setRoleNome(r.nome); setRolePerms(r.permissoes as PermissionAction[]); setRoleErro(''); setShowCargos(false); setShowRoleModal(true); }} className="inline-flex items-center gap-1 rounded-lg border border-[#E2E8F0] px-2 py-1 text-[11.5px] font-[600] text-[#2563EB] hover:bg-[#EFF6FF]"><Pencil className="w-3.5 h-3.5" /> Editar</button>
+                      <button onClick={() => void apagarCargo(id)} className="inline-flex items-center gap-1 rounded-lg border border-rose-200 px-2 py-1 text-[11.5px] font-[600] text-rose-600 hover:bg-rose-50"><Trash2 className="w-3.5 h-3.5" /> Apagar</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button onClick={() => { setEditingRoleId(null); setRoleNome(''); setRolePerms([]); setRoleErro(''); setShowCargos(false); setShowRoleModal(true); }} className="inline-flex items-center gap-1.5 rounded-xl bg-[#0F172A] px-4 py-2 text-sm font-[600] text-white"><Plus className="w-4 h-4" /> Novo cargo</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showRoleModal && (
-        <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowRoleModal(false)}>
+        <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => { setShowRoleModal(false); setEditingRoleId(null); }}>
           <div className="w-full max-w-[520px] max-h-[88vh] overflow-y-auto bg-white rounded-2xl p-6 border shadow-xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold">Criar novo cargo</h3>
+              <h3 className="font-semibold">{editingRoleId ? 'Editar cargo' : 'Criar novo cargo'}</h3>
               <button onClick={() => setShowRoleModal(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button>
             </div>
             <p className="mt-1 text-[12.5px] text-[#64748B]">O cargo fica guardado no gabinete e pode ser atribuído a qualquer colaborador.</p>
@@ -531,7 +581,7 @@ export default function GabineteEquipa() {
             {roleErro && <div className="mt-3 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-[12.5px] text-rose-700">{roleErro}</div>}
             <div className="mt-4 flex justify-end gap-2">
               <button onClick={() => setShowRoleModal(false)} className="px-4 py-2 rounded-xl border border-[#E2E8F0] text-sm">Cancelar</button>
-              <button onClick={criarCargo} disabled={roleSaving} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm font-[600] disabled:opacity-60">{roleSaving ? 'A guardar…' : 'Criar cargo'}</button>
+              <button onClick={salvarCargo} disabled={roleSaving} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm font-[600] disabled:opacity-60">{roleSaving ? 'A guardar…' : (editingRoleId ? 'Guardar cargo' : 'Criar cargo')}</button>
             </div>
           </div>
         </div>
@@ -621,7 +671,7 @@ export default function GabineteEquipa() {
             <div className="space-y-3">
               <input value={form.nome || ''} onChange={e => setForm({ ...form, nome: e.target.value })} placeholder="Nome completo" className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
               <input value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="Email (para login)" type="email" className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
-              <select value={form.role || 'contabilista'} onChange={e => { const v = e.target.value; if (v === '__novo__') { setRoleNome(''); setRolePerms([]); setRoleErro(''); setShowRoleModal(true); return; } setForm({ ...form, role: v as ColaboradorRole }); }} className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm">
+              <select value={form.role || 'contabilista'} onChange={e => { const v = e.target.value; if (v === '__novo__') { setEditingRoleId(null); setRoleNome(''); setRolePerms([]); setRoleErro(''); setShowRoleModal(true); return; } setForm({ ...form, role: v as ColaboradorRole }); }} className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm">
                 <option value="admin">Admin — dono do gabinete</option>
                 <option value="contabilista">Contabilista</option>
                 <option value="estagiaria">Estagiária</option>
