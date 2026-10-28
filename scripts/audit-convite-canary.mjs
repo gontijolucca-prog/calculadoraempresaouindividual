@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-const PROJ = 'recofatima-ferramenta';
+const PROJ = process.env.CANARY_PROJECT || 'recofatima-ferramenta';
 const KEY = 'AIzaSyBxc-JFWwxlauY6U4A3IKTxxd5UFiDzjhI';
 const BASE = process.env.CANARY_BASE || 'https://estudo360.pt/';
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
@@ -138,19 +138,19 @@ try {
     notas.push(textoAposGuardar.match(/[^\n]*(quota|Não consegui criar o link)[^\n]*/i)?.[0] || 'erro de quota');
     throw new Error('BLOQUEADO: servidor recusou a criação do convite');
   }
-  const linkVal = await p.locator('div.fixed.inset-0.z-50 input').first().inputValue().catch(() => '');
-  const token = (() => { try { return new URL(linkVal).searchParams.get('t') || ''; } catch { return ''; } })();
-  ok(!!token, 'link do convite criado');
-  const copiar = p.locator('div.fixed.inset-0.z-50').last().getByRole('button', { name: /Copiar link/i }).first();
-  if (await copiar.count()) { await copiar.click({ force: true }); await p.waitForTimeout(400); }
-  const clip = await p.evaluate(() => navigator.clipboard.readText().catch(() => ''));
-  ok(/convite\?t=/.test(clip), 'botão copiar link funciona');
+  const aviso = await p.evaluate(() => document.body.innerText);
+  ok(/entra automaticamente/i.test(aviso), 'dono vê aviso de entrada automática');
+  ok(!/LINK DO CONVITE/i.test(aviso), 'sem modal de link');
   const ctx2 = await browser.newContext({ viewport: { width: 420, height: 900 } });
   const p2 = await ctx2.newPage();
-  await p2.goto(BASE + 'convite?t=' + token, { waitUntil: 'load' }); await p2.waitForTimeout(3500);
-  ok(await p2.locator('#p1').isVisible().catch(() => false), 'link pede para definir password');
-  await p2.locator('#p1').fill(colabPass); await p2.locator('#p2').fill(colabPass);
-  await p2.locator('#go').click(); await p2.waitForTimeout(7000);
+  await p2.goto(BASE, { waitUntil: 'load' }); await p2.waitForTimeout(1500);
+  await p2.getByRole('button', { name: /Criar conta/i }).first().click(); await p2.waitForTimeout(500);
+  await p2.locator('input[placeholder="O seu nome"]').first().fill('Colaborador Canário');
+  await p2.locator('input[placeholder="nome@empresa.pt"]').first().fill(colabEmail);
+  await p2.locator('input[type="password"]').first().fill(colabPass);
+  await p2.getByRole('button', { name: /^Criar conta$/ }).first().click();
+  await p2.waitForTimeout(8000);
+  ok(/Gabinete|Visão geral|Lista de Empresas/i.test(await p2.evaluate(() => document.body.innerText)), 'nova conta entrou sozinha');
   colabUid = await p2.evaluate(() => { try { const k = Object.keys(localStorage).find((x) => x.includes('authUser')); return k ? JSON.parse(localStorage.getItem(k))?.uid || '' : ''; } catch { return ''; } });
   await p.reload({ waitUntil: 'load' }); await p.waitForTimeout(3000);
   await abrirEquipa(p);

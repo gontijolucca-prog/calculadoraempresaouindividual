@@ -12,8 +12,8 @@
 type PagesFunction = (ctx: { request: Request; env: Record<string, unknown> }) => Promise<Response>;
 
 const ALLOWED_ORIGINS = ['https://estudo360.pt', 'https://www.estudo360.pt', 'https://estudo360.pages.dev', 'http://localhost:3000', 'http://localhost:3100', 'http://localhost:3200', 'http://localhost:3300', 'http://localhost:3400', 'http://127.0.0.1:3000'];
-const FIREBASE_PROJECT = 'recofatima-ferramenta';
-const FIREBASE_KEY = 'AIzaSyBxc-JFWwxlauY6U4A3IKTxxd5UFiDzjhI';
+const FIREBASE_PROJECT = 'estudo360-app';
+const FIREBASE_KEY = 'AIzaSyChJKEBjPKZcRVF4R_n07UoUB9QO0q_EzM';
 const RL = new Map<string, number[]>();
 
 const cors = (origin: string | null) => ({
