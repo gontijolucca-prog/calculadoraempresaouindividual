@@ -695,6 +695,17 @@ function AppContent() {
   useEffect(() => { saveOfficeSettings(officeSettings); }, [officeSettings]);
   useEffect(() => { saveHonorariosConfig(honorariosConfig); }, [honorariosConfig]);
 
+  // Mudança de projeto Firebase: tokens antigos são inválidos no novo. Força
+  // um único logout para todos entrarem de novo (passwords preservadas).
+  useEffect(() => {
+    try {
+      const CHAVE = 'estudo360:firebase-project';
+      if (localStorage.getItem(CHAVE) === 'estudo360-app') return;
+      localStorage.setItem(CHAVE, 'estudo360-app');
+      void import('./lib/firebase').then(({ auth }) => auth.signOut()).catch(() => {});
+    } catch { /* storage bloqueado */ }
+  }, []);
+
   // Revogações que ficaram pendentes (quota/rede) são repetidas sozinhas.
   useEffect(() => {
     const correr = () => { void import('./lib/gabinetes').then((m) => Promise.all([m.processarRevogacoesPendentes(), m.processarCargosPendentes()])).catch(() => {}); };
