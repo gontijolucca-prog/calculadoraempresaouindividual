@@ -10,6 +10,7 @@ import {
 import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
 import { cn } from './lib/utils';
 import TopBarGlobal from './components/TopBarGlobal';
+import TopMenus, { type TopMenuGroup } from './components/TopMenus';
 import type { AppMode } from './ModeSelector';
 
 type ViewType =
@@ -402,11 +403,51 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
     </div>
   );
 
+  const navGroups: TopMenuGroup[] = [
+    {
+      id: 'empresas', label: activeClientName ? 'Trocar de Empresa' : 'Empresas', current: active === 'empresas',
+      items: [], onClick: () => { onSelectMode('empresa'); setDrawerOpen(false); },
+    },
+    {
+      id: 'gabinete', label: 'Gabinete', current: active === 'gabinete', width: 'w-[620px]',
+      items: gabTabsVisiveis.map((tab) => ({
+        label: tab.label, desc: tab.desc, Icon: tab.Icon,
+        current: active === 'gabinete' && gabineteTab === tab.id,
+        onClick: () => goGabinete(tab.id),
+      })),
+    },
+    {
+      id: 'simuladores', label: 'Simuladores', current: active === 'hub' || SIM_MENU_SIDEBAR.some((s) => s.id === active), width: 'w-[640px]',
+      items: SIM_MENU_SIDEBAR.map((s) => ({
+        label: s.label, desc: NAV_TIPS[s.id], Icon: s.Icon, current: active === s.id,
+        onClick: () => goClient(s.id),
+      })),
+    },
+    {
+      id: 'relatorios', label: 'Relatórios', current: active === 'exportar',
+      items: [
+        { label: 'Demonstrações', desc: 'Balanço, resultados, fluxos e pacote completo', Icon: FileDown, onClick: () => { onOpenRelatorios?.('balanco'); setDrawerOpen(false); } },
+        { label: 'Encerramento de contas', desc: 'Ata, Previsa e declaração de responsabilidade', Icon: FileDown, onClick: () => { onOpenRelatorios?.('acta'); setDrawerOpen(false); } },
+        { label: 'Pacote cliente', desc: 'Simulação fiscal, proposta e minuta', Icon: FileDown, onClick: () => { onOpenRelatorios?.('simulacao'); setDrawerOpen(false); } },
+      ],
+    },
+    {
+      id: 'ferramentas', label: 'Ferramentas',
+      items: [
+        ...(onSAFTUpload ? [{ label: 'Ler SAF-T', desc: 'Importar ficheiro SAF-T', Icon: Upload, onClick: () => saftInputRef.current?.click() }] : []),
+        ...(hasSaftData && onOpenSaftViewer ? [{ label: 'Ver dados SAF-T', desc: 'Consulta do SAF-T importado', Icon: Clock, onClick: () => runAction(onOpenSaftViewer) }] : []),
+        { label: 'Fazer Proposta', desc: 'Proposta comercial com PDF e link', Icon: Presentation, current: view === 'proposta', onClick: () => go('proposta') },
+        { label: 'Base Legal', desc: 'Referências legais e cálculo', Icon: Info, current: view === 'legal', onClick: () => runAction(openLegal) },
+        { label: 'Definições do Escritório', desc: 'Dados do gabinete e honorários', Icon: Settings, current: view === 'office-settings', onClick: () => go('office-settings') },
+        ...(onLogout ? [{ label: 'Sair', desc: 'Terminar sessão', Icon: LogOut, onClick: () => runAction(onLogout) }] : []),
+      ],
+    },
+  ];
+
   return (
     <div className="h-full w-full flex bg-[#F5F7FA]">
       <aside className={cn(
-        'z-40 w-64 shrink-0 transition-transform duration-200 md:static md:translate-x-0',
-        'fixed inset-y-0 left-0',
+        'fixed inset-y-0 left-0 z-40 w-64 shrink-0 md:hidden transition-transform duration-200',
         drawerOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
       )}>
         {sidebar}
@@ -422,6 +463,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
           subtitle={view === 'gabinete' ? (GAB_TABS.find((x) => x.id === gabineteTab)?.label || 'Centro de operação') : 'Estudo360 · análise e decisão'}
           onGo={(tab) => { onGabineteTab?.(tab); setView('gabinete' as ViewType); }}
           onOpenMenu={() => setDrawerOpen(true)}
+          nav={<TopMenus groups={navGroups} />}
         />
         {menuFeedback && (
           <div data-menu-feedback="1" role="status" aria-live="polite"

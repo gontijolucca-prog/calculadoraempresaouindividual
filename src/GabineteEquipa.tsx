@@ -371,7 +371,7 @@ export default function GabineteEquipa() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-[15px] font-[800] flex items-center gap-2 text-[#0B1D2D]"><Users className="w-4 h-4 text-[#2563EB]" /> Equipa do gabinete</h2>
-            <p className="text-[12.5px] text-[#64748B] mt-1">Quem trabalha aqui — convida por link e associa a clientes como responsável, apoio ou supervisor.</p>
+            <p className="text-[12.5px] text-[#64748B] mt-1">Quem trabalha aqui — adiciona por email e associa a clientes como responsável, apoio ou supervisor.</p>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => setShowCargos(true)} className="px-3 py-2 rounded-xl border border-[#E2E8F0] text-sm font-[600] text-[#334155] hover:bg-[#F8FAFC]">Gerir cargos</button>
@@ -398,7 +398,7 @@ export default function GabineteEquipa() {
       {filtered.length === 0 ? (
         <div className="bg-white rounded-xl border border-[#E2E8F0] p-8 text-center">
           <Users className="w-8 h-8 text-zinc-300 mx-auto mb-2" />
-          <p className="text-sm text-zinc-500">{q || filtroRole !== 'todos' ? 'Nenhum colaborador corresponde à pesquisa.' : 'Ainda sem equipa. Adiciona o primeiro colaborador e recebe um link de convite.'}</p>
+          <p className="text-sm text-zinc-500">{q || filtroRole !== 'todos' ? 'Nenhum colaborador corresponde à pesquisa.' : 'Ainda sem equipa. Adiciona o primeiro colaborador por email.'}</p>
           {q === '' && filtroRole === 'todos' && (
             <button onClick={openAdd} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm font-medium">Adicionar colaborador</button>
           )}
@@ -509,7 +509,7 @@ export default function GabineteEquipa() {
       </div>
 
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[12px] leading-[17px] text-amber-900">
-        <strong>Como funciona o convite:</strong> ao adicionar um colaborador criamos o registo e um <strong>link de convite único</strong> (vale 7 dias). Copia o link ou a mensagem e envia tu — <strong>o envio automático de email não está configurado</strong>, por isso não prometemos email. A pessoa abre o link, define a password e entra; a linha passa a <em>Ativa</em>. Reenviar gera um link novo e invalida o antigo; remover da equipa revoga os convites pendentes. Cada gabinete vê a sua própria equipa isolada (Firestore <code>gabinete/{'{'}officeId{'}'}/colaboradores</code>).
+        <strong>Como funciona:</strong> adiciona o colaborador com nome, email e cargo. A linha fica <em>Aguarda conta</em>; quando a pessoa criar conta com esse email (ou entrar, se já tiver), o gabinete aparece-lhe automaticamente e a linha passa a <em>Ativa</em> — sem links. Se precisar, «Reenviar» gera um link de recurso. Remover corta o acesso de imediato. Cada gabinete vê a sua própria equipa isolada.
       </div>
 
       {aviso && (

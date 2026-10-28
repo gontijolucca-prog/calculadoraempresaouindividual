@@ -3,7 +3,7 @@
  * Reaproveita os hooks do gabinete e o sino de notificações; não duplica
  * lógica de negócio. Escondida na impressão.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import NotificacoesBell from './NotificacoesBell';
 import { useGabineteClientes, useGabineteTarefas, useGabineteObrigacoes, useGabineteCofre, useGabineteAlertas } from '../lib/useGabinete';
 import { getActiveGabineteId, getGabineteMeta, clearActiveGabineteAndReload } from '../lib/gabinetes';
@@ -11,7 +11,7 @@ import { subscribeSync, getSyncSnapshot } from '../lib/sync';
 import { flushOutbox } from '../lib/gabinete';
 import { loadOfficeSettings } from '../lib/officeSettings';
 
-export default function TopBarGlobal({ title, subtitle, onGo, onOpenMenu }: { title?: string; subtitle?: string; onGo?: (tab: string) => void; onOpenMenu?: () => void }) {
+export default function TopBarGlobal({ title, subtitle, onGo, onOpenMenu, nav }: { title?: string; subtitle?: string; onGo?: (tab: string) => void; onOpenMenu?: () => void; nav?: ReactNode }) {
   const clientes = useGabineteClientes();
   const tarefas = useGabineteTarefas();
   const obrigacoes = useGabineteObrigacoes();
@@ -92,6 +92,11 @@ export default function TopBarGlobal({ title, subtitle, onGo, onOpenMenu }: { ti
           </div>
         </div>
       </div>
+      {nav && (
+        <div className="hidden md:block border-t border-zinc-100 bg-white/70">
+          <div className="mx-auto flex max-w-[1400px] items-center px-4 sm:px-6">{nav}</div>
+        </div>
+      )}
     </div>
   );
 }
