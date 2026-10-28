@@ -76,8 +76,14 @@ export async function flushAuditQueue(): Promise<void> {
   const q = loadFromStorage<AuditEvent[]>(QUEUE_KEY, []);
   if (!q.length) return;
   const pending = q.filter(e => e.uid === u || e.uid === 'anon');
+  const enviados = new Set<string>();
   for (const ev of pending.slice(-80)) {
     const toSend = ev.uid === 'anon' ? { ...ev, uid: u, email: auth.currentUser?.email ?? undefined } : ev;
-    try { await setDoc(doc(db, COL, toSend.id), semUndefined(toSend) as any); } catch {}
+    try { await setDoc(doc(db, COL, toSend.id), semUndefined(toSend) as any); enviados.add(ev.id); } catch {}
+  }
+  // Sem remover os enviados, cada abertura da app reescrevia os mesmos 80
+  // eventos para sempre — foi isto que esgotou as 20 mil gravações diárias.
+  if (enviados.size > 0) {
+    saveToStorage(QUEUE_KEY, q.filter(e => !enviados.has(e.id)));
   }
 }
