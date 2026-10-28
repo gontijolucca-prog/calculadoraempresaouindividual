@@ -63,6 +63,17 @@ await p.locator('input[placeholder="Nome completo"]:visible').first().fill('Nome
 await p.locator('select:has(option[value="__novo__"])').first().selectOption('estagiaria');
 await p.getByRole('button', { name: /^Guardar$/ }).filter({ visible: true }).first().click();
 await p.waitForTimeout(2000);
+// tentar mudar o email: tem de ser recusado (o acesso é do uid, não do email)
+const linhaEdit = p.locator('tr').filter({ hasText: 'Nome Novo' }).first();
+if (await linhaEdit.count()) {
+  await linhaEdit.locator('button[title="Editar"]').click(); await p.waitForTimeout(500);
+  await p.locator('input[placeholder="Email (para login)"]:visible').first().fill('outro+' + Date.now() + '@estudo360.pt');
+  await p.getByRole('button', { name: /^Guardar$/ }).filter({ visible: true }).first().click();
+  await p.waitForTimeout(700);
+  ok(/Para mudar o email/i.test(await p.evaluate(() => document.body.innerText)), 'mudança de email recusada com explicação');
+  await p.getByRole('button', { name: /^Cancelar$/ }).filter({ visible: true }).first().click();
+  await p.waitForTimeout(400);
+}
 const texto = await p.evaluate(() => document.body.innerText);
 ok(/Nome Novo/.test(texto), 'nome novo na lista');
 // Firestore: convite e colaborador atualizados

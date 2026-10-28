@@ -186,6 +186,13 @@ export default function GabineteEquipa() {
     if (!email || !/.+@.+\..+/.test(email)) { setError('Email válido obrigatório'); return; }
     const dup = colaboradores.some(c => c.email.toLowerCase() === email && c.id !== editing?.id);
     if (dup) { setError('Este email já está na equipa'); return; }
+    // O acesso é do uid da conta, não do texto do email. Mudar o email aqui
+    // não transferia o acesso (a conta antiga continuava a entrar) e dava a
+    // impressão errada. O caminho seguro é remover e adicionar o novo email.
+    if (editing && email !== (editing.email || '').toLowerCase()) {
+      setError('Para mudar o email, remova este colaborador e adicione o novo email. A conta antiga manteria o acesso.');
+      return;
+    }
     const col: Colaborador = {
       id: editing?.id || newColaboradorId(),
       nome,
