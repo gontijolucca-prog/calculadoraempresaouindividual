@@ -299,7 +299,13 @@ export class ConviteError extends Error {
 function classificarErroConvite(e: unknown): ConviteError {
   const raw = String((e as { code?: string; message?: string })?.code || (e as Error)?.message || e);
   if (/resource-exhausted|quota/i.test(raw)) return new ConviteError('quota', 'O servidor está sem quota de escrita. Tente novamente depois das 07:00.');
-  if (/unavailable|network|offline|tempo esgotado|timeout/i.test(raw)) return new ConviteError('rede', 'Sem ligação estável ao servidor. Verifique a rede e tente outra vez.');
+  // O Firestore em backoff (quota/rede) faz a promessa expirar no nosso prazo:
+  // isso não é "internet do utilizador".
+  if (/tempo esgotado|timeout/i.test(raw)) {
+    return new ConviteError('rede', 'O servidor não respondeu a tempo (6 s). Pode ser a quota gratuita esgotada ou a ligação lenta — tente outra vez daqui a pouco.');
+  }
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return new ConviteError('rede', 'Está sem ligação à internet. Verifique a rede e tente outra vez.');
+  if (/unavailable|network|offline/i.test(raw)) return new ConviteError('rede', 'Sem ligação estável ao servidor. Verifique a rede e tente outra vez.');
   if (/permission-denied|insufficient/i.test(raw)) return new ConviteError('permissao', 'A sua conta não tem permissão para convidar neste gabinete.');
   return new ConviteError('desconhecido', 'Não consegui criar o link do convite. Tente outra vez.');
 }

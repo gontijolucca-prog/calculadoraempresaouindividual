@@ -93,24 +93,33 @@ try {
   ok(!!ownerUid, 'conta canário criada');
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 950 }, permissions: ['clipboard-read', 'clipboard-write'] });
   const p = await ctx.newPage();
-  p.on('pageerror', (e) => notas.push('pageerror: ' + e.message.slice(0, 120)));
+  p.on('pageerror', (e) => notas.push('pageerror: ' + e.message.slice(0, 160)));
+  p.on('console', (m) => { if (m.type() === 'error') notas.push('console: ' + m.text().slice(0, 160)); });
   await signInUI(p, ownerEmail, ownerPass);
   ok(/Gabinete|Lista de Empresas|Criar gabinete/i.test(await p.evaluate(() => document.body.innerText)), 'canário entrou');
   const criar = p.getByRole('button', { name: /Criar (novo )?gabinete/i }).first();
   if (await criar.count()) {
     await criar.click(); await p.waitForTimeout(700);
     await p.locator('input[placeholder*="Silva"]').first().fill('QA Canário');
-    await p.locator('input[placeholder="500000000"]').first().fill('509' + String(stamp).slice(-6));
+    // NIF coletivo válido (checksum mod 11); um NIF aleatório é recusado pela UI.
+    const base8 = '509' + String(stamp).slice(-5);
+    let soma = 0;
+    for (let i = 0; i < 8; i++) soma += Number(base8[i]) * (9 - i);
+    const check = 11 - (soma % 11);
+    const nif = base8 + String(check >= 10 ? 0 : check);
+    await p.locator('input[placeholder="500000000"]').first().fill(nif);
     await p.getByRole('button', { name: /Criar e entrar/i }).first().click();
     await p.waitForTimeout(3000);
   }
-  gabId = await p.evaluate(() => {
+  const lerGab = () => p.evaluate(() => {
     for (const k of Object.keys(localStorage)) {
       if (!k.includes('gabinete:activeId')) continue;
       try { const d = JSON.parse(localStorage.getItem(k)); const v = d?.data || d; if (typeof v === 'string' && v.length >= 3) return v; } catch { const v = localStorage.getItem(k); if (v && v.length >= 3) return v; }
     }
     return '';
   });
+  for (let i = 0; i < 24 && !gabId; i++) { gabId = await lerGab(); if (!gabId) await p.waitForTimeout(500); }
+  console.log('   [debug pós-criar]', (await p.evaluate(() => document.body.innerText)).slice(0, 700).replace(/\n+/g, ' | '));
   if (!gabId) {
     const corpo = await p.evaluate(() => document.body.innerText.slice(0, 300).replace(/\n+/g, ' | '));
     notas.push('BLOQUEADO: gabinete não foi criado (escrita recusada) — ' + corpo.slice(0, 140));
