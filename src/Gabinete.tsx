@@ -221,13 +221,13 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
         {tab !== 'gallery' && (
           <>
             {tab === 'visao-geral' && (!activeEmpresaId ? <EscolherCliente clientes={clientes} onSelect={onSelectEmpresa} onGoEmpresas={onGoEmpresas} /> : <VisaoGeralView cliente={clienteAtivo} contactos={contactosF} alertas={alertasF} ocorrencias={ocorrenciasF} tarefas={tarefas} obrigacoes={obrigacoes} cofre={cofre} documentos={documentosF} colaboradores={colaboradores} role={effectiveRole} onGo={(tab)=>setTab(tab as GabineteTab)} onOpenCofre={()=>setTab('cofre')} />)}
-            {tab === 'dashboard' && <Dashboard clientes={clientes} tarefas={tarefasRaw} obrigacoes={obrigacoesRaw} cofre={cofre} onGo={goFunction} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
-            {tab === 'mapa-rh' && <MapaRHView clientes={clientes} obrigacoes={obrigacoesRaw} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
-            {tab === 'mapa-controlo' && <MapaControloView clientes={clientes} obrigacoes={obrigacoesRaw} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
+            {tab === 'dashboard' && <Dashboard clientes={activeClienteId ? clientes.filter(c=>c.id===activeClienteId) : clientes} tarefas={tarefas} obrigacoes={obrigacoes} cofre={cofre} onGo={goFunction} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
+            {tab === 'mapa-rh' && <MapaRHView clientes={activeClienteId ? clientes.filter(c=>c.id===activeClienteId) : clientes} obrigacoes={obrigacoes} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
+            {tab === 'mapa-controlo' && <MapaControloView clientes={activeClienteId ? clientes.filter(c=>c.id===activeClienteId) : clientes} obrigacoes={obrigacoes} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
             {tab === 'tarefas' && (!activeEmpresaId ? <EscolherCliente clientes={clientes} onSelect={onSelectEmpresa} onGoEmpresas={onGoEmpresas} /> : <TarefasView tarefas={tarefas} clientes={clientes} obrigacoes={obrigacoes} activeEmpresaId={activeClienteId} activeEmpresaNome={activeEmpresaNome} canDelete={can(effectiveRole, 'apagar')} canGerirObrigacoes={can(effectiveRole, 'gerir-obrigacoes')} />)}
             {tab === 'equipa' && (can(effectiveRole, 'gerir-equipa') ? <GabineteEquipa /> : <SemPermissao titulo="Equipa" />)}
             {tab === 'agenda' && <AgendaView tarefas={tarefas} obrigacoes={obrigacoes} alertas={alertasF} clientes={clientes} />}
-            {tab === 'obrigacoes' && <ObrigacoesView obrigacoes={obrigacoesRaw} clientes={clientes} activeEmpresaId={activeClienteId} canGerirObrigacoes={can(effectiveRole, 'gerir-obrigacoes')} />}
+            {tab === 'obrigacoes' && <ObrigacoesView obrigacoes={obrigacoes} clientes={activeClienteId ? clientes.filter(c=>c.id===activeClienteId) : clientes} activeEmpresaId={activeClienteId} canGerirObrigacoes={can(effectiveRole, 'gerir-obrigacoes')} />}
             {tab === 'lixeira' && (can(effectiveRole, 'restaurar') ? <LixeiraView clientesAll={clientesAll} tarefasAll={tarefasAll} obrigacoesAll={obrigacoesAll} contactosAll={contactosAll} alertasAll={alertasAll} ocorrenciasAll={ocorrenciasAll} documentosAll={documentosAll} canPurgar={can(effectiveRole, 'purgar')} /> : <SemPermissao titulo="Lixeira" />)}
             {tab === 'cofre' && (can(effectiveRole, 'ver-cofre') ? <CofreView cofre={cofre} clientes={clientes} /> : <SemPermissao titulo="Cofre" />)}
           </>
@@ -1876,6 +1876,7 @@ function ObrigacoesView({ obrigacoes, clientes, activeEmpresaId, canGerirObrigac
 // ─── Cofre — estilo Chrome Password Manager ───────────────────────────────
 function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:GabineteCliente[] }) {
   const [q, setQ] = useState('');
+  const [filtroCliente, setFiltroCliente] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Partial<CofreEntrada & { secretPlain?: string }>>({ categoria:'AT' });
@@ -1884,10 +1885,17 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
 
   const filtered = useMemo(()=> {
     const s=q.toLowerCase().trim();
-    if (!s) return [...cofre].sort((a,b)=> (a.titulo||'').localeCompare(b.titulo||''));
-    return cofre.filter(c=> [c.titulo,c.username,c.clienteNome,c.categoria,c.url].join(' ').toLowerCase().includes(s))
-      .sort((a,b)=> (a.titulo||'').localeCompare(b.titulo||''));
-  }, [cofre,q]);
+    let lista = cofre;
+    if (filtroCliente) lista = lista.filter((c) => c.clienteId === filtroCliente || (c.clienteNome || '') === filtroCliente);
+    if (s) lista = lista.filter(c=> [c.titulo,c.username,c.clienteNome,c.categoria,c.url].join(' ').toLowerCase().includes(s));
+    return [...lista].sort((a,b)=> (a.titulo||'').localeCompare(b.titulo||''));
+  }, [cofre,q,filtroCliente]);
+  const clientesCofre = useMemo(() => {
+    const mapa = new Map<string,string>();
+    for (const c of cofre) if (c.clienteId) mapa.set(c.clienteId, c.clienteNome || 'Cliente');
+    for (const c of clientes) if (!mapa.has(c.id)) mapa.set(c.id, c.nome);
+    return [...mapa.entries()].sort((a,b)=>a[1].localeCompare(b[1]));
+  }, [cofre, clientes]);
   const vaziasCount = useMemo(()=> listCofreVazias().length, [cofre]);
   const [purging, setPurging] = useState(false);
 
@@ -2009,12 +2017,16 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
               <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Pesquisar passwords" className="w-full pl-9 pr-3 py-2 rounded-full border border-zinc-200 bg-white text-sm placeholder:text-zinc-400" />
             </div>
+            <select value={filtroCliente} onChange={e=>setFiltroCliente(e.target.value)} className="px-3 py-2 rounded-full border border-zinc-200 bg-white text-sm max-w-[200px]">
+              <option value="">Todos os clientes</option>
+              {clientesCofre.map(([id,nome]) => <option key={id} value={id}>{nome}</option>)}
+            </select>
             <button onClick={startCreate} className="ml-auto px-4 py-2 rounded-full bg-[#0677FF] text-white text-sm font-medium flex items-center gap-2"><Plus className="w-4 h-4" /> Adicionar</button>
           </div>
           <div className="py-16 text-center">
             <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center mx-auto"><Lock className="w-6 h-6 text-zinc-400" /></div>
             <h3 className="mt-3 font-semibold text-zinc-900">Cofre vazio</h3>
-            <p className="mt-1 text-sm text-zinc-500 max-w-md mx-auto">Guarde acessos — só a sua conta vê.</p>
+            <p className="mt-1 text-sm text-zinc-500 max-w-md mx-auto">Guarde acessos do gabinete — todos os colaboradores com acesso ao cofre veem.</p>
             <button onClick={startCreate} className="mt-4 px-5 py-2.5 rounded-xl bg-zinc-900 text-white text-sm font-medium">Guardar primeiro</button>
           </div>
         </div>
@@ -2029,6 +2041,10 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
           <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Pesquisar passwords" className="w-full pl-9 pr-3 py-2 rounded-full bg-zinc-100 border border-transparent focus:bg-white focus:border-zinc-300 focus:outline-none text-sm placeholder:text-zinc-500" />
         </div>
+        <select value={filtroCliente} onChange={e=>setFiltroCliente(e.target.value)} className="px-3 py-2 rounded-full border border-zinc-200 bg-white text-sm max-w-[200px]">
+          <option value="">Todos os clientes</option>
+          {clientesCofre.map(([id,nome]) => <option key={id} value={id}>{nome}</option>)}
+        </select>
         {vaziasCount > 0 && !editing && (
           <button
             disabled={purging}
