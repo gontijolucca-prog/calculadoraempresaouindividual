@@ -4,7 +4,6 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
-  sendEmailVerification,
   sendPasswordResetEmail,
   setPersistence,
   browserLocalPersistence,
@@ -82,7 +81,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await updateProfile(cred.user, { displayName: displayName.trim() });
     }
     if (cred.user) {
-      try { await sendEmailVerification(cred.user, acoesEmail()); } catch {}
       void logAuthEvent(cred.user, 'signup');
     }
   };
@@ -104,11 +102,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signOut(auth);
   };
 
-  const sendVerificationEmail = async () => {
-    if (!auth.currentUser) throw new Error('Sem utilizador autenticado');
-    auth.languageCode = 'pt-PT';
-    await sendEmailVerification(auth.currentUser, acoesEmail());
-  };
+  // Verificação de email removida do produto: mantém-se a função para
+  // compatibilidade, mas não envia nada nem bloqueia ninguém.
+  const sendVerificationEmail = async () => { /* sem verificação */ };
 
   const resetPassword = async (email: string) => {
     auth.languageCode = 'pt-PT';

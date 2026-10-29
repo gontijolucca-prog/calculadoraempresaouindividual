@@ -46,7 +46,7 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
         await signInWithEmail(email.trim(), password, remember);
       } else if (mode === 'signup') {
         await signUpWithEmail(email.trim(), password, name.trim());
-        setInfo('Conta criada. Verifique o seu email para ativar o acesso — enviámos um link.');
+        setInfo('Conta criada. Já pode entrar no gabinete.');
       } else if (mode === 'reset') {
         await resetPassword(email.trim());
         setInfo('Se existir conta com esse email, enviámos instruções para repor a password.');

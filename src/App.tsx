@@ -13,7 +13,7 @@ import PropostaEditor from './PropostaEditor';
 import type { DeckDoc } from './lib/deck/types';
 import type { DeckCliente } from './lib/deck/build';
 import LandingPage from './LandingPage';
-import AuthView, { VerifyEmailGate } from './AuthView';
+import AuthView from './AuthView';
 import EmpresasList from './EmpresasList';
 import ClientHub from './ClientHub';
 import ExportarRelatorio from './ExportarRelatorio';
@@ -384,7 +384,6 @@ function AppContent() {
     })();
     return () => { vivo = false; };
   }, [user]);
-  const needsVerification = !!user && !user.emailVerified && user.providerData.some(p => p.providerId === 'password') && !isTestBypass && !isAdminBypass && !conviteToken && !acessoPorConvite;
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   // Mode is persisted: ao atualizar a página o utilizador continua no mesmo contexto.
@@ -994,16 +993,6 @@ function AppContent() {
   if (!isAuthenticated) {
     if (showAuth) return <AuthView initialMode={authMode} onBack={() => setShowAuth(false)} />;
     return <LandingPage onEnter={() => { setAuthMode('login'); setShowAuth(true); }} onCreateAccount={() => { setAuthMode('signup'); setShowAuth(true); }} />;
-  }
-  if (needsVerification) {
-    return (
-      <VerifyEmailGate
-        email={user.email || ''}
-        onResend={async () => { await sendVerificationEmail(); }}
-        onReload={async () => { await reloadUser(); }}
-        onLogout={async () => { await logout(); }}
-      />
-    );
   }
 
 
@@ -1882,16 +1871,6 @@ function AppContent() {
       {/* Skip link for keyboard users */}
       <a href="#main-content" className="skip-link">Saltar para conteúdo principal</a>
 
-      {/* Banner de verificação de email — não bloqueia, mas alerta e limita Cofre */}
-      {needsVerification && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[13px]">
-          <span className="flex items-center gap-2 text-amber-800"><AlertTriangle className="w-4 h-4 shrink-0" /> Verifique o seu email <strong>{user?.email}</strong> — o cofre fica bloqueado até confirmar.</span>
-          <span className="flex gap-2 shrink-0">
-            <button onClick={async()=>{ try{ await sendVerificationEmail(); }catch{} }} className="px-3 py-1.5 rounded-lg bg-white border border-amber-200 text-amber-800 text-xs font-[700] hover:bg-amber-100">Reenviar email</button>
-            <button onClick={async()=>{ try{ await reloadUser(); }catch{} }} className="px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-[700] hover:bg-amber-700">Já verifiquei</button>
-          </span>
-        </div>
-      )}
 
       {/* ── SAF-T import result modal ── */}
       {saftModal?.open && (
