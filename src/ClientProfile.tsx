@@ -668,7 +668,7 @@ export default function ClientProfile({
             />
             {st.nif.length === 9 && !isValidNIFPT(st.nif) && (
               <p id="nif-help" className="text-[11px] text-amber-700 font-[600] mt-1">
-                NIF deve ter 9 dígitos e checksum válido.
+                NIF inválido: são 9 dígitos e o último é o dígito de controlo (checksum).
               </p>
             )}
           </div>
@@ -1319,7 +1319,7 @@ export default function ClientProfile({
                 />
                 {profile.nif.length === 9 && !isValidNIFPT(profile.nif) && (
                   <p id="nif-help" className="text-[11px] text-amber-700 font-[600] mt-1">
-                    NIF deve ter 9 dígitos e checksum válido.
+                    NIF inválido: são 9 dígitos e o último é o dígito de controlo (checksum).
                   </p>
                 )}
               </div>
