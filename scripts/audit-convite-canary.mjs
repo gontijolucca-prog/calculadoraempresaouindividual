@@ -179,7 +179,9 @@ try {
   ok(!(await p.evaluate(() => document.body.innerText)).includes(colabEmail), 'colaborador removido');
   await p.screenshot({ path: 'docs/canario-producao-' + stamp + '.png' });
 } catch (e) {
-  notas.push(String(e?.message || e).slice(0, 220));
+  const msg = String(e?.message || e).slice(0, 220);
+  notas.push(msg);
+  if (!/BLOQUEADO|quota/i.test(msg)) falhas.push('erro no canário: ' + msg.slice(0, 120));
 } finally {
   await apagarGabinetesDoEmail(at, ownerEmail);
   await apagarUser(at, ownerUid);
