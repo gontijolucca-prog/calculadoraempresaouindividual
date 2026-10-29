@@ -11,7 +11,7 @@ import { subscribeSync, getSyncSnapshot } from '../lib/sync';
 import { flushOutbox } from '../lib/gabinete';
 import { loadOfficeSettings } from '../lib/officeSettings';
 
-export default function TopBarGlobal({ title, subtitle, onGo, onOpenMenu, nav }: { title?: string; subtitle?: string; onGo?: (tab: string) => void; onOpenMenu?: () => void; nav?: ReactNode }) {
+export default function TopBarGlobal({ title, subtitle, onGo, onOpenMenu, nav, activeClientName, onClientClick }: { title?: string; subtitle?: string; onGo?: (tab: string) => void; onOpenMenu?: () => void; nav?: ReactNode; activeClientName?: string; onClientClick?: () => void }) {
   const clientes = useGabineteClientes();
   const tarefas = useGabineteTarefas();
   const obrigacoes = useGabineteObrigacoes();
@@ -50,6 +50,20 @@ export default function TopBarGlobal({ title, subtitle, onGo, onOpenMenu, nav }:
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
+          {activeClientName && (
+            <button
+              type="button"
+              onClick={onClientClick}
+              title="A trabalhar neste cliente — clique para trocar"
+              className="hidden sm:flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-[11.5px] font-[700] text-rose-700 hover:bg-rose-100 transition-colors max-w-[240px]"
+            >
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-500 opacity-60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-600" />
+              </span>
+              <span className="truncate">A trabalhar em {activeClientName}</span>
+            </button>
+          )}
           <NotificacoesBell clientes={clientes} obrigacoes={obrigacoes} alertas={alertas} onGo={onGo} />
           <button
             onClick={clearActiveGabineteAndReload}

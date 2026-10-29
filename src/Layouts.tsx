@@ -375,21 +375,15 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                   title="Balanço, Demonstração de Resultados, Alterações no CP, Fluxos de Caixa e pacote completo." />
                 <ClientNavItem label="Encerramento de contas" Icon={FileDown}
                   onClick={() => { onOpenRelatorios?.('acta'); setDrawerOpen(false); }}
-                  title="Ata de Assembleia Geral, Previsa (Modelo 22 em Excel) e Declaração de Responsabilidade." />
+                  title="Ata de Assembleia Geral, Previsa (Modelo 22) e Declaração de Responsabilidade." />
                 <ClientNavItem label="Pacote cliente" Icon={FileDown}
                   onClick={() => { onOpenRelatorios?.('simulacao'); setDrawerOpen(false); }}
-                  title="Simulação Fiscal, Proposta de Honorários e Minuta de Contrato." />
+                  title="Simulação Fiscal, Proposta de Honorários e Contrato." />
               </div>
               </div>
             </div>
 
         <SectionLabel>Ferramentas</SectionLabel>
-        {onSAFTUpload && (
-          <NavItem label="Ler SAF-T" Icon={Upload} onClick={() => { saftInputRef.current?.click(); }} title="Importar ficheiro SAF-T" />
-        )}
-        {hasSaftData && onOpenSaftViewer && (
-          <NavItem label="Ver dados SAF-T" Icon={Clock} onClick={() => runAction(onOpenSaftViewer)} />
-        )}
         <NavItem label="Fazer Proposta" Icon={Presentation} onClick={() => go('proposta')} current={view === 'proposta'} title="Proposta comercial com AI, PDF e link público" />
         <NavItem label="Base Legal" Icon={Info} onClick={() => runAction(openLegal)} current={view === 'legal'} />
       </nav>
@@ -434,8 +428,6 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
     {
       id: 'ferramentas', label: 'Ferramentas',
       items: [
-        ...(onSAFTUpload ? [{ label: 'Ler SAF-T', desc: 'Importar ficheiro SAF-T', Icon: Upload, onClick: () => saftInputRef.current?.click() }] : []),
-        ...(hasSaftData && onOpenSaftViewer ? [{ label: 'Ver dados SAF-T', desc: 'Consulta do SAF-T importado', Icon: Clock, onClick: () => runAction(onOpenSaftViewer) }] : []),
         { label: 'Fazer Proposta', desc: 'Proposta comercial com PDF e link', Icon: Presentation, current: view === 'proposta', onClick: () => go('proposta') },
         { label: 'Base Legal', desc: 'Referências legais e cálculo', Icon: Info, current: view === 'legal', onClick: () => runAction(openLegal) },
         { label: 'Definições do Escritório', desc: 'Dados do gabinete e honorários', Icon: Settings, current: view === 'office-settings', onClick: () => go('office-settings') },
@@ -464,6 +456,8 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
           onGo={(tab) => { onGabineteTab?.(tab); setView('gabinete' as ViewType); }}
           onOpenMenu={() => setDrawerOpen(true)}
           nav={<TopMenus groups={navGroups} />}
+          activeClientName={activeClientName}
+          onClientClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }}
         />
         {menuFeedback && (
           <div data-menu-feedback="1" role="status" aria-live="polite"

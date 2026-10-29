@@ -446,53 +446,56 @@ function AppContent() {
     return () => { vivo = false; };
   }, [user, conviteToken]);
 
-  // Sem `?convite=` no URL: se o utilizador tem exatamente UM convite pendente
-  // e ainda não tem gabinete ativo, aceita sozinho e entra. O ref trava a
-  // tentativa (uma por login) para não entrar em loop de aceitar/apagar.
+  // Ao entrar: aceita TODOS os convites pendentes deste email e garante um
+  // gabinete ativo válido. Antes só aceitava quando havia exatamente um e
+  // desistia se existisse um activeId antigo — a pessoa entrava sem gabinete.
   const autoConviteRef = useRef<string>('');
   useEffect(() => {
     if (!user || conviteToken) return; // o link no URL tem o efeito acima
     if (autoConviteRef.current === user.uid) return;
-    autoConviteRef.current = user.uid; // trava já aqui: uma tentativa por login
+    autoConviteRef.current = user.uid;
     (async () => {
       try {
         const g = await import('./lib/gabinetes');
-        if (g.getActiveGabineteId()) return;
+        const emailLc = (user.email || '').trim().toLowerCase();
+        let aceitou = false;
         const { meus, convites } = await g.listMyGabinetes();
-        // Já é membro de exatamente 1 gabinete e não há convites: entra (útil
-        // quando a adesão ficou feita mas o id ativo não persistiu).
-        if (convites.length === 0) {
-          if (meus.length === 1 && meus[0].id) {
-            g.setActiveGabineteId(meus[0].id);
-            setGabineteNonce(n => n + 1);
-            setView('gabinete');
-          }
-          return;
-        }
-        if (convites.length !== 1) return;
-        const conv = convites[0];
-        const emailLc = (user.email || '').toLowerCase();
-        // O convite mais recente é o último (o array só cresce); é esse o token
-        // que está vivo em `convites/{token}`.
-        const conviteDoEmail = (conv.invites || []).filter(i => (i.email || '').toLowerCase() === emailLc).pop();
-        if (!conviteDoEmail) return;
-        // Captura o token antes de aceitar — acceptInvite limpa `invites`.
-        const token = conviteDoEmail.token || '';
-        await g.acceptInvite(conv.id);
-        g.setActiveGabineteId(conv.id);
-        // O link já foi usado: tenta apagar o doc público (as regras só deixam
-        // ao autor do convite, por isso é best-effort e nunca bloqueia a entrada).
-        if (token) {
+        for (const conv of convites) {
+          const doEmail = (conv.invites || []).some((i) => String(i.email || '').trim().toLowerCase() === emailLc);
+          if (!doEmail) continue;
+          const token = (conv.invites || [])
+            .filter((i) => String(i.email || '').trim().toLowerCase() === emailLc)
+            .pop()?.token || '';
           try {
-            const { doc, deleteDoc } = await import('firebase/firestore');
-            const { db } = await import('./lib/firebase');
-            await deleteDoc(doc(db, 'convites', token));
-          } catch { /* token já apagado ou sem permissão: não bloqueia a entrada */ }
+            await g.acceptInvite(conv.id);
+            aceitou = true;
+            if (token) {
+              try {
+                const { doc, deleteDoc } = await import('firebase/firestore');
+                const { db } = await import('./lib/firebase');
+                await deleteDoc(doc(db, 'convites', token));
+              } catch { /* token já usado ou sem permissão */ }
+            }
+          } catch (e) {
+            console.warn('[convite] aceitar falhou', conv.id, e);
+          }
         }
-        // O gate multi-gabinete lê o id do localStorage: força re-render.
-        setGabineteNonce(n => n + 1);
-        setEmpresasRefresh(n => n + 1);
-        setView('gabinete');
+
+        const final = aceitou ? await g.listMyGabinetes() : { meus };
+        const lista = final.meus;
+        const ids = new Set(lista.map((m) => m.id));
+        const ativo = g.getActiveGabineteId();
+        if (ativo && !ids.has(ativo)) g.clearActiveGabineteId();
+        const ativoValido = !!ativo && ids.has(ativo);
+
+        if (!ativoValido && lista.length === 1) {
+          g.setActiveGabineteId(lista[0].id);
+          setView('gabinete');
+        }
+        if (aceitou || (!ativoValido && lista.length >= 1)) {
+          setGabineteNonce((n) => n + 1);
+          setEmpresasRefresh((n) => n + 1);
+        }
       } catch (e) {
         console.warn('[convite] aceitação automática falhou', e);
       }
@@ -1649,7 +1652,7 @@ function AppContent() {
       return { ok: true };
     },
     listDownloadableDocs: () => [
-      { id: 'previsa', label: 'Previsa (Excel Modelo 22)' },
+      { id: 'previsa', label: 'Previsa (Modelo 22)' },
       ...DOC_TYPES.map((d) => ({ id: d.id, label: d.label })),
     ],
     downloadDoc: async (docId) => {
@@ -1747,6 +1750,12 @@ function AppContent() {
             onNovaEmpresaManual={handleNovaEmpresaManual}
             onNovaEmpresaFromSAFT={handleNovaEmpresaFromSAFT}
             onSAFTUpload={handleEmpresaSAFT}
+            onVerSAFT={(empId) => {
+              const emp = getEmpresa(empId);
+              if (!emp?.saftXml) return;
+              try { setSaftData(parseSAFT(emp.saftXml)); setShowSaftViewer(true); }
+              catch { alert('Não consegui ler o SAF-T guardado deste cliente.'); }
+            }}
             onDeleteEmpresa={handleDeleteEmpresa}
             onImportTOCOnline={handleImportTOCOnline}
             onImportSAFTLote={handleImportSAFTLote}

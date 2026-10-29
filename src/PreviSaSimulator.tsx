@@ -7,7 +7,6 @@ import type { Regime, Territorio, FuelType, ViaturaRow, PreviSaState } from './p
 import { defaultPreviSaState } from './previSaState';
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
-import { downloadPrevisaExcel } from './lib/previsaExcel';
 import { calculate, calcTAVeiculo, getRates, type CalcResult, saldosPorAno, totalSaldoElegivel, reavaliar3PPC, type PPCRecomendacao } from './lib/previsaCalc';
 import { SimulatorPrintButton } from './SimulatorPrint';
 import { SimGateBar, SimGatePlaceholder, RequiredMark } from './components/SimGateBar';
@@ -349,23 +348,6 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
   const ready = isSimReady('previsa', state as any);
   React.useEffect(() => { if (!ready) setSimulated(false); }, [ready]);
 
-  const [exporting, setExporting] = useState(false);
-
-  // Descarregar o Previsa preenchido — IGUAL ao modelo original PrevisaV25_01.xls.
-  // Usa o PRÓPRIO ficheiro como template (preserva as 13 folhas e 100% das
-  // fórmulas) e escreve só as células de input com os dados da empresa.
-  // Ver src/lib/previsaExcel.ts para o mapa de células.
-  const handleExportExcel = useCallback(async () => {
-    setExporting(true);
-    try {
-      await downloadPrevisaExcel(state);
-    } catch (e) {
-      console.error('Falha ao exportar o Previsa:', e);
-      alert('Não foi possível gerar o Excel do Previsa. Tente novamente.');
-    } finally {
-      setExporting(false);
-    }
-  }, [state]);
 
   const inputClass = 'w-full text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30 focus:border-[#0677FF]';
 
@@ -878,16 +860,6 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
 
       <UpdateToolsPanel state={state} setState={setState} res={res} />
 
-      <button
-        type="button"
-        onClick={handleExportExcel}
-        disabled={exporting}
-        className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#0677FF] px-4 py-2.5 text-[13px] font-[700] text-white transition-colors hover:bg-[#0560d6] disabled:opacity-60"
-        title="Descarregar o Modelo 22 preenchido em Excel (.xlsx)"
-      >
-        <Download className="h-4 w-4" />
-        {exporting ? 'A gerar Excel…' : 'Descarregar Excel preenchido'}
-      </button>
 
       <button type="button" onClick={() => setState(defaultPreviSaState())}
         className="text-[12px] font-[600] text-slate-400 hover:text-red-500 transition-colors py-2 text-center">

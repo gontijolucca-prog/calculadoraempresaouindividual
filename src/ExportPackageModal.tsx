@@ -47,14 +47,14 @@ interface Props {
 const TABS: { id: DocId; label: string; short: string; sub: string; Icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'simulacao', label: 'Simulação Fiscal',  short: 'Simulação', sub: 'ENI vs Lda + cenários',   Icon: Calculator },
   { id: 'proposta',  label: 'Proposta',           short: 'Proposta',  sub: 'Carta de honorários',     Icon: FileText },
-  { id: 'minuta',    label: 'Minuta de Contrato', short: 'Minuta',    sub: 'Modelo OCC preenchido',   Icon: FileSignature },
+  { id: 'minuta',    label: 'Contrato de Prestação de Serviços', short: 'Contrato',    sub: 'Modelo OCC preenchido',   Icon: FileSignature },
 ];
 
 /**
  * Modal multi-tab para gerar o "pacote do cliente": Simulação Fiscal,
- * Proposta de Honorários e Minuta de Contrato. Cada documento pode ser
+ * Proposta de Honorários e Contrato. Cada documento pode ser
  * pré-visualizado (com edição inline) e impresso individualmente. A
- * Minuta pode ser saltada (skip) — útil quando o cliente ainda não decidiu.
+ * Contrato pode ser saltado (skip) — útil quando o cliente ainda não decidiu.
  */
 export default function ExportPackageModal({
   profile, office, honorarios, taxState, vehicleState, ticketState, ssState,
@@ -279,7 +279,7 @@ export default function ExportPackageModal({
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
                       <FileSignature className="w-7 h-7 text-slate-400" />
                     </div>
-                    <h3 className="text-[16px] font-[800] text-[#0F172A]">Minuta saltada</h3>
+                    <h3 className="text-[16px] font-[800] text-[#0F172A]">Contrato saltado</h3>
                     <p className="text-[13px] text-[#64748B] mt-2 font-[500]">
                       Esta proposta vai sair apenas com a simulação e a carta de honorários. Ative novamente em cima caso queira incluir o contrato.
                     </p>

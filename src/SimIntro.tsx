@@ -97,7 +97,7 @@ export const SIM_INTROS: Record<string, SimIntroDef> = {
   previsa: {
     titulo: 'Simulador Previsa (IRC)',
     Icon: TrendingUp,
-    resumo: 'Prevê o IRC do exercício (Modelo 22): apuramento do lucro tributável, tributações autónomas e liquidação final. Exporta para Excel.',
+    resumo: 'Prevê o IRC do exercício (Modelo 22): apuramento do lucro tributável, tributações autónomas e liquidação final. Exporta em PDF.',
     dados: ['Rendimentos e gastos do exercício', 'Correções fiscais (Q07)', 'Prejuízos anteriores e pagamentos por conta'],
     resultado: 'IRC estimado com matéria coletável, derrama e tributações autónomas — pronto a exportar no formato Previsa.',
   },

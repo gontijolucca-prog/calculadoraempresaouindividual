@@ -342,7 +342,7 @@ Os serviços listados abaixo cobrem as obrigações contabilísticas e fiscais c
 
 A faturação será emitida no início de cada mês. Material de expediente, deslocações e serviços extraordinários não incluídos na presente proposta serão objeto de orçamento prévio.
 
-A presente proposta é válida por 30 dias a contar da data acima e converte-se em contrato de prestação de serviços formal mediante assinatura da minuta anexa.`}
+A presente proposta é válida por 30 dias a contar da data acima e converte-se em contrato de prestação de serviços formal mediante assinatura do contrato anexo.`}
           </div>
         </div>
 

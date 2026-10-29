@@ -6,68 +6,92 @@ function fmt(n: number): string {
   return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(n || 0);
 }
 
+/**
+ * PDF do Previsa — UMA única folha A4, com todos os resultados e valores
+ * finais (apuramento + liquidação). Sem Excel: o documento é este PDF.
+ */
 export async function downloadPrevisaPdf(state: PreviSaState, nome: string) {
-  const res = calculate(state);
+  const r = calculate(state) as any;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = 210;
-  let y = 14;
 
-  // Header — bege calm
+  // Cabeçalho
   doc.setFillColor(26, 26, 24);
   doc.rect(0, 0, W, 18, 'F');
   doc.setTextColor(253, 251, 247);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
-  doc.text('Previsa 2025 — Modelo 22', 10, 11);
+  doc.text('Previsa — Modelo 22', 10, 11);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.text((nome || 'Empresa') + ` · Período ${state.periodo || '—'}`, 10, 15);
+  doc.text(`${nome || 'Empresa'} · Período ${state.periodo || '—'}`, 10, 15);
 
-  y = 24;
-  doc.setTextColor(26, 26, 24);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text('Resumo — apuramento', 10, y);
-  y += 6;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  const rows: [string, number][] = [
-    ['Volume de negócios', state.volumeNegocios || 0],
-    ['Total de rendimentos', (res as any).totalRendimentos || 0],
-    ['Total de gastos', (res as any).totalGastos || 0],
-    ['Resultado antes de impostos', (res as any).effectiveRai || 0],
-    ['Matéria coletável', (res as any).materiaColetavel || 0],
-    ['IRC + Tributações Autónomas', ((res as any).c358 || 0) + ((res as any).taTotal || 0)],
-    ['Total a pagar / a recuperar', (res as any).c367 || 0],
-  ];
-  for (const [label, val] of rows) {
-    doc.setFillColor(val < 0 ? 254 : 245, val < 0 ? 242 : 240, val < 0 ? 242 : 232);
-    doc.rect(10, y - 4, 190, 7, 'F');
-    doc.setFont('helvetica', 'normal');
-    doc.text(label, 12, y);
+  const colW = 92;
+  const xL = 10;
+  const xR = 108;
+  let yL = 28;
+  let yR = 28;
+
+  const titulo = (txt: string, x: number, y: number) => {
+    doc.setTextColor(26, 26, 24);
     doc.setFont('helvetica', 'bold');
-    doc.text(fmt(val), 200, y, { align: 'right' });
-    y += 7;
-  }
+    doc.setFontSize(9);
+    doc.text(txt, x, y);
+    doc.setDrawColor(220, 220, 215);
+    doc.line(x, y + 1.5, x + colW, y + 1.5);
+    return y + 7;
+  };
+  const linha = (label: string, val: number | string, x: number, y: number, forte = false) => {
+    doc.setFont('helvetica', forte ? 'bold' : 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(forte ? 26 : 70, forte ? 26 : 70, forte ? 24 : 70);
+    doc.text(String(label).slice(0, 46), x, y);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(26, 26, 24);
+    doc.text(typeof val === 'number' ? fmt(val) : String(val), x + colW, y, { align: 'right' });
+    return y + 5.2;
+  };
 
-  y += 4;
+  // Coluna esquerda — apuramento
+  yL = titulo('Apuramento (Q07)', xL, yL);
+  yL = linha('Total de rendimentos', r.totalRendimentos, xL, yL);
+  yL = linha('Total de gastos', -Math.abs(r.totalGastos || 0), xL, yL);
+  yL = linha('Resultado antes de impostos', r.effectiveRai, xL, yL, true);
+  yL = linha('Correções (+)', r.acrescer || 0, xL, yL);
+  yL = linha('Lucro tributável', r.lucroTributavel || 0, xL, yL);
+  yL = linha('Prejuízos utilizados', -(r.prejuziosEfetivos || 0), xL, yL);
+  yL = linha('Matéria coletável (Q09)', r.materiaColetavel || 0, xL, yL, true);
+
+  // Coluna direita — liquidação
+  yR = titulo('Liquidação (Q10)', xR, yR);
+  yR = linha('IRC (coleta)', r.ircColeta || 0, xR, yR);
+  yR = linha('Derrama estadual', r.derramaEstadual || 0, xR, yR);
+  yR = linha('Derrama municipal', r.derrMunicipal || 0, xR, yR);
+  yR = linha('Deduções à coleta', -(r.deducoesColeta || 0), xR, yR);
+  yR = linha('IRC a pagar (Q10)', r.c358 || 0, xR, yR, true);
+  yR = linha('Tributações autónomas', r.taTotal || 0, xR, yR);
+  yR = linha('Pagamentos por conta', -(r.totalPagamentos || 0), xR, yR);
+  yR = linha('PEC / PPC', r.ppcProximoAno || 0, xR, yR);
+  yR = linha('Total a pagar / a recuperar', r.c367 || 0, xR, yR, true);
+
+  // Faixa final
+  const yF = Math.max(yL, yR) + 4;
+  doc.setFillColor(245, 240, 232);
+  doc.rect(10, yF, 190, 14, 'F');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.text('Notas', 10, y);
-  y += 5;
+  doc.setFontSize(9);
+  doc.setTextColor(26, 26, 24);
+  doc.text('Resultado do período', 14, yF + 6);
+  doc.setFontSize(12);
+  doc.text(fmt(r.c367 || 0), 196, yF + 9, { align: 'right' });
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
-  doc.setTextColor(100, 100, 100);
-  doc.text('Valores calculados a partir dos inputs do Previsa. O Excel original com 13 folhas e fórmulas continua disponível como template,', 10, y);
-  y += 4;
-  doc.text('mas a exportação passa a ser em PDF para impressão e envio ao cliente, como pediu.', 10, y);
-
-  // Footer
-  doc.setFontSize(7);
-  doc.setTextColor(180, 180, 180);
+  doc.setTextColor(120, 120, 115);
+  doc.text('Valores calculados a partir dos inputs do Previsa. Documento de apoio à decisão — confirme com o seu TOC.', 10, 280);
   doc.text(`Gerado em ${new Date().toLocaleDateString('pt-PT')} — estudo360.pt`, 10, 287);
   doc.text('Pág. 1/1', 200, 287, { align: 'right' });
 
-  const filename = `Previsa_${(nome || 'Empresa').replace(/\s+/g,'_')}_${state.periodo || new Date().getFullYear()}.pdf`;
+  const filename = `Previsa_${(nome || 'Empresa').replace(/\s+/g, '_')}_${state.periodo || new Date().getFullYear()}.pdf`;
   doc.save(filename);
 }

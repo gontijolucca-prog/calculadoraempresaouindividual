@@ -39,6 +39,7 @@ interface Props {
   onNovaEmpresaManual: () => void;
   onNovaEmpresaFromSAFT: (file: File) => void;
   onSAFTUpload: (file: File, empId: string) => void;
+  onVerSAFT?: (empId: string) => void;
   onDeleteEmpresa: (empId: string) => void;
   /** Restaura uma simulação do histórico deste cliente (seleciona-o primeiro). */
   onRestoreSimulacao: (empId: string, rec: SimulationRecord) => void;
@@ -53,7 +54,7 @@ interface Props {
   currentEmpresaId?: string | null;
 }
 
-export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual, onNovaEmpresaFromSAFT, onSAFTUpload, onDeleteEmpresa, onRestoreSimulacao, onHistoricoChanged, onImportTOCOnline, onImportSAFTLote, refreshKey, currentEmpresaId }: Props) {
+export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual, onNovaEmpresaFromSAFT, onSAFTUpload, onVerSAFT, onDeleteEmpresa, onRestoreSimulacao, onHistoricoChanged, onImportTOCOnline, onImportSAFTLote, refreshKey, currentEmpresaId }: Props) {
   const [empresas, setEmpresas] = useState<EmpresaRecord[]>(() => listEmpresas());
   const [query, setQuery] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<EmpresaRecord | null>(null);
@@ -210,6 +211,7 @@ export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual
                 onHistoricoChanged={onHistoricoChanged}
                 refreshKey={refreshKey}
                 onUploadSaft={(file) => onSAFTUpload(file, emp.id)}
+                onVerSaft={() => onVerSAFT?.(emp.id)}
                 onAskDelete={() => { setConfirmDelete(emp); }}
               />
             ))}
@@ -446,6 +448,7 @@ interface EmpresaCardProps {
   onHistoricoChanged: () => void;
   refreshKey?: number;
   onUploadSaft: (file: File) => void;
+  onVerSaft?: () => void;
   onAskDelete: () => void;
 }
 
@@ -526,7 +529,7 @@ const CardHistorico: React.FC<{ empId: string; onRestore: (rec: SimulationRecord
   );
 };
 
-const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onToggle, onSelectCard, onNavigate, onRestore, onHistoricoChanged, refreshKey, onUploadSaft, onAskDelete }) => {
+const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onToggle, onSelectCard, onNavigate, onRestore, onHistoricoChanged, refreshKey, onUploadSaft, onVerSaft, onAskDelete }) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const updated = formatRelative(emp.updatedAt);
   const displayNome = emp.nome.trim() || 'Empresa sem nome';
@@ -581,12 +584,12 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
           <button
             type="button"
             onClick={() => onNavigate(emp.id, 'gabinete')}
-            title={`Abrir o gabinete de ${displayNome}`}
-            aria-label={`Abrir o gabinete de ${displayNome}`}
+            title={`Abrir a visão geral de ${displayNome}`}
+            aria-label={`Abrir a visão geral de ${displayNome}`}
             className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] bg-[#0677FF]/10 text-[#0677FF] text-[12px] font-[700] whitespace-nowrap hover:bg-[#0677FF] hover:text-white transition-colors"
           >
             <LayoutDashboard className="w-3.5 h-3.5" />
-            <span>Gabinete</span>
+            <span>Visão geral</span>
           </button>
           <button
             type="button"
@@ -619,15 +622,27 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
               e.target.value = '';
             }}
           />
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            title="Importar SAF-T para esta empresa"
-            className="p-2 rounded-[8px] text-[#6B7280] hover:text-[#0677FF] hover:bg-[#0677FF]/8 transition-colors"
-            aria-label={`Importar SAF-T para ${displayNome}`}
-          >
-            <FileUp className="w-4 h-4" />
-          </button>
+          {emp.saftXml ? (
+            <button
+              type="button"
+              onClick={() => onVerSaft?.()}
+              title={`Ler o SAF-T de ${displayNome}`}
+              className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] bg-emerald-50 text-emerald-700 text-[12px] font-[700] whitespace-nowrap hover:bg-emerald-600 hover:text-white transition-colors"
+            >
+              <FileUp className="w-3.5 h-3.5" />
+              <span>Ler SAF-T</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              title={`Importar SAF-T para ${displayNome}`}
+              className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] bg-slate-100 text-slate-600 text-[12px] font-[700] whitespace-nowrap hover:bg-[#0677FF] hover:text-white transition-colors"
+            >
+              <FileUp className="w-3.5 h-3.5" />
+              <span>Importar SAF-T</span>
+            </button>
+          )}
           {emp.saftXml && (
             <button
               type="button"

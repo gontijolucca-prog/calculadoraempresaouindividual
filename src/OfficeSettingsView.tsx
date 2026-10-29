@@ -1,7 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { Building2, Image as ImageIcon, Upload, Trash2, Save, Calculator, Plus, X, Info, Download } from 'lucide-react';
-import { downloadHonorariosExcel } from './lib/honorariosExcel';
 import type { OfficeSettings, EntidadeOutorgante } from './lib/officeSettings';
 import { officeSettingsAreComplete } from './lib/officeSettings';
 import type { HonorariosConfig, TipoEntidadeCliente } from './lib/honorarios';
@@ -401,50 +400,7 @@ function HonorariosForm({ config, onChange }: { config: HonorariosConfig; onChan
         </div>
       </section>
 
-      {/* Exportar Excel */}
-      <section className="bg-white rounded-[16px] border border-[#E2E8F0] p-6">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h2 className={sectionTitleCls}>Exportar Tabela de Honorários</h2>
-            <p className="text-[12px] text-[#64748B]">Descarregue um Excel (.xlsx) com a tabela atual + exemplos por tipo de entidade, para enviar ao cliente.</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => downloadHonorariosExcel(config)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#0677FF] text-white text-[13px] font-[700] rounded-[10px] hover:bg-[#0556CC] transition-colors"
-          >
-            <Download className="w-4 h-4" /> Exportar Excel
-          </button>
-        </div>
-      </section>
 
-      {/* IVA + mínimo */}
-      <section className="bg-white rounded-[16px] border border-[#E2E8F0] p-6">
-        <h2 className={sectionTitleCls}>Outras Definições</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelCls}>Taxa de IVA aplicável</label>
-            <div className="flex items-center gap-1">
-              <input type="number" min={0} max={100} step={0.5} value={(config.taxaIVA * 100).toFixed(1)} onChange={e => set('taxaIVA', (Number(e.target.value) || 0) / 100)} className={inputCls + ' text-right'} />
-              <span className="text-[12px] font-[700] text-[#64748B]">%</span>
-            </div>
-            <p className="text-[11px] text-[#64748B] mt-1">23% no continente.</p>
-          </div>
-          <div>
-            <label className={labelCls}>Mínimo mensal absoluto</label>
-            <div className="flex items-center gap-1">
-              <input type="number" min={0} step={5} value={config.minimoMensal === 0 ? '' : config.minimoMensal} onChange={e => set('minimoMensal', Number(e.target.value) || 0)} className={inputCls + ' text-right'} />
-              <span className="text-[12px] font-[700] text-[#64748B]">€/mês</span>
-            </div>
-            <p className="text-[11px] text-[#64748B] mt-1">Propostas nunca caem abaixo deste valor.</p>
-          </div>
-        </div>
-      </section>
-
-      <div className="flex items-center gap-2 text-[12px] text-[#64748B] font-[600]">
-        <Save className="w-3.5 h-3.5" />
-        <span>As alterações são guardadas automaticamente. Exemplo: cliente Lda, 3 funcionários, €120k/ano = <strong className="text-[#0F172A]">{eur(((config.baseMensal.lda || 0) + Math.max(0, 3 - config.funcionariosIncluidos) * config.acrescimoPorFuncionario + (config.escaloesFaturacao.find(e => 120000 >= e.minFaturacao && (config.escaloesFaturacao.find(e2 => e2.minFaturacao > e.minFaturacao && 120000 >= e2.minFaturacao) === undefined))?.acrescimoMensal ?? 0)))} /mês</strong>.</span>
-      </div>
     </div>
   );
 }

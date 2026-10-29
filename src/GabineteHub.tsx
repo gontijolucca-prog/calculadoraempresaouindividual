@@ -73,7 +73,7 @@ export const GABINET_INTROS: Record<GabTab, GabineteIntroDef> = {
   dashboard: {
     titulo: 'Quadro resumo obrigações',
     Icon: Calendar,
-    resumo: 'Quadro cliente × mês (JAN-DEZ): clica na célula para alternar v Concluído / ✕ Não concluído com fundo verde/vermelho. Filtra por cliente, gestor, ano e obrigação; expande/colapsa e exporta para Excel.',
+    resumo: 'Quadro cliente × mês (JAN-DEZ): clica na célula para alternar v Concluído / ✕ Não concluído com fundo verde/vermelho. Filtra por cliente, gestor, ano e obrigação; expande/colapsa.',
     dados: ['Cliente + tipo de obrigação', 'Mês e ano', 'Estado (v/✕)'],
     resultado: 'Visão completa do cumprimento por cliente e mês, com filtros e exportação - guarda automaticamente em Firestore.',
   },

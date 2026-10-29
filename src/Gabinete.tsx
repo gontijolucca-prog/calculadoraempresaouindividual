@@ -485,30 +485,6 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
     return <span title="Não Concluído" className={`inline-flex w-6 h-6 items-center justify-center font-bold text-[13px] leading-none rounded ${withBg ? 'bg-red-600 text-white' : 'text-red-600 bg-red-50 border border-red-200'}`}>✕</span>;
   };
 
-  const handleExportExcel = () => {
-    const rows: string[] = [];
-    const header = ['Cliente','Obrigação',...meses].join(';');
-    rows.push(header);
-    for (const cli of clientesFiltrados) {
-      const ativasExp = new Set(getObrigacoesAtivas(cli));
-      for (const linha of linhasFiltradas.filter(l => ativasExp.has(l.id))) {
-        const cells = meses.map((_, i) => {
-          const st = getCellStatus(cli, linha, i+1, ano);
-          const map: Record<CellStatus,string> = { concluido:'Concluído', nao_concluido:'Não Concluído', sem_dados:'—' };
-          return map[st];
-        });
-        rows.push([cli.nome, linha.label, ...cells].join(';'));
-      }
-    }
-    const csv = rows.join('\n');
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Quadro_Resumo_Obrigacoes_${ano}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   const handleExportPdf = () => {
     const cab = ['Cliente', 'Obrigação', ...meses];
@@ -717,7 +693,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
         {/* Rodapé — botões + legenda (igual à imagem) */}
         <div data-print-toolbar className="flex flex-wrap items-center gap-2 px-3 py-2.5 bg-[#F1F1F1] border-t border-zinc-300 text-xs print:bg-white">
           <button onClick={e=>imprimirMapa(e,'Quadro Resumo de Obrigações')} className="px-3 py-1.5 rounded border border-zinc-400 bg-gradient-to-b from-white to-zinc-100 hover:from-zinc-50 hover:to-zinc-200 text-zinc-800 font-medium shadow-sm">Imprimir</button>
-          <button onClick={handleExportExcel} className="px-3 py-1.5 rounded border border-zinc-400 bg-gradient-to-b from-white to-zinc-100 hover:from-zinc-50 hover:to-zinc-200 text-zinc-800 font-medium shadow-sm">Exportar Excel</button>
+
           <button onClick={handleExportPdf} className="px-3 py-1.5 rounded border border-[#0677FF] bg-[#0677FF] text-white font-medium shadow-sm hover:bg-blue-600">Exportar PDF</button>
           <button onClick={expandirTodos} className="px-3 py-1.5 rounded border border-zinc-400 bg-gradient-to-b from-white to-zinc-100 hover:from-zinc-50 hover:to-zinc-200 text-zinc-800 font-medium shadow-sm">Expandir todos</button>
           <button onClick={colapsarTodos} className="px-3 py-1.5 rounded border border-zinc-400 bg-gradient-to-b from-white to-zinc-100 hover:from-zinc-50 hover:to-zinc-200 text-zinc-800 font-medium shadow-sm">Colapsar todos</button>

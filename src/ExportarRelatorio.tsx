@@ -39,7 +39,7 @@ import { calculate } from './lib/previsaCalc';
 type PkgId = 'proposta' | 'minuta';
 const PACKAGE_DOCS: { id: PkgId; label: string; descricao: string; Icon: typeof Calculator }[] = [
   { id: 'proposta',  label: 'Proposta de Honorários', descricao: 'Carta de honorários (Pacote do Cliente).',    Icon: FileText },
-  { id: 'minuta',    label: 'Minuta de Contrato',     descricao: 'Modelo OCC preenchido (Pacote do Cliente).',  Icon: FileSignature },
+  { id: 'minuta',    label: 'Contrato de Prestação de Serviços',     descricao: 'Modelo OCC preenchido (Pacote do Cliente).',  Icon: FileSignature },
 ];
 const PKG_IDS: PkgId[] = ['proposta', 'minuta'];
 const isPkg = (id: string): id is PkgId => (PKG_IDS as string[]).includes(id);
@@ -306,7 +306,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                           <span className="text-[13.5px] font-[800] text-[#0F172A] leading-tight">Previsa — Modelo 22 (PDF)</span>
                           <span className={`text-[9px] font-[800] uppercase tracking-[0.4px] px-1.5 py-0.5 rounded-[5px] border ${badge.cls}`}>{badge.txt}</span>
                         </span>
-                        <span className="block text-[12px] text-slate-500 font-[500] mt-0.5">O ficheiro original do Previsa preenchido com os dados da empresa; recalcula ao abrir.</span>
+                        <span className="block text-[12px] text-slate-500 font-[500] mt-0.5">Resumo do Previsa numa única folha, com os resultados e valores finais.</span>
                       </span>
                     </button>
                   );
@@ -331,8 +331,8 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
     try {
       await downloadPrevisaPdf(previsaState, emp.nome || emp.profile?.nomeCliente || '');
     } catch (e) {
-      console.error('Falha ao gerar o Excel do Previsa:', e);
-      alert('Não foi possível gerar o Excel do Previsa. Tente novamente.');
+      console.error('Falha ao gerar o PDF do Previsa:', e);
+      alert('Não foi possível gerar o PDF do Previsa. Tente novamente.');
     } finally {
       setDownloadingPrevisa(false);
     }
@@ -759,7 +759,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
               </div>
               <p className="mt-2.5 text-[11.5px] text-slate-400 font-[500] text-center text-balance">
                 {isPrevisa
-                  ? 'Sai o Excel original do Previsa (13 folhas) com os dados desta empresa; as fórmulas recalculam ao abrir.'
+                  ? 'Sai uma folha A4 com todos os resultados e valores finais do Previsa.'
                   : pkg
                     ? 'Edita o documento na folha e imprime ou guarda como PDF.'
                     : 'Descarregue o que vê na folha — com as suas edições. O Word abre o .doc editável.'}
@@ -781,7 +781,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                     className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[12.5px] font-[800] text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-[0_2px_10px_-4px_rgba(5,150,105,0.5)]"
                   >
                     {downloadingPrevisa ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-                    {downloadingPrevisa ? 'A gerar…' : 'Descarregar Excel'}
+                    {downloadingPrevisa ? 'A gerar…' : 'Descarregar PDF'}
                   </button>
                 ) : (
                   <button
@@ -845,7 +845,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                     </div>
                   ) : (
                     <p className="mt-5 text-[13px] text-slate-500 font-[500] leading-relaxed">
-                      Esta empresa ainda não tem valores no Previsa — o Excel sai com a estrutura completa do modelo, a zeros.
+                      Esta empresa ainda não tem valores no Previsa — o PDF sai com os campos a zeros.
                       {onOpenPrevisa && emp && (
                         <> {' '}
                           <button type="button" onClick={() => onOpenPrevisa(emp.id)} className="font-[700] text-[#0677FF] underline hover:text-[#0560d8]">
@@ -858,7 +858,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                   <p className="mt-5 text-[12px] text-slate-400 font-[500] leading-relaxed">
                     O ficheiro descarregado é o modelo original do Previsa com as células de input preenchidas
                     (rendimentos e gastos por conta, regime, dimensão e identificação) — formatação, fórmulas e as
-                    13 folhas ficam intactas, e o Excel recalcula tudo ao abrir. Os restantes quadros (Q07, Q10,
+                    O PDF resume os quadros essenciais numa folha. Os restantes quadros (Q07, Q10,
                     prejuízos, tributações autónomas) preenchem-se no próprio ficheiro ou aqui no simulador.
                   </p>
                 </div>

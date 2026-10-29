@@ -145,9 +145,9 @@ export default function MinutaContrato({
         <div className="mc-band" />
 
         <div className="mc-kicker">{office.nome || 'Contabilidade Certificada'}</div>
-        <h1>Minuta de Contrato de Prestação de Serviços</h1>
+        <h1>Contrato de Prestação de Serviços</h1>
         <div className="mc-rule" />
-        <p className="mc-sub">Adaptada da minuta-modelo publicada pela Ordem dos Contabilistas Certificados</p>
+        <p className="mc-sub">Adaptado do modelo publicado pela Ordem dos Contabilistas Certificados</p>
 
         <p style={{ marginTop: 16 }}><strong>ENTRE:</strong></p>
 
@@ -337,7 +337,7 @@ export default function MinutaContrato({
         </div>
 
         <p style={{ marginTop: 28, fontSize: '8pt', color: '#94A3B8', textAlign: 'center', fontStyle: 'italic' }}>
-          Esta minuta constitui uma adaptação da minuta-modelo publicada pela Ordem dos Contabilistas Certificados (OCC),
+          Este contrato constitui uma adaptação do modelo publicado pela Ordem dos Contabilistas Certificados (OCC),
           preenchida automaticamente pelo Estudo 360 com os dados do escritório e do cliente. As Partes devem revê-la antes de assinar.
         </p>
       </div>

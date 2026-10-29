@@ -231,7 +231,7 @@ function PackageBento() {
         {[
           ['Simulação','Quanto se paga e o que compensa'],
           ['Proposta','Com a sua marca'],
-          ['Minuta','Pronta a assinar'],
+          ['Contrato','Pronto a assinar'],
         ].map(([t,d])=>(
           <div key={t} className="rounded-[18px] border border-[#1A1A18]/[0.06] bg-white p-6 text-center">
             <div className="text-[13px] font-[700]" style={{fontFamily:'Geist'}}>{t}</div>
