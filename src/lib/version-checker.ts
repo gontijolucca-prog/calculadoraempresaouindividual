@@ -16,6 +16,7 @@ export interface VersionCheckConfig {
 }
 
 let lastVersion: string | null = null;
+let pendingReload = false;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let updateAvailableCallback: (() => void) | null = null;
 let reloadNeededCallback: (() => void) | null = null;
@@ -49,8 +50,19 @@ export function initVersionChecker(config: VersionCheckConfig = {}) {
   // `visibilitychange` — garante que ninguém fica preso numa versão antiga só
   // porque o evento de foco não chegou a disparar.
   focusHandler = () => fetchAndCheckVersion();
-  visHandler = () => { if (document.visibilityState === 'visible') fetchAndCheckVersion(); };
+  visHandler = () => {
+    if (document.visibilityState === 'visible') { fetchAndCheckVersion(); return; }
+    // Separador escondido com versão nova e sem edições por guardar: recarrega
+    // já, para quando a pessoa voltar estar na versão certa sem pedir nada.
+    if (pendingReload && (!checkUnsavedEditsFn || !checkUnsavedEditsFn())) {
+      pendingReload = false;
+      window.location.replace(window.location.href);
+    }
+  };
   unloadHandler = () => { if (pollTimer) clearInterval(pollTimer); };
+  const onlineHandler = () => fetchAndCheckVersion();
+  window.addEventListener('online', onlineHandler);
+  window.addEventListener('pageshow', () => fetchAndCheckVersion());
   window.addEventListener('focus', focusHandler);
   document.addEventListener('visibilitychange', visHandler);
   window.addEventListener('beforeunload', unloadHandler);
@@ -82,6 +94,7 @@ async function fetchAndCheckVersion() {
     }
 
     if (currentVersion !== lastVersion) {
+      pendingReload = true;
       if (import.meta.env.DEV) console.log(
         '[Version Checker] Update detected:',
         lastVersion,

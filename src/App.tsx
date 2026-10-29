@@ -735,7 +735,7 @@ function AppContent() {
   }, [user?.uid, officeSettings.nif]);
   useEffect(() => {
     initVersionChecker({
-      pollIntervalMs: 20000,
+      pollIntervalMs: 15000,
       onUpdateAvailable: () => setVersionUpdate(true),
       checkUnsavedEdits: () => getHasUnsavedEdits(),
     });
