@@ -690,6 +690,7 @@ export default function GabineteEquipa() {
                 ))}
                 <option value="__novo__">＋ Criar novo cargo…</option>
               </select>
+              <button type="button" onClick={() => setShowCargos(true)} className="text-[12px] font-[600] text-[#2563EB] hover:underline text-left">Gerir cargos personalizados — editar ou apagar</button>
               {error && <div className="text-[12px] text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">{error}</div>}
             </div>
             <div className="flex justify-end gap-2">
