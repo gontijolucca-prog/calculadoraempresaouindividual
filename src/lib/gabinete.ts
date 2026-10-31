@@ -1603,6 +1603,20 @@ export function gerarObrigacoesParaCliente(cli: GabineteCliente, ano = new Date(
   return novas;
 }
 
+// Mapeamento dos enums do perfil (EmpresaRecord) para os do GabineteCliente.
+// Exportado para testes: eram estes os valores que ficavam sempre errados.
+export function mapRegimeIvaCliente(ri?: string): GabineteCliente['regimeIva'] {
+  return (ri === 'isento' || ri === 'isencao53') ? 'isencao53'
+    : (ri === 'normal_mensal' || ri === 'mensal') ? 'mensal'
+    : 'trimestral';
+}
+export function mapTipoEntidadeCliente(t?: string): GabineteCliente['tipoEntidade'] {
+  const m: Record<string, GabineteCliente['tipoEntidade']> = {
+    eni: 'ENI', lda: 'LDA', unipessoal: 'UNIPESSOAL', sa: 'OUTRO', socio_unico: 'OUTRO',
+  };
+  return m[String(t || '').toLowerCase()] || 'LDA';
+}
+
 // Migração: cada EmpresaRecord vira GabineteCliente (one-off, idempotente por NIF)
 export async function migrarEmpresasParaGabinete(empresas: { id: string; nome: string; nif: string; empresaId?: string; profile?: { regimeIva?: string; tipoEntidade?: string } }[]): Promise<number> {
   const existentes = listClientesCache();
@@ -1614,15 +1628,8 @@ export async function migrarEmpresasParaGabinete(empresas: { id: string; nome: s
     const empresaId = e.empresaId || e.id;
     if (empresaId && empresaIds.has(empresaId)) continue;
     if (nifDigits && nifsExistentes.has(nifDigits)) continue;
-    const ri = e.profile?.regimeIva;
-    const regimeIva: GabineteCliente['regimeIva'] =
-      (ri === 'isento' || ri === 'isencao53') ? 'isencao53'
-      : (ri === 'normal_mensal' || ri === 'mensal') ? 'mensal'
-      : 'trimestral';
-    const tipoMap: Record<string, GabineteCliente['tipoEntidade']> = {
-      eni: 'ENI', lda: 'LDA', unipessoal: 'UNIPESSOAL', sa: 'OUTRO', socio_unico: 'OUTRO',
-    };
-    const tipoEntidade = tipoMap[String(e.profile?.tipoEntidade || '').toLowerCase()] || 'LDA';
+    const regimeIva = mapRegimeIvaCliente(e.profile?.regimeIva);
+    const tipoEntidade = mapTipoEntidadeCliente(e.profile?.tipoEntidade);
     const cli: GabineteCliente = {
       id: newClienteId(),
       nome: e.nome || 'Sem nome',
