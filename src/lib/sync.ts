@@ -40,6 +40,9 @@ function readQueue(): OutboxOp[] {
   return loadFromStorage<OutboxOp[]>(QUEUE_KEY, []);
 }
 function writeQueue(q: OutboxOp[]): void {
+  // O limite protege o localStorage, mas não pode ser silencioso: ficam as 200
+  // operações mais recentes e o utilizador é avisado de que houve descarte.
+  if (q.length > 200) lastError = `Demasiadas alterações pendentes (${q.length}); foram mantidas as 200 mais recentes.`;
   saveToStorage(QUEUE_KEY, q.slice(-200));
 }
 

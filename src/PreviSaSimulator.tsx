@@ -392,7 +392,6 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                     <option value="madeira">Região Autónoma da Madeira</option>
                     <option value="acores">Região Autónoma dos Açores</option>
                     <option value="interioridade">Interioridade</option>
-                    <option value="startup">Startup (Lei 21/2023)</option>
                   </select>
                 </div>
                 <div>
@@ -406,10 +405,6 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 <label className="flex items-center gap-3 cursor-pointer py-1">
                   <input type="checkbox" checked={st.isPME} onChange={e => s('isPME', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
                   <span className="text-[13px] font-[600] text-[#0F172A]">PME — taxa reduzida nos primeiros €50.000</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer py-1">
-                  <input type="checkbox" checked={st.isStartup} onChange={e => s('isStartup', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
-                  <span className="text-[13px] font-[600] text-[#0F172A]">Startup (12,5% em toda a matéria coletável)</span>
                 </label>
                 <label className="flex items-center gap-3 cursor-pointer py-1">
                   <input type="checkbox" checked={st.regimeSimplificado} onChange={e => s('regimeSimplificado', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
@@ -814,9 +809,9 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
             <div className="flex justify-between text-[11px]">
               <span className="text-slate-400 font-[500]">Taxa IRC</span>
               <span className="font-[700] text-slate-600">
-                {state.isPME && !state.isStartup
+                {state.isPME
                   ? `${pct(getRates(state.periodo, state.regime).pme)} / ${pct(getRates(state.periodo, state.regime).main)}`
-                  : pct(getRates(state.periodo, state.isStartup ? 'startup' : state.regime).main)}
+                  : pct(getRates(state.periodo, state.regime).main)}
               </span>
             </div>
             {res.derrMunicipal > 0 && (
@@ -959,8 +954,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                       <option value="madeira">Região Autónoma da Madeira</option>
                       <option value="acores">Região Autónoma dos Açores</option>
                       <option value="interioridade">Interioridade</option>
-                      <option value="startup">Startup (Lei 21/2023)</option>
-                    </select>
+                      </select>
                   </div>
                   <div>
                     <label className="block text-[11px] font-[600] text-slate-500 mb-1">Território (para PEC/PC/Derrama)</label>
@@ -973,10 +967,6 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                   <label className="flex items-center gap-3 cursor-pointer py-1">
                     <input type="checkbox" checked={state.isPME} onChange={e => set('isPME', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
                     <span className="text-[13px] font-[600] text-[#0F172A]">PME — taxa reduzida nos primeiros €50.000</span>
-                  </label>
-                  <label className="flex items-center gap-3 cursor-pointer py-1">
-                    <input type="checkbox" checked={state.isStartup} onChange={e => set('isStartup', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
-                    <span className="text-[13px] font-[600] text-[#0F172A]">Startup (12,5% em toda a matéria coletável)</span>
                   </label>
                   <label className="flex items-center gap-3 cursor-pointer py-1">
                     <input type="checkbox" checked={state.regimeSimplificado} onChange={e => set('regimeSimplificado', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />

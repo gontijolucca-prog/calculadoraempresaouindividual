@@ -16,7 +16,8 @@ const PME_BRACKET = 50_000;
 // Madeira: 13,3% geral (era 14%) / 10,5% PME (era 11,2%) — DL Regional 8/2025/M.
 // Açores: redução de 20% sobre a taxa do continente; PME beneficia de taxa especial 8,75%.
 // Interior: 12,5% PME (EBF art. 41º-B) — sem redução na taxa geral.
-// Startup: 12,5% — regime IFICI (Lei 21/2023), aplica-se sobre a totalidade.
+// 'startup' mantém-se apenas para leitura de estados antigos; o IFICI (Lei
+// 21/2023) é um regime de IRS e não uma taxa de IRC. A UI já não o oferece.
 const RATES_BY_YEAR: Record<number, Record<Regime, { main: number; pme: number }>> = {
   2025: {
     geral:         { main: 0.20,   pme: 0.16   },
@@ -290,9 +291,9 @@ export function calculate(s: PreviSaState): CalcResult {
   const materiaColetavel  = Math.max(0, lucroTributavel - prejuziosEfetivos - s.beneficiosFiscais);
 
   // IRC coleta (c347)
-  const r = getRates(s.periodo, s.isStartup ? 'startup' : s.regime);
+  const r = getRates(s.periodo, s.regime);
   let ircBase = 0;
-  if (s.isPME && !s.isStartup) {
+  if (s.isPME) {
     ircBase = Math.min(materiaColetavel, PME_BRACKET) * r.pme
             + Math.max(0, materiaColetavel - PME_BRACKET) * r.main;
   } else {
