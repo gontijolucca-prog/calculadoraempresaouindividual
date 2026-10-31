@@ -552,7 +552,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
           <span className="text-sm text-zinc-600">Ano</span>
           <input type="number" value={ano} onChange={e=>setAno(parseInt(e.target.value)|| new Date().getFullYear())} className="w-[78px] px-2 py-1.5 rounded border border-zinc-300 bg-white text-sm" />
           {(filtroClienteTexto || gestorFiltro || filtroGrupo || filtroEstado || filtroRegime || !todasObrigacoes || !todosClientes) && (
-            <button onClick={()=>{ setFiltroClienteTexto(''); setGestorFiltro(''); setFiltroGrupo(''); setFiltroEstado(''); setFiltroRegime(''); setTodasObrigacoes(true); setQuadroVisiveis(null); setQuadroVisiveisState(null); setTodosClientes(true); setFiltroObrigacao(''); }} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-zinc-700 text-xs hover:bg-zinc-50">Limpar</button>
+            <button onClick={()=>{ setFiltroClienteTexto(''); setGestorFiltro(''); setFiltroGrupo(''); setFiltroEstado(''); setFiltroRegime(''); setTodasObrigacoes(true); setQuadroVisiveisState(null); setTodosClientes(true); setFiltroObrigacao(''); }} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-zinc-700 text-xs hover:bg-zinc-50">Limpar</button>
           )}
         </div>
         <div className="px-3 py-2 flex flex-wrap items-center gap-2">

@@ -378,6 +378,22 @@ export default function ClientProfile({
 
     // ── IDENTIFICAÇÃO DO CLIENTE ──────────────────────────────────────────────
     let y = 20;
+    // Se o conteúdo crescer além de uma folha, abre uma segunda página em vez
+    // de escrever por cima do rodapé. Mantém cabeçalho/rodapé simples.
+    const garantirPagina = (altura: number) => {
+      if (y + altura <= ph - 16) return;
+      drawC(SLATE_200); doc.setLineWidth(0.2); doc.line(0, 13, pw, 13);
+      doc.addPage();
+      y = 20;
+      fill(SLATE_50); doc.rect(0, 0, pw, 13, 'F');
+      fill(MAROON); doc.rect(0, 0, 3, 13, 'F');
+      textC(NAVY); doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+      doc.text('Ficha do cliente — continuação', ml, 8.5);
+      drawC(SLATE_200); doc.line(0, ph - 9, pw, ph - 9);
+      fill(MAROON); doc.rect(0, ph - 9, 3, 9, 'F');
+      textC(SLATE_500); doc.setFontSize(6); doc.setFont('helvetica', 'normal');
+      doc.text('Este relatório é uma estimativa. Consulte sempre um contabilista certificado (OCC).  Estudo 360 • OE 2026', pw / 2, ph - 4, { align: 'center' });
+    };
     textC(NAVY);
     doc.setFontSize(15); doc.setFont('helvetica', 'bold');
     // Clip long names to one line (splitTextToSize, take only [0])
@@ -565,6 +581,7 @@ export default function ClientProfile({
     }
 
     if (extras.length > 0) {
+      garantirPagina(40);
       hRule(y); y += 5;
       fill(MAROON); doc.rect(ml, y, 3, 5, 'F');
       textC(SLATE_500);
@@ -584,6 +601,7 @@ export default function ClientProfile({
     }
 
     // ── HONORÁRIOS ────────────────────────────────────────────────────────────
+    garantirPagina(60);
     const { loadPricing, calcClientEstimate } = await import('./lib/pricing');
     const pricing = loadPricing();
     const est = calcClientEstimate(pricing, profile, vehicleState, ticketState);
