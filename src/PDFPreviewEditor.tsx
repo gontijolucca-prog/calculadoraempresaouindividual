@@ -8,6 +8,7 @@ import {
   calcTicketSavings, calcSelfSSContribution, calculateIRC, coefFromProfile,
 } from './lib/pt2026';
 import { DED_ESPECIFICA_CAT_A_2026, LIMIAR_JUSTIFICACAO_15PCT } from './lib/fiscal';
+import { calcViatura } from './lib/viaturas';
 
 interface TaxSimulatorState {
   profSit: string; currentInc: number; age: number; isMainAct: boolean;
@@ -365,7 +366,10 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
       else taRate = vehicleState.price < 37500 ? 0.08 : vehicleState.price < 45000 ? 0.25 : 0.32;
     }
     const taValue = totalEncsTA * taRate;
-    vehR = { ivaTotalDed, ivaAqDed, maintIvaDed, fuelIvaDed, taValue, taRate, depNaoAceite, totalEncsTA, limit, totalIvaAq, ivaAqRate };
+    // Fonte única para TA (escalões/taxas e agravamento) — o PDF não pode
+    // divergir do simulador de Viaturas.
+    const canon = calcViatura(vehicleState as never);
+    vehR = { ivaTotalDed, ivaAqDed, maintIvaDed, fuelIvaDed, taValue: canon.taValue, taRate: canon.taRate, depNaoAceite: canon.depNaoAceite, totalEncsTA: canon.totalEncsTA, limit: canon.limit, totalIvaAq, ivaAqRate };
   }
 
   // ─── Ticket computations ──────────────────────────────────────────────────
