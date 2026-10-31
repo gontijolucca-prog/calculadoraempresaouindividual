@@ -799,6 +799,9 @@ function AppContent() {
     };
     const state = byView[view];
     if (!simHasData(view, state)) return;
+    const chave = `${currentEmpresaId}|${view}|${JSON.stringify(state)}`;
+    if (autoSimKeyRef.current === chave) return;
+    autoSimKeyRef.current = chave;
     const t = window.setTimeout(() => {
       logAudit('save_simulacao', view, { empresaId: currentEmpresaId, tipo: view } as any, currentEmpresaId);
       upsertAutoSimulacao(currentEmpresaId, {
@@ -858,11 +861,16 @@ function AppContent() {
   // Empurra alterações ao registry para Firestore com debounce de 2s.
   useEffect(() => {
     if (!isAuthenticated) return;
+    const stamp = getEmpresasStamp();
+    // Só grava se houve uma alteração local desde a última gravação. Sem isto,
+    // cada snapshot remoto (mesmo igual) agendava outra gravação para sempre.
+    if (stamp === lastCloudStampRef.current) return;
     const t = setTimeout(() => {
       // Dispositivo recém-chegado SEM dados não empurra lista vazia — evita
       // limpar a cloud (e os outros computadores) antes do primeiro pull.
       if (listEmpresas().length === 0 && getEmpresasStamp() === 0) return;
-      saveEmpresasToFirestore(officeSettings.nif, listEmpresas()).catch(() => {});
+      lastCloudStampRef.current = stamp;
+      saveEmpresasToFirestore(officeSettings.nif, listEmpresas(), stamp).catch(() => { lastCloudStampRef.current = 0; });
     }, 2000);
     return () => clearTimeout(t);
   }, [isAuthenticated, clientProfile, previSaState, currentEmpresaId, empresasRefresh, officeSettings.nif]);
@@ -872,6 +880,8 @@ function AppContent() {
   // torna a lista de clientes igual em todos os computadores em tempo real.
   // (currentEmpresaId lido via ref para não ressuscitar a subscrição a cada
   // troca de cliente.)
+  const autoSimKeyRef = useRef<string>('');
+  const lastCloudStampRef = useRef(0);
   const currentEmpresaIdRef = useRef(currentEmpresaId);
   currentEmpresaIdRef.current = currentEmpresaId;
   useEffect(() => {
