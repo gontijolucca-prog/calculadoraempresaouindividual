@@ -88,3 +88,14 @@ console.log('\nTodos os testes do PDF passaram.');
   ok('H: altura A4 297 mm', Math.abs(h - 297) < 0.5);
   eq('H: uma só página', pdf.paginasFinais(), 1);
 }
+
+// ── I: paisagem também é A4 físico (297×210)
+{
+  const pdf = new RelatorioPdf({ titulo: 'Mapa A4 paisagem', paisagem: true });
+  pdf.seccao('Mapa');
+  pdf.matriz(['Cliente', 'JAN', 'FEV'], [['A', 'OK', 'X'], ['B', 'X', 'OK']]);
+  const anyp = pdf as unknown as { escolherParaUmaFolha: () => { doc: { internal: { pageSize: { getWidth(): number; getHeight(): number } } } } };
+  const { doc } = anyp.escolherParaUmaFolha();
+  ok('I: largura A4 paisagem 297 mm', Math.abs(doc.internal.pageSize.getWidth() - 297) < 0.5);
+  ok('I: altura A4 paisagem 210 mm', Math.abs(doc.internal.pageSize.getHeight() - 210) < 0.5);
+}
