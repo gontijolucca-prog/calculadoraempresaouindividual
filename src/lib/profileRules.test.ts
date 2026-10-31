@@ -24,7 +24,7 @@ eq('> 650.000 só permite mensal', allowedIvaRegimes(700000), ['normal_mensal'])
 eq('ENI simplificado > 200.000 → organizada', regimeContabForFat('eni', 'simplificado', 250000), 'organizada');
 eq('ENI simplificado <= 200.000 mantém', regimeContabForFat('eni', 'simplificado', 150000), 'simplificado');
 eq('sociedade simplificada > 200k → organizada (art.86-A)', regimeContabForFat('lda', 'simplificado', 250000), 'organizada');
-eq('sociedade <= 200k mantém simplificado', regimeContabForFat('lda', 'simplificado', 150000), 'simplificado');
+eq('sociedade <= 200k já não pode ficar simplificada', regimeContabForFat('lda', 'simplificado', 150000), 'organizada');
 eq('sociedade em transparencia fiscal >200k mantém (não simplificado)', regimeContabForFat('lda', 'transparencia_fiscal', 250000), 'transparencia_fiscal');
 eq('sociedade em retgs >200k mantém (não simplificado)', regimeContabForFat('sa', 'retgs', 250000), 'retgs');
 

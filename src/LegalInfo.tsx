@@ -756,7 +756,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
               <div className="space-y-2">
                 <LegalRow label="PME — primeiros €50.000" value="15% (taxa reduzida para micro, pequenas e médias empresas)" note="Aplicável a PME conforme Art. 2.º da Recomendação CE 2003/361/CE" />
                 <LegalRow label="Acima de €50.000" value="19% (taxa geral)" />
-                <LegalRow label="Tributação mínima" value="15% de tributação mínima para empresas com volume de negócios >€2M (OE 2024)" />
+                <LegalRow label="Tributação mínima (Pilar 2)" value="15% para grupos multinacionais com volume de negócios ≥€750M" note="Não se aplica a PME nem à generalidade das empresas portuguesas" />
               </div>
             </div>
 

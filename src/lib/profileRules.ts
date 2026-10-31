@@ -39,7 +39,10 @@ export function regimeContabForFat(
   tipoEntidade: string, regimeContabilidade: ClientProfile['regimeContabilidade'], fat: number,
 ): ClientProfile['regimeContabilidade'] {
   const isSociedade = SOCIEDADE_TYPES.includes(tipoEntidade);
-  if ((tipoEntidade === 'eni' || isSociedade) && regimeContabilidade === 'simplificado' && fat > LIMIAR_ENI_ORGANIZADA)
+  // Sociedades têm sempre contabilidade organizada, independentemente do VN.
+  if (isSociedade && regimeContabilidade === 'simplificado') return 'organizada';
+  // ENI: acima do limiar do regime simplificado passa a organizada.
+  if (tipoEntidade === 'eni' && regimeContabilidade === 'simplificado' && fat > LIMIAR_ENI_ORGANIZADA)
     return 'organizada';
   // Nota: transparencia_fiscal e RETGS nao sao forcados porque ja implicam
   // contabilidade organizada na pratica (art.86-A CIRC).

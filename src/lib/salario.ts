@@ -141,7 +141,8 @@ export function calcSalarioLiquido(p: SalarioParams): SalarioResult {
   // 5. SS do trabalhador — 11% sobre a remuneração base do mês (os subsídios de
   //    férias/Natal também descontam SS; com duodécimos o desconto acompanha o mês).
   const cashBrutoMensal = p.duodecimos ? p.salarioBruto * (14 / 12) : p.salarioBruto;
-  const ssTrabalhador = cashBrutoMensal * SS_RATE_EMPLOYEE;
+  // O excedente tributável do subsídio de alimentação também está sujeito a SS.
+  const ssTrabalhador = (cashBrutoMensal + subsidioTributavel) * SS_RATE_EMPLOYEE;
 
   // 6. Salário líquido do mês típico. O subsídio de alimentação entra POR INTEIRO
   //    (isento + excedente tributável): o excedente é pago ao trabalhador e já foi
@@ -150,7 +151,7 @@ export function calcSalarioLiquido(p: SalarioParams): SalarioResult {
 
   // 7. Totais anuais reais (14 remunerações base + subsídio alimentação 11 meses).
   const brutoAnual = p.salarioBruto * 14 + subsidioTributavel * MESES_SUBSIDIO_ALIMENTACAO;
-  const ssAnual = p.salarioBruto * 14 * SS_RATE_EMPLOYEE;
+  const ssAnual = (p.salarioBruto * 14 + subsidioTributavel * MESES_SUBSIDIO_ALIMENTACAO) * SS_RATE_EMPLOYEE;
   const retencaoAnual = p.duodecimos
     ? retencaoIRS * 12
     : retMes.retencao * 12 + retSubsidioInteiro * 2;
