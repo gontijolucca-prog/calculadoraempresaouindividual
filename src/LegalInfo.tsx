@@ -1014,8 +1014,8 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
             <div>
               <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Ticket Restaurant® — Subsídio de Refeição</h3>
               <div className="space-y-2">
-                <LegalRow label="Cartão eletrónico — limite isento" value="€10,46/dia útil" note="Despacho 233-A/2026 — suporte eletrónico (cartão refeição)" />
-                <LegalRow label="Dinheiro / transferência — limite isento" value="€6,15/dia útil" note="Despacho 233-A/2026" />
+                <LegalRow label="Cartão eletrónico — limite isento" value="€10,46/dia útil" note="CIRS art. 2.º n.º 3 e CRCSPSS art. 46.º — suporte eletrónico (valor 2026)" />
+                <LegalRow label="Dinheiro / transferência — limite isento" value="€6,15/dia útil" note="CIRS art. 2.º n.º 3 e CRCSPSS art. 46.º (valor 2026)" />
                 <LegalRow label="Isenção IRS e SS (trabalhador)" value="Total — até ao limite legal da modalidade" note="Excedente: sujeito a IRS e SS como remuneração normal" />
                 <LegalRow label="Isenção SS patronal (empresa)" value="Não há SS sobre o valor dentro do limite — poupança de 23,75%" note="Código Contributivo Art. 46.º n.º 1 e)" />
                 <LegalRow label="Dedutibilidade IRC" value="60% do custo total dos tickets" note="CIRC Art. 43.º n.º 2 — limitação específica (vs. 100% para salário)" />
@@ -1234,10 +1234,10 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
 
             {/* Subsídio alimentação */}
             <div>
-              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Subsídio de Alimentação — DL 133/2024 / Despacho 233-A/2026</h3>
+              <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Subsídio de Alimentação — CIRS art. 2.º n.º 3 / CRCSPSS art. 46.º</h3>
               <div className="space-y-2">
-                <LegalRow label="Limite isento — dinheiro" value="€6,15/dia" note="Atualizado pelo Despacho 233-A/2026 (vigorou a partir de 1 jan 2026)" />
-                <LegalRow label="Limite isento — cartão/vale refeição" value="€10,46/dia" note="Pagamento em suporte eletrónico (cartão refeição) tem limite superior" />
+                <LegalRow label="Limite isento — dinheiro" value="€6,15/dia" note="Valor de referência 2026 (CIRS/CRCSPSS)" />
+                <LegalRow label="Limite isento — cartão/vale refeição" value="€10,46/dia" note="Suporte eletrónico (cartão refeição) — limite superior" />
                 <LegalRow label="Excedente ao limite" value="Tributável em IRS e sujeito a SS (para o trabalhador)" />
                 <LegalRow label="Para a empresa" value="Custo dedutível em IRC (CIRC Art. 23.º)" note="Parte dentro do limite: não sujeita a SS patronal" />
               </div>
@@ -1365,7 +1365,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
             <Article code="TGIS Verba 1.1" description="Imposto de Selo sobre transmissões de imóveis — 0,8% sobre o valor de aquisição" />
             <Article code="CRCSPSS Art. 53.º" description="Taxas de SS TCO: 11% (trabalhador) + 23,75% (patronal lucrativa) / 22,3% (patronal não lucrativa)" />
             <Article code="CIRS Art. 25.º" description="Dedução específica Categoria A — maior de 8,54 × IAS (€4.587,09 em 2026) ou contribuições obrigatórias (OE 2026)" />
-            <Article code="Despacho 233-A/2026" description="Limites do subsídio de alimentação 2026: €6,15/dia (dinheiro), €10,46/dia (cartão)" />
+            <Article code="CIRS art. 2.º n.º 3 / CRCSPSS art. 46.º" description="Limites do subsídio de alimentação 2026: €6,15/dia (dinheiro), €10,46/dia (cartão)" />
             <Article code="Despacho SEAF de 05/01/2026" description="Tabelas de retenção na fonte 2026 — Continente (trabalho dependente e pensões); n.º do despacho a confirmar em DR" />
             <Article code="Despacho n.º 19/2026 (AT-RAM)" description="Tabelas de retenção na fonte 2026 — Região Autónoma da Madeira (JORAM, II Série, n.º 13, 4.º Supl.)" />
             <Article code="CIRS Art. 99.º-C" description="Retenção na fonte Cat. A — remuneração mensal; retenção autónoma de subsídios de férias/Natal (n.º 5) e duodécimos" />

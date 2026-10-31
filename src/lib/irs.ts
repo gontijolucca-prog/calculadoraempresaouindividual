@@ -393,7 +393,9 @@ export function simular(sim: IRSSim, opts: { tabela?: Tabela } = {}): IRSResulta
   const escResult = aplicaEscaloes(baseTaxa, escaloes, sim.regiao || 'continente');
 
   const importanciaApurada = escResult.imposto * qf;
-  const adicional = taxaAdicional(coletavel);
+  // Em tributação conjunta a taxa adicional de solidariedade é aplicada a
+  // cada sujeito passivo; sem rendimentos individuais, divide-se o coletável.
+  const adicional = qf > 1 ? taxaAdicional(coletavel / qf) * qf : taxaAdicional(coletavel);
 
   const coletaBrutaPreJovem = importanciaApurada + adicional;
 
