@@ -13,6 +13,8 @@ export function ajustarFolhasParaA4(root: ParentNode = document, a4px = (297 * 9
       z = Math.max(0.72, z * ((a4px * 0.99) / h));
       pg.style.setProperty('zoom', String(z), 'important');
     }
+    // Se nem no piso couber, não vale a pena encolher sem resolver a paginação.
+    if (pg.scrollHeight * z > a4px * 1.01) pg.style.removeProperty('zoom');
   });
 }
 
