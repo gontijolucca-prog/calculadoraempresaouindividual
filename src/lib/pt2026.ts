@@ -262,10 +262,13 @@ export function calcSelfSSContribution(
  * @param profit lucro tributável
  * @returns IRC a pagar
  */
-export function calculateIRC(profit: number): number {
+export function calculateIRC(profit: number, isPME = true): number {
   if (profit <= 0) return 0;
-  if (profit <= 50000) return profit * 0.15;
-  return 50000 * 0.15 + (profit - 50000) * 0.19;
+  // Só PME tem a taxa reduzida de 15% nos primeiros 50.000 €; as restantes
+  // sociedades pagam 19% desde o primeiro euro.
+  if (isPME && profit <= 50000) return profit * 0.15;
+  if (isPME) return 50000 * 0.15 + (profit - 50000) * 0.19;
+  return profit * 0.19;
 }
 
 /**

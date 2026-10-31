@@ -1,0 +1,10 @@
+import { calculateIRC } from './pt2026';
+let fails = 0;
+const approx = (l: string, got: number, exp: number) => { if (Math.abs(got - exp) > 0.01) { fails++; console.error(`✗ ${l}: ${got} != ${exp}`); } else console.log(`✓ ${l}`); };
+approx('PME 40k = 15%', calculateIRC(40000, true), 6000);
+approx('não PME 40k = 19%', calculateIRC(40000, false), 7600);
+approx('PME 60k = 15%+19%', calculateIRC(60000, true), 50000 * 0.15 + 10000 * 0.19);
+approx('não PME 60k = 19%', calculateIRC(60000, false), 11400);
+approx('prejuízo = 0', calculateIRC(-1000, false), 0);
+if (fails) process.exit(1);
+console.log('IRC: ok');
