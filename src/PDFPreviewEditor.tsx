@@ -257,6 +257,33 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
     return () => document.getElementById('pdf-print-css')?.remove();
   }, []);
 
+  // Antes de imprimir, garante que cada folha lógica cabe numa A4 física.
+  // O Chrome cortava conteúdo para uma 4.ª página sem cabeçalho nem número.
+  useEffect(() => {
+    const a4px = (297 * 96) / 25.4;
+    const anteriores = new Map<HTMLElement, string>();
+    const antes = () => {
+      document.querySelectorAll<HTMLElement>('#pdf-editor-root .pdf-page').forEach((pg) => {
+        anteriores.set(pg, pg.style.getPropertyValue('zoom'));
+        pg.style.removeProperty('zoom');
+        let z = 1;
+        for (let i = 0; i < 4; i++) {
+          const h = pg.scrollHeight;
+          if (!h || h <= a4px * 0.99) break;
+          z = Math.max(0.72, z * ((a4px * 0.99) / h));
+          pg.style.setProperty('zoom', String(z), 'important');
+        }
+      });
+    };
+    const depois = () => {
+      anteriores.forEach((v, pg) => { if (v) pg.style.setProperty('zoom', v); else pg.style.removeProperty('zoom'); });
+      anteriores.clear();
+    };
+    window.addEventListener('beforeprint', antes);
+    window.addEventListener('afterprint', depois);
+    return () => { window.removeEventListener('beforeprint', antes); window.removeEventListener('afterprint', depois); };
+  }, []);
+
   // ─── Financial computations ───────────────────────────────────────────────
   const today = new Date();
   const dateStr = today.toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' });
