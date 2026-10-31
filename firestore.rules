@@ -67,6 +67,7 @@ service cloud.firestore {
         || request.auth.uid == gabineteId
         || (request.auth.uid in resource.data.members
             && resource.data.members[request.auth.uid].role == 'admin')
+        || roleHasPerm(gabineteId, 'gerir-equipa')
       );
     }
     function recusaConviteValida() {
