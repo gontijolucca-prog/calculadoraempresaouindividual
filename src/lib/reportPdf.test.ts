@@ -74,3 +74,17 @@ ok('C: inválido vira 0', formatarEuros(Number.NaN).includes('0'));
 
 if (fails > 0) { console.error(`\n${fails} falha(s)`); process.exit(1); }
 console.log('\nTodos os testes do PDF passaram.');
+
+// ── H: tamanho físico A4 e conteúdo acima do rodapé
+{
+  const pdf = new RelatorioPdf({ titulo: 'A4 físico', cliente: 'Empresa A', nif: '501234560' });
+  pdf.seccao('Tabela');
+  for (let i = 0; i < 40; i++) pdf.tabela([{ label: `Linha ${i}`, valor: '1 000 €' }]);
+  const anyp = pdf as unknown as { escolherParaUmaFolha: () => { doc: { internal: { pageSize: { getWidth(): number; getHeight(): number } } } } };
+  const { doc } = anyp.escolherParaUmaFolha();
+  const w = doc.internal.pageSize.getWidth();
+  const h = doc.internal.pageSize.getHeight();
+  ok('H: largura A4 210 mm', Math.abs(w - 210) < 0.5);
+  ok('H: altura A4 297 mm', Math.abs(h - 297) < 0.5);
+  eq('H: uma só página', pdf.paginasFinais(), 1);
+}
