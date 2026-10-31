@@ -220,7 +220,8 @@ export function compararEniLda(i: FiscalInput): FiscalResult {
   const grossSalaryYr = rawGross * 14;
   const ldaSSCompany = grossSalaryYr * SS_RATE_EMPLOYER; // 23,75%
   const ldaSSManager = grossSalaryYr * SS_RATE_EMPLOYEE; // 11%
-  const ldaIRSManager = calculateIRS(grossSalaryYr);
+  // Cat. A: deduz a dedução específica (8,54×IAS) ou as contribuições SS, se superiores.
+  const ldaIRSManager = calculateIRS(Math.max(0, grossSalaryYr - Math.max(DED_ESPECIFICA_CAT_A_2026, ldaSSManager)));
   const profit = i.rev - costsLdaOutPocket - dpNaoAceite - grossSalaryYr - ldaSSCompany;
 
   let irc = 0;

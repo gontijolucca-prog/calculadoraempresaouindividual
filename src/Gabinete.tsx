@@ -94,17 +94,21 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
   const [role, setRole] = useState<GabineteRole | null>(null);
   React.useEffect(() => {
     let cancelled = false;
-    (async () => {
+    const carregar = async () => {
       try {
         const id = getActiveGabineteId();
         const uid = auth.currentUser?.uid ?? null;
         const meta = id ? await getGabineteMeta(id) : null;
         if (!cancelled) setRole(deriveRole(meta, uid));
       } catch { if (!cancelled) setRole(null); }
-    })();
-    return () => { cancelled = true; };
+    };
+    void carregar();
+    const onSwitch = () => { void carregar(); };
+    window.addEventListener('estudo360:gabinete-switch', onSwitch as EventListener);
+    return () => { cancelled = true; window.removeEventListener('estudo360:gabinete-switch', onSwitch as EventListener); };
   }, []);
-  const effectiveRole: GabineteRole = role ?? 'admin';
+  // Até o cargo estar resolvido, assume o mínimo (nunca admin por omissão).
+  const effectiveRole: GabineteRole = role ?? 'estagiaria';
   // Indicador de sincronização — escritas locais primeiro, outbox com repetição.
   const [sync, setSync] = useState<SyncSnapshot>(() => getSyncSnapshot());
   React.useEffect(() => subscribeSync(() => setSync(getSyncSnapshot())), []);
@@ -950,9 +954,9 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
         </div>
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-200 mt-2">
           {canEdit && <button onClick={()=>setShowPilaresMC(true)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-300 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50" title="Escolher pilares por empresa (nomes e visibilidade) — grava permanente">Pilares por empresa</button>}
-          <button onClick={()=>setShowGerirMC(!showGerirMC)} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerirMC ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
+          {canEdit && <button onClick={()=>setShowGerirMC(!showGerirMC)} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerirMC ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
             <Plus className="w-3.5 h-3.5" /> Gerir pilares
-          </button>
+          </button>}
           {mcVisiveis !== null && <span className="text-xs text-zinc-500 whitespace-nowrap">{mcVisiveis.length}/{pilares.length} visíveis</span>}
           {mcVisiveis === null && <span className="text-xs text-zinc-500 whitespace-nowrap">Todos visíveis</span>}
           <span className="ml-auto text-[11px] text-zinc-400 whitespace-nowrap">Cada alteração grava logo</span>
@@ -1308,9 +1312,9 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
         </div>
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-200 mt-2">
           {canEdit && <button onClick={()=>setShowPilaresRH(true)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-300 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50" title="Escolher pilares por empresa (nomes e visibilidade) — grava permanente">Pilares por empresa</button>}
-          <button onClick={()=>setShowGerirRH(!showGerirRH)} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerirRH ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
+          {canEdit && <button onClick={()=>setShowGerirRH(!showGerirRH)} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerirRH ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
             <Plus className="w-3.5 h-3.5" /> Gerir pilares
-          </button>
+          </button>}
           {rhVisiveis !== null && <span className="text-xs text-zinc-500 whitespace-nowrap">{rhVisiveis.length}/{pilares.length} visíveis</span>}
           {rhVisiveis === null && <span className="text-xs text-zinc-500 whitespace-nowrap">Todos visíveis</span>}
           <span className="ml-auto text-[11px] text-zinc-400 whitespace-nowrap">Cada alteração grava logo</span>
@@ -1734,7 +1738,7 @@ function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmp
                         <td className="px-3 py-3 text-xs text-zinc-600">{item.dataVencimento ? new Date(item.dataVencimento).toLocaleDateString('pt-PT') : '—'}</td>
                         <td className="px-4 py-3">
                           <div className="flex justify-end gap-1">
-                            {canGerirObrigacoes && o.estado !== 'entregue' && <button onClick={()=>upsertObrigacao({...o, estado:'entregue'})} className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs">Entregue</button>}
+                            {canGerirObrigacoes && o.origem !== 'calendario_fiscal' && o.estado !== 'entregue' && <button onClick={()=>upsertObrigacao({...o, estado:'entregue'})} className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs">Entregue</button>}
                             {o.estado === 'entregue' && <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs">✓ Entregue</span>}
                           </div>
                         </td>
@@ -2185,7 +2189,7 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
         ) : null}
       </div>
       {passModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={()=>setPassModal(false)}><div onClick={e=>e.stopPropagation()} className="bg-white rounded-2xl p-6 w-full max-w-sm"><h3 className="font-semibold">Desbloquear cofre</h3><p className="text-xs text-zinc-600 mt-1">Sem esta passphrase ninguém lê. Se a perder, perde o cofre.</p><input autoFocus type="password" value={passInput} onChange={e=>setPassInput(e.target.value)} placeholder="Passphrase" className="w-full mt-3 px-3 py-2.5 rounded-xl border text-sm"/><div className="flex justify-end gap-2 mt-4"><button onClick={()=>setPassModal(false)} className="px-4 py-2 rounded-full border text-sm">Cancelar</button><button onClick={async()=>{ const { setCofrePassphrase, decryptSecret }=await import('./lib/cofreCrypto'); setCofrePassphrase(passInput); const c=(selected as unknown as {cipher:never}).cipher as never; try{ const pt=await decryptSecret(c as never, passInput); setPlain(pt); setPassModal(false); setPassInput(''); }catch{ alert('Passphrase errada.'); } }} className="px-4 py-2 rounded-full bg-[#0B57D0] text-white text-sm">Desbloquear</button></div></div></div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={()=>setPassModal(false)}><div onClick={e=>e.stopPropagation()} className="bg-white rounded-2xl p-6 w-full max-w-sm"><h3 className="font-semibold">Desbloquear cofre</h3><p className="text-xs text-zinc-600 mt-1">Sem esta passphrase ninguém lê. Se a perder, perde o cofre.</p><input autoFocus type="password" value={passInput} onChange={e=>setPassInput(e.target.value)} placeholder="Passphrase" className="w-full mt-3 px-3 py-2.5 rounded-xl border text-sm"/><div className="flex justify-end gap-2 mt-4"><button onClick={()=>setPassModal(false)} className="px-4 py-2 rounded-full border text-sm">Cancelar</button><button onClick={async()=>{ const { setCofrePassphrase, decryptSecret }=await import('./lib/cofreCrypto'); const c=(selected as unknown as {cipher:never}).cipher as never; try{ const pt=await decryptSecret(c as never, passInput); setCofrePassphrase(passInput); setPlain(pt); setPassModal(false); setPassInput(''); }catch{ alert('Passphrase errada.'); } }} className="px-4 py-2 rounded-full bg-[#0B57D0] text-white text-sm">Desbloquear</button></div></div></div>
       )}
     </div>
   );

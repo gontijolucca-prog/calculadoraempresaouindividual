@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try { const { setCofrePassphrase } = await import('./cofreCrypto'); setCofrePassphrase(null); } catch {}
     try {
       // Limpa caches locais por prefixo — evita leak entre contas no mesmo browser
-      const prefixes = ['estudo360:v1:gabinete:', 'estudo360:v1:empresas', 'estudo360:v1:currentEmpresaId'];
+      const prefixes = ['estudo360:v1:gabinete:', 'estudo360:v1:empresas', 'estudo360:v1:currentEmpresaId', 'estudo360:v1:syncOutbox', 'estudo360:v1:auditQueue'];
       const toRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);

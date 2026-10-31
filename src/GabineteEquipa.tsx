@@ -603,7 +603,7 @@ export default function GabineteEquipa() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="font-semibold">Convite para {convite.nome}</h3>
-                <p className="text-[12px] text-[#64748B] mt-0.5">{convite.email} · {roleLabel[convite.role]}</p>
+                <p className="text-[12px] text-[#64748B] mt-0.5">{convite.email} · {labelDoCargo(convite.role, gabMeta)}</p>
               </div>
               <button onClick={() => setConvite(null)} className="p-1 hover:bg-zinc-100 rounded" aria-label="Fechar"><X className="w-4 h-4" /></button>
             </div>

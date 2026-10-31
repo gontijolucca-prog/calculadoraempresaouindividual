@@ -44,11 +44,14 @@ const IMT_HPP_CONTINENTE: IMTEscalao[] = [
 // CIMT Art. 17.º, OE 2026 (atualização de 2% + alargamento da taxa 0% ao
 // 1.º escalão — fonte: LOE 2026 / EY Tax Alert).
 const IMT_HABITACAO_SECUNDARIA: IMTEscalao[] = [
-  { limite: 106346,   taxa: 0,     deducao: 0 },
-  { limite: 145470,   taxa: 0.02,  deducao: 2126.92 },
-  { limite: 198347,   taxa: 0.05,  deducao: 6491.02 },
-  { limite: 330539,   taxa: 0.07,  deducao: 10457.96 },
-  { limite: 633931,   taxa: 0.08,  deducao: 13763.35 },
+  // Tabela II do CIMT (habitação não permanente): 1% no 1.º escalão e
+  // deduções 1.063,46 € inferiores às da HPP. O limite superior do 5.º
+  // escalão é o mesmo da HPP (660.982 €).
+  { limite: 106346,   taxa: 0.01,  deducao: 0 },
+  { limite: 145470,   taxa: 0.02,  deducao: 1063.46 },
+  { limite: 198347,   taxa: 0.05,  deducao: 5427.56 },
+  { limite: 330539,   taxa: 0.07,  deducao: 9394.50 },
+  { limite: 660982,   taxa: 0.08,  deducao: 12699.89 },
   { limite: 1150853,  taxa: 0.06,  deducao: null },
   { limite: Infinity, taxa: 0.075, deducao: null },
 ];
@@ -161,10 +164,13 @@ export function calcIMT(
         const imtLimite = calcIMTProgressivo(limiteIsencaoJovem, tabela);
         const imtJovem = Math.max(0, imtNormal - imtLimite);
         const taxaJovem = tabela.find(e => valor <= e.limite)?.taxa ?? 0;
+        // Na redução parcial, o IS acompanha o IMT: incide só sobre o
+        // excedente acima do limite de isenção (0,8%).
+        const impostoSeloJovem = Math.max(0, valor - limiteIsencaoJovem) * 0.008;
         return {
-          imt: imtJovem, impostoSelo: 0, total: imtJovem,
+          imt: imtJovem, impostoSelo: impostoSeloJovem, total: imtJovem + impostoSeloJovem,
           taxaAplicada: taxaJovem, isento: false, isentoJovem: true,
-          descricao: `IMT Jovem — redução parcial (excedente a ${new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(limiteIsencaoJovem)}). IS também isento.`,
+          descricao: `IMT Jovem — redução parcial (excedente a ${new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(limiteIsencaoJovem)}). IS só sobre o excedente.`,
         };
       }
       // Acima do tecto jovem: sem benefício — IMT e IS normais (o jovem não

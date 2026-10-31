@@ -5,7 +5,7 @@
  */
 import {
   collection, doc, setDoc, deleteDoc, getDoc, getDocs, writeBatch, onSnapshot,
-  query, orderBy, where, serverTimestamp, Timestamp,
+  query, orderBy, where, serverTimestamp, Timestamp, deleteField,
   type Unsubscribe,
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
@@ -109,7 +109,9 @@ function sanitizeForFirestore<T>(obj: T): T {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
     if (v === undefined) continue;          // Firestore: unsupported field value: undefined
-    out[k] = v === null ? '' : (typeof v === 'object' ? sanitizeForFirestore(v) : v);
+    // Sentinels do Firestore (deleteField/serverTimestamp) têm de passar intactos.
+    const sentinel = v && typeof v === 'object' && typeof (v as { _methodName?: unknown })._methodName === 'string';
+    out[k] = v === null ? '' : (sentinel ? v : (typeof v === 'object' ? sanitizeForFirestore(v) : v));
   }
   return out as T;
 }
@@ -637,7 +639,7 @@ export async function removePilarCliente(
 export async function resetPilaresCliente(cli: GabineteCliente, mapa: 'controlo' | 'rh'): Promise<GabineteCliente> {
   const next = { ...(cli.mapas || {}) };
   delete next[mapa];
-  const saved = await upsertCliente({ ...cli, mapas: Object.keys(next).length ? next : undefined });
+  const saved = await upsertCliente({ ...cli, mapas: (Object.keys(next).length ? next : deleteField()) as never });
   try { logAudit('reset_pilares_cliente', `${cli.nome}: ${mapa} volta ao global`, { mapa }, cli.id); } catch {}
   return saved;
 }
@@ -860,7 +862,7 @@ export async function marcarTarefaFeita(id: string, done = true): Promise<void> 
   const list = listTarefasCache();
   const t = list.find(x => x.id === id);
   if (!t) return;
-  await upsertTarefa({ ...t, estado: done ? 'done' : 'todo', dataConclusao: done ? Date.now() : undefined });
+  await upsertTarefa({ ...t, estado: done ? 'done' : 'todo', dataConclusao: (done ? Date.now() : deleteField()) as never });
 }
 export function newTarefaId(): string { return newId('tar'); }
 
@@ -898,6 +900,7 @@ export function newObrigacaoId(): string { return newId('obr'); }
 // na Agenda existente, mas com origem própria e sem ações "Entregue/Dispensar".
 const CALENDARIO_FISCAL_CLIENTE_ID = '__calendario_fiscal_2026__';
 const CALENDARIO_FISCAL_MARKER_ID = 'calendario-fiscal-2026';
+const CALENDARIO_LOCAL_KEY = 'calendario-fiscal-2026-local';
 const CALENDARIO_FISCAL_VERSION = 1;
 
 /**
@@ -928,6 +931,9 @@ export async function seedCalendarioFiscal2026(): Promise<void> {
     updatedAt: now,
     _updatedAt: now,
   }));
+  // Guarda numa chave própria: o snapshot do Firestore substitui o cache da
+  // coleção e apagava estes eventos locais a cada atualização.
+  saveToStorage(CALENDARIO_LOCAL_KEY, allRecords);
   const missing = allRecords.filter((item) => !currentIds.has(item.id));
   if (missing.length > 0) saveObrigacoesCache([...current, ...missing]);
   // Referência nacional: fica SÓ no cache local. Antes eram 313 escritas por
@@ -938,7 +944,8 @@ export async function seedCalendarioFiscal2026(): Promise<void> {
 /** Junta o calendário local (não gravado) aos registos vindos do Firestore. */
 function comCalendarioLocal(items: Obrigacao[]): Obrigacao[] {
   const ids = new Set(items.map((i) => i.id));
-  const extras = listObrigacoesCache().filter((o) => o.origem === 'calendario_fiscal' && !ids.has(o.id));
+  const locais = loadFromStorage<Obrigacao[]>(CALENDARIO_LOCAL_KEY, []) ?? [];
+  const extras = locais.filter((o) => o.origem === 'calendario_fiscal' && !ids.has(o.id));
   return extras.length ? [...items, ...extras] : items;
 }
 
@@ -1031,17 +1038,6 @@ export async function upsertColaborador(c: Colaborador): Promise<void> {
   // Cópia local imediata; o servidor é atualizado em segundo plano para a UI
   // nunca ficar à espera do Firestore.
   queueSet(colPath('colaboradores'), c.id, withTs);
-  if (typeof navigator !== 'undefined' && navigator.onLine) {
-    void (async () => {
-      try {
-        const [{ setDoc, doc }, { db }] = await Promise.all([import('firebase/firestore'), import('./firebase')]);
-        await Promise.race([
-          setDoc(doc(db, colPath('colaboradores'), c.id), withTs),
-          new Promise((_, rej) => setTimeout(() => rej(new Error('tempo esgotado')), 6000)),
-        ]);
-      } catch { /* fica na fila; o outbox volta a tentar */ }
-    })();
-  }
   logAudit('save_colaborador', c.nome || c.id);
 }
 export async function deleteColaborador(id: string): Promise<void> {

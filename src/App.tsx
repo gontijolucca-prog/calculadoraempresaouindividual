@@ -376,7 +376,7 @@ function AppContent() {
       try {
         const g = await import('./lib/gabinetes');
         if (g.getActiveGabineteId()) { if (vivo) setAcessoPorConvite(true); return; }
-        const { meus, convites } = await g.listMyGabinetes();
+        const { meus, convites, erro } = await g.listMyGabinetes();
         const emailLc = (user.email || '').toLowerCase();
         const conviteDoEmail = convites.some((c) => (c.invites || []).some((i) => (i.email || '').toLowerCase() === emailLc));
         if (vivo) setAcessoPorConvite(meus.length > 0 || conviteDoEmail);
@@ -458,7 +458,7 @@ function AppContent() {
         const g = await import('./lib/gabinetes');
         const emailLc = (user.email || '').trim().toLowerCase();
         let aceitou = false;
-        const { meus, convites } = await g.listMyGabinetes();
+        const { meus, convites, erro } = await g.listMyGabinetes();
         for (const conv of convites) {
           const doEmail = (conv.invites || []).some((i) => String(i.email || '').trim().toLowerCase() === emailLc);
           if (!doEmail) continue;
@@ -484,7 +484,7 @@ function AppContent() {
         const lista = final.meus;
         const ids = new Set(lista.map((m) => m.id));
         const ativo = g.getActiveGabineteId();
-        if (ativo && !ids.has(ativo)) g.clearActiveGabineteId();
+        if (!erro && ativo && !ids.has(ativo)) g.clearActiveGabineteId();
         const ativoValido = !!ativo && ids.has(ativo);
 
         if (!ativoValido && lista.length === 1) {
@@ -743,7 +743,13 @@ function AppContent() {
   }, [getHasUnsavedEdits]);
   // Sincroniza alterações do perfil para a empresa atual no registry.
   useEffect(() => {
-    if (currentEmpresaId) syncProfileIntoEmpresa(currentEmpresaId, clientProfile);
+    if (!currentEmpresaId) return;
+    const emp = getEmpresa(currentEmpresaId);
+    if (!emp) return;
+    // Sem isto, o snapshot → estado novo → sync → stamp → novo snapshot fazia
+    // um loop de escrita (~2 gravações/2,5 s) que queimava a quota.
+    if (JSON.stringify(normalizeProfile(emp.profile)) === JSON.stringify(clientProfile || {})) return;
+    syncProfileIntoEmpresa(currentEmpresaId, clientProfile);
   }, [clientProfile, currentEmpresaId]);
 
   // Persiste o estado do Previsa na empresa atual (espelha o sync do perfil).
@@ -753,7 +759,9 @@ function AppContent() {
   useEffect(() => {
     if (!currentEmpresaId) return;
     const emp = getEmpresa(currentEmpresaId);
-    if (emp) upsertEmpresa({ ...emp, previsa: previSaState });
+    if (!emp) return;
+    if (JSON.stringify({ ...defaultPreviSaState(), ...(emp.previsa || {}) }) === JSON.stringify(previSaState || {})) return;
+    upsertEmpresa({ ...emp, previsa: previSaState });
   }, [previSaState, currentEmpresaId]);
 
   // Persiste o estado de TODOS os simuladores na empresa atual (debounced 400ms
@@ -1444,6 +1452,11 @@ function AppContent() {
     // Normaliza o perfil da empresa: perfis legados/cloud podem não trazer todos
     // os objetos aninhados (custos, contabilidade, …) e a vista de Perfil rebenta.
     const profile = normalizeProfile(emp.profile);
+    // Se já é exatamente o perfil em estado, não cria um objeto novo (evita
+    // disparar o efeito de sync e o ciclo snapshot→gravação→snapshot).
+    if (JSON.stringify(profile) === JSON.stringify(clientProfile)) {
+      // ainda assim adota sims/saft que possam ter mudado noutro dispositivo
+    }
     const tax = (sims.tax as TaxSimulatorState) ?? getInitialTaxState(profile);
     const previsaForInit = { ...defaultPreviSaState(), ...(emp.previsa ?? {}) };
     setClientProfile(profile);
@@ -2117,7 +2130,7 @@ function AppContent() {
             <div className="mt-1 text-[11px] font-[400] text-white/80 break-words">{cloudSyncError.slice(0, 180)}</div>
             <div className="mt-2 flex gap-2">
               <button type="button" onClick={() => { void import('./lib/gabinete').then((m) => m.flushOutbox()).catch(() => {}); }} className="rounded-lg bg-white/15 px-2.5 py-1 text-[11px] font-[700] text-white hover:bg-white/25">Tentar agora</button>
-              <button type="button" onClick={() => { void import('./lib/sync').then((m) => m.clearOutbox()).catch(() => {}); setCloudSyncError(null); }} className="rounded-lg bg-white/15 px-2.5 py-1 text-[11px] font-[700] text-white hover:bg-white/25">Limpar fila</button>
+              <button type="button" onClick={() => { if (!confirm('Limpar a fila de sincronização? As alterações pendentes que ainda não chegaram ao servidor perdem-se.')) return; void import('./lib/sync').then((m) => m.clearOutbox()).catch(() => {}); setCloudSyncError(null); }} className="rounded-lg bg-white/15 px-2.5 py-1 text-[11px] font-[700] text-white hover:bg-white/25">Limpar fila</button>
             </div>
           </div>
           <button type="button" onClick={() => setCloudSyncError(null)} className="ml-auto text-white/80 hover:text-white text-[16px] leading-none" aria-label="Fechar aviso">×</button>

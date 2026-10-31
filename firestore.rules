@@ -51,6 +51,38 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    function emailAtual() {
+      return request.auth != null && request.auth.token.email is string
+        ? request.auth.token.email.lower() : '';
+    }
+    function souDonoDoGabinete(gabineteId) {
+      return request.auth != null && (
+        request.auth.uid == resource.data.ownerUid
+        || request.auth.uid == gabineteId
+      );
+    }
+    function souAdminDoGabinete(gabineteId) {
+      return request.auth != null && (
+        request.auth.uid == resource.data.ownerUid
+        || request.auth.uid == gabineteId
+        || (request.auth.uid in resource.data.members
+            && resource.data.members[request.auth.uid].role == 'admin')
+      );
+    }
+    function autoAdesaoValida() {
+      return request.auth != null
+        && emailAtual() != ''
+        && emailAtual() in resource.data.inviteEmails
+        && request.auth.uid in request.resource.data.memberUids
+        && !(request.auth.uid in resource.data.memberUids)
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && (request.resource.data.members[request.auth.uid].role in ['contabilista', 'estagiaria']
+            || request.resource.data.members[request.auth.uid].role in resource.data.customRoles)
+        && !(emailAtual() in request.resource.data.inviteEmails)
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['memberUids', 'members', 'inviteEmails', 'invites', 'updatedAt']);
+    }
+
     // ——— Gabinetes (meta) ———
     // Leitura só para owner, membros e convidados (email em inviteEmails, case-insensitive).
     match /gabinetes/{gabineteId} {
@@ -60,11 +92,12 @@ service cloud.firestore {
         || request.auth.token.email.lower() in resource.data.inviteEmails
       );
       allow create: if request.auth != null && request.auth.uid == request.resource.data.ownerUid;
+      // Só o dono/admin altera a equipa. Um convidado só pode auto-aderir se o
+      // email dele estiver mesmo em inviteEmails, e apenas nos campos da adesão.
       allow update: if request.auth != null && (
-        request.auth.uid in resource.data.memberUids
-        || request.auth.uid == resource.data.ownerUid
-        || request.auth.token.email.lower() in resource.data.inviteEmails
-        || request.auth.uid in request.resource.data.memberUids
+        souDonoDoGabinete(gabineteId)
+        || (souAdminDoGabinete(gabineteId) && request.resource.data.ownerUid == resource.data.ownerUid)
+        || autoAdesaoValida()
       );
       allow delete: if request.auth != null && request.auth.uid == resource.data.ownerUid;
     }
@@ -107,11 +140,16 @@ service cloud.firestore {
     function podeVerCofre(gabineteId) {
       return gabRoleIs(gabineteId, ['admin', 'contabilista']) || roleHasPerm(gabineteId, 'ver-cofre');
     }
-    function podeEditarRestrita(gabineteId) {
+    function podeEditarCol(gabineteId, col) {
       return gabRoleIs(gabineteId, ['admin', 'contabilista'])
-        || roleHasPerm(gabineteId, 'editar-clientes')
-        || roleHasPerm(gabineteId, 'gerir-obrigacoes')
-        || roleHasPerm(gabineteId, 'editar-cofre');
+        || (col == 'cofre' && roleHasPerm(gabineteId, 'editar-cofre'))
+        || (col == 'clientes' && roleHasPerm(gabineteId, 'editar-clientes'))
+        || (col == 'obrigacoes' && roleHasPerm(gabineteId, 'gerir-obrigacoes'));
+    }
+    function podeApagarCol(gabineteId, col) {
+      return gabRoleIs(gabineteId, ['admin', 'contabilista'])
+        || roleHasPerm(gabineteId, 'apagar')
+        || roleHasPerm(gabineteId, 'purgar');
     }
     function podeLixeira(gabineteId) {
       return gabRoleIs(gabineteId, ['admin', 'contabilista'])
@@ -138,19 +176,19 @@ service cloud.firestore {
         && (col != 'cofre' || podeVerCofre(officeId));
       allow create: if gabIsUser(officeId)
         && isValidGabineteDoc(request.resource.data)
-        && (!isColRestrita(col) || podeEditarRestrita(officeId));
+        && (!isColRestrita(col) || podeEditarCol(officeId, col));
       allow update: if gabIsUser(officeId)
         && isValidGabineteDoc(request.resource.data)
         && (
           isColRestrita(col)
-            ? podeEditarRestrita(officeId)
+            ? podeEditarCol(officeId, col)
             : (!isLixeiraChange(resource.data, request.resource.data) || podeLixeira(officeId))
         );
       // Purga definitiva: só admin (cofre: admin+contabilista; restantes: membros).
       allow delete: if gabIsUser(officeId) && (
         isColLixeira(col)
           ? (gabRoleIs(officeId, ['admin']) || roleHasPerm(officeId, 'purgar'))
-          : (col == 'cofre' ? podeVerCofre(officeId) : true)
+          : podeApagarCol(officeId, col)
       );
     }
     match /gabinete/{officeId} {

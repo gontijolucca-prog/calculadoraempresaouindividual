@@ -31,10 +31,10 @@ function is(label: string, got: unknown, exp: unknown) {
   approx('B: total (IMT + Selo)', r.total, 5142.04);
 }
 
-// ── C: Habitação secundária 200 000 € (7%, dedução 10 457,96 — OE 2026) ──
+// ── C: Habitação secundária 200 000 € (7%, dedução 9 394,50 — tabela II) ──
 {
   const r = calcIMT(200000, 'habitacao', 'continente', false, 40);
-  approx('C: IMT', r.imt, 3542.04);
+  approx('C: IMT', r.imt, 4605.50);
 }
 
 // ── D: Prédio rústico 100 000 € → taxa plana 5% ──
@@ -62,7 +62,7 @@ function is(label: string, got: unknown, exp: unknown) {
 {
   const r = calcIMT(400000, 'hpp', 'continente', true, 30);
   approx('G: IMT Jovem (redução parcial)', r.imt, 5556.88);
-  approx('G: Selo = 0', r.impostoSelo, 0);
+  approx('G: Selo sobre o excedente (0,8%)', r.impostoSelo, 555.69);
 }
 
 // ── H: IMT Jovem acima do teto de redução (660 982 €) → sem benefício:

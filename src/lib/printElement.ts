@@ -97,6 +97,7 @@ export function imprimirUmaFolha(
     return { fator: 1 };
   }
 
+  const zoomOriginal = root.style.zoom;
   const paginas = Array.from(root.querySelectorAll<HTMLElement>(seletor));
 
   // Documentos com várias "folhas" (ex.: contrato) passam a fluxo contínuo:
@@ -160,7 +161,6 @@ export function imprimirUmaFolha(
     root.style.zoom = String(fator);
     compensar(fator);
   }
-  const zoomAnterior = root.style.zoom;
 
   // O zoom estreita a largura e o texto reflui; alargar compensa, mas a altura
   // muda outra vez. Itera até o conteúdo encher ~97% da A4 (cresce e encolhe).
@@ -185,8 +185,9 @@ export function imprimirUmaFolha(
         window.print();
       } finally {
         setTimeout(() => {
-          root.style.zoom = zoomAnterior;
+          root.style.zoom = zoomOriginal;
           root.style.removeProperty('--uma-folha-pt');
+          root.classList.remove('uma-folha-flow', 'uma-folha-texto');
           paginas.forEach((p, i) => { p.style.width = larguraOriginal[i] || ''; p.style.maxWidth = ''; });
         }, 1500);
       }

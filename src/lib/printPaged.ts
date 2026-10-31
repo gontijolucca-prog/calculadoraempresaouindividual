@@ -287,14 +287,15 @@ function runPagedIframe(fullDoc: string, foot: { left: string; right: string }, 
  * Imprime um documento HTML numa única folha A4.
  *
  * Ao contrário do paged.js (que pagina por desenho), aqui mede-se a altura real
- * do conteúdo dentro de um iframe isolado e aplica-se `zoom` até caber. Nunca
- * há segunda página. Piso de escala configurável (omissão 0.45).
+ * do conteúdo dentro de um iframe isolado e aplica-se `zoom` até caber. O piso
+ * de escala protege a legibilidade: se não couber, sai uma segunda folha em vez
+ * de texto a 4 pt.
  */
 export function printHtmlUmaFolha(
   fullHtml: string,
   opts: { title: string; paisagem?: boolean; piso?: number; onSettled?: () => void },
 ): void {
-  const piso = opts.piso ?? 0.45;
+  const piso = opts.piso ?? 0.70;
   const iframe = document.createElement('iframe');
   iframe.setAttribute('aria-hidden', 'true');
   iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:210mm;height:297mm;border:0;opacity:0;pointer-events:none;z-index:-1;';
@@ -317,8 +318,9 @@ export function printHtmlUmaFolha(
   doc.open();
   doc.write(`<!doctype html><html><head><meta charset="utf-8">${fontLink}<title>${esc(opts.title)}</title>
 <style>${styleCss}
-html, body { margin: 0; padding: 0; background: #fff; }
+html, body { margin: 0; padding: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 @page { size: A4 ${opts.paisagem ? 'landscape' : 'portrait'}; margin: 0; }
+body { padding: 14mm 12mm; box-sizing: border-box; }
 </style></head><body>${bodyHtml}</body></html>`);
   doc.close();
 

@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import type { PreviSaState } from '../previSaState';
 import { calculate } from './previsaCalc';
+import { sanitizePdf, slugFicheiro } from './reportPdf';
 
 function fmt(n: number): string {
   return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(n || 0);
@@ -24,7 +25,7 @@ export async function downloadPrevisaPdf(state: PreviSaState, nome: string) {
   doc.text('Previsa — Modelo 22', 10, 11);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.text(`${nome || 'Empresa'} · Período ${state.periodo || '—'}`, 10, 15);
+  doc.text(sanitizePdf(`${nome || 'Empresa'} · Período ${state.periodo || '—'}`), 10, 15);
 
   const colW = 92;
   const xL = 10;
@@ -45,7 +46,7 @@ export async function downloadPrevisaPdf(state: PreviSaState, nome: string) {
     doc.setFont('helvetica', forte ? 'bold' : 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(forte ? 26 : 70, forte ? 26 : 70, forte ? 24 : 70);
-    doc.text(String(label).slice(0, 46), x, y);
+    doc.text(sanitizePdf(String(label).slice(0, 46)), x, y);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(26, 26, 24);
     doc.text(typeof val === 'number' ? fmt(val) : String(val), x + colW, y, { align: 'right' });
@@ -92,6 +93,6 @@ export async function downloadPrevisaPdf(state: PreviSaState, nome: string) {
   doc.text(`Gerado em ${new Date().toLocaleDateString('pt-PT')} — estudo360.pt`, 10, 287);
   doc.text('Pág. 1/1', 200, 287, { align: 'right' });
 
-  const filename = `Previsa_${(nome || 'Empresa').replace(/\s+/g, '_')}_${state.periodo || new Date().getFullYear()}.pdf`;
+  const filename = `${slugFicheiro('Previsa ' + (nome || 'Empresa') + ' ' + (state.periodo || new Date().getFullYear()))}.pdf`;
   doc.save(filename);
 }

@@ -187,7 +187,9 @@ export function construirObrigacaoDaCelula(
   agora: number = Date.now(),
 ): Obrigacao {
   const mm = String(k.mes).padStart(2, '0');
-  const venc = new Date(k.ano, k.mes - 1, 20).getTime();
+  // Preserva o prazo real já existente; o dia 20 do mês é só um fallback de
+  // criação e não deve reescrever o vencimento ao clicar na célula.
+  const venc = existente?.vencimento || new Date(k.ano, k.mes - 1, 20).getTime();
   const label = pilar.labelFull?.trim() || pilar.label || pilar.id;
   const tituloBase = k.mapa === 'quadro' ? (tituloMap[pilar.id] || pilar.label) : label;
   const payload: Obrigacao = {

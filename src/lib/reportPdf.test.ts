@@ -53,7 +53,7 @@ ok('C: inválido vira 0', formatarEuros(Number.NaN).includes('0'));
   grande.nota('Valores indicativos.');
   ok('E: em tamanho normal passaria de uma página', grande.numeroPaginas > 1);
   eq('E: página final = 1', grande.paginasFinais(), 1);
-  ok('E: fator dentro do piso', grande.fatorFinal() >= 0.55 && grande.fatorFinal() <= 1);
+  ok('E: fator dentro do piso', grande.fatorFinal() >= 0.72 && grande.fatorFinal() <= 1);
 }
 
 // ── F: relatório curto fica no tamanho normal

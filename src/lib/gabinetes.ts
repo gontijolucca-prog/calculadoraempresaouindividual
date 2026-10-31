@@ -146,19 +146,21 @@ export async function createGabinete(nome: string, nif?: string): Promise<string
   return id;
 }
 
-export async function listMyGabinetes(): Promise<{ meus: GabineteMeta[]; convites: GabineteMeta[] }> {
+export async function listMyGabinetes(): Promise<{ meus: GabineteMeta[]; convites: GabineteMeta[]; erro?: boolean }> {
   const u = auth.currentUser;
-  if (!u) return { meus: [], convites: [] };
+  if (!u) return { meus: [], convites: [], erro: true };
   const uid = u.uid;
   const emailLc = normalizeEmail(u.email || '');
   let meus: GabineteMeta[] = [];
   let convites: GabineteMeta[] = [];
+  let erro = false;
 
   try {
     const q1 = query(collection(db, 'gabinetes'), where('memberUids', 'array-contains', uid));
     const s1 = await getDocs(q1);
     meus = s1.docs.map(d => ({ ...(d.data() as GabineteMeta), id: d.id }));
   } catch (e) {
+    erro = true;
     console.warn('[gabinetes] list membros falhou', e);
   }
 
@@ -179,7 +181,7 @@ export async function listMyGabinetes(): Promise<{ meus: GabineteMeta[]; convite
   // ordenar: mais recente primeiro
   meus.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
   convites.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-  return { meus, convites };
+  return { meus, convites, erro };
 }
 
 export async function acceptInvite(gabineteId: string): Promise<void> {
@@ -191,7 +193,10 @@ export async function acceptInvite(gabineteId: string): Promise<void> {
   if (!snap || !snap.exists()) throw new Error('Gabinete não encontrado');
   const data = snap.data() as GabineteMeta;
   const invite = data.invites?.find(i => normalizeEmail(i.email) === emailLc);
-  const role: GabineteRole = (invite?.role as GabineteRole) || 'contabilista';
+  // As regras só permitem auto-adesão como contabilista/estagiária/cargo
+  // personalizado (nunca admin). Um convite admin entra como contabilista e o
+  // dono promove depois na Equipa.
+  const role: GabineteRole = (invite?.role as GabineteRole) === 'admin' ? 'contabilista' : ((invite?.role as GabineteRole) || 'contabilista');
   // adiciona membro e remove convite
   await withTimeout(updateDoc(ref, {
     memberUids: arrayUnion(u.uid),

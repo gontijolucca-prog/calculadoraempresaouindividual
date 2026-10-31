@@ -700,8 +700,9 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
             <div>
               <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Dedução por Dependentes — Art. 78.º-A CIRS</h3>
               <div className="space-y-2">
-                <LegalRow label="1.º ao 3.º dependente" value="€600 por dependente (dedução à coleta)" />
-                <LegalRow label="A partir do 4.º dependente" value="€900 por dependente adicional" />
+                <LegalRow label="Dependente até 3 anos" value="€726 por dependente" />
+                <LegalRow label="Dependente até 6 anos (2.º e seguintes)" value="€900 por dependente" />
+                <LegalRow label="Outros dependentes" value="€600 por dependente" />
                 <LegalRow label="Dependente com deficiência" value="€900 por dependente" />
               </div>
               <p className="text-[11px] text-[#94A3B8] mt-2 font-[500]">Dedução à coleta (subtrai diretamente ao imposto calculado, não ao rendimento)</p>
@@ -711,7 +712,8 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
             <div>
               <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Retenção na Fonte — Categoria B</h3>
               <div className="space-y-2">
-                <LegalRow label="Serviços profissionais (geral)" value="11,5%" note="Aplicável quando o prestador emite fatura a entidades com contabilidade organizada" />
+                <LegalRow label="Serviços profissionais (art. 151.º)" value="25%" note="Atividades da tabela do art. 151.º do CIRS, com coeficiente 0,75" />
+                <LegalRow label="Outros serviços" value="11,5%" note="Serviços fora da tabela do art. 151.º" />
                 <LegalRow label="Direitos de autor" value="16,5%" />
                 <LegalRow label="Isenção para novos ENI" value="Primeiro ano: sem retenção obrigatória (Art. 101.º CIRS)" />
               </div>
@@ -725,7 +727,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
               Numa Lda./Unipessoal, o sócio-gerente pode receber rendimento como salário (Categoria A), distribuição de dividendos (Categoria E) ou misto. A escolha tem impacto significativo em IRS, IRC e SS.
             </p>
             <div className="space-y-2 mb-4">
-              <LegalRow label="Salário do sócio-gerente — Cat. A" value="Tributado a escalões IRS (13–48%) + SS 11% trabalhador + 23,75% empresa" note="Custo dedutível em IRC para a empresa (Art. 23.º CIRC)" />
+              <LegalRow label="Salário do sócio-gerente — Cat. A" value="Tributado a escalões IRS (12,5–48%) + SS 11% trabalhador + 23,75% empresa" note="Custo dedutível em IRC para a empresa (Art. 23.º CIRC)" />
               <LegalRow label="Dividendos — Cat. E" value="Retenção liberatória 28% (Art. 71.º CIRS)" note="Pode optar por englobamento se mais favorável (escalões IRS) — declara-se na Mod. 3" />
               <LegalRow label="Distribuição não dedutível em IRC" value="Os lucros saem após pagamento de IRC (15%/19%) — dupla tributação económica" />
               <LegalRow label="Reinvestimento de lucros" value="Sem tributação adicional até serem distribuídos — favorece capitalização" />
@@ -920,7 +922,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
                 <LegalRow label="Base — Prestação de Serviços" value="70% do rendimento mensal declarado" note="Efetivo: 14,98% do rendimento bruto" />
                 <LegalRow label="Base — Venda de Bens" value="20% do rendimento mensal declarado" note="Efetivo: 4,28% do rendimento bruto" />
                 <LegalRow label="Mínimo de contribuição" value={`€20,00/mês (se rendimento > IAS — ${ptEur(IAS_2026)})`} />
-                <LegalRow label="Pagamento" value="Trimestral — até dia 20 de jan, abr, jul e out" />
+                <LegalRow label="Pagamento" value="Mensal — até ao dia 20; declaração trimestral em jan, abr, jul e out" />
                 <LegalRow label="Isenção 1.º ano" value="Total — Art. 164.º CRCSPSS" note="Aplica-se a novos inscritos como TI. Isenção durante 12 meses." />
                 <LegalRow label="Isenção TCO secundário" value="Se rendimento ≤€20.000 e atividade não é principal: isenção de SS como TI" />
               </div>
@@ -930,7 +932,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
               <h3 className="text-[14px] font-[800] text-[#0F172A] mb-3">Cálculo Trimestral na Prática</h3>
               <div className="bg-[#F0FDF4] border border-emerald-200 rounded-[12px] p-4">
                 <p className="text-[13px] text-emerald-900 font-[500] leading-relaxed">
-                  A SS calcula o <strong>rendimento relevante trimestral</strong> com base nos rendimentos do trimestre anterior (declarados na plataforma da Segurança Social Direta). A contribuição trimestral = rendimento médio mensal do trimestre anterior × base (70% ou 20%) × 21,4% × 3 meses.
+                  A SS calcula o <strong>rendimento relevante trimestral</strong> com base nos rendimentos do trimestre anterior (declarados na plataforma da Segurança Social Direta). A contribuição mensal = rendimento médio mensal do trimestre anterior × base (70% ou 20%) × 21,4%; paga-se até ao dia 20 de cada mês.
                 </p>
               </div>
             </div>
@@ -1077,7 +1079,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
                 <LegalRow label="IVA — Ligeiros de passageiros" value="0% de IVA dedutível em combustível e manutenção" note="CIVA Art. 21.º n.º 1 a) — exclusão total de viaturas de passageiros" />
                 <LegalRow label="IVA — Ligeiros mistos / pick-up" value="50% de IVA dedutível" note="CIVA Art. 21.º n.º 2 — dedução parcial para veículos de uso misto" />
                 <LegalRow label="IVA — Viaturas comerciais / mercadorias" value="100% de IVA dedutível" note="CIVA Art. 21.º — viaturas exclusivamente afetas à atividade" />
-                <LegalRow label="Tributação Autónoma (TA)" value="Pode aplicar-se sobre as despesas com viaturas — taxa varia conforme o custo de aquisição e o ano" note="CIRC Art. 88.º n.º 3 — taxa de 10%, 27,5% ou 35% consoante o valor de aquisição da viatura" />
+                <LegalRow label="Tributação Autónoma (TA)" value="Pode aplicar-se sobre as despesas com viaturas — taxa varia conforme o custo de aquisição e o ano" note="CIRC Art. 88.º n.º 3 — 8%, 25% ou 32% (PHEV 2,5%, 7,5% ou 15%) consoante o custo de aquisição" />
               </div>
             </div>
 
@@ -1394,7 +1396,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
                 <li>• <a href="https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/codigos_tributarios/cirs_rep/Pages/irs68.aspx" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Portal das Finanças — Art. 68.º CIRS (escalões IRS)</a></li>
                 <li>• <a href="https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/codigos_tributarios/CIRC_2R/Pages/irc88.aspx" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Portal das Finanças — Art. 88.º CIRC (Tributação Autónoma viaturas)</a></li>
                 <li>• <a href="https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/codigos_tributarios/cimt/Pages/cimt17.aspx" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Portal das Finanças — Art. 17.º CIMT (escalões IMT)</a></li>
-                <li>• <a href="https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/legislacao/Despachos_SEAF/Documents/Despacho-SEAF-2026-01-05-XXV.pdf" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Despacho SEAF 2026 — Tabelas de Retenção na Fonte (Janeiro 2026)</a></li>
+                <li>• <a href="https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/legislacao/Despachos_SEAF/Documents/Despacho-SEAF-2026-01-05.pdf" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Despacho SEAF 2026 — Tabelas de Retenção na Fonte (Janeiro 2026)</a></li>
                 <li>• <a href="https://www.oe.gov.pt/" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">Orçamento do Estado 2026 — Portal oficial do Governo</a></li>
                 <li>• <a href="https://at.madeira.gov.pt/Ficheiros/NL/AFJaneiro2026.pdf" target="_blank" rel="noopener noreferrer" className="text-[#0677FF] font-[700] hover:underline">AT Madeira — Agenda Fiscal Janeiro 2026 (PDF)</a></li>
               

@@ -535,10 +535,11 @@ export default function ClientProfile({
       const totalEncTA = dep + (vehicleState.maintenanceCost - maintIvaDed) + vehicleState.insuranceCost + (vehicleState.fuelCost - fuelIva * fuelIvaRate);
       let taRate = 0;
       if (vehicleState.category === 'passageiros' && !vehicleState.exemptTA) {
+        // Tabela TA 2026: 8/25/32% até 37.500/45.000 €; PHEV 2,5/7,5/15%.
         if (vehicleState.engineType === 'electric') taRate = vehicleState.price >= 62500 ? 0.10 : 0;
         else if (vehicleState.engineType === 'phev' && vehicleState.phevCompliant)
-          taRate = vehicleState.price < 27500 ? 0.025 : vehicleState.price < 35000 ? 0.075 : 0.15;
-        else taRate = vehicleState.price < 27500 ? 0.085 : vehicleState.price < 35000 ? 0.255 : 0.325;
+          taRate = vehicleState.price < 37500 ? 0.025 : vehicleState.price < 45000 ? 0.075 : 0.15;
+        else taRate = vehicleState.price < 37500 ? 0.08 : vehicleState.price < 45000 ? 0.25 : 0.32;
       }
       extras.push([
         `Viatura ${vehicleState.engineType.toUpperCase()} — ${ptEur(vehicleState.price)}`,

@@ -96,7 +96,7 @@ export function calcTAVeiculo(v: ViaturaRow, agravamento: boolean): number {
   const b = TA_BRACKETS.find(x => v.custoHistorico <= x.max) ?? TA_BRACKETS.at(-1)!;
   let rate = 0;
   if      (v.combustivel === 'eletrico')    rate = b.eletrico;
-  else if (v.combustivel === 'plug_in_5050') rate = b.plug5050;
+  else if (v.combustivel === 'plug_in_5050' || v.combustivel === 'plug_in') rate = b.plug5050;
   else if (v.combustivel === 'gnv')          rate = b.gnv;
   else                                       rate = b.conv; // convencional or plug_in
   // Art. 88.º n.º 14 CIRC: agravamento de +10 PONTOS PERCENTUAIS à taxa
@@ -302,7 +302,8 @@ export function calculate(s: PreviSaState): CalcResult {
 
   // Derramas
   const derramaEstadual = calcDerramaEstadual(materiaColetavel, s.territorio);
-  const derrMunicipal   = lucroTributavel * s.taxaDerramaMunicipal;
+  // Derrama municipal incide sobre o lucro tributável efetivo (já após prejuízos).
+  const derrMunicipal   = materiaColetavel * s.taxaDerramaMunicipal;
 
   // c378
   const c378 = ircColeta + derramaEstadual + derrMunicipal;

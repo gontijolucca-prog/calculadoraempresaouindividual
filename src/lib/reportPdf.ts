@@ -45,7 +45,7 @@ const MM = {
 };
 
 /** Fatores tentados, do maior para o menor. 0.55 é o piso de legibilidade. */
-const FATORES = [1, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55];
+const FATORES = [1, 0.95, 0.9, 0.85, 0.8, 0.76, 0.72];
 
 export function slugFicheiro(s: string): string {
   return (s || 'Estudo360')
@@ -106,8 +106,8 @@ export class RelatorioPdf {
 
   constructor(opts: PdfOptions, fator = 1) {
     this.opts = opts;
-    this.f = Math.min(1, Math.max(0.55, fator));
-    this.forcarUmaFolha = this.f <= 0.5501;
+    this.f = Math.min(1, Math.max(0.72, fator));
+    this.forcarUmaFolha = this.f <= 0.7201;
     this.doc = new jsPDF({ orientation: opts.paisagem ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
     this.largura = this.doc.internal.pageSize.getWidth();
     this.altura = this.doc.internal.pageSize.getHeight();
@@ -128,7 +128,7 @@ export class RelatorioPdf {
   }
 
   // ── escala ────────────────────────────────────────────────────────────────
-  private fs(n: number): number { return Math.max(5.2, n * this.f); }
+  private fs(n: number): number { return Math.max(6.4, n * this.f); }
   private v(n: number): number { return n * this.f; }
   private get margem(): number { return MM.margem; }
 
@@ -301,7 +301,8 @@ export class RelatorioPdf {
     const alturaLinha = this.v(6.4);
     d.setFontSize(this.fs(8.8));
 
-    linhas.forEach((linha, i) => {
+    for (let i = 0; i < linhas.length; i++) {
+      const linha = linhas[i];
       const linhasValor = d.splitTextToSize(sanitizePdf(linha.valor || '—'), largura * 0.42) as string[];
       const linhasLabel = d.splitTextToSize(sanitizePdf(linha.label), largura * 0.54) as string[];
       const h = Math.max(alturaLinha, Math.max(linhasValor.length, linhasLabel.length) * this.v(4.2) + this.v(3));
@@ -312,7 +313,7 @@ export class RelatorioPdf {
         d.setTextColor(100, 116, 139);
         d.text(`… mais ${faltam} linha(s) na aplicação (não cabiam numa folha A4).`, this.margem + 2.5, this.y + this.v(3.6));
         this.y += this.v(6);
-        return this;
+        break;
       }
       if (i % 2 === 1) {
         d.setFillColor(250, 252, 254);
@@ -337,7 +338,7 @@ export class RelatorioPdf {
         d.line(this.margem, this.y + h, this.largura - this.margem, this.y + h);
       }
       this.y += h;
-    });
+    }
     this.y += this.v(4);
     return this;
   }
