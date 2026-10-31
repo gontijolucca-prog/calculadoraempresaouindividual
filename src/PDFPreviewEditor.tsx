@@ -9,6 +9,7 @@ import {
 } from './lib/pt2026';
 import { DED_ESPECIFICA_CAT_A_2026, LIMIAR_JUSTIFICACAO_15PCT } from './lib/fiscal';
 import { calcViatura } from './lib/viaturas';
+import { ajustarFolhasParaA4, reporZoomFolhas } from './lib/printFit';
 
 interface TaxSimulatorState {
   profSit: string; currentInc: number; age: number; isMainAct: boolean;
@@ -265,18 +266,11 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
     const antes = () => {
       document.querySelectorAll<HTMLElement>('#pdf-editor-root .pdf-page').forEach((pg) => {
         anteriores.set(pg, pg.style.getPropertyValue('zoom'));
-        pg.style.removeProperty('zoom');
-        let z = 1;
-        for (let i = 0; i < 4; i++) {
-          const h = pg.scrollHeight;
-          if (!h || h <= a4px * 0.99) break;
-          z = Math.max(0.72, z * ((a4px * 0.99) / h));
-          pg.style.setProperty('zoom', String(z), 'important');
-        }
       });
+      ajustarFolhasParaA4(document.querySelector('#pdf-editor-root') || document, a4px);
     };
     const depois = () => {
-      anteriores.forEach((v, pg) => { if (v) pg.style.setProperty('zoom', v); else pg.style.removeProperty('zoom'); });
+      reporZoomFolhas(document.querySelector('#pdf-editor-root') || document, anteriores);
       anteriores.clear();
     };
     window.addEventListener('beforeprint', antes);
