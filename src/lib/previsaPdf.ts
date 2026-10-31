@@ -123,6 +123,27 @@ export async function downloadPrevisaPdf(state: PreviSaState, nome: string, escr
   ];
   notas.forEach((n, i) => doc.text(sanitizePdf(n), 10, yN + 7 + i * 5.4, { maxWidth: 190 }));
 
+  // Parâmetros considerados — evita um PDF só com números soltos.
+  const yP = yN + 7 + notas.length * 5.4 + 7;
+  if (yP + 26 < 280) {
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(10, yP, 190, 24, 2, 2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.6);
+    doc.setTextColor(26, 26, 24);
+    doc.text('Parâmetros considerados', 14, yP + 6);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.2);
+    doc.setTextColor(90, 90, 86);
+    const st = state as unknown as Record<string, unknown>;
+    const regime = String(st.regime || 'geral');
+    const pme = st.isPME === false ? 'não PME' : 'PME';
+    const territorio = String(st.territorio || 'continental');
+    const derrama = Number(st.taxaDerramaMunicipal || 0) * 100;
+    doc.text(sanitizePdf(`Regime: ${regime}  ·  ${pme}  ·  Território: ${territorio}`), 14, yP + 13);
+    doc.text(sanitizePdf(`Derrama municipal: ${derrama.toFixed(2)}%  ·  Período: ${state.periodo || '—'}`), 14, yP + 19);
+  }
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
   doc.setTextColor(140, 140, 135);
