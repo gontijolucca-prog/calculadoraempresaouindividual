@@ -504,7 +504,7 @@ function AppContent() {
   useEffect(() => { if (VALID_GAB_TABS.has(gabineteTab)) saveToStorage('gabineteTab', gabineteTab); else saveToStorage('gabineteTab', 'gallery'); }, [gabineteTab]);
 
   // Cargo no gabinete ativo — decide que tabs do Gabinete aparecem no menu.
-  // Enquanto não se sabe (null), mostram-se todas: nunca esconder por dúvida.
+  // Enquanto não se sabe, mostram-se só as tabs mínimas (nunca todas por omissão).
   const [gabRole, setGabRole] = useState<GabineteRole | null>(null);
   useEffect(() => {
     let vivo = true;
@@ -526,7 +526,7 @@ function AppContent() {
     window.addEventListener('estudo360:gabinete-switch', onSwitch);
     return () => { vivo = false; window.clearInterval(timer); window.clearTimeout(parar); window.removeEventListener('estudo360:gabinete-switch', onSwitch); };
   }, [view]);
-  const gabTabsPermitidos = useMemo(() => tabsGabinete(gabRole), [gabRole]);
+  const gabTabsPermitidos = useMemo(() => tabsGabinete(gabRole ?? 'estagiaria'), [gabRole]);
   // Bump para forçar refresh da Lista de Empresas após mutações (criar/eliminar/SAFT).
   const [empresasRefresh, setEmpresasRefresh] = useState(0);
   const [currentEmpresaId, setCurrentEmpresaIdState] = useState<string | null>(() => getCurrentEmpresaId());

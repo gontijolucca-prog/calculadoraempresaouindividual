@@ -2215,6 +2215,11 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
           <div className="space-y-3">
             <div className="font-semibold">{selected.titulo}</div>
             <div className="text-sm text-zinc-600">{selected.username || '—'}</div>
+            {!('cipher' in (selected as unknown as Record<string, unknown>)) && !!(selected as unknown as { segredo?: string }).segredo && (
+              <div className="mt-2 text-[11px] font-[700] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
+                Guardada em texto simples (entrada antiga). Edite e guarde para cifrar com a passphrase.
+              </div>
+            )}
             <div className="flex gap-2"><button onClick={startEdit} className="flex-1 py-2 rounded-full bg-[#0B57D0] text-white text-sm">Editar</button><button onClick={()=>handleDelete(selected.id)} className="px-4 py-2 rounded-full border text-sm">Eliminar</button></div>
           </div>
         ) : null}
