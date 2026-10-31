@@ -5,7 +5,7 @@
  */
 import {
   collection, doc, setDoc, deleteDoc, getDoc, getDocs, writeBatch, onSnapshot,
-  query, orderBy, where, serverTimestamp, Timestamp, deleteField,
+  query, orderBy, where, serverTimestamp, Timestamp,
   type Unsubscribe,
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
@@ -111,7 +111,7 @@ function sanitizeForFirestore<T>(obj: T): T {
     if (v === undefined) continue;          // Firestore: unsupported field value: undefined
     // Sentinels do Firestore (deleteField/serverTimestamp) têm de passar intactos.
     const sentinel = v && typeof v === 'object' && typeof (v as { _methodName?: unknown })._methodName === 'string';
-    out[k] = v === null ? '' : (sentinel ? v : (typeof v === 'object' ? sanitizeForFirestore(v) : v));
+    out[k] = v === null ? null : (sentinel ? v : (typeof v === 'object' ? sanitizeForFirestore(v) : v));
   }
   return out as T;
 }
@@ -173,8 +173,15 @@ export async function flushOutbox(): Promise<number> {
       done++;
       endWrite();
     } catch (e) {
-      remaining = bumpTries(remaining, op.id);
-      endWrite(e);
+      const code = (e as { code?: string })?.code || '';
+      if (code === 'permission-denied' || code === 'invalid-argument') {
+        // Erro permanente: repetir a cada 45 s só queima quota. Descarta e avisa.
+        remaining = dropOp(remaining, op.id);
+        endWrite(`Escrita recusada pelo servidor (${code}); operação removida da fila.`);
+      } else {
+        remaining = bumpTries(remaining, op.id);
+        endWrite(e);
+      }
     }
   }
   saveOps(remaining);
@@ -641,7 +648,7 @@ export async function removePilarCliente(
 export async function resetPilaresCliente(cli: GabineteCliente, mapa: 'controlo' | 'rh'): Promise<GabineteCliente> {
   const next = { ...(cli.mapas || {}) };
   delete next[mapa];
-  const saved = await upsertCliente({ ...cli, mapas: (Object.keys(next).length ? next : deleteField()) as never });
+  const saved = await upsertCliente({ ...cli, mapas: (Object.keys(next).length ? next : null) as never });
   try { logAudit('reset_pilares_cliente', `${cli.nome}: ${mapa} volta ao global`, { mapa }, cli.id); } catch {}
   return saved;
 }
@@ -864,7 +871,7 @@ export async function marcarTarefaFeita(id: string, done = true): Promise<void> 
   const list = listTarefasCache();
   const t = list.find(x => x.id === id);
   if (!t) return;
-  await upsertTarefa({ ...t, estado: done ? 'done' : 'todo', dataConclusao: (done ? Date.now() : deleteField()) as never });
+  await upsertTarefa({ ...t, estado: done ? 'done' : 'todo', dataConclusao: (done ? Date.now() : null) as never });
 }
 export function newTarefaId(): string { return newId('tar'); }
 
@@ -945,10 +952,12 @@ export async function seedCalendarioFiscal2026(): Promise<void> {
 
 /** Junta o calendário local (não gravado) aos registos vindos do Firestore. */
 function comCalendarioLocal(items: Obrigacao[]): Obrigacao[] {
-  const ids = new Set(items.map((i) => i.id));
   const locais = loadFromStorage<Obrigacao[]>(CALENDARIO_LOCAL_KEY, []) ?? [];
-  const extras = locais.filter((o) => o.origem === 'calendario_fiscal' && !ids.has(o.id));
-  return extras.length ? [...items, ...extras] : items;
+  // O calendário local é a versão atual (datas corrigidas). Substitui os
+  // registos de calendário antigos que já estejam no Firestore.
+  const extras = locais.filter((o) => o.origem === 'calendario_fiscal');
+  const baseSemCalendario = items.filter((o) => o.origem !== 'calendario_fiscal');
+  return extras.length ? [...baseSemCalendario, ...extras] : baseSemCalendario;
 }
 
 // ─── CRUD — Cofre ────────────────────────────────────────────────────────────
@@ -1606,12 +1615,19 @@ export async function migrarEmpresasParaGabinete(empresas: { id: string; nome: s
     if (empresaId && empresaIds.has(empresaId)) continue;
     if (nifDigits && nifsExistentes.has(nifDigits)) continue;
     const ri = e.profile?.regimeIva;
-    const regimeIva: GabineteCliente['regimeIva'] = (ri === 'isento' || ri === 'isencao53') ? 'isencao53' : (ri === 'mensal' ? 'mensal' : 'trimestral');
+    const regimeIva: GabineteCliente['regimeIva'] =
+      (ri === 'isento' || ri === 'isencao53') ? 'isencao53'
+      : (ri === 'normal_mensal' || ri === 'mensal') ? 'mensal'
+      : 'trimestral';
+    const tipoMap: Record<string, GabineteCliente['tipoEntidade']> = {
+      eni: 'ENI', lda: 'LDA', unipessoal: 'UNIPESSOAL', sa: 'OUTRO', socio_unico: 'OUTRO',
+    };
+    const tipoEntidade = tipoMap[String(e.profile?.tipoEntidade || '').toLowerCase()] || 'LDA';
     const cli: GabineteCliente = {
       id: newClienteId(),
       nome: e.nome || 'Sem nome',
       nif: e.nif || '',
-      tipoEntidade: (e.profile?.tipoEntidade as GabineteCliente['tipoEntidade']) || 'LDA',
+      tipoEntidade,
       regimeIva,
       estado: 'ativo',
       empresaId,

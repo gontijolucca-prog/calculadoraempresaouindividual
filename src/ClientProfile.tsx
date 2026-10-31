@@ -381,7 +381,8 @@ export default function ClientProfile({
     textC(NAVY);
     doc.setFontSize(15); doc.setFont('helvetica', 'bold');
     // Clip long names to one line (splitTextToSize, take only [0])
-    const nameLines = doc.splitTextToSize(profile.nomeCliente || 'Cliente', cw);
+    const reticencias = '...';
+    const nameLines = doc.splitTextToSize(profile.nomeCliente || 'Cliente', cw - doc.getTextWidth(reticencias));
     doc.text(nameLines.length > 1 ? `${nameLines[0].replace(/\s+$/, '')}...` : nameLines[0], ml, y);
 
     const entityLabel = ({ eni: 'ENI', lda: 'Lda.', unipessoal: 'Unipessoal Lda.', sa: 'SA', socio_unico: 'Sócio Único' } as Record<string, string>)[profile.tipoEntidade] ?? '';

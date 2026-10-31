@@ -471,10 +471,11 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
         antigo?.remove();
         const holder = document.createElement('div');
         holder.id = 'minuta-resumo-print';
+        holder.style.cssText = 'position:fixed;left:-10000px;top:0;width:210mm;background:#fff;';
         const estilo = document.createElement('style');
         estilo.textContent = `@media print {
           body > *:not(#minuta-resumo-print) { display: none !important; }
-          #minuta-resumo-print { display: block !important; background: #fff; }
+          #minuta-resumo-print { display: block !important; position: static !important; left: 0 !important; background: #fff; }
         }`;
         holder.appendChild(estilo);
         parsed.head.querySelectorAll('style').forEach((s2) => holder.appendChild(s2.cloneNode(true)));

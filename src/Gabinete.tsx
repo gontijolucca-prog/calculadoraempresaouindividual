@@ -95,12 +95,25 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
   React.useEffect(() => {
     let cancelled = false;
     const carregar = async () => {
-      try {
-        const id = getActiveGabineteId();
-        const uid = auth.currentUser?.uid ?? null;
-        const meta = id ? await getGabineteMeta(id) : null;
-        if (!cancelled) setRole(deriveRole(meta, uid));
-      } catch { if (!cancelled) setRole(null); }
+      const id = getActiveGabineteId();
+      const uid = auth.currentUser?.uid ?? null;
+      const cacheKey = id && uid ? `estudo360:v1:gabRole:${id}:${uid}` : '';
+      if (cacheKey) {
+        try { const raw = localStorage.getItem(cacheKey); if (raw) setRole(JSON.parse(raw)?.data ?? raw as GabineteRole); } catch {}
+      }
+      for (let tentativa = 0; tentativa < 3; tentativa++) {
+        try {
+          const meta = id ? await getGabineteMeta(id) : null;
+          if (cancelled) return;
+          const r = deriveRole(meta, uid);
+          setRole(r);
+          if (cacheKey && r) { try { localStorage.setItem(cacheKey, JSON.stringify({ v: 1, data: r })); } catch {} }
+          return;
+        } catch {
+          if (tentativa < 2) await new Promise((res) => setTimeout(res, 400 * (tentativa + 1)));
+        }
+      }
+      if (!cancelled) setRole(null);
     };
     void carregar();
     const onSwitch = () => { void carregar(); };
@@ -233,7 +246,7 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
             {tab === 'agenda' && <AgendaView tarefas={tarefas} obrigacoes={obrigacoes} alertas={alertasF} clientes={clientes} />}
             {tab === 'obrigacoes' && <ObrigacoesView obrigacoes={obrigacoes} clientes={activeClienteId ? clientes.filter(c=>c.id===activeClienteId) : clientes} activeEmpresaId={activeClienteId} canGerirObrigacoes={can(effectiveRole, 'gerir-obrigacoes')} />}
             {tab === 'lixeira' && (can(effectiveRole, 'restaurar') ? <LixeiraView clientesAll={clientesAll} tarefasAll={tarefasAll} obrigacoesAll={obrigacoesAll} contactosAll={contactosAll} alertasAll={alertasAll} ocorrenciasAll={ocorrenciasAll} documentosAll={documentosAll} canPurgar={can(effectiveRole, 'purgar')} /> : <SemPermissao titulo="Lixeira" />)}
-            {tab === 'cofre' && (can(effectiveRole, 'ver-cofre') ? <CofreView cofre={cofre} clientes={clientes} /> : <SemPermissao titulo="Cofre" />)}
+            {tab === 'cofre' && (can(effectiveRole, 'ver-cofre') ? <CofreView cofre={cofre} clientes={clientes} canDelete={can(effectiveRole, 'apagar')} /> : <SemPermissao titulo="Cofre" />)}
           </>
         )}
       </div>
@@ -1878,7 +1891,7 @@ function ObrigacoesView({ obrigacoes, clientes, activeEmpresaId, canGerirObrigac
 }
 
 // ─── Cofre — estilo Chrome Password Manager ───────────────────────────────
-function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:GabineteCliente[] }) {
+function CofreView({ cofre, clientes, canDelete = true }: { cofre:CofreEntrada[]; clientes:GabineteCliente[]; canDelete?: boolean }) {
   const [q, setQ] = useState('');
   const [filtroCliente, setFiltroCliente] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -1908,13 +1921,26 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
   const [aCifrar, setACifrar] = useState(false);
   const cifrarAntigas = async () => {
     if (emTextoSimples.length === 0 || aCifrar) return;
-    const { getCofrePassphrase, setCofrePassphrase, encryptSecret } = await import('./lib/cofreCrypto');
+    const { getCofrePassphrase, setCofrePassphrase, encryptSecret, decryptSecret } = await import('./lib/cofreCrypto');
     let pass = getCofrePassphrase();
     if (!pass) {
       const criada = prompt('Passphrase para cifrar as entradas antigas (mínimo 6 caracteres). Guarde-a: sem ela não volta a ler estas passwords.');
       if (!criada || criada.length < 6) return;
       pass = criada; setCofrePassphrase(pass);
     }
+    // Se já há entradas cifradas, a passphrase tem de ser a mesma; senão
+    // re-cifrava tudo com uma chave diferente e o dono perdia o acesso.
+    const comCipher = cofre.find((e) => (e as unknown as { cipher?: unknown }).cipher);
+    if (comCipher) {
+      try {
+        const c = (comCipher as unknown as { cipher: unknown }).cipher;
+        await decryptSecret(c as never, pass);
+      } catch {
+        alert('Passphrase diferente da usada no cofre. Operação cancelada para não tornar as entradas ilegíveis.');
+        return;
+      }
+    }
+    if (!confirm(`Cifrar ${emTextoSimples.length} entrada(s) antigas com esta passphrase?`)) return;
     setACifrar(true);
     let n = 0;
     try {
@@ -2038,7 +2064,7 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
       return;
     }
     if (!finalSeg || finalSeg === '—' || finalSeg === '-' || finalSeg === '...') return alert('Password é obrigatória');
-    const { getCofrePassphrase, setCofrePassphrase, encryptSecret } = await import('./lib/cofreCrypto');
+    const { getCofrePassphrase, setCofrePassphrase, encryptSecret, decryptSecret } = await import('./lib/cofreCrypto');
     let pass = getCofrePassphrase();
     if (!pass) {
       const criada = prompt('Passphrase do cofre (mínimo 6 caracteres). Sem ela, as passwords ficam cifradas e ninguém — nem o suporte — as consegue ler. Guarde-a bem: se a perder, perde o cofre.');
@@ -2066,6 +2092,7 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
     setEditing(false); setShowSecret(false); setSelectedId(entry.id); setForm({ categoria:'AT' });
   };
   const handleDelete = async (id: string) => {
+    if (!canDelete) return alert('Sem permissão para apagar entradas do cofre.');
     if (!confirm('Apagar esta entrada do cofre?')) return;
     await deleteCofre(id);
     if (selectedId === id) setSelectedId(filtered.find(c=>c.id!==id)?.id || null);
@@ -2231,7 +2258,7 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
               <div className="border-t border-zinc-100 px-4 py-3 flex items-center justify-between">
                 <div className="flex gap-2">
                   <button onClick={startEdit} className="px-5 py-2 rounded-full border border-zinc-300 text-sm font-semibold text-[#1A73E8] hover:bg-zinc-50">Editar</button>
-                  <button onClick={()=>handleDelete(selected.id)} className="px-5 py-2 rounded-full border border-zinc-300 text-sm font-semibold text-[#1A73E8] hover:bg-zinc-50">Eliminar</button>
+                  {canDelete && <button onClick={()=>handleDelete(selected.id)} className="px-5 py-2 rounded-full border border-zinc-300 text-sm font-semibold text-[#1A73E8] hover:bg-zinc-50">Eliminar</button>}
                 </div>
                 <button onClick={handleShare} className="px-5 py-2 rounded-full border border-zinc-300 text-sm font-semibold text-[#1A73E8] hover:bg-zinc-50 flex items-center gap-1.5"><Share2 className="w-3.5 h-3.5" />Partilhar</button>
               </div>
@@ -2258,7 +2285,7 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
                 Guardada em texto simples (entrada antiga). Edite e guarde para cifrar com a passphrase.
               </div>
             )}
-            <div className="flex gap-2"><button onClick={startEdit} className="flex-1 py-2 rounded-full bg-[#0B57D0] text-white text-sm">Editar</button><button onClick={()=>handleDelete(selected.id)} className="px-4 py-2 rounded-full border text-sm">Eliminar</button></div>
+            <div className="flex gap-2"><button onClick={startEdit} className="flex-1 py-2 rounded-full bg-[#0B57D0] text-white text-sm">Editar</button>{canDelete && <button onClick={()=>handleDelete(selected.id)} className="px-4 py-2 rounded-full border text-sm">Eliminar</button>}</div>
           </div>
         ) : null}
       </div>

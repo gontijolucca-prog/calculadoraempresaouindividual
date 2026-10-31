@@ -69,6 +69,16 @@ service cloud.firestore {
             && resource.data.members[request.auth.uid].role == 'admin')
       );
     }
+    function recusaConviteValida() {
+      return request.auth != null
+        && emailAtual() != ''
+        && emailAtual() in resource.data.inviteEmails
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.memberUids == resource.data.memberUids
+        && request.resource.data.members == resource.data.members
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['inviteEmails', 'invites', 'updatedAt']);
+    }
     function autoAdesaoValida() {
       return request.auth != null
         && emailAtual() != ''
@@ -98,6 +108,7 @@ service cloud.firestore {
         souDonoDoGabinete(gabineteId)
         || (souAdminDoGabinete(gabineteId) && request.resource.data.ownerUid == resource.data.ownerUid)
         || autoAdesaoValida()
+        || recusaConviteValida()
       );
       allow delete: if request.auth != null && request.auth.uid == resource.data.ownerUid;
     }
@@ -149,7 +160,8 @@ service cloud.firestore {
     function podeApagarCol(gabineteId, col) {
       return gabRoleIs(gabineteId, ['admin', 'contabilista'])
         || roleHasPerm(gabineteId, 'apagar')
-        || roleHasPerm(gabineteId, 'purgar');
+        || roleHasPerm(gabineteId, 'purgar')
+        || (col == 'cofre' && roleHasPerm(gabineteId, 'editar-cofre'));
     }
     function podeLixeira(gabineteId) {
       return gabRoleIs(gabineteId, ['admin', 'contabilista'])

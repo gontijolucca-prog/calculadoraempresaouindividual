@@ -376,7 +376,7 @@ function AppContent() {
       try {
         const g = await import('./lib/gabinetes');
         if (g.getActiveGabineteId()) { if (vivo) setAcessoPorConvite(true); return; }
-        const { meus, convites, erro } = await g.listMyGabinetes();
+        const { meus, convites } = await g.listMyGabinetes();
         const emailLc = (user.email || '').toLowerCase();
         const conviteDoEmail = convites.some((c) => (c.invites || []).some((i) => (i.email || '').toLowerCase() === emailLc));
         if (vivo) setAcessoPorConvite(meus.length > 0 || conviteDoEmail);
@@ -801,8 +801,8 @@ function AppContent() {
     if (!simHasData(view, state)) return;
     const chave = `${currentEmpresaId}|${view}|${JSON.stringify(state)}`;
     if (autoSimKeyRef.current === chave) return;
-    autoSimKeyRef.current = chave;
     const t = window.setTimeout(() => {
+      autoSimKeyRef.current = chave;
       logAudit('save_simulacao', view, { empresaId: currentEmpresaId, tipo: view } as any, currentEmpresaId);
       upsertAutoSimulacao(currentEmpresaId, {
         tipo: view,
@@ -1201,7 +1201,7 @@ function AppContent() {
       n++;
     }
     // Espelha no gabinete (migração por NIF já evita duplicados)
-    void migrarEmpresasParaGabinete(listEmpresas().map(e => ({ id: e.id, nome: e.nome, nif: e.nif })));
+    void migrarEmpresasParaGabinete(listEmpresas().map(e => ({ id: e.id, nome: e.nome, nif: e.nif, profile: e.profile })));
     setEmpresasRefresh(x => x + 1);
     return n;
   };
@@ -1272,7 +1272,7 @@ function AppContent() {
     if (resumo.criadas.length > 0) {
       // Espelha no gabinete (migração por NIF já evita duplicados); a cloud é
       // empurrada pelo efeito com debounce que observa empresasRefresh.
-      void migrarEmpresasParaGabinete(listEmpresas().map(e => ({ id: e.id, nome: e.nome, nif: e.nif })));
+      void migrarEmpresasParaGabinete(listEmpresas().map(e => ({ id: e.id, nome: e.nome, nif: e.nif, profile: e.profile })));
       setEmpresasRefresh(x => x + 1);
     }
     return resumo;
@@ -1470,11 +1470,6 @@ function AppContent() {
     // Normaliza o perfil da empresa: perfis legados/cloud podem não trazer todos
     // os objetos aninhados (custos, contabilidade, …) e a vista de Perfil rebenta.
     const profile = normalizeProfile(emp.profile);
-    // Se já é exatamente o perfil em estado, não cria um objeto novo (evita
-    // disparar o efeito de sync e o ciclo snapshot→gravação→snapshot).
-    if (JSON.stringify(profile) === JSON.stringify(clientProfile)) {
-      // ainda assim adota sims/saft que possam ter mudado noutro dispositivo
-    }
     const tax = (sims.tax as TaxSimulatorState) ?? getInitialTaxState(profile);
     const previsaForInit = { ...defaultPreviSaState(), ...(emp.previsa ?? {}) };
     setClientProfile(profile);
