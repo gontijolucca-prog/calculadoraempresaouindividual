@@ -771,14 +771,18 @@ function AppContent() {
     const t = window.setTimeout(() => {
       const emp = getEmpresa(currentEmpresaId);
       if (!emp) return;
-      upsertEmpresa({
-        ...emp,
-        sims: {
-          tax: taxState, vehicle: vehicleState, ticket: ticketState, selfss: ssState,
-          diagnostico: diagnosticoState, imoveis: imoveisState, imt: imtState,
-          salario: salarioState, irs: irsState, aquisicao: aquisicaoState,
-        },
-      });
+      const simsPayload = {
+        tax: taxState, vehicle: vehicleState, ticket: ticketState, selfss: ssState,
+        diagnostico: diagnosticoState, imoveis: imoveisState, imt: imtState,
+        salario: salarioState, irs: irsState, aquisicao: aquisicaoState,
+      };
+      // Se o snapshot acabou de trazer exatamente estes simuladores, não voltar
+      // a gravar: era mais uma via do ciclo snapshot→stamp→snapshot.
+      const simsAtuais = (emp.sims ?? {}) as Record<string, unknown>;
+      const mudou = Object.entries(simsPayload).some(([k, v]) =>
+        JSON.stringify(simsAtuais[k]) !== JSON.stringify(v));
+      if (!mudou) return;
+      upsertEmpresa({ ...emp, sims: simsPayload });
     }, 400);
     return () => window.clearTimeout(t);
   }, [taxState, vehicleState, ticketState, ssState, diagnosticoState, imoveisState, imtState, salarioState, irsState, aquisicaoState, currentEmpresaId]);
