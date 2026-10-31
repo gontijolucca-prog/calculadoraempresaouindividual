@@ -112,10 +112,15 @@ export function imprimirUmaFolha(
         page-break-after: auto !important; break-after: auto !important;
         margin: 0 !important; box-shadow: none !important;
       }
-      /* Versão condensada: documento longo cabe numa folha sem virar miniatura. */
+      /* Versão condensada: documento longo cabe numa folha sem virar miniatura.
+         Os seletores com ID dentro do componente têm especificidade maior, por
+         isso o !important é obrigatório também nos parágrafos/listas. */
       .uma-folha-flow .mc-page { font-size: var(--uma-folha-pt, 9pt) !important; line-height: 1.28 !important; padding: 12mm 16mm !important; width: 210mm !important; }
       .uma-folha-flow .mc-page h1 { font-size: 13pt !important; margin: 0 0 3mm !important; }
       .uma-folha-flow .mc-page h2 { font-size: 10pt !important; margin: 2.5mm 0 1mm !important; }
+      .uma-folha-flow .mc-page p,
+      .uma-folha-flow .mc-page li,
+      .uma-folha-flow .mc-page .mc-sub { font-size: var(--uma-folha-pt, 9pt) !important; line-height: 1.28 !important; margin: 2px 0 !important; }
       .uma-folha-flow .mc-page *.mc-kicker { margin: 1mm 0 2mm !important; }`;
       document.head.appendChild(style);
     }

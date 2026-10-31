@@ -1121,15 +1121,19 @@ function AppContent() {
 
   // "Inserir à mão": NÃO cria já a empresa. Abre um rascunho limpo no modo
   // "Novo Cliente" para o utilizador preencher; só entra na lista ao "Guardar".
-  // Importação em lote do TOConline: cria registos (ignora NIFs já existentes).
+  // Importação em lote do TOConline: cria registos e não descarta clientes sem
+  // NIF (ficam com NIF vazio; o utilizador completa depois na ficha).
   const handleImportTOCOnline = (drafts: import('./lib/toconline').TocCustomerDraft[]) => {
-    const existentes = new Set(listEmpresas().map(e => (e.nif || '').replace(/\D/g, '')));
+    const existentes = new Set(listEmpresas().map(e => (e.nif || '').replace(/\D/g, '')).filter(Boolean));
+    const nomes = new Set(listEmpresas().map(e => (e.nome || '').trim().toLowerCase()).filter(Boolean));
     const now = Date.now();
     let n = 0;
     for (const d of drafts) {
       const nif = (d.nif || '').replace(/\D/g, '');
-      if (!nif || existentes.has(nif)) continue;
-      existentes.add(nif);
+      const nomeLc = (d.nome || '').trim().toLowerCase();
+      if (nif && existentes.has(nif)) continue;
+      if (!nif && (!nomeLc || nomes.has(nomeLc))) continue;
+      if (nif) existentes.add(nif); else nomes.add(nomeLc);
       const id = newEmpresaId();
       const profile = {
         ...defaultProfile,

@@ -136,7 +136,7 @@ export default function MinutaContrato({
           <p style={{ marginBottom: 12 }}><strong>Retribuição:</strong> {eur(Object.values(honorarios.baseMensal || {})[0] || 0)}/mês + IVA</p>
           <p style={{ marginBottom: 12 }}><strong>Duração:</strong> 12 meses, renovável.</p>
           <div style={{ textAlign: 'center', marginTop: 16 }}>
-            <button onClick={() => imprimirUmaFolha(printRootId, { piso: 0.4 })} style={{ background: '#0677FF', color: 'white', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Imprimir contrato</button>
+            <button onClick={() => imprimirUmaFolha(printRootId, { piso: 0.6 })} style={{ background: '#0677FF', color: 'white', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Imprimir contrato</button>
           </div>
         </div>
       </div>

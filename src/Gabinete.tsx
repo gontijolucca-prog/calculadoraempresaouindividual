@@ -1988,6 +1988,15 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
     const novo = (form as unknown as { secretPlain?: string }).secretPlain?.trim() || '';
     const finalSeg = (novo || atual).trim();
     if (!finalSeg || finalSeg === '—' || finalSeg === '-' || finalSeg === '...') return alert('Password é obrigatória');
+    const { getCofrePassphrase, setCofrePassphrase, encryptSecret } = await import('./lib/cofreCrypto');
+    let pass = getCofrePassphrase();
+    if (!pass) {
+      const criada = prompt('Passphrase do cofre (mínimo 6 caracteres). Sem ela, as passwords ficam cifradas e ninguém — nem o suporte — as consegue ler. Guarde-a bem: se a perder, perde o cofre.');
+      if (!criada || criada.length < 6) return alert('Passphrase obrigatória (mínimo 6 caracteres). A password não foi guardada em texto simples.');
+      pass = criada;
+      setCofrePassphrase(pass);
+    }
+    const cipher = await encryptSecret(finalSeg, pass);
     const entry: CofreEntrada = {
       id: (form.id as string) || newCofreId(),
       titulo: form.titulo!.trim(),
@@ -1997,7 +2006,8 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
       username: form.username?.trim(),
       url: form.url?.trim(),
       notas: form.notas?.trim(),
-      segredo: finalSeg,
+      segredo: '',
+      cipher,
       createdAt: (form.createdAt as number) || Date.now(),
       updatedAt: Date.now(),
       createdBy: 'local',

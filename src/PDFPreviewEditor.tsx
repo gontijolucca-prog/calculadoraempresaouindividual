@@ -755,13 +755,13 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
       role="dialog"
       aria-modal="true"
       aria-label="Editor de relatório"
-      className="fixed inset-0 z-[1100] flex items-stretch no-print"
+      className="fixed inset-0 z-[1100] flex items-stretch"
     >
       <button
         type="button"
         aria-label="Fechar"
         onClick={onClose}
-        className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm cursor-default"
+        className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm cursor-default no-print"
       />
       <motion.div
         initial={{ opacity: 0, x: 24 }}

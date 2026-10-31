@@ -959,8 +959,12 @@ export async function upsertCofre(e: CofreEntrada): Promise<CofreEntrada> {
   const pass = getCofrePassphrase();
   let toSave: CofreEntrada = { ...e } as CofreEntrada;
   const plain = (e as unknown as { segredo?: string }).segredo?.trim();
-  if (plain && pass) {
-    try { const cipher = await encryptSecret(plain, pass); (toSave as unknown as Record<string,unknown>).segredo = ''; (toSave as unknown as Record<string,unknown>).cipher = cipher; } catch {}
+  if (plain) {
+    // Nunca gravar passwords em texto simples na coleção partilhada do gabinete.
+    if (!pass) throw new Error('Cofre bloqueado: defina a passphrase antes de guardar a password.');
+    const cipher = await encryptSecret(plain, pass);
+    (toSave as unknown as Record<string,unknown>).segredo = '';
+    (toSave as unknown as Record<string,unknown>).cipher = cipher;
   }
   const list = listCofreCache();
   const idx = list.findIndex(x => x.id === e.id);

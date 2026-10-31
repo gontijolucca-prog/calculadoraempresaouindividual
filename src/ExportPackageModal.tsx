@@ -8,6 +8,7 @@ import { officeSettingsAreComplete } from './lib/officeSettings';
 import PDFPreviewEditor from './PDFPreviewEditor';
 import Proposta from './Proposta';
 import MinutaContrato from './MinutaContrato';
+import { imprimirUmaFolha } from './lib/printElement';
 
 // Local mirrors — alinhados ao que o PDFPreviewEditor (consumidor real) espera.
 interface TaxSimulatorState {
@@ -73,8 +74,11 @@ export default function ExportPackageModal({
 
   // Print just the active tab.
   const printActive = () => {
-    // Each tab component sets up its own @media print isolation via its
-    // printRootId — calling window.print() will only render the visible doc.
+    // Contrato e proposta saem pelo motor de uma folha (mede, encolhe e repõe
+    // o preview). Sem isto, o window.print() direto fazia 3–6 páginas com a
+    // primeira quase vazia e sem margens.
+    if (active === 'minuta') { imprimirUmaFolha('minuta-print-root', { piso: 0.55 }); return; }
+    if (active === 'proposta') { imprimirUmaFolha('proposta-print-root', { piso: 0.65 }); return; }
     window.print();
   };
 
