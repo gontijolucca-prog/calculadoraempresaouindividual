@@ -382,7 +382,6 @@ export default function ClientProfile({
     // de escrever por cima do rodapé. Mantém cabeçalho/rodapé simples.
     const garantirPagina = (altura: number) => {
       if (y + altura <= ph - 16) return;
-      drawC(SLATE_200); doc.setLineWidth(0.2); doc.line(0, 13, pw, 13);
       doc.addPage();
       y = 20;
       fill(SLATE_50); doc.rect(0, 0, pw, 13, 'F');
