@@ -249,7 +249,7 @@ function runPagedIframe(fullDoc: string, foot: { left: string; right: string }, 
   // Espera o paged.js terminar a paginação (aparecem .pagedjs_page) e imprime.
   const win = iframe.contentWindow!;
   let done = false;
-  const cleanup = () => { setTimeout(() => iframe.remove(), 1000); };
+  const cleanup = () => { setTimeout(() => iframe.remove(), 60000); };
   const tryPrint = () => {
     if (done) return;
     done = true;
@@ -263,7 +263,11 @@ function runPagedIframe(fullDoc: string, foot: { left: string; right: string }, 
         pg.appendChild(bar);
       });
       win.focus();
-      win.print();
+      // Sem esperar pelas fontes, a paginação do paged.js usa métricas de
+      // fallback e as quebras mudam quando o PDF é gerado.
+      const imprimir = () => { try { win.print(); } finally {} };
+      if (win.document.fonts?.ready) win.document.fonts.ready.then(imprimir).catch(imprimir);
+      else imprimir();
     } finally {
       onSettled?.();
       cleanup();
@@ -325,8 +329,9 @@ body { padding: 14mm 12mm; box-sizing: border-box; }
   doc.close();
 
   const alvo = (opts.paisagem ? 210 : 297) * 96 / 25.4;
-  setTimeout(() => {
+  setTimeout(async () => {
     try {
+      try { await doc.fonts.ready; } catch {}
       const altura = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight);
       let fator = Math.min(1, Math.max(piso, (alvo * 0.97) / Math.max(1, altura)));
       doc.body.style.zoom = String(fator);
