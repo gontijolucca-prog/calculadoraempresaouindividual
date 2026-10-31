@@ -485,7 +485,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
         document.body.appendChild(holder);
         window.addEventListener('afterprint', () => { fechar(); holder.remove(); }, { once: true });
         imprimirUmaFolha('minuta-resumo-print', { piso: 0.8, seletor: '.mr-wrap' });
-        setTimeout(() => { fechar(); holder.remove(); }, 1500);
+        setTimeout(() => { fechar(); holder.remove(); }, 60000);
       } catch {
         imprimirUmaFolha(PKG_ROOT_ID[docId], { piso: 0.45 });
         setTimeout(() => setPrintingPkg(false), 1800);

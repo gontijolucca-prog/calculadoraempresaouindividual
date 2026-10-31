@@ -615,7 +615,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
         {/* ════ PÁGINA 3 — VIATURAS ════ */}
         {vehicleState && vehR && (
           <div className="pdf-page" style={pageStyle}>
-            <PageHeader title="Viaturas Ligeiras — IVA e Tributação Autónoma" pageNum={3} brand={brand} />
+            <PageHeader title="Viaturas Ligeiras — IVA e Tributação Autónoma" pageNum={2 + (taxState ? 1 : 0)} brand={brand} />
             <div style={{ padding: '5mm 14mm 8mm 14mm' }}>
               <SecHead title={`${vehicleState.category === 'passageiros' ? 'Ligeiro de Passageiros' : 'Veículo Comercial'} — ${vehicleState.engineType.toUpperCase()}`} bg={brand.color} />
               <div style={{ background: '#F5F7FA' }}>
@@ -654,7 +654,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
         {/* ════ PÁGINA 4 — BENEFÍCIOS E SS ════ */}
         {hasBenef && (
           <div className="pdf-page" style={pageStyle}>
-            <PageHeader title="Benefícios Laborais e Segurança Social" pageNum={vehicleState ? 4 : 3} brand={brand} />
+            <PageHeader title="Benefícios Laborais e Segurança Social" pageNum={2 + (taxState ? 1 : 0) + (vehicleState ? 1 : 0)} brand={brand} />
             <div style={{ padding: '5mm 14mm 8mm 14mm' }}>
 
               {tickR && ticketState && (
@@ -700,7 +700,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
 
         {/* ════ ÚLTIMA PÁGINA — NOTAS LEGAIS ════ */}
         <div className="pdf-page" style={{ ...pageStyle, pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
-          <PageHeader title="Base Legal e Notas" pageNum={[taxState, vehicleState, hasBenef].filter(Boolean).length + 2} brand={brand} />
+          <PageHeader title="Base Legal e Notas" pageNum={2 + (taxState ? 1 : 0) + (vehicleState ? 1 : 0) + (hasBenef ? 1 : 0)} brand={brand} />
           <div style={{ padding: '5mm 14mm 8mm 14mm' }}>
             <SecHead title={`Legislação de Referência — ${brand.name} · Simuladores 2026`} bg={brand.color} />
             <div style={{ background: '#F5F7FA' }}>

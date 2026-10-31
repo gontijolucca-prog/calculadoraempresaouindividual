@@ -279,7 +279,7 @@ export default function ExportPackageModal({
                   />
                 )}
                 {active === 'minuta' && !includeMinuta && (
-                  <div className="max-w-xl mx-auto bg-white rounded-[16px] p-10 text-center shadow-sm">
+                  <div className="no-print max-w-xl mx-auto bg-white rounded-[16px] p-10 text-center shadow-sm">
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
                       <FileSignature className="w-7 h-7 text-slate-400" />
                     </div>

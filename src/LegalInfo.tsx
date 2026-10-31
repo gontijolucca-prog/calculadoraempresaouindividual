@@ -821,7 +821,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
               <LegalRow label="Sociedade por Quotas (Lda.)" value="2+ sócios, capital livre (mín. €2)" note="CSC Art. 197.º-264.º. Cada sócio responde pela sua quota" />
               <LegalRow label="Sociedade Anónima (SA)" value="5+ acionistas, capital mínimo €50.000" note="CSC Art. 271.º. 30% capital realizado na constituição" />
               <LegalRow label="Empresário em Nome Individual (ENI)" value="Sem capital social — pessoa singular" note="Responsabilidade ilimitada com património pessoal" />
-              <LegalRow label="Estabelecimento Individual de Resp. Limitada (EIRL)" value="Capital mínimo €5.000" note="DL 248/86. Património afeto isolado, mas figura em desuso" />
+              <LegalRow label="Estabelecimento Individual de Resp. Limitada (EIRL)" value="Figura histórica — sem novas constituições" note="Para responsabilidade limitada individual usa-se a Sociedade Unipessoal por Quotas" />
               <LegalRow label="Gerência" value="Lda.: 1+ gerente. SA: Conselho de Administração" note="CSC Art. 252.º (Lda.) e 405.º (SA)" />
               <LegalRow label="Responsabilidade do gerente" value="Subsidiária por dívidas fiscais e SS" note="LGT Art. 24.º — gerente responde se houver culpa funcional na falta de pagamento" />
               <LegalRow label="Pacto social — alterações" value="Escritura/registo comercial obrigatórios" note="Aumento capital, mudança gerência, dissolução: registo predial-comercial" />
