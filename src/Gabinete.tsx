@@ -1901,6 +1901,35 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
     return [...mapa.entries()].sort((a,b)=>a[1].localeCompare(b[1]));
   }, [cofre, clientes]);
   const vaziasCount = useMemo(()=> listCofreVazias().length, [cofre]);
+  const emTextoSimples = useMemo(
+    () => cofre.filter((e) => !(e as unknown as { cipher?: unknown }).cipher && !!((e as unknown as { segredo?: string }).segredo || '').trim()),
+    [cofre],
+  );
+  const [aCifrar, setACifrar] = useState(false);
+  const cifrarAntigas = async () => {
+    if (emTextoSimples.length === 0 || aCifrar) return;
+    const { getCofrePassphrase, setCofrePassphrase, encryptSecret } = await import('./lib/cofreCrypto');
+    let pass = getCofrePassphrase();
+    if (!pass) {
+      const criada = prompt('Passphrase para cifrar as entradas antigas (mínimo 6 caracteres). Guarde-a: sem ela não volta a ler estas passwords.');
+      if (!criada || criada.length < 6) return;
+      pass = criada; setCofrePassphrase(pass);
+    }
+    setACifrar(true);
+    let n = 0;
+    try {
+      for (const e of emTextoSimples) {
+        const seg = ((e as unknown as { segredo?: string }).segredo || '').trim();
+        if (!seg) continue;
+        const cipher = await encryptSecret(seg, pass);
+        await upsertCofre({ ...e, segredo: '', cipher } as unknown as CofreEntrada);
+        n++;
+      }
+      alert(`${n} entrada(s) cifradas.`);
+    } catch (err) {
+      alert('Falhou a cifrar: ' + String(err));
+    } finally { setACifrar(false); }
+  };
   const [purging, setPurging] = useState(false);
 
   const selected = useMemo(()=> filtered.find(c=>c.id===selectedId) || null, [filtered, selectedId]);
@@ -2080,6 +2109,15 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
           <option value="">Todos os clientes</option>
           {clientesCofre.map(([id,nome]) => <option key={id} value={id}>{nome}</option>)}
         </select>
+        {emTextoSimples.length > 0 && !editing && (
+          <button
+            type="button"
+            disabled={aCifrar}
+            onClick={() => void cifrarAntigas()}
+            className="inline-flex px-3 py-2 rounded-full border border-amber-300 bg-amber-50 text-amber-800 text-xs font-semibold hover:bg-amber-100 disabled:opacity-50"
+            title="Cifra com passphrase as entradas antigas guardadas em texto simples"
+          >{aCifrar ? 'A cifrar…' : `Cifrar antigas (${emTextoSimples.length})`}</button>
+        )}
         {vaziasCount > 0 && !editing && (
           <button
             disabled={purging}
