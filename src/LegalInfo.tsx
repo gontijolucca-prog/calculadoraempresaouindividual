@@ -1076,7 +1076,7 @@ export default function LegalInfo({ onBack, clientProfile, vehicleState, ticketS
                 <LegalRow label="Isenção IRS" value="Não existe — gasto de viatura não isento para o trabalhador" note="CIRS Art. 2.º n.º 3 b) — remuneração em espécie sujeita a IRS se não for viatura da empresa" />
                 <LegalRow label="Isenção SS" value="Não existe — incide contribuição normal" />
                 <LegalRow label="Dedutibilidade IRC" value="100% dedutível como gasto com viaturas" note="CIRC Art. 23.º n.º 1 h) — gastos suportados com viaturas afetas à atividade" />
-                <LegalRow label="IVA — Ligeiros de passageiros" value="0% de IVA dedutível em combustível e manutenção" note="CIVA Art. 21.º n.º 1 a) — exclusão total de viaturas de passageiros" />
+                <LegalRow label="IVA — Ligeiros de passageiros" value="0% em regra; aquisição de elétrico/PHEV pode ser dedutível" note="CIVA art. 21.º n.º 1 a); n.º 2 f) e h): elétricos ≤62.500 €, PHEV ≤50.000 €; eletricidade 100%" />
                 <LegalRow label="IVA — Ligeiros mistos / pick-up" value="50% de IVA dedutível" note="CIVA Art. 21.º n.º 2 — dedução parcial para veículos de uso misto" />
                 <LegalRow label="IVA — Viaturas comerciais / mercadorias" value="100% de IVA dedutível" note="CIVA Art. 21.º — viaturas exclusivamente afetas à atividade" />
                 <LegalRow label="Tributação Autónoma (TA)" value="Pode aplicar-se sobre as despesas com viaturas — taxa varia conforme o custo de aquisição e o ano" note="CIRC Art. 88.º n.º 3 — 8%, 25% ou 32% (PHEV 2,5%, 7,5% ou 15%) consoante o custo de aquisição" />
