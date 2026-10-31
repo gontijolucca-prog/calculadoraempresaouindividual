@@ -103,6 +103,7 @@ export class RelatorioPdf {
   private ops: Operacao[] = [];
   private aGravar = false;
   private forcarUmaFolha = false;
+  private esgotado = false;
 
   constructor(opts: PdfOptions, fator = 1) {
     this.opts = opts;
@@ -230,7 +231,8 @@ export class RelatorioPdf {
     return MM.topo + this.v(4);
   }
   private limiteInferior(): number {
-    return this.altura - MM.rodape - this.v(6);
+    // Deixa espaço real para o rodapé (linha a 288 mm e texto a 293 mm).
+    return this.altura - 24;
   }
 
   private novaPagina() {
@@ -278,6 +280,7 @@ export class RelatorioPdf {
   }
 
   private _seccao(titulo: string): this {
+    if (this.esgotado) return this;
     if (!this.garantirAltura(this.v(14))) return this;
     const d = this.doc;
     d.setFillColor(MARCA.dourado[0], MARCA.dourado[1], MARCA.dourado[2]);
@@ -295,6 +298,7 @@ export class RelatorioPdf {
   }
 
   private _tabela(linhas: LinhaTabela[], opts: { destaquePrimeira?: boolean } = {}): this {
+    if (this.esgotado) return this;
     if (linhas.length === 0) return this._paragrafo('Sem dados para apresentar.');
     const d = this.doc;
     const largura = this.largura - this.margem * 2;
@@ -311,8 +315,10 @@ export class RelatorioPdf {
         d.setFont('helvetica', 'italic');
         d.setFontSize(this.fs(6.8));
         d.setTextColor(100, 116, 139);
-        d.text(`… mais ${faltam} linha(s) na aplicação (não cabiam numa folha A4).`, this.margem + 2.5, this.y + this.v(3.6));
-        this.y += this.v(6);
+        const yNota = Math.min(this.y + this.v(3.6), this.limiteInferior() - 2);
+        d.text(`… mais ${faltam} linha(s); restantes secções não couberam numa folha A4.`, this.margem + 2.5, yNota);
+        this.y = yNota;
+        this.esgotado = true;
         break;
       }
       if (i % 2 === 1) {
@@ -344,6 +350,7 @@ export class RelatorioPdf {
   }
 
   private _matriz(cabecalho: string[], linhas: string[][]): this {
+    if (this.esgotado) return this;
     if (linhas.length === 0) return this._paragrafo('Sem linhas para apresentar.');
     const d = this.doc;
     const largura = this.largura - this.margem * 2;
@@ -390,6 +397,7 @@ export class RelatorioPdf {
       this.y += alturaLinha;
     });
     if (cortadas > 0) {
+      this.esgotado = true;
       d.setFont('helvetica', 'italic');
       d.setFontSize(this.fs(6.8));
       d.setTextColor(100, 116, 139);
@@ -414,11 +422,12 @@ export class RelatorioPdf {
       this.y += this.v(4.6);
     }
     if (cortadas > 0) {
+      this.esgotado = true;
       d.setFont('helvetica', 'italic');
       d.setFontSize(this.fs(6.6));
       d.setTextColor(100, 116, 139);
-      d.text(`… ${cortadas} linha(s) de texto não cabiam nesta folha A4.`, this.margem, this.y + this.v(3));
-      this.y += this.v(5);
+      d.text(`… ${cortadas} linha(s) de texto não cabiam nesta folha A4.`, this.margem, Math.min(this.y + this.v(3), this.limiteInferior() - 2));
+      this.y = Math.min(this.y + this.v(5), this.altura - 16);
     }
     this.y += this.v(2);
     return this;
