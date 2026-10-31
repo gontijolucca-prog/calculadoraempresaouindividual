@@ -329,7 +329,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
     if (!emp || downloadingPrevisa) return;
     setDownloadingPrevisa(true);
     try {
-      await downloadPrevisaPdf(previsaState, emp.nome || emp.profile?.nomeCliente || '');
+      await downloadPrevisaPdf(previsaState, emp.nome || emp.profile?.nomeCliente || '', office);
     } catch (e) {
       console.error('Falha ao gerar o PDF do Previsa:', e);
       alert('Não foi possível gerar o PDF do Previsa. Tente novamente.');

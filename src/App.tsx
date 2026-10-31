@@ -1677,7 +1677,7 @@ function AppContent() {
       if (!emp) return { ok: false, reason: 'sem-cliente' };
       try {
         if (docId === 'previsa') {
-          await downloadPrevisaPdf(previSaState, emp.nome || emp.profile?.nomeCliente || '');
+          await downloadPrevisaPdf(previSaState, emp.nome || emp.profile?.nomeCliente || '', officeSettings);
           return { ok: true, label: 'Previsa (PDF Modelo 22)' };
         }
         const def = DOC_TYPES.find((d) => d.id === docId);
