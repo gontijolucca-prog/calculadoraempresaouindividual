@@ -165,11 +165,13 @@ export async function flushOutbox(): Promise<number> {
   let remaining = ops;
   let done = 0;
   for (const op of ops) {
+    beginWrite();
     try {
       if (op.kind === 'set') await safeSetDoc(op.path, op.docId, op.data);
       else await safeDeleteDoc(op.path, op.docId);
       remaining = dropOp(remaining, op.id);
       done++;
+      endWrite();
     } catch (e) {
       remaining = bumpTries(remaining, op.id);
       endWrite(e);
@@ -1574,27 +1576,33 @@ export function gerarObrigacoesParaCliente(cli: GabineteCliente, ano = new Date(
 }
 
 // Migração: cada EmpresaRecord vira GabineteCliente (one-off, idempotente por NIF)
-export async function migrarEmpresasParaGabinete(empresas: { id: string; nome: string; nif: string }[]): Promise<number> {
+export async function migrarEmpresasParaGabinete(empresas: { id: string; nome: string; nif: string; empresaId?: string; profile?: { regimeIva?: string; tipoEntidade?: string } }[]): Promise<number> {
   const existentes = listClientesCache();
   const nifsExistentes = new Set(existentes.map(c => (c.nif || '').replace(/\D/g, '')));
+  const empresaIds = new Set(existentes.map(c => c.empresaId).filter(Boolean) as string[]);
   let criados = 0;
   for (const e of empresas) {
     const nifDigits = (e.nif || '').replace(/\D/g, '');
+    const empresaId = e.empresaId || e.id;
+    if (empresaId && empresaIds.has(empresaId)) continue;
     if (nifDigits && nifsExistentes.has(nifDigits)) continue;
+    const ri = e.profile?.regimeIva;
+    const regimeIva: GabineteCliente['regimeIva'] = (ri === 'isento' || ri === 'isencao53') ? 'isencao53' : (ri === 'mensal' ? 'mensal' : 'trimestral');
     const cli: GabineteCliente = {
       id: newClienteId(),
       nome: e.nome || 'Sem nome',
       nif: e.nif || '',
-      tipoEntidade: 'LDA',
-      regimeIva: 'trimestral',
+      tipoEntidade: (e.profile?.tipoEntidade as GabineteCliente['tipoEntidade']) || 'LDA',
+      regimeIva,
       estado: 'ativo',
-      empresaId: e.id,
+      empresaId,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
     await upsertCliente(cli);
     criados++;
     if (nifDigits) nifsExistentes.add(nifDigits);
+    if (empresaId) empresaIds.add(empresaId);
   }
   return criados;
 }
