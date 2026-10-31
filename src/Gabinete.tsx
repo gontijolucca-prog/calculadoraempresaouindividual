@@ -1987,6 +1987,27 @@ function CofreView({ cofre, clientes }: { cofre:CofreEntrada[]; clientes:Gabinet
     const atual = (form as unknown as { segredo?: string }).segredo?.trim() || '';
     const novo = (form as unknown as { secretPlain?: string }).secretPlain?.trim() || '';
     const finalSeg = (novo || atual).trim();
+    const cipherExistente = (form as unknown as { cipher?: unknown }).cipher;
+    // Editar só metadados de uma entrada já cifrada não obriga a reescrever a password.
+    if (!finalSeg && cipherExistente) {
+      const entry = {
+        ...(form as unknown as CofreEntrada),
+        id: (form.id as string) || newCofreId(),
+        titulo: form.titulo!.trim(),
+        categoria: (form.categoria as CofreEntrada['categoria']) || 'OUTRO',
+        clienteId: form.clienteId,
+        clienteNome: clientes.find(c=>c.id===form.clienteId)?.nome,
+        username: form.username?.trim(),
+        url: form.url?.trim(),
+        notas: form.notas?.trim(),
+        segredo: '',
+        cipher: cipherExistente,
+        updatedAt: Date.now(),
+      } as unknown as CofreEntrada;
+      await upsertCofre(entry);
+      setEditing(false); setShowSecret(false); setSelectedId(entry.id); setForm({ categoria:'AT' });
+      return;
+    }
     if (!finalSeg || finalSeg === '—' || finalSeg === '-' || finalSeg === '...') return alert('Password é obrigatória');
     const { getCofrePassphrase, setCofrePassphrase, encryptSecret } = await import('./lib/cofreCrypto');
     let pass = getCofrePassphrase();
