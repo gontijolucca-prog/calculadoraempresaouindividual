@@ -91,7 +91,6 @@ export async function downloadPrevisaPdf(state: PreviSaState, nome: string, escr
   yR = linha('IRC a pagar (Q10)', r.c358 || 0, xR, yR, true);
   yR = linha('Tributações autónomas', r.taTotal || 0, xR, yR);
   yR = linha('Pagamentos por conta', -(r.totalPagamentos || 0), xR, yR);
-  yR = linha('PEC / PPC', r.ppcProximoAno || 0, xR, yR);
   yR = linha('Total a pagar / a recuperar', r.c367 || 0, xR, yR, true);
 
   // Faixa do resultado
@@ -105,8 +104,17 @@ export async function downloadPrevisaPdf(state: PreviSaState, nome: string, escr
   doc.setFontSize(14);
   doc.text(fmt(r.c367 || 0), 196, yF + 10.5, { align: 'right' });
 
+  // O PPC do ano seguinte não entra no total deste período — fica separado.
+  const ppc = Number(r.ppcProximoAno || 0);
+  if (ppc) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.6);
+    doc.setTextColor(90, 90, 86);
+    doc.text(sanitizePdf(`PPC do próximo período (estimativa, fora deste total): ${fmt(ppc)}`), 10, yF + 22);
+  }
+
   // Notas de leitura (ocupam o espaço restante com utilidade)
-  const yN = yF + 25;
+  const yN = yF + (ppc ? 32 : 25);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(26, 26, 24);

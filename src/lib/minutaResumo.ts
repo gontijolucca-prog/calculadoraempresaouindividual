@@ -52,9 +52,9 @@ export function buildMinutaResumoHtml(office: OfficeSettings, honorarios: Honora
   <div class="head">
     <div>
       <div class="nome">${esc(escritorio)}</div>
-      <div style="font-family:Arial;font-size:7.6pt;color:#64748B">Estudo 360 · Análise · Estratégia · Decisão</div>
+      <div style="font-family:Arial;font-size:7.6pt;color:#64748B">Documento confidencial</div>
     </div>
-    <div class="meta">MINUTA DE CONTRATO<br>${esc(hoje)}<br>NIF ${esc(nifEsc)}${occ ? `<br>${esc(occ)}` : ''}</div>
+    <div class="meta">CONTRATO<br>${esc(hoje)}<br>NIF ${esc(nifEsc)}${occ ? `<br>${esc(occ)}` : ''}</div>
   </div>
 
   <h1>Contrato de Prestação de Serviços de Contabilidade</h1>

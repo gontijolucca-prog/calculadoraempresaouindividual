@@ -5,7 +5,7 @@ import type { ClientProfile } from './ClientProfile';
 import type { OfficeSettings } from './lib/officeSettings';
 import {
   calculateIRS, calcIRSJovem, calcDependentsDeduction,
-  calcTicketSavings, calcSelfSSContribution, calculateIRC,
+  calcTicketSavings, calcSelfSSContribution, calculateIRC, coefFromProfile,
 } from './lib/pt2026';
 import { DED_ESPECIFICA_CAT_A_2026, LIMIAR_JUSTIFICACAO_15PCT } from './lib/fiscal';
 
@@ -14,7 +14,7 @@ interface TaxSimulatorState {
   monthlyNeed: number; isServices: boolean; b2b: boolean; rev: number;
   isSeasonal: boolean; invEquip: number; invLic: number; invWorks: number;
   invFundo: number; fixedMo: number; varYr: number; accMoLda: number;
-  accMoEni: number; anosAtividade: number;
+  accMoEni: number; anosAtividade: number; taxaDerramaMunicipal?: number;
 }
 interface VehicleSimulatorState {
   category: 'comercial' | 'passageiros'; engineType: string; price: number;
@@ -90,7 +90,7 @@ function BrandLogo({ brand, width, height }: { brand: Brand; width: number; heig
 }
 
 const ptEur = (v: number) =>
-  new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(Math.max(0, v));
+  new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v);
 
 // Editable span — user can click and type. Renders value as text (React escapes it),
 // avoiding the XSS risk of dangerouslySetInnerHTML even with profile-derived content.
@@ -232,7 +232,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
         [contenteditable] { outline: none !important; }
         /* Rodapé fixo: o Chrome repete-o em todas as páginas físicas. */
         #pdf-editor-root::after {
-          content: "Estudo 360 · Relatório confidencial · estudo360.pt";
+          content: attr(data-print-brand) " · Relatório confidencial · estudo360.pt";
           position: fixed; left: 16mm; right: 16mm; bottom: 5mm;
           padding-top: 2mm; border-top: 0.3pt solid #E2E8F0;
           font: 7.5pt Arial, sans-serif; color: #94A3B8; text-align: right;
@@ -283,8 +283,11 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
       // Mesmo motor do TaxSimulator (teto 12×IAS + mínimo) — evita PDF ≠ simulador.
       eniSS = calcSelfSSContribution(taxState.rev / 12, taxState.isServices ? 'servicos' : 'bens', false).anual;
     }
-    let eniRC = taxState.rev * (taxState.isServices ? 0.75 : 0.15);
-    if (taxState.isServices && taxState.rev > LIMIAR_JUSTIFICACAO_15PCT) {
+    const coefArt31 = profile.atividadePrincipal
+      ? coefFromProfile(profile.atividadePrincipal)
+      : (taxState.isServices ? 0.75 : 0.15);
+    let eniRC = taxState.rev * coefArt31;
+    if ((coefArt31 === 0.75 || coefArt31 === 0.35) && taxState.rev > LIMIAR_JUSTIFICACAO_15PCT) {
       const rj = taxState.rev * 0.15;
       const jd = costsEni + DED_ESPECIFICA_CAT_A_2026;
       if (jd < rj) eniRC += rj - jd;
@@ -306,7 +309,8 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
     const ldaSSMgr = grossSalaryYr * 0.11;
     const profit = taxState.rev - costsLda - dpNaoAceite - grossSalaryYr - ldaSSComp;
     const irc = calculateIRC(profit);
-    const companyNet = profit - irc;
+    const derrama = Math.max(0, profit) * (taxState.taxaDerramaMunicipal || 0);
+    const companyNet = profit - irc - derrama;
     const ldaNet = companyNet + taxState.monthlyNeed * 12;
     const ldaCashFlow = (companyNet + dpNaoAceite) - totalInv;
     const winner = ldaNet > eniNet ? 'LDA' : 'ENI';
@@ -357,8 +361,8 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
     if (vehicleState.category === 'passageiros' && !vehicleState.exemptTA) {
       if (vehicleState.engineType === 'electric') taRate = vehicleState.price >= 62500 ? 0.10 : 0;
       else if (vehicleState.engineType === 'phev' && vehicleState.phevCompliant)
-        taRate = vehicleState.price < 27500 ? 0.025 : vehicleState.price < 35000 ? 0.075 : 0.15;
-      else taRate = vehicleState.price < 27500 ? 0.085 : vehicleState.price < 35000 ? 0.255 : 0.325;
+        taRate = vehicleState.price < 37500 ? 0.025 : vehicleState.price < 45000 ? 0.075 : 0.15;
+      else taRate = vehicleState.price < 37500 ? 0.08 : vehicleState.price < 45000 ? 0.25 : 0.32;
     }
     const taValue = totalEncsTA * taRate;
     vehR = { ivaTotalDed, ivaAqDed, maintIvaDed, fuelIvaDed, taValue, taRate, depNaoAceite, totalEncsTA, limit, totalIvaAq, ivaAqRate };
@@ -403,7 +407,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
     : { background: '#e2e8f0', height: '100%', display: 'flex', flexDirection: 'column' };
 
   const inner = (
-    <div id="pdf-editor-root" style={rootStyle}>
+    <div id="pdf-editor-root" data-print-brand={brand.name} style={rootStyle}>
 
       {!embedded && (
         <>

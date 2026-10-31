@@ -37,7 +37,7 @@ const PRINT_TITLES: Record<SimView, string> = {
 };
 
 const PRINT_METHOD: Record<SimView, string> = {
-  tax: 'ENI em simplificado (coeficiente 0,75 nos serviços) com TSU de 21,4% vs. sociedade com IRC de 17% até €50.000 (PME) e 20% no excedente, TSU de 23,75% + 11% e derramas. Vence o regime com maior líquido anual.',
+  tax: 'ENI em simplificado (coeficiente do art. 31.º conforme a atividade) com TSU de 21,4% vs. sociedade com IRC de 15% até €50.000 (PME) e 19% no excedente, TSU de 23,75% + 11% e derramas. Vence o regime com maior líquido anual.',
   vehicle: 'IVA dedutível conforme a categoria e o regime da aquisição; Tributação Autónoma pela taxa do combustível e escalão de valor; limites de depreciação fiscal por tipo de viatura.',
   ticket: 'Subsídio de refeição isento até €10,46/dia em cartão (€6,15 em numerário); 60% do encargo dedutível em IRC (art. 43.º do CIRC).',
   selfss: 'Base de incidência de 70% nos serviços e 20% nos bens, taxa de 21,4%, com mínimo e teto indexados ao IAS; isenção total no 1.º ano de atividade (art. 164.º).',
@@ -46,7 +46,7 @@ const PRINT_METHOD: Record<SimView, string> = {
   imt: 'Tabelas de IMT por tipo de imóvel e localização, mais Imposto do Selo de 0,8%; benefício IMT Jovem na primeira habitação quando aplicável.',
   salario: 'Tabelas de retenção na fonte de IRS de 2026 por estado civil, dependentes e região, com ou sem duodécimos; Segurança Social de 11% e subsídio de alimentação dentro dos limites.',
   irs: 'Taxas progressivas do CIRS sobre o rendimento englobado, com deduções por dependentes e despesas, benefício do IRS Jovem e devolução municipal até 5%.',
-  previsa: 'Da Q07 (apuramento) à Q09 (matéria coletável) e Q10 (liquidação) do Modelo 22: IRC de 17% até €50.000 (PME) e 20% no excedente, tributações autónomas e pagamentos por conta.',
+  previsa: 'Da Q07 (apuramento) à Q09 (matéria coletável) e Q10 (liquidação) do Modelo 22: IRC de 15% até €50.000 (PME) e 19% no excedente, tributações autónomas e pagamentos por conta.',
 };
 
 const num = (value: unknown): number => typeof value === 'number' && Number.isFinite(value) ? value : 0;

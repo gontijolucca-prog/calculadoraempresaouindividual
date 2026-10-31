@@ -77,7 +77,7 @@ export default function ExportPackageModal({
     // Contrato e proposta saem pelo motor de uma folha (mede, encolhe e repõe
     // o preview). Sem isto, o window.print() direto fazia 3–6 páginas com a
     // primeira quase vazia e sem margens.
-    if (active === 'minuta') { imprimirUmaFolha('minuta-print-root', { piso: 0.55 }); return; }
+    if (active === 'minuta') { imprimirUmaFolha('minuta-print-root', { piso: 0.70 }); return; }
     if (active === 'proposta') { imprimirUmaFolha('proposta-print-root', { piso: 0.65 }); return; }
     window.print();
   };

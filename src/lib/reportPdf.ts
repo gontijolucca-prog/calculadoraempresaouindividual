@@ -104,6 +104,7 @@ export class RelatorioPdf {
   private aGravar = false;
   private forcarUmaFolha = false;
   private esgotado = false;
+  private notaOmitida = false;
 
   constructor(opts: PdfOptions, fator = 1) {
     this.opts = opts;
@@ -175,7 +176,7 @@ export class RelatorioPdf {
     d.setFont('helvetica', 'normal');
     d.setFontSize(this.fs(7.5));
     d.setTextColor(100, 116, 139);
-    d.text('Estudo 360 · Análise · Estratégia · Decisão', xTexto, this.y + 8.6);
+    d.text(nome === 'Estudo 360' ? 'Estudo 360 · Análise · Estratégia · Decisão' : 'Relatório confidencial', xTexto, this.y + 8.6);
     d.text(
       `RELATÓRIO · ${new Intl.DateTimeFormat('pt-PT', { dateStyle: 'long' }).format(new Date())}`,
       this.largura - this.margem, this.y + 4.6, { align: 'right' },
@@ -220,7 +221,9 @@ export class RelatorioPdf {
       d.text('NIF', this.largura - this.margem - 40, this.y + this.v(4));
       d.setFontSize(this.fs(9.5));
       d.setTextColor(15, 23, 42);
-      d.text(d.splitTextToSize(sanitizePdf(this.opts.cliente || '—'), this.largura - this.margem * 2 - 50)[0], this.margem + 3, this.y + this.v(9.2));
+      const larguraNome = this.largura - this.margem * 2 - 50;
+      const nomeLinhas = d.splitTextToSize(sanitizePdf(this.opts.cliente || '—'), larguraNome - d.getTextWidth('...'));
+      d.text(nomeLinhas.length > 1 ? `${nomeLinhas[0].replace(/\s+$/, '')}...` : nomeLinhas[0], this.margem + 3, this.y + this.v(9.2));
       d.text(sanitizePdf(this.opts.nif || '—'), this.largura - this.margem - 40, this.y + this.v(9.2));
       this.y += boxH + this.v(6);
     }
@@ -439,7 +442,7 @@ export class RelatorioPdf {
     d.setFontSize(this.fs(7.8));
     const linhas = d.splitTextToSize(sanitizePdf(texto), this.largura - this.margem * 2 - 8) as string[];
     const h = linhas.length * this.v(4.2) + this.v(5);
-    if (!this.garantirAltura(h)) return this;
+    if (!this.garantirAltura(h)) { this.notaOmitida = true; return this; }
     d.setFillColor(255, 251, 235);
     d.setDrawColor(245, 158, 11);
     d.setLineWidth(0.7);
@@ -465,7 +468,7 @@ export class RelatorioPdf {
       d.setFontSize(6.8);
       d.setTextColor(100, 116, 139);
       const rodape = 'Cálculos indicativos — confirme com o seu Contabilista Certificado.';
-      d.text(this.opts.rodape || rodape, this.margem, this.altura - 7.5);
+      d.text(this.opts.rodape || (rodape + (this.notaOmitida ? ' Nota legal omitida por falta de espaço.' : '')), this.margem, this.altura - 7.5);
       d.text(`${escritorio} · ${new Intl.DateTimeFormat('pt-PT').format(new Date())}`, this.largura - this.margem, this.altura - 7.5, { align: 'right' });
     }
   }
