@@ -1313,9 +1313,24 @@ function makeSubscriber<T>(col: string, mapFn?: (d: unknown) => T) {
           // remove campo interno _updatedAtServer se vier
           items.push(mapFn ? mapFn(data) : data);
         });
-        // atualiza cache para offline
-        writeCache(col, items as unknown as T[]);
-        cb(items);
+        // O snapshot é a verdade do servidor, mas não pode apagar escritas que
+        // ainda estão na outbox (quota/rede): funde-as por id antes de gravar.
+        const pendentes = listOps().filter((op) => op.path === colPath(col));
+        let finais = items;
+        if (pendentes.length > 0) {
+          const porId = new Map<string, T>();
+          for (const it of items) {
+            const id = (it as unknown as { id?: string }).id;
+            if (id) porId.set(String(id), it);
+          }
+          for (const op of pendentes) {
+            if (op.kind === 'delete') porId.delete(op.docId);
+            else if (op.data) porId.set(op.docId, { ...(op.data as T), id: op.docId } as T);
+          }
+          finais = [...porId.values()];
+        }
+        writeCache(col, finais as unknown as T[]);
+        cb(finais);
       }, (err) => {
         console.warn(`[gabinete] onSnapshot ${col} erro:`, err);
         // mantém cache
