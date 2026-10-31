@@ -230,6 +230,13 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
         .pdf-card, .pdf-norow { break-inside: avoid; page-break-inside: avoid; }
         * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
         [contenteditable] { outline: none !important; }
+        /* Rodapé fixo: o Chrome repete-o em todas as páginas físicas. */
+        #pdf-editor-root::after {
+          content: "Estudo 360 · Relatório confidencial · estudo360.pt";
+          position: fixed; left: 16mm; right: 16mm; bottom: 5mm;
+          padding-top: 2mm; border-top: 0.3pt solid #E2E8F0;
+          font: 7.5pt Arial, sans-serif; color: #94A3B8; text-align: right;
+        }
         @page { size: A4 portrait; margin: 0; }
       }
       /* Em ecrãs estreitos a página A4 (210mm) é mais larga que o ecrã;
