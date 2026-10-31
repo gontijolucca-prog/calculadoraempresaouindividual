@@ -39,6 +39,10 @@ const mesmoPeriodo = (o: Obrigacao, ano: number, mes: number): boolean => {
   const mm = String(mes).padStart(2, '0');
   const periodo = String(o.periodo || '').trim();
   if (/^\d{4}-\d{2}$/.test(periodo)) return periodo === `${ano}-${mm}`;
+  // IVA trimestral: a célula é o último mês do trimestre (mar/jun/set/dez),
+  // não o mês do vencimento.
+  const trim = /^(\d{4})-T([1-4])$/.exec(periodo);
+  if (trim) return Number(trim[1]) === ano && mes === Number(trim[2]) * 3;
   const d = new Date(o.vencimento);
   return d.getFullYear() === ano && d.getMonth() + 1 === mes;
 };
@@ -187,9 +191,15 @@ export function construirObrigacaoDaCelula(
   agora: number = Date.now(),
 ): Obrigacao {
   const mm = String(k.mes).padStart(2, '0');
-  // Preserva o prazo real já existente; o dia 20 do mês é só um fallback de
-  // criação e não deve reescrever o vencimento ao clicar na célula.
-  const venc = existente?.vencimento || new Date(k.ano, k.mes - 1, 20).getTime();
+  const trimestral = /trimestral/i.test(`${pilar.id} ${pilar.label} ${pilar.labelFull || ''}`);
+  const trimestre = Math.ceil(k.mes / 3);
+  // IVA trimestral: identidade 2026-Tn e prazo no 2.º mês seguinte ao trimestre.
+  const periodoCell = trimestral ? `${k.ano}-T${trimestre}` : `${k.ano}-${mm}`;
+  const vencFallback = trimestral
+    ? new Date(k.ano, trimestre * 3 + 1, 20).getTime()
+    : new Date(k.ano, k.mes - 1, 20).getTime();
+  // Preserva o prazo real já existente; o fallback é só para criação.
+  const venc = existente?.vencimento || vencFallback;
   const label = pilar.labelFull?.trim() || pilar.label || pilar.id;
   const tituloBase = k.mapa === 'quadro' ? (tituloMap[pilar.id] || pilar.label) : label;
   const payload: Obrigacao = {
@@ -199,7 +209,7 @@ export function construirObrigacaoDaCelula(
     titulo: `${tituloBase} ${mm}/${k.ano} — ${cli.nome}`,
     clienteId: cli.id,
     clienteNome: cli.nome,
-    periodo: `${k.ano}-${mm}`,
+    periodo: periodoCell,
     vencimento: venc,
     estado: proximoEstado(existente ? estadoCelula(existente) : 'sem_dados'),
     origem: existente?.origem ?? 'cliente',

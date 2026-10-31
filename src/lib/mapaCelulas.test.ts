@@ -190,3 +190,21 @@ console.log('\nTodos os testes de célula passaram.');
 }
 
 process.exit(fails ? 1 : 0);
+
+// ── Q: IVA trimestral pertence à célula do fim do trimestre, não ao vencimento
+{
+  const q = obr({ id: 'q1', clienteId: 'c1', tipo: 'iva', vencimento: new Date(2026, 4, 20).getTime(), periodo: '2026-T1' });
+  const kq = (mes: number): CellKey => ({ clienteId: 'c1', mapa: 'quadro', refId: 'iva_trimestral', ano: 2026, mes });
+  ok('Q: T1 acende março', correspondeCelula(q, kq(3), ['iva']));
+  ok('Q: T1 não acende maio (vencimento)', !correspondeCelula(q, kq(5), ['iva']));
+  ok('Q: T1 não acende fevereiro', !correspondeCelula(q, kq(2), ['iva']));
+}
+
+// ── R: criar a célula trimestral grava 2026-Tn, não 2026-MM
+{
+  const kq: CellKey = { clienteId: 'c1', mapa: 'quadro', refId: 'iva_trimestral', ano: 2026, mes: 3 };
+  const p = construirObrigacaoDaCelula(kq, { id: 'iva_trimestral', label: 'IVA Trimestral', tipos: ['iva'] }, { id: 'c1', nome: 'Cliente' });
+  ok('R: período trimestral T1', p.periodo === '2026-T1');
+  const d = new Date(p.vencimento);
+  ok('R: vencimento em maio', d.getMonth() === 4);
+}
