@@ -1,0 +1,14 @@
+import { mapRegimeIvaCliente, mapTipoEntidadeCliente } from './gabinete';
+let fails = 0;
+const eq = (l: string, got: unknown, exp: unknown) => { if (got !== exp) { fails++; console.error(`✗ ${l}: ${got} != ${exp}`); } else console.log(`✓ ${l}`); };
+eq('IVA normal mensal → mensal', mapRegimeIvaCliente('normal_mensal'), 'mensal');
+eq('IVA normal trimestral → trimestral', mapRegimeIvaCliente('normal_trimestral'), 'trimestral');
+eq('IVA isento → isencao53', mapRegimeIvaCliente('isento'), 'isencao53');
+eq('IVA pequenos retalhistas → trimestral', mapRegimeIvaCliente('pequenos_retalhistas'), 'trimestral');
+eq('Tipo ENI', mapTipoEntidadeCliente('eni'), 'ENI');
+eq('Tipo Lda', mapTipoEntidadeCliente('lda'), 'LDA');
+eq('Tipo Unipessoal', mapTipoEntidadeCliente('unipessoal'), 'UNIPESSOAL');
+eq('Tipo SA → OUTRO', mapTipoEntidadeCliente('sa'), 'OUTRO');
+eq('Tipo desconhecido → LDA', mapTipoEntidadeCliente(undefined), 'LDA');
+if (fails) process.exit(1);
+console.log('Migração: ok');
