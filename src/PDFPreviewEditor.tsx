@@ -8,6 +8,7 @@ import {
   calcTicketSavings, calcSelfSSContribution, calculateIRC,
 } from './lib/pt2026';
 import { DED_ESPECIFICA_CAT_A_2026, LIMIAR_JUSTIFICACAO_15PCT } from './lib/fiscal';
+import { printViaPaged } from './lib/printPaged';
 
 interface TaxSimulatorState {
   profSit: string; currentInc: number; age: number; isMainAct: boolean;
@@ -402,6 +403,14 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
     ? { background: 'transparent', display: 'flex', flexDirection: 'column' }
     : { background: '#e2e8f0', height: '100%', display: 'flex', flexDirection: 'column' };
 
+  const imprimir = () => {
+    const root = document.getElementById('pdf-editor-root');
+    if (!root) { window.print(); return; }
+    // Paged.js aplica margens A4, rodapé e numeração «Página X de Y» em todas
+    // as folhas; o window.print() direto não consegue repetir a numeração.
+    printViaPaged(root, { title: 'Relatório Estudo 360', footerLeft: brand.name, footerRight: 'estudo360.pt' });
+  };
+
   const inner = (
     <div id="pdf-editor-root" style={rootStyle}>
 
@@ -417,7 +426,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button
-                onClick={() => window.print()}
+                onClick={imprimir}
                 style={{ background: '#0677FF', color: 'white', border: 'none', padding: '8px 18px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}
               >
                 <Download size={15} /> Transferir PDF
