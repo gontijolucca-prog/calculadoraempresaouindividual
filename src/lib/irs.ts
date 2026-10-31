@@ -350,7 +350,9 @@ export function simular(sim: IRSSim, opts: { tabela?: Tabela } = {}): IRSResulta
     // IRS Jovem (art. 12.º-B) — abrange a Cat. A (trabalho) E a Cat. B (atividade).
     const fracao = isencaoIRSJovem(+p.irsJovemAno || 0);
     const baseJovem = trab + Math.max(0, atvColetavel);
-    const isento = Math.min(baseJovem * fracao, LIMITE_ISENCAO_IRS_JOVEM * fracao);
+    // O limite de 55 IAS é anual e absoluto; a percentagem aplica-se ao
+    // rendimento, não reduce também o teto (senão o ano 2 valia menos).
+    const isento = Math.min(baseJovem * fracao, LIMITE_ISENCAO_IRS_JOVEM);
     totalIsencaoJovem += isento;
 
     rendGlobalBruto += trab + atvColetavel - isento;

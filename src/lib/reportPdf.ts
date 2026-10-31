@@ -407,10 +407,18 @@ export class RelatorioPdf {
     d.setTextColor(71, 85, 105);
     const linhas = d.splitTextToSize(sanitizePdf(texto), this.largura - this.margem * 2) as string[];
     d.setCharSpace(0);
-    for (const l of linhas) {
-      if (!this.garantirAltura(this.v(5))) break;
-      d.text(l, this.margem, this.y + this.v(3));
+    let cortadas = 0;
+    for (let i = 0; i < linhas.length; i++) {
+      if (!this.garantirAltura(this.v(5))) { cortadas = linhas.length - i; break; }
+      d.text(linhas[i], this.margem, this.y + this.v(3));
       this.y += this.v(4.6);
+    }
+    if (cortadas > 0) {
+      d.setFont('helvetica', 'italic');
+      d.setFontSize(this.fs(6.6));
+      d.setTextColor(100, 116, 139);
+      d.text(`… ${cortadas} linha(s) de texto não cabiam nesta folha A4.`, this.margem, this.y + this.v(3));
+      this.y += this.v(5);
     }
     this.y += this.v(2);
     return this;
