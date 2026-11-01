@@ -487,7 +487,9 @@ function AppContent() {
         if (!erro && ativo && !ids.has(ativo)) g.clearActiveGabineteId();
         const ativoValido = !!ativo && ids.has(ativo);
 
-        if (!ativoValido && lista.length === 1) {
+        // Se o utilizador pediu explicitamente para trocar, respeitar o
+        // selector mesmo quando só tem um gabinete.
+        if (!g.isForceSelector() && !ativoValido && lista.length === 1) {
           g.setActiveGabineteId(lista[0].id);
           setView('gabinete');
         }

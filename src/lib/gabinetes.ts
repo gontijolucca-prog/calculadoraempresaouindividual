@@ -32,6 +32,7 @@ export interface GabineteMeta {
   invites: Array<{ email: string; role: GabineteRole; invitedAt: number; invitedBy: string; invitedByEmail: string; token?: string; expira?: number }>;
 }
 
+const FORCE_SELECTOR_KEY = 'gabinete:forceSelector';
 const ACTIVE_KEY = 'gabinete:activeId';
 function perUidKey(uid: string) { return `gabinete:activeId:${uid}`; }
 
@@ -50,6 +51,7 @@ export function setActiveGabineteId(id: string) {
   const uid = auth.currentUser?.uid;
   if (uid) saveToStorage(perUidKey(uid), id);
   saveToStorage(ACTIVE_KEY, id);
+  clearStorage(FORCE_SELECTOR_KEY);
   saveToStorage('gabinete:officeId', id); // legacy
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('estudo360:gabinete-switch', { detail: { id } } as any));
@@ -66,6 +68,9 @@ export function clearActiveGabineteId() {
 /** Volta à lista de gabinetes: limpa o gabinete ativo e recarrega para abrir o selector. */
 export function clearActiveGabineteAndReload() {
   try {
+    // Marca que o utilizador quer VER o selector (não ser re-encaixado no
+    // gabinete anterior pelo auto-join quando só existe um).
+    saveToStorage(FORCE_SELECTOR_KEY, true);
     clearActiveGabineteId();
   } catch {
     try {
@@ -78,6 +83,11 @@ export function clearActiveGabineteAndReload() {
     window.location.reload();
   }
 }
+
+export function isForceSelector(): boolean {
+  try { return loadFromStorage<boolean>(FORCE_SELECTOR_KEY, false) === true; } catch { return false; }
+}
+export function clearForceSelector(): void { clearStorage(FORCE_SELECTOR_KEY); }
 
 function newGabineteId(): string {
   return `gab_${Math.random().toString(36).slice(2, 9)}${Date.now().toString(36).slice(-4)}`;
