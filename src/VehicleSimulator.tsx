@@ -5,6 +5,7 @@ import { Car, Euro, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { cn } from './lib/utils';
 import { calcViatura } from './lib/viaturas';
 import ComparadorAquisicao from './components/ComparadorAquisicao';
+import SeletorRegimeAquisicao from './components/SeletorRegimeAquisicao';
 import { NaoAplicavel, patchNaoAplicavel } from './components/NaoAplicavel';
 import { useTheme } from './ThemeContext';
 import { Tip } from './Tip';
@@ -414,11 +415,14 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
       description: 'Como foi adquirida a viatura?',
       isVisible: () => true,
       render: (s, setS) => (
-        <select value={s.ivaRegime} onChange={e => setS({ ivaRegime: e.target.value })} className={inputClass}>
-          <option value="normal">Compra Nova (Fatura c/ IVA)</option>
-          <option value="second_hand">Regime Bens em 2ª Mão</option>
-          <option value="leasing">Locação / Leasing / Renting</option>
-        </select>
+        <>
+          <select value={s.ivaRegime} onChange={e => setS({ ivaRegime: e.target.value })} className={inputClass}>
+            <option value="normal">Compra Nova (Fatura c/ IVA)</option>
+            <option value="second_hand">Regime Bens em 2ª Mão</option>
+            <option value="leasing">Locação / Leasing / Renting</option>
+          </select>
+          <SeletorRegimeAquisicao value={s.ivaRegime} onChange={(v) => setS({ ivaRegime: v })} />
+        </>
       ),
     },
     {
@@ -589,6 +593,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
               <option value="second_hand">Regime Bens em 2ª Mão</option>
               <option value="leasing">Locação / Leasing / Renting</option>
             </select>
+            <SeletorRegimeAquisicao value={ivaRegime} onChange={(v) => setState({ ivaRegime: v })} />
             {ivaRegime === 'leasing' && (
               <label className="flex items-center gap-2 mt-2 text-[12px]"><input type="checkbox" checked={initialState.rentingDiscriminada ?? true} onChange={e=>onStateChange({...initialState, rentingDiscriminada: e.target.checked})} /> Fatura separada (locação vs manutenção/seguro)</label>
             )}
