@@ -32,8 +32,6 @@ const fmtDateHist = (ms: number) =>
 interface Props {
   /** Seleciona o cliente e abre a vista pedida (Perfil, simulador, histórico…). */
   onNavigate: (empId: string, view: string, opts?: NavOpts) => void;
-  /** Seleciona o cliente para trabalhar SEM navegar (fica na lista). */
-  onSelect: (empId: string) => void;
   /** "Inserir à mão": abre um rascunho limpo no modo Novo Cliente (a empresa só
    *  é criada quando o utilizador carrega em "Guardar cliente"). */
   onNovaEmpresaManual: () => void;
@@ -54,7 +52,7 @@ interface Props {
   currentEmpresaId?: string | null;
 }
 
-export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual, onNovaEmpresaFromSAFT, onSAFTUpload, onVerSAFT, onDeleteEmpresa, onRestoreSimulacao, onHistoricoChanged, onImportTOCOnline, onImportSAFTLote, refreshKey, currentEmpresaId }: Props) {
+export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEmpresaFromSAFT, onSAFTUpload, onVerSAFT, onDeleteEmpresa, onRestoreSimulacao, onHistoricoChanged, onImportTOCOnline, onImportSAFTLote, refreshKey, currentEmpresaId }: Props) {
   const [empresas, setEmpresas] = useState<EmpresaRecord[]>(() => listEmpresas());
   const [query, setQuery] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<EmpresaRecord | null>(null);
@@ -205,7 +203,6 @@ export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual
                 active={emp.id === currentEmpresaId}
                 expanded={emp.id === expandedId}
                 onToggle={() => setExpandedId(id => id === emp.id ? null : emp.id)}
-                onSelectCard={() => { onSelect(emp.id); setExpandedId(id => id === emp.id ? null : emp.id); }}
                 onNavigate={onNavigate}
                 onRestore={(rec) => onRestoreSimulacao(emp.id, rec)}
                 onHistoricoChanged={onHistoricoChanged}
@@ -442,7 +439,6 @@ interface EmpresaCardProps {
   onToggle: () => void;
   onNavigate: (empId: string, view: string, opts?: NavOpts) => void;
   /** Clique no corpo do cartão: seleciona o cliente e abre/fecha o histórico. */
-  onSelectCard: () => void;
   /** Restaura uma simulação do histórico deste cliente. */
   onRestore: (rec: SimulationRecord) => void;
   onHistoricoChanged: () => void;
@@ -529,7 +525,7 @@ const CardHistorico: React.FC<{ empId: string; onRestore: (rec: SimulationRecord
   );
 };
 
-const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onToggle, onSelectCard, onNavigate, onRestore, onHistoricoChanged, refreshKey, onUploadSaft, onVerSaft, onAskDelete }) => {
+const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onToggle, onNavigate, onRestore, onHistoricoChanged, refreshKey, onUploadSaft, onVerSaft, onAskDelete }) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const updated = formatRelative(emp.updatedAt);
   const displayNome = emp.nome.trim() || 'Empresa sem nome';
@@ -545,8 +541,8 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
       <div className="flex flex-col sm:flex-row sm:items-stretch">
         <button
           type="button"
-          onClick={onSelectCard}
-          title="Selecionar este cliente e ver o histórico de simulações"
+          onClick={() => onNavigate(emp.id, 'gabinete')}
+          title={`Abrir ${displayNome}`}
           className="flex-1 flex items-center gap-4 text-left px-5 py-4 min-w-0"
         >
           <div className="w-11 h-11 rounded-[10px] bg-[#0677FF]/10 text-[#0677FF] font-[800] text-[14px] flex items-center justify-center shrink-0">
@@ -599,7 +595,7 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
             className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] bg-[#0677FF]/10 text-[#0677FF] text-[12px] font-[700] whitespace-nowrap hover:bg-[#0677FF] hover:text-white transition-colors"
           >
             <UserCircle className="w-3.5 h-3.5" />
-            <span>Perfil do Cliente</span>
+            <span>Ficha do cliente</span>
           </button>
           <button
             type="button"

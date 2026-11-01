@@ -1759,7 +1759,6 @@ function AppContent() {
             refreshKey={empresasRefresh}
             currentEmpresaId={currentEmpresaId}
             onNavigate={navigateClient}
-            onSelect={selectEmpresaParaTrabalhar}
             onRestoreSimulacao={restoreSimulacaoCliente}
             onHistoricoChanged={() => setEmpresasRefresh(n => n + 1)}
             onNovaEmpresaManual={handleNovaEmpresaManual}
