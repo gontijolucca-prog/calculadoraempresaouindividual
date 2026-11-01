@@ -350,3 +350,24 @@ textarea:focus-visible,
 @media (prefers-reduced-motion: reduce) {
   .menu-refresh-pulse, .app-refresh { animation: none; }
 }
+
+
+@media screen {
+/* ── Modo simples / letra grande (acede no topo: Aa) ─────────────────────── */
+html.modo-simples { font-size: 17px; }
+html.modo-simples body { font-size: 16px; }
+html.modo-simples button:not([aria-label]) { min-height: 44px; }
+html.modo-simples input,
+html.modo-simples select,
+html.modo-simples textarea { min-height: 44px; font-size: 16px; }
+html.modo-simples [class*="text-[10px]"],
+html.modo-simples [class*="text-[11px]"],
+html.modo-simples [class*="text-[11.5px]"],
+html.modo-simples [class*="text-[12px]"],
+html.modo-simples [class*="text-[12.5px]"] { font-size: 13.5px !important; line-height: 1.4; }
+html.modo-simples [class*="text-[13px]"],
+html.modo-simples [class*="text-[13.5px]"] { font-size: 15px !important; line-height: 1.45; }
+html.modo-simples .simple-hide { display: none !important; }
+html.modo-simples .simple-panel { border-width: 2px; }
+
+}

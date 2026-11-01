@@ -1307,7 +1307,10 @@ export default function ClientProfile({
         transition={{ duration: 0.35, delay: 0.05, ease: [0.32, 0.72, 0, 1] }}
       >
         <div className="p-4 md:p-8 sticky top-0 bg-white/90 backdrop-blur-md z-20 border-b border-[#F1F5F9] flex items-center justify-between gap-3">
-          <h2 className="text-[18px] md:text-[20px] font-[800] tracking-[-0.5px] text-[#0F172A]">Perfil do Cliente</h2>
+          <div>
+            <h2 className="text-[18px] md:text-[20px] font-[800] tracking-[-0.5px] text-[#0F172A]">Perfil do Cliente</h2>
+            <p className="mt-0.5 text-[12px] font-[500] text-[#64748B]">Só o nome e o NIF são necessários. O resto é opcional.</p>
+          </div>
           <button type="button" onClick={() => void generatePDF()} className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-[#0677FF] px-3 py-2 text-[12px] font-[700] text-white hover:bg-[#0560d8]">
             PDF da ficha
           </button>

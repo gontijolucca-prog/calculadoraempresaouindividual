@@ -18,11 +18,18 @@ export default function TopBarGlobal({ title, subtitle, onGo, onOpenMenu, nav, a
   const cofre = useGabineteCofre();
   const alertas = useGabineteAlertas();
   const [sync, setSync] = useState(() => getSyncSnapshot());
+  const [modoSimples, setModoSimples] = useState<boolean>(() => {
+    try { return localStorage.getItem('estudo360:v1:modoSimples') !== '0'; } catch { return true; }
+  });
   const [nome, setNome] = useState<string | null>(() => {
     try { return loadOfficeSettings()?.nome?.trim() || null; } catch { return null; }
   });
 
   useEffect(() => subscribeSync(() => setSync(getSyncSnapshot())), []);
+  useEffect(() => {
+    document.documentElement.classList.toggle('modo-simples', modoSimples);
+    try { localStorage.setItem('estudo360:v1:modoSimples', modoSimples ? '1' : '0'); } catch {}
+  }, [modoSimples]);
   useEffect(() => {
     let vivo = true;
     const id = getActiveGabineteId();
@@ -64,6 +71,13 @@ export default function TopBarGlobal({ title, subtitle, onGo, onOpenMenu, nav, a
               <span className="truncate">A trabalhar em {activeClientName}</span>
             </button>
           )}
+          <button
+            type="button"
+            onClick={() => setModoSimples(v => !v)}
+            aria-label={modoSimples ? 'Desligar modo simples' : 'Ligar modo simples, letra maior'}
+            title={modoSimples ? 'Modo simples ligado — clique para desligar' : 'Modo simples: letra e botões maiores'}
+            className={`inline-flex h-9 items-center justify-center rounded-full border px-2.5 text-[13px] font-[800] ${modoSimples ? 'border-[#0677FF] bg-[#0677FF] text-white' : 'border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50'}`}
+          >Aa</button>
           <NotificacoesBell clientes={clientes} obrigacoes={obrigacoes} alertas={alertas} onGo={onGo} />
           <button
             onClick={clearActiveGabineteAndReload}
@@ -81,7 +95,7 @@ export default function TopBarGlobal({ title, subtitle, onGo, onOpenMenu, nav, a
           </button>
         </div>
 
-        <div className="hidden md:flex items-center gap-2 text-right text-xs text-zinc-500">
+        <div className="simple-hide hidden md:flex items-center gap-2 text-right text-xs text-zinc-500">
           <span>{clientes.length} clientes</span>
           <span className="opacity-30">•</span>
           <span>{abertas} tarefas abertas</span>
@@ -99,7 +113,7 @@ export default function TopBarGlobal({ title, subtitle, onGo, onOpenMenu, nav, a
           )}
         </div>
 
-        <div className="flex items-center gap-2 md:hidden text-right text-[11px] leading-tight text-zinc-500">
+        <div className="simple-hide flex items-center gap-2 md:hidden text-right text-[11px] leading-tight text-zinc-500">
           <div>
             <div>{clientes.length} clientes</div>
             <div>{abertas} abertas</div>

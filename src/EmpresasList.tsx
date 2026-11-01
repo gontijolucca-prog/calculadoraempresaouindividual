@@ -163,7 +163,7 @@ export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual
                   onClick={() => setShowTOC(true)}
                   className="inline-flex items-center gap-2 bg-white border border-[#E2E8F0] text-[#0B1D2D] px-4 py-2.5 rounded-[10px] text-[13px] font-[700] hover:bg-zinc-50 active:scale-[0.98] transition-all"
                 >
-                  <Download className="w-4 h-4" /> TOConline
+                  <Download className="w-4 h-4" /> Importar TOConline
                 </button>
               )}
               <button
@@ -171,7 +171,7 @@ export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual
                 onClick={startNova}
                 className="inline-flex items-center gap-2 bg-[#0677FF] text-white px-4 py-2.5 rounded-[10px] text-[13px] font-[700] hover:bg-[#0556CC] active:scale-[0.98] transition-all shadow-md shadow-[#0677FF]/25"
               >
-                <Plus className="w-4 h-4" /> Nova Empresa
+                <Plus className="w-4 h-4" /> Novo cliente
               </button>
             </div>
           </div>
@@ -260,7 +260,7 @@ export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual
             <div className="p-7">
               <div className="flex items-start justify-between mb-1">
                 <h2 id="nova-modal-title" className="text-[22px] font-[800] text-[#0B1D2D] leading-tight">
-                  Nova Empresa
+                  Novo cliente
                 </h2>
                 <button
                   type="button"
@@ -272,35 +272,35 @@ export default function EmpresasList({ onNavigate, onSelect, onNovaEmpresaManual
                 </button>
               </div>
               <p className="text-[13px] text-[#6B7280] font-[500] mb-5">
-                Como pretende adicionar esta empresa à sua carteira?
+                Como quer começar? Pode alterar tudo depois.
               </p>
 
               <div className="grid sm:grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => novaSaftInputRef.current?.click()}
-                  className="text-left p-5 rounded-[14px] border-2 border-[#E5E9F0] hover:border-[#0677FF] hover:bg-[#0677FF]/4 transition-all group focus-visible:border-[#0677FF]"
+                  className="order-2 text-left p-5 rounded-[14px] border-2 border-[#E5E9F0] hover:border-[#0677FF] hover:bg-[#0677FF]/4 transition-all group focus-visible:border-[#0677FF]"
                 >
                   <div className="w-10 h-10 rounded-[10px] bg-[#0677FF]/12 text-[#0677FF] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                     <FileText className="w-5 h-5" />
                   </div>
-                  <div className="text-[15px] font-[800] text-[#0B1D2D]">A partir de SAF-T</div>
+                  <div className="text-[15px] font-[800] text-[#0B1D2D]">Tenho o ficheiro SAF-T</div>
                   <p className="text-[12px] text-[#6B7280] font-[500] mt-1 leading-snug">
-                    Importa o ficheiro SAF-T e preenchemos automaticamente os dados da empresa.
+                    Importe o ficheiro do programa de contabilidade e preenchemos os dados por si.
                   </p>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleNovaManual}
-                  className="text-left p-5 rounded-[14px] border-2 border-[#E5E9F0] hover:border-[#0B1D2D] hover:bg-[#0B1D2D]/4 transition-all group focus-visible:border-[#0B1D2D]"
+                  className="order-1 text-left p-5 rounded-[14px] border-2 border-[#E5E9F0] hover:border-[#0B1D2D] hover:bg-[#0B1D2D]/4 transition-all group focus-visible:border-[#0B1D2D]"
                 >
                   <div className="w-10 h-10 rounded-[10px] bg-[#0B1D2D]/10 text-[#0B1D2D] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                     <Pencil className="w-5 h-5" />
                   </div>
-                  <div className="text-[15px] font-[800] text-[#0B1D2D]">Inserir à mão</div>
+                  <div className="text-[15px] font-[800] text-[#0B1D2D]">Preencher à mão <span className="ml-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] text-emerald-700">mais simples</span></div>
                   <p className="text-[12px] text-[#6B7280] font-[500] mt-1 leading-snug">
-                    Abre o Perfil do Cliente em branco para preencheres os dados manualmente.
+                    Só precisa do nome e do NIF. O resto pode ficar para depois.
                   </p>
                 </button>
               </div>
@@ -704,16 +704,16 @@ function EmptyState({ onNova, hasQuery }: { onNova: () => void; hasQuery: boolea
       <div className="w-14 h-14 rounded-full bg-[#0677FF]/10 text-[#0677FF] flex items-center justify-center mx-auto mb-4">
         <Building2 className="w-6 h-6" />
       </div>
-      <h2 className="text-[18px] font-[800] text-[#0B1D2D] mb-1">Ainda não tem empresas guardadas</h2>
+      <h2 className="text-[18px] font-[800] text-[#0B1D2D] mb-1">Ainda não tem clientes</h2>
       <p className="text-[13px] text-[#6B7280] font-[500] max-w-md mx-auto mb-5">
-        Crie a primeira empresa da sua carteira. Vai poder importar o SAF-T e gerar simulações associadas.
+        Comece por criar o primeiro cliente. Depois pode importar o SAF-T e abrir as simulações.
       </p>
       <button
         type="button"
         onClick={onNova}
         className="inline-flex items-center gap-2 bg-[#0677FF] text-white px-5 py-3 rounded-[10px] text-[13px] font-[700] hover:bg-[#0556CC] active:scale-[0.98] transition-all shadow-md shadow-[#0677FF]/25"
       >
-        <Plus className="w-4 h-4" /> Criar primeira empresa
+        <Plus className="w-4 h-4" /> Criar primeiro cliente
       </button>
     </div>
   );
