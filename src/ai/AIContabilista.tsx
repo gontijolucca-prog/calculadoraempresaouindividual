@@ -322,9 +322,15 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
       }
     } catch { /* triage falhou → deixa passar */ }
     try {
+      const { auth } = await import('../lib/firebase');
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) {
+        setMsgs((prev) => [...prev, { role: 'assistant' as const, content: 'A sessão expirou. Entre novamente para usar o AI Contabilista.' }]);
+        return;
+      }
       const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
         body: JSON.stringify({
           appContext: bridge.getContext(),
           messages: history.slice(-16).map((m) => ({ role: m.role, content: m.content })),

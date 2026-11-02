@@ -22,6 +22,7 @@ import { KILO_ENDPOINT, KILO_MODELS, GO_MODELS, OPENROUTER_FALLBACK_MODELS, OMNI
 import { pareceTerDadosCliente, mascararMensagens } from '../_privacidade';
 import { SYSTEM_PROMPT } from '../_systemPrompt';
 import { KNOWLEDGE_BASE } from '../_kb';
+import { verifyFirebaseRequest } from '../_auth';
 
 interface Env {
   KILO_API_KEY?: string;       // opcional: sem chave usa o free anónimo
@@ -75,7 +76,7 @@ function corsHeaders(origin: string | null): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': ok && origin ? origin : 'https://estudo360.pt',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400',
   };
 }
@@ -164,6 +165,8 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
   if (!hostAllowed(origin) && !hostAllowed(referer)) {
     return json({ error: 'origem_nao_autorizada' }, 403, origin);
   }
+  const autenticado = await verifyFirebaseRequest(request, env as Record<string, unknown>);
+  if (!autenticado) return json({ error: 'sem_sessao' }, 401, origin);
 
   // 2) Chave configurada? (OpenCode Go primeiro; OpenRouter como fallback)
   const hasGo = !!env.OPENCODE_GO_KEY;

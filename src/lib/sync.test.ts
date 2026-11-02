@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { upsertOp, dropOp, bumpTries, type OutboxOp } from './sync';
+import { upsertOp, dropOp, bumpTries, mergeQueueAfterFlush, type OutboxOp } from './sync';
 
 function op(partial: Partial<OutboxOp>): OutboxOp {
   return { id: 'x', at: 0, tries: 0, kind: 'set', path: 'p', docId: 'd', ...partial };
@@ -28,5 +28,14 @@ describe('sync outbox — operações puras', () => {
     const out = bumpTries(list, '1');
     assert.equal(out[0].tries, 2);
     assert.equal(out[1].tries, 5);
+  });
+  it('preserva operações novas criadas durante o flush e aplica LWW na mesma célula', () => {
+    const inicial = op({ id: '1', docId: 'd1', data: { v: 1 } });
+    const novaMesmaCelula = op({ id: '2', docId: 'd1', data: { v: 2 } });
+    const novaOutraCelula = op({ id: '3', docId: 'd2', data: { v: 3 } });
+    const restantes = [inicial];
+    const out = mergeQueueAfterFlush([inicial], [inicial, novaMesmaCelula, novaOutraCelula], restantes);
+    assert.deepEqual(out.map((x) => x.id).sort(), ['2', '3']);
+    assert.deepEqual(out.find((x) => x.docId === 'd1')?.data, { v: 2 });
   });
 });

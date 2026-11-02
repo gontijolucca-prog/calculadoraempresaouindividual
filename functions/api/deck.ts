@@ -8,6 +8,7 @@
  * `mode: 'plan'` → deck completo; `mode: 'rewrite'` → um único card.
  */
 import { GO_MODELS, OPENROUTER_FALLBACK_MODELS } from '../_models';
+import { verifyFirebaseRequest } from '../_auth';
 
 interface Env {
   OPENCODE_GO_KEY?: string;
@@ -58,7 +59,7 @@ function corsHeaders(origin: string | null): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': ok && origin ? origin : 'https://estudo360.pt',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400',
   };
 }
@@ -200,6 +201,8 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
 
   // 1) Origem
   if (origin && !hostAllowed(origin)) return json({ error: 'origem_nao_autorizada' }, 403, origin);
+  const autenticado = await verifyFirebaseRequest(request, env as Record<string, unknown>);
+  if (!autenticado) return json({ error: 'sem_sessao' }, 401, origin);
 
   // 2) Chaves
   if (!env.OPENCODE_GO_KEY && !env.OPENROUTER_API_KEY) {

@@ -18,9 +18,12 @@ export async function requestAiCards(req: DeckAiRequest): Promise<unknown | null
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
+    const { auth } = await import('../firebase');
+    const idToken = await auth.currentUser?.getIdToken();
+    if (!idToken) return null;
     const res = await fetch('/api/deck', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
       body: JSON.stringify(req),
       signal: controller.signal,
     });

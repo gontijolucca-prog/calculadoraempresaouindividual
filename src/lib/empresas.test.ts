@@ -38,6 +38,7 @@ import {
   type EmpresaRecord,
 } from './empresas';
 import { repairMojibake } from './mojibake';
+import { saveToStorage } from './storage';
 
 beforeEach(() => store.clear());
 
@@ -64,6 +65,19 @@ describe('newId', () => {
 
 // ── registry local + relógio monotónico ──────────────────────────────────
 describe('registry local (LWW)', () => {
+  it('isola a carteira por gabinete ativo', () => {
+    saveToStorage('gabinete:activeId', 'gab_A');
+    upsertEmpresa(mkEmp({ id: 'a', nome: 'Cliente A' }));
+
+    saveToStorage('gabinete:activeId', 'gab_B');
+    assert.equal(listEmpresas().length, 0);
+    upsertEmpresa(mkEmp({ id: 'b', nome: 'Cliente B' }));
+    assert.deepEqual(listEmpresas().map((e) => e.id), ['b']);
+
+    saveToStorage('gabinete:activeId', 'gab_A');
+    assert.deepEqual(listEmpresas().map((e) => e.id), ['a']);
+  });
+
   it('save→list round-trip', () => {
     saveEmpresas([mkEmp({ id: 'a' }), mkEmp({ id: 'b' })]);
     assert.deepEqual(listEmpresas().map(e => e.id).sort(), ['a', 'b']);

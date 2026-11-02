@@ -87,17 +87,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try { const { setCofrePassphrase } = await import('./cofreCrypto'); setCofrePassphrase(null); } catch {}
+    try { const { clearGabineteMemoryCache } = await import('./gabinetes'); clearGabineteMemoryCache(); } catch {}
     try {
       // Limpa caches locais por prefixo — evita leak entre contas no mesmo browser
-      const prefixes = ['estudo360:v1:gabinete:', 'estudo360:v1:empresas', 'estudo360:v1:currentEmpresaId', 'estudo360:v1:syncOutbox', 'estudo360:v1:auditQueue'];
+      const prefixes = [
+        'estudo360:v1:gabinete:',
+        'estudo360:v1:empresas',
+        'estudo360:v1:currentEmpresaId',
+        'estudo360:v1:syncOutbox',
+        'estudo360:v1:auditQueue',
+        'estudo360:v1:officeSettings',
+        'estudo360:v1:honorariosConfig',
+        'recofa_pricing',
+      ];
       const toRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
         if (k && prefixes.some(p => k.startsWith(p))) toRemove.push(k);
       }
       toRemove.forEach(k => localStorage.removeItem(k));
-      // Tenta limpar IndexedDB do Firestore (best-effort, não bloqueia logout)
-      try { indexedDB.deleteDatabase('firebaseLocalStorageDb'); } catch {}
+      // Limpa Auth + cache persistente do Firestore entre contas.
+      try {
+        const dbs = await indexedDB.databases?.().catch(() => []);
+        const alvos = (dbs || [])
+          .map((d) => d.name || '')
+          .filter((n) => n === 'firebaseLocalStorageDb' || n.startsWith('firestore/'));
+        await Promise.all(alvos.map((name) => new Promise<void>((resolve) => {
+          const req = indexedDB.deleteDatabase(name);
+          req.onsuccess = () => resolve();
+          req.onerror = () => resolve();
+          req.onblocked = () => resolve();
+        })));
+      } catch {}
     } catch {}
     await signOut(auth);
   };

@@ -10,8 +10,9 @@
  * A função `calcularProposta` é pura — não toca em DOM nem storage.
  */
 
-import { loadFromStorage, saveToStorage } from './storage';
+import { clearStorage, loadFromStorage, saveToStorage } from './storage';
 import type { ClientProfile } from '../ClientProfile';
+import { getActiveGabineteId } from './gabinetes';
 
 export type TipoEntidadeCliente = 'eni' | 'lda' | 'unipessoal' | 'sa' | 'socio_unico';
 
@@ -82,14 +83,37 @@ export const defaultHonorariosConfig: HonorariosConfig = {
   minimoMensal: 75,
 };
 
-const STORAGE_KEY = 'honorariosConfig';
+const LEGACY_KEY = 'honorariosConfig';
+
+function activeGabineteId(): string | null {
+  try { return getActiveGabineteId(); } catch { return null; }
+}
+function storageKey(): string { return `gabinete:honorariosConfig:${activeGabineteId() || ''}`; }
 
 export function loadHonorariosConfig(): HonorariosConfig {
-  return loadFromStorage<HonorariosConfig>(STORAGE_KEY, defaultHonorariosConfig);
+  if (!activeGabineteId()) {
+    return loadFromStorage<HonorariosConfig | null>(LEGACY_KEY, null) || defaultHonorariosConfig;
+  }
+  const key = storageKey();
+  let config = loadFromStorage<HonorariosConfig | null>(key, null);
+  if (!config) {
+    const legado = loadFromStorage<HonorariosConfig | null>(LEGACY_KEY, null);
+    if (legado) {
+      config = legado;
+      saveToStorage(key, legado);
+      clearStorage(LEGACY_KEY);
+    }
+  }
+  return config || defaultHonorariosConfig;
 }
 
 export function saveHonorariosConfig(c: HonorariosConfig): void {
-  saveToStorage(STORAGE_KEY, c);
+  if (!activeGabineteId()) {
+    saveToStorage(LEGACY_KEY, c);
+    return;
+  }
+  saveToStorage(storageKey(), c);
+  clearStorage(LEGACY_KEY);
 }
 
 // ─── Cálculo de proposta ────────────────────────────────────────────────────

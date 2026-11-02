@@ -587,7 +587,7 @@
       <div class="status">
         <div class="st"><span class="mark">✅</span><b>Dossier</b><span>10 documentos prontos</span></div>
         <div class="st"><span class="mark">✅</span><b>9 requisitos</b><span>com provas no código</span></div>
-        <div class="st"><span class="mark">⏳</span><b>Base legal</b><span>confirmada (Portaria 293/2017)</span></div>
+        <div class="st"><span class="mark">⏳</span><b>Base legal</b><span>enquadramento em confirmação com a AT</span></div>
         <div class="st"><span class="mark">⏳</span><b>Enquadramento</b><span>a confirmar com a AT</span></div>
       </div>
 
@@ -715,12 +715,12 @@
   // Próximos passos guardados no Firestore: cada gravação é uma versão nova
   // (nunca se perde) e o site mostra sempre a mais recente a qualquer pessoa.
   const CFG = {
-    apiKey: 'AIzaSyBxc-JFWwxlauY6U4A3IKTxxd5UFiDzjhI',
-    authDomain: 'recofatima-ferramenta.firebaseapp.com',
-    projectId: 'recofatima-ferramenta',
-    storageBucket: 'recofatima-ferramenta.firebasestorage.app',
-    messagingSenderId: '561979864363',
-    appId: '1:561979864363:web:4577c584f4802261c0016e',
+    apiKey: 'AIzaSyChJKEBjPKZcRVF4R_n07UoUB9Q0q_EzM',
+    authDomain: 'estudo360-app.firebaseapp.com',
+    projectId: 'estudo360-app',
+    storageBucket: 'estudo360-app.firebasestorage.app',
+    messagingSenderId: '297215704391',
+    appId: '1:297215704391:web:74168b37a27cc99669a062',
   };
   const MARKER = 'proximos:semana-26-10';
   const el = (id) => document.getElementById(id);
@@ -784,7 +784,7 @@
     };
 
     authMod.onAuthStateChanged(auth, (user) => {
-      if (user) {
+      if (user && String(user.email || '').toLowerCase() === 'admin@estudo360.pt') {
         editor.style.display = '';
         locked.style.display = 'none';
         if (ta && !ta.value && docs[0]) ta.value = docs[0].text;

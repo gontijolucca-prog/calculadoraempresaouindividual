@@ -13,6 +13,7 @@
 //  - {action:'customers', apiUrl, accessToken}
 
 import { urlClientes, mapTocCustomer, explicarErroOauth } from '../_toc';
+import { verifyFirebaseRequest } from '../_auth';
 
 const ALLOWED_HOST_SUFFIXES = [
   'estudo360.pt',
@@ -38,7 +39,7 @@ function corsHeaders(origin: string | null): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': ok && origin ? origin : 'https://estudo360.pt',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400',
   };
 }
@@ -59,12 +60,12 @@ function rateLimited(ip: string): boolean {
   return arr.length > RL_MAX;
 }
 
-function isAllowedTocUrl(raw: string): boolean {
+export function isAllowedTocUrl(raw: string): boolean {
   try {
     const u = new URL(raw);
     if (u.protocol !== 'https:') return false;
     const h = u.hostname.toLowerCase();
-    return h.includes('toconline');
+    return h === 'toconline.pt' || h.endsWith('.toconline.pt');
   } catch { return false; }
 }
 
@@ -75,13 +76,15 @@ function basicAuth(clientId: string, secret: string): string {
 export const onRequestOptions = async ({ request }: { request: Request }) =>
   new Response(null, { status: 204, headers: corsHeaders(request.headers.get('Origin')) });
 
-export const onRequestPost = async (ctx: { request: Request }) => {
-  const { request } = ctx;
+export const onRequestPost = async (ctx: { request: Request; env: Record<string, unknown> }) => {
+  const { request, env } = ctx;
   const origin = request.headers.get('Origin');
   const referer = request.headers.get('Referer');
   if (!hostAllowed(origin) && !hostAllowed(referer)) {
     return json({ error: 'origem_nao_autorizada' }, 403, origin);
   }
+  const autenticado = await verifyFirebaseRequest(request, env);
+  if (!autenticado) return json({ error: 'sem_sessao' }, 401, origin);
   const ip = request.headers.get('CF-Connecting-IP') || 'desconhecido';
   if (rateLimited(ip)) return json({ error: 'rate_limit' }, 429, origin);
 

@@ -32,7 +32,7 @@ function devTocProxy(): Plugin {
     configureServer(server) {
       // Usa a Function real (dev == produção), como o /api/chat e o /api/deck.
       server.middlewares.use('/api/toconline', async (req, res) => {
-        if (req.method === 'OPTIONS') { res.statusCode = 204; res.setHeader('Access-Control-Allow-Origin', '*'); res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); res.end(); return; }
+        if (req.method === 'OPTIONS') { res.statusCode = 204; res.setHeader('Access-Control-Allow-Origin', '*'); res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization'); res.end(); return; }
         if (req.method !== 'POST') { res.statusCode = 405; res.end('{"error":"metodo"}'); return; }
         try {
           let body = '';
@@ -40,10 +40,15 @@ function devTocProxy(): Plugin {
           const { onRequestPost } = await import('./functions/api/toconline');
           const request = new Request('http://localhost/api/toconline', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', Origin: 'http://localhost:3000', Referer: 'http://localhost:3000/' },
+            headers: {
+              'Content-Type': 'application/json',
+              Origin: 'http://localhost:3000',
+              Referer: 'http://localhost:3000/',
+              ...(req.headers.authorization ? { Authorization: req.headers.authorization } : {}),
+            },
             body,
           });
-          const response = await onRequestPost({ request });
+          const response = await onRequestPost({ request, env: {} });
           const text = await response.text();
           res.statusCode = response.status;
           res.setHeader('Content-Type', 'application/json');
@@ -113,7 +118,11 @@ function devChatProxy(): Plugin {
           const { onRequestPost } = await import('./functions/api/chat');
           const request = new Request('http://localhost/api/chat', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', Origin: 'http://localhost:3000' },
+            headers: {
+              'Content-Type': 'application/json',
+              Origin: 'http://localhost:3000',
+              ...(req.headers.authorization ? { Authorization: req.headers.authorization } : {}),
+            },
             body,
           });
           const t0 = Date.now();
@@ -154,7 +163,11 @@ function devDeckProxy(): Plugin {
           const { onRequestPost } = await import('./functions/api/deck');
           const request = new Request('http://localhost/api/deck', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', Origin: 'http://localhost:3000' },
+            headers: {
+              'Content-Type': 'application/json',
+              Origin: 'http://localhost:3000',
+              ...(req.headers.authorization ? { Authorization: req.headers.authorization } : {}),
+            },
             body,
           });
           const t0 = Date.now();

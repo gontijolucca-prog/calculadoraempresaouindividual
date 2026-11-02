@@ -13,9 +13,10 @@
 import type { ClientProfile } from '../ClientProfile';
 import type { PreviSaState } from '../previSaState';
 import { loadFromStorage, saveToStorage, clearStorage } from './storage';
-import { doc, getDoc, setDoc, getDocs, collection, onSnapshot, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, getDocs, setDoc, collection, onSnapshot, writeBatch } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import { repairMojibake } from './mojibake';
+import { getActiveGabineteId } from './gabinetes';
 
 /** Uma simulação guardada no histórico de um cliente (torna os simuladores
  *  "não descartáveis"). `state` é o snapshot do estado do simulador (permite
@@ -97,6 +98,7 @@ export const SAFT_REPARSE_REV = 2;
 
 const REGISTRY_KEY = 'empresas';
 const CURRENT_KEY = 'currentEmpresaId';
+const SHARED_OFFICE_ID = 'shared';
 // Relógio do registry (last-write-wins ao nível do documento). Qualquer mutação
 // local — incluindo ELIMINAR — avança este stamp; a sincronização compara-o com
 // o stamp do Firestore para decidir quem vence. É isto que faz uma eliminação
@@ -104,21 +106,59 @@ const CURRENT_KEY = 'currentEmpresaId';
 // fazer união por id (que nunca conseguia representar uma remoção → "Hydra").
 const STAMP_KEY = 'empresasUpdatedAt';
 
+/** Dados de clientes/simulações pertencem ao gabinete ativo, não à conta. */
+function empresasScopeId(): string {
+  try { return getActiveGabineteId() || auth.currentUser?.uid || SHARED_OFFICE_ID; }
+  catch { return auth.currentUser?.uid || SHARED_OFFICE_ID; }
+}
+function scopedStorageKey(base: string): string {
+  return `${base}:${empresasScopeId()}`;
+}
+
+function readScoped<T>(base: string, fallback: T, legacyBase?: string): T {
+  const key = scopedStorageKey(base);
+  const scoped = loadFromStorage<T | null>(key, null);
+  if (scoped !== null) return scoped;
+  const uid = auth.currentUser?.uid;
+  if (uid && key !== `${base}:${uid}`) {
+    const daConta = loadFromStorage<T | null>(`${base}:${uid}`, null);
+    if (daConta !== null) {
+      saveToStorage(key, daConta);
+      clearStorage(`${base}:${uid}`);
+      return daConta;
+    }
+  }
+  if (legacyBase) {
+    const legado = loadFromStorage<T | null>(legacyBase, null);
+    if (legado !== null) {
+      saveToStorage(key, legado);
+      clearStorage(legacyBase);
+      return legado;
+    }
+  }
+  return fallback;
+}
+
+function writeScoped<T>(base: string, value: T, legacyBase?: string): void {
+  saveToStorage(scopedStorageKey(base), value);
+  if (legacyBase) clearStorage(legacyBase);
+}
+
 export function newId(): string {
   return 'emp_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 }
 
 export function getEmpresasStamp(): number {
-  const n = loadFromStorage<number>(STAMP_KEY, 0);
+  const n = readScoped<number>(STAMP_KEY, 0, STAMP_KEY);
   return typeof n === 'number' && Number.isFinite(n) ? n : 0;
 }
 
 function setEmpresasStamp(n: number): void {
-  saveToStorage(STAMP_KEY, n);
+  writeScoped(STAMP_KEY, n, STAMP_KEY);
 }
 
 export function listEmpresas(): EmpresaRecord[] {
-  const list = loadFromStorage<EmpresaRecord[]>(REGISTRY_KEY, []);
+  const list = readScoped<EmpresaRecord[]>(REGISTRY_KEY, [], REGISTRY_KEY);
   return Array.isArray(list) ? list : [];
 }
 
@@ -128,7 +168,7 @@ export function listEmpresas(): EmpresaRecord[] {
 // Firestore). Isto fecha dois buracos: (a) editar no mesmo milissegundo em que
 // se adotou o remoto, e (b) relógios dessincronizados entre dispositivos.
 export function saveEmpresas(list: EmpresaRecord[]): void {
-  saveToStorage(REGISTRY_KEY, list);
+  writeScoped(REGISTRY_KEY, list, REGISTRY_KEY);
   setEmpresasStamp(Math.max(Date.now(), getEmpresasStamp() + 1));
 }
 
@@ -142,7 +182,7 @@ export function adoptRemoteEmpresas(list: EmpresaRecord[], remoteStamp: number):
     const loc = localById.get(e.id);
     return !e.saftXml && loc?.saftXml ? { ...e, saftXml: loc.saftXml } : e;
   });
-  saveToStorage(REGISTRY_KEY, merged);
+  writeScoped(REGISTRY_KEY, merged, REGISTRY_KEY);
   setEmpresasStamp(remoteStamp);
 }
 
@@ -166,15 +206,15 @@ export function deleteEmpresa(id: string): void {
 }
 
 export function getCurrentEmpresaId(): string | null {
-  return loadFromStorage<string | null>(CURRENT_KEY, null);
+  return readScoped<string | null>(CURRENT_KEY, null, CURRENT_KEY);
 }
 
 export function setCurrentEmpresaId(id: string | null): void {
-  saveToStorage(CURRENT_KEY, id);
+  writeScoped(CURRENT_KEY, id, CURRENT_KEY);
 }
 
 export function clearCurrentEmpresaId(): void {
-  saveToStorage(CURRENT_KEY, null);
+  writeScoped(CURRENT_KEY, null, CURRENT_KEY);
 }
 
 export function getCurrentEmpresa(): EmpresaRecord | null {
@@ -283,24 +323,24 @@ export function deleteSimulacao(empresaId: string, simId: string): void {
 
 const FIRESTORE_COLLECTION = 'empresas';
 const FIRESTORE_CHUNKS_SUBCOLLECTION = 'chunks';
+const MIGRATION_COLLECTION = 'migrations';
 const CHUNK_SIZE = 20; // ~20 empresas por chunk (~500 KB), bem abaixo de 1 MiB
 
-// Documento por UTILIZADOR — isolamento total por conta. Cada uid tem o seu doc
-// empresas/{uid}. O doc 'shared' é legado e só é lido uma vez para migração.
-const SHARED_OFFICE_ID = 'shared';
-const MIGRATED_KEY = 'empresasMigratedToShared';
+// O documento é por GABINETE. Contas antigas em empresas/{uid} são migradas
+// para o espaço partilhado na primeira entrada.
 
 export function getCurrentUid(): string | null {
   return auth.currentUser?.uid || null;
 }
 function requireUid(): string {
-  const uid = getCurrentUid();
-  if (!uid) throw new Error('Não autenticado — inicia sessão.');
-  return uid;
+  if (!getCurrentUid()) throw new Error('Não autenticado — inicia sessão.');
+  const scope = empresasScopeId();
+  if (!scope || scope === SHARED_OFFICE_ID) throw new Error('Sem gabinete ativo.');
+  return scope;
 }
-// Mantido por compatibilidade de assinatura, mas agora retorna o uid.
+// Mantido por compatibilidade de assinatura, mas agora retorna o gabinete ativo.
 export function getOfficeId(_officeNif?: string): string {
-  return getCurrentUid() || SHARED_OFFICE_ID;
+  return empresasScopeId();
 }
 // Limpa cache local ao trocar de conta — evita leak entre utilizadores no mesmo browser
 export function clearLocalEmpresasCache(): void {
@@ -320,6 +360,41 @@ function splitIntoChunks<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
   return out;
+}
+
+async function readOfficeSnapshot(officeId: string): Promise<{ list: EmpresaRecord[]; updatedAt: number } | null> {
+  try {
+    const snap = await getDocs(chunksCollectionRef(officeId));
+    if (!snap.empty) {
+      const chunks: { idx: number; list: EmpresaRecord[]; updatedAt: number }[] = [];
+      let maxUpdatedAt = 0;
+      snap.forEach((d) => {
+        const data = d.data() as { list?: EmpresaRecord[]; updatedAt?: number; chunk?: number };
+        if (!Array.isArray(data?.list)) return;
+        const idx = typeof data.chunk === 'number' ? data.chunk : parseInt(d.id, 10);
+        chunks.push({
+          idx: Number.isFinite(idx) ? idx : 0,
+          list: data.list as EmpresaRecord[],
+          updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : 0,
+        });
+        if (typeof data.updatedAt === 'number' && data.updatedAt > maxUpdatedAt) maxUpdatedAt = data.updatedAt;
+      });
+      if (chunks.length > 0) {
+        chunks.sort((a, b) => a.idx - b.idx);
+        return { list: chunks.flatMap((c) => c.list), updatedAt: maxUpdatedAt };
+      }
+    }
+  } catch (e) {
+    console.warn(`[empresas] load chunks ${officeId} falhou, a tentar legado:`, e);
+  }
+  const snap = await getDoc(doc(db, FIRESTORE_COLLECTION, officeId));
+  if (!snap.exists()) return null;
+  const data = snap.data();
+  if (!Array.isArray(data?.list)) return null;
+  return {
+    list: data.list as EmpresaRecord[],
+    updatedAt: typeof data?.updatedAt === 'number' ? data.updatedAt : 0,
+  };
 }
 
 /** Avisa a UI do estado da sincronização cloud (App mostra/limpa o aviso). */
@@ -357,55 +432,38 @@ export async function saveEmpresasToFirestore(
   try {
     const cloudList = stripSaftXmlForCloud(list);
     const payloadSize = JSON.stringify(cloudList).length;
-    if (payloadSize > 980_000) {
-      console.warn(`[empresas] payload cloud grande (${payloadSize} bytes) — a usar chunks, sem limite de 1 MiB por doc`);
-    }
     const chunks = splitIntoChunks(cloudList, CHUNK_SIZE);
     const updatedAt = stamp ?? getEmpresasStamp() ?? Date.now();
-    // Lê chunks existentes para saber quais apagar quando a lista encolheu
-    let existingCount = 0;
-    try {
-      const snap = await getDocs(chunksCollectionRef(officeId));
-      existingCount = snap.size;
-    } catch {}
-    // Escreve chunks com writes paralelos (poucos chunks, < 50 para 1000 empresas)
-    const writes: Promise<void>[] = [];
+    const existentes = await getDocs(chunksCollectionRef(officeId));
+    const writesNecessarios = chunks.length + Math.max(0, existentes.size - chunks.length) + 1;
+    if (writesNecessarios > 450) {
+      throw new Error(`Demasiados blocos para uma sincronização atómica (${writesNecessarios}/450).`);
+    }
+
+    // Um batch torna a atualização dos blocos + documento principal atómica.
+    // Ou o novo snapshot fica inteiro, ou o anterior permanece intacto.
+    const batch = writeBatch(db);
     for (let i = 0; i < chunks.length; i++) {
-      writes.push(setDoc(chunkDocRef(officeId, i), { list: chunks[i], updatedAt, chunk: i }));
+      batch.set(chunkDocRef(officeId, i), { list: chunks[i], updatedAt, chunk: i });
     }
-    // Apaga chunks excedentes (lista encolheu)
-    for (let i = chunks.length; i < existingCount; i++) {
-      writes.push(deleteDoc(chunkDocRef(officeId, i)).catch(()=>{}));
+    for (let i = chunks.length; i < existentes.size; i++) {
+      batch.delete(chunkDocRef(officeId, i));
     }
-    await Promise.all(writes);
-    // Dual-write legado para compat com clientes antigos (enquanto payload < 1 MiB)
-    if (payloadSize < 980_000) {
-      try {
-        await setDoc(doc(db, FIRESTORE_COLLECTION, officeId), {
-          list: cloudList,
-          updatedAt,
-        });
-      } catch (e) {
-        console.warn('[empresas] dual write legado falhou (ignorado):', e);
-      }
+
+    // Compatibilidade com clientes antigos; o doc principal também faz parte
+    // do mesmo batch, por isso nunca fica à frente dos blocos.
+    if (payloadSize < 980_000 && cloudList.length < 500) {
+      batch.set(doc(db, FIRESTORE_COLLECTION, officeId), { list: cloudList, updatedAt });
+    } else {
+      batch.delete(doc(db, FIRESTORE_COLLECTION, officeId));
     }
+
+    await batch.commit();
     emitCloudSync(true);
   } catch (err) {
-    console.warn('[empresas] firestore save (chunks) falhou:', err);
-    // Fallback: tenta gravar no doc legado se falhar nos chunks (ex: rule ainda a propagar ou payload pequeno)
-    try {
-      const cloudList = stripSaftXmlForCloud(list);
-      await setDoc(doc(db, FIRESTORE_COLLECTION, officeId), {
-        list: cloudList,
-        updatedAt: stamp ?? getEmpresasStamp() ?? Date.now(),
-      });
-      console.warn('[empresas] fallback legado OK após falha chunks');
-      emitCloudSync(true);
-      return;
-    } catch (e2) {
-      console.warn('[empresas] fallback legado também falhou:', e2);
-    }
+    console.warn('[empresas] firestore save atómico falhou:', err);
     emitCloudSync(false, err instanceof Error ? err.message : String(err));
+    throw err;
   }
 }
 
@@ -415,37 +473,7 @@ export async function loadEmpresasFromFirestore(
   let officeId: string;
   try { officeId = requireUid(); } catch { return null; }
   try {
-    // Tenta chunks primeiro (novo escalável)
-    try {
-      const snap = await getDocs(chunksCollectionRef(officeId));
-      if (!snap.empty) {
-        const chunks: { idx: number; list: EmpresaRecord[]; updatedAt: number }[] = [];
-        let maxUpdatedAt = 0;
-        snap.forEach(d => {
-          const data = d.data() as { list?: EmpresaRecord[]; updatedAt?: number; chunk?: number };
-          if (Array.isArray(data?.list)) {
-            const idx = typeof data.chunk === 'number' ? data.chunk : parseInt(d.id, 10);
-            chunks.push({ idx: Number.isFinite(idx) ? idx : 0, list: data.list as EmpresaRecord[], updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : 0 });
-            if (typeof data.updatedAt === 'number' && data.updatedAt > maxUpdatedAt) maxUpdatedAt = data.updatedAt;
-          }
-        });
-        if (chunks.length > 0) {
-          chunks.sort((a,b)=>a.idx-b.idx);
-          const merged: EmpresaRecord[] = [];
-          for (const c of chunks) merged.push(...c.list);
-          return { list: merged, updatedAt: maxUpdatedAt };
-        }
-      }
-    } catch (e) {
-      console.warn('[empresas] load chunks falhou, a tentar legado:', e);
-    }
-    // Fallback legado doc único
-    const snap = await getDoc(doc(db, FIRESTORE_COLLECTION, officeId));
-    if (!snap.exists()) return null;
-    const data = snap.data();
-    if (!Array.isArray(data?.list)) return null;
-    const updatedAt = typeof data?.updatedAt === 'number' ? data.updatedAt : 0;
-    return { list: data.list as EmpresaRecord[], updatedAt };
+    return await readOfficeSnapshot(officeId);
   } catch (err) {
     console.warn('[empresas] firestore load falhou:', err);
     return null;
@@ -469,7 +497,8 @@ export function subscribeEmpresasLive(
 ): () => void {
   const uid = getCurrentUid();
   if (!uid) return () => {};
-  const officeId = uid;
+  const officeId = empresasScopeId();
+  if (officeId === SHARED_OFFICE_ID) return () => {};
   // Escuta chunks (novo) + legado doc (compat)
   let cancelled = false;
   let lastMax = getEmpresasStamp();
@@ -621,65 +650,43 @@ async function finalizeEmpresas(officeNif: string | undefined, list: EmpresaReco
  * mais recente sobrepõe-se ao outro. Para um escritório single-user é o
  * comportamento correto e previsível.
  */
-/** Migra uma vez o doc legado `shared` para o doc do utilizador logado.
- *  Estatisticamente é o caso mais comum: quem usava a versão sem login tem tudo
- *  em `shared` e ao criar conta ficaria com lista vazia. Copiamos shared → uid
- *  uma única vez (se o uid ainda não tem dados). Depois o shared deixa de ser usado. */
-async function migrateSharedToUserIfNeeded(): Promise<void> {
+/** Migra os dados antigos da conta para o espaço do gabinete ativo. */
+async function migrateOwnedDataToGabineteIfNeeded(): Promise<void> {
   const uid = getCurrentUid();
   if (!uid) return;
-  const userDoc = await getDoc(doc(db, FIRESTORE_COLLECTION, uid)).catch(()=>null);
-  if (userDoc && userDoc.exists()) return; // já tem dados — não sobrescrever
+  const targetId = empresasScopeId();
+  if (!targetId || targetId === SHARED_OFFICE_ID || targetId === uid) return;
   try {
-    const sharedSnap = await getDoc(doc(db, FIRESTORE_COLLECTION, SHARED_OFFICE_ID));
-    if (!sharedSnap.exists()) return;
-    const data = sharedSnap.data() as { list?: EmpresaRecord[]; updatedAt?: number } | undefined;
-    if (!Array.isArray(data?.list) || data.list.length===0) return;
+    const markerRef = doc(db, MIGRATION_COLLECTION, uid);
+    const marker = await getDoc(markerRef).catch(() => null);
+    if (marker?.exists() && marker.data()?.empresasParaGabinete) return;
+    const [target, owned] = await Promise.all([
+      readOfficeSnapshot(targetId).catch(() => null),
+      readOfficeSnapshot(uid).catch(() => null),
+    ]);
+    // O gabinete já tem uma carteira partilhada: não voltar a importar a cópia
+    // antiga da conta, senão clientes entretanto apagados seriam ressuscitados.
+    if (target?.list.length) {
+      await setDoc(markerRef, { empresasParaGabinete: targetId, at: Date.now() }, { merge: true });
+      return;
+    }
+    if (!owned?.list.length) {
+      await setDoc(markerRef, { empresasParaGabinete: targetId, at: Date.now() }, { merge: true });
+      return;
+    }
     const local = listEmpresas();
-    // Se o localStorage já tem dados (ex: outro browser), prioriza local; senão usa shared
-    const toMigrate = local.length > 0 ? local : data.list;
-    const stamp = local.length > 0 ? getEmpresasStamp() || Date.now() : (data.updatedAt || Date.now());
-    // Escreve no doc do utilizador
-    await setDoc(doc(db, FIRESTORE_COLLECTION, uid), { list: stripSaftXmlForCloud(toMigrate as EmpresaRecord[]), updatedAt: stamp });
-    // Também atualiza cache local se estava vazio
-    if (local.length===0) {
-      adoptRemoteEmpresas(toMigrate as EmpresaRecord[], stamp);
-    }
+    const merged = mergeEmpresasUnion([target?.list || [], local, owned.list]);
+    const stamp = Math.max(getEmpresasStamp(), target?.updatedAt || 0, owned.updatedAt || 0, Date.now());
+    if (merged.length === 0) return;
+    saveEmpresas(merged);
+    await saveEmpresasToFirestore(undefined, merged, Math.max(stamp, getEmpresasStamp()));
+    await setDoc(markerRef, { empresasParaGabinete: targetId, at: Date.now() }, { merge: true });
   } catch (e) {
-    console.warn('[empresas] migração shared→uid falhou:', e);
-  }
-}
-
-
-/** Migra o doc legado `empresas/{uid}` com `{list}` para chunks `chunks/{idx}` (1ª vez). */
-async function migrateLegacyDocToChunksIfNeeded(): Promise<void> {
-  const uid = getCurrentUid();
-  if (!uid) return;
-  try {
-    const csnap = await getDocs(chunksCollectionRef(uid));
-    if (!csnap.empty) return; // já migrado
-    const legacySnap = await getDoc(doc(db, FIRESTORE_COLLECTION, uid));
-    if (!legacySnap.exists()) return;
-    const data = legacySnap.data() as { list?: EmpresaRecord[]; updatedAt?: number } | undefined;
-    if (!Array.isArray(data?.list) || data.list.length === 0) return;
-    const chunks = splitIntoChunks(stripSaftXmlForCloud(data.list as EmpresaRecord[]), CHUNK_SIZE);
-    const updatedAt = typeof data.updatedAt === 'number' ? data.updatedAt : Date.now();
-    const writes: Promise<void>[] = [];
-    for (let i = 0; i < chunks.length; i++) {
-      writes.push(setDoc(chunkDocRef(uid, i), { list: chunks[i], updatedAt, chunk: i }));
-    }
-    await Promise.all(writes);
-    console.log(`[empresas] migrado legado doc (${data.list.length} empresas) para ${chunks.length} chunks`);
-  } catch (e) {
-    console.warn('[empresas] migração doc→chunks falhou:', e);
+    console.warn('[empresas] migração conta→gabinete falhou:', e);
   }
 }
 export async function syncEmpresasFromFirestore(officeNif: string | undefined): Promise<EmpresaRecord[]> {
-  // Migra legado shared → uid na primeira vez que o utilizador entra
-  await migrateSharedToUserIfNeeded();
-  // Mantém compat legada por segurança (não faz nada se já migrado)
-  await migrateLegacyBucketsToShared().catch(()=>{});
-  await migrateLegacyDocToChunksIfNeeded().catch(()=>{});
+  await migrateOwnedDataToGabineteIfNeeded();
 
   const remote = await loadEmpresasFromFirestore(officeNif);
   const local = listEmpresas();
@@ -732,37 +739,6 @@ export function mergeEmpresasUnion(lists: EmpresaRecord[][]): EmpresaRecord[] {
     }
   }
   return dedupeByNif([...byId.values()]);
-}
-
-/**
- * Migração única para o documento partilhado. Lê TODOS os documentos da coleção
- * `empresas` (os baldes antigos por NIF + 'default'), junta-os com a lista local
- * e grava o resultado no documento partilhado. Idempotente (a união converge) e
- * protegida por uma flag em localStorage para não correr a cada arranque.
- */
-async function migrateLegacyBucketsToShared(): Promise<void> {
-  const perUidKey = getCurrentUid() ? `${MIGRATED_KEY}:${getCurrentUid()}` : MIGRATED_KEY;
-  if (loadFromStorage<boolean>(perUidKey, false)) return;
-  try {
-    const snap = await getDocs(collection(db, FIRESTORE_COLLECTION));
-    const lists: EmpresaRecord[][] = [listEmpresas()];
-    snap.forEach(d => {
-      const data = d.data() as { list?: EmpresaRecord[] } | undefined;
-      if (Array.isArray(data?.list)) lists.push(data!.list);
-    });
-    const merged = mergeEmpresasUnion(lists);
-    if (merged.length > 0) {
-      saveEmpresas(merged); // grava local + avança o relógio do registry
-      await setDoc(doc(db, FIRESTORE_COLLECTION, SHARED_OFFICE_ID), {
-        list: stripSaftXmlForCloud(merged),
-        updatedAt: getEmpresasStamp(),
-      });
-    }
-    saveToStorage(perUidKey, true);
-  } catch (err) {
-    // Falha silenciosa — repete-se no próximo arranque (flag não fica marcada).
-    console.warn('[empresas] migração para documento partilhado falhou:', err);
-  }
 }
 
 export function dedupeByNif(list: EmpresaRecord[]): EmpresaRecord[] {

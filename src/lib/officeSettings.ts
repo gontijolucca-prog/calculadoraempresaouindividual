@@ -9,7 +9,8 @@
  * Migração futura: Firestore por utilizador autenticado.
  */
 
-import { loadFromStorage, saveToStorage } from './storage';
+import { clearStorage, loadFromStorage, saveToStorage } from './storage';
+import { getActiveGabineteId } from './gabinetes';
 
 export type EntidadeOutorgante = 'individual' | 'sociedade';
 
@@ -85,16 +86,40 @@ export const defaultOfficeSettings: OfficeSettings = {
   historia: '',
 };
 
-const STORAGE_KEY = 'officeSettings';
+const LEGACY_KEY = 'officeSettings';
+
+function activeGabineteId(): string | null {
+  try { return getActiveGabineteId(); } catch { return null; }
+}
+function storageKey(): string { return `gabinete:officeSettings:${activeGabineteId() || ''}`; }
 
 export function loadOfficeSettings(): OfficeSettings {
-  const s = loadFromStorage<OfficeSettings>(STORAGE_KEY, defaultOfficeSettings);
+  const gabineteId = activeGabineteId();
+  if (!gabineteId) {
+    const legado = loadFromStorage<OfficeSettings | null>(LEGACY_KEY, null);
+    return { ...defaultOfficeSettings, ...(legado || {}) } as OfficeSettings;
+  }
+  const key = storageKey();
+  let s = loadFromStorage<OfficeSettings | null>(key, null);
+  if (!s) {
+    const legado = loadFromStorage<OfficeSettings | null>(LEGACY_KEY, null);
+    if (legado) {
+      s = legado;
+      saveToStorage(key, legado);
+      clearStorage(LEGACY_KEY);
+    }
+  }
   // Merge defaults para campos novos quando o storage antigo não tem o campo
-  return { ...defaultOfficeSettings, ...s } as OfficeSettings;
+  return { ...defaultOfficeSettings, ...(s || {}) } as OfficeSettings;
 }
 
 export function saveOfficeSettings(s: OfficeSettings): void {
-  saveToStorage(STORAGE_KEY, s);
+  if (!activeGabineteId()) {
+    saveToStorage(LEGACY_KEY, s);
+    return;
+  }
+  saveToStorage(storageKey(), s);
+  clearStorage(LEGACY_KEY);
 }
 
 /** Verifica se as definições mínimas estão preenchidas para emitir propostas/contratos. */

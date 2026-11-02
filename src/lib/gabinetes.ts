@@ -30,6 +30,8 @@ export interface GabineteMeta {
   customRoles?: Record<string, { nome: string; permissoes: string[]; createdAt?: number; createdBy?: string }>;
   inviteEmails: string[]; // lowercased
   invites: Array<{ email: string; role: GabineteRole; invitedAt: number; invitedBy: string; invitedByEmail: string; token?: string; expira?: number }>;
+  inviteRoles?: Record<string, GabineteRole>;
+  inviteExpiries?: Record<string, number>;
 }
 
 const FORCE_SELECTOR_KEY = 'gabinete:forceSelector';
@@ -126,8 +128,10 @@ export async function ensureDefaultGabinete(): Promise<string | null> {
     members: { [uid]: { role: 'admin', addedAt: now, email } },
     inviteEmails: [],
     invites: [],
+    inviteRoles: {},
+    inviteExpiries: {},
   };
-  await setDoc(ref, payload as any).catch(() => {});
+  await setDoc(ref, payload as any);
   return uid;
 }
 
@@ -148,6 +152,8 @@ export async function createGabinete(nome: string, nif?: string): Promise<string
     members: { [u.uid]: { role: 'admin', addedAt: now, email } },
     inviteEmails: [],
     invites: [],
+    inviteRoles: {},
+    inviteExpiries: {},
   };
   // NIF é opcional: campo ausente, nunca `undefined` (o setDoc rebenta com undefined)
   const nifTrim = nif?.trim();
@@ -182,8 +188,16 @@ export async function listMyGabinetes(): Promise<{ meus: GabineteMeta[]; convite
       const all = s2.docs.map(d => ({ ...(d.data() as GabineteMeta), id: d.id }));
       // filtra os que já sou membro (evita duplicar)
       const meusIds = new Set(meus.map(g => g.id));
-      convites = all.filter(g => !meusIds.has(g.id));
+      const agora = Date.now();
+      convites = all.filter(g => {
+        if (meusIds.has(g.id)) return false;
+        return (g.invites || []).some(i =>
+          normalizeEmail(i.email) === emailLc
+          && (i.expira || g.inviteExpiries?.[emailLc] || 0) > agora
+        );
+      });
     } catch (e) {
+      erro = true;
       console.warn('[gabinetes] list convites falhou', e);
     }
   }
@@ -203,26 +217,24 @@ export async function acceptInvite(gabineteId: string): Promise<void> {
   if (!snap || !snap.exists()) throw new Error('Gabinete não encontrado');
   const data = snap.data() as GabineteMeta;
   const invite = data.invites?.find(i => normalizeEmail(i.email) === emailLc);
-  // As regras só permitem auto-adesão como contabilista/estagiária/cargo
-  // personalizado (nunca admin). Um convite admin entra como contabilista e o
-  // dono promove depois na Equipa.
-  const role: GabineteRole = (invite?.role as GabineteRole) === 'admin' ? 'contabilista' : ((invite?.role as GabineteRole) || 'contabilista');
+  const expira = invite?.expira || data.inviteExpiries?.[emailLc] || 0;
+  if (!invite) throw new Error('Convite não encontrado. Peça ao gabinete para o enviar novamente.');
+  if (expira <= Date.now()) throw new Error('Este convite expirou. Peça ao gabinete um convite novo.');
+  const role: GabineteRole = (data.inviteRoles?.[emailLc] || invite.role) as GabineteRole;
+  if (!role) throw new Error('O cargo do convite não está definido.');
+  const rolesRestantes = { ...(data.inviteRoles || {}) };
+  const expiriesRestantes = { ...(data.inviteExpiries || {}) };
+  delete rolesRestantes[emailLc];
+  delete expiriesRestantes[emailLc];
   // adiciona membro e remove convite
   await withTimeout(updateDoc(ref, {
     memberUids: arrayUnion(u.uid),
     [`members.${u.uid}`]: { role, addedAt: Date.now(), email: u.email || '' },
     inviteEmails: arrayRemove(emailLc),
+    inviteRoles: rolesRestantes,
+    inviteExpiries: expiriesRestantes,
     updatedAt: Date.now(),
-  } as any), 6000, 'aceitar convite').catch(async () => {
-    // fallback se campo não existir
-    await setDoc(ref, {
-      memberUids: [...(data.memberUids || []), u.uid],
-      members: { ...(data.members || {}), [u.uid]: { role, addedAt: Date.now(), email: u.email || '' } },
-      inviteEmails: (data.inviteEmails || []).filter(e => e !== emailLc),
-      invites: (data.invites || []).filter(i => normalizeEmail(i.email) !== emailLc),
-      updatedAt: Date.now(),
-    } as any, { merge: true });
-  });
+  } as any), 6000, 'aceitar convite');
   // Confirmar no servidor: sem isto a app entrava num gabinete onde as regras
   // ainda não reconhecem o membro (tudo dava 403 depois, em silêncio).
   const confirmacao = await getDoc(ref).catch(() => null);
@@ -230,6 +242,9 @@ export async function acceptInvite(gabineteId: string): Promise<void> {
   const eMembro = !!metaFinal && (metaFinal.ownerUid === u.uid || (metaFinal.memberUids || []).includes(u.uid));
   if (!eMembro) {
     throw new Error('O convite não foi aceite no servidor. Peça ao admin do gabinete para o enviar novamente.');
+  }
+  if (invite.token) {
+    try { await deleteDoc(doc(db, 'convites', invite.token)); } catch { /* expira pela regra/7 dias */ }
   }
 
   // Marca o colaborador como ativo (a lista da Equipa deixa de dizer "pendente").
@@ -248,15 +263,6 @@ export async function acceptInvite(gabineteId: string): Promise<void> {
     }
   } catch { /* sem permissão — a aceitação já foi confirmada acima */ }
 
-  // também limpar invites array
-  try {
-    const fresh = await getDoc(ref);
-    const d = fresh.data() as GabineteMeta;
-    const filtered = (d.invites || []).filter(i => normalizeEmail(i.email) !== emailLc);
-    if (filtered.length !== (d.invites || []).length) {
-      await updateDoc(ref, { invites: filtered } as any);
-    }
-  } catch {}
 }
 
 export async function declineInvite(gabineteId: string): Promise<void> {
@@ -264,18 +270,18 @@ export async function declineInvite(gabineteId: string): Promise<void> {
   if (!u) throw new Error('Não autenticado');
   const emailLc = normalizeEmail(u.email || '');
   const ref = doc(db, 'gabinetes', gabineteId);
+  const snap = await getDoc(ref);
+  const data = snap.exists() ? snap.data() as GabineteMeta : null;
+  const rolesRestantes = { ...(data?.inviteRoles || {}) };
+  const expiriesRestantes = { ...(data?.inviteExpiries || {}) };
+  delete rolesRestantes[emailLc];
+  delete expiriesRestantes[emailLc];
   await updateDoc(ref, {
     inviteEmails: arrayRemove(emailLc),
+    inviteRoles: rolesRestantes,
+    inviteExpiries: expiriesRestantes,
     updatedAt: Date.now(),
-  } as any).catch(() => {});
-  try {
-    const snap = await getDoc(ref);
-    if (snap.exists()) {
-      const d = snap.data() as GabineteMeta;
-      const filtered = (d.invites || []).filter(i => normalizeEmail(i.email) !== emailLc);
-      await updateDoc(ref, { invites: filtered } as any).catch(() => {});
-    }
-  } catch {}
+  } as any);
 }
 
 export function novoTokenConvite(): string {
@@ -362,10 +368,15 @@ export async function inviteToGabinete(gabineteId: string, email: string, role: 
   try {
     await withTimeout(updateDoc(ref, {
       inviteEmails: arrayUnion(emailLc),
-      invites: arrayUnion({
+      invites: [
+        ...(data.invites || []).filter(i => normalizeEmail(i.email) !== emailLc),
+        {
         email: emailLc, role, invitedAt: Date.now(), invitedBy: u.uid, invitedByEmail: u.email || '', expira,
         ...(token ? { token } : {}),
-      }),
+        },
+      ],
+      inviteRoles: { ...(data.inviteRoles || {}), [emailLc]: role },
+      inviteExpiries: { ...(data.inviteExpiries || {}), [emailLc]: expira },
       updatedAt: Date.now(),
     } as any), 6000, 'convite');
   } catch (e) {
@@ -405,6 +416,8 @@ export async function removeFromGabinete(gabineteId: string, email: string, uid?
     memberUids: (data.memberUids || []).filter(x => x === data.ownerUid || !removidos.has(x)),
     inviteEmails: (data.inviteEmails || []).filter(e => e !== emailLc),
     invites: (data.invites || []).filter(i => normalizeEmail(i.email) !== emailLc),
+    inviteRoles: Object.fromEntries(Object.entries(data.inviteRoles || {}).filter(([email]) => normalizeEmail(email) !== emailLc)),
+    inviteExpiries: Object.fromEntries(Object.entries(data.inviteExpiries || {}).filter(([email]) => normalizeEmail(email) !== emailLc)),
     members,
     updatedAt: Date.now(),
   } as any);
@@ -418,6 +431,11 @@ export async function removeFromGabinete(gabineteId: string, email: string, uid?
 // por ecrã (cargo, equipa, topo), consumindo leituras sem necessidade.
 const metaCache = new Map<string, { at: number; meta: GabineteMeta | null }>();
 const META_TTL_MS = 15_000;
+
+export function clearGabineteMemoryCache(): void {
+  metaCache.clear();
+  void import('./permissions').then((m) => m.setCustomRolesCache({})).catch(() => {});
+}
 
 export async function getGabineteMeta(id: string, opts?: { force?: boolean }): Promise<GabineteMeta | null> {
   const cached = metaCache.get(id);
@@ -461,8 +479,40 @@ export async function atualizarCargoColaborador(gabineteId: string, email: strin
     }
   }
   const invites = (data.invites || []).map(i => normalizeEmail(i.email) === emailLc ? { ...i, role } : i);
+  const inviteRoles = { ...(data.inviteRoles || {}) };
+  if (normalizeEmail(data.ownerEmail || '') !== emailLc && invites.some(i => normalizeEmail(i.email) === emailLc)) {
+    inviteRoles[emailLc] = role;
+  }
   if (!alterado && invites.every(i => normalizeEmail(i.email) !== emailLc)) return;
-  await updateDoc(ref, { members, invites, updatedAt: Date.now() } as any);
+  await updateDoc(ref, { members, invites, inviteRoles, updatedAt: Date.now() } as any);
+}
+
+/** Preenche os índices novos para convites criados antes da correção de segurança. */
+export async function backfillInviteIndexes(meta: GabineteMeta): Promise<GabineteMeta> {
+  if (!meta?.id || !(meta.invites || []).length) return meta;
+  const roles = { ...(meta.inviteRoles || {}) };
+  const expiries = { ...(meta.inviteExpiries || {}) };
+  let alterado = false;
+  const ordenados = [...(meta.invites || [])].sort((a, b) => (a.invitedAt || 0) - (b.invitedAt || 0));
+  for (const invite of ordenados) {
+    const email = normalizeEmail(invite.email);
+    if (!email) continue;
+    const expira = invite.expira || ((invite.invitedAt || meta.updatedAt || Date.now()) + 7 * 24 * 60 * 60 * 1000);
+    if (roles[email] !== invite.role) { roles[email] = invite.role; alterado = true; }
+    if (expiries[email] !== expira) { expiries[email] = expira; alterado = true; }
+  }
+  if (!alterado) return meta;
+  try {
+    await withTimeout(updateDoc(doc(db, 'gabinetes', meta.id), {
+      inviteRoles: roles,
+      inviteExpiries: expiries,
+      updatedAt: Date.now(),
+    } as any), 6000, 'índices de convites');
+    metaCache.delete(meta.id);
+    return { ...meta, inviteRoles: roles, inviteExpiries: expiries };
+  } catch {
+    return meta;
+  }
 }
 
 function membroEhDono(uid: string, data: GabineteMeta): boolean {

@@ -11,7 +11,7 @@ import {
 import { db, auth } from './firebase';
 import { loadFromStorage, saveToStorage } from './storage';
 import { logAudit } from './audit';
-import { beginWrite, endWrite, enqueueOp, listOps, dropOp, bumpTries, saveOps, clearSyncError } from './sync';
+import { beginWrite, endWrite, enqueueOp, listOps, dropOp, bumpTries, saveOps, clearSyncError, mergeQueueAfterFlush } from './sync';
 import { tarefaFromAssunto, type AssuntoLegacy } from './gabineteSelectors';
 import type { CofreCipher } from './cofreCrypto';
 import { CALENDARIO_FISCAL_2026 } from './calendarioFiscal2026';
@@ -184,6 +184,7 @@ export async function flushOutbox(): Promise<number> {
       }
     }
   }
+  remaining = mergeQueueAfterFlush(ops, listOps(), remaining);
   saveOps(remaining);
   if (remaining.length === 0) clearSyncError();
   return done;

@@ -1,9 +1,11 @@
 import type { ClientProfile } from '../ClientProfile';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
+import { loadFromStorage, saveToStorage } from './storage';
+import { getActiveGabineteId } from './gabinetes';
 
-const FIRESTORE_DOC = 'pricing';
-const FIRESTORE_COL = 'config';
+const META_DOC = 'pricing';
+const LEGACY_STORAGE_KEY = 'recofa_pricing';
 
 export interface PricingConfig {
   // Contabilidade mensal base (€/mês)
@@ -49,7 +51,11 @@ export interface ClientEstimate {
   entityLabel: string;
 }
 
-const STORAGE_KEY = 'recofa_pricing';
+function storageKey(): string {
+  let gabineteId = '';
+  try { gabineteId = getActiveGabineteId() || ''; } catch { /* sessão ainda a arrancar */ }
+  return `gabinete:pricing:${gabineteId}`;
+}
 
 export function defaultPricing(): PricingConfig {
   return {
@@ -72,21 +78,42 @@ export function defaultPricing(): PricingConfig {
 
 export function loadPricing(): PricingConfig {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultPricing();
-    return { ...defaultPricing(), ...JSON.parse(raw) };
+    if (!getActiveGabineteId()) {
+      const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+      return raw ? { ...defaultPricing(), ...JSON.parse(raw) } : defaultPricing();
+    }
+    const scoped = loadFromStorage<PricingConfig | null>(storageKey(), null);
+    if (scoped) return { ...defaultPricing(), ...scoped };
+    try {
+      const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (raw) {
+        const legado = JSON.parse(raw) as Partial<PricingConfig>;
+        const migrado = { ...defaultPricing(), ...legado };
+        saveToStorage(storageKey(), migrado);
+        localStorage.removeItem(LEGACY_STORAGE_KEY);
+        return migrado;
+      }
+    } catch {}
+    return defaultPricing();
   } catch {
     return defaultPricing();
   }
 }
 
 export function savePricing(p: PricingConfig): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
+  if (!getActiveGabineteId()) {
+    try { localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(p)); } catch {}
+    return;
+  }
+  saveToStorage(storageKey(), p);
+  try { localStorage.removeItem(LEGACY_STORAGE_KEY); } catch {}
 }
 
 export async function loadPricingFromFirestore(): Promise<PricingConfig | null> {
+  const gabineteId = getActiveGabineteId();
+  if (!gabineteId) return null;
   try {
-    const snap = await getDoc(doc(db, FIRESTORE_COL, FIRESTORE_DOC));
+    const snap = await getDoc(doc(db, 'gabinetes', gabineteId, 'settings', META_DOC));
     if (snap.exists()) return { ...defaultPricing(), ...snap.data() } as PricingConfig;
     return null;
   } catch {
@@ -94,11 +121,14 @@ export async function loadPricingFromFirestore(): Promise<PricingConfig | null> 
   }
 }
 
-export async function savePricingToFirestore(p: PricingConfig): Promise<void> {
+export async function savePricingToFirestore(p: PricingConfig): Promise<boolean> {
+  const gabineteId = getActiveGabineteId();
+  if (!gabineteId) return false;
   try {
-    await setDoc(doc(db, FIRESTORE_COL, FIRESTORE_DOC), p);
+    await setDoc(doc(db, 'gabinetes', gabineteId, 'settings', META_DOC), p, { merge: true });
+    return true;
   } catch {
-    // silently fail — localStorage still has the data
+    return false;
   }
 }
 

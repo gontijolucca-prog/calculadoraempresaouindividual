@@ -449,21 +449,35 @@ function AppContent() {
   // gabinete ativo válido. Antes só aceitava quando havia exatamente um e
   // desistia se existisse um activeId antigo — a pessoa entrava sem gabinete.
   const autoConviteRef = useRef<string>('');
+  const autoConviteTentativasRef = useRef(0);
+  const autoConviteUidRef = useRef<string>('');
+  const [autoConviteNonce, setAutoConviteNonce] = useState(0);
   useEffect(() => {
     if (!user || conviteToken) return; // o link no URL tem o efeito acima
+    if (autoConviteUidRef.current !== user.uid) {
+      autoConviteUidRef.current = user.uid;
+      autoConviteTentativasRef.current = 0;
+    }
     if (autoConviteRef.current === user.uid) return;
-    autoConviteRef.current = user.uid;
+    if (autoConviteTentativasRef.current >= 3) return;
+    autoConviteTentativasRef.current++;
     (async () => {
       try {
         const g = await import('./lib/gabinetes');
         const emailLc = (user.email || '').trim().toLowerCase();
+        const agora = Date.now();
         let aceitou = false;
         const { meus, convites, erro } = await g.listMyGabinetes();
+        if (erro) throw new Error('Não foi possível confirmar a associação ao gabinete.');
         for (const conv of convites) {
-          const doEmail = (conv.invites || []).some((i) => String(i.email || '').trim().toLowerCase() === emailLc);
+          const conviteDoEmail = (conv.invites || [])
+            .filter((i) => String(i.email || '').trim().toLowerCase() === emailLc)
+            .find((i) => (i.expira || conv.inviteExpiries?.[emailLc] || 0) > agora);
+          const doEmail = !!conviteDoEmail;
           if (!doEmail) continue;
           const token = (conv.invites || [])
             .filter((i) => String(i.email || '').trim().toLowerCase() === emailLc)
+            .filter((i) => (i.expira || conv.inviteExpiries?.[emailLc] || 0) > agora)
             .pop()?.token || '';
           try {
             await g.acceptInvite(conv.id);
@@ -497,11 +511,16 @@ function AppContent() {
           setGabineteNonce((n) => n + 1);
           setEmpresasRefresh((n) => n + 1);
         }
+        autoConviteRef.current = user.uid;
+        autoConviteTentativasRef.current = 0;
       } catch (e) {
         console.warn('[convite] aceitação automática falhou', e);
+        if (autoConviteTentativasRef.current < 3) {
+          window.setTimeout(() => setAutoConviteNonce((n) => n + 1), 1500 * autoConviteTentativasRef.current);
+        }
       }
     })();
-  }, [user, conviteToken]);
+  }, [user, conviteToken, autoConviteNonce]);
 
   useEffect(() => { if (VALID_GAB_TABS.has(gabineteTab)) saveToStorage('gabineteTab', gabineteTab); else saveToStorage('gabineteTab', 'gallery'); }, [gabineteTab]);
 
@@ -698,6 +717,12 @@ function AppContent() {
   useEffect(() => { saveToStorage('lastView', view); }, [view]);
   useEffect(() => { saveOfficeSettings(officeSettings); }, [officeSettings]);
   useEffect(() => { saveHonorariosConfig(honorariosConfig); }, [honorariosConfig]);
+  // Branding, IBAN e honorários são definições de cada gabinete. Ao trocar,
+  // recarrega o conjunto do novo tenant em vez de manter o anterior em memória.
+  useEffect(() => {
+    setOfficeSettings(loadOfficeSettings());
+    setHonorariosConfig(loadHonorariosConfig());
+  }, [gabineteNonce]);
 
   // Mudança de projeto Firebase: tokens antigos são inválidos no novo. Força
   // um único logout para todos entrarem de novo (passwords preservadas).
@@ -835,30 +860,34 @@ function AppContent() {
   // O doc legado 'shared' é migrado uma vez para o uid na primeira autenticação.
   useEffect(() => {
     if (!isAuthenticated) return;
+    lastCloudStampRef.current = 0;
     let cancelled = false;
     (async () => {
       const merged = await syncEmpresasFromFirestore(officeSettings.nif);
       if (cancelled) return;
       setEmpresasRefresh(n => n + 1);
-      // Se a empresa atual foi carregada da cloud, atualiza o perfil em memória.
-      if (currentEmpresaId) {
-        const emp = merged.find(e => e.id === currentEmpresaId);
+      // O cliente ativo também é namespaced por gabinete.
+      const scopedCurrentId = getCurrentEmpresaId();
+      if (scopedCurrentId) {
+        const emp = merged.find(e => e.id === scopedCurrentId);
         if (emp) loadEmpresaIntoState(emp);
-        else if (merged.length > 0) {
-          // O cliente ativo já não existe (apagado noutro dispositivo) — limpa
-          // o estado ativo em vez de ficar preso em “Cliente sem nome”.
+        setCurrentEmpresaIdState(emp ? scopedCurrentId : null);
+        if (!emp) {
           setCurrentEmpresaId(null);
-          setCurrentEmpresaIdState(null);
           setClientProfile({ ...defaultProfile });
           setPreviSaState(defaultPreviSaState());
         }
+      } else if (currentEmpresaId && !merged.some(e => e.id === currentEmpresaId)) {
+        setCurrentEmpresaIdState(null);
+        setClientProfile({ ...defaultProfile });
+        setPreviSaState(defaultPreviSaState());
       }
     })();
     return () => { cancelled = true; };
     // Intencionalmente apenas no início de sessão (não a cada mudança de office.nif
     // para evitar sync infinitos quando a UI das definições do escritório está aberta).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated]);
+  }, [isAuthenticated, gabineteNonce]);
 
   // Empurra alterações ao registry para Firestore com debounce de 2s.
   useEffect(() => {
@@ -875,7 +904,7 @@ function AppContent() {
       saveEmpresasToFirestore(officeSettings.nif, listEmpresas(), stamp).catch(() => { lastCloudStampRef.current = 0; });
     }, 2000);
     return () => clearTimeout(t);
-  }, [isAuthenticated, clientProfile, previSaState, currentEmpresaId, empresasRefresh, officeSettings.nif]);
+  }, [isAuthenticated, clientProfile, previSaState, currentEmpresaId, empresasRefresh, officeSettings.nif, gabineteNonce]);
 
   // Listener LIVE do registry na cloud: quando OUTRO computador cria/edita/
   // elimina uma empresa, este adota a lista na hora — sem refresh. É isto que
@@ -908,7 +937,7 @@ function AppContent() {
     // officeSettings.nif é irrelevante na prática (doc por uid); não
     // ressuscitar a subscrição quando as definições mudam.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated]);
+  }, [isAuthenticated, gabineteNonce]);
 
   // Cross-fill: Diagnóstico vai buscar dados ao Previsa quando ainda está vazio
   useEffect(() => {
@@ -993,12 +1022,6 @@ function AppContent() {
     }
     prevUidRef.current = uid;
   }, [user?.uid]);
-
-  // Migra dados legados do Gabinete shared → uid na primeira autenticação
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    import('./lib/gabinete').then(m => m.migrateGabineteSharedToUser().catch(()=>{}));
-  }, [isAuthenticated]);
 
   const botSaftInputRef = useRef<HTMLInputElement>(null);
   const botSaftTargetRef = useRef<'novo' | 'empresa'>('novo');

@@ -88,4 +88,20 @@ export function dropOpById(id: string): void { writeQueue(dropOp(readQueue(), id
 export function bumpTries(list: OutboxOp[], id: string): OutboxOp[] {
   return list.map(x => (x.id === id ? { ...x, tries: x.tries + 1 } : x));
 }
+/**
+ * Mescla operações adicionadas durante um flush com o resultado da fotografia
+ * inicial. Sem isto, o `saveOps(remaining)` final apagava alterações novas.
+ */
+export function mergeQueueAfterFlush(
+  processados: OutboxOp[],
+  atuais: OutboxOp[],
+  restantes: OutboxOp[],
+): OutboxOp[] {
+  const idsProcessados = new Set(processados.map((op) => op.id));
+  let out = restantes;
+  for (const op of atuais) {
+    if (!idsProcessados.has(op.id)) out = upsertOp(out, op);
+  }
+  return out;
+}
 export function saveOps(list: OutboxOp[]): void { writeQueue(list); emit(); }

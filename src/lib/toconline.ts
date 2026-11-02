@@ -137,9 +137,12 @@ export function buildTocAuthUrl(cfg: TocConfig, state: string): string {
 }
 
 async function callTocProxy(payload: Record<string, unknown>): Promise<any> {
+  const { auth } = await import('./firebase');
+  const idToken = await auth.currentUser?.getIdToken();
+  if (!idToken) throw new Error('A sessão expirou. Entre novamente para ligar ao TOConline.');
   const r = await fetch('/api/toconline', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
     body: JSON.stringify(payload),
   });
   const j = await r.json().catch(() => ({}));
