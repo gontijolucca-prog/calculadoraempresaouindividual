@@ -58,6 +58,12 @@ const testedCards = page.locator('#novidades .card .test');
 check(await changelogCards.count() === await testedCards.count(), 'todos os cartões do changelog indicam como testar');
 const timelineText = await page.locator('#novidades .timeline').innerText();
 check(!/firestore|base de dados|servidor|deploy|pipeline|quota/i.test(timelineText), 'changelog não lista trabalho técnico invisível');
+const changelogPdfLinks = await page.locator('#documentos a[data-pdf]').evaluateAll((links) => links.map((link) => link.href));
+check(changelogPdfLinks.length === 26, `changelog lista diretamente os 26 PDFs (${changelogPdfLinks.length})`);
+for (const href of changelogPdfLinks) {
+  const response = await page.request.get(href);
+  check(response.status() === 200, `${href.split('/').pop()} abre a partir do changelog`);
+}
 const examplesResponse = await page.request.get(new URL('exemplos-exportacoes-2026-11-03/index.html', BASE).href);
 check(examplesResponse.status() === 200, 'pasta de exemplos dos 26 PDFs responde 200');
 await page.goto(new URL('exemplos-exportacoes-2026-11-03/index.html', BASE).href, { waitUntil: 'domcontentloaded' });

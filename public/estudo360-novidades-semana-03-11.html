@@ -102,6 +102,8 @@
   .file .fn{flex:none;padding:2px 6px;border:1px solid var(--line);border-radius:5px;background:var(--paper-2);font-family:"JetBrains Mono",monospace;font-size:9.5px}
   .file .fc{min-width:0}
   .file b{display:block;font-size:11.8px}.file span{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+  .doc-intro{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:8px;font-size:12.5px;color:var(--muted)}
+  .doc-intro b{color:var(--ink)}
   .next-top{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}
   .np-status{display:inline-flex;align-items:center;gap:7px;padding-top:3px;font-size:11.5px;color:var(--muted)}
   .dotk{width:7px;height:7px;border-radius:50%;background:#c6cbd3}.dotk.ok{background:var(--green)}.dotk.err{background:var(--rose)}
@@ -139,6 +141,7 @@
     .hero-card .num{font-size:38px}
     .hero-card .num small{display:block;margin-top:7px;font-family:Montserrat,"Helvetica Neue",sans-serif;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:0}
     .test-rule{align-items:flex-start;flex-direction:column;gap:9px}
+    .doc-intro{align-items:flex-start;flex-direction:column;gap:4px}
     .day{padding-left:52px}.timeline::before{left:18px}.when{width:36px}.knob{width:29px;height:29px}
     .highlight,.matrix{grid-template-columns:1fr}
     .svat,.next-card{padding:20px 17px}
@@ -153,6 +156,7 @@
     <div class="brand">Estudo<span>360</span></div>
     <nav aria-label="Navegação da atualização">
       <a href="#novidades">Novidades</a>
+      <a href="#documentos">26 PDFs</a>
       <a href="#svat">SVAT</a>
       <a href="#proximos">Próximos passos</a>
       <a href="estudo360-novidades-semana-26-10">Reunião de 28/10</a>
@@ -174,7 +178,7 @@
       </div>
       <div class="cta">
         <a class="btn primary" href="#novidades">Ver o que mudou</a>
-        <a class="btn ghost" href="#svat">Ler o estado SVAT</a>
+        <a class="btn ghost" href="#documentos">Rever os 26 PDFs</a>
       </div>
     </div>
     <aside class="hero-card reveal">
@@ -221,7 +225,7 @@
         </div>
         <div class="card reveal">
           <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M9 13h6M9 17h6"/></svg></div>
-          <div class="body"><span class="tag green">Documentos</span><div class="txt"><b>Foram revistos todos os documentos exportáveis e criada uma pasta com um exemplo de cada PDF.</b> São 26 documentos, todos numa página A4, com cliente, escritório, valores e informação própria do documento.</div><div class="test"><b>Testar</b><a href="exemplos-exportacoes-2026-11-03/index.html" style="color:#0558c9;font-weight:700">Abrir a pasta de exemplos</a> e rever documento por documento.</div></div>
+          <div class="body"><span class="tag green">Documentos</span><div class="txt"><b>Foram revistos todos os documentos exportáveis e reunidos nesta página.</b> São 26 documentos, todos numa página A4, com cliente, escritório, valores e informação própria do documento.</div><div class="test"><b>Testar</b><a href="#documentos" style="color:#0558c9;font-weight:700">Ver os 26 PDFs abaixo</a> e rever documento por documento.</div></div>
         </div>
       </article>
 
@@ -302,6 +306,42 @@
       <div class="stat"><b>1 folha</b><span>Documentos completos e portáteis, sem segunda página.</span></div>
       <div class="stat"><b>Sem emails</b><span>Contas da equipa criadas dentro da própria aplicação.</span></div>
       <div class="stat"><b>Por gabinete</b><span>Dados, cofre, tarefas e permissões isolados.</span></div>
+    </div>
+  </section>
+
+  <section id="documentos">
+    <div class="sec-head reveal">
+      <div><div class="overline">Revisão documental</div><h2>26 PDFs, um exemplo de cada</h2></div>
+      <div class="side">Todos com uma página A4</div>
+    </div>
+    <div class="doc-intro reveal"><span>Cada ligação abre o PDF real exportado pelo Estudo360.</span><span><b>26/26</b> revistos</span></div>
+    <div class="files reveal">
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/01-simulacao-fiscal.pdf" target="_blank" rel="noopener"><span class="fn">01</span><span class="fc"><b>Simulador Fiscal</b><span>ENI vs Sociedade, parâmetros, comparação, recomendação e enquadramento.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/02-simulacao-viaturas.pdf" target="_blank" rel="noopener"><span class="fn">02</span><span class="fc"><b>Simulador de Viaturas</b><span>IVA, tributação autónoma, depreciação e formas de aquisição.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/03-simulacao-aquisicao.pdf" target="_blank" rel="noopener"><span class="fn">03</span><span class="fc"><b>Simulador de Aquisição</b><span>Compra, crédito, leasing e renting com o regime fiscal escolhido.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/04-simulacao-tickets.pdf" target="_blank" rel="noopener"><span class="fn">04</span><span class="fc"><b>Tickets e Benefícios</b><span>Custo, poupança, limites isentos e enquadramento fiscal.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/05-seguranca-social-independente.pdf" target="_blank" rel="noopener"><span class="fn">05</span><span class="fc"><b>SS Independente</b><span>Base de incidência, contribuição mensal, anual e regras aplicáveis.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/06-diagnostico-autonomia.pdf" target="_blank" rel="noopener"><span class="fn">06</span><span class="fc"><b>Diagnóstico de Autonomia</b><span>Cinco pilares, scores, pontos fortes, riscos e plano de ação.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/07-imoveis-na-empresa.pdf" target="_blank" rel="noopener"><span class="fn">07</span><span class="fc"><b>Imóveis na Empresa</b><span>Arrendamento, comodato ou entrada em espécie, IMT, selo e impacto fiscal.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/08-simulacao-imt.pdf" target="_blank" rel="noopener"><span class="fn">08</span><span class="fc"><b>IMT e Imposto do Selo</b><span>Valor, localização, tipo de imóvel, taxa, benefícios e total.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/09-salario-liquido.pdf" target="_blank" rel="noopener"><span class="fn">09</span><span class="fc"><b>Salário Líquido</b><span>Bruto, descontos, líquido, custo empregador e pressupostos.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/10-simulacao-irs.pdf" target="_blank" rel="noopener"><span class="fn">10</span><span class="fc"><b>IRS — Modelo 3</b><span>Agregado, rendimentos, deduções, taxa, imposto e resultado.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/11-previsa-modelo-22.pdf" target="_blank" rel="noopener"><span class="fn">11</span><span class="fc"><b>Previsa — Modelo 22</b><span>Q07, Q09, Q10, IRC, derramas, tributação autónoma e notas.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/12-ficha-simulacao-cliente.pdf" target="_blank" rel="noopener"><span class="fn">12</span><span class="fc"><b>Ficha de simulação do cliente</b><span>Resumo executivo com identificação, fiscalidade, resultados e honorários.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/13-ficha-360-gabinete.pdf" target="_blank" rel="noopener"><span class="fn">13</span><span class="fc"><b>Ficha 360 do gabinete</b><span>Cliente, obrigações, alertas, contactos, tarefas e orientações.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/14-quadro-obrigacoes.pdf" target="_blank" rel="noopener"><span class="fn">14</span><span class="fc"><b>Quadro Resumo de Obrigações</b><span>Matriz anual de obrigações por cliente e estado.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/15-mapa-controlo.pdf" target="_blank" rel="noopener"><span class="fn">15</span><span class="fc"><b>Mapa de Controlo</b><span>Pilares de controlo por cliente e mês, com filtros refletidos no PDF.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/16-mapa-rh.pdf" target="_blank" rel="noopener"><span class="fn">16</span><span class="fc"><b>Mapa RH</b><span>Pilares de recursos humanos por cliente e mês.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/17-proposta-honorarios.pdf" target="_blank" rel="noopener"><span class="fn">17</span><span class="fc"><b>Proposta de Honorários</b><span>Serviços, mensalidade, totais, condições e dados do escritório.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/18-minuta-contrato.pdf" target="_blank" rel="noopener"><span class="fn">18</span><span class="fc"><b>Minuta de Contrato</b><span>Partes, objeto, serviços, honorários, obrigações, duração e foro.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/19-proposta-comercial.pdf" target="_blank" rel="noopener"><span class="fn">19</span><span class="fc"><b>Proposta Comercial</b><span>Síntese dos sete blocos da proposta com branding e próximo passo.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/20-demonstracao-resultados.pdf" target="_blank" rel="noopener"><span class="fn">20</span><span class="fc"><b>Demonstração dos Resultados</b><span>Rendimentos, gastos, EBITDA, resultado operacional, impostos e líquido.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/21-alteracoes-capital-proprio.pdf" target="_blank" rel="noopener"><span class="fn">21</span><span class="fc"><b>Alterações no Capital Próprio</b><span>Capital, reservas, resultados e movimentos do período.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/22-fluxos-caixa.pdf" target="_blank" rel="noopener"><span class="fn">22</span><span class="fc"><b>Fluxos de Caixa</b><span>Atividades operacionais, investimento, financiamento e variação de caixa.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/23-balanco.pdf" target="_blank" rel="noopener"><span class="fn">23</span><span class="fc"><b>Balanço</b><span>Ativo, capital próprio, passivo, totais e comparação com abertura.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/24-demonstracoes-financeiras-sintese.pdf" target="_blank" rel="noopener"><span class="fn">24</span><span class="fc"><b>Demonstrações Financeiras — Síntese</b><span>Visão consolidada de Balanço, Resultados, Capital Próprio e Fluxos.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/25-ata-assembleia-geral.pdf" target="_blank" rel="noopener"><span class="fn">25</span><span class="fc"><b>Ata de Assembleia Geral</b><span>Convocatória, sócios, deliberações, resultado e assinaturas.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/26-declaracao-responsabilidade.pdf" target="_blank" rel="noopener"><span class="fn">26</span><span class="fc"><b>Declaração de Responsabilidade</b><span>Entidade, contabilista, cédula, declarações e assinatura da gerência.</span></span></a>
     </div>
   </section>
 
