@@ -11,6 +11,7 @@
     "lint": "tsc --noEmit",
     "test": "for f in src/lib/*.test.ts src/lib/deck/*.test.ts functions/*.test.ts; do node --import tsx \"$f\" || exit 1; done",
     "audit:segredos": "node scripts/audit-segredos.mjs",
+    "audit:pdf-palette": "node scripts/audit-pdf-palette.mjs",
     "migrar:equipa": "node --import tsx scripts/migrar-equipa-credenciais.ts",
     "tauri": "tauri"
   },

@@ -488,7 +488,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
         imprimirUmaFolha('minuta-resumo-print', { piso: 0.8, seletor: '.mr-wrap' });
         setTimeout(() => { fechar(); holder.remove(); }, 60000);
       } catch {
-        imprimirUmaFolha(PKG_ROOT_ID[docId], { piso: 0.45 });
+        imprimirUmaFolha(PKG_ROOT_ID[docId], { piso: 0.8 });
         setTimeout(() => setPrintingPkg(false), 1800);
       }
       return;
@@ -500,7 +500,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
       const fechar = () => setPrintingPkg(false);
       window.addEventListener('afterprint', fechar, { once: true });
       try {
-        imprimirUmaFolha(PKG_ROOT_ID[docId], { piso: 0.45 });
+        imprimirUmaFolha(PKG_ROOT_ID[docId], { piso: 1 });
       } finally {
         setTimeout(fechar, 800);
       }

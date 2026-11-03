@@ -58,6 +58,9 @@ const testedCards = page.locator('#novidades .card .test');
 check(await changelogCards.count() === await testedCards.count(), 'todos os cartões do changelog indicam como testar');
 const timelineText = await page.locator('#novidades .timeline').innerText();
 check(!/firestore|base de dados|servidor|deploy|pipeline|quota/i.test(timelineText), 'changelog não lista trabalho técnico invisível');
+const closedNotes = page.locator('#fechadas .closed');
+check(await closedNotes.count() === 6, `notas da reunião anterior fechadas (${await closedNotes.count()})`);
+check((await page.locator('#fechadas .closed .ok').allInnerTexts()).every((text) => /concluído/i.test(text)), 'todas as notas anteriores estão marcadas como concluídas');
 const changelogPdfLinks = await page.locator('#documentos a[data-pdf]').evaluateAll((links) => links.map((link) => link.href));
 check(changelogPdfLinks.length === 26, `changelog lista diretamente os 26 PDFs (${changelogPdfLinks.length})`);
 for (const href of changelogPdfLinks) {

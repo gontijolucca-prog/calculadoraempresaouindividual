@@ -11,6 +11,8 @@
  */
 // Polyfill paged.js auto-hospedado em public/ (o package bloqueia deep-imports
 // via "exports"; servir como asset estático mantém a impressão offline-safe).
+import { PDF_COLORS as C } from './pdfTheme';
+
 // A query de versão evita que o browser sirva uma cópia antiga do cache quando
 // o polyfill for atualizado — bump ao trocar a versão do ficheiro em public/.
 const pagedPolyfillUrl = '/paged.polyfill.js?v=0.4.3';
@@ -103,16 +105,16 @@ function buildPageBreakCss(footerLeft: string, footerRight: string): string {
     .pp-foot-injected {
       position: absolute; left: 16mm; right: 16mm; bottom: 8mm;
       display: flex; justify-content: space-between; align-items: baseline;
-      font: 8pt Georgia, serif; color: #94A3B8; pointer-events: none;
+      font: 8pt Georgia, serif; color: ${C.medium}; pointer-events: none;
     }
     @page {
       size: A4; margin: 18mm 16mm 20mm 16mm;
       @bottom-center {
         content: "Página " counter(page) " de " counter(pages);
-        font: 9pt Georgia, 'Times New Roman', serif; color: #64748B;
+        font: 9pt Georgia, 'Times New Roman', serif; color: ${C.medium};
       }
-      @bottom-left  { content: "${cssStr(footerLeft)}";  font: 8pt Georgia, serif; color: #94A3B8; }
-      @bottom-right { content: "${cssStr(footerRight)}"; font: 8pt Georgia, serif; color: #94A3B8; }
+      @bottom-left  { content: "${cssStr(footerLeft)}";  font: 8pt Georgia, serif; color: ${C.medium}; }
+      @bottom-right { content: "${cssStr(footerRight)}"; font: 8pt Georgia, serif; color: ${C.medium}; }
     }
     /* Primeira página sem o número repetido em cima do título (estética). */
   `;

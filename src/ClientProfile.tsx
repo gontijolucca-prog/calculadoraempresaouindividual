@@ -6,6 +6,7 @@ import { useFlowMode } from './AnimatedPage';
 import { Tip } from './Tip';
 import { jsPDF } from 'jspdf';
 import { RelatorioPdf } from './lib/reportPdf';
+import { PDF_RGB } from './lib/pdfTheme';
 import ExportPackageModal from './ExportPackageModal';
 import { consumeOpenPackage, consumeFlowToggle } from './lib/profileIntent';
 import {
@@ -18,7 +19,7 @@ import type { HonorariosConfig } from './lib/honorarios';
 // Converte o SVG do logotipo para PNG data URL via canvas
 const svgLogoToPng = (): Promise<string> => {
   return new Promise((resolve) => {
-    const svgContent = `<svg viewBox="0 0 100 100" width="400" height="400" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="white"/><path d="M 70 20 A 35 35 0 1 1 35 22" stroke="#0677FF" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M 60 10 L 70 20 L 60 30" stroke="#0B1D2D" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="50" y="64" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="700" fill="#0B1D2D" text-anchor="middle">360</text></svg>`;
+    const svgContent = `<svg viewBox="0 0 100 100" width="400" height="400" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="white"/><path d="M 70 20 A 35 35 0 1 1 35 22" stroke="#0677FF" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M 60 10 L 70 20 L 60 30" stroke="#003B8F" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="50" y="64" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="700" fill="#003B8F" text-anchor="middle">360</text></svg>`;
     const canvas = document.createElement('canvas');
     canvas.width = 400;
     canvas.height = 400;
@@ -317,7 +318,7 @@ export default function ClientProfile({
 
   const generatePDF = async () => {
     const logoGenerico = await svgLogoToPng();
-    const logoDataUrl = office?.logoDataUrl || logoGenerico;
+    const logoDataUrl = logoGenerico;
     const officeName = office?.nome?.trim() || 'Estudo 360';
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const fiscalSummary: { label: string; valor: string }[] = [];
@@ -329,18 +330,18 @@ export default function ClientProfile({
     const cw = pw - ml - mr; // 178 mm
 
     type RGB = [number, number, number];
-    const NAVY: RGB         = [15, 23, 42];
-    const MAROON: RGB       = [120, 29, 29];
-    const MAROON_LIGHT: RGB = [253, 242, 242];
-    const SLATE_50: RGB     = [248, 250, 252];
-    const SLATE_100: RGB    = [241, 245, 249];
-    const SLATE_200: RGB    = [226, 232, 240];
-    const SLATE_500: RGB    = [100, 116, 139];
-    const SLATE_700: RGB    = [51, 65, 85];
-    const SLATE_900: RGB    = [15, 23, 42];
-    const WHITE: RGB        = [255, 255, 255];
-    const GREEN: RGB        = [5, 150, 105];
-    const GREEN_LIGHT: RGB  = [236, 253, 245];
+    const NAVY: RGB         = PDF_RGB.dark;
+    const MAROON: RGB       = PDF_RGB.blue;
+    const MAROON_LIGHT: RGB = PDF_RGB.light;
+    const SLATE_50: RGB     = PDF_RGB.pale;
+    const SLATE_100: RGB    = PDF_RGB.light;
+    const SLATE_200: RGB    = PDF_RGB.line;
+    const SLATE_500: RGB    = PDF_RGB.medium;
+    const SLATE_700: RGB    = PDF_RGB.dark;
+    const SLATE_900: RGB    = PDF_RGB.dark;
+    const WHITE: RGB        = PDF_RGB.white;
+    const GREEN: RGB        = PDF_RGB.blue;
+    const GREEN_LIGHT: RGB  = PDF_RGB.light;
 
     const fill  = (c: RGB) => doc.setFillColor(c[0], c[1], c[2]);
     const textC = (c: RGB) => doc.setTextColor(c[0], c[1], c[2]);
@@ -514,7 +515,7 @@ export default function ClientProfile({
         if (isLast) {
           fill(eniWins ? GREEN_LIGHT : SLATE_50);
           doc.rect(ml, y, labelCol, 11, 'F');
-          fill(!eniWins ? MAROON_LIGHT : SLATE_50);
+          fill(eniWins ? SLATE_50 : SLATE_100);
           doc.rect(ml + labelCol, y, cw - labelCol, 11, 'F');
         }
         const rowH = isLast ? 11 : 8.5;
@@ -671,7 +672,8 @@ export default function ClientProfile({
     doc.text(noteLines, ml, y);
     y += Math.max(10, noteLines.length * 3.2 + 6);
 
-    if (y < ph - 32) {
+    let officeBlockIncluded = false;
+    if (y < ph - 46) {
       hRule(y); y += 6;
       fill(MAROON); doc.rect(ml, y, 3, 5, 'F');
       textC(SLATE_500);
@@ -705,11 +707,13 @@ export default function ClientProfile({
       textC(SLATE_500); doc.setFontSize(7); doc.setFont('helvetica', 'normal');
       doc.text('Pressupostos: dados do perfil, simuladores e tabela de honorários do gabinete. Taxas e escalões de 2026.', ml + 3, y + 4.7);
       doc.text('Documento indicativo. Confirme o enquadramento e os valores com um Contabilista Certificado.', ml + 3, y + 9);
+      y += 17;
+      officeBlockIncluded = true;
     }
 
     // ── GRAVAR ───────────────────────────────────────────────────────────────
     const filename = `Estudo360_${profile.nomeCliente || 'Simulacao'}_${today.getFullYear()}.pdf`;
-    if (doc.getNumberOfPages() === 1) {
+    if (doc.getNumberOfPages() === 1 && officeBlockIncluded && y <= ph - 14) {
       doc.save(filename);
       return;
     }
@@ -724,19 +728,15 @@ export default function ClientProfile({
       escritorio: {
         nome: (office as OfficeSettings | undefined)?.nome,
         corPrimaria: (office as OfficeSettings | undefined)?.corPrimaria,
-        logoDataUrl: logoDataUrl || (office as OfficeSettings | undefined)?.logoDataUrl,
+        logoDataUrl,
       },
       nomeFicheiro: filename.replace(/\.pdf$/i, ''),
     });
     resumo.seccao('Identificação e enquadramento').tabela([
-      { label: 'Cliente / Empresa', valor: profile.nomeCliente || '—' },
-      { label: 'NIF', valor: profile.nif || '—' },
-      { label: 'Tipo de entidade', valor: String(profile.tipoEntidade || '—') },
-      { label: 'Regime de contabilidade', valor: String(profile.regimeContabilidade || '—') },
-      { label: 'Regime de IVA', valor: String(profile.regimeIva || '—') },
-      { label: 'Atividade principal', valor: String(profile.atividadePrincipal || '—') },
+      { label: 'Cliente / NIF', valor: `${profile.nomeCliente || '—'} · ${profile.nif || '—'}` },
+      { label: 'Entidade / contabilidade / IVA', valor: `${String(profile.tipoEntidade || '—')} · ${String(profile.regimeContabilidade || '—')} · ${String(profile.regimeIva || '—')}` },
+      { label: 'Atividade / funcionários', valor: `${String(profile.atividadePrincipal || '—')} · ${profile.nrFuncionarios || 0}` },
       { label: 'Faturação anual prevista', valor: ptEur(profile.faturaçaoAnualPrevista || 0) },
-      { label: 'N.º de funcionários', valor: String(profile.nrFuncionarios || 0) },
       { label: 'Contacto', valor: [profile.email, profile.telefone].filter(Boolean).join(' · ') || '—' },
       { label: 'Morada', valor: [profile.morada, profile.codigoPostal, profile.localidade].filter(Boolean).join(', ') || '—' },
     ]);
@@ -745,11 +745,18 @@ export default function ClientProfile({
       resumo.seccao('Outros resultados').tabela(extras.map(([label, valor]) => ({ label, valor })));
     }
     resumo.seccao('Estimativa de honorários').tabela([
-      ...honorLines.map(([label, valor]) => ({ label, valor: `${ptEur(valor)}/mês` })),
+      { label: 'Base mensal', valor: `${ptEur(est.baseMonthly)}/mês` },
+      { label: 'Serviços adicionais', valor: honorLines.slice(1).map(([label, valor]) => `${label}: ${ptEur(valor)}`).join(' · ') || 'Não aplicável' },
       { label: 'Total mensal estimado', valor: `${ptEur(est.totalMensal)}/mês` },
       { label: 'Total anual estimado', valor: `${ptEur(est.totalAnual)}/ano` },
     ]);
-    resumo.nota('Proposta indicativa. Serviços pontuais não incluídos. Confirme sempre o enquadramento com o seu Contabilista Certificado.');
+    resumo.seccao('Escritório e pressupostos').tabela([
+      { label: 'Escritório / NIF', valor: `${officeName} · ${office?.nif || 'NIF por preencher'}` },
+      { label: 'Cédula / OCC / responsável', valor: `${[office?.cedulaProfissional, office?.numeroInscricaoOCC].filter(Boolean).join(' · ') || 'Por preencher'} · ${office?.contabilistaResponsavel || officeName}` },
+      { label: 'Email / telefone', valor: [office?.email, office?.telefone].filter(Boolean).join(' · ') || 'Por preencher' },
+      { label: 'Morada / IBAN', valor: `${[office?.morada, office?.codigoPostal, office?.localidade].filter(Boolean).join(', ') || 'Por preencher'} · ${office?.iban || 'IBAN por preencher'}` },
+      { label: 'Base e limites', valor: 'Perfil, simuladores e honorários; OE 2026 indicativo. Serviços pontuais não incluídos; confirmar com o Contabilista Certificado.' },
+    ]);
     resumo.save();
   };
 

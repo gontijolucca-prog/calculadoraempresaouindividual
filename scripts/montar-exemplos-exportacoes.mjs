@@ -25,7 +25,7 @@ const files = [
   ['15-mapa-controlo.pdf', 'docs/audit-2026-11-03/extra/11-mapa-controlo.pdf', 'Mapa de Controlo', 'Pilares de controlo por cliente e mês, com filtros refletidos no PDF.'],
   ['16-mapa-rh.pdf', 'docs/audit-2026-11-03/extra/12-mapa-rh.pdf', 'Mapa RH', 'Pilares de recursos humanos por cliente e mês.'],
   ['17-proposta-honorarios.pdf', 'docs/audit-2026-10-26/pdf/proposta-honorarios.pdf', 'Proposta de Honorários', 'Serviços, mensalidade, totais, condições e dados do escritório.'],
-  ['18-minuta-contrato.pdf', 'docs/audit-2026-10-26/pdf/minuta-contrato.pdf', 'Minuta de Contrato', 'Partes, objeto, serviços, honorários, obrigações, duração e foro.'],
+  ['18-contrato-prestacao-servicos.pdf', 'docs/audit-2026-10-26/pdf/minuta-contrato.pdf', 'Contrato de Prestação de Serviços', 'Partes, objeto, serviços, honorários, confidencialidade, RGPD, duração, foro e assinaturas.'],
   ['19-proposta-comercial.pdf', 'docs/audit-2026-11-03/extra/13-proposta-comercial.pdf', 'Proposta Comercial', 'Síntese dos sete blocos da proposta comercial com branding e próximo passo.'],
   ['20-demonstracao-resultados.pdf', 'docs/audit-2026-11-03/word/01-demonstracao-resultados.pdf', 'Demonstração dos Resultados', 'Rendimentos, gastos, EBITDA, resultado operacional, impostos e resultado líquido.'],
   ['21-alteracoes-capital-proprio.pdf', 'docs/audit-2026-11-03/word/02-alteracoes-capital-proprio.pdf', 'Alterações no Capital Próprio', 'Capital, reservas, resultados e movimentos do período.'],
@@ -57,7 +57,7 @@ for (const [targetName, relativeSource, titulo, descricao] of files) {
 const lines = [
   '# Exemplos de exportações — Estudo360',
   '',
-  `Gerado em ${new Date().toLocaleDateString('pt-PT')}. Todos os ficheiros têm exactamente uma página A4.`,
+  `Gerado em ${new Date().toLocaleDateString('pt-PT')}. Todos os ficheiros têm exactamente uma página A4 e usam apenas azul e branco.`,
   '',
   '| # | Documento | Onde testar | Conteúdo principal |',
   '|---|---|---|---|',
@@ -113,8 +113,8 @@ const html = `<!doctype html>
 <body>
 <header><div class="wrap"><div class="top"><img class="logo" src="/logo.svg" alt=""><div class="brand">Estudo<span>360</span></div></div>
 <h1>Documentos exportáveis, revistos um a um.</h1>
-<p>Esta pasta reúne um exemplo real de cada PDF que o Estudo360 consegue gerar. Todos têm exatamente uma página A4, identificação do escritório e cliente, dados úteis e acabamento visual consistente.</p>
-<span class="badge">${catalogo.length} PDFs · 1 página cada</span></div></header>
+<p>Esta pasta reúne um exemplo real de cada PDF que o Estudo360 consegue gerar. Todos têm exatamente uma página A4, apenas azul e branco, identificação do escritório e cliente, dados úteis e acabamento visual consistente.</p>
+<span class="badge">${catalogo.length} PDFs · 1 página · azul e branco</span></div></header>
 <main class="wrap"><div class="docs">${cards}</div>
 <footer><span><b>Estudo360</b> · revisão de ${new Date().toLocaleDateString('pt-PT')}</span><span><a href="/estudo360-novidades-semana-03-11">Voltar ao changelog</a></span></footer></main>
 </body></html>`;

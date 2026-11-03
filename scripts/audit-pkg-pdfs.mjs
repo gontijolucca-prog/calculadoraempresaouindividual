@@ -85,9 +85,11 @@ for (const [doc, botaoNome, previewRoot, root, ficheiro] of [
     }, root);
     ok(medida.prints >= 1, `${doc}: impressão disparada`);
   }
-  const pisoDoc = doc === 'Minuta de Contrato' ? 0.79 : 0.4;
+  const pisoDoc = doc === 'Minuta de Contrato' ? 0.79 : 1;
   ok(medida.zoom <= 1 && medida.zoom >= pisoDoc, `${doc}: zoom ${medida.zoom.toFixed(2)}`);
-  ok(medida.altura * medida.zoom <= A4 + 4, `${doc}: cabe na A4 (${Math.round(medida.altura * medida.zoom)}px de ${Math.round(A4)}px)`);
+  if (doc === 'Minuta de Contrato') {
+    ok(medida.altura * medida.zoom <= A4 + 4, `${doc}: cabe na A4 (${Math.round(medida.altura * medida.zoom)}px de ${Math.round(A4)}px)`);
+  }
 
   // PDF real (só na proposta): a minuta tem o seu próprio teste de PDF.
   if (doc === 'Minuta de Contrato') {

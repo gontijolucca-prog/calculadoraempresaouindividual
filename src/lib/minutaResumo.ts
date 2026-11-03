@@ -9,6 +9,7 @@ import type { OfficeSettings } from './officeSettings';
 import type { HonorariosConfig } from './honorarios';
 import type { ClientProfile } from '../ClientProfile';
 import { calcularProposta } from './honorarios';
+import { PDF_COLORS as C } from './pdfTheme';
 
 const esc = (s: unknown) => String(s ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -31,28 +32,28 @@ export function buildMinutaResumoHtml(office: OfficeSettings, honorarios: Honora
   return `<!doctype html><html lang="pt"><head><meta charset="utf-8"><title>Minuta de Contrato — ${esc(cliente)}</title>
 <style>
   @page { size: A4; margin: 0; }
-  html, body { margin: 0; padding: 0; background: #fff; }
-  body { font-family: Georgia, 'Times New Roman', serif; color: #1A1A18; font-size: 9.6pt; line-height: 1.42; }
+  html, body { margin: 0; padding: 0; background: ${C.white}; }
+  body { font-family: Georgia, 'Times New Roman', serif; color: ${C.dark}; font-size: 9.2pt; line-height: 1.4; }
   .wrap { padding: 16mm 18mm; }
-  .head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1.4mm solid #B06D35; padding-bottom: 3mm; }
+  .head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1.4mm solid ${C.blue}; padding-bottom: 3mm; }
   .head .nome { font-family: Arial, Helvetica, sans-serif; font-weight: 800; font-size: 12pt; letter-spacing: .02em; }
-  .head .meta { font-family: Arial, Helvetica, sans-serif; font-size: 8pt; color: #64748B; text-align: right; }
+  .head .meta { font-family: Arial, Helvetica, sans-serif; font-size: 8pt; color: ${C.medium}; text-align: right; }
   h1 { font-family: Arial, Helvetica, sans-serif; font-size: 14pt; margin: 5mm 0 1mm; letter-spacing: .02em; }
-  .sub { font-family: Arial, Helvetica, sans-serif; font-size: 8.4pt; color: #64748B; margin: 0 0 4mm; }
-  h2 { font-family: Arial, Helvetica, sans-serif; font-size: 9.4pt; text-transform: uppercase; letter-spacing: .08em; color: #B06D35; margin: 4mm 0 1mm; }
+  .sub { font-family: Arial, Helvetica, sans-serif; font-size: 8.4pt; color: ${C.medium}; margin: 0 0 3mm; }
+  h2 { font-family: Arial, Helvetica, sans-serif; font-size: 9.2pt; text-transform: uppercase; letter-spacing: .08em; color: ${C.blue}; margin: 3mm 0 1mm; }
   p { margin: 0 0 1.6mm; text-align: justify; }
   ul { margin: 0 0 1.6mm 5mm; padding: 0; }
   li { margin: 0 0 .8mm; }
-  .box { border: 1px solid #E2E8F0; background: #FDFBF7; border-radius: 2mm; padding: 3mm 4mm; margin: 2mm 0; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm 6mm; font-size: 9pt; }
-  .ass { display: grid; grid-template-columns: 1fr 1fr; gap: 12mm; margin-top: 10mm; font-family: Arial, Helvetica, sans-serif; font-size: 8.4pt; text-align: center; }
-  .linha { border-top: 1px solid #1A1A18; margin-bottom: 1.5mm; padding-top: 1.5mm; }
-  .nota { margin-top: 4mm; font-family: Arial, Helvetica, sans-serif; font-size: 7.6pt; color: #64748B; }
+  .box { border: 1px solid ${C.line}; background: ${C.pale}; border-radius: 2mm; padding: 3mm 4mm; margin: 2mm 0; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm 6mm; font-size: 8.8pt; }
+  .ass { display: grid; grid-template-columns: 1fr 1fr; gap: 12mm; margin-top: 7mm; font-family: Arial, Helvetica, sans-serif; font-size: 8.4pt; text-align: center; }
+  .linha { border-top: 1px solid ${C.medium}; margin-bottom: 1.5mm; padding-top: 1.5mm; }
+  .nota { margin-top: 3mm; font-family: Arial, Helvetica, sans-serif; font-size: 7.4pt; color: ${C.medium}; }
 </style></head><body><div class="wrap">
   <div class="head">
     <div>
       <div class="nome">${esc(escritorio)}</div>
-      <div style="font-family:Arial;font-size:7.6pt;color:#64748B">Documento confidencial</div>
+      <div style="font-family:Arial;font-size:7.6pt;color:${C.medium}">Documento confidencial</div>
     </div>
     <div class="meta">CONTRATO<br>${esc(hoje)}<br>NIF ${esc(nifEsc)}${occ ? `<br>${esc(occ)}` : ''}</div>
   </div>
@@ -77,10 +78,13 @@ export function buildMinutaResumoHtml(office: OfficeSettings, honorarios: Honora
 
   <h2>Obrigações essenciais</h2>
   <p><strong>Do Prestador:</strong> sigilo profissional, diligência técnica, entrega das declarações dentro dos prazos legais e informação atempada de alterações legislativas relevantes.</p>
-  <p><strong>Do Cliente:</strong> entregar os documentos até ao dia 5 do mês seguinte, manter os acessos atualizados e validar as declarações antes da submissão.</p>
+  <p><strong>Do Cliente:</strong> entregar os documentos até ao dia 5 do mês seguinte, manter os acessos atualizados, esclarecer operações relevantes e validar as declarações antes da submissão.</p>
+
+  <h2>Confidencialidade e proteção de dados</h2>
+  <p>As partes mantêm confidencial toda a informação a que tenham acesso. O tratamento de dados pessoais observa o RGPD e a legislação aplicável, sendo os dados utilizados apenas para a execução dos serviços, cumprimento de obrigações legais e comunicação com o Cliente.</p>
 
   <h2>Duração e foro</h2>
-  <p>O contrato produz efeitos na data da assinatura e vigora por 12 meses, renovável. Para qualquer litígio é competente o tribunal da comarca da sede do Prestador, com renúncia a outro.</p>
+  <p>O contrato produz efeitos na data da assinatura e vigora por 12 meses, renovável por períodos iguais. Qualquer alteração ao âmbito, honorários ou periodicidade deve ser acordada por escrito. Para qualquer litígio é competente o tribunal da comarca da sede do Prestador.</p>
 
   <div class="ass">
     <div><div class="linha"></div>${esc(escritorio)}<br>${esc(occ || 'Contabilista Certificado')}</div>

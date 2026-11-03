@@ -1,6 +1,6 @@
 # Exemplos de exportações — Estudo360
 
-Gerado em 03/11/2026. Todos os ficheiros têm exactamente uma página A4.
+Gerado em 03/11/2026. Todos os ficheiros têm exactamente uma página A4 e usam apenas azul e branco.
 
 | # | Documento | Onde testar | Conteúdo principal |
 |---|---|---|---|
@@ -21,7 +21,7 @@ Gerado em 03/11/2026. Todos os ficheiros têm exactamente uma página A4.
 | 15 | Mapa de Controlo | [Abrir PDF](./15-mapa-controlo.pdf) | Pilares de controlo por cliente e mês, com filtros refletidos no PDF. |
 | 16 | Mapa RH | [Abrir PDF](./16-mapa-rh.pdf) | Pilares de recursos humanos por cliente e mês. |
 | 17 | Proposta de Honorários | [Abrir PDF](./17-proposta-honorarios.pdf) | Serviços, mensalidade, totais, condições e dados do escritório. |
-| 18 | Minuta de Contrato | [Abrir PDF](./18-minuta-contrato.pdf) | Partes, objeto, serviços, honorários, obrigações, duração e foro. |
+| 18 | Contrato de Prestação de Serviços | [Abrir PDF](./18-contrato-prestacao-servicos.pdf) | Partes, objeto, serviços, honorários, confidencialidade, RGPD, duração, foro e assinaturas. |
 | 19 | Proposta Comercial | [Abrir PDF](./19-proposta-comercial.pdf) | Síntese dos sete blocos da proposta comercial com branding e próximo passo. |
 | 20 | Demonstração dos Resultados | [Abrir PDF](./20-demonstracao-resultados.pdf) | Rendimentos, gastos, EBITDA, resultado operacional, impostos e resultado líquido. |
 | 21 | Alterações no Capital Próprio | [Abrir PDF](./21-alteracoes-capital-proprio.pdf) | Capital, reservas, resultados e movimentos do período. |

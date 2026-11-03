@@ -10,6 +10,7 @@
  * para nunca sair uma segunda folha com uma linha órfã.
  */
 import { jsPDF } from 'jspdf';
+import { PDF_RGB } from './pdfTheme';
 
 export interface EscritorioPdf {
   nome?: string;
@@ -29,14 +30,6 @@ export interface PdfOptions {
 }
 
 export interface LinhaTabela { label: string; valor: string }
-
-/** Paleta do site: tinta, dourado e bege calmo. */
-const MARCA = {
-  tinta: [26, 26, 24] as [number, number, number],
-  dourado: [176, 109, 53] as [number, number, number],
-  bege: [253, 251, 247] as [number, number, number],
-  areia: [231, 224, 213] as [number, number, number],
-};
 
 const MM = {
   margem: 16,
@@ -98,7 +91,6 @@ export class RelatorioPdf {
   private largura: number;
   private altura: number;
   private cor: [number, number, number];
-  private corPrimaria: string;
   private f: number;
   private ops: Operacao[] = [];
   private aGravar = false;
@@ -114,8 +106,7 @@ export class RelatorioPdf {
     this.largura = this.doc.internal.pageSize.getWidth();
     this.altura = this.doc.internal.pageSize.getHeight();
     this.y = MM.topo;
-    this.corPrimaria = /^#[0-9A-Fa-f]{6}$/.test(opts.escritorio?.corPrimaria || '') ? opts.escritorio!.corPrimaria! : '#0677FF';
-    this.cor = this.hexParaRgb(this.corPrimaria);
+    this.cor = PDF_RGB.blue;
     // Metadados: o PDF fica identificável em qualquer leitor (portabilidade).
     try {
       this.doc.setProperties({
@@ -134,67 +125,45 @@ export class RelatorioPdf {
   private v(n: number): number { return n * this.f; }
   private get margem(): number { return MM.margem; }
 
-  private hexParaRgb(hex: string): [number, number, number] {
-    const h = hex.replace('#', '');
-    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
-  }
-
-  private setCor(hex: string) {
-    const [r, g, b] = this.hexParaRgb(hex);
-    this.doc.setTextColor(r, g, b);
-  }
-
   private cabecalho() {
     const d = this.doc;
     const esc = this.opts.escritorio || {};
     const nome = (esc.nome || 'Estudo 360').trim();
-    let xTexto = this.margem;
+    const xTexto = this.margem + 16;
 
-    if (esc.logoDataUrl) {
-      try {
-        const props = d.getImageProperties(esc.logoDataUrl);
-        const maxW = 34, maxH = 14;
-        const ratio = Math.min(maxW / props.width, maxH / props.height);
-        d.addImage(esc.logoDataUrl, 'PNG', this.margem, this.y, props.width * ratio, props.height * ratio);
-        xTexto = this.margem + maxW + 4;
-      } catch { /* logo inválido: cai para o bloco 360 */ }
-    }
-    if (xTexto === this.margem) {
-      d.setFillColor(this.cor[0], this.cor[1], this.cor[2]);
-      d.roundedRect(this.margem, this.y, 12, 12, 2.5, 2.5, 'F');
-      d.setTextColor(255, 255, 255);
-      d.setFont('helvetica', 'bold');
-      d.setFontSize(this.fs(11));
-      d.text('360', this.margem + 6, this.y + 7.6, { align: 'center' });
-      xTexto = this.margem + 16;
-    }
+    d.setFillColor(...PDF_RGB.blue);
+    d.roundedRect(this.margem, this.y, 12, 12, 2.5, 2.5, 'F');
+    d.setTextColor(...PDF_RGB.white);
+    d.setFont('helvetica', 'bold');
+    d.setFontSize(this.fs(11));
+    d.text('360', this.margem + 6, this.y + 7.6, { align: 'center' });
 
     d.setFont('helvetica', 'bold');
     d.setFontSize(this.fs(10.5));
-    d.setTextColor(15, 23, 42);
+    d.setTextColor(...PDF_RGB.dark);
     d.text(sanitizePdf(nome), xTexto, this.y + 4.6);
     d.setFont('helvetica', 'normal');
     d.setFontSize(this.fs(7.5));
-    d.setTextColor(100, 116, 139);
+    d.setTextColor(...PDF_RGB.medium);
     d.text(nome === 'Estudo 360' ? 'Estudo 360 · Análise · Estratégia · Decisão' : 'Relatório confidencial', xTexto, this.y + 8.6);
+    d.setTextColor(...PDF_RGB.medium);
     d.text(
       `RELATÓRIO · ${new Intl.DateTimeFormat('pt-PT', { dateStyle: 'long' }).format(new Date())}`,
       this.largura - this.margem, this.y + 4.6, { align: 'right' },
     );
 
-    // Filete dourado da marca, acima do filete da cor do escritório.
-    d.setFillColor(MARCA.dourado[0], MARCA.dourado[1], MARCA.dourado[2]);
+    d.setFillColor(...PDF_RGB.blue);
     d.rect(0, 0, this.largura, 2.2, 'F');
 
     this.y += this.v(16);
-    d.setDrawColor(this.cor[0], this.cor[1], this.cor[2]);
+    d.setDrawColor(...PDF_RGB.blue);
     d.setLineWidth(0.7);
     d.line(this.margem, this.y, this.largura - this.margem, this.y);
     this.y += this.v(8);
 
     d.setFont('helvetica', 'bold');
     d.setFontSize(this.fs(17));
-    d.setTextColor(11, 29, 45);
+    d.setTextColor(...PDF_RGB.dark);
     const titulo = d.splitTextToSize(sanitizePdf(this.opts.titulo), this.largura - this.margem * 2);
     d.text(titulo, this.margem, this.y);
     this.y += titulo.length * this.v(7) + 1;
@@ -202,7 +171,7 @@ export class RelatorioPdf {
     if (this.opts.subtitulo) {
       d.setFont('helvetica', 'normal');
       d.setFontSize(this.fs(9.5));
-      d.setTextColor(100, 116, 139);
+      d.setTextColor(...PDF_RGB.medium);
       const sub = d.splitTextToSize(sanitizePdf(this.opts.subtitulo), this.largura - this.margem * 2);
       d.text(sub, this.margem, this.y);
       this.y += sub.length * this.v(4.6) + 1;
@@ -210,17 +179,17 @@ export class RelatorioPdf {
 
     if (this.opts.cliente || this.opts.nif) {
       const boxH = this.v(13);
-      d.setFillColor(MARCA.bege[0], MARCA.bege[1], MARCA.bege[2]);
-      d.setDrawColor(MARCA.areia[0], MARCA.areia[1], MARCA.areia[2]);
+      d.setFillColor(...PDF_RGB.pale);
+      d.setDrawColor(...PDF_RGB.line);
       d.setLineWidth(0.3);
       d.roundedRect(this.margem, this.y, this.largura - this.margem * 2, boxH, 2, 2, 'FD');
       d.setFontSize(this.fs(6.8));
       d.setFont('helvetica', 'bold');
-      d.setTextColor(100, 116, 139);
+      d.setTextColor(...PDF_RGB.medium);
       d.text('CLIENTE / EMPRESA', this.margem + 3, this.y + this.v(4));
       d.text('NIF', this.largura - this.margem - 40, this.y + this.v(4));
       d.setFontSize(this.fs(9.5));
-      d.setTextColor(15, 23, 42);
+      d.setTextColor(...PDF_RGB.dark);
       const larguraNome = this.largura - this.margem * 2 - 50;
       const nomeLinhas = d.splitTextToSize(sanitizePdf(this.opts.cliente || '—'), larguraNome - d.getTextWidth('...'));
       d.text(nomeLinhas.length > 1 ? `${nomeLinhas[0].replace(/\s+$/, '')}...` : nomeLinhas[0], this.margem + 3, this.y + this.v(9.2));
@@ -286,14 +255,14 @@ export class RelatorioPdf {
     if (this.esgotado) return this;
     if (!this.garantirAltura(this.v(14))) return this;
     const d = this.doc;
-    d.setFillColor(MARCA.dourado[0], MARCA.dourado[1], MARCA.dourado[2]);
+    d.setFillColor(...PDF_RGB.blue);
     d.circle(this.margem + 1.4, this.y + this.v(1.6), 1.2, 'F');
     d.setFont('helvetica', 'bold');
     d.setFontSize(this.fs(8.6));
-    d.setTextColor(MARCA.tinta[0], MARCA.tinta[1], MARCA.tinta[2]);
+    d.setTextColor(...PDF_RGB.dark);
     d.text(titulo.toUpperCase(), this.margem + 5, this.y + this.v(2.8));
     this.y += this.v(5);
-    d.setDrawColor(220, 231, 242);
+    d.setDrawColor(...PDF_RGB.line);
     d.setLineWidth(0.3);
     d.line(this.margem, this.y, this.largura - this.margem, this.y);
     this.y += this.v(4);
@@ -317,7 +286,7 @@ export class RelatorioPdf {
         const faltam = linhas.length - i;
         d.setFont('helvetica', 'italic');
         d.setFontSize(this.fs(6.8));
-        d.setTextColor(100, 116, 139);
+        d.setTextColor(...PDF_RGB.medium);
         const yNota = Math.min(this.y + this.v(3.6), this.limiteInferior() - 2);
         d.text(`… mais ${faltam} linha(s); restantes secções não couberam numa folha A4.`, this.margem + 2.5, yNota);
         this.y = yNota;
@@ -325,24 +294,24 @@ export class RelatorioPdf {
         break;
       }
       if (i % 2 === 1) {
-        d.setFillColor(250, 252, 254);
+        d.setFillColor(...PDF_RGB.pale);
         d.rect(this.margem, this.y, largura, h, 'F');
       }
       if (opts.destaquePrimeira && i === 0) {
-        d.setFillColor(this.cor[0], this.cor[1], this.cor[2]);
+        d.setFillColor(...PDF_RGB.blue);
         d.roundedRect(this.margem, this.y, largura, h, 1.5, 1.5, 'F');
-        d.setTextColor(255, 255, 255);
+        d.setTextColor(...PDF_RGB.white);
       } else {
-        d.setTextColor(71, 85, 105);
+        d.setTextColor(...PDF_RGB.medium);
       }
       d.setFont('helvetica', 'normal');
       d.text(linhasLabel, this.margem + 2.5, this.y + this.v(4.4));
       d.setFont('helvetica', 'bold');
-      if (opts.destaquePrimeira && i === 0) d.setTextColor(255, 255, 255);
-      else d.setTextColor(15, 23, 42);
+      if (opts.destaquePrimeira && i === 0) d.setTextColor(...PDF_RGB.white);
+      else d.setTextColor(...PDF_RGB.dark);
       d.text(linhasValor, this.largura - this.margem - 2.5, this.y + this.v(4.4), { align: 'right' });
       if (!(opts.destaquePrimeira && i === 0)) {
-        d.setDrawColor(238, 242, 247);
+        d.setDrawColor(...PDF_RGB.line);
         d.setLineWidth(0.2);
         d.line(this.margem, this.y + h, this.largura - this.margem, this.y + h);
       }
@@ -365,9 +334,9 @@ export class RelatorioPdf {
     const alturaLinha = this.v(7.6);
     let cortadas = 0;
     const desenharCabecalho = () => {
-      d.setFillColor(74, 74, 74);
+      d.setFillColor(...PDF_RGB.dark);
       d.rect(this.margem, this.y, largura, alturaLinha, 'F');
-      d.setTextColor(255, 255, 255);
+      d.setTextColor(...PDF_RGB.white);
       d.setFont('helvetica', 'bold');
       d.setFontSize(this.fs(6.8));
       cabecalho.forEach((c, i) => {
@@ -387,11 +356,12 @@ export class RelatorioPdf {
         return;
       }
       if (idx % 2 === 1) {
-        d.setFillColor(248, 250, 252);
+        d.setFillColor(...PDF_RGB.pale);
         d.rect(this.margem, this.y, largura, alturaLinha, 'F');
       }
       linha.slice(0, cols).forEach((cell, i) => {
-        d.setTextColor(i === 0 ? 15 : 71, i === 0 ? 23 : 85, i === 0 ? 42 : 105);
+        const tom = i === 0 ? PDF_RGB.dark : PDF_RGB.medium;
+        d.setTextColor(...tom);
         d.setFont('helvetica', i < 2 ? 'bold' : 'normal');
         const align = i < 2 ? 'left' : 'center';
         const x = i < 2 ? xCols[i] + 1.5 : xCols[i] + colWidths[i] / 2;
@@ -401,7 +371,7 @@ export class RelatorioPdf {
           lineHeightFactor: 1.05,
         });
       });
-      d.setDrawColor(226, 232, 240);
+      d.setDrawColor(...PDF_RGB.line);
       d.setLineWidth(0.15);
       d.line(this.margem, this.y + alturaLinha, this.largura - this.margem, this.y + alturaLinha);
       this.y += alturaLinha;
@@ -410,7 +380,7 @@ export class RelatorioPdf {
       this.esgotado = true;
       d.setFont('helvetica', 'italic');
       d.setFontSize(this.fs(6.8));
-      d.setTextColor(100, 116, 139);
+      d.setTextColor(...PDF_RGB.medium);
       d.text(`… mais ${cortadas} registo(s) na aplicação (não cabiam numa folha A4).`, this.margem + 1.5, this.y + this.v(3.6));
       this.y += this.v(6);
     }
@@ -422,7 +392,7 @@ export class RelatorioPdf {
     const d = this.doc;
     d.setFont('helvetica', 'normal');
     d.setFontSize(this.fs(8.8));
-    d.setTextColor(71, 85, 105);
+    d.setTextColor(...PDF_RGB.medium);
     const linhas = d.splitTextToSize(sanitizePdf(texto), this.largura - this.margem * 2) as string[];
     d.setCharSpace(0);
     let cortadas = 0;
@@ -435,7 +405,7 @@ export class RelatorioPdf {
       this.esgotado = true;
       d.setFont('helvetica', 'italic');
       d.setFontSize(this.fs(6.6));
-      d.setTextColor(100, 116, 139);
+      d.setTextColor(...PDF_RGB.medium);
       d.text(`… ${cortadas} linha(s) de texto não cabiam nesta folha A4.`, this.margem, Math.min(this.y + this.v(3), this.limiteInferior() - 2));
       this.y = Math.min(this.y + this.v(5), this.altura - 16);
     }
@@ -450,12 +420,12 @@ export class RelatorioPdf {
     const linhas = d.splitTextToSize(sanitizePdf(texto), this.largura - this.margem * 2 - 8) as string[];
     const h = linhas.length * this.v(4.2) + this.v(5);
     if (!this.garantirAltura(h)) { this.notaOmitida = true; return this; }
-    d.setFillColor(255, 251, 235);
-    d.setDrawColor(245, 158, 11);
+    d.setFillColor(...PDF_RGB.pale);
+    d.setDrawColor(...PDF_RGB.blue);
     d.setLineWidth(0.7);
     d.line(this.margem, this.y, this.margem, this.y + h);
     d.roundedRect(this.margem, this.y, this.largura - this.margem * 2, h, 1.5, 1.5, 'F');
-    d.setTextColor(146, 64, 14);
+    d.setTextColor(...PDF_RGB.dark);
     d.setCharSpace(0);
     d.text(linhas, this.margem + 3.5, this.y + this.v(4.4), { lineHeightFactor: 1.35 });
     this.y += h + this.v(4);
@@ -468,14 +438,14 @@ export class RelatorioPdf {
     const escritorio = (this.opts.escritorio?.nome || 'Estudo 360').trim();
     for (let p = 1; p <= total; p++) {
       d.setPage(p);
-      d.setDrawColor(226, 232, 240);
+      d.setDrawColor(...PDF_RGB.line);
       d.setLineWidth(0.3);
       d.line(this.margem, this.altura - 12, this.largura - this.margem, this.altura - 12);
       d.setFont('helvetica', 'normal');
       d.setFontSize(6.8);
-      d.setTextColor(100, 116, 139);
+      d.setTextColor(...PDF_RGB.medium);
       const rodape = 'Cálculos indicativos — confirme com o seu Contabilista Certificado.';
-      d.text(this.opts.rodape || (rodape + (this.notaOmitida ? ' Nota legal omitida por falta de espaço.' : '')), this.margem, this.altura - 7.5);
+      d.text(this.opts.rodape || (rodape + (this.notaOmitida ? ' Nota legal omitida por falta de espaço.' : '') + ' · Página 1 de 1'), this.margem, this.altura - 7.5);
       d.text(`${escritorio} · ${new Intl.DateTimeFormat('pt-PT').format(new Date())}`, this.largura - this.margem, this.altura - 7.5, { align: 'right' });
     }
   }

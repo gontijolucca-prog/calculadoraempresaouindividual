@@ -86,7 +86,7 @@ export default function ExportPackageModal({
     // o preview). Sem isto, o window.print() direto fazia 3–6 páginas com a
     // primeira quase vazia e sem margens.
     if (active === 'minuta') { imprimirUmaFolha('minuta-print-root', { piso: 0.70 }); return; }
-    if (active === 'proposta') { imprimirUmaFolha('proposta-print-root', { piso: 0.65 }); return; }
+    if (active === 'proposta') { imprimirUmaFolha('proposta-print-root', { piso: 1 }); return; }
     window.print();
   };
 

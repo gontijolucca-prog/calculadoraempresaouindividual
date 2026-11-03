@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback, useImperativeHandle } from 'react';
-import { Sparkles, X, Send, Trash2, Check, RotateCcw, Lightbulb, FileUp } from 'lucide-react';
+import { X, Send, Trash2, Check, RotateCcw, Lightbulb, FileUp } from 'lucide-react';
 import { parseReply, type BotAction, type FillField, type ViewId } from './actions';
 import { registerSuggestion } from './suggestions';
 import { GUIAS, reativarGuias, type ViewKey } from '../lib/guias';
 import { triageQuestion } from '../lib/layaGate';
 import { useHideOnScroll } from '../lib/useHideOnScroll';
+import { useAuth } from '../lib/auth';
 
 // Bridge fornecida pelo App: dá ao bot poderes de navegação e preenchimento,
 // e um contexto ANONIMIZADO (sem dados sensíveis) para enviar ao modelo.
@@ -168,6 +169,14 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
   view: string;
   viewTitle?: string;
 }) {
+  const { user, employeeProfile, accountEmail } = useAuth();
+  const personName = employeeProfile?.nome || user?.displayName || accountEmail || user?.email || 'Utilizador';
+  const personInitials = personName
+    .split(/[\s@._-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'U';
   const [open, setOpen] = useState(false);
   // Esconde o botão flutuante durante o scroll ativo (só o botão fechado —
   // o painel aberto é um dialog e não se esconde).
@@ -411,7 +420,7 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
           }}
         >
           <span className="relative flex items-center justify-center w-8 h-8 rounded-full bg-white/20">
-            <Sparkles className="w-4.5 h-4.5" strokeWidth={2.5} style={{ width: 18, height: 18 }} />
+            <span className="text-[10px] font-[900] tracking-[0.3px]" aria-hidden>{personInitials}</span>
             <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#00FFA3] border-2 border-[#0677FF]" />
           </span>
           <span className="hidden lg:inline">AI Contabilista</span>
@@ -439,7 +448,7 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
             <div className="shrink-0 px-4 py-3 flex items-center gap-3 text-white"
               style={{ background: 'linear-gradient(135deg, #0B1D2D 0%, #0677FF 100%)' }}>
               <span className="relative flex items-center justify-center w-9 h-9 rounded-full bg-white/15 shrink-0">
-                <Sparkles className="w-5 h-5" strokeWidth={2.5} />
+                <span className="text-[11px] font-[900] tracking-[0.3px]" aria-hidden>{personInitials}</span>
                 <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#00FFA3] border-2 border-[#0B1D2D]" />
               </span>
               <div className="min-w-0 flex-1">

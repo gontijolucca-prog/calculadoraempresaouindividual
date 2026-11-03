@@ -10,6 +10,7 @@ import {
 import { DED_ESPECIFICA_CAT_A_2026, LIMIAR_JUSTIFICACAO_15PCT } from './lib/fiscal';
 import { calcViatura } from './lib/viaturas';
 import { ajustarFolhasParaA4, reporZoomFolhas } from './lib/printFit';
+import { PDF_COLORS as C } from './lib/pdfTheme';
 
 interface TaxSimulatorState {
   profSit: string; currentInc: number; age: number; isMainAct: boolean;
@@ -62,7 +63,7 @@ function brandFromOffice(office?: OfficeSettings): Brand {
   const hasOffice = !!(o && (o.nome || o.logoDataUrl));
   if (!hasOffice) {
     return {
-      color: '#0677FF',
+      color: C.blue,
       name: 'Estudo 360',
       subtitleShort: 'Contabilidade',
       subtitleLong: 'Contabilidade & Consultoria Fiscal',
@@ -70,11 +71,11 @@ function brandFromOffice(office?: OfficeSettings): Brand {
     };
   }
   return {
-    color: o!.corPrimaria || '#0677FF',
+    color: C.blue,
     name: o!.nome || 'Estudo 360',
     subtitleShort: o!.tipo === 'sociedade' ? 'Sociedade de Contabilidade' : 'Contabilidade Certificada',
     subtitleLong: o!.tipo === 'sociedade' ? 'Sociedade de Contabilidade Certificada' : 'Contabilista Certificado',
-    logoDataUrl: o!.logoDataUrl || null,
+    logoDataUrl: null,
   };
 }
 
@@ -84,7 +85,7 @@ function brandFromOffice(office?: OfficeSettings): Brand {
 function BrandLogo({ brand, width, height }: { brand: Brand; width: number; height: number }) {
   return (
     <img
-      src={brand.logoDataUrl || '/logo.svg'}
+      src="/logo.svg"
       alt=""
       style={{ width, height, objectFit: 'contain', display: 'block' }}
     />
@@ -199,15 +200,15 @@ const pageStyle: React.CSSProperties = {
 };
 
 // Paleta da marca do site (estudo360.pt) — navy / azul / ciano.
-const NAVY = '#0B1D2D';
-const CYAN = '#00C2FF';
+const NAVY = C.dark;
+const CYAN = C.blue;
 
 // Semântica de cor consistente em todo o relatório: a MELHOR opção é sempre
 // VERDE e a PIOR sempre VERMELHA — independentemente de ser ENI ou Sociedade.
-const GREEN = { bg: '#ecfdf5', accent: '#059669', dark: '#065f46' };
+const GREEN = { bg: C.light, accent: C.blue, dark: C.dark };
 // Perdedor em slate neutro (não vermelho saturado): a recomendação destaca-se a
 // verde, a alternativa fica calma — menos alarmista, mais profissional.
-const SLATE = { bg: '#F1F5F9', accent: '#475569', dark: '#334155' };
+const SLATE = { bg: C.pale, accent: C.medium, dark: C.dark };
 /** Devolve a paleta (verde vencedor / slate alternativa) para um regime. */
 const regimePalette = (isWinner: boolean) => (isWinner ? GREEN : SLATE);
 
@@ -222,6 +223,17 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
         body { visibility: hidden; }
         #pdf-editor-root { visibility: visible; position: absolute; top: 0; left: 0; width: 100%; background: white; overflow: visible; z-index: 99999; }
         #pdf-editor-root * { visibility: visible; }
+        #pdf-editor-root, #pdf-editor-root * {
+          color: ${C.dark} !important;
+          border-color: ${C.line} !important;
+          background-color: transparent !important;
+          background-image: none !important;
+        }
+        #pdf-editor-root .pdf-page {
+          background: ${C.white} !important;
+          border-top: 2.5pt solid ${C.blue} !important;
+        }
+        #pdf-editor-root [contenteditable] { color: ${C.dark} !important; }
         .no-print { display: none !important; }
         /* O wrapper de scroll com padding/overflow gera páginas em branco na
            impressão — neutralizá-lo para o conteúdo fluir como folhas A4 limpas. */
@@ -236,8 +248,8 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
         #pdf-editor-root::after {
           content: attr(data-print-brand) " · Relatório confidencial · estudo360.pt";
           position: fixed; left: 16mm; right: 16mm; bottom: 5mm;
-          padding-top: 2mm; border-top: 0.3pt solid #E2E8F0;
-          font: 7.5pt Arial, sans-serif; color: #94A3B8; text-align: right;
+          padding-top: 2mm; border-top: 0.3pt solid ${C.line};
+          font: 7.5pt Arial, sans-serif; color: ${C.medium}; text-align: right;
         }
         @page { size: A4 portrait; margin: 0; }
       }

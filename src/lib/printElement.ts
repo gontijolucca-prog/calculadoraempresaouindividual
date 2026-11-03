@@ -102,7 +102,7 @@ export function imprimirUmaFolha(
 
   // Documentos com várias "folhas" (ex.: contrato) passam a fluxo contínuo:
   // sem quebras nem altura mínima, para caber tudo numa só A4.
-  if (paginas.length > 1) {
+  if (paginas.length > 0) {
     root.classList.add('uma-folha-flow');
     if (!document.getElementById('uma-folha-flow-css')) {
       const style = document.createElement('style');

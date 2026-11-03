@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import type { ClientProfile } from './ClientProfile';
 import type { OfficeSettings } from './lib/officeSettings';
 import { type HonorariosConfig, type PropostaResultado, calcularProposta } from './lib/honorarios';
+import { PDF_COLORS as C } from './lib/pdfTheme';
 
 interface Props {
   profile: ClientProfile;
@@ -32,8 +33,7 @@ const ptDate = (iso?: string) => {
 /** Texto de fallback a destacar — para placeholders não preenchidos. */
 function P({ v, w = '—' }: { v: string | number | undefined | null; w?: string }) {
   if (v === null || v === undefined || v === '' || v === 0) {
-    // .mc-fill — destaque amarelo SÓ no ecrã (a regra @media print remove-o).
-    return <span className="mc-fill" style={{ background: '#FEF3C7', color: '#92400E', padding: '0 4px', borderRadius: 3, fontWeight: 600 }}>{w}</span>;
+    return <span className="mc-fill" style={{ background: C.light, color: C.dark, padding: '0 4px', borderRadius: 3, fontWeight: 600 }}>{w}</span>;
   }
   return <strong>{v}</strong>;
 }
@@ -60,7 +60,7 @@ export default function MinutaContrato({
   const moradaCliente = [profile.morada, profile.codigoPostal, profile.localidade].filter(Boolean).join(', ');
   const moradaEscritorio = [office.morada, office.codigoPostal, office.localidade].filter(Boolean).join(', ');
 
-  const cor = office.corPrimaria || '#0677FF';
+  const cor = C.blue;
 
   // Identificação do contabilista responsável (cláusula 1.ª nº 3).
   const ccResponsavel = escritorioSociedade ? (office.contabilistaResponsavel || office.nome) : office.nome;
@@ -77,15 +77,15 @@ export default function MinutaContrato({
   );
 
   return (
-    <div id={printRootId} className="bg-white" style={{ color: '#1E293B' }}>
+    <div id={printRootId} className="bg-white" style={{ color: C.dark }}>
       <style>{`
         #${printRootId} { font-family: Georgia, 'Times New Roman', Times, serif; }
         #${printRootId} .mc-page { width: 210mm; min-height: 297mm; box-sizing: border-box; padding: 22mm 24mm; margin: 0 auto; background: white; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
         #${printRootId} .mc-kicker { text-align: center; font-family: Arial, Helvetica, sans-serif; font-size: 8pt; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; color: ${cor}; margin: 4px 0 6px 0; }
-        #${printRootId} h1 { font-size: 19pt; text-align: center; letter-spacing: 0.3px; margin: 0 auto 8px auto; color: #0B1D2D; font-weight: 700; line-height: 1.2; }
+        #${printRootId} h1 { font-size: 19pt; text-align: center; letter-spacing: 0.3px; margin: 0 auto 8px auto; color: ${C.dark}; font-weight: 700; line-height: 1.2; }
         #${printRootId} .mc-rule { width: 52px; height: 2.5px; background: ${cor}; border-radius: 2px; margin: 0 auto 12px auto; }
         #${printRootId} h2 { font-size: 10.5pt; text-align: center; margin: 24px 0 2px 0; letter-spacing: 1.2px; text-transform: uppercase; color: ${cor}; font-family: Arial, Helvetica, sans-serif; font-weight: 800; }
-        #${printRootId} .mc-sub { font-size: 9pt; text-align: center; color: #64748B; margin: 0 0 12px 0; font-style: italic; }
+        #${printRootId} .mc-sub { font-size: 9pt; text-align: center; color: ${C.medium}; margin: 0 0 12px 0; font-style: italic; }
         #${printRootId} h2 + .mc-sub { margin-top: 1px; }
         #${printRootId} p { font-size: 11pt; line-height: 1.55; text-align: justify; margin: 6px 0; }
         #${printRootId} ol { padding-left: 22px; }
@@ -121,22 +121,22 @@ export default function MinutaContrato({
       `}</style>
 
       {/* Dica de edição (não imprime) */}
-      <div className="no-print" style={{ maxWidth: '210mm', margin: '0 auto 8px auto', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, fontSize: '12px', color: '#1D4ED8', fontWeight: 600 }}>
+      <div className="no-print" style={{ maxWidth: '210mm', margin: '0 auto 8px auto', display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: C.light, border: `1px solid ${C.line}`, borderRadius: 8, fontSize: '12px', color: C.dark, fontWeight: 600 }}>
         <span aria-hidden>✏️</span>
         <span>Clique em qualquer cláusula ou texto para o editar antes de imprimir.</span>
       </div>
 
       {/* Vista de formulário para mobile — layout vertical legível */}
       <div className="mc-mobile-form" style={{ display: 'none', maxWidth: 480, margin: '0 auto', padding: 16 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0B1D2D', marginBottom: 12 }}>Contrato de Prestação de Serviços</h2>
-        <p style={{ fontSize: 13, color: '#64748B', marginBottom: 16 }}>Escritório: {office.nome || '—'} · Cliente: {profile.nomeCliente || profile.nif || '(NIF)'}</p>
-        <div style={{ background: 'white', borderRadius: 12, padding: 16, border: '1px solid #E2E8F0', fontSize: 14, lineHeight: 1.8, color: '#333' }}>
+        <h2 style={{ fontSize: 18, fontWeight: 800, color: C.dark, marginBottom: 12 }}>Contrato de Prestação de Serviços</h2>
+        <p style={{ fontSize: 13, color: C.medium, marginBottom: 16 }}>Escritório: {office.nome || '—'} · Cliente: {profile.nomeCliente || profile.nif || '(NIF)'}</p>
+        <div style={{ background: C.white, borderRadius: 12, padding: 16, border: `1px solid ${C.line}`, fontSize: 14, lineHeight: 1.8, color: C.dark }}>
           <p style={{ marginBottom: 12 }}>Contrato de prestação de serviços contabilísticos entre o escritório e o cliente.</p>
           <p style={{ marginBottom: 12 }}><strong>Objeto:</strong> Prestação de serviços de contabilidade, fiscalidade e administração.</p>
           <p style={{ marginBottom: 12 }}><strong>Retribuição:</strong> {eur(Object.values(honorarios.baseMensal || {})[0] || 0)}/mês + IVA</p>
           <p style={{ marginBottom: 12 }}><strong>Duração:</strong> 12 meses, renovável.</p>
           <div style={{ textAlign: 'center', marginTop: 16 }}>
-            <button onClick={() => imprimirUmaFolha(printRootId, { piso: 0.7 })} style={{ background: '#0677FF', color: 'white', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Imprimir contrato</button>
+            <button onClick={() => imprimirUmaFolha(printRootId, { piso: 0.7 })} style={{ background: C.blue, color: C.white, border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Imprimir contrato</button>
           </div>
         </div>
       </div>
@@ -267,7 +267,7 @@ export default function MinutaContrato({
           <li>No caso de o Segundo Outorgante não aceitar as alterações propostas pelo Primeiro Outorgante, assiste-lhe o direito de denunciar o Contrato, por escrito e no prazo máximo de 15 (quinze) dias após o recebimento da comunicação do Primeiro Outorgante, através de carta registada com aviso de receção, sob pena de se considerarem tacitamente aceites as alterações propostas.</li>
         </ol>
         {office.iban && (
-          <p style={{ fontSize: '10pt', color: '#64748B', fontStyle: 'italic' }}>
+          <p style={{ fontSize: '10pt', color: C.medium, fontStyle: 'italic' }}>
             Pagamento por transferência bancária para o IBAN <strong>{office.iban}</strong>.
           </p>
         )}
@@ -336,7 +336,7 @@ export default function MinutaContrato({
           <Signature label="Segundo Outorgante" sub={profile.nomeCliente} />
         </div>
 
-        <p style={{ marginTop: 28, fontSize: '8pt', color: '#94A3B8', textAlign: 'center', fontStyle: 'italic' }}>
+        <p style={{ marginTop: 28, fontSize: '8pt', color: C.medium, textAlign: 'center', fontStyle: 'italic' }}>
           Este contrato constitui uma adaptação do modelo publicado pela Ordem dos Contabilistas Certificados (OCC),
           preenchida automaticamente pelo Estudo 360 com os dados do escritório e do cliente. As Partes devem revê-la antes de assinar.
         </p>
@@ -348,9 +348,9 @@ export default function MinutaContrato({
 function Signature({ label, sub }: { label: string; sub: string }) {
   return (
     <div>
-      <div style={{ borderBottom: '1px solid #94A3B8', height: 50 }} />
-      <div style={{ fontSize: '9pt', color: '#64748B', textTransform: 'uppercase', letterSpacing: 1, marginTop: 4, fontWeight: 700 }}>{label}</div>
-      <div style={{ fontSize: '10pt', color: '#1E293B', marginTop: 2, whiteSpace: 'pre-line', fontWeight: 600 }}>{sub}</div>
+      <div style={{ borderBottom: `1px solid ${C.medium}`, height: 50 }} />
+      <div style={{ fontSize: '9pt', color: C.medium, textTransform: 'uppercase', letterSpacing: 1, marginTop: 4, fontWeight: 700 }}>{label}</div>
+      <div style={{ fontSize: '10pt', color: C.dark, marginTop: 2, whiteSpace: 'pre-line', fontWeight: 600 }}>{sub}</div>
     </div>
   );
 }

@@ -104,6 +104,12 @@
   .file b{display:block;font-size:11.8px}.file span{display:block;font-size:11px;color:var(--muted);margin-top:1px}
   .doc-intro{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:8px;font-size:12.5px;color:var(--muted)}
   .doc-intro b{color:var(--ink)}
+  .closed-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .closed{border:1px solid var(--line);border-left:2px solid var(--blue);border-radius:0 9px 9px 0;background:var(--paper);padding:12px 13px}
+  .closed .ok{display:inline-flex;align-items:center;gap:5px;margin-bottom:5px;font-family:"JetBrains Mono",monospace;font-size:8.5px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:#0558c9}
+  .closed .ok::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--blue)}
+  .closed b{display:block;font-size:12.5px;line-height:1.4}
+  .closed span{display:block;margin-top:4px;font-size:11px;line-height:1.5;color:var(--muted)}
   .next-top{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}
   .np-status{display:inline-flex;align-items:center;gap:7px;padding-top:3px;font-size:11.5px;color:var(--muted)}
   .dotk{width:7px;height:7px;border-radius:50%;background:#c6cbd3}.dotk.ok{background:var(--green)}.dotk.err{background:var(--rose)}
@@ -128,7 +134,7 @@
   @media(max-width:860px){
     .hero-in{grid-template-columns:1fr;gap:26px;padding:44px 0}
     .hero-card{max-width:500px}
-    .files{grid-template-columns:1fr}
+    .files,.closed-grid{grid-template-columns:1fr}
     .sec-head{flex-direction:column;align-items:flex-start}
     .side{white-space:normal}
   }
@@ -156,6 +162,7 @@
     <div class="brand">Estudo<span>360</span></div>
     <nav aria-label="Navegação da atualização">
       <a href="#novidades">Novidades</a>
+      <a href="#fechadas">Notas 28/10</a>
       <a href="#documentos">26 PDFs</a>
       <a href="#svat">SVAT</a>
       <a href="#proximos">Próximos passos</a>
@@ -188,7 +195,7 @@
       <div class="row"><span>Período revisto</span><b>28/10 - 03/11</b></div>
       <div class="row"><span>Acesso da equipa</span><b>Sem email</b></div>
       <div class="row"><span>Documentos</span><b>1 folha A4</b></div>
-      <div class="row"><span>Próximos passos</span><b>Histórico permanente</b></div>
+      <div class="row"><span>Notas de 28/10</span><b>6/6 fechadas</b></div>
     </aside>
   </div>
 </header>
@@ -226,6 +233,10 @@
         <div class="card reveal">
           <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M9 13h6M9 17h6"/></svg></div>
           <div class="body"><span class="tag green">Documentos</span><div class="txt"><b>Foram revistos todos os documentos exportáveis e reunidos nesta página.</b> São 26 documentos, todos numa página A4, com cliente, escritório, valores e informação própria do documento.</div><div class="test"><b>Testar</b><a href="#documentos" style="color:#0558c9;font-weight:700">Ver os 26 PDFs abaixo</a> e rever documento por documento.</div></div>
+        </div>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"/><path d="M8 12h8M12 8v8"/></svg></div>
+          <div class="body"><span class="tag blue">Design dos PDFs</span><div class="txt"><b>Os 26 documentos passaram a usar apenas azul e branco.</b> Foram retirados verdes, vermelhos, laranjas, castanhos e cinzentos. A informação ficou mais organizada e os documentos deixaram de usar logótipos ou cores do escritório que pudessem quebrar esta regra.</div><div class="test"><b>Testar</b><a href="#documentos" style="color:#0558c9;font-weight:700">Abrir os 26 PDFs</a> e confirmar que todos usam apenas azul e branco.</div></div>
         </div>
       </article>
 
@@ -309,12 +320,27 @@
     </div>
   </section>
 
+  <section id="fechadas">
+    <div class="sec-head reveal">
+      <div><div class="overline">Fecho da reunião anterior</div><h2>Notas de 28/10 fechadas</h2></div>
+      <div class="side">Executadas · não passam para outra reunião</div>
+    </div>
+    <div class="closed-grid reveal">
+      <div class="closed"><span class="ok">Concluído</span><b>PDFs completos numa só página</b><span>Os 26 documentos estão validados em A4. Rever documento por documento na secção seguinte.</span></div>
+      <div class="closed"><span class="ok">Concluído</span><b>Login fica ligado ao gabinete</b><span>O acesso criado pelo gabinete entra diretamente no gabinete correto, sem email de verificação.</span></div>
+      <div class="closed"><span class="ok">Concluído</span><b>Minuta passou a contrato</b><span>O documento 18 já identifica partes, serviços, honorários, confidencialidade, RGPD, duração e assinaturas.</span></div>
+      <div class="closed"><span class="ok">Concluído</span><b>Menus passaram para a barra superior</b><span>A barra permanece disponível em todos os ecrãs e o menu ativo recarrega a vista ao ser clicado.</span></div>
+      <div class="closed"><span class="ok">Concluído</span><b>SAF-T abre em cada cliente</b><span>O botão deixou o menu geral e passou para o menu do cliente que tem SAF-T guardado.</span></div>
+      <div class="closed"><span class="ok">Concluído</span><b>Ícone do AI muda por pessoa</b><span>O assistente mostra as iniciais da conta autenticada. Ao entrar com outro colaborador, o ícone muda.</span></div>
+    </div>
+  </section>
+
   <section id="documentos">
     <div class="sec-head reveal">
       <div><div class="overline">Revisão documental</div><h2>26 PDFs, um exemplo de cada</h2></div>
-      <div class="side">Todos com uma página A4</div>
+      <div class="side">A4 · azul e branco</div>
     </div>
-    <div class="doc-intro reveal"><span>Cada ligação abre o PDF real exportado pelo Estudo360.</span><span><b>26/26</b> revistos</span></div>
+    <div class="doc-intro reveal"><span>Cada ligação abre o PDF real exportado, organizado apenas em azul e branco.</span><span><b>26/26</b> revistos</span></div>
     <div class="files reveal">
       <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/01-simulacao-fiscal.pdf" target="_blank" rel="noopener"><span class="fn">01</span><span class="fc"><b>Simulador Fiscal</b><span>ENI vs Sociedade, parâmetros, comparação, recomendação e enquadramento.</span></span></a>
       <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/02-simulacao-viaturas.pdf" target="_blank" rel="noopener"><span class="fn">02</span><span class="fc"><b>Simulador de Viaturas</b><span>IVA, tributação autónoma, depreciação e formas de aquisição.</span></span></a>
@@ -333,7 +359,7 @@
       <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/15-mapa-controlo.pdf" target="_blank" rel="noopener"><span class="fn">15</span><span class="fc"><b>Mapa de Controlo</b><span>Pilares de controlo por cliente e mês, com filtros refletidos no PDF.</span></span></a>
       <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/16-mapa-rh.pdf" target="_blank" rel="noopener"><span class="fn">16</span><span class="fc"><b>Mapa RH</b><span>Pilares de recursos humanos por cliente e mês.</span></span></a>
       <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/17-proposta-honorarios.pdf" target="_blank" rel="noopener"><span class="fn">17</span><span class="fc"><b>Proposta de Honorários</b><span>Serviços, mensalidade, totais, condições e dados do escritório.</span></span></a>
-      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/18-minuta-contrato.pdf" target="_blank" rel="noopener"><span class="fn">18</span><span class="fc"><b>Minuta de Contrato</b><span>Partes, objeto, serviços, honorários, obrigações, duração e foro.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/18-contrato-prestacao-servicos.pdf" target="_blank" rel="noopener"><span class="fn">18</span><span class="fc"><b>Contrato de Prestação de Serviços</b><span>Partes, objeto, serviços, honorários, confidencialidade, RGPD, duração, foro e assinaturas.</span></span></a>
       <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/19-proposta-comercial.pdf" target="_blank" rel="noopener"><span class="fn">19</span><span class="fc"><b>Proposta Comercial</b><span>Síntese dos sete blocos da proposta com branding e próximo passo.</span></span></a>
       <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/20-demonstracao-resultados.pdf" target="_blank" rel="noopener"><span class="fn">20</span><span class="fc"><b>Demonstração dos Resultados</b><span>Rendimentos, gastos, EBITDA, resultado operacional, impostos e líquido.</span></span></a>
       <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/21-alteracoes-capital-proprio.pdf" target="_blank" rel="noopener"><span class="fn">21</span><span class="fc"><b>Alterações no Capital Próprio</b><span>Capital, reservas, resultados e movimentos do período.</span></span></a>

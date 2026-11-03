@@ -11,6 +11,7 @@ import { calcIMT, type TipoImovel, type Localizacao } from './lib/imt';
 import type { ClientProfile } from './ClientProfile';
 import type { OfficeSettings } from './lib/officeSettings';
 import type { PreviSaState } from './previSaState';
+import { PDF_COLORS as C } from './lib/pdfTheme';
 
 export interface SimulatorPrintContextValue {
   view: SimView | null;
@@ -168,43 +169,41 @@ function buildReport(ctx: SimulatorPrintContextValue): string {
   const clientName = profile.nomeCliente?.trim() || 'Por preencher (Perfil do cliente)';
   const clientNif = profile.nif?.trim() || 'Por preencher';
   const date = new Intl.DateTimeFormat('pt-PT', { dateStyle: 'long' }).format(new Date());
-  const color = /^#[0-9A-Fa-f]{6}$/.test(office.corPrimaria || '') ? office.corPrimaria : '#0677FF';
-  const logo = office.logoDataUrl
-    ? `<img class="logo" src="${esc(office.logoDataUrl)}" alt="${esc(officeName)}">`
-    : `<div class="logo-fallback" style="background:${esc(color)}">360</div>`;
+  const color = C.blue;
+  const logo = `<div class="logo-fallback" style="background:${color}">360</div>`;
   const legal = 'Cálculos indicativos — confirme os valores e o enquadramento com o seu Contabilista Certificado.';
 
   return `
 <style>
   * { box-sizing: border-box; }
-  body { margin: 0; background: #fff; color: #0B1D2D; font-family: Montserrat, Arial, sans-serif; font-size: 10pt; line-height: 1.45; }
+  body { margin: 0; background: ${C.white}; color: ${C.dark}; font-family: Montserrat, Arial, sans-serif; font-size: 10pt; line-height: 1.45; }
   .sim-report { max-width: 180mm; margin: 0 auto; }
   .report-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16mm; padding: 0 0 8mm; border-bottom: 2px solid ${esc(color)}; }
   .brand { display:flex; align-items:center; gap:4mm; min-width:0; }
   .logo { max-width: 42mm; max-height: 18mm; object-fit: contain; object-position:left center; }
-  .logo-fallback { width: 18mm; height: 18mm; border-radius: 5mm; color:#fff; display:flex; align-items:center; justify-content:center; font-size:16pt; font-weight:800; }
-  .office { font-size:8pt; color:#64748B; margin-top:1mm; }
-  .doc-meta { text-align:right; color:#64748B; font-size:8pt; white-space:nowrap; }
+  .logo-fallback { width: 18mm; height: 18mm; border-radius: 5mm; color:${C.white}; display:flex; align-items:center; justify-content:center; font-size:16pt; font-weight:800; }
+  .office { font-size:8pt; color:${C.medium}; margin-top:1mm; }
+  .doc-meta { text-align:right; color:${C.medium}; font-size:8pt; white-space:nowrap; }
   h1 { font-size: 22pt; line-height:1.12; letter-spacing:-.4px; margin:9mm 0 0; }
-  .subtitle { margin:2mm 0 7mm; color:#64748B; font-size:10pt; }
-  .client-box { display:grid; grid-template-columns: 1fr 42mm; gap:6mm; background:#F5F7FA; border:1px solid #E2E8F0; border-radius:4mm; padding:4mm 5mm; margin-bottom:8mm; }
-  .meta-label { color:#64748B; font-size:7.5pt; font-weight:800; letter-spacing:.7px; text-transform:uppercase; }
+  .subtitle { margin:2mm 0 7mm; color:${C.medium}; font-size:10pt; }
+  .client-box { display:grid; grid-template-columns: 1fr 42mm; gap:6mm; background:${C.pale}; border:1px solid ${C.line}; border-radius:4mm; padding:4mm 5mm; margin-bottom:8mm; }
+  .meta-label { color:${C.medium}; font-size:7.5pt; font-weight:800; letter-spacing:.7px; text-transform:uppercase; }
   .meta-value { margin-top:1mm; font-size:10.5pt; font-weight:700; }
   .section { break-inside:avoid; page-break-inside:avoid; margin: 0 0 7mm; }
-  .section-title { display:flex; align-items:center; gap:2mm; color:${esc(color)}; font-size:9pt; font-weight:800; letter-spacing:1px; text-transform:uppercase; border-bottom:1px solid #DCE7F2; padding-bottom:2mm; margin-bottom:3mm; }
+  .section-title { display:flex; align-items:center; gap:2mm; color:${color}; font-size:9pt; font-weight:800; letter-spacing:1px; text-transform:uppercase; border-bottom:1px solid ${C.line}; padding-bottom:2mm; margin-bottom:3mm; }
   .section-title:before { content:''; width:3mm; height:3mm; border-radius:50%; background:${esc(color)}; }
-  .rows { border:1px solid #E2E8F0; border-radius:3mm; overflow:hidden; }
-  .row { display:flex; justify-content:space-between; align-items:baseline; gap:8mm; padding:2.8mm 4mm; border-bottom:1px solid #EEF2F7; }
+  .rows { border:1px solid ${C.line}; border-radius:3mm; overflow:hidden; }
+  .row { display:flex; justify-content:space-between; align-items:baseline; gap:8mm; padding:2.8mm 4mm; border-bottom:1px solid ${C.line}; }
   .row:last-child { border-bottom:0; }
-  .row:nth-child(even) { background:#FAFCFE; }
-  .row span { color:#475569; min-width:0; }
-  .row strong { text-align:right; color:#0F172A; font-weight:700; white-space:nowrap; }
-  .result-box { border:2px solid ${esc(color)}; border-radius:4mm; padding:5mm; background:linear-gradient(135deg, #F5FAFF, #fff); }
-  .result-box .row strong { color:${esc(color)}; font-size:10.5pt; }
-  .result-box .row:first-child { background:${esc(color)}; color:#fff; border-radius:2mm; margin:-1mm -1mm 2mm; padding:3.5mm 4mm; }
-  .result-box .row:first-child span, .result-box .row:first-child strong { color:#fff; }
-  .empty { color:#64748B; background:#F8FAFC; border:1px dashed #CBD5E1; border-radius:3mm; padding:5mm; margin:0; }
-  .note { border-left:3px solid #F59E0B; background:#FFFBEB; color:#92400E; padding:3.5mm 4mm; border-radius:0 3mm 3mm 0; font-size:8.5pt; break-inside:avoid; }
+  .row:nth-child(even) { background:${C.pale}; }
+  .row span { color:${C.medium}; min-width:0; }
+  .row strong { text-align:right; color:${C.dark}; font-weight:700; white-space:nowrap; }
+  .result-box { border:2px solid ${color}; border-radius:4mm; padding:5mm; background:${C.pale}; }
+  .result-box .row strong { color:${color}; font-size:10.5pt; }
+  .result-box .row:first-child { background:${color}; color:${C.white}; border-radius:2mm; margin:-1mm -1mm 2mm; padding:3.5mm 4mm; }
+  .result-box .row:first-child span, .result-box .row:first-child strong { color:${C.white}; }
+  .empty { color:${C.medium}; background:${C.pale}; border:1px dashed ${C.line}; border-radius:3mm; padding:5mm; margin:0; }
+  .note { border-left:3px solid ${C.blue}; background:${C.pale}; color:${C.dark}; padding:3.5mm 4mm; border-radius:0 3mm 3mm 0; font-size:8.5pt; break-inside:avoid; }
   @media (max-width: 700px) { .report-head { gap:5mm; } .client-box { grid-template-columns:1fr; } .doc-meta { text-align:left; } h1 { font-size:19pt; } }
 </style>
 <article class="sim-report">
@@ -228,7 +227,7 @@ function buildReport(ctx: SimulatorPrintContextValue): string {
   </section>
   <section class="section">
     <div class="section-title">Como se calcula</div>
-    <p class="note" style="border-color:${esc(color)};background:#F5FAFF;color:#0B1D2D;">${esc(PRINT_METHOD[ctx.view])}</p>
+    <p class="note" style="border-color:${color};background:${C.pale};color:${C.dark};">${esc(PRINT_METHOD[ctx.view])}</p>
   </section>
   <div class="note">${esc(legal)}</div>
 </article>`;
@@ -247,7 +246,17 @@ export function SimulatorPrintButton({ compact = false }: { compact?: boolean })
       void downloadPrevisaPdf(
         ctx.state as PreviSaState,
         profile.nomeCliente?.trim() || 'Empresa',
-        { nome: office.nome, logoDataUrl: office.logoDataUrl, corPrimaria: office.corPrimaria },
+        {
+          nome: office.nome,
+          nif: office.nif,
+          cedulaProfissional: office.cedulaProfissional,
+          numeroInscricaoOCC: office.numeroInscricaoOCC,
+          email: office.email,
+          telefone: office.telefone,
+          morada: office.morada,
+          codigoPostal: office.codigoPostal,
+          localidade: office.localidade,
+        },
       );
       return;
     }
@@ -351,26 +360,24 @@ export function SimulatorPrintButton({ compact = false }: { compact?: boolean })
         const clientName = (ctx.profile as unknown as { nomeCliente?: string })?.nomeCliente?.trim() || '—';
         const clientNif = (ctx.profile as unknown as { nif?: string })?.nif?.trim() || '—';
         const date = new Intl.DateTimeFormat('pt-PT', { dateStyle: 'long' }).format(new Date());
-        const color = /^#[0-9A-Fa-f]{6}$/.test((ctx.office as unknown as { corPrimaria?: string })?.corPrimaria || '') ? (ctx.office as unknown as { corPrimaria: string }).corPrimaria : '#0677FF';
-        const logo = (ctx.office as unknown as { logoDataUrl?: string })?.logoDataUrl
-          ? `<img class="logo" src="${esc((ctx.office as unknown as { logoDataUrl: string }).logoDataUrl)}" alt="${esc(officeName)}">`
-          : `<div class="logo-fallback" style="background:${esc(color)}">360</div>`;
+        const color = C.blue;
+        const logo = `<div class="logo-fallback" style="background:${color}">360</div>`;
         // Clone the results node (deep)
         const clone = node.cloneNode(true) as HTMLElement;
         // Extract branding header HTML (same as buildReport but reusing live results DOM)
         tmp.innerHTML = `
-          <div class="sim-report-live" style="font-family: Montserrat, Arial, sans-serif; color: #0B1D2D;">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16mm;padding:0 0 6mm;border-bottom:2px solid ${esc(color)};margin-bottom:6mm;">
+          <div class="sim-report-live" style="font-family: Montserrat, Arial, sans-serif; color: ${C.dark};">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16mm;padding:0 0 6mm;border-bottom:2px solid ${color};margin-bottom:6mm;">
               <div style="display:flex;align-items:center;gap:4mm;">
                 ${logo}
-                <div><div style="font-weight:800">${esc(officeName)}</div><div style="font-size:8pt;color:#64748B">Estudo 360 · Análise · Estratégia · Decisão</div></div>
+                <div><div style="font-weight:800">${esc(officeName)}</div><div style="font-size:8pt;color:${C.medium}">Estudo 360 · Análise · Estratégia · Decisão</div></div>
               </div>
-              <div style="text-align:right;color:#64748B;font-size:8pt">RELATÓRIO<br>${esc(date)}</div>
+              <div style="text-align:right;color:${C.medium};font-size:8pt">RELATÓRIO<br>${esc(date)}</div>
             </div>
             <h1 style="font-size:18pt;line-height:1.15;margin:2mm 0 1mm;font-weight:800;letter-spacing:-0.3px">${esc(title)}</h1>
-            <div style="display:grid;grid-template-columns:1fr 42mm;gap:4mm;background:#F5F7FA;border:1px solid #E2E8F0;border-radius:4mm;padding:3mm 4mm;margin-bottom:6mm;font-size:9pt;">
-              <div><div style="font-size:7.5pt;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#64748B">Cliente / Empresa</div><div style="font-weight:700;margin-top:1mm">${esc(clientName)}</div></div>
-              <div><div style="font-size:7.5pt;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#64748B">NIF</div><div style="font-weight:700;margin-top:1mm">${esc(clientNif)}</div></div>
+            <div style="display:grid;grid-template-columns:1fr 42mm;gap:4mm;background:${C.pale};border:1px solid ${C.line};border-radius:4mm;padding:3mm 4mm;margin-bottom:6mm;font-size:9pt;">
+              <div><div style="font-size:7.5pt;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:${C.medium}">Cliente / Empresa</div><div style="font-weight:700;margin-top:1mm">${esc(clientName)}</div></div>
+              <div><div style="font-size:7.5pt;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:${C.medium}">NIF</div><div style="font-weight:700;margin-top:1mm">${esc(clientNif)}</div></div>
             </div>
           </div>`;
         const wrapper = tmp.firstElementChild as HTMLElement;

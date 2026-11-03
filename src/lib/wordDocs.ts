@@ -14,6 +14,7 @@ import type { ContabilidadeData } from '../ClientProfile';
 import type { PreviSaState } from '../previSaState';
 import { defaultPreviSaState } from '../previSaState';
 import { impostoEstimado } from './previsaCalc';
+import { PDF_COLORS as C } from './pdfTheme';
 
 // ─── Helpers de formatação ──────────────────────────────────────────────────
 
@@ -149,34 +150,40 @@ function drLinhas(p: PreviSaState) {
 const STYLE = `
   @page { size: 21cm 29.7cm; margin: 1.8cm 1.4cm; }
   * { box-sizing: border-box; }
-  html { background: #ffffff; }
-  body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #1a1a1a; margin: 0; background: #ffffff; }
+  html { background: ${C.white}; }
+  body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: ${C.dark}; margin: 0; background: ${C.white}; }
   .hdr { display: table; width: 100%; margin-bottom: 4pt; }
-  .hdr .l { display: table-cell; text-align: left; font-weight: bold; color: #0B1D2D; font-size: 11pt; }
-  .hdr .r { display: table-cell; text-align: right; font-weight: bold; color: #1f4e79; font-size: 11pt; }
-  .office-meta { color: #64748B; font-size: 7.5pt; margin: 0 0 5pt; }
-  h1.title { color: #1f4e79; font-size: 14pt; margin: 2pt 0 2pt; padding-bottom: 4pt; border-bottom: 1.5pt solid #1f4e79; page-break-after: avoid; }
-  .em-euros { text-align: right; color: #1f4e79; font-size: 8pt; font-weight: bold; margin: 2pt 0 8pt; }
+  .hdr .l { display: table-cell; text-align: left; font-weight: bold; color: ${C.dark}; font-size: 11pt; }
+  .hdr .r { display: table-cell; text-align: right; font-weight: bold; color: ${C.blue}; font-size: 11pt; }
+  .office-meta { color: ${C.medium}; font-size: 7.5pt; margin: 0 0 5pt; }
+  .doc-control { display: flex; justify-content: space-between; gap: 8pt; margin: 0 0 7pt; padding: 3pt 5pt; background: ${C.light}; border: 0.5pt solid ${C.line}; color: ${C.medium}; font-size: 7.2pt; }
+  .doc-control b { color: ${C.dark}; }
+  h1.title { color: ${C.dark}; font-size: 14pt; margin: 2pt 0 2pt; padding-bottom: 4pt; border-bottom: 1.5pt solid ${C.blue}; page-break-after: avoid; }
+  .em-euros { text-align: right; color: ${C.blue}; font-size: 8pt; font-weight: bold; margin: 2pt 0 8pt; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5pt; margin: 0 0 8pt; }
+  .kpi { border: 0.75pt solid ${C.line}; background: ${C.pale}; padding: 4pt 5pt; }
+  .kpi small { display: block; color: ${C.medium}; font-size: 7pt; text-transform: uppercase; letter-spacing: .4pt; }
+  .kpi strong { display: block; color: ${C.dark}; font-size: 10pt; margin-top: 1pt; }
   table { border-collapse: collapse; width: 100%; max-width: 100%; page-break-inside: auto; }
   table.dr { table-layout: fixed; }
-  table.dr td, table.dr th { padding: 3pt 4pt; font-size: 9.5pt; border-bottom: 0.5pt solid #e2e2e2; overflow-wrap: break-word; word-break: break-word; }
-  table.dr th { color: #0B1D2D; border-bottom: 1pt solid #999; }
+  table.dr td, table.dr th { padding: 3pt 4pt; font-size: 9.5pt; border-bottom: 0.5pt solid ${C.line}; overflow-wrap: break-word; word-break: break-word; }
+  table.dr th { color: ${C.white}; background: ${C.dark}; border-bottom: 1pt solid ${C.blue}; }
   thead { display: table-header-group; }
   tr { page-break-inside: avoid; }
   .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .tot td { font-weight: bold; border-top: 0.75pt solid #999; }
-  .sec { font-weight: bold; text-align: center; color: #0B1D2D; }
+  .tot td { font-weight: bold; border-top: 0.75pt solid ${C.blue}; }
+  .sec { font-weight: bold; text-align: center; color: ${C.dark}; background: ${C.light}; }
   .ind { padding-left: 10pt !important; }
-  .dash { color: #b0b0b0; letter-spacing: 1px; }
-  .fill { color: #555; letter-spacing: 1px; }
+  .dash { color: ${C.medium}; letter-spacing: 1px; }
+  .fill { color: ${C.medium}; letter-spacing: 1px; }
   p { line-height: 1.5; margin: 6pt 0; text-align: justify; orphans: 2; widows: 2; }
   ul { margin: 4pt 0; page-break-inside: avoid; }
   li { margin: 3pt 0; line-height: 1.45; }
   .sigs { display: table; width: 100%; margin-top: 36pt; page-break-inside: avoid; }
   .sigs .c { display: table-cell; width: 50%; text-align: center; font-size: 9.5pt; padding-top: 24pt; }
-  .sigs .line { border-top: 0.75pt solid #333; margin: 0 18pt; padding-top: 3pt; }
-  .ftr { margin-top: 18pt; padding-top: 4pt; border-top: 0.5pt solid #ccc; color: #1f4e79; font-size: 8pt; text-align: right; }
-  .meta { color: #555; font-size: 9pt; }
+  .sigs .line { border-top: 0.75pt solid ${C.medium}; margin: 0 18pt; padding-top: 3pt; }
+  .ftr { margin-top: 18pt; padding-top: 4pt; border-top: 0.5pt solid ${C.line}; color: ${C.blue}; font-size: 8pt; text-align: right; }
+  .meta { color: ${C.medium}; font-size: 9pt; }
   .pgbreak { page-break-before: always; }
   /* Tabela larga (Alterações no Capital Próprio): compacta para caber em A4. */
   table.compact td, table.compact th { padding: 2.5pt 2.8pt; font-size: 7.2pt; }
@@ -217,7 +224,8 @@ function cabecalho(c: Ctx, titulo: string, emEuros = true): string {
   return `<div class="hdr"><span class="l">${esc(c.nome.toUpperCase())}</span><span class="r">NIF: ${esc(c.nif) || FILL}</span></div>
 ${identidade ? `<div class="office-meta">${identidade}</div>` : ''}
 <h1 class="title">${titulo}</h1>
-${emEuros ? '<div class="em-euros">(em euros)</div>' : ''}`;
+${emEuros ? '<div class="em-euros">(em euros)</div>' : ''}
+<div class="doc-control"><span><b>Exercício</b> ${c.ano}</span><span><b>Moeda</b> EUR</span><span><b>Emissão</b> ${new Intl.DateTimeFormat('pt-PT').format(new Date())}</span><span><b>Documento</b> 1/1</span></div>`;
 }
 
 function rodape(c: Ctx): string {
@@ -237,9 +245,17 @@ export function buildDemonstracaoResultados(emp: EmpresaRecord, office: OfficeSe
   const d = drLinhas(c.prev);
   const { valor: imposto, estimado: impostoEst } = impostoPeriodo(c);
   const liquido = cv(c.cont, 'resultadoLiquido') ?? (imposto != null && Number.isFinite(d.rai) ? d.rai - imposto : null);
+  const margemLiquida = d.vendas > 0 && liquido != null ? (liquido / d.vendas) * 100 : null;
   const r = (label: string, v: number | null, opts: { tot?: boolean; ind?: boolean } = {}) =>
     `<tr class="${opts.tot ? 'tot' : ''}"><td class="${opts.ind ? 'ind' : ''}">${label}</td><td class="num"></td><td class="num">${val(v)}</td><td class="num"></td></tr>`;
   const body = `${cabecalho(c, `Demonstra&ccedil;&atilde;o dos resultados por naturezas em 31 de dezembro de ${c.ano}`)}
+<div class="kpis">
+  <div class="kpi"><small>Vendas e servi&ccedil;os</small><strong>${val(d.vendas) || '&mdash;'}</strong></div>
+  <div class="kpi"><small>EBITDA</small><strong>${val(d.ebitda) || '&mdash;'}</strong></div>
+  <div class="kpi"><small>Resultado antes de impostos</small><strong>${val(d.rai) || '&mdash;'}</strong></div>
+  <div class="kpi"><small>Resultado l&iacute;quido</small><strong>${val(liquido) || '&mdash;'}</strong></div>
+</div>
+${margemLiquida != null ? `<p class="meta" style="margin:0 0 7pt"><b>Margem l&iacute;quida:</b> ${margemLiquida.toFixed(1).replace('.', ',')}% do volume de vendas e servi&ccedil;os.</p>` : ''}
 <table class="dr">
 <tr><th style="text-align:left">Rendimentos e Gastos</th><th class="num">Notas</th><th class="num">${c.ano}</th><th class="num">${c.anoAnt}</th></tr>
 ${r('Vendas e servi&ccedil;os prestados', d.vendas)}
@@ -567,8 +583,8 @@ export function buildDeclaracaoResponsabilidade(emp: EmpresaRecord, office: Offi
   const entidade = c.nome ? esc(c.nome) : FILL;
   const nif = c.nif ? esc(c.nif) : FILL;
   const local = c.localEscritorio ? esc(c.localEscritorio) : FILL;
-  const body = `<p style="text-align:right;color:#777;font-size:8.5pt">(PROPOSTA)</p>
-<h1 class="title" style="text-align:center;border:0;color:#0B1D2D">DECLARA&Ccedil;&Atilde;O DE RESPONSABILIDADE FINAL DE EXERC&Iacute;CIO</h1>
+  const body = `<p style="text-align:right;color:${C.medium};font-size:8.5pt">(PROPOSTA)</p>
+<h1 class="title" style="text-align:center;border:0;color:${C.dark}">DECLARA&Ccedil;&Atilde;O DE RESPONSABILIDADE FINAL DE EXERC&Iacute;CIO</h1>
 <p>Nos termos do disposto no n.&ordm; 6 do Artigo 12.&ordm; do C&oacute;digo Deontol&oacute;gico dos Contabilistas Certificados, emite-se a presente declara&ccedil;&atilde;o a pedido do contabilista certificado ${nomeCC}, c&eacute;dula profissional n.&ordm; ${cedula}, a quem compete planificar, organizar, coordenar a execu&ccedil;&atilde;o da contabilidade e assumir a responsabilidade pela regularidade t&eacute;cnica, nas &aacute;reas contabil&iacute;stica e fiscal de ${entidade} (entidade), NIF/NIPC ${nif}, do exerc&iacute;cio fiscal de ${c.ano}.</p>
 <p>Para o efeito, declara-se como &eacute; nosso dever que:</p>
 <p>N&atilde;o foram omitidos quaisquer documentos ou informa&ccedil;&otilde;es relevantes com efeitos na contabilidade e na verdade fiscal, designadamente:</p>
@@ -611,7 +627,7 @@ export function buildActaAG(emp: EmpresaRecord, office: OfficeSettings): string 
   const linhasSocios = socios.length
     ? socios.map(s => `<li>${s.nome?.trim() ? esc(s.nome) : FILL}; titular de quota social com valor nominal de ${quota(s.percentagem)}${s.percentagem ? ` (${fmt(s.percentagem)}% do capital)` : ''}.</li>`).join('')
     : `<li>${FILL}; titular de quota social com valor nominal de ${DASH}.</li>`;
-  const body = `<h1 class="title" style="text-align:center;border:0;color:#0B1D2D">ATA N.&ordm; ${FILL}</h1>
+  const body = `<h1 class="title" style="text-align:center;border:0;color:${C.dark}">ATA N.&ordm; ${FILL}</h1>
 <p>Reuni&atilde;o da Assembleia Geral de S&oacute;cios de <strong>${esc(c.nome)}</strong>${c.nif ? `, NIF ${esc(c.nif)}` : ''}, nos termos previstos no artigo 54.&ordm; do C&oacute;digo das Sociedades Comerciais (CSC).</p>
 <p>Data e hora da realiza&ccedil;&atilde;o da AG de s&oacute;cios: ${dataAG}, pelas ${FILL}.<br>
 Local da realiza&ccedil;&atilde;o da AG de s&oacute;cios: ${c.localEscritorio ? esc(c.localEscritorio) + ' &mdash; ' : ''}Sede Social da Entidade.</p>

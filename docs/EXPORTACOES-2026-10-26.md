@@ -13,6 +13,8 @@ hash.
 Todos os documentos exportáveis pelo Estudo360 devem:
 
 - ocupar uma única folha A4;
+- usar exclusivamente azul e branco, sem logótipos ou cores do escritório que
+  introduzam outras cores;
 - incluir identificação do escritório e do cliente quando aplicável;
 - mostrar os dados calculados, o enquadramento fiscal e a base legal;
 - indicar valores em falta sem inventar dados;
@@ -43,6 +45,7 @@ secundárias com uma nota explícita. Nunca deve truncar informação sem aviso.
 - `scripts/audit-pdf-portability.mjs`
 - `node scripts/audit-exportacoes-extra.mjs`
 - `node scripts/montar-exemplos-exportacoes.mjs`
+- `node scripts/audit-pdf-palette.mjs`
 - inspeção visual do PDF final em desktop e telemóvel
 
 Os testes exigem `paginasFinais() === 1`, MediaBox A4, texto extraível e ausência
