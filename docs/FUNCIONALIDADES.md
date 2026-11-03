@@ -58,10 +58,10 @@ de email. O dono cria email e password dentro do gabinete.
 | E12 | Quadro/Mapa Controlo/Mapa RH | 1 folha A4 (paisagem), filtros respeitados | ✅ |
 | E13 | Proposta de Honorários | 1 folha, zoom medido, sem cortar texto | ✅ |
 | E14 | Minuta de Contrato | 1 folha em versão resumida (cláusulas essenciais + nota), a partir do pacote; integral em Word | ✅ |
-| E15–E21 | DR, Alterações, Fluxos, Balanço, DF, Ata, Declaração | 1 folha cada (DF completo a 0,42) | ✅ |
-| E22 | Proposta comercial (deck) | 3–8 páginas (1 card por página, máx. 8) | ✅ |
+| E15–E21 | DR, Alterações, Fluxos, Balanço, DF — Síntese, Ata, Declaração | 1 folha cada; a síntese consolidada evita texto ilegível | ✅ |
+| E22 | Proposta comercial | PDF executivo de 1 página A4; o deck visual completo mantém-se no editor e no link público | ✅ |
 | E23 | CSV/Excel | Exporta o quadro em CSV (cabeçalho + linhas) | ✅ |
-| E24 | PDF portátil | A4 exato, metadados, fontes standard/embutidas, sem URLs externas — 15/15 PDFs | ✅ |
+| E24 | PDF portátil | A4 exato, metadados, fontes standard/embutidas, sem URLs externas — 26/26 PDFs | ✅ |
 
 ## F. Propostas
 | # | Funcionalidade | Como deve funcionar | Estado |

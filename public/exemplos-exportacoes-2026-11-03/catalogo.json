@@ -1,0 +1,240 @@
+{
+  "data": "2026-11-03T12:32:37.291Z",
+  "total": 26,
+  "documentos": [
+    {
+      "ficheiro": "01-simulacao-fiscal.pdf",
+      "titulo": "Simulador Fiscal",
+      "descricao": "ENI vs Sociedade, parâmetros, comparação, recomendação, enquadramento e escritório.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 21503,
+      "sha256": "dfcc7188e4b1f1f36093c22b38822660b42e3892f17b272c6e0b9af0a88d2602"
+    },
+    {
+      "ficheiro": "02-simulacao-viaturas.pdf",
+      "titulo": "Simulador de Viaturas",
+      "descricao": "IVA, tributação autónoma, depreciação e comparação de formas de aquisição.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 24313,
+      "sha256": "620aa25caf5385c1c6dd90dddfbac92561718ef9f49173a5e516e64ad0ba6d8b"
+    },
+    {
+      "ficheiro": "03-simulacao-aquisicao.pdf",
+      "titulo": "Simulador de Aquisição",
+      "descricao": "Compra, crédito, leasing e renting com o regime fiscal escolhido.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 18420,
+      "sha256": "ee3ee833f7d8e1498836025eebf40cbcbd5ad040dae3feab49183536975b4fff"
+    },
+    {
+      "ficheiro": "04-simulacao-tickets.pdf",
+      "titulo": "Tickets e Benefícios",
+      "descricao": "Custo, poupança, limites isentos e enquadramento fiscal.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 19994,
+      "sha256": "809af6e14d35b2a56342eb9c755ae9f8104a642e5c8b838dc2ce6971fe6f0db5"
+    },
+    {
+      "ficheiro": "05-seguranca-social-independente.pdf",
+      "titulo": "SS Independente",
+      "descricao": "Base de incidência, contribuição mensal, anual e regras aplicáveis.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 19739,
+      "sha256": "ed9b2d629552bfbb40c9ef443ad541b915f2ddbe101665254dd13a0b6d0e1fea"
+    },
+    {
+      "ficheiro": "06-diagnostico-autonomia.pdf",
+      "titulo": "Diagnóstico de Autonomia",
+      "descricao": "Cinco pilares, scores, pontos fortes, riscos e plano de ação.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 22398,
+      "sha256": "58ec165231fdbf2e3ee43cf38d55a11807ba9572d59a555377cef7970f3c58a3"
+    },
+    {
+      "ficheiro": "07-imoveis-na-empresa.pdf",
+      "titulo": "Imóveis na Empresa",
+      "descricao": "Arrendamento/comodato vs entrada em espécie, IMT, selo e impacto fiscal.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 20211,
+      "sha256": "d274fde3072222578d487937ef5f84d8fca93014c8b9df17bffe410ff976b784"
+    },
+    {
+      "ficheiro": "08-simulacao-imt.pdf",
+      "titulo": "IMT e Imposto do Selo",
+      "descricao": "Valor, localização, tipo de imóvel, taxa, benefícios e total.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 21254,
+      "sha256": "be351e1dc01815fbfcd9ec904254ef0a7de170ae46991188ffa0d31d1327bf2d"
+    },
+    {
+      "ficheiro": "09-salario-liquido.pdf",
+      "titulo": "Salário Líquido",
+      "descricao": "Bruto, descontos, líquido, custo empregador e pressupostos.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 20169,
+      "sha256": "9133d27046df325d194d40e4919d577a0aa7c46fe20073f2f6355823ca431eed"
+    },
+    {
+      "ficheiro": "10-simulacao-irs.pdf",
+      "titulo": "IRS — Modelo 3",
+      "descricao": "Agregado, rendimentos, deduções, taxa, imposto e resultado.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 19683,
+      "sha256": "eac6a8d92b3256911eee4de20d02a75667262f1f49caeb6e72b7102832fedbbd"
+    },
+    {
+      "ficheiro": "11-previsa-modelo-22.pdf",
+      "titulo": "Previsa — Modelo 22",
+      "descricao": "Q07, Q09, Q10, IRC, derramas, tributação autónoma, PPC e notas.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 10814,
+      "sha256": "808d5092fcbd29f77b96f038559b062fc9b841fbef40d844fe3860216f1e4909"
+    },
+    {
+      "ficheiro": "12-ficha-simulacao-cliente.pdf",
+      "titulo": "Ficha de simulação do cliente",
+      "descricao": "Resumo executivo com identificação, fiscalidade, resultados e honorários.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 497905,
+      "sha256": "9404e1cf155ba052d038258b8193c7cfe5f110b58ccc24172933ddec051d62d8"
+    },
+    {
+      "ficheiro": "13-ficha-360-gabinete.pdf",
+      "titulo": "Ficha 360 do gabinete",
+      "descricao": "Cliente, obrigações, alertas, contactos, tarefas, situação e orientações.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 21104,
+      "sha256": "1f3ab51cbccb9811b186d10922c68dfcbd154df510021af8e288556ae4dbe3fd"
+    },
+    {
+      "ficheiro": "14-quadro-obrigacoes.pdf",
+      "titulo": "Quadro Resumo de Obrigações",
+      "descricao": "Matriz anual de obrigações por cliente e estado.",
+      "formato": "A4 paisagem",
+      "paginas": 1,
+      "bytes": 45274,
+      "sha256": "8f0b84855a42e40cbf80533826d2500e0f2b4276e4439da59352fb8b6365ee02"
+    },
+    {
+      "ficheiro": "15-mapa-controlo.pdf",
+      "titulo": "Mapa de Controlo",
+      "descricao": "Pilares de controlo por cliente e mês, com filtros refletidos no PDF.",
+      "formato": "A4 paisagem",
+      "paginas": 1,
+      "bytes": 45485,
+      "sha256": "de770fd6d30e565150e068204ee3063215b6ce0823488758335258c227878b9e"
+    },
+    {
+      "ficheiro": "16-mapa-rh.pdf",
+      "titulo": "Mapa RH",
+      "descricao": "Pilares de recursos humanos por cliente e mês.",
+      "formato": "A4 paisagem",
+      "paginas": 1,
+      "bytes": 40132,
+      "sha256": "970096b24eecba427f66b25b52f70ed0b17f1d298d14428b5dd14e86b412d0bf"
+    },
+    {
+      "ficheiro": "17-proposta-honorarios.pdf",
+      "titulo": "Proposta de Honorários",
+      "descricao": "Serviços, mensalidade, totais, condições e dados do escritório.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 98447,
+      "sha256": "3e1fd178d519cb9468c8bfa0de960e8c12ec0b16f25a553a14d9cea14442b1a3"
+    },
+    {
+      "ficheiro": "18-minuta-contrato.pdf",
+      "titulo": "Minuta de Contrato",
+      "descricao": "Partes, objeto, serviços, honorários, obrigações, duração e foro.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 167803,
+      "sha256": "8ba7fd7a089bd056a9efb07bc3c4ea478b8510812e5fa794fa156d59802723af"
+    },
+    {
+      "ficheiro": "19-proposta-comercial.pdf",
+      "titulo": "Proposta Comercial",
+      "descricao": "Síntese dos sete blocos da proposta comercial com branding e próximo passo.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 15959,
+      "sha256": "d773c7a2be9309c588d85eddce74fb00da4ddfa1a2d3837b732d16a3e3e391aa"
+    },
+    {
+      "ficheiro": "20-demonstracao-resultados.pdf",
+      "titulo": "Demonstração dos Resultados",
+      "descricao": "Rendimentos, gastos, EBITDA, resultado operacional, impostos e resultado líquido.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 142081,
+      "sha256": "db9ef19c2f4d1ccd601e6174265b6fe47f81ec2d224281963fcfa77113e03cbc"
+    },
+    {
+      "ficheiro": "21-alteracoes-capital-proprio.pdf",
+      "titulo": "Alterações no Capital Próprio",
+      "descricao": "Capital, reservas, resultados e movimentos do período.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 149932,
+      "sha256": "80d87b7b323bd72fd34df206ecacf67003ea45cde75a48855df0f7e49f8f02b4"
+    },
+    {
+      "ficheiro": "22-fluxos-caixa.pdf",
+      "titulo": "Fluxos de Caixa",
+      "descricao": "Atividades operacionais, investimento, financiamento e variação de caixa.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 140723,
+      "sha256": "aeb315abfdbd5fafdf27a2f373c349bfea1c89152f39b257c82d88118ebf662a"
+    },
+    {
+      "ficheiro": "23-balanco.pdf",
+      "titulo": "Balanço",
+      "descricao": "Ativo, capital próprio, passivo, totais e comparação com abertura.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 139715,
+      "sha256": "c28cf317c4289f4f8a5c696e30443d95a02f17cd7b8bbb519738a6c9762fb7c9"
+    },
+    {
+      "ficheiro": "24-demonstracoes-financeiras-sintese.pdf",
+      "titulo": "Demonstrações Financeiras — Síntese",
+      "descricao": "Visão consolidada de Balanço, Resultados, Capital Próprio e Fluxos.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 157365,
+      "sha256": "06ba3f8a31f9fc5f2a6aa6b9cb6e219c4631eeabe414d160058d2eb25462ab7d"
+    },
+    {
+      "ficheiro": "25-ata-assembleia-geral.pdf",
+      "titulo": "Ata de Assembleia Geral",
+      "descricao": "Convocatória, sócios, deliberações, resultado e assinaturas.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 75692,
+      "sha256": "23a5e7dc69f9116ea1a61ed8a30f5c40b38409e948413c456dfb848acc482740"
+    },
+    {
+      "ficheiro": "26-declaracao-responsabilidade.pdf",
+      "titulo": "Declaração de Responsabilidade",
+      "descricao": "Entidade, contabilista, cédula, declarações e assinatura da gerência.",
+      "formato": "A4 retrato",
+      "paginas": 1,
+      "bytes": 85762,
+      "sha256": "e1a075a0a73b70e85a8d4f539b54f57dd6ff740de19c8560e5085f6f26bae616"
+    }
+  ]
+}

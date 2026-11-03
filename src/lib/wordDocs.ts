@@ -154,6 +154,7 @@ const STYLE = `
   .hdr { display: table; width: 100%; margin-bottom: 4pt; }
   .hdr .l { display: table-cell; text-align: left; font-weight: bold; color: #0B1D2D; font-size: 11pt; }
   .hdr .r { display: table-cell; text-align: right; font-weight: bold; color: #1f4e79; font-size: 11pt; }
+  .office-meta { color: #64748B; font-size: 7.5pt; margin: 0 0 5pt; }
   h1.title { color: #1f4e79; font-size: 14pt; margin: 2pt 0 2pt; padding-bottom: 4pt; border-bottom: 1.5pt solid #1f4e79; page-break-after: avoid; }
   .em-euros { text-align: right; color: #1f4e79; font-size: 8pt; font-weight: bold; margin: 2pt 0 8pt; }
   table { border-collapse: collapse; width: 100%; max-width: 100%; page-break-inside: auto; }
@@ -178,7 +179,7 @@ const STYLE = `
   .meta { color: #555; font-size: 9pt; }
   .pgbreak { page-break-before: always; }
   /* Tabela larga (Alterações no Capital Próprio): compacta para caber em A4. */
-  table.compact td, table.compact th { padding: 2pt 2.5pt; font-size: 6.5pt; }
+  table.compact td, table.compact th { padding: 2.5pt 2.8pt; font-size: 7.2pt; }
   table.compact .num { white-space: normal; }
   table.compact .dash { letter-spacing: 0; }
   /* Ecrã: pré-visualização fluida à largura do painel (nunca corta na horizontal).
@@ -206,14 +207,23 @@ function cabecalho(c: Ctx, titulo: string, emEuros = true): string {
   // `titulo` é um literal de confiança com entidades HTML (ç, ã…) — NÃO escapar,
   // senão o & das entidades fica duplamente escapado. O nome da empresa (dados do
   // utilizador) continua escapado.
+  const contacto = [c.office.email, c.office.telefone].filter(Boolean).map(esc).join(' · ');
+  const identidade = [
+    c.office.nome ? esc(c.office.nome) : '',
+    c.office.nif ? `NIF ${esc(c.office.nif)}` : '',
+    c.cedula ? `Cédula ${esc(c.cedula)}` : '',
+    contacto,
+  ].filter(Boolean).join(' · ');
   return `<div class="hdr"><span class="l">${esc(c.nome.toUpperCase())}</span><span class="r">NIF: ${esc(c.nif) || FILL}</span></div>
+${identidade ? `<div class="office-meta">${identidade}</div>` : ''}
 <h1 class="title">${titulo}</h1>
 ${emEuros ? '<div class="em-euros">(em euros)</div>' : ''}`;
 }
 
-function rodape(): string {
-  // Documentos entregues pela contabilista ao cliente — não levam marca do site.
-  return '';
+function rodape(c: Ctx): string {
+  const escritorio = c.office.nome?.trim() || 'Estudo 360';
+  const contacto = [c.office.email, c.office.telefone, c.localEscritorio].filter(Boolean).map(esc).join(' · ');
+  return `<div class="ftr">${esc(escritorio)}${contacto ? ` · ${contacto}` : ''} · Documento 1/1</div>`;
 }
 
 function assinaturas(): string {
@@ -254,7 +264,7 @@ ${r('Total resultado l&iacute;quido do per&iacute;odo', liquido, { tot: true })}
 </table>
 ${impostoEst && imposto != null ? '<p class="meta">Nota: o imposto sobre o rendimento &eacute; uma estimativa do Previsa (IRC liquidado + tributa&ccedil;&otilde;es aut&oacute;nomas) &mdash; substitua pelo valor da conta 812 ao fechar as contas.</p>' : ''}
 ${assinaturas()}
-${rodape()}`;
+${rodape(c)}`;
   return wordShell(`Demonstracao de Resultados ${c.ano}`, body);
 }
 
@@ -319,7 +329,7 @@ ${rv('Caixa e seus equivalentes no fim do per&iacute;odo', caixaFim)}
     ? 'Nota: fluxos derivados automaticamente dos di&aacute;rios do SAF-T pelo m&eacute;todo directo (cada movimento de caixa classificado pela contrapartida) &mdash; reveja a classifica&ccedil;&atilde;o antes de entregar.'
     : 'Nota: a caixa no in&iacute;cio/fim vem da contabilidade (perfil do cliente); os fluxos por atividade s&atilde;o detalhados a partir do balancete.'}</p>
 ${assinaturas()}
-${rodape()}`;
+${rodape(c)}`;
   return wordShell(`Fluxos de Caixa ${c.ano}`, body);
 }
 
@@ -374,7 +384,7 @@ ${row(`Posi&ccedil;&atilde;o no fim do per&iacute;odo ${c.ano}`, fim, anyData)}
 </table>
 <p class="meta">Nota: capital, reservas e resultado l&iacute;quido vêm da contabilidade (perfil do cliente); movimentos do per&iacute;odo a completar.</p>
 ${assinaturas()}
-${rodape()}`;
+${rodape(c)}`;
   return wordShell(`Alteracoes Capital Proprio ${c.ano}`, body);
 }
 
@@ -444,8 +454,8 @@ ${brow('Outros passivos', outrosP, false, outrosPA)}
 ${brow('Total do passivo', totalPass, true, totalPassA)}
 ${brow('Total do capital pr&oacute;prio e do passivo', totalCPPass, true, totalCPPassA)}
 </table>
-<p class="meta">Nota: Balan&ccedil;o preenchido a partir da contabilidade (perfil do cliente / SAF-T)${anyAssetA || anyCPA || anyPassA ? `; a coluna de ${c.anoAnt} vem dos saldos de abertura do SAF-T` : ''}; rubricas sem dados ficam por preencher.</p>
-${rodape()}</div>`;
+<p class="meta">Nota: Balan&ccedil;o preenchido a partir da contabilidade (perfil do cliente / SAF-T)${anyAssetA || anyCPA || anyPassA ? `; a coluna de ${c.anoAnt} vem dos saldos de abertura do SAF-T` : ''}; rubricas sem contrapartida no SAF-T permanecem em branco.</p>
+${rodape(c)}</div>`;
 }
 
 /** Balanço como documento único (também incluído no pacote DF). */
@@ -456,23 +466,98 @@ export function buildBalanco(emp: EmpresaRecord, office: OfficeSettings): string
 
 export function buildDemonstracoesFinanceiras(emp: EmpresaRecord, office: OfficeSettings): string {
   const c = ctx(emp, office);
-  // Capa
-  // Cabeçalho curto no topo da página (antes era uma capa com 9cm de espaço em
-  // branco antes do título — o documento parecia começar a meio da folha).
-  const capa = `<div class="meta" style="font-size:12pt;color:#555">${esc(c.nome.toUpperCase())}</div>
-<div style="font-size:22pt;font-weight:bold;color:#111;margin:4pt 0">Demonstra&ccedil;&otilde;es Financeiras</div>
-<div class="meta" style="font-size:12pt">Exerc&iacute;cio de ${c.ano}</div>
-<div style="margin:12pt 0 18pt 0;width:7cm;border-top:0.75pt solid #ccc"></div>`;
-  const balanco = buildBalancoBody(c);
-  // DR + Alterações CP + Fluxos como páginas seguintes (reutiliza os builders, sem <html>)
-  const inner = (html: string) => {
-    const m = html.match(/<body>([\s\S]*)<\/body>/);
-    return m ? m[1] : '';
-  };
-  const dr = `<div class="pgbreak">${inner(buildDemonstracaoResultados(emp, office))}</div>`;
-  const acp = `<div class="pgbreak">${inner(buildAlteracoesCapitalProprio(emp, office))}</div>`;
-  const fc = `<div class="pgbreak">${inner(buildFluxosCaixa(emp, office))}</div>`;
-  return wordShell(`Demonstracoes Financeiras ${c.ano}`, capa + balanco + dr + acp + fc);
+  const k = c.cont;
+  const d = drLinhas(c.prev);
+  const imposto = impostoPeriodo(c).valor;
+  const liquido = resultadoLiquido(c).valor;
+
+  const totalAtivo = ['ativoFixoTangivel', 'ativoIntangivel', 'investimentosFinanceiros', 'inventarios',
+    'clientes', 'estadoOutrosAtivo', 'outrosAtivosCorrentes', 'caixaDepositos']
+    .reduce((sum, key) => sum + (cv(k, key as keyof ContabilidadeData) ?? 0), 0);
+  const totalPassivo = ['financiamentosObtidos', 'fornecedores', 'estadoOutrosPassivo', 'outrosPassivos']
+    .reduce((sum, key) => sum + (cv(k, key as keyof ContabilidadeData) ?? 0), 0);
+  const totalCP = ['capitalRealizado', 'reservasResultadosTransitados', 'outrasVariacoesCapital']
+    .reduce((sum, key) => sum + (cv(k, key as keyof ContabilidadeData) ?? 0), liquido ?? 0);
+
+  const receb = cv(k, 'fcRecebimentosClientes') ?? 0;
+  const pagForn = cv(k, 'fcPagamentosFornecedores') ?? 0;
+  const pagPess = cv(k, 'fcPagamentosPessoal') ?? 0;
+  const impostoPago = cv(k, 'fcImpostoRendimento') ?? 0;
+  const outrosOp = cv(k, 'fcOutrosOperacionais') ?? 0;
+  const pagInv = cv(k, 'fcPagamentosInvestimento') ?? 0;
+  const recInv = cv(k, 'fcRecebimentosInvestimento') ?? 0;
+  const finObt = cv(k, 'fcFinanciamentosObtidos') ?? 0;
+  const pagFin = cv(k, 'fcPagamentosFinanciamento') ?? 0;
+  const realCap = cv(k, 'fcRealizacoesCapital') ?? 0;
+  const fluxoOp = receb - pagForn - pagPess - impostoPago + outrosOp;
+  const fluxoInv = recInv - pagInv;
+  const fluxoFin = finObt + realCap - pagFin;
+  const variacaoCaixa = fluxoOp + fluxoInv + fluxoFin;
+  const caixaFim = cv(k, 'caixaDepositos');
+
+  const row = (peca: string, indicador: string, value: number | null) =>
+    `<tr><td>${peca}</td><td>${indicador}</td><td class="num">${value != null ? val(value) : DASH}</td></tr>`;
+  const section = (label: string) => `<tr class="tot"><td colspan="3" class="sec">${label}</td></tr>`;
+  const body = `${cabecalho(c, `Demonstra&ccedil;&otilde;es Financeiras &mdash; s&iacute;ntese em 31 de dezembro de ${c.ano}`)}
+<div class="meta" style="margin:0 0 8pt">Vis&atilde;o consolidada das quatro pe&ccedil;as. Cada demonstra&ccedil;&atilde;o detalhada continua dispon&iacute;vel separadamente, tamb&eacute;m numa p&aacute;gina A4.</div>
+<table class="dr compact">
+<tr><th style="text-align:left">Pe&ccedil;a</th><th style="text-align:left">Indicador</th><th class="num">${c.ano}</th></tr>
+${section('Balan&ccedil;o')}
+${row('Ativo', 'Ativos fixos tang&iacute;veis', cv(k, 'ativoFixoTangivel'))}
+${row('Ativo', 'Ativos intang&iacute;veis', cv(k, 'ativoIntangivel'))}
+${row('Ativo', 'Investimentos financeiros', cv(k, 'investimentosFinanceiros'))}
+${row('Ativo', 'Invent&aacute;rios', cv(k, 'inventarios'))}
+${row('Ativo', 'Clientes', cv(k, 'clientes'))}
+${row('Ativo', 'Caixa e dep&oacute;sitos', cv(k, 'caixaDepositos'))}
+${row('Balan&ccedil;o', 'Total do ativo', totalAtivo || null)}
+${row('Capital pr&oacute;prio', 'Capital realizado', cv(k, 'capitalRealizado'))}
+${row('Capital pr&oacute;prio', 'Reservas e resultados transitados', cv(k, 'reservasResultadosTransitados'))}
+${row('Capital pr&oacute;prio', 'Resultado l&iacute;quido do per&iacute;odo', liquido)}
+${row('Balan&ccedil;o', 'Total do capital pr&oacute;prio', totalCP || null)}
+${row('Passivo', 'Financiamentos obtidos', cv(k, 'financiamentosObtidos'))}
+${row('Passivo', 'Fornecedores', cv(k, 'fornecedores'))}
+${row('Passivo', 'Estado e outros entes p&uacute;blicos', cv(k, 'estadoOutrosPassivo'))}
+${row('Passivo', 'Outros passivos', cv(k, 'outrosPassivos'))}
+${row('Balan&ccedil;o', 'Total do passivo', totalPassivo || null)}
+${section('Demonstra&ccedil;&atilde;o dos Resultados')}
+${row('Resultados', 'Vendas e servi&ccedil;os prestados', d.vendas || null)}
+${row('Resultados', 'Subs&iacute;dios &agrave; explora&ccedil;&atilde;o', d.subsidios || null)}
+${row('Resultados', 'Custo das mercadorias vendidas e mat&eacute;rias consumidas', d.cmvCmc ? -d.cmvCmc : null)}
+${row('Resultados', 'Fornecimentos e servi&ccedil;os externos', d.fse ? -d.fse : null)}
+${row('Resultados', 'Gastos com o pessoal', d.pessoal ? -d.pessoal : null)}
+${row('Resultados', 'Resultado antes de deprecia&ccedil;&otilde;es e impostos (EBITDA)', d.ebitda || null)}
+${row('Resultados', 'Deprecia&ccedil;&otilde;es e amortiza&ccedil;&otilde;es', d.deprec ? -d.deprec : null)}
+${row('Resultados', 'Resultado operacional', d.operacional || null)}
+${row('Resultados', 'Resultado antes de impostos', d.rai || null)}
+${row('Resultados', 'Imposto sobre o rendimento', imposto != null ? -imposto : null)}
+${row('Resultados', 'Resultado l&iacute;quido do per&iacute;odo', liquido)}
+${section('Altera&ccedil;&otilde;es no Capital Pr&oacute;prio')}
+${row('Capital pr&oacute;prio', 'Capital realizado no in&iacute;cio do per&iacute;odo', cv(c.contAb, 'capitalRealizado'))}
+${row('Capital pr&oacute;prio', 'Reservas no in&iacute;cio do per&iacute;odo', cv(c.contAb, 'reservasResultadosTransitados'))}
+${row('Capital pr&oacute;prio', 'Outras varia&ccedil;&otilde;es no in&iacute;cio do per&iacute;odo', cv(c.contAb, 'outrasVariacoesCapital'))}
+${row('Capital pr&oacute;prio', 'Resultado l&iacute;quido do per&iacute;odo', liquido)}
+${row('Capital pr&oacute;prio', 'Total do capital pr&oacute;prio', totalCP || null)}
+${section('Fluxos de Caixa')}
+${row('Fluxos', 'Recebimentos de clientes', receb || null)}
+${row('Fluxos', 'Pagamentos a fornecedores', pagForn ? -pagForn : null)}
+${row('Fluxos', 'Pagamentos ao pessoal', pagPess ? -pagPess : null)}
+${row('Fluxos', 'Imposto sobre o rendimento pago', impostoPago ? -impostoPago : null)}
+${row('Fluxos', 'Outros recebimentos/pagamentos operacionais', outrosOp || null)}
+${row('Fluxos', 'Atividades operacionais', fluxoOp)}
+${row('Fluxos', 'Pagamentos de investimento', pagInv ? -pagInv : null)}
+${row('Fluxos', 'Recebimentos de investimento', recInv || null)}
+${row('Fluxos', 'Atividades de investimento', fluxoInv)}
+${row('Fluxos', 'Financiamentos obtidos', finObt || null)}
+${row('Fluxos', 'Realiza&ccedil;&otilde;es de capital', realCap || null)}
+${row('Fluxos', 'Pagamentos de financiamento', pagFin ? -pagFin : null)}
+${row('Fluxos', 'Atividades de financiamento', fluxoFin)}
+${row('Fluxos', 'Varia&ccedil;&atilde;o de caixa', variacaoCaixa)}
+${row('Fluxos', 'Caixa no fim do per&iacute;odo', caixaFim)}
+</table>
+<p class="meta">Nota: a s&iacute;ntese usa os mesmos dados das pe&ccedil;as detalhadas. Valores ausentes ficam assinalados e n&atilde;o s&atilde;o inventados.</p>
+${assinaturas()}
+${rodape(c)}`;
+  return wordShell(`Demonstracoes Financeiras Sintese ${c.ano}`, body);
 }
 
 export function buildDeclaracaoResponsabilidade(emp: EmpresaRecord, office: OfficeSettings): string {
@@ -500,7 +585,7 @@ export function buildDeclaracaoResponsabilidade(emp: EmpresaRecord, office: Offi
 </ul>
 <p style="margin-top:20pt">${local}, ${hojePorExtenso()}</p>
 <p style="margin-top:24pt"><strong>A Ger&ecirc;ncia/Administra&ccedil;&atilde;o</strong><br>${gerenciaNomes(emp)}</p>
-${rodape()}`;
+${rodape(c)}`;
   return wordShell(`Declaracao de Responsabilidade ${c.ano}`, body);
 }
 
@@ -548,7 +633,7 @@ Nome do S&oacute;cio que presidiu &agrave; AG de S&oacute;cios: ${presidente ? e
 <p style="margin-top:18pt">${c.localEscritorio ? esc(c.localEscritorio) + ', ' : ''}${dataAG}.</p>
 <p style="margin-top:18pt"><strong>Os S&oacute;cios presentes,</strong></p>
 ${(socios.length ? socios : [{ nome: '' }, { nome: '' }]).map(s => `<p style="margin-top:22pt">_______________________________<br>${s.nome?.trim() ? esc(s.nome) : ''}</p>`).join('')}
-${rodape()}`;
+${rodape(c)}`;
   return wordShell(`Ata Assembleia Geral ${c.ano}`, body);
 }
 
@@ -612,8 +697,8 @@ export const DOC_TYPES: DocTypeDef[] = [
     filename: (e) => `Balanco_${slug(e.nome || '')}`,
   },
   {
-    id: 'df', label: 'Demonstrações Financeiras (pacote completo)',
-    descricao: 'Capa + Balanço + Resultados + Alterações no Capital Próprio + Fluxos de Caixa.',
+    id: 'df', label: 'Demonstrações Financeiras — Síntese',
+    descricao: 'Visão consolidada de Balanço, Resultados, Capital Próprio e Fluxos numa página; peças detalhadas disponíveis separadamente.',
     fill: 'parcial', precisaPrevisa: true,
     build: buildDemonstracoesFinanceiras,
     filename: (e) => `Demonstracoes_Financeiras_${slug(e.nome || '')}`,

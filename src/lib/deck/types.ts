@@ -68,7 +68,7 @@ export interface DeckDoc {
 }
 
 export const MIN_CARDS = 3;
-// 8 cards = 8 páginas no PDF (a proposta tem de ficar entre 3 e 8 páginas).
+// O PDF exportado resume entre 3 e 8 cards numa única página A4.
 export const MAX_CARDS = 8;
 export const MAX_TITLE = 90;
 export const MAX_SUBTITLE = 140;

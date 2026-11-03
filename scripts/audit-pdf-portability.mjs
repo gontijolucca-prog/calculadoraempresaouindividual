@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const DIR = path.resolve('docs/audit-2026-10-26/pdf');
+const DIR = path.resolve(process.env.PDF_DIR || 'docs/audit-2026-10-26/pdf');
 const ficheiros = fs.readdirSync(DIR).filter((f) => f.endsWith('.pdf'));
 const falhas = [];
 const ok = (c, m) => { console.log(`${c ? '✓' : '✗'} ${m}`); if (!c) falhas.push(m); };

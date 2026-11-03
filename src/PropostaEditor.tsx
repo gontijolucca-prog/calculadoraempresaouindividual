@@ -2,7 +2,8 @@
  * Editor da proposta — lista de cards, canvas 16:9 e inspetor.
  *
  * Autosave local+Firestore (debounce 800 ms), geração AI por card e publicação
- * de link só-leitura. O PDF é a impressão do mesmo renderer, um card por página.
+ * de link só-leitura. O PDF é uma síntese executiva de todos os blocos numa
+ * única folha A4; a apresentação visual integral permanece no editor e no link.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -18,8 +19,9 @@ import { chooseDeck, prepareAiCard } from './lib/deck/plan';
 import { requestAiCards } from './lib/deck/ai';
 import { publicUrl, SHARE_DAYS } from './lib/deck/share';
 import { publishDeck, revokeDeck, saveDeck } from './lib/deck/store';
-import { DeckCardView, DeckPrintStyles } from './components/deck/DeckRenderer';
+import { DeckCardView } from './components/deck/DeckRenderer';
 import GamaCopyButton from './components/GamaCopyButton';
+import { RelatorioPdf } from './lib/reportPdf';
 
 interface Props {
   deck: DeckDoc;
@@ -213,16 +215,45 @@ export default function PropostaEditor({ deck: initial, office, honorarios, clie
     } catch { /* clipboard bloqueado — o link fica visível para copiar à mão */ }
   }, [deck.slug]);
 
-  const print = useCallback(() => {
-    window.print();
-  }, []);
+  const exportPdf = useCallback(() => {
+    const resumoCard = (c: DeckCard) => {
+      const itens = (c.items || []).map((item) => [
+        item.label,
+        item.value,
+        item.note,
+      ].filter(Boolean).join(' - ')).join(' | ');
+      return [c.subtitle, c.body, itens].filter(Boolean).join(' ');
+    };
+    const pdf = new RelatorioPdf({
+      titulo: deck.titulo || 'Proposta de Serviços',
+      subtitulo: `${deck.cards.length} blocos da proposta numa única folha A4`,
+      cliente: cliente?.nome || deck.clienteNome || 'Proposta geral',
+      nif: cliente?.nif || '—',
+      escritorio: {
+        nome: office.nome,
+        corPrimaria: office.corPrimaria,
+        logoDataUrl: office.logoDataUrl,
+      },
+      nomeFicheiro: `Proposta-${cliente?.nome || deck.clienteNome || 'Estudo360'}`,
+    });
+    pdf.seccao('Proposta em síntese').tabela(
+      deck.cards.map((c, index) => ({
+        label: `${index + 1}. ${c.title || KIND_LABEL[c.kind]}`,
+        valor: resumoCard(c).slice(0, 420) || 'Sem conteúdo.',
+      })),
+    );
+    pdf.seccao('Próximo passo').paragrafo(
+      [office.email, office.telefone, office.website].filter(Boolean).join(' · ')
+      || 'Contacte o gabinete para confirmar o âmbito e iniciar os serviços.',
+    );
+    pdf.nota('Resumo completo da proposta comercial. O link público mantém todos os blocos e a apresentação visual integral.');
+    pdf.save();
+  }, [cliente, deck, office]);
 
   const items = card?.items ?? [];
 
   return (
     <div className="h-full flex flex-col bg-[#F5F7FA]">
-      <DeckPrintStyles />
-
       {/* Barra superior */}
       <div className="no-print shrink-0 bg-white border-b border-[#E2E8F0] px-4 py-2.5 flex items-center gap-3 flex-wrap">
         <button onClick={onBack} className="inline-flex items-center gap-1.5 text-[13px] font-[700] text-[#64748B] hover:text-[#0F172A]">
@@ -250,8 +281,8 @@ export default function PropostaEditor({ deck: initial, office, honorarios, clie
             {busyAi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Regerar card
           </button>
           <GamaCopyButton office={office} honorarios={honorarios} cliente={cliente} briefing={deck.respostas} />
-          <button onClick={print} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-[700] text-[#334155] hover:border-[#0677FF]">
-            <Printer className="w-4 h-4" /> PDF
+          <button onClick={exportPdf} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-[700] text-[#334155] hover:border-[#0677FF]">
+            <Printer className="w-4 h-4" /> PDF · 1 página
           </button>
           <button onClick={publish} disabled={pubBusy} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#0677FF] text-white text-[12px] font-[700] hover:bg-[#0059c9] disabled:opacity-60">
             {pubBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />} {deck.slug ? 'Atualizar link' : 'Publicar'}
@@ -402,15 +433,6 @@ export default function PropostaEditor({ deck: initial, office, honorarios, clie
             </>
           )}
         </aside>
-      </div>
-
-      {/* Impressão: todos os cards, um por página */}
-      <div id="deck-print-root" style={{ display: 'none' }}>
-        {deck.cards.map((c, i) => (
-          <div key={c.id} className="deck-page">
-            <DeckCardView card={c} tema={deck.tema} brand={brand} index={i} total={deck.cards.length} />
-          </div>
-        ))}
       </div>
 
       {/* Modal de publicação */}

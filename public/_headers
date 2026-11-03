@@ -32,6 +32,10 @@
   X-Robots-Tag: noindex
   Cache-Control: no-cache
 
+/exemplos-exportacoes-2026-11-03/*
+  X-Robots-Tag: noindex
+  Cache-Control: no-cache
+
 # Proposta pública: link privado, nunca indexar
 /p/*
   X-Robots-Tag: noindex

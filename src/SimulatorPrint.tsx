@@ -6,9 +6,11 @@ import { resultSimulacao } from './lib/simResults';
 import { calcViatura } from './lib/viaturas';
 import { compararModos, ETIQUETA_MODO, MODOS, type FinanciamentoInput } from './lib/viaturasFinanciamento';
 import { RelatorioPdf } from './lib/reportPdf';
+import { downloadPrevisaPdf } from './lib/previsaPdf';
 import { calcIMT, type TipoImovel, type Localizacao } from './lib/imt';
 import type { ClientProfile } from './ClientProfile';
 import type { OfficeSettings } from './lib/officeSettings';
+import type { PreviSaState } from './previSaState';
 
 export interface SimulatorPrintContextValue {
   view: SimView | null;
@@ -241,6 +243,14 @@ export function SimulatorPrintButton({ compact = false }: { compact?: boolean })
     const txt = PRINT_TITLES[v];
     const office = ctx.office || ({} as OfficeSettings);
     const profile = ctx.profile || ({} as ClientProfile);
+    if (v === 'previsa') {
+      void downloadPrevisaPdf(
+        ctx.state as PreviSaState,
+        profile.nomeCliente?.trim() || 'Empresa',
+        { nome: office.nome, logoDataUrl: office.logoDataUrl, corPrimaria: office.corPrimaria },
+      );
+      return;
+    }
     const pdf = new RelatorioPdf({
       titulo: txt,
       subtitulo: 'Relatório resumido da simulação efetuada.',

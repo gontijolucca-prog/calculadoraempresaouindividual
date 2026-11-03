@@ -5,6 +5,7 @@ import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { Tip } from './Tip';
 import { jsPDF } from 'jspdf';
+import { RelatorioPdf } from './lib/reportPdf';
 import ExportPackageModal from './ExportPackageModal';
 import { consumeOpenPackage, consumeFlowToggle } from './lib/profileIntent';
 import {
@@ -315,8 +316,11 @@ export default function ClientProfile({
   // ─── PDF GENERATION ───────────────────────────────────────────────────────
 
   const generatePDF = async () => {
-    const logoDataUrl = await svgLogoToPng();
+    const logoGenerico = await svgLogoToPng();
+    const logoDataUrl = office?.logoDataUrl || logoGenerico;
+    const officeName = office?.nome?.trim() || 'Estudo 360';
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const fiscalSummary: { label: string; valor: string }[] = [];
     // ─── COMPACT SINGLE-PAGE PDF ──────────────────────────────────────────
     const pw = doc.internal.pageSize.getWidth();
     const ph = doc.internal.pageSize.getHeight();
@@ -355,10 +359,10 @@ export default function ClientProfile({
     if (logoDataUrl) doc.addImage(logoDataUrl, 'PNG', ml, 2.5, 8, 8);
     textC(NAVY);
     doc.setFontSize(8.5); doc.setFont('helvetica', 'bold');
-    doc.text('Estudo 360', ml + 10, 7.5);
+    doc.text(officeName, ml + 10, 7.5);
     textC(SLATE_500);
     doc.setFontSize(6.5); doc.setFont('helvetica', 'normal');
-    doc.text('Contabilidade', ml + 10, 11);
+    doc.text(office?.contabilistaResponsavel || 'Contabilidade', ml + 10, 11);
     textC(SLATE_500);
     doc.setFontSize(7);
     doc.text('Simulação Fiscal • OE 2026', pw / 2, 8.5, { align: 'center' });
@@ -461,6 +465,16 @@ export default function ClientProfile({
 
       const eniWins = eniNet >= ldaNet;
       const diff    = Math.abs(eniNet - ldaNet);
+      fiscalSummary.push(
+        { label: 'Regime recomendado', valor: eniWins ? 'Trabalhador Independente (ENI)' : 'Sociedade' },
+        { label: 'Vantagem anual face à alternativa', valor: ptEur(diff) },
+        { label: 'Segurança Social ENI', valor: ptEur(eniSS) },
+        { label: 'IRS estimado ENI', valor: ptEur(eniIRS) },
+        { label: 'Rendimento líquido ENI', valor: ptEur(eniNet) },
+        { label: 'Segurança Social Sociedade', valor: ptEur(ldaSSComp + ldaSSMgr) },
+        { label: 'IRC estimado Sociedade', valor: ptEur(irc) },
+        { label: 'Rendimento líquido Sociedade', valor: ptEur(ldaNet) },
+      );
 
       // Recomendação
       fill(eniWins ? GREEN_LIGHT : MAROON_LIGHT);
@@ -470,7 +484,7 @@ export default function ClientProfile({
       textC(eniWins ? GREEN : MAROON);
       doc.setFontSize(10.5); doc.setFont('helvetica', 'bold');
       doc.text(
-        `✓  Regime Recomendado: ${eniWins ? 'Trabalhador Independente (ENI)' : 'Sociedade (Lda / Unipessoal)'}`,
+        `Regime Recomendado: ${eniWins ? 'Trabalhador Independente (ENI)' : 'Sociedade (Lda / Unipessoal)'}`,
         ml + 7, y + 7
       );
       textC(SLATE_700);
@@ -655,9 +669,88 @@ export default function ClientProfile({
       cw
     );
     doc.text(noteLines, ml, y);
+    y += Math.max(10, noteLines.length * 3.2 + 6);
+
+    if (y < ph - 32) {
+      hRule(y); y += 6;
+      fill(MAROON); doc.rect(ml, y, 3, 5, 'F');
+      textC(SLATE_500);
+      doc.setFontSize(7); doc.setFont('helvetica', 'bold');
+      doc.text('DADOS DO ESCRITÓRIO E PRESSUPOSTOS', ml + 6, y + 4);
+      y += 9;
+
+      const officeRows: [string, string][] = [
+        ['Escritório', officeName],
+        ['NIF', office?.nif || 'Por preencher'],
+        ['Cédula / OCC', [office?.cedulaProfissional, office?.numeroInscricaoOCC].filter(Boolean).join(' · ') || 'Por preencher'],
+        ['Contabilista responsável', office?.contabilistaResponsavel || officeName],
+        ['Contacto', [office?.email, office?.telefone].filter(Boolean).join(' · ') || 'Por preencher'],
+        ['Morada', [office?.morada, office?.codigoPostal, office?.localidade].filter(Boolean).join(', ') || 'Por preencher'],
+      ];
+      for (let i = 0; i < officeRows.length; i += 2) {
+        const left = officeRows[i];
+        const right = officeRows[i + 1];
+        if ((i / 2) % 2 === 0) { fill(SLATE_50); doc.rect(ml, y, cw, 8, 'F'); }
+        doc.setFontSize(6.2); doc.setFont('helvetica', 'bold'); textC(SLATE_500);
+        doc.text(left[0].toUpperCase(), ml + 3, y + 2.8);
+        if (right) doc.text(right[0].toUpperCase(), ml + cw / 2 + 3, y + 2.8);
+        doc.setFontSize(7.4); doc.setFont('helvetica', 'bold'); textC(NAVY);
+        doc.text(doc.splitTextToSize(left[1], cw / 2 - 6)[0], ml + 3, y + 6.1);
+        if (right) doc.text(doc.splitTextToSize(right[1], cw / 2 - 6)[0], ml + cw / 2 + 3, y + 6.1);
+        y += 8;
+      }
+
+      y += 5;
+      fill(SLATE_100); doc.rect(ml, y, cw, 12, 'F');
+      textC(SLATE_500); doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+      doc.text('Pressupostos: dados do perfil, simuladores e tabela de honorários do gabinete. Taxas e escalões de 2026.', ml + 3, y + 4.7);
+      doc.text('Documento indicativo. Confirme o enquadramento e os valores com um Contabilista Certificado.', ml + 3, y + 9);
+    }
 
     // ── GRAVAR ───────────────────────────────────────────────────────────────
-    doc.save(`Estudo360_${profile.nomeCliente || 'Simulacao'}_${today.getFullYear()}.pdf`);
+    const filename = `Estudo360_${profile.nomeCliente || 'Simulacao'}_${today.getFullYear()}.pdf`;
+    if (doc.getNumberOfPages() === 1) {
+      doc.save(filename);
+      return;
+    }
+
+    // Se a ficha detalhada exceder uma folha, entrega uma versão executiva
+    // completa e legível numa única A4, em vez de cortar dados em silêncio.
+    const resumo = new RelatorioPdf({
+      titulo: 'Ficha executiva do cliente',
+      subtitulo: 'Perfil, enquadramento, resultados e honorários numa única folha',
+      cliente: profile.nomeCliente || 'Cliente',
+      nif: profile.nif || '—',
+      escritorio: {
+        nome: (office as OfficeSettings | undefined)?.nome,
+        corPrimaria: (office as OfficeSettings | undefined)?.corPrimaria,
+        logoDataUrl: logoDataUrl || (office as OfficeSettings | undefined)?.logoDataUrl,
+      },
+      nomeFicheiro: filename.replace(/\.pdf$/i, ''),
+    });
+    resumo.seccao('Identificação e enquadramento').tabela([
+      { label: 'Cliente / Empresa', valor: profile.nomeCliente || '—' },
+      { label: 'NIF', valor: profile.nif || '—' },
+      { label: 'Tipo de entidade', valor: String(profile.tipoEntidade || '—') },
+      { label: 'Regime de contabilidade', valor: String(profile.regimeContabilidade || '—') },
+      { label: 'Regime de IVA', valor: String(profile.regimeIva || '—') },
+      { label: 'Atividade principal', valor: String(profile.atividadePrincipal || '—') },
+      { label: 'Faturação anual prevista', valor: ptEur(profile.faturaçaoAnualPrevista || 0) },
+      { label: 'N.º de funcionários', valor: String(profile.nrFuncionarios || 0) },
+      { label: 'Contacto', valor: [profile.email, profile.telefone].filter(Boolean).join(' · ') || '—' },
+      { label: 'Morada', valor: [profile.morada, profile.codigoPostal, profile.localidade].filter(Boolean).join(', ') || '—' },
+    ]);
+    if (fiscalSummary.length) resumo.seccao('Comparação fiscal ENI / Sociedade').tabela(fiscalSummary);
+    if (extras.length) {
+      resumo.seccao('Outros resultados').tabela(extras.map(([label, valor]) => ({ label, valor })));
+    }
+    resumo.seccao('Estimativa de honorários').tabela([
+      ...honorLines.map(([label, valor]) => ({ label, valor: `${ptEur(valor)}/mês` })),
+      { label: 'Total mensal estimado', valor: `${ptEur(est.totalMensal)}/mês` },
+      { label: 'Total anual estimado', valor: `${ptEur(est.totalAnual)}/ano` },
+    ]);
+    resumo.nota('Proposta indicativa. Serviços pontuais não incluídos. Confirme sempre o enquadramento com o seu Contabilista Certificado.');
+    resumo.save();
   };
 
   const steps: FlowStep<ClientProfile>[] = [

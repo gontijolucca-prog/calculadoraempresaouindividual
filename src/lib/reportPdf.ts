@@ -358,8 +358,11 @@ export class RelatorioPdf {
     const d = this.doc;
     const largura = this.largura - this.margem * 2;
     const cols = Math.max(1, cabecalho.length);
-    const colW = largura / cols;
-    const alturaLinha = this.v(6);
+    const colWidths = cols >= 5
+      ? [largura * 0.20, largura * 0.18, ...Array(Math.max(0, cols - 2)).fill(largura * 0.62 / Math.max(1, cols - 2))]
+      : [largura * 0.34, ...Array(Math.max(0, cols - 1)).fill(largura * 0.66 / Math.max(1, cols - 1))];
+    const xCols = colWidths.map((_, i) => this.margem + colWidths.slice(0, i).reduce((sum, w) => sum + w, 0));
+    const alturaLinha = this.v(7.6);
     let cortadas = 0;
     const desenharCabecalho = () => {
       d.setFillColor(74, 74, 74);
@@ -368,9 +371,9 @@ export class RelatorioPdf {
       d.setFont('helvetica', 'bold');
       d.setFontSize(this.fs(6.8));
       cabecalho.forEach((c, i) => {
-        const align = i === 0 ? 'left' : 'center';
-        const x = i === 0 ? this.margem + 1.5 : this.margem + colW * i + colW / 2;
-        d.text(d.splitTextToSize(sanitizePdf(c), colW - 2)[0] || sanitizePdf(c), x, this.y + this.v(4), { align });
+        const align = i < 2 ? 'left' : 'center';
+        const x = i < 2 ? xCols[i] + 1.5 : xCols[i] + colWidths[i] / 2;
+        d.text(d.splitTextToSize(sanitizePdf(c), colWidths[i] - 2)[0] || sanitizePdf(c), x, this.y + this.v(4), { align });
       });
       this.y += alturaLinha;
     };
@@ -389,10 +392,14 @@ export class RelatorioPdf {
       }
       linha.slice(0, cols).forEach((cell, i) => {
         d.setTextColor(i === 0 ? 15 : 71, i === 0 ? 23 : 85, i === 0 ? 42 : 105);
-        if (i === 0) d.setFont('helvetica', 'bold'); else d.setFont('helvetica', 'normal');
-        const align = i === 0 ? 'left' : 'center';
-        const x = i === 0 ? this.margem + 1.5 : this.margem + colW * i + colW / 2;
-        d.text(d.splitTextToSize(sanitizePdf(cell || ''), colW - 2)[0] || '', x, this.y + this.v(4), { align });
+        d.setFont('helvetica', i < 2 ? 'bold' : 'normal');
+        const align = i < 2 ? 'left' : 'center';
+        const x = i < 2 ? xCols[i] + 1.5 : xCols[i] + colWidths[i] / 2;
+        const texto = d.splitTextToSize(sanitizePdf(cell || ''), colWidths[i] - 2).slice(0, 2);
+        d.text(texto.length ? texto : [''], x, this.y + this.v(3.4), {
+          align,
+          lineHeightFactor: 1.05,
+        });
       });
       d.setDrawColor(226, 232, 240);
       d.setLineWidth(0.15);

@@ -53,6 +53,20 @@ const body = await page.locator('body').innerText();
 check(/requisito h\).*não implementado/is.test(body), 'página declara h) não implementado');
 check(/requisito i\).*não implementado/is.test(body), 'página declara i) não implementado');
 check(!/9\/9|dossier.*100% pronto|sem objeto/i.test(body), 'página não contém alegações antigas');
+const changelogCards = page.locator('#novidades .card');
+const testedCards = page.locator('#novidades .card .test');
+check(await changelogCards.count() === await testedCards.count(), 'todos os cartões do changelog indicam como testar');
+const timelineText = await page.locator('#novidades .timeline').innerText();
+check(!/firestore|base de dados|servidor|deploy|pipeline|quota/i.test(timelineText), 'changelog não lista trabalho técnico invisível');
+const examplesResponse = await page.request.get(new URL('exemplos-exportacoes-2026-11-03/index.html', BASE).href);
+check(examplesResponse.status() === 200, 'pasta de exemplos dos 26 PDFs responde 200');
+await page.goto(new URL('exemplos-exportacoes-2026-11-03/index.html', BASE).href, { waitUntil: 'domcontentloaded' });
+const exampleLinks = await page.locator('a.doc').evaluateAll((links) => links.map((link) => link.href));
+check(exampleLinks.length === 26, `pasta lista os 26 PDFs (${exampleLinks.length})`);
+for (const href of exampleLinks) {
+  const response = await page.request.get(href);
+  check(response.status() === 200, `${href.split('/').pop()} responde 200`);
+}
 await context.close();
 await browser.close();
 

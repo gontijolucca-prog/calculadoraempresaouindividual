@@ -46,11 +46,19 @@ await page.waitForTimeout(900);
 await page.evaluate(() => {
   localStorage.setItem('estudo360:test-bypass-auth', '1');
   localStorage.setItem('estudo360:v1:empresas', JSON.stringify({ v: 1, data: [{
-    id: 'e1', nome: 'Empresa PDF', nif: '501234567', createdAt: 1, updatedAt: 1,
+    id: 'e1', nome: 'Empresa Exemplo, Lda.', nif: '501234567', createdAt: 1, updatedAt: 1,
     profile: {
-      nomeCliente: 'Empresa PDF', nif: '501234567', tipoEntidade: 'lda', regimeContabilidade: 'organizada',
-      faturaçaoAnualPrevista: 250000, nrFuncionarios: 3, atividadePrincipal: 'servicos',
+      nomeCliente: 'Empresa Exemplo, Lda.', nif: '501234567', tipoEntidade: 'lda', regimeContabilidade: 'organizada',
+      faturaçaoAnualPrevista: 180000, nrFuncionarios: 3, atividadePrincipal: 'servicos',
       email: 'geral@empresa.pt', telefone: '249 000 000', morada: 'Rua A, 1', localidade: 'Fátima',
+    },
+    previsa: {
+      periodo: 2025, volumeNegocios: 180000,
+      rai_711: 150000, rai_712: 10000, rai_72: 20000,
+      rai_cmv: 15000, rai_cmc: 0, rai_62: 42000, rai_63: 62000,
+      rai_64: 12000, rai_65: 0, rai_66: 4000, rai_67: 0, rai_68: 0,
+      rai_69: 3000, rai_74: 0, rai_75: 0, rai_76: 0, rai_77: 0, rai_78: 0, rai_79: 0,
+      c701_rai: 42000, regime: 'geral', isPME: true, territorio: 'continental', taxaDerramaMunicipal: 0.015,
     },
     sims: {},
   }] }));
@@ -58,13 +66,13 @@ await page.evaluate(() => {
   localStorage.setItem('estudo360:v1:gabinete:activeId', JSON.stringify({ v: 1, data: 'audit-office' }));
   localStorage.setItem('estudo360:v1:gabinete:officeId', JSON.stringify({ v: 1, data: 'audit-office' }));
   localStorage.setItem('estudo360:v1:gabinete:shared:clientes', JSON.stringify({ v: 1, data: [{
-    id: 'c1', nome: 'Empresa PDF', nif: '501234567', tipoEntidade: 'LDA', regimeIva: 'mensal',
+    id: 'c1', nome: 'Empresa Exemplo, Lda.', nif: '501234567', tipoEntidade: 'LDA', regimeIva: 'mensal',
     estado: 'ativo', createdAt: 1, updatedAt: 1, empresaId: 'e1', obrigacoesAtivas: ['iva'],
   }] }));
   const officeSettings = {
-    nome: 'Escritório Teste', nif: '509999999', cedulaProfissional: '12345', numeroInscricaoOCC: 'OCC-1',
-    morada: 'Rua do Escritório 10', codigoPostal: '2495-000', localidade: 'Fátima',
-    email: 'geral@escritorio.pt', telefone: '249 111 222', corPrimaria: '#0677FF',
+    nome: 'Gabinete Exemplo & Associados', nif: '509999999', cedulaProfissional: '12345', numeroInscricaoOCC: 'OCC-1',
+    morada: 'Avenida do Gabinete 100', codigoPostal: '2495-000', localidade: 'Fátima',
+    email: 'geral@gabinete-exemplo.pt', telefone: '249 111 222', corPrimaria: '#0677FF',
   };
   localStorage.setItem('estudo360:v1:officeSettings', JSON.stringify({ v: 1, data: officeSettings }));
   localStorage.setItem('estudo360:v1:gabinete:officeSettings:audit-office', JSON.stringify({ v: 1, data: officeSettings }));
@@ -81,7 +89,14 @@ const preencher = async () => page.evaluate(() => {
     if (/taxa|tan|juro|percent/.test(s)) return 5;
     if (/dia/.test(s)) return 22;
     if (/km|quilóm/.test(s)) return 15000;
-    if (/pre..o|valor|fatura|rendiment|receit|custo|sal[aá]rio|remunera|investiment|capital/.test(s)) return 250000;
+    if (/rendimento.*atual|rendimento.*anual|rendimento.*trabalho|remunera/.test(s)) return 42000;
+    if (/necessidade mensal/.test(s)) return 3200;
+    if (/custo fixo mensal|custo mensal/.test(s)) return 4500;
+    if (/custo vari[aá]vel|gastos anuais/.test(s)) return 30000;
+    if (/investimento|equipamento|licen[cç]a|obras/.test(s)) return 12000;
+    if (/sal[aá]rio/.test(s)) return 2400;
+    if (/fatura|volume de neg|receita/.test(s)) return 180000;
+    if (/pre..o|valor/.test(s)) return 30000;
     return 1000;
   };
   const rotulo = (el) => {
@@ -153,7 +168,7 @@ for (const [vista, nome] of VISTAS) {
   await dl.saveAs(destino);
   const info = paginasDe(destino);
   const texto = fs.readFileSync(destino).toString('latin1');
-  const emFalta = ['Por preencher', 'undefined', 'NaN'].filter((x) => texto.includes(x));
+  const emFalta = ['Por preencher', 'Sem dados para apresentar', 'undefined', 'NaN'].filter((x) => texto.includes(x));
   resultados.push({ vista, nome, preenchidos, ...info, emFalta });
   ok(info.paginas === 1, `${nome}: ${info.paginas} página(s) · ${info.bytes} B · ${info.media}`);
   ok(emFalta.length === 0, `${nome}: sem campos em falta${emFalta.length ? ` (${emFalta.join(', ')})` : ''}`);

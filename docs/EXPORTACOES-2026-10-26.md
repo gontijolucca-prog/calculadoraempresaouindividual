@@ -3,6 +3,11 @@
 Estado revisto em 03/11/2026. Este documento substitui o relatório intermédio
 de 26/10.
 
+Revisão visual e funcional: os 26 PDFs exportáveis estão reunidos em
+`public/exemplos-exportacoes-2026-11-03/index.html`. O catálogo técnico em
+`catalogo.json` confirma, para cada ficheiro, uma página, formato A4, tamanho e
+hash.
+
 ## Regra do produto
 
 Todos os documentos exportáveis pelo Estudo360 devem:
@@ -22,11 +27,12 @@ secundárias com uma nota explícita. Nunca deve truncar informação sem aviso.
 | Grupo | Estado |
 |---|---|
 | 11 relatórios de simulação | 1 página A4 por relatório |
-| Proposta de honorários | 1 página A4 |
-| Minuta resumida de contrato | 1 página A4; versão integral em Word |
-| Mapas de Controlo e RH | 1 página A4 horizontal |
-| DR, Balanço, Fluxos, Alterações e pacote de DF | 1 página A4 por documento |
-| Ata, declaração e documentos de fecho | 1 página A4 por documento |
+| Ficha de simulação e Ficha 360 do gabinete | 1 página A4 cada |
+| Quadro de obrigações, Mapa de Controlo e Mapa RH | 1 página A4 cada |
+| Proposta de honorários, minuta resumida e proposta comercial | 1 página A4 cada |
+| DR, Balanço, Fluxos e Alterações no Capital Próprio | 1 página A4 cada |
+| Demonstrações Financeiras — Síntese | 1 página A4 |
+| Ata e Declaração de Responsabilidade | 1 página A4 cada |
 
 ## Verificação obrigatória
 
@@ -35,6 +41,8 @@ secundárias com uma nota explícita. Nunca deve truncar informação sem aviso.
 - `node --import tsx scripts/audit-minuta-resumo.mjs`
 - `scripts/audit-word-pdfs.mjs`
 - `scripts/audit-pdf-portability.mjs`
+- `node scripts/audit-exportacoes-extra.mjs`
+- `node scripts/montar-exemplos-exportacoes.mjs`
 - inspeção visual do PDF final em desktop e telemóvel
 
 Os testes exigem `paginasFinais() === 1`, MediaBox A4, texto extraível e ausência
