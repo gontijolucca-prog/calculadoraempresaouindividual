@@ -1,0 +1,16 @@
+ERRATA - 03/11/2026
+
+1. O dossier anterior apresentava uma pontuação de conformidade e um selo
+   interno que não correspondiam a qualquer atribuição oficial. Essas alegações
+   foram retiradas.
+
+2. O canal oficial é e-balcão > Outras Obrigações > SVAT > Submissão.
+
+3. A Portaria n.º 293/2017 visa programas de contabilidade e a produção do
+   ficheiro SAF-T (PT). O Estudo360 apenas importa e conserva SAF-T; não produz
+   escrituração nem exporta o SAF-T de contabilidade.
+
+4. Os requisitos h) e i) estão marcados como não implementados na matriz 02.
+
+5. Não foi submetido nenhum pedido nem apresentado o Mod. 334. O dossier atual
+   serve para pedir a classificação do produto à AT.

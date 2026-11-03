@@ -15,6 +15,7 @@ export type PermissionAction =
   | 'restaurar'
   | 'purgar'
   | 'gerir-equipa'
+  | 'gerir-acessos'
   | 'gerir-gabinete';
 
 export const PERMISSION_LABELS: Record<PermissionAction, string> = {
@@ -27,6 +28,7 @@ export const PERMISSION_LABELS: Record<PermissionAction, string> = {
   'restaurar': 'Restaurar da Lixeira',
   'purgar': 'Apagar definitivamente (Lixeira)',
   'gerir-equipa': 'Gerir a equipa e os cargos',
+  'gerir-acessos': 'Criar, repor e remover acessos de colaboradores',
   'gerir-gabinete': 'Gerir o gabinete',
 };
 
@@ -34,7 +36,7 @@ const MATRIX: Record<GabineteRoleBase, PermissionAction[]> = {
   admin: [
     'editar-operacional', 'editar-clientes', 'gerir-obrigacoes',
     'ver-cofre', 'editar-cofre', 'apagar', 'restaurar', 'purgar',
-    'gerir-equipa', 'gerir-gabinete',
+    'gerir-equipa', 'gerir-acessos', 'gerir-gabinete',
   ],
   contabilista: [
     'editar-operacional', 'editar-clientes', 'gerir-obrigacoes',
@@ -92,7 +94,7 @@ export function tabsGabinete(role: GabineteRole | null | undefined): string[] | 
   if (!role) return null;
   const tabs = ['visao-geral', 'dashboard', 'mapa-controlo', 'mapa-rh', 'tarefas', 'agenda', 'obrigacoes'];
   if (can(role, 'ver-cofre')) tabs.push('cofre');
-  if (can(role, 'gerir-equipa')) tabs.push('equipa');
+  if (can(role, 'gerir-equipa') || can(role, 'gerir-acessos')) tabs.push('equipa');
   if (can(role, 'restaurar')) tabs.push('lixeira');
   return tabs;
 }

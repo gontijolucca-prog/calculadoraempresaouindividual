@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { Loader2, Save, Calculator, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { Loader2, Save, Calculator, ArrowLeft, AlertTriangle, LogOut } from 'lucide-react';
 import { useAuth } from './lib/auth';
 import ErrorBoundary from './ErrorBoundary';
 import ClientProfile, { defaultProfile } from './ClientProfile';
@@ -359,31 +359,39 @@ function NoEmpresaGate({ onGo }: { onGo: () => void }) {
   );
 }
 
+function EmployeeAccessBlocked({ email, revoked, onLogout }: { email: string; revoked: boolean; onLogout: () => Promise<void> }) {
+  return (
+    <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center px-4">
+      <div className="w-full max-w-[480px] rounded-2xl border border-[#E2E8F0] bg-white p-7 shadow-sm">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+          <AlertTriangle className="h-5 w-5" />
+        </div>
+        <h1 className="mt-5 text-[22px] font-[800] text-[#0F172A]">
+          {revoked ? 'O acesso a este gabinete foi removido' : 'Não foi possível abrir este acesso'}
+        </h1>
+        <p className="mt-2 text-[13.5px] leading-relaxed text-[#64748B]">
+          {revoked
+            ? 'A conta continua válida, mas o dono ou um administrador removeu a ligação a este gabinete. Se deve continuar a trabalhar aqui, peça um novo acesso.'
+            : 'A ligação entre esta conta e o gabinete não está disponível. Saia e tente novamente; se continuar, peça ao dono do gabinete para repor o acesso.'}
+        </p>
+        {email && <p className="mt-3 rounded-lg bg-[#F8FAFC] px-3 py-2 text-[12px] font-[600] text-[#475569]">{email}</p>}
+        <button
+          type="button"
+          onClick={() => void onLogout()}
+          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0F172A] px-4 py-3 text-[13px] font-[700] text-white hover:bg-[#162a41]"
+        >
+          <LogOut className="h-4 w-4" /> Sair desta conta
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function AppContent() {
-  const { user, loading: authLoading, logout, sendVerificationEmail, reloadUser } = useAuth();
+  const { user, loading: authLoading, accessLoading, employeeProfile, accountEmail, logout } = useAuth();
   const isTestBypass = typeof window !== 'undefined' && import.meta.env.DEV && window.location.search.includes('test') && localStorage.getItem('estudo360:test-bypass-auth') === '1';
   const isAdminBypass = user?.email === 'admin@estudo360.pt';
   const isAuthenticated = !!user || isTestBypass;
-  const [conviteToken] = useState<string>(() => (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('convite') || '' : ''));
-  // Quem chega pelo link do convite já provou que tem acesso ao email.
-  // Quem entra por convite prova que controla o email; se já for membro de um
-  // gabinete (ou tiver convite pendente), não fica preso na confirmação.
-  const [acessoPorConvite, setAcessoPorConvite] = useState<boolean>(false);
-  useEffect(() => {
-    if (!user || user.emailVerified) { setAcessoPorConvite(false); return; }
-    let vivo = true;
-    (async () => {
-      try {
-        const g = await import('./lib/gabinetes');
-        if (g.getActiveGabineteId()) { if (vivo) setAcessoPorConvite(true); return; }
-        const { meus, convites } = await g.listMyGabinetes();
-        const emailLc = (user.email || '').toLowerCase();
-        const conviteDoEmail = convites.some((c) => (c.invites || []).some((i) => (i.email || '').toLowerCase() === emailLc));
-        if (vivo) setAcessoPorConvite(meus.length > 0 || conviteDoEmail);
-      } catch { if (vivo) setAcessoPorConvite(false); }
-    })();
-    return () => { vivo = false; };
-  }, [user]);
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   // Mode is persisted: ao atualizar a página o utilizador continua no mesmo contexto.
@@ -416,112 +424,6 @@ function AppContent() {
     const raw = loadFromStorage<string>('gabineteTab', 'dashboard') || 'dashboard';
     return VALID_GAB_TABS.has(raw) ? raw : 'gallery';
   });
-  // Link do convite (/convite?t=...): aceita sozinho e entra no gabinete.
-  useEffect(() => {
-    if (!user || !conviteToken) return;
-    let vivo = true;
-    (async () => {
-      try {
-        const [{ doc, getDoc }, g] = await Promise.all([import('firebase/firestore'), import('./lib/gabinetes')]);
-        const { db } = await import('./lib/firebase');
-        const snap = await getDoc(doc(db, 'convites', conviteToken));
-        if (!snap.exists()) return;
-        const conv = snap.data() as { gabineteId?: string; email?: string; expiresAt?: number };
-        const mesmoEmail = (conv.email || '').toLowerCase() === (user.email || '').toLowerCase();
-        const valido = !conv.expiresAt || conv.expiresAt > Date.now();
-        if (!conv.gabineteId || !mesmoEmail || !valido) return;
-        await g.acceptInvite(conv.gabineteId);
-        g.setActiveGabineteId(conv.gabineteId);
-        if (vivo) {
-          setView('gabinete');
-          const url = new URL(window.location.href);
-          url.searchParams.delete('convite');
-          window.history.replaceState({}, '', url.toString());
-        }
-      } catch (e) {
-        console.warn('[convite] falhou a aceitação automática', e);
-      }
-    })();
-    return () => { vivo = false; };
-  }, [user, conviteToken]);
-
-  // Ao entrar: aceita TODOS os convites pendentes deste email e garante um
-  // gabinete ativo válido. Antes só aceitava quando havia exatamente um e
-  // desistia se existisse um activeId antigo — a pessoa entrava sem gabinete.
-  const autoConviteRef = useRef<string>('');
-  const autoConviteTentativasRef = useRef(0);
-  const autoConviteUidRef = useRef<string>('');
-  const [autoConviteNonce, setAutoConviteNonce] = useState(0);
-  useEffect(() => {
-    if (!user || conviteToken) return; // o link no URL tem o efeito acima
-    if (autoConviteUidRef.current !== user.uid) {
-      autoConviteUidRef.current = user.uid;
-      autoConviteTentativasRef.current = 0;
-    }
-    if (autoConviteRef.current === user.uid) return;
-    if (autoConviteTentativasRef.current >= 3) return;
-    autoConviteTentativasRef.current++;
-    (async () => {
-      try {
-        const g = await import('./lib/gabinetes');
-        const emailLc = (user.email || '').trim().toLowerCase();
-        const agora = Date.now();
-        let aceitou = false;
-        const { meus, convites, erro } = await g.listMyGabinetes();
-        if (erro) throw new Error('Não foi possível confirmar a associação ao gabinete.');
-        for (const conv of convites) {
-          const conviteDoEmail = (conv.invites || [])
-            .filter((i) => String(i.email || '').trim().toLowerCase() === emailLc)
-            .find((i) => (i.expira || conv.inviteExpiries?.[emailLc] || 0) > agora);
-          const doEmail = !!conviteDoEmail;
-          if (!doEmail) continue;
-          const token = (conv.invites || [])
-            .filter((i) => String(i.email || '').trim().toLowerCase() === emailLc)
-            .filter((i) => (i.expira || conv.inviteExpiries?.[emailLc] || 0) > agora)
-            .pop()?.token || '';
-          try {
-            await g.acceptInvite(conv.id);
-            aceitou = true;
-            if (token) {
-              try {
-                const { doc, deleteDoc } = await import('firebase/firestore');
-                const { db } = await import('./lib/firebase');
-                await deleteDoc(doc(db, 'convites', token));
-              } catch { /* token já usado ou sem permissão */ }
-            }
-          } catch (e) {
-            console.warn('[convite] aceitar falhou', conv.id, e);
-          }
-        }
-
-        const final = aceitou ? await g.listMyGabinetes() : { meus };
-        const lista = final.meus;
-        const ids = new Set(lista.map((m) => m.id));
-        const ativo = g.getActiveGabineteId();
-        if (!erro && ativo && !ids.has(ativo)) g.clearActiveGabineteId();
-        const ativoValido = !!ativo && ids.has(ativo);
-
-        // Se o utilizador pediu explicitamente para trocar, respeitar o
-        // selector mesmo quando só tem um gabinete.
-        if (!g.isForceSelector() && !ativoValido && lista.length === 1) {
-          g.setActiveGabineteId(lista[0].id);
-          setView('gabinete');
-        }
-        if (aceitou || (!ativoValido && lista.length >= 1)) {
-          setGabineteNonce((n) => n + 1);
-          setEmpresasRefresh((n) => n + 1);
-        }
-        autoConviteRef.current = user.uid;
-        autoConviteTentativasRef.current = 0;
-      } catch (e) {
-        console.warn('[convite] aceitação automática falhou', e);
-        if (autoConviteTentativasRef.current < 3) {
-          window.setTimeout(() => setAutoConviteNonce((n) => n + 1), 1500 * autoConviteTentativasRef.current);
-        }
-      }
-    })();
-  }, [user, conviteToken, autoConviteNonce]);
-
   useEffect(() => { if (VALID_GAB_TABS.has(gabineteTab)) saveToStorage('gabineteTab', gabineteTab); else saveToStorage('gabineteTab', 'gallery'); }, [gabineteTab]);
 
   // Cargo no gabinete ativo — decide que tabs do Gabinete aparecem no menu.
@@ -1027,7 +929,7 @@ function AppContent() {
   const botSaftTargetRef = useRef<'novo' | 'empresa'>('novo');
 
   // ── Gate de autenticação seguro ──────────────────────────────────────────
-  if (authLoading) {
+  if (authLoading || accessLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F5F7FA]">
         <div className="flex flex-col items-center gap-3">
@@ -1040,6 +942,16 @@ function AppContent() {
   if (!isAuthenticated) {
     if (showAuth) return <AuthView initialMode={authMode} onBack={() => setShowAuth(false)} />;
     return <LandingPage onEnter={() => { setAuthMode('login'); setShowAuth(true); }} onCreateAccount={() => { setAuthMode('signup'); setShowAuth(true); }} />;
+  }
+
+  if (employeeProfile && employeeProfile.status !== 'active') {
+    return (
+      <EmployeeAccessBlocked
+        email={accountEmail}
+        revoked={employeeProfile.status === 'revoked'}
+        onLogout={logout}
+      />
+    );
   }
 
 
@@ -1059,7 +971,7 @@ function AppContent() {
         if (leg) { try { const parsed = JSON.parse(leg); if (parsed?.data) _activeGabineteId = String(parsed.data); } catch {} }
       }
     } catch {}
-    const _needsChoice = isAuthenticated && !_activeGabineteId;
+    const _needsChoice = isAuthenticated && !employeeProfile && !_activeGabineteId;
     if (_needsChoice) {
       return (
         <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#F5F7FA]"><Loader2 className="w-8 h-8 text-[#0677FF] animate-spin" /></div>}>

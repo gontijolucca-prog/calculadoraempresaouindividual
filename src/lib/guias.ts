@@ -271,11 +271,11 @@ export const GUIAS: Record<ViewKey, Guia> = {
   },
   'gab-equipa': {
     titulo: 'Equipa do gabinete',
-    intro: 'Gere quem trabalha no gabinete: adiciona por email, define cargo e associa a clientes.',
-    acao: 'Adiciona o primeiro membro da equipa e associa-o a um cliente.',
+    intro: 'Gere quem trabalha no gabinete: cria o login, define a password inicial e associa a clientes.',
+    acao: 'Cria o primeiro acesso e associa o colaborador a um cliente.',
     passos: [
-      { titulo: 'Equipa', corpo: 'Vês todos os colaboradores do gabinete com nome, email e cargo.', alvo: { texto: 'Equipa do gabinete' } },
-      { titulo: 'Convidar', corpo: 'Adiciona por email — o convidado depois cria conta com esse email e fica ativo.', alvo: { texto: 'Adicionar funcionário' } },
+      { titulo: 'Equipa', corpo: 'Vês todos os colaboradores do gabinete com nome, email, cargo e estado.', alvo: { texto: 'Equipa do gabinete' } },
+      { titulo: 'Criar acesso', corpo: 'O dono define o email e uma password. Não é enviado nenhum email.', alvo: { texto: 'Criar acesso' } },
       { titulo: 'Associar a cliente', corpo: 'Escolha responsável, apoio e supervisor por cliente a partir da equipa.', alvo: { texto: 'Associações por cliente' } },
     ],
   },

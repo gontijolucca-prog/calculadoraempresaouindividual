@@ -62,37 +62,64 @@ function devTocProxy(): Plugin {
   };
 }
 
-function devConviteProxy(): Plugin {
+function devEmployeeAccessProxy(localEnv: Record<string, string>): Plugin {
   return {
-    name: 'dev-convite-proxy',
+    name: 'dev-employee-access-proxy',
     configureServer(server) {
-      server.middlewares.use('/api/equipa-convite', async (req, res) => {
-        if (req.method === 'OPTIONS') { res.statusCode = 204; res.setHeader('Access-Control-Allow-Origin', '*'); res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); res.end(); return; }
-        if (req.method !== 'POST') { res.statusCode = 405; res.end('{"erro":"metodo"}'); return; }
-        try {
-          let body = '';
-          for await (const chunk of req) body += chunk;
-          const { onRequestPost } = await import('./functions/api/equipa-convite');
-          const request = new Request('http://localhost/api/equipa-convite', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Origin: req.headers.origin || 'http://localhost:3400' },
-            body,
-          });
-          const env: Record<string, unknown> = {
-            RESEND_API_KEY: process.env.RESEND_API_KEY || '',
-            MAIL_FROM: process.env.MAIL_FROM || '',
-            SEND_EMAIL: undefined,
-          };
-          const resp = await onRequestPost({ request, env });
-          res.statusCode = resp.status;
-          resp.headers.forEach((v, k) => res.setHeader(k, v));
-          res.end(await resp.text());
-        } catch (e: any) {
-          res.statusCode = 500;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ erro: 'dev_proxy', detalhe: String(e?.message || e) }));
-        }
-      });
+      const endpoints: Record<string, () => Promise<{ onRequestPost: (ctx: { request: Request; env: Record<string, unknown> }) => Promise<Response> }>> = {
+        '/api/equipa-contas': () => import('./functions/api/equipa-contas'),
+        '/api/colaborador-login': () => import('./functions/api/colaborador-login'),
+        '/api/vincular-conta': () => import('./functions/api/vincular-conta'),
+      };
+      for (const [path, loadModule] of Object.entries(endpoints)) {
+        server.middlewares.use(path, async (req, res) => {
+          if (req.method === 'OPTIONS') {
+            res.statusCode = 204;
+            res.setHeader('Access-Control-Allow-Origin', req.headers.origin || 'http://localhost:3000');
+            res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+            res.end();
+            return;
+          }
+          if (req.method !== 'POST') {
+            res.statusCode = 405;
+            res.end('{"erro":"metodo"}');
+            return;
+          }
+          try {
+            let body = '';
+            for await (const chunk of req) body += chunk;
+            const { onRequestPost } = await loadModule();
+            const request = new Request(`http://localhost${path}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Origin: req.headers.origin || 'http://localhost:3000',
+                Referer: req.headers.referer || 'http://localhost:3000/',
+                ...(req.headers.authorization ? { Authorization: req.headers.authorization } : {}),
+                ...(req.headers['cf-connecting-ip'] ? { 'CF-Connecting-IP': String(req.headers['cf-connecting-ip']) } : {}),
+              },
+              body,
+            });
+            const env: Record<string, unknown> = {
+              FIREBASE_SERVICE_ACCOUNT_JSON: process.env.FIREBASE_SERVICE_ACCOUNT_JSON || localEnv.FIREBASE_SERVICE_ACCOUNT_JSON || '',
+              FIREBASE_API_KEY: process.env.FIREBASE_API_KEY || localEnv.FIREBASE_API_KEY || '',
+              FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID || localEnv.FIREBASE_PROJECT_ID || 'estudo360-app',
+              FIREBASE_AUTH_EMULATOR_HOST: process.env.FIREBASE_AUTH_EMULATOR_HOST || localEnv.FIREBASE_AUTH_EMULATOR_HOST || '',
+              FIRESTORE_EMULATOR_HOST: process.env.FIRESTORE_EMULATOR_HOST || localEnv.FIRESTORE_EMULATOR_HOST || '',
+            };
+            const response = await onRequestPost({ request, env });
+            res.statusCode = response.status;
+            response.headers.forEach((value, key) => res.setHeader(key, value));
+            res.end(await response.text());
+          } catch (e: any) {
+            console.error(`[dev-employee-access] ${path}:`, e);
+            res.statusCode = 503;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ erro: 'servico_acessos_indisponivel' }));
+          }
+        });
+      }
     },
   };
 }
@@ -194,7 +221,7 @@ export default defineConfig(({mode}) => {
 
   return {
     base: basePath,
-    plugins: [react(), tailwindcss(), vitePluginVersion(), devTocProxy(), devChatProxy(), devDeckProxy(), devConviteProxy(), devEmulatorCsp()],
+    plugins: [react(), tailwindcss(), vitePluginVersion(), devTocProxy(), devChatProxy(), devDeckProxy(), devEmployeeAccessProxy(env), devEmulatorCsp()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

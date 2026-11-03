@@ -1,36 +1,31 @@
-Assunto: Certificação de software — pedido de enquadramento (Estudo360.pt)
+Assunto: SVAT - pedido de classificação de plataforma que importa SAF-T, mas não produz contabilidade
 
 Exmos. Senhores,
 
-Na qualidade de produtores do software Estudo360.pt, vimos solicitar o
-enquadramento aplicável antes de submeter qualquer candidatura.
+A Recofatima, NIF 510 770 460, é produtora do Estudo360, uma aplicação web de
+apoio a gabinetes de contabilidade. O produto organiza clientes, tarefas,
+obrigações, documentos, credenciais, simuladores e propostas. Importa e conserva
+ficheiros SAF-T (PT) fornecidos pelos clientes para extração e análise de dados.
 
-1. Identificação do produtor
-- Denominação: Recofatima — [substituir pela razão social completa]
-- NIF: [NIF da Recofatima]
-- Contacto: [email + telefone]
-- Software: Estudo360.pt — https://estudo360.pt
-- Versão: 02/10/2026 (commit f846c07) — React + Firebase, alojamento Cloudflare Pages
+O Estudo360 não mantém escrituração contabilística, não processa lançamentos,
+não produz diários ou razão e não gera/exporta o ficheiro SAF-T (PT) de
+contabilidade. Não foi submetido qualquer pedido de SVAT e não está a ser usado
+o selo ou o nome da AT.
 
-2. O que o software faz
-- Simulação de impostos e salários (motores próprios);
-- Gestão de clientes, tarefas, obrigações fiscais e gabinete;
-- Leitura e análise de ficheiros SAF-T;
-- Cofre de acessos e auditoria de alterações.
+Tendo em conta a Portaria n.º 293/2017, de 2 de outubro, solicitamos que nos seja
+confirmado:
 
-3. O que o software NÃO faz
-- Não emite faturas, recibos, notas de crédito/débito nem documentos de transporte;
-- Não substitui software de faturação certificado.
+1. Se uma plataforma com estas características está abrangida pelo SVAT;
+2. Estando abrangida, quais os requisitos adicionais e o formulário aplicável;
+3. Não estando abrangida, se é necessária alguma declaração ou registo;
+4. Qual o formato e canal corretos para apresentar os elementos técnicos que a
+   AT venha a solicitar.
 
-4. Questões
-a) Por não emitir faturas, confirma-se que a aplicação está fora do âmbito da
-   certificação de programas de faturação?
-b) Se estiver fora, é exigido algum documento ou registo?
-c) Se estiver dentro, qual o diploma aplicável e a lista de requisitos/documentos
-   exigidos para a candidatura?
+Anexamos memória descritiva, matriz dos requisitos a) a i), dicionário de dados
+e anexos técnicos. A matriz identifica de forma expressa que os requisitos h) e
+i) não estão implementados.
 
-Agradecemos a indicação do enquadramento correto. Ficamos a aguardar resposta
-antes de submeter o dossier descritivo que já temos preparado.
+Ficamos disponíveis para prestar qualquer esclarecimento.
 
 Com os melhores cumprimentos,
-Recofatima — Estudo360.pt
+Recofatima - Estudo360.pt

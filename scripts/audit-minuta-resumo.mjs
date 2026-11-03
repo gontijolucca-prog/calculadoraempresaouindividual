@@ -2,7 +2,7 @@
  * Minuta de Contrato em 1 folha: gera o HTML resumido, imprime para PDF e
  * confirma 1 página + cláusulas essenciais.
  *
- *   node scripts/audit-minuta-resumo.mjs
+ *   node --import tsx scripts/audit-minuta-resumo.mjs
  */
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';

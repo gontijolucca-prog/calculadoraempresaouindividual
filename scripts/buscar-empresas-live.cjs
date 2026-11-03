@@ -4,11 +4,16 @@
  * (CORS OK) → grava public/import-empresas.json.
  */
 const fs = require('fs');
-const API_KEY = 'AIzaSyBxc-JFWwxlauY6U4A3IKTxxd5UFiDzjhI';
-const PROJECT = 'recofatima-ferramenta';
-const OUT = '/Users/lucca/Documents/GitHub/calculadoraempresaouindividual/public/import-empresas.json';
+const API_KEY = process.env.FIREBASE_API_KEY || '';
+const PROJECT = process.env.FIREBASE_PROJECT_ID || '';
+const OUT = process.env.IMPORT_OUT || '';
 const LOG = '/tmp/login-vigia.log';
 function log(m) { console.log(m); fs.appendFileSync(LOG, m + '\n'); }
+
+if (!API_KEY || !PROJECT || !OUT) {
+  console.error('Defina FIREBASE_API_KEY, FIREBASE_PROJECT_ID e IMPORT_OUT.');
+  process.exit(1);
+}
 
 const CDP = 'http://localhost:9223';
 

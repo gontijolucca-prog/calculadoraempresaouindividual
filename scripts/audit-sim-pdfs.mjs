@@ -42,6 +42,7 @@ const context = await browser.newContext({ viewport: { width: 1440, height: 1100
 const page = await context.newPage();
 
 await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(900);
 await page.evaluate(() => {
   localStorage.setItem('estudo360:test-bypass-auth', '1');
   localStorage.setItem('estudo360:v1:empresas', JSON.stringify({ v: 1, data: [{
@@ -60,11 +61,13 @@ await page.evaluate(() => {
     id: 'c1', nome: 'Empresa PDF', nif: '501234567', tipoEntidade: 'LDA', regimeIva: 'mensal',
     estado: 'ativo', createdAt: 1, updatedAt: 1, empresaId: 'e1', obrigacoesAtivas: ['iva'],
   }] }));
-  localStorage.setItem('estudo360:v1:officeSettings', JSON.stringify({ v: 1, data: {
+  const officeSettings = {
     nome: 'Escritório Teste', nif: '509999999', cedulaProfissional: '12345', numeroInscricaoOCC: 'OCC-1',
     morada: 'Rua do Escritório 10', codigoPostal: '2495-000', localidade: 'Fátima',
     email: 'geral@escritorio.pt', telefone: '249 111 222', corPrimaria: '#0677FF',
-  } }));
+  };
+  localStorage.setItem('estudo360:v1:officeSettings', JSON.stringify({ v: 1, data: officeSettings }));
+  localStorage.setItem('estudo360:v1:gabinete:officeSettings:audit-office', JSON.stringify({ v: 1, data: officeSettings }));
 });
 
 /** Preenche o que estiver vazio com valores plausíveis por rótulo. */

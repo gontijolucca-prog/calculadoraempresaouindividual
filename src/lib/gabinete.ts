@@ -755,7 +755,9 @@ export interface Colaborador {
   cor?: string;
   avatar?: string;
   initials?: string;
-  status?: 'convite_pendente' | 'ativo';
+  status?: 'pendente' | 'ativo' | 'convite_pendente';
+  accessStatus?: 'preparing' | 'active' | 'revoked' | 'error';
+  credentialId?: string;
   inviteSentAt?: number;
   linkedUid?: string;
   updatedAt?: number;
@@ -1042,8 +1044,29 @@ export async function purgeCofreVazias(): Promise<number> {
 }
 
 // ─── Colaboradores ───────────────────────────────────────────────────────────
+const colaboradoresRemovidosLocal = new Set<string>();
 export function listColaboradoresCache(): Colaborador[] { return readCache<Colaborador>('colaboradores', []); }
 export function saveColaboradoresCache(list: Colaborador[]): void { writeCache('colaboradores', list); }
+export function guardarColaboradorLocal(c: Colaborador): void {
+  const list = listColaboradoresCache();
+  const idx = list.findIndex((item) => item.id === c.id);
+  const atual = {
+    ...c,
+    updatedAt: Date.now(),
+    initials: c.initials || getColaboradorInitials(c.nome),
+    status: c.status || 'ativo' as const,
+  };
+  if (idx >= 0) list[idx] = atual;
+  else list.push(atual);
+  colaboradoresRemovidosLocal.delete(c.id);
+  saveColaboradoresCache(list);
+  notificarAtualizacaoLocal('colaboradores');
+}
+export function removerColaboradorLocal(id: string): void {
+  colaboradoresRemovidosLocal.add(id);
+  saveColaboradoresCache(listColaboradoresCache().filter((item) => item.id !== id));
+  notificarAtualizacaoLocal('colaboradores');
+}
 export async function upsertColaborador(c: Colaborador): Promise<void> {
   const list = listColaboradoresCache();
   const idx = list.findIndex(x => x.id === c.id);
@@ -1359,7 +1382,6 @@ const subscribeObrigacoesBase = makeSubscriber<Obrigacao>('obrigacoes');
 export const subscribeObrigacoes = (cb: (items: Obrigacao[]) => void) =>
   subscribeObrigacoesBase((items) => cb(comCalendarioLocal(items)));
 export const subscribeCofre = makeSubscriber<CofreEntrada>('cofre');
-const colaboradoresRemovidosLocal = new Set<string>();
 const subscribeColaboradoresBase = makeSubscriber<Colaborador>('colaboradores');
 /**
  * O snapshot do Firestore é a verdade do servidor, mas quando uma escrita

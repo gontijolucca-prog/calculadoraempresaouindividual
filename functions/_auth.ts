@@ -24,8 +24,15 @@ export async function verifyFirebaseRequest(
   if (!idToken) return null;
   try {
     const key = String(env.FIREBASE_API_KEY || FIREBASE_KEY);
+    const emulator = String(env.FIREBASE_AUTH_EMULATOR_HOST || '')
+      .trim()
+      .replace(/^https?:\/\//, '')
+      .replace(/\/+$/, '');
+    const base = emulator
+      ? `http://${emulator}/identitytoolkit.googleapis.com/v1`
+      : 'https://identitytoolkit.googleapis.com/v1';
     const res = await fetchImpl(
-      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(key)}`,
+      `${base}/accounts:lookup?key=${encodeURIComponent(key)}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

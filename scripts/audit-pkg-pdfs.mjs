@@ -52,7 +52,8 @@ for (const [doc, botaoNome, previewRoot, root, ficheiro] of [
   ['Proposta de Honorários', /Imprimir proposta/i, '#proposta-print-root', '#proposta-print-root', 'proposta-honorarios'],
   ['Minuta de Contrato', /Imprimir contrato/i, '#minuta-print-root', '#minuta-resumo-print', 'minuta-contrato'],
 ]) {
-  const card = page.getByRole('radio', { name: new RegExp(doc, 'i') });
+  const cardPattern = doc === 'Minuta de Contrato' ? /Contrato de Prestação/i : new RegExp(doc, 'i');
+  const card = page.getByRole('radio', { name: cardPattern });
   if (!(await card.count())) { ok(false, `${doc}: cartão não encontrado`); continue; }
   await card.first().click();
   await page.waitForTimeout(1500);

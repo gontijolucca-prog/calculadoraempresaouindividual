@@ -1,36 +1,39 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Building2, Users, Mail, Plus, LogOut, Check, X, Loader2, ShieldCheck, Briefcase, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Building2, Users, Plus, LogOut, Check, Loader2, ShieldCheck, Briefcase, ChevronRight, AlertTriangle, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { useAuth } from './lib/auth';
 import {
-  listMyGabinetes, ensureDefaultGabinete, createGabinete,
-  acceptInvite, declineInvite, setActiveGabineteId, getActiveGabineteId, type GabineteMeta,
+  listMyGabinetes, createGabinete,
+  setActiveGabineteId, getActiveGabineteId, type GabineteMeta,
 } from './lib/gabinetes';
+import { EquipaAcessoError, vincularContaNormal } from './lib/equipaAcesso';
 
 interface Props {
   onChosen: (gabineteId: string) => void;
 }
 
 export default function GabineteSelector({ onChosen }: Props) {
-  const { user, logout } = useAuth();
+  const { user, employeeProfile, accountEmail, logout } = useAuth();
   const [meus, setMeus] = useState<GabineteMeta[]>([]);
-  const [convites, setConvites] = useState<GabineteMeta[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [newNome, setNewNome] = useState('');
   const [newNif, setNewNif] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkPassword, setLinkPassword] = useState('');
+  const [showLinkPassword, setShowLinkPassword] = useState(false);
+  const [linkBusy, setLinkBusy] = useState(false);
+  const [linkSuccess, setLinkSuccess] = useState('');
 
   const load = async () => {
     setError(null);
     setLoading(true);
     try {
-      await ensureDefaultGabinete();
-      const { meus: m, convites: c } = await listMyGabinetes();
+      const { meus: m } = await listMyGabinetes();
       setMeus(m);
-      setConvites(c);
-      // Auto-select se só houver 1 e sem convites pendentes e sem ativo prévio
+      // Auto-select se só houver um gabinete e não houver um ativo prévio.
       // Mas user pediu que PERGUNTE SEMPRE — então não auto-entra. Deixa lista visível.
       // Se houver activeId já válido (sessão anterior) e o user já pertence, pré-seleciona visualmente.
     } catch (e: any) {
@@ -45,32 +48,6 @@ export default function GabineteSelector({ onChosen }: Props) {
   const choose = (id: string) => {
     setActiveGabineteId(id);
     onChosen(id);
-  };
-
-  const handleAccept = async (id: string) => {
-    setBusyId(id);
-    setError(null);
-    try {
-      await acceptInvite(id);
-      setActiveGabineteId(id);
-      onChosen(id);
-    } catch (e: any) {
-      setError(e?.message || 'Falha ao aceitar convite.');
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  const handleDecline = async (id: string) => {
-    setBusyId(id);
-    try {
-      await declineInvite(id);
-      await load();
-    } catch (e: any) {
-      setError(e?.message || 'Falha ao recusar.');
-    } finally {
-      setBusyId(null);
-    }
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -89,6 +66,35 @@ export default function GabineteSelector({ onChosen }: Props) {
     }
   };
 
+  const handleLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!linkPassword) {
+      setError('Indique a password criada pelo gabinete.');
+      return;
+    }
+    setLinkBusy(true);
+    setError(null);
+    setLinkSuccess('');
+    try {
+      const result = await vincularContaNormal(linkPassword);
+      if (result.gabinetesVinculados.length === 0) {
+        setError('Não encontrámos um acesso ativo para este email com essa password. Confirme os dados ou peça ao gabinete para repor a password.');
+        return;
+      }
+      const gabineteId = result.gabinetesVinculados[0];
+      setLinkSuccess('Acesso confirmado. A abrir o gabinete...');
+      setLinkPassword('');
+      setActiveGabineteId(gabineteId);
+      onChosen(gabineteId);
+    } catch (err) {
+      setError(err instanceof EquipaAcessoError
+        ? err.message
+        : 'Não foi possível confirmar este acesso. Tente novamente.');
+    } finally {
+      setLinkBusy(false);
+    }
+  };
+
   const activeId = getActiveGabineteId();
 
   return (
@@ -100,7 +106,7 @@ export default function GabineteSelector({ onChosen }: Props) {
           <span className="ml-2 text-[11px] font-[700] tracking-[1px] uppercase px-2 py-1 rounded-full bg-white border border-[#E2E8F0] text-[#64748B]">Gabinetes</span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="hidden sm:inline text-[13px] text-[#64748B]">{user?.email}</span>
+          <span className="hidden sm:inline text-[13px] text-[#64748B]">{accountEmail}</span>
           <button onClick={() => logout()} className="inline-flex items-center gap-1.5 text-[13px] font-[600] px-3 py-1.5 rounded-full border border-black/10 hover:bg-black/5"><LogOut className="w-3.5 h-3.5" /> Sair</button>
         </div>
       </header>
@@ -111,7 +117,7 @@ export default function GabineteSelector({ onChosen }: Props) {
           <div className="space-y-6">
             <div>
               <h1 className="text-[30px] font-[800] tracking-[-1px] text-[#0B1D2D] leading-none">Em que gabinete pretende trabalhar?</h1>
-              <p className="mt-2 text-[14px] text-[#64748B]">Escolha um dos seus gabinetes ou aceite um convite. Perguntamos sempre ao entrar — pode trocar a qualquer momento.</p>
+              <p className="mt-2 text-[14px] text-[#64748B]">Escolha o gabinete onde quer trabalhar. As associações criadas pelo dono aparecem aqui automaticamente.</p>
             </div>
 
             {error && (
@@ -125,31 +131,6 @@ export default function GabineteSelector({ onChosen }: Props) {
               </div>
             ) : (
               <>
-                {convites.length > 0 && (
-                  <div className="bg-white rounded-[20px] border border-amber-200 shadow-sm overflow-hidden">
-                    <div className="px-5 py-3 bg-amber-50 border-b border-amber-100 flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-amber-600" />
-                      <span className="text-[11px] font-[800] tracking-[1px] uppercase text-amber-800">Convites para si ({convites.length})</span>
-                    </div>
-                    <div className="divide-y divide-[#F1F5F9]">
-                      {convites.map(g => (
-                        <div key={g.id} className="px-5 py-4 flex items-center justify-between gap-4">
-                          <div className="min-w-0">
-                            <div className="text-[14px] font-[800] text-[#0B1D2D] truncate">{g.nome}</div>
-                            <div className="text-[12px] text-[#64748B] truncate">{g.ownerEmail} · convidou-te como {g.invites.find(i => i.email.toLowerCase() === (user?.email || '').toLowerCase())?.role || 'colaborador'}</div>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <button disabled={busyId === g.id} onClick={() => void handleDecline(g.id)} className="w-9 h-9 rounded-full border border-[#E2E8F0] bg-white hover:bg-[#F5F7FA] flex items-center justify-center disabled:opacity-50"><X className="w-4 h-4 text-[#64748B]" /></button>
-                            <button disabled={busyId === g.id} onClick={() => void handleAccept(g.id)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#0B1D2D] text-white text-[13px] font-[700] hover:bg-[#162a41] disabled:opacity-50">
-                              {busyId === g.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Aceitar e entrar
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 <div className="bg-white rounded-[20px] border border-[#E2E8F0] shadow-sm overflow-hidden">
                   <div className="px-5 py-3 bg-[#F5F7FA] border-b border-[#E2E8F0] flex items-center gap-2">
                     <Building2 className="w-4 h-4 text-[#0677FF]" />
@@ -191,7 +172,53 @@ export default function GabineteSelector({ onChosen }: Props) {
 
           {/* Direita — criar + reassurance */}
           <div className="space-y-4">
-            <div className="bg-white rounded-[20px] border border-[#E2E8F0] shadow-sm p-6">
+            {!employeeProfile && (
+              <div className="bg-white rounded-[20px] border border-[#E2E8F0] shadow-sm p-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-[#EFF6FF] text-[#0677FF] flex items-center justify-center"><KeyRound className="w-4 h-4" /></div>
+                  <div>
+                    <h2 className="text-[16px] font-[800] text-[#0B1D2D]">Já tem um acesso criado pelo gabinete?</h2>
+                    <p className="text-[12px] text-[#64748B] mt-0.5">{accountEmail}</p>
+                  </div>
+                </div>
+                {!linkOpen ? (
+                  <>
+                    <p className="mt-3 text-[13px] text-[#64748B] leading-relaxed">Use a password que o dono ou administrador criou para este email. Assim, a sua conta fica associada ao gabinete certo.</p>
+                    <button onClick={() => { setLinkOpen(true); setError(null); }} className="mt-4 w-full inline-flex items-center justify-center gap-2 border border-[#0677FF]/25 bg-[#EFF6FF] text-[#0558C9] py-3 rounded-xl text-[14px] font-[800] hover:bg-[#E3F0FF]">
+                      <KeyRound className="w-4 h-4" /> Confirmar acesso ao gabinete
+                    </button>
+                  </>
+                ) : (
+                  <form onSubmit={handleLink} className="mt-4 space-y-3">
+                    <label className="block">
+                      <span className="text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B]">Password criada pelo gabinete</span>
+                      <div className="relative mt-1">
+                        <input
+                          type={showLinkPassword ? 'text' : 'password'}
+                          value={linkPassword}
+                          onChange={(e) => setLinkPassword(e.target.value)}
+                          className="w-full px-3 pr-11 py-3 rounded-xl border border-[#E2E8F0] bg-[#F5F7FA] text-[14px] focus:bg-white focus:border-[#0677FF] outline-none"
+                          autoComplete="current-password"
+                          autoFocus
+                        />
+                        <button type="button" onClick={() => setShowLinkPassword(v => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-[#64748B] hover:text-[#0B1D2D]" aria-label={showLinkPassword ? 'Ocultar password' : 'Mostrar password'}>
+                          {showLinkPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </label>
+                    {linkSuccess && <div className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2 text-[12.5px] font-[600] text-emerald-700"><Check className="w-4 h-4" /> {linkSuccess}</div>}
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => { setLinkOpen(false); setLinkPassword(''); setError(null); }} className="flex-1 py-3 rounded-xl border border-[#E2E8F0] bg-white text-[14px] font-[700] text-[#475569]">Cancelar</button>
+                      <button type="submit" disabled={linkBusy} className="flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-[#0677FF] text-white text-[14px] font-[800] hover:bg-[#0558c9] disabled:opacity-60">
+                        {linkBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />} Confirmar
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            )}
+
+            {!employeeProfile && <div className="bg-white rounded-[20px] border border-[#E2E8F0] shadow-sm p-6">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-full bg-[#0B1D2D] text-white flex items-center justify-center"><Plus className="w-4 h-4" /></div>
                 <h2 className="text-[16px] font-[800] text-[#0B1D2D]">Criar novo gabinete</h2>
@@ -221,12 +248,12 @@ export default function GabineteSelector({ onChosen }: Props) {
                   </div>
                 </form>
               )}
-            </div>
+            </div>}
 
             <div className="bg-[#0B1D2D] text-white rounded-[20px] p-6">
               <div className="flex items-center gap-2 text-emerald-300"><ShieldCheck className="w-4 h-4" /><span className="text-[11px] font-[800] tracking-[1px] uppercase">Privado por gabinete</span></div>
-              <p className="mt-2 text-[13px] leading-relaxed text-slate-300">Cada gabinete é um espaço isolado: clientes, tarefas, obrigações e cofre nunca se misturam entre gabinetes — nem mesmo para o dono. Só membros convidados vêem o gabinete.</p>
-              <div className="mt-4 flex items-center gap-2 text-[12px] text-slate-400"><Users className="w-4 h-4" /> Convida por email no ecrã Equipa do Gabinete.</div>
+              <p className="mt-2 text-[13px] leading-relaxed text-slate-300">Cada gabinete é um espaço isolado: clientes, tarefas, obrigações e cofre nunca se misturam entre gabinetes — nem mesmo para o dono. Só membros autorizados vêem o gabinete.</p>
+              {!employeeProfile && <div className="mt-4 flex items-center gap-2 text-[12px] text-slate-400"><Users className="w-4 h-4" /> Crie os logins da equipa no ecrã Equipa do Gabinete.</div>}
             </div>
           </div>
         </div>

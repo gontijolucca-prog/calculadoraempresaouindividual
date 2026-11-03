@@ -37,10 +37,35 @@ jobs:
       - name: Tests
         run: npm test
 
+      - name: Secret scan
+        run: npm run audit:segredos
+
       - name: Build
         env:
           VITE_BASE_URL: /
         run: npm run build
+
+      # Conta de serviço usada apenas pelas Functions server-side do sistema de
+      # acessos da equipa. Nunca é injetada no bundle do browser.
+      - name: Configurar conta de serviço Firebase no Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" | npx wrangler@4 pages secret put FIREBASE_SERVICE_ACCOUNT_JSON --project-name=estudo360
+
+      - name: Publicar Firestore Rules
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
+          cred="$(mktemp)"
+          trap 'rm -f "$cred"' EXIT
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$cred"
+          GOOGLE_APPLICATION_CREDENTIALS="$cred" \
+            npx firebase-tools@15.28.1 deploy --only firestore:rules --project estudo360-app --non-interactive
 
       # Publica a chave do OpenCode Go como secret de runtime do Pages, para a
       # Function /api/chat (AI Contabilista) lhe aceder via env.OPENCODE_GO_KEY.

@@ -87,9 +87,9 @@ export const GABINET_INTROS: Record<GabTab, GabineteIntroDef> = {
   equipa: {
     titulo: 'Equipa do gabinete',
     Icon: Users,
-    resumo: 'Gere quem trabalha no gabinete: adiciona por email, define cargo e vê quem já tem acesso.',
-    dados: ['Nome e email', 'Cargo', 'Estado do convite'],
-    resultado: 'Equipa organizada pronta a associar a clientes.',
+    resumo: 'Gere quem trabalha no gabinete: cria o login, define a password inicial e o cargo.',
+    dados: ['Nome e email', 'Password inicial', 'Cargo e estado'],
+    resultado: 'Equipa com acessos controlados, pronta a associar a clientes.',
   },
   tarefas: {
     titulo: 'Tarefas',

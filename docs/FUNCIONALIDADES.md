@@ -2,12 +2,16 @@
 
 Estado: ✅ = testado e provado nesta ronda · ⚠️ = existe, falta prova automática · ⛔ = bloqueado (precisa de contas/dados).
 
+Revisão de acessos: 03/11/2026. Já não existem convites por link nem verificação
+de email. O dono cria email e password dentro do gabinete.
+
 ## A. Entrada e conta
 | # | Funcionalidade | Como deve funcionar | Estado |
 |---|---|---|---|
 | A1 | Landing | Página pública, 0 erros de consola, sem overflow a 375/1024/1440 | ✅ |
-| A2 | Criar conta / entrar | Email+password, confirmação de email, sessão — testado nos emuladores | ✅ (emulador) |
-| A3 | Escolher gabinete | Pergunta ao entrar; criação pede nome+NIF e entra | ✅ (emulador) |
+| A2 | Criar conta / entrar | Conta normal com email+password; sem verificação de email; login de colaborador criado pelo gabinete | ✅ (emulador) |
+| A3 | Escolher gabinete | Pergunta ao entrar; lista apenas gabinetes com associação efetiva; criação pede nome+NIF | ✅ (emulador) |
+| A3.1 | Confirmar acesso criado | Conta normal introduz a password secreta do gabinete; o mesmo email sozinho nunca dá acesso | ✅ (unidade + emulador) |
 | A4 | Sair | Termina sessão e volta à landing | ⚠️ |
 
 ## B. Carteira e perfil
@@ -33,8 +37,9 @@ Estado: ✅ = testado e provado nesta ronda · ⚠️ = existe, falta prova auto
 | C8 | Agenda | Prazos de obrigações, tarefas e alertas por data | ✅ |
 | C9 | Cofre | Entradas por cliente; cifra AES-GCM com passphrase; só admin/contabilista | ⚠️ cifra testada; formulário com duplicados responsivos não é fiável por script |
 | C10 | Lixeira | Restaurar (deletedAt removido) e purgar; nada desaparece sem rasto | ✅ |
-| C11 | Equipa | Convidar (mensagem pronta copiar/mailto), cargo, aceitar convite e ficar **Ativa** com uid ligado — ciclo completo testado | ✅ (emulador) |
-| C12 | Permissões | estagiária convidada: cofre negado pelas rules (403), clientes permitidos e **Cofre/Equipa/Lixeira fora do menu** (7 tabs vs 10 do dono) | ✅ (emulador) |
+| C11 | Equipa | O dono cria nome, email, password e cargo; o colaborador entra diretamente no gabinete; editar, repor password e remover estão disponíveis | ✅ (emulador) |
+| C11.1 | Cargos | Criar, editar e apagar cargos personalizados com lista de permissões; bloqueia apagar cargo ainda atribuído | ✅ |
+| C12 | Permissões | Admin, contabilista, estagiária e cargos custom são aplicados no cliente e nas rules; um acesso não pode elevar o próprio cargo | ✅ (unidade + emulador) |
 | C13 | Offline | Grava local, sincroniza ao voltar a rede; nada falha em silêncio | ✅ |
 | C14 | Imprimir mapas | Só o quadro/mapa, A4 horizontal, 1 folha | ✅ |
 | C15 | Exportar PDF dos mapas | jsPDF, 1 página, símbolos ✓/✕/—, colunas do mês | ✅ |

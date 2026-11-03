@@ -1,40 +1,56 @@
-# Candidatura SVAT — Estudo360.pt
-**Dossier 02/10/2026 v3 — base legal confirmada; enquadramento do Estudo360 provavelmente fora do âmbito (ver ENCAMINHAMENTO-SVAT.md)**
+# Candidatura SVAT - Estudo360
 
-## Para a reunião de hoje 17h com a Sandrine
-1. Abrir `00-LEIA-PRIMEIRO.pdf` (2 minutos) — explica tudo
-2. Abrir `05-Guia-E-balcao-Passo-a-Passo.pdf` — onde clicar no E-balcão
-3. Copiar `06-Texto-Pronto-para-colar.txt` → colar no E-balcão → anexar 01 a 04 → Enviar
+**Revisão:** 03/11/2026
 
-**Estado:** G1+G2+G3 100% em produção (commit f846c07) · firestore.rules publicado · 9/9 requisitos documentados · Grátis, 30 dias, sem prazo.
+## Estado
 
-## Conteúdo da pasta (ordem de envio à AT)
-| # | Ficheiro | Para que serve |
-|---|----------|----------------|
-| 00 | LEIA-PRIMEIRO.pdf | 2 min — o que fazer às 17h |
-| 00 | INDICE.pdf | Índice visual |
-| 01 | Memoria-Descritiva.pdf | O que faz/não faz (AT exige) |
-| 02 | Matriz-Conformidade.pdf | 9 requisitos com evidência |
-| 03 | Dicionario-Dados.pdf | Coleções + auditoria |
-| 04 | Checklist-Submissao.pdf | Prazos legais |
-| 05 | Guia-E-balcao-Passo-a-Passo.pdf | Passo-a-passo com prints |
-| 06 | Texto-Pronto-para-colar.txt/.pdf | Texto já escrito para o E-balcão |
-| 07 | Declaracao-Produtor.pdf | Declaração Recofatima (assinar) |
-| 08 | Logotipo-SVAT/ | AT logo + mock selo + regras |
-| 09 | Anexos-Tecnicos.pdf | firestore.rules + exemplo audit_events |
+Não existe candidatura submetida, selo atribuído, aprovação da AT nem parecer
+de conformidade. O primeiro passo é pedir à Autoridade Tributária a
+classificação do Estudo360.
 
-## E-balcão
-`https://sitfiscal.portaldasfinancas.gov.pt/ebalcao` → Outras Obrigações → SVAT → Submissão (confirmado na página oficial em 26/10/2026)
-Alternativa email: `certificacao.software@at.gov.pt`
+A Portaria n.º 293/2017 aplica o SVAT a programas de contabilidade quanto à
+produção do SAF-T (PT). O Estudo360 importa e conserva SAF-T, mas não mantém
+escrituração nem exporta o SAF-T de contabilidade. Por isso, os requisitos h)
+e i) estão marcados como **não implementados**.
 
-> **Antes de enviar:** confirmar o âmbito com a AT (texto em `PERGUNTA-AT.txt`).
-> A referência «Portaria 293/2017» não foi confirmada em fonte oficial a 26/10/2026.
+## Documentos
 
-## Após envio
-Guardar comprovativo como `10-Comprovativo-Envio.pdf` nesta pasta. AT responde em 30 dias.
+| # | Ficheiro | Finalidade |
+|---|---|---|
+| 00 | `00-CAPA.pdf` | Identificação do dossier |
+| 00 | `00-INDICE.pdf` | Ordem dos documentos |
+| 00 | `00-LEIA-PRIMEIRO.pdf` | Estado e próxima ação |
+| 01 | `01-Memoria-Descritiva.pdf` | Âmbito real do produto |
+| 02 | `02-Matriz-Conformidade.pdf` | Requisitos a) a i), sem inflação |
+| 03 | `03-Dicionario-Dados.pdf` | Coleções, campos e acessos |
+| 04 | `04-Checklist-Submissao.pdf` | Pronto / pendente |
+| 05 | `05-Guia-E-balcao-Passo-a-Passo.pdf` | Percurso oficial |
+| 06 | `06-Texto-Pronto-para-colar.pdf` | Pedido de classificação |
+| 07 | `07-Declaracao-Produtor.pdf` | Minuta condicionada, por preencher |
+| 08 | `08-Identidade-e-Uso.pdf` | Regras de comunicação |
+| 09 | `09-Anexos-Tecnicos.pdf` | Controlos e limitações |
 
-## Nota honesta
-SVAT foi feito para TOConline. AT pode responder “sem objeto”. Nesse caso usar Plano B: auditoria como selo próprio na landing (“Auditoria SVAT 9/9 conforme 02/10/2026”).
+## Próxima ação
 
----
-Gerado 02/10/2026 · v3 · Tudo verificado
+1. Confirmar representante legal, assinante, endereço e contactos oficiais.
+2. Entrar no Portal das Finanças.
+3. Abrir **e-balcão → Outras Obrigações → SVAT → Submissão**.
+4. Adaptar o texto de `06-Texto-Pronto-para-colar.txt`.
+5. Anexar os documentos 01, 02, 03, 06 e 09.
+6. Guardar o comprovativo e registar a resposta da AT.
+
+Não apresentar o Mod. 334 como candidatura enquanto o enquadramento não estiver
+confirmado. Não usar o logótipo, nome ou selo da AT antes de uma atribuição
+oficial.
+
+## Fontes
+
+- [Selo de Validação AT (SVAT)](https://info.portaldasfinancas.gov.pt/pt/apoio_ao_contribuinte/Negocios/Faturacao/SAF_T_PT/SVAT/Paginas/default.aspx)
+- Portaria n.º 293/2017, de 2 de outubro
+- Mod. 334.1 e respetivas instruções de preenchimento
+
+## Regeneração
+
+Os PDFs são produzidos por `scripts/gerar-pacote-svat.py` com ReportLab e
+validados com PyMuPDF: uma página A4 por documento, texto extraível e render
+visual. A cópia pública é sincronizada para `public/docs-candidatura-svat`.

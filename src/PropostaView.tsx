@@ -35,7 +35,7 @@ function newDeckId(): string {
 }
 
 export default function PropostaView({ office, honorarios, onOpen, onGoToOfficeSettings }: Props) {
-  const { user } = useAuth();
+  const { user, accountEmail } = useAuth();
   const [metas, setMetas] = useState<DeckMeta[]>(() => listMetas());
   const [creating, setCreating] = useState(false);
   const [passo, setPasso] = useState<'escolha' | 'briefing'>('escolha');
@@ -95,7 +95,7 @@ export default function PropostaView({ office, honorarios, onOpen, onGoToOfficeS
         ownerUid: user?.uid || '',
         gabineteId: getGabineteOfficeId(),
         ajuste: valorAjuste || motivoAjuste.trim()
-          ? { mensal: valorAjuste, motivo: motivoAjuste.trim() || 'Ajuste comercial', por: user?.email || user?.uid || 'local' }
+          ? { mensal: valorAjuste, motivo: motivoAjuste.trim() || 'Ajuste comercial', por: accountEmail || user?.uid || 'local' }
           : undefined,
       });
       if (valorAjuste) {

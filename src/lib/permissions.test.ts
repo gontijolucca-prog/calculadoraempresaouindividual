@@ -4,7 +4,7 @@ import { can, deriveRole, tabsGabinete, setCustomRolesCache } from './permission
 
 describe('permissions — matriz por cargo', () => {
   it('admin pode tudo', () => {
-    for (const a of ['editar-operacional','editar-clientes','gerir-obrigacoes','ver-cofre','editar-cofre','apagar','restaurar','purgar','gerir-equipa','gerir-gabinete'] as const) {
+    for (const a of ['editar-operacional','editar-clientes','gerir-obrigacoes','ver-cofre','editar-cofre','apagar','restaurar','purgar','gerir-equipa','gerir-acessos','gerir-gabinete'] as const) {
       assert.equal(can('admin', a), true, a);
     }
   });
@@ -16,6 +16,7 @@ describe('permissions — matriz por cargo', () => {
     assert.equal(can('contabilista', 'gerir-obrigacoes'), true);
     assert.equal(can('contabilista', 'purgar'), false);
     assert.equal(can('contabilista', 'gerir-equipa'), false);
+    assert.equal(can('contabilista', 'gerir-acessos'), false);
     assert.equal(can('contabilista', 'gerir-gabinete'), false);
   });
 
@@ -56,7 +57,7 @@ describe('permissions — matriz completa (espelho das firestore.rules)', () => 
   const acoes = [
     'editar-operacional', 'editar-clientes', 'gerir-obrigacoes',
     'ver-cofre', 'editar-cofre', 'apagar', 'restaurar', 'purgar',
-    'gerir-equipa', 'gerir-gabinete',
+    'gerir-equipa', 'gerir-acessos', 'gerir-gabinete',
   ] as const;
 
   const esperado: Record<string, Record<string, boolean>> = {
@@ -65,11 +66,13 @@ describe('permissions — matriz completa (espelho das firestore.rules)', () => 
       'editar-operacional': true, 'editar-clientes': true, 'gerir-obrigacoes': true,
       'ver-cofre': true, 'editar-cofre': true, 'apagar': true, 'restaurar': true,
       'purgar': false, 'gerir-equipa': false, 'gerir-gabinete': false,
+      'gerir-acessos': false,
     },
     estagiaria: {
       'editar-operacional': true, 'editar-clientes': false, 'gerir-obrigacoes': false,
       'ver-cofre': false, 'editar-cofre': false, 'apagar': false, 'restaurar': false,
       'purgar': false, 'gerir-equipa': false, 'gerir-gabinete': false,
+      'gerir-acessos': false,
     },
   };
 

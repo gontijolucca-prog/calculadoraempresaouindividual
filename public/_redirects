@@ -1,3 +1,7 @@
 # Link público da proposta — SPA fallback para /p/<slug>
 # As Functions (/api/*) correm antes dos assets, por isso não são afetadas.
 /p/*  /index.html  200
+/convite / 302
+/estudo360-novidades-semana-03-11  /estudo360-novidades-semana-03-11.html  200
+/estudo360-novidades-semana-26-10  /estudo360-novidades-semana-26-10.html  200
+/estudo360-novidades-e-svat  /estudo360-novidades-e-svat.html  200

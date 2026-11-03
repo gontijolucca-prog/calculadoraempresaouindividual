@@ -1,24 +1,31 @@
-# SVAT — enquadramento (26/10/2026)
+# SVAT - encaminhamento
 
-## O que é (fonte oficial)
-Selo de Validação AT (SVAT), criado pela **Portaria n.º 293/2017, de 2 de outubro**,
-para **programas de contabilidade**, quanto à produção do **ficheiro SAF-T (PT)**.
-A AT mantém a lista de programas com selo e a declaração a apresentar.
+## Situação
 
-## Como se pede
-Preencher a **Declaração Selo de Validação AT (SVAT)** e submeter em:
-**e-balcão → Outras Obrigações → SVAT → Submissão**.
+O Estudo360 lê e conserva SAF-T (PT), mas não produz escrituração nem exporta o
+SAF-T de contabilidade. A aplicação não preenche, por isso, os requisitos h) e
+i) da Portaria n.º 293/2017.
 
-## O caso do Estudo360
-- Lê SAF-T (PT) para análise; **não produz** SAF-T nem escrituração.
-- Não é, por isso, um programa de contabilidade nos termos da Portaria.
-- Conclusão provável: **fora do âmbito** — a AT responderá «sem objeto» ou indicará
-  que não há lugar a selo.
+## Próximo ato
 
-## Recomendação
-1. Enviar `PERGUNTA-AT.txt` no e-balcão (não é candidatura; é pedido de enquadramento).
-2. Só se a AT disser que se aplica, preencher a Declaração oficial e submeter.
-3. Não usar o selo nem a expressão «validado pela AT» até resposta favorável.
+Pedir à AT a classificação do produto pelo e-balcão:
 
-## O que já está pronto
-Descrição do produto, requisitos e provas técnicas (dossier 01–09) e a errata.
+**Outras Obrigações → SVAT → Submissão**
+
+O pedido deve explicar que o Estudo360 não é um programa de contabilidade e deve
+anexar a memória, a matriz, o dicionário e os anexos técnicos.
+
+## O que não fazer
+
+- Não apresentar o Mod. 334 como candidatura concluída.
+- Não marcar os requisitos h) ou i) como implementados.
+- Não usar o logótipo, nome ou selo da AT.
+- Não inventar representante, assinante, morada ou contactos.
+- Não prometer um prazo de aprovação: os 30 dias legais dizem respeito à
+  notificação dos elementos necessários aos testes.
+
+## Depois da resposta
+
+Guardar a resposta oficial neste dossier. Só avançar para o Mod. 334 se a AT
+confirmar que o produto está no âmbito e depois de cumprir todos os requisitos
+aplicáveis.

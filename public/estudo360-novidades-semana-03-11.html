@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Estudo360 · Novidades de 28/10 a 03/11</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,300;9..144,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#fff;--paper-2:#fafaf7;--ink:#14181e;--muted:#667085;--soft:#98a2b3;
+    --line:#e7e6e1;--line-2:#d8d7d1;--blue:#0677ff;--blue-soft:#eef6ff;
+    --green:#0e9f6e;--amber:#b45309;--rose:#be123c;--gold:#b06d35;
+    --shadow:0 14px 36px rgba(20,24,30,.055);--radius:11px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper-2);color:var(--ink);font-family:Montserrat,"Helvetica Neue",sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 24px}
+  .mono{font-family:"JetBrains Mono",monospace}
+  .serif{font-family:Fraunces,Georgia,serif}
+  .top{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}
+  .top-in{display:flex;align-items:center;gap:12px;padding:12px 0}
+  .logo{width:31px;height:31px;flex:none}
+  .brand{font-size:14.5px;font-weight:700;letter-spacing:-.2px;white-space:nowrap}
+  .brand span{color:var(--blue)}
+  .top nav{margin-left:auto;display:flex;gap:2px;min-width:0}
+  .top nav a{font-size:12.5px;font-weight:500;color:var(--muted);text-decoration:none;padding:8px 11px;border-radius:8px;white-space:nowrap}
+  .top nav a:hover{color:var(--ink);background:var(--paper-2)}
+  .hero{background:var(--paper);border-bottom:1px solid var(--line)}
+  .hero-in{display:grid;grid-template-columns:1.22fr .78fr;gap:44px;align-items:center;padding:62px 0 56px}
+  .kicker{display:inline-flex;align-items:center;gap:8px;font-family:"JetBrains Mono",monospace;font-size:10.5px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+  .kicker i{width:7px;height:7px;background:var(--blue);border-radius:2px}
+  h1{font-family:Fraunces,Georgia,serif;font-size:clamp(32px,4.5vw,52px);font-weight:700;line-height:1.04;letter-spacing:-1.3px;margin:16px 0 15px}
+  h1 em{font-style:italic;color:var(--blue)}
+  .hero .sub{max-width:590px;margin:0;color:var(--muted);font-size:15.5px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+  .chip{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:var(--paper);font-size:11.8px;color:var(--muted)}
+  .chip b{color:var(--ink);font-weight:600}
+  .cta{display:flex;flex-wrap:wrap;gap:9px;margin-top:24px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 17px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600}
+  .btn.primary{background:var(--ink);color:#fff}.btn.primary:hover{background:#000}
+  .btn.ghost{border:1px solid var(--line-2);background:var(--paper)}.btn.ghost:hover{background:var(--paper-2)}
+  .hero-card{background:var(--paper);border:1px solid var(--line);border-radius:13px;padding:22px;box-shadow:var(--shadow)}
+  .hero-card .num{font-family:Fraunces,Georgia,serif;font-size:45px;font-weight:700;line-height:1;letter-spacing:-1.5px}
+  .hero-card .num small{font-size:20px;color:var(--blue)}
+  .hero-card .lbl{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .hero-card hr{border:0;border-top:1px solid var(--line);margin:17px 0 6px}
+  .hero-card .row{display:flex;justify-content:space-between;gap:18px;border-top:1px solid var(--line);padding:7px 0;font-size:12.2px;color:var(--muted)}
+  .hero-card .row:first-of-type{border-top:0}
+  .hero-card .row b{color:var(--ink);font-weight:600;text-align:right}
+  section{padding:58px 0 12px;scroll-margin-top:68px}
+  .sec-head{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;margin-bottom:24px}
+  .overline{font-family:"JetBrains Mono",monospace;font-size:10.5px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+  .sec-head h2{font-family:Fraunces,Georgia,serif;font-size:clamp(25px,3vw,35px);line-height:1.08;letter-spacing:-.7px;margin:6px 0 0}
+  .side{font-size:11.5px;color:var(--soft);padding-bottom:5px;white-space:nowrap}
+  .timeline{position:relative}
+  .timeline::before{content:"";position:absolute;left:22px;top:12px;bottom:42px;width:1px;background:var(--line)}
+  .day{position:relative;padding-left:64px;margin-bottom:38px}
+  .when{position:absolute;left:0;top:0;width:46px;display:flex;flex-direction:column;align-items:center;gap:5px}
+  .knob{width:31px;height:31px;border-radius:50%;border:1px solid var(--line-2);background:var(--paper);display:flex;align-items:center;justify-content:center;font-family:"JetBrains Mono",monospace;font-size:10.5px;font-weight:600}
+  .fulldate{position:relative;z-index:2;white-space:nowrap;background:var(--paper);padding:1px 4px;border-radius:4px;font-family:"JetBrains Mono",monospace;font-size:9.4px;font-weight:600;color:var(--muted)}
+  .day h3{margin:2px 0 2px;font-size:16px;font-weight:650;letter-spacing:-.2px}
+  .note{margin:0 0 13px;color:var(--muted);font-size:12.5px}
+  .card{display:flex;align-items:flex-start;gap:13px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+  .card + .card{margin-top:8px}
+  .card:hover{border-color:var(--line-2);background:#fdfdfb}
+  .ic{flex:none;width:30px;height:30px;border-radius:8px;background:#f4f4f0;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .body{min-width:0}
+  .tag{display:inline-flex;align-items:center;gap:6px;margin-bottom:5px;padding:3px 9px;border:1px solid var(--line);border-radius:999px;font-family:"JetBrains Mono",monospace;font-size:9px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+  .tag::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--soft)}
+  .tag.green::before{background:var(--green)}.tag.blue::before{background:var(--blue)}.tag.amber::before{background:var(--amber)}
+  .txt{font-size:13.5px}.txt b{font-weight:650}
+  .extra{margin-top:3px;font-size:12.2px;color:var(--muted)}
+  .hero-day .card{border-left:2px solid var(--blue)}
+  .highlight{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:20px 0 4px}
+  .stat{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .stat b{display:block;font-family:Fraunces,Georgia,serif;font-size:25px;line-height:1}
+  .stat span{display:block;margin-top:5px;font-size:11.5px;color:var(--muted)}
+  .svat,.next-card{background:var(--paper);border:1px solid var(--line);border-radius:13px;padding:26px;box-shadow:var(--shadow)}
+  .status-row{display:flex;align-items:flex-start;gap:13px}
+  .status-icon{width:38px;height:38px;border-radius:10px;background:#fff7ed;color:var(--amber);display:flex;align-items:center;justify-content:center;flex:none}
+  .svat h2,.next-card h2{font-family:Fraunces,Georgia,serif;font-size:28px;line-height:1.12;letter-spacing:-.5px;margin:0 0 7px}
+  .lead{font-size:13.5px;color:var(--muted);margin:0}
+  .matrix{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:20px 0}
+  .matrix .m{border:1px solid var(--line);border-radius:9px;padding:11px 12px;background:var(--paper-2)}
+  .matrix b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted)}
+  .matrix span{display:block;margin-top:3px;font-size:12.5px;font-weight:600}
+  .honest{border-left:2px solid var(--amber);background:var(--paper-2);padding:13px 15px;border-radius:0 9px 9px 0;color:var(--muted);font-size:12.5px}
+  .honest b{color:var(--ink)}
+  .files{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:20px}
+  .file{display:flex;align-items:flex-start;gap:10px;text-decoration:none;border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--paper)}
+  .file:hover{background:var(--paper-2);border-color:var(--line-2)}
+  .file .fn{flex:none;padding:2px 6px;border:1px solid var(--line);border-radius:5px;background:var(--paper-2);font-family:"JetBrains Mono",monospace;font-size:9.5px}
+  .file .fc{min-width:0}
+  .file b{display:block;font-size:11.8px}.file span{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+  .next-top{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}
+  .np-status{display:inline-flex;align-items:center;gap:7px;padding-top:3px;font-size:11.5px;color:var(--muted)}
+  .dotk{width:7px;height:7px;border-radius:50%;background:#c6cbd3}.dotk.ok{background:var(--green)}.dotk.err{background:var(--rose)}
+  .np-view{white-space:pre-wrap;min-height:78px;border:1px solid var(--line);border-radius:10px;background:var(--paper-2);padding:15px 16px;font-size:13.5px;line-height:1.75}
+  .np-meta{margin-top:8px;font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--soft)}
+  #npText{display:block;width:100%;min-height:210px;resize:vertical;border:1px solid var(--line);border-radius:10px;background:var(--paper-2);padding:15px 16px;font-family:Montserrat,"Helvetica Neue",sans-serif;font-size:13.5px;line-height:1.7;color:var(--ink);outline:none}
+  #npText:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(6,119,255,.12);background:#fff}
+  .np-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+  button{font:inherit}
+  .npbtn{border:0;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:10px 17px;border-radius:8px;font-size:12.5px;font-weight:600}
+  .npbtn.primary{background:var(--ink);color:#fff}.npbtn.ghost{border:1px solid var(--line-2);background:var(--paper);color:var(--ink)}
+  .npmsg{font-size:12px;color:var(--muted)}
+  .history{display:none;margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+  .history-item{padding:9px 0;border-top:1px solid var(--line);font-size:12.5px;white-space:pre-wrap}
+  .history-item:first-child{border-top:0}
+  footer{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:42px;padding:29px 0 52px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+  footer b{color:var(--ink);font-weight:600}
+  footer a{color:var(--muted);text-decoration:none}footer a:hover{color:var(--blue)}
+  .reveal{opacity:0;transform:translateY(10px);transition:opacity .55s cubic-bezier(.22,1,.36,1),transform .55s cubic-bezier(.22,1,.36,1);transition-delay:var(--d,0ms)}
+  .reveal.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}}
+  @media(max-width:860px){
+    .hero-in{grid-template-columns:1fr;gap:26px;padding:44px 0}
+    .hero-card{max-width:500px}
+    .files{grid-template-columns:1fr}
+    .sec-head{flex-direction:column;align-items:flex-start}
+    .side{white-space:normal}
+  }
+  @media(max-width:680px){
+    .wrap{padding:0 17px}
+    .top-in{flex-wrap:wrap;padding:9px 0;gap:4px 10px}
+    .top nav{margin-left:0;width:100%;overflow-x:auto;scrollbar-width:none}.top nav::-webkit-scrollbar{display:none}
+    .top nav a{padding:6px 9px;font-size:11.4px}
+    section{padding-top:46px}
+    .day{padding-left:52px}.timeline::before{left:18px}.when{width:36px}.knob{width:29px;height:29px}
+    .highlight,.matrix{grid-template-columns:1fr}
+    .svat,.next-card{padding:20px 17px}
+  }
+  @media print{.top,.cta,.np-actions{display:none}body{background:#fff}.card,.file,.svat,.next-card{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="wrap top-in">
+    <img class="logo" src="/logo.svg" alt="">
+    <div class="brand">Estudo<span>360</span></div>
+    <nav aria-label="Navegação da atualização">
+      <a href="#novidades">Novidades</a>
+      <a href="#svat">SVAT</a>
+      <a href="#proximos">Próximos passos</a>
+      <a href="estudo360-novidades-semana-26-10">Reunião de 28/10</a>
+      <a href="estudo360-novidades-e-svat">Arquivo inicial</a>
+    </nav>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap hero-in">
+    <div>
+      <span class="kicker"><i></i>Atualizações · 28/10 a 03/11</span>
+      <h1>Mais simples de usar.<br><em>Mais difícil de contornar.</em></h1>
+      <p class="sub">Tudo o que foi corrigido e melhorado depois da reunião de 28 de outubro, explicado sem termos técnicos. O registo anterior fica preservado e esta é a versão mais recente.</p>
+      <div class="chips">
+        <span class="chip"><b>Equipa</b> com login próprio</span>
+        <span class="chip"><b>PDFs</b> completos e portáteis</span>
+        <span class="chip"><b>SVAT</b> com estado honesto</span>
+      </div>
+      <div class="cta">
+        <a class="btn primary" href="#novidades">Ver o que mudou</a>
+        <a class="btn ghost" href="#svat">Ler o estado SVAT</a>
+      </div>
+    </div>
+    <aside class="hero-card reveal">
+      <div class="num">23<small> novidades</small></div>
+      <div class="lbl">organizadas por dia e por tema</div>
+      <hr>
+      <div class="row"><span>Período revisto</span><b>28/10 - 03/11</b></div>
+      <div class="row"><span>Acesso da equipa</span><b>Sem email</b></div>
+      <div class="row"><span>Documentos</span><b>1 folha A4</b></div>
+      <div class="row"><span>Próximos passos</span><b>Histórico permanente</b></div>
+    </aside>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="novidades">
+    <div class="sec-head reveal">
+      <div><div class="overline">Registo cronológico</div><h2>O que mudou, por ordem</h2></div>
+      <div class="side">Tudo incluído até 03/11/2026</div>
+    </div>
+
+    <div class="timeline">
+      <article class="day hero-day">
+        <div class="when"><div class="knob">03</div><div class="fulldate">03/11</div></div>
+        <h3>Entrada da equipa sem e-mails e sem cotas</h3>
+        <p class="note">O dono do gabinete cria o acesso e entrega as credenciais à pessoa.</p>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 7.2-7.2M15 8l2 2M17 6l2 2"/></svg></div>
+          <div class="body"><span class="tag green">Novo acesso</span><div class="txt"><b>O dono cria email e password dentro do gabinete.</b> A pessoa entra diretamente no gabinete que a criou e não pode criar um gabinete próprio com esse login.</div><div class="extra">Isto substitui os convites por link e o envio de emails.</div></div>
+        </div>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+          <div class="body"><span class="tag blue">Segurança</span><div class="txt"><b>Permissões verificadas no servidor.</b> Um administrador não consegue atribuir um cargo superior ao seu, nem usar um acesso para obter mais poderes.</div><div class="extra">A conta normal e a conta de colaborador são separadas.</div></div>
+        </div>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15"/><path d="M10 10v7M14 10v7"/></svg></div>
+          <div class="body"><span class="tag amber">Correção</span><div class="txt"><b>Remover um acesso corta a entrada imediatamente.</b> O colaborador vê um ecrã claro a explicar que já não pertence ao gabinete.</div><div class="extra">Também foi acrescentada a alteração e reposição de password.</div></div>
+        </div>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V5l8-3 8 3v8Z"/><path d="M12 8v4M12 16h.01"/></svg></div>
+          <div class="body"><span class="tag blue">Ligação de contas</span><div class="txt"><b>Uma conta normal pode confirmar um acesso já criado pelo gabinete.</b> Tem de introduzir a password secreta criada pelo dono; usar o mesmo email, sozinho, nunca dá acesso.</div></div>
+        </div>
+      </article>
+
+      <article class="day">
+        <div class="when"><div class="knob">02</div><div class="fulldate">02/11</div></div>
+        <h3>Isolamento entre gabinetes reforçado</h3>
+        <p class="note">Uma revisão completa às regras que impedem dados de um cliente aparecerem noutro.</p>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+          <div class="body"><span class="tag green">Segurança</span><div class="txt"><b>Cada gabinete ficou fechado sobre si mesmo.</b> Clientes, tarefas, cofre e documentos só são lidos ou alterados por quem pertence ao gabinete e tem a permissão certa.</div><div class="extra">Foram fechados caminhos antigos que podiam permitir associações automáticas indevidas.</div></div>
+        </div>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h5"/></svg></div>
+          <div class="body"><span class="tag blue">Dados</span><div class="txt"><b>Operações sensíveis passaram a deixar registo.</b> Criação, alteração e remoção de acessos ficam auditadas no servidor.</div></div>
+        </div>
+      </article>
+
+      <article class="day">
+        <div class="when"><div class="knob">01</div><div class="fulldate">01/11</div></div>
+        <h3>Trabalho por cliente mais rápido</h3>
+        <p class="note">Menos cliques para abrir a ficha e o simulador certos.</p>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3h14v18H5z"/><path d="M9 7h6M9 11h6M9 15h4"/></svg></div>
+          <div class="body"><span class="tag green">Cliente</span><div class="txt"><b>O cartão do cliente abre a visão geral com um clique.</b> Deixa de ser preciso procurar primeiro o separador dentro do gabinete.</div></div>
+        </div>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17h14l-2-6H7z"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg></div>
+          <div class="body"><span class="tag blue">Aquisição</span><div class="txt"><b>O simulador de Aquisição ganhou um seletor próprio do regime fiscal.</b> Compra normal, viatura usada e leasing são agora escolhidos dentro do simulador, sem esconder os restantes campos.</div></div>
+        </div>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/><path d="m8 9-3 3 3 3"/></svg></div>
+          <div class="body"><span class="tag amber">Navegação</span><div class="txt"><b>Trocar de gabinete volta a abrir a escolha.</b> Antes a aplicação podia reencaminhar imediatamente para o gabinete onde já estava.</div><div class="extra">Os menus também recarregam a vista atual quando o botão já está ativo, para dar feedback claro.</div></div>
+        </div>
+      </article>
+
+      <article class="day">
+        <div class="when"><div class="knob">31</div><div class="fulldate">31/10</div></div>
+        <h3>Auditoria profunda, documentos e cálculos</h3>
+        <p class="note">Uma passagem pelo site inteiro para encontrar falhas de dados, PDF e fiscalidade.</p>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+          <div class="body"><span class="tag green">Qualidade</span><div class="txt"><b>Foram revistos os fluxos principais e as regras do Firestore.</b> Corrigiram-se permissões padrão demasiado abertas, repetições de gravação e textos legais desatualizados.</div></div>
+        </div>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M9 13h6M9 17h6"/></svg></div>
+          <div class="body"><span class="tag blue">PDFs</span><div class="txt"><b>Os documentos passaram a caber numa única folha A4.</b> Mantêm identificação do escritório, cliente, valores, enquadramento fiscal, notas e base legal; quando há muitas linhas, o conteúdo é condensado em vez de abrir uma segunda página.</div><div class="extra">Foram testados simuladores, propostas, mapas e documentos de fecho.</div></div>
+        </div>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5M4 19h16"/><path d="m7 15 4-4 3 2 5-7"/></svg></div>
+          <div class="body"><span class="tag amber">Fiscalidade</span><div class="txt"><b>Correções no IMT, tributação autónoma, PreviSa, derrama e regime de aquisição.</b> O objetivo foi retirar valores duplicados e aplicar o regime escolhido ao cálculo certo.</div><div class="extra">Os valores continuam a ser indicativos e devem ser confirmados por um contabilista.</div></div>
+        </div>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15" r="1"/></svg></div>
+          <div class="body"><span class="tag green">Cofre</span><div class="txt"><b>As passwords do cofre passaram a ser cifradas no dispositivo.</b> A sincronização e a fila offline foram revistas para não perder alterações nem bloquear o trabalho.</div></div>
+        </div>
+      </article>
+
+      <article class="day">
+        <div class="when"><div class="knob">28-29</div><div class="fulldate">OUT</div></div>
+        <h3>Topbar, SAF-T e trabalho por cliente</h3>
+        <p class="note">A base do que ficou visível na reunião de 28/10.</p>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg></div>
+          <div class="body"><span class="tag green">Navegação</span><div class="txt"><b>A barra de topo ficou disponível em toda a aplicação.</b> O acesso aos menus deixou de depender da página onde a pessoa estava.</div></div>
+        </div>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M9 12h6M9 16h4"/></svg></div>
+          <div class="body"><span class="tag blue">SAF-T</span><div class="txt"><b>O botão para ler o SAF-T passou para cada cliente.</b> Abre os dados guardados desse cliente em vez de um menu geral.</div><div class="extra">A importação continua a preencher perfil, contabilidade e simuladores com os dados disponíveis.</div></div>
+        </div>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h8M8 17h3"/></svg></div>
+          <div class="body"><span class="tag green">Equipa e cargos</span><div class="txt"><b>Os cargos passaram a definir permissões concretas.</b> Admin, contabilista e estagiária têm acessos diferentes, e é possível criar, editar e apagar cargos personalizados.</div></div>
+        </div>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></svg></div>
+          <div class="body"><span class="tag amber">Contas</span><div class="txt"><b>A verificação de email deixou de bloquear a entrada.</b> O acesso fica associado ao gabinete e à permissão atribuída.</div></div>
+        </div>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M8 12h8"/></svg></div>
+          <div class="body"><span class="tag blue">Cofre por cliente</span><div class="txt"><b>O cofre ficou geral do gabinete e ganhou filtro por cliente.</b> Os restantes menus adaptam-se ao cliente que está a ser trabalhado.</div></div>
+        </div>
+      </article>
+    </div>
+
+    <div class="highlight reveal">
+      <div class="stat"><b>1 folha</b><span>Documentos completos e portáteis, sem segunda página.</span></div>
+      <div class="stat"><b>Sem emails</b><span>Contas da equipa criadas dentro da própria aplicação.</span></div>
+      <div class="stat"><b>Por gabinete</b><span>Dados, cofre, tarefas e permissões isolados.</span></div>
+    </div>
+  </section>
+
+  <section id="svat">
+    <div class="sec-head reveal">
+      <div><div class="overline">Certificação SVAT</div><h2>Estado real, sem promessas</h2></div>
+      <div class="side">Revisto em 03/11/2026</div>
+    </div>
+    <div class="svat reveal">
+      <div class="status-row">
+        <div class="status-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 9v5M12 17h.01"/></svg></div>
+        <div><h2>Primeiro passo: pedir à AT para confirmar o enquadramento.</h2><p class="lead">A Portaria n.º 293/2017 aplica o SVAT a programas de contabilidade que produzem e exportam SAF-T de contabilidade. O Estudo360 lê e guarda SAF-T, mas não produz escrituração nem exporta esse ficheiro.</p></div>
+      </div>
+      <div class="matrix">
+        <div class="m"><b>Requisitos a-g</b><span>Existem controlos úteis, mas cobertura parcial</span></div>
+        <div class="m"><b>Requisito h)</b><span>Não implementado: sem exportação SAF-T</span></div>
+        <div class="m"><b>Requisito i)</b><span>Não implementado: sem escrituração contabilística</span></div>
+      </div>
+      <div class="honest"><b>Não foi submetido nenhum pedido nem apresentado o Mod. 334.</b> A próxima ação é pedir à Autoridade Tributária a classificação do produto. O dossier abaixo serve para essa consulta e para manter as provas técnicas organizadas; não é uma declaração de aprovação.</div>
+      <div class="files">
+        <a class="file" href="docs-candidatura-svat/00-LEIA-PRIMEIRO.pdf"><span class="fn">00</span><span class="fc"><b>Leia primeiro</b><span>Resumo da situação e próximos atos</span></span></a>
+        <a class="file" href="docs-candidatura-svat/01-Memoria-Descritiva.pdf"><span class="fn">01</span><span class="fc"><b>Memória descritiva</b><span>Âmbito real do Estudo360</span></span></a>
+        <a class="file" href="docs-candidatura-svat/02-Matriz-Conformidade.pdf"><span class="fn">02</span><span class="fc"><b>Matriz de conformidade</b><span>Os 9 requisitos, sem inflação</span></span></a>
+        <a class="file" href="docs-candidatura-svat/03-Dicionario-Dados.pdf"><span class="fn">03</span><span class="fc"><b>Dicionário de dados</b><span>Coleções e campos relevantes</span></span></a>
+        <a class="file" href="docs-candidatura-svat/04-Checklist-Submissao.pdf"><span class="fn">04</span><span class="fc"><b>Checklist</b><span>O que falta confirmar antes de enviar</span></span></a>
+        <a class="file" href="docs-candidatura-svat/05-Guia-E-balcao-Passo-a-Passo.pdf"><span class="fn">05</span><span class="fc"><b>Guia do e-balcão</b><span>Outras Obrigações → SVAT → Submissão</span></span></a>
+        <a class="file" href="docs-candidatura-svat/06-Texto-Pronto-para-colar.pdf"><span class="fn">06</span><span class="fc"><b>Pedido de classificação</b><span>Texto pronto para adaptar</span></span></a>
+        <a class="file" href="docs-candidatura-svat/07-Declaracao-Produtor.pdf"><span class="fn">07</span><span class="fc"><b>Declaração do produtor</b><span>Minuta, por assinar</span></span></a>
+        <a class="file" href="docs-candidatura-svat/08-Identidade-e-Uso.pdf"><span class="fn">08</span><span class="fc"><b>Identidade e uso</b><span>Sem selo ou logótipo da AT</span></span></a>
+        <a class="file" href="docs-candidatura-svat/09-Anexos-Tecnicos.pdf"><span class="fn">09</span><span class="fc"><b>Anexos técnicos</b><span>Provas e limitações declaradas</span></span></a>
+      </div>
+      <p style="margin:14px 0 0;font-size:12px;color:var(--muted)">Fonte oficial: <a href="https://info.portaldasfinancas.gov.pt/pt/apoio_ao_contribuinte/Negocios/Faturacao/SAF_T_PT/SVAT/Paginas/default.aspx" target="_blank" rel="noopener" style="color:var(--blue);font-weight:600">Selo de Validação AT (SVAT)</a>. O pedido deve seguir pelo e-balcão em <b>Outras Obrigações → SVAT → Submissão</b>.</p>
+    </div>
+  </section>
+
+  <section id="proximos">
+    <div class="sec-head reveal">
+      <div><div class="overline">Reunião desta semana</div><h2>Próximos passos</h2></div>
+      <div class="side">Cada gravação fica guardada para sempre</div>
+    </div>
+    <div class="next-card reveal">
+      <div class="next-top">
+        <div><h2 style="font-size:20px">O que foi decidido na reunião</h2><p class="lead" style="margin-top:4px">Este bloco começa em branco. Quando a primeira versão for guardada, ninguém a pode apagar: as alterações seguintes criam versões novas.</p></div>
+        <div class="np-status"><span class="dotk" id="npDot"></span><span id="npStatus">A carregar</span></div>
+      </div>
+      <div class="np-view" id="npView">Ainda não há passos registados.</div>
+      <div class="np-meta" id="npMeta"></div>
+      <div id="npEditor" style="display:none;margin-top:14px">
+        <textarea id="npText" maxlength="1000" spellcheck="true" placeholder="Escreva aqui os próximos passos da reunião."></textarea>
+        <div class="np-actions"><button class="npbtn primary" id="npSave" type="button">Guardar nova versão</button><span class="npmsg" id="npMsg"></span></div>
+      </div>
+      <div class="history" id="npHist"><div class="overline" style="margin-bottom:5px">Versões anteriores</div><div id="npHistList"></div></div>
+    </div>
+  </section>
+
+  <footer>
+    <span><b>Estudo360</b> · Registo de 28/10 a 03/11</span>
+    <span><a href="estudo360-novidades-semana-26-10">Reunião de 28/10</a> · <a href="estudo360-novidades-e-svat">Arquivo inicial</a> · estudo360.pt</span>
+  </footer>
+</main>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in');
+        io.unobserve(entry.target);
+      }
+    }
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach((element, index) => {
+    element.style.setProperty('--d', `${(index % 5) * 55}ms`);
+    io.observe(element);
+  });
+</script>
+
+<script type="module">
+  const emulators = new URLSearchParams(location.search).has('emu');
+  const FIREBASE_CONFIG = {
+    apiKey: 'AIzaSyChJKEBjPKZcRVF4R_n07UoUB9Q0q_EzM',
+    authDomain: 'estudo360-app.firebaseapp.com',
+    projectId: emulators ? 'demo-estudo360-audit' : 'estudo360-app',
+    storageBucket: 'estudo360-app.firebasestorage.app',
+    messagingSenderId: '297215704391',
+    appId: '1:297215704391:web:74168b37a27cc99669a062',
+  };
+  const MARKER = 'proximos:semana-03-11';
+  const LOCAL_KEY = `estudo360:np:${MARKER}`;
+  const view = document.getElementById('npView');
+  const meta = document.getElementById('npMeta');
+  const status = document.getElementById('npStatus');
+  const dot = document.getElementById('npDot');
+  const editor = document.getElementById('npEditor');
+  const text = document.getElementById('npText');
+  const message = document.getElementById('npMsg');
+  const history = document.getElementById('npHist');
+  const historyList = document.getElementById('npHistList');
+  const setStatus = (kind, label) => {
+    dot.className = `dotk ${kind || ''}`.trim();
+    status.textContent = label;
+  };
+  const formatDate = (value) => new Intl.DateTimeFormat('pt-PT', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(new Date(Number(value) || Date.now()));
+
+  try {
+    const [{ initializeApp }, authModule, firestoreModule] = await Promise.all([
+      import('https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js'),
+      import('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js'),
+      import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js'),
+    ]);
+    const app = initializeApp(FIREBASE_CONFIG);
+    let auth;
+    try {
+      auth = authModule.initializeAuth(app, { persistence: authModule.browserLocalPersistence });
+    } catch {
+      auth = authModule.getAuth(app);
+    }
+    const db = firestoreModule.getFirestore(app);
+    if (emulators) {
+      authModule.connectAuthEmulator(auth, 'http://127.0.0.1:9199', { disableWarnings: true });
+      firestoreModule.connectFirestoreEmulator(db, '127.0.0.1', 8180);
+    }
+
+    let entries = [];
+    const readEntries = async () => {
+      try {
+        const query = firestoreModule.query(
+          firestoreModule.collection(db, 'updates'),
+          firestoreModule.where('autor', '==', MARKER),
+        );
+        const snapshot = await firestoreModule.getDocs(query);
+        entries = snapshot.docs
+          .map((document) => ({ id: document.id, ...document.data() }))
+          .filter((entry) => typeof entry.text === 'string' && entry.text.trim())
+          .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+      } catch {
+        setStatus('err', 'Sem ligação - a mostrar a cópia local');
+        const local = localStorage.getItem(LOCAL_KEY);
+        if (local) view.textContent = local;
+        return;
+      }
+
+      const latest = entries[0];
+      if (latest) {
+        view.textContent = latest.text;
+        meta.textContent = `Guardado a ${formatDate(latest.createdAt)} - ${entries.length} versão(ões) preservada(s)`;
+        localStorage.setItem(LOCAL_KEY, latest.text);
+        if (!text.value) text.value = latest.text;
+      } else {
+        view.textContent = 'Ainda não há passos registados.';
+        meta.textContent = '';
+      }
+
+      if (entries.length > 1) {
+        history.style.display = 'block';
+        historyList.replaceChildren(...entries.slice(1, 8).map((entry) => {
+          const item = document.createElement('div');
+          item.className = 'history-item';
+          const date = document.createElement('div');
+          date.className = 'mono';
+          date.style.cssText = 'font-size:10px;color:#98a2b3;margin-bottom:3px';
+          date.textContent = formatDate(entry.createdAt);
+          const body = document.createElement('div');
+          body.textContent = entry.text;
+          item.append(date, body);
+          return item;
+        }));
+      } else {
+        history.style.display = 'none';
+      }
+      setStatus('ok', latest ? 'Ligado ao site' : 'Pronto');
+    };
+
+    authModule.onAuthStateChanged(auth, (user) => {
+      const isAdmin = String(user?.email || '').toLowerCase() === 'admin@estudo360.pt';
+      editor.style.display = isAdmin ? 'block' : 'none';
+    });
+
+    document.getElementById('npSave')?.addEventListener('click', async () => {
+      const value = text.value.trim();
+      if (!auth.currentUser) {
+        message.textContent = 'Entre em estudo360.pt com a conta de administração.';
+        return;
+      }
+      if (!value) {
+        message.textContent = 'Escreva primeiro os próximos passos.';
+        return;
+      }
+      message.textContent = 'A guardar...';
+      try {
+        await firestoreModule.addDoc(firestoreModule.collection(db, 'updates'), {
+          text: value,
+          atualizado: false,
+          aprovado: false,
+          createdAt: Date.now(),
+          autor: MARKER,
+        });
+        message.textContent = 'Nova versão guardada.';
+        await readEntries();
+      } catch {
+        message.textContent = 'Não foi possível guardar. Tente novamente.';
+      }
+    });
+
+    await readEntries();
+  } catch {
+    setStatus('err', 'Sem ligação - a mostrar a cópia local');
+    const local = localStorage.getItem(LOCAL_KEY);
+    if (local) view.textContent = local;
+  }
+</script>
+</body>
+</html>

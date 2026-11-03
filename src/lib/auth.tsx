@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
+  signInWithCustomToken,
   createUserWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
@@ -9,19 +10,34 @@ import {
   browserLocalPersistence,
   browserSessionPersistence,
   updateProfile,
+  updatePassword,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
   type User,
 } from 'firebase/auth';
 import { auth, db } from './firebase';
 import { collection, addDoc } from 'firebase/firestore';
+import { setActiveGabineteId } from './gabinetes';
+import {
+  alterarPasswordTecnica,
+  claimsTecnicas,
+  lerPerfilTecnico,
+  loginTecnico,
+  subscreverPerfilTecnico,
+  type EmployeeAccessProfile,
+} from './equipaAcesso';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  accessLoading: boolean;
+  employeeProfile: EmployeeAccessProfile | null;
+  accountEmail: string;
   signInWithEmail: (email: string, password: string, remember?: boolean) => Promise<void>;
   signUpWithEmail: (email: string, password: string, displayName?: string) => Promise<void>;
   logout: () => Promise<void>;
-  sendVerificationEmail: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   reloadUser: () => Promise<void>;
 }
 
@@ -43,13 +59,65 @@ function acoesEmail(): { url: string; handleCodeInApp: boolean } {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [accessLoading, setAccessLoading] = useState(true);
+  const [employeeProfile, setEmployeeProfile] = useState<EmployeeAccessProfile | null>(null);
+  const [accountEmailOverride, setAccountEmailOverride] = useState('');
+  const profileUnsubRef = useRef<(() => void) | null>(null);
+  const loginEmailHintRef = useRef('');
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      profileUnsubRef.current?.();
+      profileUnsubRef.current = null;
       setUser(u);
-      setLoading(false);
+      setEmployeeProfile(null);
+      if (!u) {
+        setAccountEmailOverride('');
+        setLoading(false);
+        setAccessLoading(false);
+        return;
+      }
+
+      setAccessLoading(true);
+      try {
+        const token = await u.getIdTokenResult();
+        const claims = claimsTecnicas(token.claims as Record<string, unknown>);
+        if (claims) {
+          setActiveEmployeeGabinete(claims.gabineteId);
+          const perfil = await lerPerfilTecnico(u.uid).catch(() => null);
+          setEmployeeProfile(perfil || {
+            credentialId: claims.credentialId,
+            gabineteId: claims.gabineteId,
+            nome: u.displayName || 'Colaborador',
+            email: loginEmailHintRef.current,
+            role: '',
+            status: 'active',
+            createdAt: 0,
+            updatedAt: 0,
+          });
+          profileUnsubRef.current = subscreverPerfilTecnico(
+            u.uid,
+            (novo) => {
+              if (!novo) return;
+              setEmployeeProfile(novo);
+              if (novo.gabineteId) setActiveEmployeeGabinete(novo.gabineteId);
+              if (novo.email) setAccountEmailOverride(novo.email);
+            },
+            () => {},
+          );
+        } else {
+          const email = String(u.email || '');
+          setAccountEmailOverride(email);
+        }
+      } finally {
+        setLoading(false);
+        setAccessLoading(false);
+      }
     });
-    return unsubscribe;
+    return () => {
+      profileUnsubRef.current?.();
+      unsubscribe();
+    };
   }, []);
 
   // Registo de acessos (fire-and-forget: nunca bloqueia o login se falhar).
@@ -61,7 +129,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: u.email || '',
         type,
         at: Date.now(),
-        verified: !!u.emailVerified,
         app: 'estudo360',
       });
     } catch { /* offline ou rules antigas — login continua */ }
@@ -70,12 +137,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithEmail = async (email: string, password: string, remember = true) => {
     // "Lembrar-me": sessão persistente (sobrevive a fechar o browser) vs sessão só desta janela.
     await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
-    const cred = await signInWithEmailAndPassword(auth, email, password);
-    if (cred.user) void logAuthEvent(cred.user, 'login');
+    loginEmailHintRef.current = email.trim().toLowerCase();
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      setAccountEmailOverride(email.trim().toLowerCase());
+      if (cred.user) void logAuthEvent(cred.user, 'login');
+    } catch (error) {
+      const code = String((error as { code?: string })?.code || '');
+      const podeTentarAcessoGabinete = [
+        'auth/invalid-credential',
+        'auth/user-not-found',
+        'auth/wrong-password',
+      ].includes(code);
+      if (!podeTentarAcessoGabinete) throw error;
+      const tecnico = await loginTecnico(email.trim().toLowerCase(), password);
+      setAccountEmailOverride(email.trim().toLowerCase());
+      await signInWithCustomToken(auth, tecnico.token);
+    }
   };
 
   const signUpWithEmail = async (email: string, password: string, displayName?: string) => {
     auth.languageCode = 'pt-PT';
+    loginEmailHintRef.current = email.trim().toLowerCase();
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     if (displayName?.trim() && cred.user) {
       await updateProfile(cred.user, { displayName: displayName.trim() });
@@ -86,6 +169,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    profileUnsubRef.current?.();
+    profileUnsubRef.current = null;
+    loginEmailHintRef.current = '';
+    setEmployeeProfile(null);
+    setAccountEmailOverride('');
     try { const { setCofrePassphrase } = await import('./cofreCrypto'); setCofrePassphrase(null); } catch {}
     try { const { clearGabineteMemoryCache } = await import('./gabinetes'); clearGabineteMemoryCache(); } catch {}
     try {
@@ -123,13 +211,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signOut(auth);
   };
 
-  // Verificação de email removida do produto: mantém-se a função para
-  // compatibilidade, mas não envia nada nem bloqueia ninguém.
-  const sendVerificationEmail = async () => { /* sem verificação */ };
-
   const resetPassword = async (email: string) => {
     auth.languageCode = 'pt-PT';
     await sendPasswordResetEmail(auth, email, acoesEmail());
+  };
+
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    if (!auth.currentUser) throw new Error('Sessão inválida.');
+    if (employeeProfile) {
+      await alterarPasswordTecnica(currentPassword, newPassword);
+      return;
+    }
+    const email = auth.currentUser.email;
+    if (!email) throw new Error('A conta não tem email associado.');
+    const credential = EmailAuthProvider.credential(email, currentPassword);
+    await reauthenticateWithCredential(auth.currentUser, credential);
+    await updatePassword(auth.currentUser, newPassword);
   };
 
   const reloadUser = async () => {
@@ -139,8 +236,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithEmail, signUpWithEmail, logout, sendVerificationEmail, resetPassword, reloadUser }}>
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      accessLoading,
+      employeeProfile,
+      accountEmail: employeeProfile?.email || accountEmailOverride || user?.email || '',
+      signInWithEmail,
+      signUpWithEmail,
+      logout,
+      resetPassword,
+      changePassword,
+      reloadUser,
+    }}>
       {children}
     </AuthContext.Provider>
   );
+}
+
+function setActiveEmployeeGabinete(gabineteId: string) {
+  try {
+    setActiveGabineteId(gabineteId);
+  } catch {
+    // A vista volta a receber o gabinete pelas claims quando o storage falhar.
+  }
 }

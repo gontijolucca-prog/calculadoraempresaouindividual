@@ -1,21 +1,31 @@
-Assunto: SVAT — enquadramento de plataforma que lê SAF-T mas não produz contabilidade
+Assunto: SVAT - pedido de classificação de plataforma que importa SAF-T, mas não produz contabilidade
 
 Exmos. Senhores,
 
-A Recofatima (NIF 510 770 460) desenvolve o Estudo360.pt, aplicação web para
-gabinetes de contabilidade com simulação fiscal, gestão de clientes, tarefas,
-obrigações e cofre de acessos. A aplicação LÊ ficheiros SAF-T (PT), mas não
-produz escrituração nem gera o ficheiro SAF-T (PT) de auditoria.
+A Recofatima, NIF 510 770 460, é produtora do Estudo360, uma aplicação web de
+apoio a gabinetes de contabilidade. O produto organiza clientes, tarefas,
+obrigações, documentos, credenciais, simuladores e propostas. Importa e conserva
+ficheiros SAF-T (PT) fornecidos pelos clientes para extração e análise de dados.
 
-Tendo em conta a Portaria n.º 293/2017, de 2 de outubro (Selo de Validação AT — SVAT):
+O Estudo360 não mantém escrituração contabilística, não processa lançamentos,
+não produz diários ou razão e não gera/exporta o ficheiro SAF-T (PT) de
+contabilidade. Não foi submetido qualquer pedido de SVAT e não está a ser usado
+o selo ou o nome da AT.
 
-1. Confirma-se que esta aplicação, por não produzir o ficheiro SAF-T (PT) nem
-   escrituração, está fora do âmbito do SVAT?
-2. Em caso afirmativo, é necessária alguma declaração ou registo?
-3. Em caso negativo, quais os requisitos e o formulário (Declaração SVAT) a
-   apresentar, e em que opção do e-balcão deve ser submetido?
+Tendo em conta a Portaria n.º 293/2017, de 2 de outubro, solicitamos que nos seja
+confirmado:
 
-Agradecemos a confirmação antes de apresentarmos qualquer pedido.
+1. Se uma plataforma com estas características está abrangida pelo SVAT;
+2. Estando abrangida, quais os requisitos adicionais e o formulário aplicável;
+3. Não estando abrangida, se é necessária alguma declaração ou registo;
+4. Qual o formato e canal corretos para apresentar os elementos técnicos que a
+   AT venha a solicitar.
+
+Anexamos memória descritiva, matriz dos requisitos a) a i), dicionário de dados
+e anexos técnicos. A matriz identifica de forma expressa que os requisitos h) e
+i) não estão implementados.
+
+Ficamos disponíveis para prestar qualquer esclarecimento.
 
 Com os melhores cumprimentos,
-Recofatima — Estudo360.pt
+Recofatima - Estudo360.pt
