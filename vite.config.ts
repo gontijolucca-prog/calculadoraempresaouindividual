@@ -94,8 +94,10 @@ function devEmployeeAccessProxy(localEnv: Record<string, string>): Plugin {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                Origin: req.headers.origin || 'http://localhost:3000',
-                Referer: req.headers.referer || 'http://localhost:3000/',
+                // O proxy é confiável (só existe em dev). Normaliza a origem para
+                // o domínio esperado, senão portas de teste (3012…) dão 403.
+                Origin: 'http://localhost:3000',
+                Referer: 'http://localhost:3000/',
                 ...(req.headers.authorization ? { Authorization: req.headers.authorization } : {}),
                 ...(req.headers['cf-connecting-ip'] ? { 'CF-Connecting-IP': String(req.headers['cf-connecting-ip']) } : {}),
               },
