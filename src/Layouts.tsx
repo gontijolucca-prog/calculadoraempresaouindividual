@@ -418,15 +418,15 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
       })),
     },
     {
-      id: 'relatorios', label: 'Relatórios', current: active === 'exportar',
+      id: 'relatorios', label: 'Relatórios', current: active === 'exportar', align: 'right',
       items: [
         { label: 'Demonstrações', desc: 'Balanço, resultados, fluxos e pacote completo', Icon: FileDown, onClick: () => { onOpenRelatorios?.('balanco'); setDrawerOpen(false); } },
         { label: 'Encerramento de contas', desc: 'Ata, Previsa e declaração de responsabilidade', Icon: FileDown, onClick: () => { onOpenRelatorios?.('acta'); setDrawerOpen(false); } },
-        { label: 'Pacote cliente', desc: 'Simulação fiscal, proposta e minuta', Icon: FileDown, onClick: () => { onOpenRelatorios?.('simulacao'); setDrawerOpen(false); } },
+        { label: 'Pacote cliente', desc: 'Proposta de honorários e contrato', Icon: FileDown, onClick: () => { onOpenRelatorios?.('proposta'); setDrawerOpen(false); } },
       ],
     },
     {
-      id: 'ferramentas', label: 'Ferramentas',
+      id: 'ferramentas', label: 'Ferramentas', align: 'right',
       items: [
         { label: 'Fazer Proposta', desc: 'Proposta comercial com PDF e link', Icon: Presentation, current: view === 'proposta', onClick: () => go('proposta') },
         { label: 'Base Legal', desc: 'Referências legais e cálculo', Icon: Info, current: view === 'legal', onClick: () => runAction(openLegal) },

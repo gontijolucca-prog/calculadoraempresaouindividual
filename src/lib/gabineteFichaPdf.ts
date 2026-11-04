@@ -48,16 +48,16 @@ export function exportarFichaGabinetePdf(input: {
     label: `${fmt(o.vencimento)} · ${o.titulo}`,
     valor: o.estado === 'entregue' ? 'Entregue' : o.estado === 'atrasada' ? 'Atrasada' : o.estado === 'dispensada' ? 'Dispensada' : 'Pendente',
   })));
-  const abertos = alertas.filter((a) => a.clienteId === cliente.id && (a.estado ?? 'aberto') === 'aberto');
+  const abertos = alertas.filter((a) => a.clienteId === cliente.id && !a.deletedAt && (a.estado ?? 'aberto') === 'aberto');
   pdf.seccao('Alertas abertos').tabela(abertos.map((a) => ({
     label: a.texto,
     valor: a.vencimento ? fmt(a.vencimento) : 'sem prazo',
   })));
-  pdf.seccao('Contactos').tabela(contactos.filter((c) => c.clienteId === cliente.id).map((c) => ({
+  pdf.seccao('Contactos').tabela(contactos.filter((c) => c.clienteId === cliente.id && !c.deletedAt).map((c) => ({
     label: `${c.nome}${c.cargo ? ` · ${c.cargo}` : ''}`,
     valor: [c.telefone, c.email].filter(Boolean).join(' · ') || '—',
   })));
-  const abertas = tarefas.filter((t) => t.clienteId === cliente.id && t.estado !== 'done');
+  const abertas = tarefas.filter((t) => t.clienteId === cliente.id && !t.deletedAt && t.estado !== 'done');
   pdf.seccao('Tarefas em aberto').tabela(abertas.map((t) => ({
     label: t.titulo,
     valor: t.dataVencimento ? fmt(t.dataVencimento) : t.estado,

@@ -218,7 +218,10 @@ export async function removeFromGabinete(gabineteId: string, email: string, uid?
   }
   const members: Record<string, unknown> = { ...(data.members || {}) };
   const removidos = new Set<string>();
-  if (uid) { removidos.add(uid); delete members[uid]; }
+  // `uid` pode vir como id local (`col_…`) quando não há conta ligada — nesse
+  // caso só o email identifica o membro.
+  const uidReal = !!uid && !uid.startsWith('col_') && !uid.startsWith('cred_') ? uid : undefined;
+  if (uidReal) { removidos.add(uidReal); delete members[uidReal]; }
   for (const [k, v] of Object.entries(members)) {
     const em = normalizeEmail((v as { email?: string } | undefined)?.email || '');
     if (k !== data.ownerUid && em && em === emailLc) { removidos.add(k); delete members[k]; }
@@ -243,6 +246,9 @@ const metaCache = new Map<string, { at: number; meta: GabineteMeta | null }>();
 const META_TTL_MS = 15_000;
 
 export function clearGabineteMemoryCache(): void {
+  // Sem isto, trocar de conta no mesmo separador mantinha o gabinete do
+  // utilizador anterior como "ativo" até alguém o substituir.
+  activeGabineteRuntime = null;
   metaCache.clear();
   void import('./permissions').then((m) => m.setCustomRolesCache({})).catch(() => {});
 }

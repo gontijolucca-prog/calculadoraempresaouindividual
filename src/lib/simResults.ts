@@ -32,7 +32,7 @@ function resultadoFiscal(s: any, profile: Profileish): { label: string; valor: s
   if (!(s.profSit === 'tco' && !s.isMainAct && num(s.rev) <= 20000)) {
     // Mesmo motor do TaxSimulator (teto 12×IAS + mínimo) — o histórico tinha a
     // fórmula sem teto e divergia do simulador acima de ~110 k€/ano.
-    eniSS = calcSelfSSContribution(num(s.rev) / 12, s.isServices ? 'servicos' : 'bens', false).anual;
+    eniSS = calcSelfSSContribution(num(s.rev) / 12, s.isServices ? 'servicos' : 'bens', num(s.anosAtividade) < 1).anual;
   }
   let eniRC = num(s.rev) * (s.isServices ? 0.75 : 0.15);
   if (s.isServices && num(s.rev) > LIMIAR_JUSTIFICACAO_15PCT) {

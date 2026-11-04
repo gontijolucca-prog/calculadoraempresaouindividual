@@ -225,13 +225,13 @@ function cabecalho(c: Ctx, titulo: string, emEuros = true): string {
 ${identidade ? `<div class="office-meta">${identidade}</div>` : ''}
 <h1 class="title">${titulo}</h1>
 ${emEuros ? '<div class="em-euros">(em euros)</div>' : ''}
-<div class="doc-control"><span><b>Exercício</b> ${c.ano}</span><span><b>Moeda</b> EUR</span><span><b>Emissão</b> ${new Intl.DateTimeFormat('pt-PT').format(new Date())}</span><span><b>Documento</b> 1/1</span></div>`;
+<div class="doc-control"><span><b>Exercício</b> ${c.ano}</span><span><b>Moeda</b> EUR</span><span><b>Emissão</b> ${new Intl.DateTimeFormat('pt-PT').format(new Date())}</span><span><b>Versão</b> 1</span></div>`;
 }
 
 function rodape(c: Ctx): string {
   const escritorio = c.office.nome?.trim() || 'Estudo 360';
   const contacto = [c.office.email, c.office.telefone, c.localEscritorio].filter(Boolean).map(esc).join(' · ');
-  return `<div class="ftr">${esc(escritorio)}${contacto ? ` · ${contacto}` : ''} · Documento 1/1</div>`;
+  return `<div class="ftr">${esc(escritorio)}${contacto ? ` · ${contacto}` : ''}</div>`;
 }
 
 function assinaturas(): string {

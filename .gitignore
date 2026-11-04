@@ -19,3 +19,6 @@ abrir-simuladores.ps1
 .aider*
 public/import-empresas.json
 docs-export-review/
+
+# backups locais (contêm dados de clientes)
+backups/

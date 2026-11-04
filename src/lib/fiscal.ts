@@ -185,7 +185,7 @@ export function compararEniLda(i: FiscalInput): FiscalResult {
   if (i.profSit === 'tco' && !i.isMainAct && i.rev <= 20000) {
     eniSS = 0; // ENI complementar isento (art. 168.º-A CRCSPSS)
   } else {
-    eniSS = calcSelfSSContribution(i.rev / 12, i.isServices ? 'servicos' : 'bens', false).anual;
+    eniSS = calcSelfSSContribution(i.rev / 12, i.isServices ? 'servicos' : 'bens', i.anosAtividade < 1).anual;
   }
 
   const coefArt31 = i.coefArt31 ?? (i.isServices ? 0.75 : 0.15);

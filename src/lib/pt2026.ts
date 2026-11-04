@@ -243,7 +243,9 @@ export function calcSelfSSContribution(
   const baseSemTeto = income * baseRate;
   const baseCalculo = Math.min(baseSemTeto, TETO_BASE);
   const baseLimitada = baseSemTeto > TETO_BASE;
-  const mensal = Math.max(20, baseCalculo * taxRate);
+  // O mínimo de 20 € só existe quando há rendimento relevante; sem rendimento
+  // não há contribuição devida.
+  const mensal = baseCalculo > 0 ? Math.max(20, baseCalculo * taxRate) : 0;
 
   return {
     mensal,

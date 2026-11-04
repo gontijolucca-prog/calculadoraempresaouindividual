@@ -50,9 +50,11 @@ interface Props {
   refreshKey?: number;
   /** Cliente ativo — cartão fica destacado. */
   currentEmpresaId?: string | null;
+  /** O cargo atual pode apagar clientes. Falso esconde o botão Eliminar. */
+  canDelete?: boolean;
 }
 
-export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEmpresaFromSAFT, onSAFTUpload, onVerSAFT, onDeleteEmpresa, onRestoreSimulacao, onHistoricoChanged, onImportTOCOnline, onImportSAFTLote, refreshKey, currentEmpresaId }: Props) {
+export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEmpresaFromSAFT, onSAFTUpload, onVerSAFT, onDeleteEmpresa, onRestoreSimulacao, onHistoricoChanged, onImportTOCOnline, onImportSAFTLote, refreshKey, currentEmpresaId, canDelete = false }: Props) {
   const [empresas, setEmpresas] = useState<EmpresaRecord[]>(() => listEmpresas());
   const [query, setQuery] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<EmpresaRecord | null>(null);
@@ -209,7 +211,7 @@ export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEm
                 refreshKey={refreshKey}
                 onUploadSaft={(file) => onSAFTUpload(file, emp.id)}
                 onVerSaft={() => onVerSAFT?.(emp.id)}
-                onAskDelete={() => { setConfirmDelete(emp); }}
+                onAskDelete={canDelete ? () => { setConfirmDelete(emp); } : undefined}
               />
             ))}
           </ul>
@@ -445,7 +447,7 @@ interface EmpresaCardProps {
   refreshKey?: number;
   onUploadSaft: (file: File) => void;
   onVerSaft?: () => void;
-  onAskDelete: () => void;
+  onAskDelete?: () => void;
 }
 
 // Histórico de simulações do cliente — vive dentro do dropdown do cartão.
@@ -660,6 +662,7 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
               <Download className="w-4 h-4" />
             </button>
           )}
+          {onAskDelete && (
           <button
             type="button"
             onClick={onAskDelete}
@@ -669,6 +672,7 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
           >
             <Trash2 className="w-4 h-4" />
           </button>
+          )}
         </div>
       </div>
 
@@ -717,14 +721,12 @@ function EmptyState({ onNova, hasQuery }: { onNova: () => void; hasQuery: boolea
 
 function DeleteConfirmModal({ name, onConfirm, onCancel }: { name: string; onConfirm: () => void; onCancel: () => void }) {
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const [texto, setTexto] = useState('');
+  const podeEliminar = texto.trim().toLowerCase() === 'eliminar';
   useEffect(() => {
     cancelRef.current?.focus();
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel();
-      if (e.key === 'Tab') {
-        e.preventDefault();
-        cancelRef.current?.focus();
-      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -734,7 +736,8 @@ function DeleteConfirmModal({ name, onConfirm, onCancel }: { name: string; onCon
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`Eliminar ${name}`}
+      aria-labelledby="delete-titulo"
+      aria-describedby="delete-descricao"
       className="fixed inset-0 z-[1000] flex items-center justify-center p-6"
     >
       <button
@@ -744,12 +747,22 @@ function DeleteConfirmModal({ name, onConfirm, onCancel }: { name: string; onCon
         className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
       />
       <div className="relative bg-white rounded-[20px] shadow-2xl max-w-md w-full p-6">
-        <h2 className="text-[18px] font-[800] text-[#0B1D2D] mb-2">
+        <h2 id="delete-titulo" className="text-[18px] font-[800] text-[#0B1D2D] mb-2">
           Eliminar {name}?
         </h2>
-        <p className="text-[13px] text-[#6B7280] font-[500] mb-5">
-          Esta ação remove o perfil e os dados associados desta empresa do equipamento. Não pode ser desfeita.
+        <p id="delete-descricao" className="text-[13px] text-[#6B7280] font-[500] mb-3">
+          Remove o perfil, as simulações e os documentos deste cliente <b>em todos os dispositivos da equipa</b>. Não vai para a Lixeira e não pode ser desfeito.
         </p>
+        <label htmlFor="delete-confirmar" className="block text-[12px] font-[700] text-[#0B1D2D] mb-1.5">
+          Escreva <span className="font-mono">eliminar</span> para confirmar
+        </label>
+        <input
+          id="delete-confirmar"
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+          autoComplete="off"
+          className="w-full mb-4 px-3 py-2.5 rounded-[10px] border border-[#E2E8F0] text-[13px] font-[600] text-[#0B1D2D] focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30"
+        />
         <div className="flex gap-3">
           <button
             ref={cancelRef}
@@ -762,7 +775,8 @@ function DeleteConfirmModal({ name, onConfirm, onCancel }: { name: string; onCon
           <button
             type="button"
             onClick={onConfirm}
-            className="flex-1 py-2.5 rounded-[10px] text-[13px] font-[700] bg-red-600 text-white hover:bg-red-700 transition-colors"
+            disabled={!podeEliminar}
+            className="flex-1 py-2.5 rounded-[10px] text-[13px] font-[700] bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Eliminar
           </button>

@@ -145,16 +145,27 @@ async function safeDeleteDoc(path: string, id: string): Promise<void> {
  * Escrita local-first: dispara para Firestore em background e devolve já.
  * Se o servidor rejeitar/falhar, a operação fica na outbox com repetição.
  */
+/** Uma escrita que teve sucesso torna obsoletas as operações pendentes mais
+ *  antigas para o mesmo documento — reenviá-las repunha dados velhos por cima
+ *  do que acabou de ser gravado. */
+function limparPendentesAnteriores(path: string, id: string, ate: number): void {
+  const fila = listOps();
+  if (fila.length === 0) return;
+  const restantes = fila.filter((o) => !(o.path === path && o.docId === id && o.at <= ate));
+  if (restantes.length !== fila.length) saveOps(restantes);
+}
 export function queueSet(path: string, id: string, data: unknown): void {
   beginWrite();
+  const inicio = Date.now();
   safeSetDoc(path, id, data)
-    .then(() => endWrite())
+    .then(() => { endWrite(); limparPendentesAnteriores(path, id, inicio); })
     .catch((e) => { endWrite(e); enqueueOp({ kind: 'set', path, docId: id, data }); });
 }
 export function queueRemove(path: string, id: string): void {
   beginWrite();
+  const inicio = Date.now();
   safeDeleteDoc(path, id)
-    .then(() => endWrite())
+    .then(() => { endWrite(); limparPendentesAnteriores(path, id, inicio); })
     .catch((e) => { endWrite(e); enqueueOp({ kind: 'delete', path, docId: id }); });
 }
 
@@ -1123,7 +1134,9 @@ export async function linkColaboradorPorEmail(email: string, uid: string): Promi
   const list = listColaboradoresCache();
   let changed = false;
   for (const c of list) {
-    if (c.email.toLowerCase() === lower && c.status !== 'ativo') {
+    // Liga sempre o uid conhecido: sem isto, um colaborador ativo ficava sem
+    // `linkedUid` e a remoção não conseguia tirá-lo de `memberUids`.
+    if (c.email.toLowerCase() === lower && (!c.linkedUid || c.linkedUid !== uid)) {
       c.status = 'ativo';
       c.linkedUid = uid;
       c.updatedAt = Date.now();

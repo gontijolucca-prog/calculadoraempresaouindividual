@@ -436,7 +436,7 @@ export default function ClientProfile({
 
       let eniSS = 0;
       if (!(taxState.profSit === 'tco' && !taxState.isMainAct && taxState.rev <= 20000)) {
-        const ssMo = calcSelfSSContribution(taxState.rev / 12, taxState.isServices ? 'servicos' : 'bens', false);
+        const ssMo = calcSelfSSContribution(taxState.rev / 12, taxState.isServices ? 'servicos' : 'bens', (taxState.anosAtividade || 0) < 1);
         eniSS = ssMo.anual;
       }
 

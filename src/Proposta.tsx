@@ -151,7 +151,7 @@ export default function Proposta({ profile, office, honorarios, servicosIds, onS
             <span style={{ fontSize: 16, fontWeight: 900, color: C.blue }}>{eur(mensalComIVA)}</span>
           </div>
           <div style={{ textAlign: 'center', marginTop: 12 }}>
-            <button onClick={() => imprimirUmaFolha(printRootId, { piso: 1 })} style={{ background: C.blue, color: C.white, border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Imprimir proposta</button>
+            <button onClick={() => imprimirUmaFolha(printRootId, { piso: 0.62 })} style={{ background: C.blue, color: C.white, border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Imprimir proposta</button>
           </div>
         </div>
       </div>

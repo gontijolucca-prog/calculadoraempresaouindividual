@@ -225,7 +225,7 @@ export default function GabineteSelector({ onChosen }: Props) {
               </div>
               {!creating ? (
                 <>
-                  <p className="text-[13px] text-[#64748B] leading-relaxed">Cada gabinete tem a sua carteira de clientes, tarefas e cofre separados. Podes ter quantos precisares (por sociedade, por marca, por equipa).</p>
+                  <p className="text-[13px] text-[#64748B] leading-relaxed">Cada gabinete tem a sua carteira de clientes, tarefas e cofre separados. Pode ter quantos precisar (por sociedade, por marca, por equipa).</p>
                   <button onClick={() => setCreating(true)} className="mt-4 w-full inline-flex items-center justify-center gap-2 bg-[#0B1D2D] text-white py-3 rounded-xl text-[14px] font-[800] hover:bg-[#162a41]">
                     <Plus className="w-4 h-4" /> Criar gabinete
                   </button>
@@ -259,7 +259,7 @@ export default function GabineteSelector({ onChosen }: Props) {
         </div>
       </div>
 
-      <footer className="py-4 text-center text-[11px] text-[#94A3B8]">Podes sempre trocar de gabinete no topo do Gabinete.</footer>
+      <footer className="py-4 text-center text-[11px] text-[#94A3B8]">Pode sempre trocar de gabinete no topo do Gabinete.</footer>
     </div>
   );
 }

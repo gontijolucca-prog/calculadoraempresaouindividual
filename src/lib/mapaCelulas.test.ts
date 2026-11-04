@@ -173,6 +173,16 @@ const dmrSs = PIP('dmr_ss', ['ss']);
   ok('J: NÃO acende Banco', !correspondeCelula(legadoDossier, k('banco'), catalogo[2].tipos, mapa));
 }
 
+
+// ── S: célula mensal nasce com prazo no mês seguinte (não no próprio mês)
+{
+  const k: CellKey = { clienteId: 'c1', mapa: 'quadro', refId: 'iva', ano: 2026, mes: 1 };
+  const p = construirObrigacaoDaCelula(k, { id: 'iva', label: 'IVA', tipos: ['iva'] }, { id: 'c1', nome: 'Cliente' });
+  const d = new Date(p.vencimento);
+  ok('S: período mensal janeiro', p.periodo === '2026-01');
+  ok('S: vencimento em fevereiro', d.getMonth() === 1);
+}
+
 if (fails > 0) { console.error(`\n${fails} falha(s)`); process.exit(1); }
 console.log('\nTodos os testes de célula passaram.');
 

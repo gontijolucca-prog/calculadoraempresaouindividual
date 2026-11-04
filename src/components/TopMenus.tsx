@@ -22,6 +22,8 @@ export interface TopMenuGroup {
   /** Abre direto (sem dropdown). */
   onClick?: () => void;
   width?: string;
+  /** Alinha o painel à direita do botão (menus junto ao bordo direito). */
+  align?: 'left' | 'right';
 }
 
 export default function TopMenus({ groups }: { groups: TopMenuGroup[] }) {
@@ -81,7 +83,8 @@ export default function TopMenus({ groups }: { groups: TopMenuGroup[] }) {
                 onMouseEnter={cancelarFecho}
                 onMouseLeave={agendarFecho}
                 className={cn(
-                  'absolute left-0 top-full z-50 mt-1 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_18px_50px_rgba(15,23,42,0.16)]',
+                  'absolute top-full z-50 mt-1 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_18px_50px_rgba(15,23,42,0.16)]',
+                  g.align === 'right' ? 'right-0' : 'left-0',
                   g.width || 'w-[420px]',
                 )}
               >

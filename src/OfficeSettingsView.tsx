@@ -275,7 +275,7 @@ function EscritorioForm({ office, onChange }: { office: OfficeSettings; onChange
             <input type="text" value={office.iban} onChange={e => set('iban', e.target.value.toUpperCase().replace(/\s/g, ''))} className={inputCls + ' font-mono tracking-wider'} placeholder="PT50000000000000000000000" maxLength={25} />
           </div>
           <div className="col-span-2">
-            <label className={labelCls}>Foro da Comarca (Cláusula 9.ª da minuta de contrato)</label>
+            <label className={labelCls}>Foro da Comarca (Cláusula 9.ª do contrato)</label>
             <input type="text" value={office.foroComarca} onChange={e => set('foroComarca', e.target.value)} className={inputCls} placeholder="Lisboa" />
           </div>
         </div>

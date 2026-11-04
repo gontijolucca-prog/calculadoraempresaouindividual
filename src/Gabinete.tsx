@@ -473,7 +473,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
 
   const [pendingCells, setPendingCells] = useState<Set<string>>(() => new Set());
   const toggleCell = async (cli: GabineteCliente, linha: LinhaDef, mes: number) => {
-    if (!canEdit) { showToast('O teu cargo não permite editar obrigações.'); return; }
+    if (!canEdit) { showToast('O seu cargo não permite editar obrigações.'); return; }
     const k = chaveCelula({ clienteId: cli.id, mapa: 'quadro', refId: linha.id, ano, mes });
     if (pendingCells.has(k)) return;
     const mm = String(mes).padStart(2, '0');
@@ -840,7 +840,7 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
 
   const [pendingMC, setPendingMC] = useState<Set<string>>(() => new Set());
   const toggleCell = async (cli:GabineteCliente, pilar:Pilar, mes:number) => {
-    if (!canEdit) { showToastMC('O teu cargo não permite editar obrigações.'); return; }
+    if (!canEdit) { showToastMC('O seu cargo não permite editar obrigações.'); return; }
     const key: CellKey = { clienteId: cli.id, mapa: 'controlo', refId: pilar.key, ano, mes };
     const k = chaveCelula(key);
     if (pendingMC.has(k)) return;
@@ -1198,7 +1198,7 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
 
   const [pendingRH, setPendingRH] = useState<Set<string>>(() => new Set());
   const toggleCell = async (cli:GabineteCliente, pilar:Pilar, mes:number) => {
-    if (!canEdit) { showToastRH('O teu cargo não permite editar obrigações.'); return; }
+    if (!canEdit) { showToastRH('O seu cargo não permite editar obrigações.'); return; }
     const key: CellKey = { clienteId: cli.id, mapa: 'rh', refId: pilar.key, ano, mes };
     const k = chaveCelula(key);
     if (pendingRH.has(k)) return;
@@ -1936,7 +1936,7 @@ function CofreView({ cofre, clientes, canDelete = true }: { cofre:CofreEntrada[]
         const c = (comCipher as unknown as { cipher: unknown }).cipher;
         await decryptSecret(c as never, pass);
       } catch {
-        alert('Passphrase diferente da usada no cofre. Operação cancelada para não tornar as entradas ilegíveis.');
+        notificar('Passphrase diferente da usada no cofre. Operação cancelada para não tornar as entradas ilegíveis.', 'erro');
         return;
       }
     }
@@ -1951,9 +1951,9 @@ function CofreView({ cofre, clientes, canDelete = true }: { cofre:CofreEntrada[]
         await upsertCofre({ ...e, segredo: '', cipher } as unknown as CofreEntrada);
         n++;
       }
-      alert(`${n} entrada(s) cifradas.`);
+      notificar(`${n} entrada(s) cifradas.`);
     } catch (err) {
-      alert('Falhou a cifrar: ' + String(err));
+      notificar('Falhou a cifrar: ' + String(err), 'erro');
     } finally { setACifrar(false); }
   };
   const [purging, setPurging] = useState(false);
@@ -1997,12 +1997,12 @@ function CofreView({ cofre, clientes, canDelete = true }: { cofre:CofreEntrada[]
       const { getCofrePassphrase, decryptSecret } = await import('./lib/cofreCrypto');
       let pass = getCofrePassphrase();
       if (!pass) { setPassModal(true); return; }
-      try { const pt = await decryptSecret(cipher, pass!); setPlain(pt); registarVistaCofre(selected.id).catch(()=>{}); return; } catch { alert('Passphrase errada.'); return; }
+      try { const pt = await decryptSecret(cipher, pass!); setPlain(pt); registarVistaCofre(selected.id).catch(()=>{}); return; } catch { notificar('Passphrase errada.', 'erro'); return; }
     }
     const seg = getSegredoCompat(selected);
     const hasLegacy = !!(selected as unknown as { cipher?: unknown }).cipher && !seg;
-    if (hasLegacy) { alert('Entrada antiga cifrada. Edita e volta a guardar a password.'); return; }
-    if (!seg) { alert('Sem segredo guardado — clica em Editar e guarda a password.'); return; }
+    if (hasLegacy) { notificar('Entrada antiga cifrada. Edita e volta a guardar a password.', 'erro'); return; }
+    if (!seg) { notificar('Sem segredo guardado — clica em Editar e guarda a password.', 'erro'); return; }
     setPlain(seg);
     registarVistaCofre(selected.id).catch(()=>{});
   };
@@ -2015,30 +2015,24 @@ function CofreView({ cofre, clientes, canDelete = true }: { cofre:CofreEntrada[]
       const nav = navigator as unknown as { share?: (d:{title:string;text:string})=>Promise<void> };
       if (nav.share) await nav.share({ title: selected.titulo, text });
       else await navigator.clipboard.writeText(text);
-    } catch {}
+      notificar(seg ? 'Credenciais copiadas com a password. Trate como confidencial.' : 'Credenciais copiadas.');
+    } catch {
+      notificar('Não foi possível copiar. Selecione o texto e copie à mão.', 'erro');
+    }
   };
 
   const startCreate = () => { setForm({ categoria:'AT' }); setEditing(true); setSelectedId(null); setPlain(null); };
   const startEdit = () => {
     if (!selected) return;
-    const compat = (() => {
-      const o = selected as unknown as Record<string, unknown>;
-      const s = (o.segredo as string | undefined)?.trim();
-      if (s && s !== '—' && s !== '-') return s;
-      for (const k of ['password','pass','secret','segredoPlain','valor']) {
-        const v = (o[k] as string | undefined)?.trim();
-        if (v && v !== '—' && v !== '-' && v !== '...') return v;
-      }
-      return '';
-    })();
-    // se for placeholder '—', deixa vazio para o utilizador preencher
-    setForm({ ...selected, secretPlain: compat } as any);
+    // Não pré-preencher a password: evita expor o segredo no DOM. Campo vazio
+    // significa "manter a atual"; escrever substitui.
+    setForm({ ...selected, secretPlain: '' } as any);
     setEditing(true);
     setPlain(null);
   };
   const cancelEdit = () => { setEditing(false); setShowSecret(false); if (!selectedId) setForm({ categoria:'AT' }); };
   const handleSave = async () => {
-    if (!form.titulo?.trim()) return alert('Título é obrigatório');
+    if (!form.titulo?.trim()) return notificar('Título é obrigatório', 'erro');
     const atual = (form as unknown as { segredo?: string }).segredo?.trim() || '';
     const novo = (form as unknown as { secretPlain?: string }).secretPlain?.trim() || '';
     const finalSeg = (novo || atual).trim();
@@ -2063,12 +2057,12 @@ function CofreView({ cofre, clientes, canDelete = true }: { cofre:CofreEntrada[]
       setEditing(false); setShowSecret(false); setSelectedId(entry.id); setForm({ categoria:'AT' });
       return;
     }
-    if (!finalSeg || finalSeg === '—' || finalSeg === '-' || finalSeg === '...') return alert('Password é obrigatória');
+    if (!finalSeg || finalSeg === '—' || finalSeg === '-' || finalSeg === '...') return notificar('Password é obrigatória', 'erro');
     const { getCofrePassphrase, setCofrePassphrase, encryptSecret, decryptSecret } = await import('./lib/cofreCrypto');
     let pass = getCofrePassphrase();
     if (!pass) {
       const criada = prompt('Passphrase do cofre (mínimo 6 caracteres). Sem ela, as passwords ficam cifradas e ninguém — nem o suporte — as consegue ler. Guarde-a bem: se a perder, perde o cofre.');
-      if (!criada || criada.length < 6) return alert('Passphrase obrigatória (mínimo 6 caracteres). A password não foi guardada em texto simples.');
+      if (!criada || criada.length < 6) return notificar('Passphrase obrigatória (mínimo 6 caracteres). A password não foi guardada em texto simples.', 'erro');
       pass = criada;
       setCofrePassphrase(pass);
     }
@@ -2092,7 +2086,7 @@ function CofreView({ cofre, clientes, canDelete = true }: { cofre:CofreEntrada[]
     setEditing(false); setShowSecret(false); setSelectedId(entry.id); setForm({ categoria:'AT' });
   };
   const handleDelete = async (id: string) => {
-    if (!canDelete) return alert('Sem permissão para apagar entradas do cofre.');
+    if (!canDelete) return notificar('Sem permissão para apagar entradas do cofre.', 'erro');
     if (!confirm('Apagar esta entrada do cofre?')) return;
     await deleteCofre(id);
     if (selectedId === id) setSelectedId(filtered.find(c=>c.id!==id)?.id || null);
@@ -2290,7 +2284,7 @@ function CofreView({ cofre, clientes, canDelete = true }: { cofre:CofreEntrada[]
         ) : null}
       </div>
       {passModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={()=>setPassModal(false)}><div onClick={e=>e.stopPropagation()} className="bg-white rounded-2xl p-6 w-full max-w-sm"><h3 className="font-semibold">Desbloquear cofre</h3><p className="text-xs text-zinc-600 mt-1">Sem esta passphrase ninguém lê. Se a perder, perde o cofre.</p><input autoFocus type="password" value={passInput} onChange={e=>setPassInput(e.target.value)} placeholder="Passphrase" className="w-full mt-3 px-3 py-2.5 rounded-xl border text-sm"/><div className="flex justify-end gap-2 mt-4"><button onClick={()=>setPassModal(false)} className="px-4 py-2 rounded-full border text-sm">Cancelar</button><button onClick={async()=>{ const { setCofrePassphrase, decryptSecret }=await import('./lib/cofreCrypto'); const c=(selected as unknown as {cipher:never}).cipher as never; try{ const pt=await decryptSecret(c as never, passInput); setCofrePassphrase(passInput); setPlain(pt); setPassModal(false); setPassInput(''); }catch{ alert('Passphrase errada.'); } }} className="px-4 py-2 rounded-full bg-[#0B57D0] text-white text-sm">Desbloquear</button></div></div></div>
+        <div role="dialog" aria-modal="true" aria-label="Desbloquear cofre" className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={()=>setPassModal(false)}><div onClick={e=>e.stopPropagation()} className="bg-white rounded-2xl p-6 w-full max-w-sm"><h3 className="font-semibold">Desbloquear cofre</h3><p className="text-xs text-zinc-600 mt-1">Sem esta passphrase ninguém lê. Se a perder, perde o cofre.</p><input autoFocus type="password" value={passInput} onChange={e=>setPassInput(e.target.value)} placeholder="Passphrase" className="w-full mt-3 px-3 py-2.5 rounded-xl border text-sm"/><div className="flex justify-end gap-2 mt-4"><button onClick={()=>setPassModal(false)} className="px-4 py-2 rounded-full border text-sm">Cancelar</button><button onClick={async()=>{ const { setCofrePassphrase, decryptSecret }=await import('./lib/cofreCrypto'); const c=(selected as unknown as {cipher:never}).cipher as never; try{ const pt=await decryptSecret(c as never, passInput); setCofrePassphrase(passInput); setPlain(pt); setPassModal(false); setPassInput(''); }catch{ alert('Passphrase errada.'); } }} className="px-4 py-2 rounded-full bg-[#0B57D0] text-white text-sm">Desbloquear</button></div></div></div>
       )}
     </div>
   );
@@ -2319,7 +2313,7 @@ function SemPermissao({ titulo }: { titulo: string }) {
     <div className="bg-white rounded-2xl border border-zinc-200 p-8 text-center">
       <Shield className="w-6 h-6 text-zinc-400 mx-auto" />
       <p className="mt-2 text-sm font-semibold text-zinc-700">{titulo} — sem permissão</p>
-      <p className="text-xs text-zinc-500 mt-1">O teu cargo não dá acesso a esta área. Pede ao admin do gabinete para te dar acesso.</p>
+      <p className="text-xs text-zinc-500 mt-1">O seu cargo não dá acesso a esta área. Peça ao administrador do gabinete para lhe dar acesso.</p>
     </div>
   );
 }

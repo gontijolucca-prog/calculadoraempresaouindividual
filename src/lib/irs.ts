@@ -256,11 +256,13 @@ function deducoesColeta(d: {
     // ≤3 anos
     if (ate3 >= 1) dDependentes += 726; // 1.º filho ≤ 3 anos
     if (ate3 >= 2) dDependentes += (ate3 - 1) * 900; // 2.º+ ≤3 anos = €900
-    // 4-6 anos: se há ≤3 anos, são "2.º+ ≤6a" = €900; senão €600
+    // 4-6 anos: se há ≤3 anos, são "2.º+ ≤6a" = €900; senão o 1.º fica a €600
+    // e os seguintes (2.º+) também a €900 — mesma regra de pt2026.ts.
     if (ate3 >= 1 && ate6 >= 1) {
       dDependentes += ate6 * 900; // todos os 4-6 são 2.º+ ≤6a
-    } else {
-      dDependentes += ate6 * 600; // sem filhos ≤3, ficam a €600
+    } else if (ate6 >= 1) {
+      dDependentes += ate6 * 600;
+      if (ate6 >= 2) dDependentes += (ate6 - 1) * 300; // 2.º+ ≤6a: 900-600
     }
   }
   const dPensoes = Math.min((d.pensoes || 0) * 0.2, 419.22);

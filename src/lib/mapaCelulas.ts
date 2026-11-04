@@ -197,7 +197,9 @@ export function construirObrigacaoDaCelula(
   const periodoCell = trimestral ? `${k.ano}-T${trimestre}` : `${k.ano}-${mm}`;
   const vencFallback = trimestral
     ? new Date(k.ano, trimestre * 3 + 1, 20).getTime()
-    : new Date(k.ano, k.mes - 1, 20).getTime();
+    // Mensal: o prazo cai no mês seguinte ao período (20.º dia). Antes usava o
+    // próprio mês da célula, o que marcava a obrigação como atrasada ao criar.
+    : new Date(k.ano, k.mes, 20).getTime();
   // Preserva o prazo real já existente; o fallback é só para criação.
   const venc = existente?.vencimento || vencFallback;
   const label = pilar.labelFull?.trim() || pilar.label || pilar.id;

@@ -63,7 +63,7 @@ import MiniDock from './components/MiniDock';
 import type { ViewKey } from './lib/guias';
 import { marcarGuiaDesativado } from './lib/guias';
 import { LAYOUTS } from './Layouts';
-import { deriveRole, tabsGabinete } from './lib/permissions';
+import { can, deriveRole, tabsGabinete } from './lib/permissions';
 import type { GabineteRole } from './lib/gabinetes';
 import { loadFromStorage, saveToStorage, clearStorage } from './lib/storage';
 import { loadOfficeSettings, saveOfficeSettings, type OfficeSettings } from './lib/officeSettings';
@@ -887,6 +887,9 @@ function AppContent() {
   }, [view, isAuthenticated]);
 
   useEffect(() => {
+    // O shell com sidebar faz scroll em #main-scroll; as vistas antigas usam
+    // #main-content. Limpar os dois é barato e evita ficar a meio da página.
+    document.getElementById('main-scroll')?.scrollTo({ top: 0 });
     const main = document.getElementById('main-content');
     if (main) main.scrollTop = 0;
   }, [view]);
@@ -1257,19 +1260,38 @@ function AppContent() {
    *  e leva à vista Perfil via handleSAFTUpload). O useEffect de sync grava os dados
    *  do SAFT na empresa recém-criada. */
   const handleNovaEmpresaFromSAFT = (file: File) => {
-    const id = newEmpresaId();
-    upsertEmpresa({
-      id,
-      nome: '',
-      nif: '',
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      profile: { ...defaultProfile },
-    });
-    setCurrentEmpresaId(id);
-    setCurrentEmpresaIdState(id);
-    setEmpresasRefresh(n => n + 1);
-    handleSAFTUpload(file);
+    // Lê e valida ANTES de criar a empresa: um SAF-T ilegível não pode deixar
+    // um registo "Empresa sem nome" na carteira.
+    const reader = new FileReader();
+    reader.onload = () => {
+      let valido = false;
+      try {
+        const result = parseSAFT(decodeSaftText(reader.result as ArrayBuffer));
+        valido = Object.keys(result.profile).length > 0;
+        if (!valido) {
+          setSaftModal({ open: true, filled: [], empty: result.empty ?? [], warnings: ['Nenhum campo reconhecido foi encontrado no ficheiro SAF-T.'] });
+        }
+      } catch (err) {
+        setSaftModal({ open: true, filled: [], empty: [], warnings: [err instanceof Error ? err.message : 'Erro ao processar o ficheiro SAF-T.'] });
+      }
+      if (!valido) return;
+
+      const id = newEmpresaId();
+      upsertEmpresa({
+        id,
+        nome: '',
+        nif: '',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        profile: { ...defaultProfile },
+      });
+      setCurrentEmpresaId(id);
+      setCurrentEmpresaIdState(id);
+      setEmpresasRefresh(n => n + 1);
+      handleSAFTUpload(file);
+    };
+    reader.onerror = () => setSaftModal({ open: true, filled: [], empty: [], warnings: ['Não foi possível ler o ficheiro.'] });
+    reader.readAsArrayBuffer(file);
   };
 
   const openLegal = () => { setPrevView(view); setLegalAnchor(null); setView('legal'); };
@@ -1708,16 +1730,17 @@ function AppContent() {
               catch { alert('Não consegui ler o SAF-T guardado deste cliente.'); }
             }}
             onDeleteEmpresa={handleDeleteEmpresa}
+            canDelete={can(gabRole, 'apagar') || can(gabRole, 'purgar')}
             onImportTOCOnline={handleImportTOCOnline}
             onImportSAFTLote={handleImportSAFTLote}
           />
         )}
-        {view === 'profile' && (
+        {view === 'profile' && ((currentEmpresaId || mode === 'novo-cliente') ? (
           <ClientProfile profile={clientProfile} onChange={updateProfileWithSimulatorSync}
             taxState={taxState} vehicleState={vehicleState} ticketState={ticketState} ssState={ssState}
             office={officeSettings} honorarios={honorariosConfig}
             onGoToOfficeSettings={() => setView('office-settings')} />
-        )}
+        ) : simGate)}
         {view === 'tax' && ((currentEmpresaId || mode === 'novo-cliente')
           ? <TaxSimulator initialState={taxState} onStateChange={handleTaxStateChange} profile={clientProfile} />
           : simGate)}

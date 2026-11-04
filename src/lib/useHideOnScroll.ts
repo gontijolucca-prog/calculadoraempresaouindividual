@@ -22,8 +22,9 @@ export function useHideOnScroll(idleMs = 700): boolean {
     };
     const opts: AddEventListenerOptions = { passive: true };
     window.addEventListener('scroll', onScroll, opts);
-    // O painel principal é que faz scroll (Layouts.tsx: main#main-content).
-    const main = document.getElementById('main-content');
+    // O contentor com scroll é `#main-scroll` (Layouts.tsx); `#main-content`
+    // fica como fallback para as vistas que ainda usam o layout antigo.
+    const main = document.getElementById('main-scroll') || document.getElementById('main-content');
     main?.addEventListener('scroll', onScroll, opts);
     return () => {
       window.removeEventListener('scroll', onScroll, opts);

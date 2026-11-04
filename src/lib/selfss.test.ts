@@ -55,5 +55,11 @@ function is(label: string, got: unknown, exp: unknown) {
   is('E: isento = true', r.isento, true);
 }
 
+// ── F: sem rendimento → sem contribuição (o mínimo de 20 € não se aplica) ──
+{
+  const r = calcSelfSSContribution(0, 'servicos');
+  approx('F: mensal = 0 sem rendimento', r.mensal, 0);
+}
+
 if (fails) { console.error(`\n${fails} caso(s) FALHARAM`); process.exit(1); }
 else console.log('\nTodos os casos golden de SS Independente passaram.');

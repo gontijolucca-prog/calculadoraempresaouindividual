@@ -14,7 +14,7 @@
  * ⚠ Valores fiscais a validar pela contabilista — ver
  * docs/AUDITORIA-FISCAL-PENDENTE.md (secção "Enquadramento v3").
  */
-import { calculateIRS, calculateIRC, calcDependentsDeduction } from './pt2026';
+import { calculateIRS, calculateIRC, calcDependentsDeduction, IAS_2026 } from './pt2026';
 import { DED_ESPECIFICA_CAT_A_2026 } from './fiscal';
 
 // ─── 01_Parâmetros_Legais: taxas, limites e coeficientes com vigência ─────────
@@ -232,10 +232,17 @@ export function materiaColetavelIrcSimplificado(rend: RendimentosPorNatureza, an
     + (rend.outrosServicos + rend.restantes) * P.coef.restantesServicos * f;
 }
 
-/** SS de independente: base 70% serviços + 20% vendas × 21,4% (⚠ nuances da base). */
+/** SS de independente: base 70% serviços + 20% vendas × 21,4%, com teto mensal
+ *  de 12×IAS (o mesmo limite de `calcSelfSSContribution`). Antes não havia teto,
+ *  o que inflacionava a SS acima de ~110 k€/ano face ao simulador fiscal. */
 export function ssIndependente(rend: RendimentosPorNatureza): number {
   const servicos = rend.servicosProf + rend.outrosServicos + rend.subsidiosExploracao + rend.restantes;
-  return (servicos * 0.70 + rend.vendas * 0.20) * PARAMS_2026.ss.independente;
+  const tetoBaseAnual = 12 * IAS_2026 * 12; // teto mensal × 12 meses
+  const baseServicos = Math.min(servicos * 0.70, tetoBaseAnual);
+  const baseVendas = Math.min(rend.vendas * 0.20, tetoBaseAnual);
+  const baseAnual = baseServicos + baseVendas;
+  if (baseAnual <= 0) return 0;
+  return Math.max(20 * 12, baseAnual * PARAMS_2026.ss.independente);
 }
 
 /** IRS marginal sobre o rendimento da atividade, dado o resto do agregado. */

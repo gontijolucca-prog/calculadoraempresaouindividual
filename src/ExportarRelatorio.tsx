@@ -500,7 +500,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
       const fechar = () => setPrintingPkg(false);
       window.addEventListener('afterprint', fechar, { once: true });
       try {
-        imprimirUmaFolha(PKG_ROOT_ID[docId], { piso: 1 });
+        imprimirUmaFolha(PKG_ROOT_ID[docId], { piso: 0.62 });
       } finally {
         setTimeout(fechar, 800);
       }

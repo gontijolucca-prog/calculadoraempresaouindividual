@@ -333,7 +333,9 @@ async function atualizarMembros(
     env,
     `gabinetes/${gabineteId}`,
     emailNormalizado,
-    ['updatedAt', ...membros.map((membro) => `members.${membro.uid}`)],
+    // Incluir os removidos no updateMask SEM valor apaga `members.{uid}`.
+    // Sem isto, o cargo antigo sobrevivia e `deriveRole` voltava a dá-lo.
+    ['updatedAt', ...membros.map((membro) => `members.${membro.uid}`), ...Array.from(removerSet).map((uid) => `members.${uid}`)],
     [{
       fieldPath: 'memberUids',
       append: membros.map((membro) => membro.uid),
@@ -434,12 +436,20 @@ async function marcarFalhaCriacao(
 async function removerResiduosCriacao(
   env: Env,
   cred: EmployeeCredential,
+  opcoes: { removerDaEquipa?: string[]; desativarAuth?: string[] } = {},
   fetchImpl: typeof fetch = fetch,
 ): Promise<void> {
+  const { removerDaEquipa = [], desativarAuth = [] } = opcoes;
   await Promise.allSettled([
     deleteFirestoreDoc(env, `gabinete/${cred.gabineteId}/colaboradores/${cred.credentialId}`, fetchImpl),
     deleteFirestoreDoc(env, `employeeProfiles/${cred.uid}`, fetchImpl),
     deleteFirestoreDoc(env, `employeeCredentials/${cred.credentialId}`, fetchImpl),
+    // Se a falha aconteceu depois de escrever a equipa, o membro ficaria com
+    // acesso real a apesar de a UI dizer que a criação falhou.
+    removerDaEquipa.length
+      ? atualizarMembros(env, cred.gabineteId, [], removerDaEquipa)
+      : Promise.resolve(),
+    ...desativarAuth.map((uid) => updateAuthUser(env, { localId: uid, disable: true, revoke: true }, fetchImpl).catch(() => {})),
   ]);
 }
 
@@ -582,7 +592,10 @@ export async function criarCredencial(
       await guardarPerfil(env, existente).catch(() => {});
     } else {
       await marcarFalhaCriacao(env, cred, 'falha_criacao').catch(() => {});
-      await removerResiduosCriacao(env, cred).catch(() => {});
+      await removerResiduosCriacao(env, cred, {
+        removerDaEquipa: [uid, ...(normalUid && normalMembershipAddedByCredential ? [normalUid] : [])],
+        desativarAuth: [uid],
+      }).catch(() => {});
     }
     throw new AccessError('nao_foi_possivel_criar_acesso', 502);
   }

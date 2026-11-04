@@ -15,6 +15,17 @@
 import { urlClientes, mapTocCustomer, explicarErroOauth } from '../_toc';
 import { verifyFirebaseRequest } from '../_auth';
 
+/** fetch com prazo: uma resposta pendurada do TOConline não pode prender a Function. */
+async function fetchComPrazo(input: string, init: RequestInit, ms = 10_000): Promise<Response> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(input, { ...init, signal: ctrl.signal });
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 const ALLOWED_HOST_SUFFIXES = [
   'estudo360.pt',
   'estudo360.pages.dev',
@@ -118,7 +129,7 @@ export const onRequestPost = async (ctx: { request: Request; env: Record<string,
 
     let r: Response;
     try {
-      r = await fetch(`${authUrl}?${qs.toString()}`, {
+      r = await fetchComPrazo(`${authUrl}?${qs.toString()}`, {
         method: 'GET',
         redirect: 'manual',
         headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
@@ -143,7 +154,7 @@ export const onRequestPost = async (ctx: { request: Request; env: Record<string,
     if (!tokenUrl.toLowerCase().includes('/token')) tokenUrl = tokenUrl + '/token';
     let tr: Response;
     try {
-      tr = await fetch(tokenUrl, {
+      tr = await fetchComPrazo(tokenUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -192,7 +203,7 @@ export const onRequestPost = async (ctx: { request: Request; env: Record<string,
     if (!tokenUrl.toLowerCase().includes('/token')) tokenUrl = tokenUrl + '/token';
     let r: Response;
     try {
-      r = await fetch(tokenUrl, {
+      r = await fetchComPrazo(tokenUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -218,7 +229,9 @@ export const onRequestPost = async (ctx: { request: Request; env: Record<string,
   // ── customers ──
   if (action === 'customers') {
     const apiUrl = String(body.apiUrl || '').trim().replace(/\/$/, '');
-    const accessToken = String(body.accessToken || '').trim();
+    const accessToken = String(body.accessToken || '').trim().slice(0, 4000);
+    // Diagnóstico só quando explicitamente pedido (evita PII em produção).
+    const debugPedido = new URL(request.url).searchParams.get('debug') === '1';
     if (!apiUrl || !accessToken) return json({ error: 'parametros_em_falta' }, 400, origin);
     if (!isAllowedTocUrl(apiUrl)) return json({ error: 'api_url_invalido' }, 400, origin);
 
@@ -231,7 +244,7 @@ export const onRequestPost = async (ctx: { request: Request; env: Record<string,
       const url = urlClientes(apiUrl, page);
       let r: Response;
       try {
-        r = await fetch(url, {
+        r = await fetchComPrazo(url, {
           headers: {
             'Content-Type': 'application/vnd.api+json',
             Accept: 'application/json',
@@ -287,7 +300,8 @@ export const onRequestPost = async (ctx: { request: Request; env: Record<string,
       comPrazoPagamento: out.filter((x: any) => typeof x.prazoPagamento === 'number').length,
       firstRawKeys: firstRaw ? Object.keys(firstRaw).slice(0, 30) : [],
       firstRawAttributesKeys: firstRaw?.attributes ? Object.keys(firstRaw.attributes).slice(0, 30) : [],
-      firstRawSample: firstRaw ? JSON.stringify(firstRaw).slice(0, 1200) : null,
+      // Só com ?debug=1: o JSON cru tem PII (email, telefone, morada do cliente).
+      firstRawSample: (firstRaw && debugPedido) ? JSON.stringify(firstRaw).slice(0, 1200) : null,
       meta: lastMeta,
     };
     return json({ data: out, debug }, 200, origin);

@@ -30,6 +30,7 @@ import {
 } from './lib/gabinete';
 import {
   atualizarCargoColaborador,
+  enfileirarRevogacao,
   removeFromGabinete,
   getActiveGabineteId,
   getGabineteMeta,
@@ -134,6 +135,20 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
   const [rolePerms, setRolePerms] = useState<PermissionAction[]>([]);
   const [roleErro, setRoleErro] = useState('');
   const [roleSaving, setRoleSaving] = useState(false);
+
+  // Escape fecha o diálogo mais acima. Sem isto, quem usa teclado ficava preso.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (formOpen && !formSaving) { setFormOpen(false); return; }
+      if (resetTarget && !resetSaving) { setResetTarget(null); return; }
+      if (removerTarget && !removendo) { setRemoverTarget(null); return; }
+      if (showRoleModal && !roleSaving) { setShowRoleModal(false); return; }
+      if (showCargos) setShowCargos(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [formOpen, formSaving, resetTarget, resetSaving, removerTarget, removendo, showRoleModal, roleSaving, showCargos]);
 
   const recarregarMeta = useCallback(async () => {
     const gabId = getActiveGabineteId();
@@ -354,7 +369,13 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
       setRemoverTarget(null);
       await recarregarMeta();
     } catch (error) {
-      setErroGlobal(mensagemErro(error));
+      // Se a remoção não chegou ao servidor, fica na fila: caso contrário a
+      // pessoa continuaria com acesso e ninguém voltaria a tentar.
+      const gabineteId = getActiveGabineteId();
+      if (gabineteId && removerTarget) {
+        enfileirarRevogacao(gabineteId, removerTarget.email, removerTarget.linkedUid || undefined);
+      }
+      setErroGlobal(`${mensagemErro(error)} A revogação ficou em fila e será repetida automaticamente.`);
     } finally {
       setRemovendo(false);
     }
@@ -579,7 +600,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
         <div className="mt-3 space-y-2">
           {clientes.length === 0 ? (
             <div className="rounded-xl border-2 border-dashed p-4 text-center text-[12px] text-[#94A3B8]">Sem clientes para associar.</div>
-          ) : clientes.slice(0, 20).map((cliente) => (
+          ) : clientes.map((cliente) => (
             <div key={cliente.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-[#F1F5F9] bg-[#F8FAFC] p-2">
               <span className="w-[160px] truncate text-[12.5px] font-[600] text-[#0F172A]">{cliente.nome}</span>
               {[
@@ -626,7 +647,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
       )}
 
       {formOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm" onClick={() => !formSaving && setFormOpen(false)}>
+        <div role="dialog" aria-modal="true" aria-label="Adicionar colaborador" className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm" onClick={() => !formSaving && setFormOpen(false)}>
           <div className="max-h-[94vh] w-full max-w-[500px] overflow-y-auto rounded-2xl border bg-white p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="text-[17px] font-[700] text-[#0F172A]">{editing ? 'Editar colaborador' : 'Criar acesso de colaborador'}</h3>
@@ -699,7 +720,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
       )}
 
       {resetTarget && (
-        <div className="fixed inset-0 z-[61] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm" onClick={() => !resetSaving && setResetTarget(null)}>
+        <div role="dialog" aria-modal="true" aria-label="Repor password" className="fixed inset-0 z-[61] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm" onClick={() => !resetSaving && setResetTarget(null)}>
           <div className="w-full max-w-[450px] rounded-2xl border bg-white p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="text-[17px] font-[700] text-[#0F172A]">Repor password</h3>
@@ -742,7 +763,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
       )}
 
       {removerTarget && (
-        <div className="fixed inset-0 z-[62] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm" onClick={() => !removendo && setRemoverTarget(null)}>
+        <div role="dialog" aria-modal="true" aria-label="Remover acesso" className="fixed inset-0 z-[62] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm" onClick={() => !removendo && setRemoverTarget(null)}>
           <div className="w-full max-w-[430px] rounded-2xl border bg-white p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
             <h3 className="text-[17px] font-[700] text-[#0F172A]">Remover acesso</h3>
             <p className="mt-2 text-[13px] leading-6 text-[#475569]">
@@ -799,7 +820,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
       )}
 
       {showCargos && podeGerirEquipa && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm" onClick={() => setShowCargos(false)}>
+        <div role="dialog" aria-modal="true" aria-label="Gerir cargos" className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm" onClick={() => setShowCargos(false)}>
           <div className="max-h-[88vh] w-full max-w-[570px] overflow-y-auto rounded-2xl border bg-white p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="text-[17px] font-[700] text-[#0F172A]">Gerir cargos</h3>
@@ -860,7 +881,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
       )}
 
       {showRoleModal && podeGerirEquipa && (
-        <div className="fixed inset-0 z-[61] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm" onClick={() => !roleSaving && setShowRoleModal(false)}>
+        <div role="dialog" aria-modal="true" aria-label="Criar cargo" className="fixed inset-0 z-[61] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm" onClick={() => !roleSaving && setShowRoleModal(false)}>
           <div className="max-h-[90vh] w-full max-w-[540px] overflow-y-auto rounded-2xl border bg-white p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="text-[17px] font-[700] text-[#0F172A]">{editingRoleId ? 'Editar cargo' : 'Criar novo cargo'}</h3>

@@ -315,7 +315,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
     let eniSS = 0;
     if (!(taxState.profSit === 'tco' && !taxState.isMainAct && taxState.rev <= 20000)) {
       // Mesmo motor do TaxSimulator (teto 12×IAS + mínimo) — evita PDF ≠ simulador.
-      eniSS = calcSelfSSContribution(taxState.rev / 12, taxState.isServices ? 'servicos' : 'bens', false).anual;
+      eniSS = calcSelfSSContribution(taxState.rev / 12, taxState.isServices ? 'servicos' : 'bens', (taxState.anosAtividade || 0) < 1).anual;
     }
     const coefArt31 = profile.atividadePrincipal
       ? coefFromProfile(profile.atividadePrincipal)

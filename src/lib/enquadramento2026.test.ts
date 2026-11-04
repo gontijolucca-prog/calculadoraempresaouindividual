@@ -191,5 +191,14 @@ approx('C: SS independente (70% serviços + 20% vendas × 21,4%)', ssIndependent
   check('I: sem empresa → seed vazio', Object.keys(seedEnqFromSaft(null, undefined).seed).length === 0);
 }
 
+
+// ── D: teto mensal de 12×IAS também no enquadramento (antes faltava) ──
+{
+  const alto = {
+    vendas: 0, servicosProf: 200000, outrosServicos: 0, subsidiosExploracao: 0, restantes: 0,
+  } as Parameters<typeof ssIndependente>[0];
+  approx('D: SS limitada ao teto (12×IAS × 12)', ssIndependente(alto), 77346.72 * 0.214);
+}
+
 if (fails) { console.error(`\n${fails} caso(s) FALHARAM`); process.exit(1); }
 else console.log('\nTodos os casos golden do Enquadramento 2026 passaram.');

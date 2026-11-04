@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Building2, AlertTriangle, Calendar, FileText, Users, Lock, Phone, Mail, MessageCircle, Clock, Plus, Trash2, X, CheckSquare
 } from 'lucide-react';
@@ -146,6 +146,23 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
   const [showEditSituacao, setShowEditSituacao] = useState(false);
   const [situacaoEdit, setSituacaoEdit] = useState<Array<{ texto: string; cor: 'red' | 'green' | 'orange' }>>([]);
   const [showEditOrient, setShowEditOrient] = useState(false);
+
+  // Escape fecha o diálogo aberto (o mais acima primeiro).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (showEditCliente) return setShowEditCliente(false);
+      if (showAddAlerta) return setShowAddAlerta(false);
+      if (showAddTarefa) return setShowAddTarefa(false);
+      if (showAddContacto) return setShowAddContacto(false);
+      if (showAddDoc) return setShowAddDoc(false);
+      if (showAddOcorr) return setShowAddOcorr(false);
+      if (showEditSituacao) return setShowEditSituacao(false);
+      if (showEditOrient) return setShowEditOrient(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showEditCliente, showAddAlerta, showAddTarefa, showAddContacto, showAddDoc, showAddOcorr, showEditSituacao, showEditOrient]);
   const [orientEdit, setOrientEdit] = useState(orientacoes);
 
   const handleExportFichaPdf = () => {
@@ -389,10 +406,10 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
                     </button>
                     <span className={`shrink-0 text-[11px] font-[600] px-2 py-0.5 rounded-full border ${cls}`}>{label}</span>
                     {t.estado !== 'done' && (
-                      <button onClick={()=>marcarTarefaFeita(t.id, true)} title="Concluir" className="opacity-0 group-hover:opacity-100 p-1 hover:bg-emerald-50 rounded text-emerald-600"><CheckSquare className="w-3 h-3" /></button>
+                      <button onClick={()=>marcarTarefaFeita(t.id, true)} title="Concluir" className="opacity-60 group-hover:opacity-100 focus-visible:opacity-100 p-1 hover:bg-emerald-50 rounded text-emerald-600"><CheckSquare className="w-3 h-3" /></button>
                     )}
                     {canDelete && (
-                      <button onClick={async()=>{ if(confirm('Mover tarefa para a lixeira?')) await deleteTarefa(t.id); }} title="Apagar" className="opacity-0 group-hover:opacity-100 p-1 hover:bg-zinc-100 rounded"><Trash2 className="w-3 h-3 text-zinc-500" /></button>
+                      <button onClick={async()=>{ if(confirm('Mover tarefa para a lixeira?')) await deleteTarefa(t.id); }} title="Apagar" className="opacity-60 group-hover:opacity-100 focus-visible:opacity-100 p-1 hover:bg-zinc-100 rounded"><Trash2 className="w-3 h-3 text-zinc-500" /></button>
                     )}
                   </div>
                 );
@@ -416,9 +433,9 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
                     {a.texto}
                     {a.vencimento ? <span className="text-[11px] text-[#B91C1C]"> · até {fmtData(a.vencimento)}</span> : null}
                   </span>
-                  <button onClick={()=>resolverAlerta(a.id)} className="opacity-0 group-hover:opacity-100 text-[11px] font-[600] text-emerald-700 hover:bg-white rounded px-1 shrink-0">Resolver</button>
+                  <button onClick={()=>resolverAlerta(a.id)} className="opacity-60 group-hover:opacity-100 focus-visible:opacity-100 text-[11px] font-[600] text-emerald-700 hover:bg-white rounded px-1 shrink-0">Resolver</button>
                   {canDelete && (
-                    <button onClick={async()=>{ if(confirm('Mover alerta para a lixeira?')) await deleteAlertaGabinete(a.id); }} className="opacity-0 group-hover:opacity-100 text-[#DC2626] hover:bg-white rounded px-1 shrink-0"><Trash2 className="w-3 h-3" /></button>
+                    <button onClick={async()=>{ if(confirm('Mover alerta para a lixeira?')) await deleteAlertaGabinete(a.id); }} className="opacity-60 group-hover:opacity-100 focus-visible:opacity-100 text-[#DC2626] hover:bg-white rounded px-1 shrink-0"><Trash2 className="w-3 h-3" /></button>
                   )}
                 </li>
               ))}
@@ -446,13 +463,13 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
                       {p.kind === 'alerta' ? '⏰ ' : ''}{(p.titulo || '').trim() || 'Obrigação sem descrição'}
                     </span>
                     {p.kind === 'alerta' && (
-                      <button onClick={()=>resolverAlerta(p.id)} className="opacity-0 group-hover:opacity-100 text-[11px] font-[600] text-emerald-700 hover:bg-white rounded px-1 shrink-0">Resolver</button>
+                      <button onClick={()=>resolverAlerta(p.id)} className="opacity-60 group-hover:opacity-100 focus-visible:opacity-100 text-[11px] font-[600] text-emerald-700 hover:bg-white rounded px-1 shrink-0">Resolver</button>
                     )}
                     {p.kind === 'obrigacao' && canGerirObrigacoes && p.estado !== 'entregue' && (
-                      <button onClick={()=>resolverObrigacao(p.id, 'entregue')} className="opacity-0 group-hover:opacity-100 text-[11px] font-[600] text-emerald-700 hover:bg-white rounded px-1 shrink-0">Entregue</button>
+                      <button onClick={()=>resolverObrigacao(p.id, 'entregue')} className="opacity-60 group-hover:opacity-100 focus-visible:opacity-100 text-[11px] font-[600] text-emerald-700 hover:bg-white rounded px-1 shrink-0">Entregue</button>
                     )}
                     {p.kind === 'obrigacao' && canGerirObrigacoes && p.estado !== 'dispensada' && (
-                      <button onClick={()=>resolverObrigacao(p.id, 'dispensada')} className="opacity-0 group-hover:opacity-100 text-[11px] font-[500] text-[#64748B] hover:bg-white rounded px-1 shrink-0">Dispensar</button>
+                      <button onClick={()=>resolverObrigacao(p.id, 'dispensada')} className="opacity-60 group-hover:opacity-100 focus-visible:opacity-100 text-[11px] font-[500] text-[#64748B] hover:bg-white rounded px-1 shrink-0">Dispensar</button>
                     )}
                   </li>
                 ))}
@@ -492,7 +509,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
                 <span className="flex items-center gap-1.5 truncate"><span className="w-3 h-3 rounded-[2px] bg-[#FEE2E2] border border-[#FECACA] flex items-center justify-center text-[7px] text-[#DC2626]">⧉</span> <span className="truncate text-[#334155]">{d.nome}</span></span>
                 <span className="flex items-center gap-2 shrink-0">
                   <span className="text-[11px] text-[#94A3B8]">{new Date(d.dataUpload).toLocaleDateString('pt-PT')}</span>
-                  {canDelete && <button onClick={async()=>{ if(confirm('Mover documento para a lixeira?')) await deleteDocumentoGeral(d.id); }} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-zinc-100 rounded"><Trash2 className="w-3 h-3 text-zinc-500" /></button>}
+                  {canDelete && <button onClick={async()=>{ if(confirm('Mover documento para a lixeira?')) await deleteDocumentoGeral(d.id); }} className="opacity-60 group-hover:opacity-100 focus-visible:opacity-100 p-1 hover:bg-zinc-100 rounded"><Trash2 className="w-3 h-3 text-zinc-500" /></button>}
                 </span>
               </li>
             ))}
@@ -520,7 +537,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
                   {c.email && <a href={`mailto:${c.email}`} className="w-6 h-6 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:bg-zinc-50"><Mail className="w-3 h-3" /></a>}
                   {!c.email && <span className="w-6 h-6 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-zinc-300"><Mail className="w-3 h-3" /></span>}
                   <span className="w-6 h-6 rounded-full bg-[#DCFCE7] border border-[#BBF7D0] flex items-center justify-center text-[#16A34A]"><MessageCircle className="w-3 h-3" /></span>
-                  {canDelete && <button onClick={async()=>{ if(confirm('Mover contacto para a lixeira?')) await deleteContactoGabinete(c.id); }} className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-zinc-500 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="w-3 h-3" /></button>}
+                  {canDelete && <button onClick={async()=>{ if(confirm('Mover contacto para a lixeira?')) await deleteContactoGabinete(c.id); }} className="opacity-60 group-hover:opacity-100 focus-visible:opacity-100 w-6 h-6 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-zinc-500 hover:bg-rose-50 hover:text-rose-600"><Trash2 className="w-3 h-3" /></button>}
                 </div>
               </li>
             ))}
@@ -561,7 +578,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
                 <span className="w-6 h-6 rounded-full bg-[#1E293B] text-white flex items-center justify-center text-[9px] font-[700] shrink-0">{o.autorInitials}</span>
                 <span className="w-[105px] shrink-0 text-[12px] font-[600] text-[#334155] truncate">{o.autorNome}</span>
                 <span className="flex-1 text-[#475569] truncate">{o.descricao}</span>
-                {canDelete && <button onClick={async()=>{ if(confirm('Mover ocorrência para a lixeira?')) await deleteOcorrencia(o.id); }} className="opacity-0 group-hover:opacity-100 p-1 hover:bg-zinc-100 rounded"><Trash2 className="w-3 h-3 text-zinc-500" /></button>}
+                {canDelete && <button onClick={async()=>{ if(confirm('Mover ocorrência para a lixeira?')) await deleteOcorrencia(o.id); }} className="opacity-60 group-hover:opacity-100 focus-visible:opacity-100 p-1 hover:bg-zinc-100 rounded"><Trash2 className="w-3 h-3 text-zinc-500" /></button>}
               </li>
             ))}
           </ul>
@@ -570,15 +587,15 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
 
       {/* ——— Modais funcionais ——— */}
       {showEditCliente && cliente && (
-        <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={()=>setShowEditCliente(false)}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={()=>setShowEditCliente(false)}>
           <div className="w-full max-w-[560px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
             <div className="flex items-center justify-between"><h3 className="font-semibold">Editar cliente</h3><button onClick={()=>setShowEditCliente(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
             <div className="grid grid-cols-2 gap-3">
               <input value={formCliente.nome||''} onChange={e=>setFormCliente({...formCliente, nome:e.target.value})} placeholder="Nome" className="col-span-2 px-3 py-2 rounded-xl border text-sm" />
               <input value={formCliente.nif||''} onChange={e=>setFormCliente({...formCliente, nif:e.target.value.replace(/\D/g,'')})} placeholder="NIF" className="px-3 py-2 rounded-xl border text-sm" />
               <input value={formCliente.caes||''} onChange={e=>setFormCliente({...formCliente, caes:e.target.value})} placeholder="CAE" className="px-3 py-2 rounded-xl border text-sm" />
-              <input value={formCliente.caeDescricao||''} onChange={e=>setFormCliente({...formCliente, caeDescricao:e.target.value})} placeholder="CAE descricao" className="col-span-2 px-3 py-2 rounded-xl border text-sm" />
-              <input value={Array.isArray(formCliente.gerentes) ? formCliente.gerentes.join(', ') : (formCliente.gerentes as unknown as string) || ''} onChange={e=>setFormCliente({...formCliente, gerentes: e.target.value.split(',').map(s=>s.trim()).filter(Boolean) as unknown as string[]})} placeholder="Gerentes (virgula)" className="col-span-2 px-3 py-2 rounded-xl border text-sm" />
+              <input value={formCliente.caeDescricao||''} onChange={e=>setFormCliente({...formCliente, caeDescricao:e.target.value})} placeholder="CAE — descrição" className="col-span-2 px-3 py-2 rounded-xl border text-sm" />
+              <input value={Array.isArray(formCliente.gerentes) ? formCliente.gerentes.join(', ') : (formCliente.gerentes as unknown as string) || ''} onChange={e=>setFormCliente({...formCliente, gerentes: e.target.value.split(',').map(s=>s.trim()).filter(Boolean) as unknown as string[]})} placeholder="Gerentes (separados por vírgula)" className="col-span-2 px-3 py-2 rounded-xl border text-sm" />
               <input value={formCliente.nrTrabalhadores != null ? String(formCliente.nrTrabalhadores) : ''} onChange={e=>setFormCliente({...formCliente, nrTrabalhadores: e.target.value === '' ? undefined : parseInt(e.target.value, 10) || 0})} placeholder="N. trabalhadores" className="px-3 py-2 rounded-xl border text-sm" />
               <select value={formCliente.regimeIva||''} onChange={e=>setFormCliente({...formCliente, regimeIva:e.target.value as GabineteCliente['regimeIva']})} className="px-3 py-2 rounded-xl border text-sm bg-white">
                 <option value="">Regime IVA…</option>
@@ -624,7 +641,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
         </div>
       )}
       {showAddAlerta && (
-        <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddAlerta(false)}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddAlerta(false)}>
           <div className="w-full max-w-[480px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
             <div className="flex items-center justify-between"><h3 className="font-semibold">Novo alerta</h3><button onClick={()=>setShowAddAlerta(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
             <textarea value={alertaTexto} onChange={e=>setAlertaTexto(e.target.value)} placeholder="Texto do alerta..." rows={3} className="w-full px-3 py-2 rounded-xl border text-sm" />
@@ -636,7 +653,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
         </div>
       )}
       {showAddTarefa && (
-        <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddTarefa(false)}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddTarefa(false)}>
           <div className="w-full max-w-[480px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
             <div className="flex items-center justify-between"><h3 className="font-semibold">Nova tarefa</h3><button onClick={()=>setShowAddTarefa(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
             <input value={tarefaTitulo} onChange={e=>setTarefaTitulo(e.target.value)} placeholder="Título da tarefa" className="w-full px-3 py-2 rounded-xl border text-sm" />
@@ -654,7 +671,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
         </div>
       )}
       {showAddContacto && (
-        <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddContacto(false)}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddContacto(false)}>
           <div className="w-full max-w-[480px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
             <div className="flex items-center justify-between"><h3 className="font-semibold">Novo contacto</h3><button onClick={()=>setShowAddContacto(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
             <input value={contactoForm.nome||''} onChange={e=>setContactoForm({...contactoForm, nome:e.target.value})} placeholder="Nome" className="w-full px-3 py-2 rounded-xl border text-sm" />
@@ -665,7 +682,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
         </div>
       )}
       {showAddDoc && (
-        <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddDoc(false)}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddDoc(false)}>
           <div className="w-full max-w-[480px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
             <div className="flex items-center justify-between"><h3 className="font-semibold">Novo documento</h3><button onClick={()=>setShowAddDoc(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
             <input value={docNome} onChange={e=>setDocNome(e.target.value)} placeholder="Nome do ficheiro (ex: Contrato.pdf)" className="w-full px-3 py-2 rounded-xl border text-sm" />
@@ -674,18 +691,18 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
         </div>
       )}
       {showAddOcorr && (
-        <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddOcorr(false)}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddOcorr(false)}>
           <div className="w-full max-w-[480px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
-            <div className="flex items-center justify-between"><h3 className="font-semibold">Nova ocorrencia</h3><button onClick={()=>setShowAddOcorr(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
+            <div className="flex items-center justify-between"><h3 className="font-semibold">Nova ocorrência</h3><button onClick={()=>setShowAddOcorr(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
             <textarea value={ocorrDesc} onChange={e=>setOcorrDesc(e.target.value)} placeholder="Descricao..." rows={3} className="w-full px-3 py-2 rounded-xl border text-sm" />
             <div className="flex justify-end gap-2"><button onClick={()=>setShowAddOcorr(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddOcorr} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Adicionar</button></div>
           </div>
         </div>
       )}
       {showEditSituacao && cliente && (
-        <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowEditSituacao(false)}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowEditSituacao(false)}>
           <div className="w-full max-w-[520px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
-            <div className="flex items-center justify-between"><h3 className="font-semibold">Editar situacao</h3><button onClick={()=>setShowEditSituacao(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
+            <div className="flex items-center justify-between"><h3 className="font-semibold">Editar situação</h3><button onClick={()=>setShowEditSituacao(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
             <div className="space-y-2">
               {situacaoEdit.map((s, i)=>(
                 <div key={i} className="flex gap-2">
@@ -704,9 +721,9 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
         </div>
       )}
       {showEditOrient && cliente && (
-        <div className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowEditOrient(false)}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowEditOrient(false)}>
           <div className="w-full max-w-[520px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
-            <div className="flex items-center justify-between"><h3 className="font-semibold">Orientacoes a equipa</h3><button onClick={()=>setShowEditOrient(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
+            <div className="flex items-center justify-between"><h3 className="font-semibold">Orientações à equipa</h3><button onClick={()=>setShowEditOrient(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
             <textarea value={orientEdit} onChange={e=>setOrientEdit(e.target.value)} rows={6} className="w-full px-3 py-2 rounded-xl border text-sm" />
             <div className="flex justify-end gap-2"><button onClick={()=>setShowEditOrient(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={async()=>{ await upsertCliente({...cliente, orientacoes: orientEdit, updatedAt: Date.now()}); setShowEditOrient(false); }} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Guardar</button></div>
           </div>

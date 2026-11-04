@@ -68,7 +68,7 @@ async function setClaims(uid, claims) {
 }
 
 const stamp = Date.now();
-const gid = `qa${stamp.toString(36)}`;
+const gid = `gab_qa${stamp.toString(36)}`;
 const ownerEmail = `qaowner+${stamp}@estudo360.pt`;
 const colabEmail = `qacolab+${stamp}@estudo360.pt`;
 const employeeEmail = `employee+qa${stamp}@auth.estudo360.pt`;
@@ -266,6 +266,30 @@ ok(
 ok(
   (await req('DELETE', `${BASE}/updates/${updateId}`, null, appAdmin.token)).status === 403,
   'versão guardada não pode ser apagada',
+);
+
+// Namespaces reservados/terceiros: criar `gabinetes/shared` ou um id que não
+// seja `gab_…`/o próprio uid daria acesso aos dados desses paths.
+const ownerUid = JSON.parse(Buffer.from(owner.token.split('.')[1], 'base64').toString()).user_id;
+const gabFields = (uid) => ({
+  ownerUid: { stringValue: uid },
+  ownerEmail: { stringValue: 'x@y.pt' },
+  nome: { stringValue: 'x' },
+  createdAt: { integerValue: '1' },
+  updatedAt: { integerValue: '1' },
+  memberUids: { arrayValue: { values: [{ stringValue: uid }] } },
+});
+ok(
+  (await req('POST', `${BASE}/gabinetes?documentId=shared`, { fields: gabFields(ownerUid) }, owner.token)).status === 403,
+  'não é possível criar o namespace reservado `shared`',
+);
+ok(
+  (await req('POST', `${BASE}/gabinetes?documentId=aaaaaaaaaaaaaaaaaaaaaaaaaaaa`, { fields: gabFields(ownerUid) }, owner.token)).status === 403,
+  'não é possível criar gabinete com id de outra pessoa',
+);
+ok(
+  (await req('POST', `${BASE}/gabinetes?documentId=gab_qa${stamp}`, { fields: gabFields(ownerUid) }, owner.token)).status === 200,
+  'id `gab_…` válido continua a poder criar gabinete',
 );
 
 await req('DELETE', `${BASE}/gabinetes/${gid}`, null, owner.token);

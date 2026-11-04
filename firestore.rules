@@ -83,9 +83,13 @@ service cloud.firestore {
         request.auth.uid == resource.data.ownerUid
         || request.auth.uid in resource.data.memberUids
       );
+      // O id tem de ser um id de gabinete gerado pela app (`gab_…`) ou o próprio
+      // uid (path legado). Sem isto, qualquer conta criava `gabinetes/shared` ou
+      // `gabinetes/{uidDeOutraPessoa}` e passava a `gabIsUser` nesses namespaces.
       allow create: if request.auth != null
         && request.auth.token.get('employeeOnly', false) == false
-        && request.auth.uid == request.resource.data.ownerUid;
+        && request.auth.uid == request.resource.data.ownerUid
+        && (gabineteId == request.auth.uid || gabineteId.matches('^gab_[a-z0-9]{8,}$'));
       // Só o dono/admin altera a equipa. Auto-adesão por link foi removida.
       allow update: if request.auth != null && (
         souDonoDoGabinete(gabineteId)
@@ -110,7 +114,8 @@ service cloud.firestore {
             || request.auth.uid in gabData(gabineteId).memberUids);
     }
     function gabIsUser(gabineteId) {
-      return gabIsOwnerUid(gabineteId) || gabIsMember(gabineteId);
+      // `shared` é namespace reservado (migração) — nunca conta como gabinete.
+      return gabineteId != 'shared' && (gabIsOwnerUid(gabineteId) || gabIsMember(gabineteId));
     }
     function gabRole(gabineteId) {
       return gabIsOwnerUid(gabineteId) ? 'admin'
@@ -145,10 +150,13 @@ service cloud.firestore {
         || (col == 'obrigacoes' && roleHasPerm(gabineteId, 'gerir-obrigacoes'));
     }
     function podeApagarCol(gabineteId, col) {
-      return gabRoleIs(gabineteId, ['admin', 'contabilista'])
-        || roleHasPerm(gabineteId, 'apagar')
-        || roleHasPerm(gabineteId, 'purgar')
-        || (col == 'cofre' && roleHasPerm(gabineteId, 'editar-cofre'));
+      // O cofre exige sempre poder vê-lo: apagar às cegas não faz sentido.
+      return (col != 'cofre' && (gabRoleIs(gabineteId, ['admin', 'contabilista'])
+            || roleHasPerm(gabineteId, 'apagar')
+            || roleHasPerm(gabineteId, 'purgar')))
+        || (col == 'cofre' && podeVerCofre(gabineteId) && (gabRoleIs(gabineteId, ['admin', 'contabilista'])
+            || roleHasPerm(gabineteId, 'apagar')
+            || roleHasPerm(gabineteId, 'editar-cofre')));
     }
     function podeLixeira(gabineteId) {
       return gabRoleIs(gabineteId, ['admin', 'contabilista'])
@@ -255,9 +263,11 @@ service cloud.firestore {
     }
 
     match /ai_suggestions/{docId} {
-      allow read: if request.auth != null;
+      // Feedback interno do bot: só o admin lê e muda estados. Antes qualquer
+      // conta autenticada lia as sugestões de todos os gabinetes.
+      allow read: if isAppAdmin();
       allow create: if request.auth != null && isValidSuggestion(request.resource.data);
-      allow update: if request.auth != null && isSuggestionStatusOnly(resource.data, request.resource.data);
+      allow update: if isAppAdmin() && isSuggestionStatusOnly(resource.data, request.resource.data);
       allow delete: if false;
     }
 
@@ -313,7 +323,8 @@ function isValidEmpresasPayload(data) {
       && data.list.size() < 500
       && data.updatedAt is number
       // Validação leve de conteúdo para mitigar bomb JSON — cada empresa tem nome/nif curtos
-      && data.list.size() == 0 || (data.list[0].keys().hasAny(['nome', 'nif', 'profile']));
+      // Parênteses obrigatórios: sem eles o `||` escapava à conjunção acima.
+      && (data.list.size() == 0 || data.list[0].keys().hasAny(['nome', 'nif', 'profile']));
 }
 
 function isValidChunkPayload(data) {

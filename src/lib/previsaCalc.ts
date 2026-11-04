@@ -302,11 +302,11 @@ export function calculate(s: PreviSaState): CalcResult {
   const ircColeta = ircBase + s.c349 * s.c349_taxa;
 
   // Derramas
-  const derramaEstadual = calcDerramaEstadual(materiaColetavel, s.territorio);
-  // Derrama municipal incide sobre o lucro tributável efetivo (já após prejuízos).
-  // Art. 18.º EBF: base é o lucro tributável depois dos prejuízos, antes dos
-  // benefícios fiscais (a matéria coletável já deduz benefícios).
-  const derrMunicipal   = Math.max(0, lucroTributavel - prejuziosEfetivos) * s.taxaDerramaMunicipal;
+  // Derramas — ambas incidem sobre o lucro tributável (art. 87.º-A CIRC), não
+  // sobre a matéria coletável (que já deduz benefícios fiscais).
+  const baseDerramas = Math.max(0, lucroTributavel - prejuziosEfetivos);
+  const derramaEstadual = calcDerramaEstadual(baseDerramas, s.territorio);
+  const derrMunicipal   = baseDerramas * s.taxaDerramaMunicipal;
 
   // c378
   const c378 = ircColeta + derramaEstadual + derrMunicipal;

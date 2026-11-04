@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Estudo360 · Novidades de 28/10 a 03/11</title>
+<title>Estudo360 · Novidades de 28/10 a 04/11</title>
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -175,7 +175,7 @@
 <header class="hero">
   <div class="wrap hero-in">
     <div>
-      <span class="kicker"><i></i>Atualizações · 28/10 a 03/11</span>
+      <span class="kicker"><i></i>Atualizações · 28/10 a 04/11</span>
       <h1>Mais simples de usar.<br><em>Mais difícil de contornar.</em></h1>
       <p class="sub">Só alterações que podem ser abertas e testadas na reunião. O registo anterior fica preservado e esta é a versão mais recente.</p>
       <div class="chips">
@@ -192,7 +192,7 @@
       <div class="num">100<small>% testável</small></div>
       <div class="lbl">cada cartão indica onde experimentar</div>
       <hr>
-      <div class="row"><span>Período revisto</span><b>28/10 - 03/11</b></div>
+      <div class="row"><span>Período revisto</span><b>28/10 - 04/11</b></div>
       <div class="row"><span>Acesso da equipa</span><b>Sem email</b></div>
       <div class="row"><span>Documentos</span><b>1 folha A4</b></div>
       <div class="row"><span>Notas de 28/10</span><b>6/6 fechadas</b></div>
@@ -210,6 +210,40 @@
     <div class="test-rule reveal"><div><b>Regra deste changelog:</b> trabalho interno, testes e alterações sem ecrã visível ficam fora desta lista.</div><span>Só testável</span></div>
 
     <div class="timeline">
+      <article class="day">
+        <div class="when"><div class="knob">04</div><div class="fulldate">04/11</div></div>
+        <h3>Revisão de toda a aplicação</h3>
+        <p class="note">Sete correções que se confirmam em minutos, em qualquer computador.</p>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15"/></svg></div>
+          <div class="body"><span class="tag amber">Correção</span><div class="txt"><b>Eliminar um cliente avisa agora o que realmente acontece.</b> O aviso diz que o cliente sai de todos os computadores da equipa e pede que escreva <i>eliminar</i> antes de continuar. Só aparece a quem tem permissão para apagar.</div><div class="test"><b>Testar</b>Lista de Empresas → Eliminar num cliente → ler o aviso e escrever a palavra pedida.</div></div>
+        </div>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"/></svg></div>
+          <div class="body"><span class="tag blue">Ficha do cliente</span><div class="txt"><b>O Perfil já não aceita escrita sem cliente aberto.</b> Se não houver cliente selecionado, mostra o aviso para escolher um — antes deixava escrever e o trabalho não era guardado.</div><div class="test"><b>Testar</b>Sem cliente ativo, abrir Perfil e confirmar que pede para escolher um cliente.</div></div>
+        </div>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M9 13h6M9 17h6"/></svg></div>
+          <div class="body"><span class="tag green">Importação</span><div class="txt"><b>Um SAF-T que não abre já não cria um cliente vazio.</b> Antes ficava «Empresa sem nome» na carteira; agora só entra depois de o ficheiro ser lido com sucesso.</div><div class="test"><b>Testar</b>Lista de Empresas → Importar SAF-T com um ficheiro inválido e confirmar que a carteira não ganha registos.</div></div>
+        </div>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></div>
+          <div class="body"><span class="tag blue">Relatórios</span><div class="txt"><b>«Pacote cliente» abre a Proposta e o Contrato.</b> Abria no último documento usado, que podia ser um Balanço.</div><div class="test"><b>Testar</b>Lateral → Relatórios → Pacote cliente, e confirmar que aparece a Proposta.</div></div>
+        </div>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"/><path d="M8 12l3 3 5-6"/></svg></div>
+          <div class="body"><span class="tag green">Visão geral</span><div class="txt"><b>Concluir, apagar e resolver já aparecem sem passar o rato.</b> No telemóvel e no tablet estes botões ficavam invisíveis.</div><div class="test"><b>Testar</b>Gabinete → Visão geral num telemóvel e confirmar que as ações estão visíveis.</div></div>
+        </div>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+          <div class="body"><span class="tag blue">Cofre</span><div class="txt"><b>Copiar credenciais passa a avisar, e editar já não mostra a password antiga.</b> A cópia confirma se levou a password e avisa que é confidencial; o campo de password fica vazio e só muda se escrever uma nova.</div><div class="test"><b>Testar</b>Gabinete → Cofre → Copiar numa entrada e Editar noutra, confirmando o aviso e o campo vazio.</div></div>
+        </div>
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h7"/></svg></div>
+          <div class="body"><span class="tag amber">Correção</span><div class="txt"><b>Os menus do topo já não saem do ecrã.</b> Relatórios e Ferramentas abrem alinhados à direita em ecrãs pequenos.</div><div class="test"><b>Testar</b>Reduzir a janela do computador e abrir Relatórios e Ferramentas no topo.</div></div>
+        </div>
+      </article>
+
       <article class="day hero-day">
         <div class="when"><div class="knob">03</div><div class="fulldate">03/11</div></div>
         <h3>Entrada da equipa sem e-mails e sem cotas</h3>
