@@ -15,7 +15,12 @@ service cloud.firestore {
 
     match /updates/{docId} {
       allow read: if true;
-      allow create: if isAppAdmin() && isValidUpdateCreate(request.resource.data);
+      // Admin da app ou administrador de um gabinete (as notas da reunião são
+      // escritas por quem gere o gabinete, não só pela conta admin@).
+      allow create: if (isAppAdmin()
+          || (request.resource.data.keys().hasAny(['gabineteId'])
+              && gabIsAdmin(request.resource.data.gabineteId)))
+        && isValidUpdateCreate(request.resource.data);
       // As notas de reunião são um arquivo append-only: uma gravação nova cria
       // uma versão; nenhuma versão anterior pode ser alterada ou apagada.
       allow update, delete: if false;
@@ -308,13 +313,14 @@ function isSuggestionStatusOnly(before, after) {
 }
 
 function isValidUpdateCreate(data) {
-  return data.keys().hasOnly(['text', 'atualizado', 'aprovado', 'createdAt', 'autor'])
+  return data.keys().hasOnly(['text', 'atualizado', 'aprovado', 'createdAt', 'autor', 'gabineteId'])
       && data.text is string
       && data.text.size() > 0
       && data.text.size() < 1000
       && data.atualizado is bool
       && data.aprovado is bool
-      && (!('autor' in data) || (data.autor is string && data.autor.size() > 0 && data.autor.size() < 100));
+      && (!('autor' in data) || (data.autor is string && data.autor.size() > 0 && data.autor.size() < 100))
+      && (!('gabineteId' in data) || (data.gabineteId is string && data.gabineteId.size() > 0 && data.gabineteId.size() < 120));
 }
 
 function isValidEmpresasPayload(data) {

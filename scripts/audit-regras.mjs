@@ -268,6 +268,24 @@ ok(
   'versão guardada não pode ser apagada',
 );
 
+// Notas da reunião: o admin do gabinete pode escrever; quem não é membro não.
+const notaFields = (gabineteId) => ({
+  text: { stringValue: 'Notas da reunião QA' },
+  atualizado: { booleanValue: false },
+  aprovado: { booleanValue: false },
+  createdAt: { integerValue: String(Date.now()) },
+  autor: { stringValue: 'proximos:semana-03-11' },
+  gabineteId: { stringValue: gabineteId },
+});
+ok(
+  (await req('POST', `${BASE}/updates?documentId=nota-dono-${stamp}`, { fields: notaFields(gid) }, owner.token)).status === 200,
+  'dono do gabinete guarda as notas da reunião',
+);
+ok(
+  (await req('POST', `${BASE}/updates?documentId=nota-intruso-${stamp}`, { fields: notaFields(gid) }, intruder.token)).status === 403,
+  'quem não é membro não escreve notas nesse gabinete',
+);
+
 // Namespaces reservados/terceiros: criar `gabinetes/shared` ou um id que não
 // seja `gab_…`/o próprio uid daria acesso aos dados desses paths.
 const ownerUid = JSON.parse(Buffer.from(owner.token.split('.')[1], 'base64').toString()).user_id;
