@@ -162,7 +162,7 @@ export class RelatorioPdf {
     this.y += this.v(8);
 
     d.setFont('helvetica', 'bold');
-    d.setFontSize(this.fs(17));
+    d.setFontSize(this.fs(20));
     d.setTextColor(...PDF_RGB.dark);
     const titulo = d.splitTextToSize(sanitizePdf(this.opts.titulo), this.largura - this.margem * 2);
     d.text(titulo, this.margem, this.y);
@@ -258,14 +258,16 @@ export class RelatorioPdf {
     d.setFillColor(...PDF_RGB.blue);
     d.circle(this.margem + 1.4, this.y + this.v(1.6), 1.2, 'F');
     d.setFont('helvetica', 'bold');
-    d.setFontSize(this.fs(8.6));
+    d.setFontSize(this.fs(8.2));
     d.setTextColor(...PDF_RGB.dark);
-    d.text(titulo.toUpperCase(), this.margem + 5, this.y + this.v(2.8));
-    this.y += this.v(5);
+    // Micro-rótulo com tracking: hierarquia editorial, sem mudar a paleta.
+    d.text(titulo.toUpperCase(), this.margem + 5, this.y + this.v(2.8), { charSpace: 0.55 });
+    this.y += this.v(5.4);
+    // Filete que arranca no ponto e vai até à margem direita.
     d.setDrawColor(...PDF_RGB.line);
-    d.setLineWidth(0.3);
-    d.line(this.margem, this.y, this.largura - this.margem, this.y);
-    this.y += this.v(4);
+    d.setLineWidth(0.35);
+    d.line(this.margem + 5, this.y, this.largura - this.margem, this.y);
+    this.y += this.v(4.4);
     return this;
   }
 
