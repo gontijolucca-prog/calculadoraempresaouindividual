@@ -915,7 +915,7 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
           </select>
           <div className="ml-auto flex gap-1.5">
             <button onClick={e=>imprimirMapa(e,'Mapa de Controlo')} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Imprimir</button>
-            <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Exportar XLS</button>
+            <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Exportar CSV</button>
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
@@ -1077,7 +1077,7 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
         <div data-print-toolbar className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 bg-[#F1F1F1] border-t border-zinc-300 text-xs">
           <div className="flex gap-1.5">
             <button onClick={e=>imprimirMapa(e,'Mapa de Controlo')} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Imprimir</button>
-            <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Exportar XLS</button>
+            <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Exportar CSV</button>
             <button onClick={exportPDF} className="px-3 py-1.5 rounded border border-[#0677FF] bg-[#0677FF] text-white">Exportar PDF</button>
             <button onClick={()=>{ const s=new Set<string>(); clientesFiltrados.forEach(c=>s.add(c.id)); setCollapsed(new Set()); }} className="hidden sm:inline-flex px-3 py-1.5 rounded border border-zinc-400 bg-white">Expandir todos</button>
             <button onClick={()=>setCollapsed(new Set(clientesFiltrados.map(c=>c.id)))} className="hidden sm:inline-flex px-3 py-1.5 rounded border border-zinc-400 bg-white">Colapsar todos</button>
@@ -1273,7 +1273,7 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
           </select>
           <div className="ml-auto flex gap-1.5">
             <button onClick={e=>imprimirMapa(e,'Mapa RH')} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Imprimir</button>
-            <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Exportar XLS</button>
+            <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Exportar CSV</button>
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
@@ -1435,7 +1435,7 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
         <div data-print-toolbar className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 bg-[#F1F1F1] border-t border-zinc-300 text-xs">
           <div className="flex gap-1.5">
             <button onClick={e=>imprimirMapa(e,'Mapa RH')} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Imprimir</button>
-            <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Exportar XLS</button>
+            <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Exportar CSV</button>
             <button onClick={exportPDF} className="px-3 py-1.5 rounded border border-[#0677FF] bg-[#0677FF] text-white">Exportar PDF</button>
             <button onClick={()=>{ const s=new Set<string>(); clientesFiltrados.forEach(c=>s.add(c.id)); setCollapsed(new Set()); }} className="hidden sm:inline-flex px-3 py-1.5 rounded border border-zinc-400 bg-white">Expandir todos</button>
             <button onClick={()=>setCollapsed(new Set(clientesFiltrados.map(c=>c.id)))} className="hidden sm:inline-flex px-3 py-1.5 rounded border border-zinc-400 bg-white">Colapsar todos</button>

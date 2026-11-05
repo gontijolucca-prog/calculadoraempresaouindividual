@@ -9,8 +9,6 @@ import PDFPreviewEditor from './PDFPreviewEditor';
 import Proposta from './Proposta';
 import MinutaContrato from './MinutaContrato';
 import { imprimirUmaFolha } from './lib/printElement';
-import { printHtmlUmaFolha } from './lib/printPaged';
-import { buildMinutaResumoHtml } from './lib/minutaResumo';
 
 // Local mirrors — alinhados ao que o PDFPreviewEditor (consumidor real) espera.
 interface TaxSimulatorState {
@@ -74,18 +72,10 @@ export default function ExportPackageModal({
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  // Print just the active tab.
-  const printMinutaResumo = () => {
-    printHtmlUmaFolha(buildMinutaResumoHtml(office, honorarios, profile), {
-      title: 'Contrato de Prestação de Serviços', piso: 0.8,
-    });
-  };
-
   const printActive = () => {
-    // Contrato e proposta saem pelo motor de uma folha (mede, encolhe e repõe
-    // o preview). Sem isto, o window.print() direto fazia 3–6 páginas com a
-    // primeira quase vazia e sem margens.
-    if (active === 'minuta') { imprimirUmaFolha('minuta-print-root', { piso: 0.70 }); return; }
+    // O contrato sai integral, tal como no preview (2–3 páginas). O próprio
+    // componente isola-se na impressão e respeita as quebras entre cláusulas.
+    if (active === 'minuta') { window.print(); return; }
     if (active === 'proposta') { imprimirUmaFolha('proposta-print-root', { piso: 0.62 }); return; }
     window.print();
   };
@@ -225,16 +215,6 @@ export default function ExportPackageModal({
                   />
                   Incluir
                 </label>
-              )}
-              {active === 'minuta' && includeMinuta && (
-                <button
-                  type="button"
-                  onClick={printMinutaResumo}
-                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] border border-[#0677FF]/30 text-[#0677FF] text-[11px] font-[800] hover:bg-[#0677FF]/5"
-                  title="Resumo do contrato numa única folha A4"
-                >
-                  Resumo 1 pág.
-                </button>
               )}
               <button
                 type="button"

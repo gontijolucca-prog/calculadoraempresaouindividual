@@ -16,7 +16,6 @@ import MinutaContrato from './MinutaContrato';
 import { defaultProfile, type ClientProfile } from './ClientProfile';
 import { printViaPaged, printHtmlUmaFolha } from './lib/printPaged';
 import { imprimirUmaFolha } from './lib/printElement';
-import { buildMinutaResumoHtml } from './lib/minutaResumo';
 import { downloadPrevisaPdf } from './lib/previsaPdf';
 import { defaultPreviSaState, type PreviSaState } from './previSaState';
 import { calculate } from './lib/previsaCalc';
@@ -456,41 +455,14 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
     const root = pkgWrapRef.current?.querySelector(`#${PKG_ROOT_ID[docId]}`) as HTMLElement | null;
     if (!root) { window.print(); return; }
 
-    // Minuta: versão resumida de 1 página (o contrato integral tem 2–3 páginas
-    // a 6 pt — numa folha ficaria ilegível). O texto completo continua na app
-    // e no download em Word.
+    // Contrato: imprime integralmente o que está no preview (2–3 páginas).
+    // O componente já tem CSS de impressão que isola a folha e respeita as
+    // quebras entre cláusulas.
     if (docId === 'minuta') {
       setPrintingPkg(true);
-      const fechar = () => setPrintingPkg(false);
-      try {
-        const html = buildMinutaResumoHtml(office, honorarios, profile);
-        // Monta o resumo num contentor próprio e usa o zoom já provado da
-        // Proposta (imprimirUmaFolha), em vez de um iframe à parte.
-        const parsed = new DOMParser().parseFromString(html, 'text/html');
-        const antigo = document.getElementById('minuta-resumo-print');
-        antigo?.remove();
-        const holder = document.createElement('div');
-        holder.id = 'minuta-resumo-print';
-        holder.style.cssText = 'position:fixed;left:-10000px;top:0;width:210mm;background:#fff;';
-        const estilo = document.createElement('style');
-        estilo.textContent = `@media print {
-          body > *:not(#minuta-resumo-print) { display: none !important; }
-          #minuta-resumo-print { display: block !important; position: static !important; left: 0 !important; background: #fff; }
-        }`;
-        holder.appendChild(estilo);
-        parsed.head.querySelectorAll('style').forEach((s2) => holder.appendChild(s2.cloneNode(true)));
-        const wrap = document.createElement('div');
-        wrap.className = 'mr-wrap';
-        wrap.innerHTML = parsed.body.innerHTML;
-        holder.appendChild(wrap);
-        document.body.appendChild(holder);
-        window.addEventListener('afterprint', () => { fechar(); holder.remove(); }, { once: true });
-        imprimirUmaFolha('minuta-resumo-print', { piso: 0.8, seletor: '.mr-wrap' });
-        setTimeout(() => { fechar(); holder.remove(); }, 60000);
-      } catch {
-        imprimirUmaFolha(PKG_ROOT_ID[docId], { piso: 0.8 });
-        setTimeout(() => setPrintingPkg(false), 1800);
-      }
+      window.addEventListener('afterprint', () => setPrintingPkg(false), { once: true });
+      setTimeout(() => window.print(), 60);
+      setTimeout(() => setPrintingPkg(false), 60000);
       return;
     }
 

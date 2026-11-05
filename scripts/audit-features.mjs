@@ -43,7 +43,7 @@ await semear(page, 'gabinete', 'dashboard');
 await page.reload({ waitUntil: 'load' });
 await page.waitForSelector('[data-print-map] table', { timeout: 20000 });
 const csvWait = page.waitForEvent('download', { timeout: 15000 }).catch(() => null);
-await page.locator('#main-content button:visible').filter({ hasText: /Exportar Excel/i }).first().click();
+await page.locator('#main-scroll button:visible').filter({ hasText: /Exportar (CSV|XLS|Excel)/i }).first().click();
 const csv = await csvWait;
 if (csv) {
   const p = path.join(OUT, 'quadro.csv');
@@ -56,14 +56,14 @@ if (csv) {
 await semear(page, 'tax', '');
 await page.reload({ waitUntil: 'load' });
 await page.waitForTimeout(2200);
-const na = page.locator('#main-content label, #main-content span').filter({ hasText: /^N\/A$/ }).first();
+const na = page.locator('#main-scroll label, #main-scroll span').filter({ hasText: /^N\/A$/ }).first();
 const naCount = await page.locator('text=N/A').count();
 if (naCount) {
   const checkbox = page.locator('input[type="checkbox"]').nth(0);
-  const antes = await page.locator('#main-content input[type="number"]:disabled').count();
-  await page.locator('#main-content label:has-text("N/A") input[type="checkbox"]').first().click({ force: true }).catch(() => {});
+  const antes = await page.locator('#main-scroll input[type="number"]:disabled').count();
+  await page.locator('#main-scroll label:has-text("N/A") input[type="checkbox"]').first().click({ force: true }).catch(() => {});
   await page.waitForTimeout(400);
-  const depois = await page.locator('#main-content input[type="number"]:disabled').count();
+  const depois = await page.locator('#main-scroll input[type="number"]:disabled').count();
   ok(depois >= antes, `N/A no Fiscal: campos desativados ${antes} → ${depois}`);
 } else ok(false, 'N/A no Fiscal não encontrado');
 
@@ -76,7 +76,7 @@ await page.waitForTimeout(1800);
 ok(await page.locator('text=Tarefa Funcional').count() >= 1, 'tarefa aparece na lista');
 let dialogoTxt = null;
 page.once('dialog', async (d) => { dialogoTxt = d.message(); await d.accept(); });
-const lixo = page.locator('#main-content button:has(svg.lucide-trash2)').first();
+const lixo = page.locator('#main-scroll button:has(svg.lucide-trash2)').first();
 if (await lixo.count()) await lixo.click({ force: true });
 await page.waitForTimeout(900);
 ok(!!dialogoTxt && /Tarefa Funcional/.test(dialogoTxt), `apagar tarefa pede confirmação (${dialogoTxt || 'sem diálogo'})`);

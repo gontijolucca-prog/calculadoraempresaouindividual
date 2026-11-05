@@ -1,4 +1,3 @@
-import { imprimirUmaFolha } from './lib/printElement';
 import React, { useState } from 'react';
 import type { ClientProfile } from './ClientProfile';
 import type { OfficeSettings } from './lib/officeSettings';
@@ -136,7 +135,7 @@ export default function MinutaContrato({
           <p style={{ marginBottom: 12 }}><strong>Retribuição:</strong> {eur(Object.values(honorarios.baseMensal || {})[0] || 0)}/mês + IVA</p>
           <p style={{ marginBottom: 12 }}><strong>Duração:</strong> 12 meses, renovável.</p>
           <div style={{ textAlign: 'center', marginTop: 16 }}>
-            <button onClick={() => imprimirUmaFolha(printRootId, { piso: 0.7 })} style={{ background: C.blue, color: C.white, border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Imprimir contrato</button>
+            <button onClick={() => window.print()} style={{ background: C.blue, color: C.white, border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Imprimir contrato</button>
           </div>
         </div>
       </div>
