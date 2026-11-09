@@ -1,0 +1,105 @@
+/**
+ * Notas da reunião — escrita sem conta.
+ *
+ * O dono do gabinete recebe um link com uma chave (`?k=…`). A chave não é
+ * guardada em lado nenhum: o servidor só conhece o SHA-256 dela, em
+ * `notasPainel/reuniao`. Sem chave, a página é só de leitura.
+ *
+ * Cada gravação cria um documento novo em `updates` (append-only): nenhuma
+ * versão anterior pode ser alterada ou apagada, nem pelo próprio servidor.
+ */
+import { getFirestoreDoc, patchFirestoreDoc } from '../_firebaseAdmin';
+
+type Env = Record<string, unknown>;
+
+const ORIGENS = new Set([
+  'https://estudo360.pt',
+  'https://www.estudo360.pt',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:3011',
+  'http://localhost:3012',
+  'http://127.0.0.1:3011',
+  'http://127.0.0.1:3012',
+]);
+
+/** 64 hex chars. Rejeita cedo para não gastar hashing com lixo. */
+export function chaveValida(chave: unknown): chave is string {
+  return typeof chave === 'string' && /^[a-f0-9]{32,64}$/i.test(chave);
+}
+
+export async function sha256Hex(texto: string): Promise<string> {
+  const data = new TextEncoder().encode(texto);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** Comparação em tempo constante para não revelar o prefixo correto. */
+export function iguaisSeguro(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+function json(body: unknown, status: number, origin: string | null): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store',
+      ...(origin ? { 'Access-Control-Allow-Origin': origin } : {}),
+    },
+  });
+}
+
+export async function onRequestOptions({ request }: { request: Request }): Promise<Response> {
+  const origin = request.headers.get('Origin');
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': ORIGENS.has(String(origin)) ? String(origin) : 'https://estudo360.pt',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age': '86400',
+    },
+  });
+}
+
+export async function onRequestPost({ request, env }: { request: Request; env: Env }): Promise<Response> {
+  const origin = request.headers.get('Origin');
+  const permitido = ORIGENS.has(String(origin)) ? String(origin) : null;
+
+  let body: Record<string, unknown>;
+  try { body = (await request.json()) as Record<string, unknown>; } catch { return json({ erro: 'json_invalido' }, 400, permitido); }
+
+  const chave = body.chave;
+  const texto = typeof body.texto === 'string' ? body.texto.trim() : '';
+  const marcador = typeof body.marcador === 'string' ? body.marcador : 'proximos:semana-03-11';
+
+  if (!chaveValida(chave)) return json({ erro: 'chave_invalida' }, 401, permitido);
+  if (!texto) return json({ erro: 'texto_vazio' }, 400, permitido);
+  if (texto.length > 4000) return json({ erro: 'texto_longo' }, 400, permitido);
+  if (!/^[a-z0-9:_-]{4,64}$/.test(marcador)) return json({ erro: 'marcador_invalido' }, 400, permitido);
+
+  try {
+    const cfg = await getFirestoreDoc<{ chaveHash?: string }>(env, 'notasPainel/reuniao');
+    const esperado = typeof cfg?.data?.chaveHash === 'string' ? cfg.data.chaveHash : '';
+    if (!esperado) return json({ erro: 'sem_chave_configurada' }, 503, permitido);
+
+    const recebido = await sha256Hex(String(chave));
+    if (!iguaisSeguro(recebido, esperado)) return json({ erro: 'chave_incorreta' }, 401, permitido);
+
+    const id = `nota_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    await patchFirestoreDoc(env, `updates/${id}`, {
+      text: texto,
+      atualizado: false,
+      aprovado: false,
+      createdAt: Date.now(),
+      autor: marcador,
+    });
+    return json({ ok: true, id }, 200, permitido);
+  } catch (e) {
+    return json({ erro: 'servico_indisponivel', detalhe: e instanceof Error ? e.message : String(e) }, 502, permitido);
+  }
+}

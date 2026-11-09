@@ -479,15 +479,13 @@
       </div>
       <div class="np-view" id="npView">Ainda não há passos registados.</div>
       <div class="np-meta" id="npMeta"></div>
-      <form id="npLogin" style="display:none;margin-top:14px" autocomplete="on">
-        <p class="lead" style="margin-bottom:10px">Entre com a conta do gabinete para escrever as notas.</p>
-        <input id="npEmail" type="email" autocomplete="username" placeholder="email do gabinete" style="width:100%;margin-bottom:8px;padding:11px 12px;border:1px solid var(--line);border-radius:9px;font:inherit" />
-        <input id="npPass" type="password" autocomplete="current-password" placeholder="password" style="width:100%;margin-bottom:10px;padding:11px 12px;border:1px solid var(--line);border-radius:9px;font:inherit" />
-        <div class="np-actions"><button class="npbtn primary" id="npEnter" type="submit">Entrar para editar</button><span class="npmsg" id="npLoginMsg"></span></div>
-      </form>
       <div id="npEditor" style="display:none;margin-top:14px">
-        <textarea id="npText" maxlength="1000" spellcheck="true" placeholder="Escreva aqui os próximos passos da reunião."></textarea>
+        <textarea id="npText" maxlength="4000" spellcheck="true" placeholder="Escreva aqui os próximos passos da reunião."></textarea>
         <div class="np-actions"><button class="npbtn primary" id="npSave" type="button">Guardar nova versão</button><span class="npmsg" id="npMsg"></span></div>
+        <p class="np-hint" id="npHint">Guardado no site. Pode fechar a página: as notas ficam.</p>
+      </div>
+      <div id="npLocked" style="display:none;margin-top:14px">
+        <p class="lead" style="margin:0">Esta página é só de leitura. Para escrever, abra o seu link de edição.</p>
       </div>
       <div class="history" id="npHist"><div class="overline" style="margin-bottom:5px">Versões anteriores</div><div id="npHistList"></div></div>
     </div>
@@ -545,25 +543,15 @@
   }).format(new Date(Number(value) || Date.now()));
 
   try {
-    const [{ initializeApp }, authModule, firestoreModule] = await Promise.all([
+    // Só leitura pública: as notas são lidas sem sessão. Escrever passa pelo
+    // /api/notas com a chave do link, por isso não é preciso Auth aqui.
+    const [{ initializeApp }, firestoreModule] = await Promise.all([
       import('https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js'),
-      import('https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js'),
       import('https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js'),
     ]);
     const app = initializeApp(FIREBASE_CONFIG);
-    // Mesma persistência que a app (localStorage), para reconhecer a sessão
-    // já iniciada em estudo360.pt noutra página do mesmo domínio.
-    let auth;
-    try {
-      auth = authModule.initializeAuth(app, {
-        persistence: [authModule.browserLocalPersistence, authModule.browserSessionPersistence],
-      });
-    } catch {
-      auth = authModule.getAuth(app);
-    }
     const db = firestoreModule.getFirestore(app);
     if (emulators) {
-      authModule.connectAuthEmulator(auth, 'http://127.0.0.1:9199', { disableWarnings: true });
       firestoreModule.connectFirestoreEmulator(db, '127.0.0.1', 8180);
     }
 
@@ -617,74 +605,75 @@
       setStatus('ok', latest ? 'Ligado ao site' : 'Pronto');
     };
 
-    // Quem escreve as notas é o dono/admin do gabinete (ou a conta admin@).
-    // Basta ter sessão iniciada no estudo360.pt; as regras decidem se grava.
-    const loginForm = document.getElementById('npLogin');
-    const loginMsg = document.getElementById('npLoginMsg');
-    const userBlock = document.getElementById('npUser');
+    // Escrever não exige conta: o link de edição traz uma chave (?k=…).
+    // O servidor só conhece o hash da chave; sem ela a página é de leitura.
+    const CHAVE_STORAGE = `estudo360:np-chave:${MARKER}`;
+    const locked = document.getElementById('npLocked');
+    const hint = document.getElementById('npHint');
 
-    const pintar = (user) => {
-      editor.style.display = user ? 'block' : 'none';
-      loginForm.style.display = user ? 'none' : 'block';
-      if (user) {
-        userBlock.style.display = 'inline-flex';
-        userBlock.textContent = user.email || 'Sessão iniciada';
-      } else {
-        userBlock.style.display = 'none';
-        message.textContent = '';
-      }
+    const chaveDoLink = () => {
+      try { return new URLSearchParams(location.search).get('k') || ''; } catch { return ''; }
     };
-    authModule.onAuthStateChanged(auth, pintar);
+    let chave = chaveDoLink();
+    if (chave && /^[a-f0-9]{32,64}$/i.test(chave)) {
+      try { localStorage.setItem(CHAVE_STORAGE, chave); } catch {}
+    } else {
+      try { chave = localStorage.getItem(CHAVE_STORAGE) || ''; } catch { chave = ''; }
+    }
 
-    loginForm.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const email = document.getElementById('npEmail').value.trim();
-      const password = document.getElementById('npPass').value;
-      if (!email || !password) { loginMsg.textContent = 'Preencha o email e a password.'; return; }
-      loginMsg.textContent = 'A entrar...';
-      try {
-        await authModule.signInWithEmailAndPassword(auth, email, password);
-        loginMsg.textContent = '';
-        document.getElementById('npPass').value = '';
-      } catch {
-        loginMsg.textContent = 'Email ou password incorretos.';
-      }
+    const podeEscrever = /^[a-f0-9]{32,64}$/i.test(chave);
+    editor.style.display = podeEscrever ? 'block' : 'none';
+    locked.style.display = podeEscrever ? 'none' : 'block';
+    if (podeEscrever) {
+      hint.textContent = 'Guardado no site. Pode fechar a página: as notas ficam. O link com a chave é pessoal — não o partilhe.';
+    }
+
+    // Rascunho local: se a rede falhar a meio, o texto não se perde.
+    const RASCUNHO = `estudo360:np-rascunho:${MARKER}`;
+    try {
+      const r = localStorage.getItem(RASCUNHO);
+      if (r && !text.value) text.value = r;
+    } catch {}
+    text.addEventListener('input', () => {
+      try { localStorage.setItem(RASCUNHO, text.value); } catch {}
     });
 
     document.getElementById('npSave')?.addEventListener('click', async () => {
       const value = text.value.trim();
-      if (!auth.currentUser) {
-        message.textContent = 'Entre primeiro em estudo360.pt (mesma janela) e volte a esta página.';
-        return;
-      }
-      let gabineteId = '';
-      try {
-        const raw = localStorage.getItem('estudo360:v1:gabinete:activeId')
-          || localStorage.getItem(`estudo360:v1:gabinete:activeId:${auth.currentUser.uid}`);
-        if (raw) gabineteId = String(JSON.parse(raw)?.data || '');
-      } catch { /* sem gabinete ativo em cache */ }
-      if (!gabineteId) {
-        message.textContent = 'Escolha um gabinete no estudo360.pt e volte a tentar.';
-        return;
-      }
-      if (!value) {
-        message.textContent = 'Escreva primeiro os próximos passos.';
-        return;
-      }
+      if (!podeEscrever) { locked.style.display = 'block'; return; }
+      if (!value) { message.textContent = 'Escreva primeiro os próximos passos.'; return; }
+      if (value.length > 4000) { message.textContent = 'Texto demasiado longo (máximo 4000 caracteres).'; return; }
+
       message.textContent = 'A guardar...';
       try {
-        await firestoreModule.addDoc(firestoreModule.collection(db, 'updates'), {
-          text: value,
-          atualizado: false,
-          aprovado: false,
-          createdAt: Date.now(),
-          autor: MARKER,
-          gabineteId,
+        const resposta = await fetch('/api/notas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chave, texto: value, marcador: MARKER }),
         });
-        message.textContent = 'Nova versão guardada.';
-        await readEntries();
+        if (resposta.ok) {
+          message.textContent = 'Versão guardada.';
+          try { localStorage.removeItem(RASCUNHO); } catch {}
+          await readEntries();
+          return;
+        }
+        if (resposta.status === 401) {
+          message.textContent = 'Esta chave já não é válida. Abra o seu link de edição mais recente.';
+        } else if (resposta.status === 400) {
+          message.textContent = 'Não foi possível guardar: verifique o texto.';
+        } else {
+          message.textContent = 'O serviço não respondeu. O texto ficou guardado neste dispositivo — tente outra vez.';
+        }
       } catch {
-        message.textContent = 'Não foi possível guardar. Tente novamente.';
+        message.textContent = 'Sem ligação. O texto ficou guardado neste dispositivo — tente outra vez.';
+      }
+    });
+
+    // Ctrl/⌘+Enter guarda sem tirar as mãos do teclado.
+    text.addEventListener('keydown', (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        event.preventDefault();
+        document.getElementById('npSave')?.click();
       }
     });
 

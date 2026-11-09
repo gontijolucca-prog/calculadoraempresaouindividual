@@ -70,6 +70,7 @@ function devEmployeeAccessProxy(localEnv: Record<string, string>): Plugin {
         '/api/equipa-contas': () => import('./functions/api/equipa-contas'),
         '/api/colaborador-login': () => import('./functions/api/colaborador-login'),
         '/api/vincular-conta': () => import('./functions/api/vincular-conta'),
+        '/api/notas': () => import('./functions/api/notas'),
       };
       for (const [path, loadModule] of Object.entries(endpoints)) {
         server.middlewares.use(path, async (req, res) => {
