@@ -64,7 +64,25 @@ ok((await lerAccent()) === '#0e7c5a', 'accent personalizado é aplicado ao docum
 const bg = await lerBotao();
 ok(bg === 'rgb(14, 124, 90)', `CSS pinta com o accent (${bg})`);
 const usos = await contarUsos();
-ok(usos >= 3, `elementos usam o accent no ecrã atual (${usos})`);
+// Na landing pública (sem sessão) pode não haver controlos com accent: nesse
+// caso exigimos que o CSS os tenha, para garantir que não desapareceram.
+const naApp = await page.evaluate(() => !!document.getElementById('main-scroll') || !!document.getElementById('main-content'));
+if (naApp) {
+  ok(usos >= 3, `elementos usam o accent no ecrã atual (${usos})`);
+} else {
+  const regras = await page.evaluate(async () => {
+    const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).map((l) => l.href);
+    let n = 0;
+    for (const href of links) {
+      try {
+        const css = await (await fetch(href)).text();
+        n += (css.match(/var\(--accent\)/g) || []).length;
+      } catch { /* folha externa inacessível */ }
+    }
+    return n;
+  });
+  ok(regras >= 20, `landing pública: ${regras} regras CSS usam o accent`);
+}
 
 // 4) Cor inválida cai para o padrão em vez de partir o tema
 await seed('roxo-neon');
