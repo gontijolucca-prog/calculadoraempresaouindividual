@@ -32,7 +32,7 @@ const criar = page.getByRole('button', { name: /Criar conta/i }).first();
 if (await criar.count()) await criar.click();
 await page.waitForTimeout(700);
 await page.locator('input[placeholder="O seu nome"]').first().fill('QA Emulador');
-await page.locator('input[placeholder="nome@empresa.pt"]').first().fill(email);
+await page.locator('input[autocomplete="username"]').first().fill(email);
 await page.locator('input[type="password"]').first().fill(password);
 await page.getByRole('button', { name: /^Criar conta$/ }).first().click();
 await page.waitForTimeout(3500);
@@ -60,7 +60,7 @@ if (verificado) {
   await page.waitForTimeout(1500);
   const entrar = page.getByRole('button', { name: /^Entrar$/ }).first();
   if (await entrar.count()) await entrar.click();
-  await page.locator('input[placeholder="nome@empresa.pt"]').first().fill(email);
+  await page.locator('input[autocomplete="username"]').first().fill(email);
   await page.locator('input[type="password"]').first().fill(password);
   await page.getByRole('button', { name: /^Entrar$/ }).last().click();
   await page.waitForTimeout(3000);

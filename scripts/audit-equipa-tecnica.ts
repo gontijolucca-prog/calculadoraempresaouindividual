@@ -144,6 +144,20 @@ if (create.status !== 201) {
   console.log('\nFAIL — criação de acesso bloqueada; testes seguintes abortados.');
   process.exit(1);
 }
+// Login sem email: o dono cria um utilizador simples ("balcao.2", por exemplo).
+const nomeSimples = `balcao.${Date.now().toString(36).slice(-6)}`;
+const criarSimples = await callFunction(equipaPost, '/api/equipa-contas', {
+  action: 'criar',
+  gabineteId: gid,
+  nome: 'Colaborador Sem Email',
+  email: nomeSimples,
+  password: password1,
+  role: 'estagiaria',
+}, owner.token);
+check(criarSimples.status === 201, `dono cria acesso só com utilizador (${criarSimples.status}) ${JSON.stringify(criarSimples.data).slice(0, 140)}`);
+const loginSimples = await callFunction(loginPost, '/api/colaborador-login', { email: nomeSimples, password: password1 });
+check(loginSimples.status === 200 && !!loginSimples.data.token, `entra com utilizador sem email (${loginSimples.status})`);
+
 const credentialId = String(create.data.credencialId || '');
 const credentialDoc = await getFirestoreDoc<Record<string, unknown>>(env, `employeeCredentials/${credentialId}`);
 check(credentialDoc?.data.status === 'active', 'credencial fica ativa no servidor');

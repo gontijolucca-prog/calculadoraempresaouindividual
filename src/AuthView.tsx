@@ -33,7 +33,11 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
   const [info, setInfo] = useState<string | null>(null);
 
   const validate = (): string | null => {
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Indique um email válido.';
+    const id = email.trim().toLowerCase();
+    // Entrar aceita email ou o utilizador criado pelo gabinete (sem @).
+    // Criar conta exige email: a conta normal é sempre identificada por email.
+    const idValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(id) || (mode === 'login' && /^[a-z0-9][a-z0-9._-]{2,39}$/.test(id));
+    if (!id || !idValido) return mode === 'login' ? 'Indique o email ou o utilizador da conta.' : 'Indique um email válido.';
     if (mode !== 'reset' && password.length < 8) return 'Password com pelo menos 8 caracteres.';
     if (mode === 'signup' && !name.trim()) return 'Indique o seu nome.';
     return null;
@@ -128,7 +132,7 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
                 <span className="text-[11px] font-[600] tracking-[1px] uppercase text-[#1A1A18]/35">Email</span>
                 <div className="relative mt-1">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A18]/25" />
-                  <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="nome@empresa.pt" className="w-full pl-9 pr-3 py-3 rounded-xl border border-[#1A1A18]/10 bg-[#FDFBF7] text-[14px] focus:bg-white focus:border-[#B06D35]/30 focus:ring-2 focus:ring-[#B06D35]/10 outline-none transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" autoComplete="email" required />
+                  <input type="text" inputMode="email" autoCapitalize="none" spellCheck={false} value={email} onChange={e=>setEmail(e.target.value)} placeholder="email ou utilizador" className="w-full pl-9 pr-3 py-3 rounded-xl border border-[#1A1A18]/10 bg-[#FDFBF7] text-[14px] focus:bg-white focus:border-[#B06D35]/30 focus:ring-2 focus:ring-[#B06D35]/10 outline-none transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" autoComplete="username" required />
                 </div>
               </label>
               {mode !== 'reset' && (

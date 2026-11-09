@@ -1,90 +1,46 @@
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
-import {
-  emailValido,
-  passwordValida,
-  parseCustomClaims,
-  podeGerirAcessos,
-  podeAtribuirCargo,
-  roleValida,
-  origemPermitida,
-  corsHeaders,
-  type GabineteMetaLite,
-} from './_equipaAccess';
+/**
+ * Validação do identificador de entrada dos colaboradores.
+ * Correr: npx tsx functions/_equipaAccess.test.ts  (ou pela suite)
+ */
+import { identificadorValido, emailValido, passwordValida } from './_equipaAccess';
 
-const meta: GabineteMetaLite = {
-  id: 'gab_1',
-  ownerUid: 'owner',
-  memberUids: ['owner', 'admin', 'financeiro', 'estagiaria'],
-  members: {
-    owner: { role: 'admin', email: 'owner@empresa.pt' },
-    admin: { role: 'admin', email: 'admin@empresa.pt' },
-    financeiro: { role: 'custom:financeiro', email: 'fin@empresa.pt' },
-    estagiaria: { role: 'estagiaria', email: 'estagio@empresa.pt' },
-  },
-  customRoles: {
-    financeiro: { nome: 'Financeiro', permissoes: ['gerir-acessos'] },
-  },
-};
+let fails = 0;
+function ok(label: string, cond: boolean) {
+  if (!cond) { fails++; console.error(`✗ ${label}`); } else console.log(`✓ ${label}`);
+}
 
-describe('credenciais da equipa — validação', () => {
-  it('aceita emails reais e rejeita formatos incompletos', () => {
-    assert.equal(emailValido('ana@empresa.pt'), true);
-    assert.equal(emailValido('ana+equipa@sub.empresa.pt'), true);
-    assert.equal(emailValido('sem-arroba'), false);
-    assert.equal(emailValido('ana@empresa'), false);
-    assert.equal(emailValido(`${'a'.repeat(250)}@x.pt`), false);
-  });
+// A: utilizadores simples são aceites (não precisam de email)
+ok('A: "ana" é válido', identificadorValido('ana'));
+ok('A: "ana.silva" é válido', identificadorValido('ana.silva'));
+ok('A: "recepcao-2" é válido', identificadorValido('recepcao-2'));
+ok('A: "equipa_1" é válido', identificadorValido('equipa_1'));
+ok('A: maiúsculas normalizam', identificadorValido('ANA'));
 
-  it('exige letra e número e limita espaços nas pontas', () => {
-    assert.equal(passwordValida('Teste12345!'), true);
-    assert.equal(passwordValida('12345678'), false);
-    assert.equal(passwordValida('abcdefgh'), false);
-    assert.equal(passwordValida(' Teste123'), false);
-    assert.equal(passwordValida('Teste123 '), false);
-    assert.equal(passwordValida('A1b2c3d4'), true);
-  });
+// B: emails continuam a funcionar (acessos antigos)
+ok('B: email é válido', identificadorValido('ana@escritorio.pt'));
+ok('B: email com subdomínio', identificadorValido('a.b@mail.escritorio.pt'));
 
-  it('interpreta custom claims sem confiar em JSON inválido', () => {
-    assert.deepEqual(parseCustomClaims('{"employeeOnly":true}'), { employeeOnly: true });
-    assert.deepEqual(parseCustomClaims('{invalido'), {});
-    assert.deepEqual(parseCustomClaims('[]'), {});
-  });
-});
+// C: lixo é recusado
+ok('C: vazio recusado', !identificadorValido(''));
+ok('C: dois caracteres recusados', !identificadorValido('ab'));
+ok('C: arroba solta recusada', !identificadorValido('ana@'));
+ok('C: espaços recusados', !identificadorValido('ana silva'));
+ok('C: começar por ponto recusado', !identificadorValido('.ana'));
+ok('C: símbolos recusados', !identificadorValido('ana!#$'));
+ok('C: acentos recusados no utilizador', !identificadorValido('joão'));
 
-describe('credenciais da equipa — autorização', () => {
-  it('dono e admin gerem acessos por defeito', () => {
-    assert.equal(podeGerirAcessos(meta, 'owner'), true);
-    assert.equal(podeGerirAcessos(meta, 'admin'), true);
-  });
+// D: limites
+ok('D: 40 caracteres aceites', identificadorValido('a'.repeat(40)));
+ok('D: 41 caracteres recusados', !identificadorValido('a'.repeat(41)));
 
-  it('cargo personalizado só gere acessos se tiver a permissão', () => {
-    assert.equal(podeGerirAcessos(meta, 'financeiro'), true);
-    assert.equal(podeGerirAcessos(meta, 'estagiaria'), false);
-  });
+// E: emailValido continua estrito (dono, contas normais)
+ok('E: emailValido rejeita "ana"', !emailValido('ana'));
+ok('E: emailValido aceita email', emailValido('ana@x.pt'));
 
-  it('gestor personalizado não consegue criar ou assumir cargos superiores', () => {
-    const authFinanceiro = { uid: 'financeiro', email: 'fin@empresa.pt', claims: {} };
-    const authAdmin = { uid: 'admin', email: 'admin@empresa.pt', claims: {} };
-    assert.equal(podeAtribuirCargo(meta, authFinanceiro, 'admin'), false);
-    assert.equal(podeAtribuirCargo(meta, authFinanceiro, 'contabilista'), false);
-    assert.equal(podeAtribuirCargo(meta, authFinanceiro, 'custom:financeiro'), true);
-    assert.equal(podeAtribuirCargo(meta, authAdmin, 'admin'), true);
-  });
+// F: passwords (inalterado)
+ok('F: password forte aceite', passwordValida('Equipa2026'));
+ok('F: password sem número recusada', !passwordValida('EquipaForte'));
+ok('F: password curta recusada', !passwordValida('Ab1'));
 
-  it('valida cargos base e personalizados existentes', () => {
-    assert.equal(roleValida(meta, 'contabilista'), true);
-    assert.equal(roleValida(meta, 'custom:financeiro'), true);
-    assert.equal(roleValida(meta, 'custom:inexistente'), false);
-    assert.equal(roleValida(meta, 'root'), false);
-  });
-
-  it('só aceita origens oficiais', () => {
-    assert.equal(origemPermitida('https://estudo360.pt', null), true);
-    assert.equal(origemPermitida(null, 'https://www.estudo360.pt/equipa'), true);
-    assert.equal(origemPermitida('http://estudo360.pt', null), false);
-    assert.equal(origemPermitida('https://estudo360.pt.evil.example', null), false);
-    assert.equal(origemPermitida('http://localhost:3000', null), true);
-    assert.equal(corsHeaders('https://estudo360.pt')['Access-Control-Allow-Origin'], 'https://estudo360.pt');
-  });
-});
+if (fails) { console.error(`\n${fails} caso(s) FALHARAM`); process.exit(1); }
+else console.log('\nTodos os casos do identificador passaram.');

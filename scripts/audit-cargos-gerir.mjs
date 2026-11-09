@@ -20,7 +20,7 @@ async function verificar(addr) {
 await p.goto(BASE, { waitUntil: 'load' }); await p.waitForTimeout(1400);
 await p.getByRole('button', { name: /Criar conta/i }).first().click(); await p.waitForTimeout(400);
 await p.locator('input[placeholder="O seu nome"]').first().fill('Dono Cargos');
-await p.locator('input[placeholder="nome@empresa.pt"]').first().fill(dono);
+await p.locator('input[autocomplete="username"]').first().fill(dono);
 await p.locator('input[type="password"]').first().fill(pass);
 await p.getByRole('button', { name: /^Criar conta$/ }).first().click(); await p.waitForTimeout(2200);
 ok(await verificar(dono), 'dono criado');
@@ -28,7 +28,7 @@ const sair = p.getByRole('button', { name: /Sair/i }).first(); if (await sair.co
 await p.goto(BASE, { waitUntil: 'load' }); await p.waitForTimeout(1200);
 const entrar = p.getByRole('button', { name: /^Entrar$/ }).first(); if (await entrar.count()) await entrar.click();
 await p.waitForTimeout(400);
-await p.locator('input[placeholder="nome@empresa.pt"]').first().fill(dono);
+await p.locator('input[autocomplete="username"]').first().fill(dono);
 await p.locator('input[type="password"]').first().fill(pass);
 await p.getByRole('button', { name: /^Entrar$/ }).last().click(); await p.waitForTimeout(2400);
 const criar = p.getByRole('button', { name: /Criar (novo )?gabinete/i }).first();

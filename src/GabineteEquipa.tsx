@@ -239,8 +239,10 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
       setFormErro('Indique o nome completo do colaborador.');
       return;
     }
-    if (!editing && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-      setFormErro('Indique um email válido.');
+    // O dono cria o login: serve um utilizador simples ("ana", "recepcao-2")
+    // ou um email, para os acessos antigos continuarem a entrar.
+    if (!editing && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) && !/^[a-z0-9][a-z0-9._-]{2,39}$/.test(email)) {
+      setFormErro('Indique um utilizador (3 a 40 caracteres: letras, números, ponto, hífen ou _) ou um email.');
       return;
     }
     if (!editing) {
@@ -297,7 +299,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
           password: formPassword,
           role: formRole,
         });
-        setAviso(`${nome} já pode entrar com o email e a password criados.`);
+        setAviso(`${nome} já pode entrar com o utilizador «${email}» e a password definidas.`);
       }
       setFormOpen(false);
       setEditing(null);
@@ -459,7 +461,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
               <Users className="h-4 w-4 text-[var(--accent-strong)]" /> Equipa do gabinete
             </h2>
             <p className="mt-1 max-w-[720px] text-[12.5px] leading-5 text-[#64748B]">
-              O dono ou um administrador cria o email e a password. Não é enviado nenhum email e a pessoa entra diretamente neste gabinete.
+              O dono ou um administrador cria o utilizador e a password. Não é preciso email nem é enviada nenhuma mensagem: a pessoa entra diretamente neste gabinete.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -636,7 +638,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
       </div>
 
       <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-[12px] leading-[18px] text-blue-900">
-        <strong>Como funciona:</strong> o administrador define o email e uma password. O colaborador entra com essas credenciais e fica ligado apenas a este gabinete. Se já usar esse email numa conta normal, a conta existente também passa a ver este gabinete. A remoção corta o acesso imediatamente.
+        <strong>Como funciona:</strong> o administrador define um utilizador (pode ser um email, mas não é obrigatório) e uma password. O colaborador entra com essas credenciais e fica ligado apenas a este gabinete. Se o utilizador for um email que já tenha conta normal, essa conta também passa a ver este gabinete. A remoção corta o acesso imediatamente.
       </div>
 
       {aviso && (
@@ -662,8 +664,8 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
                 <input value={formNome} onChange={(event) => setFormNome(event.target.value)} autoFocus className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-sm" />
               </label>
               <label className="block">
-                <span className="text-[10.5px] font-[700] uppercase tracking-[0.8px] text-[#64748B]">Email de entrada</span>
-                <input value={formEmail} onChange={(event) => setFormEmail(event.target.value)} type="email" disabled={!!editing} className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-sm disabled:bg-zinc-100 disabled:text-zinc-500" />
+                <span className="text-[10.5px] font-[700] uppercase tracking-[0.8px] text-[#64748B]">Utilizador de entrada</span>
+                <input value={formEmail} onChange={(event) => setFormEmail(event.target.value)} type="text" autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder="ex.: ana.silva (não precisa de email)" disabled={!!editing} className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-sm disabled:bg-zinc-100 disabled:text-zinc-500" />
               </label>
               <label className="block">
                 <span className="text-[10.5px] font-[700] uppercase tracking-[0.8px] text-[#64748B]">Cargo</span>

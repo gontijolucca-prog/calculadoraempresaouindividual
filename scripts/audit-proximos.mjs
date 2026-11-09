@@ -25,7 +25,7 @@ const criar = app.getByRole('button', { name: /Criar conta/i }).first();
 if (await criar.count()) await criar.click();
 await app.waitForTimeout(500);
 await app.locator('input[placeholder="O seu nome"]').first().fill('Proximos QA');
-await app.locator('input[placeholder="nome@empresa.pt"]').first().fill(email);
+await app.locator('input[autocomplete="username"]').first().fill(email);
 await app.locator('input[type="password"]').first().fill(pass);
 await app.getByRole('button', { name: /^Criar conta$/ }).first().click();
 await app.waitForTimeout(2500);

@@ -9,7 +9,7 @@ const falhas = []; const ok = (c, m) => { console.log(`${c ? '✓' : '✗'} ${m}
 await p.goto(BASE, { waitUntil: 'load' }); await p.waitForTimeout(1200);
 await p.getByRole('button', { name: /Criar conta/i }).first().click(); await p.waitForTimeout(400);
 await p.locator('input[placeholder="O seu nome"]').first().fill('Auditoria QA');
-await p.locator('input[placeholder="nome@empresa.pt"]').first().fill(email);
+await p.locator('input[autocomplete="username"]').first().fill(email);
 await p.locator('input[type="password"]').first().fill('Teste12345!');
 await p.getByRole('button', { name: /^Criar conta$/ }).first().click(); await p.waitForTimeout(2200);
 for (let i = 0; i < 10; i++) {

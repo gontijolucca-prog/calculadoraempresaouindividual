@@ -144,8 +144,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (cred.user) void logAuthEvent(cred.user, 'login');
     } catch (error) {
       const code = String((error as { code?: string })?.code || '');
+      // `auth/invalid-email` acontece quando o utilizador não é um email: é o
+      // caso normal dos logins criados pelo gabinete, que seguem para a API.
       const podeTentarAcessoGabinete = [
         'auth/invalid-credential',
+        'auth/invalid-email',
         'auth/user-not-found',
         'auth/wrong-password',
       ].includes(code);

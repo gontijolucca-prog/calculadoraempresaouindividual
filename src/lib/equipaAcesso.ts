@@ -25,10 +25,11 @@ interface ErroApi {
 }
 
 const MENSAGENS: Record<string, string> = {
-  email_invalido: 'Indique um email válido.',
-  email_reservado: 'Este endereço de email é interno e não pode ser usado como acesso de colaborador.',
-  email_do_dono: 'O email do dono do gabinete não pode ser usado como acesso de colaborador.',
-  email_ja_tem_acesso: 'Este email já tem acesso ativo a este gabinete.',
+  email_invalido: 'Indique um utilizador (3 a 40 caracteres) ou um email.',
+  identificador_invalido: 'Indique um utilizador (3 a 40 caracteres: letras, números, ponto, hífen ou _) ou um email.',
+  email_reservado: 'Este identificador é interno e não pode ser usado como acesso de colaborador.',
+  email_do_dono: 'O identificador do dono do gabinete não pode ser usado como acesso de colaborador.',
+  email_ja_tem_acesso: 'Este utilizador já tem acesso ativo a este gabinete.',
   acesso_a_ser_criado: 'Este acesso está a ser criado. Aguarde alguns segundos e atualize a página.',
   password_fraca: 'A password deve ter pelo menos 8 caracteres, incluir uma letra, um número e não começar nem terminar com espaços.',
   password_atual_incorreta: 'A password atual não está correta.',

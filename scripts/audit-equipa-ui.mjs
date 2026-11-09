@@ -72,7 +72,7 @@ async function loginOn(targetPage, email, password) {
     await enter.click();
     await targetPage.waitForTimeout(350);
   }
-  await targetPage.locator('input[placeholder="nome@empresa.pt"]').first().fill(email);
+  await targetPage.locator('input[autocomplete="username"]').first().fill(email);
   await targetPage.locator('input[type="password"]').first().fill(password);
   await targetPage.getByRole('button', { name: /^Entrar$/ }).last().click();
   await targetPage.waitForTimeout(2300);
@@ -134,7 +134,7 @@ await createButton.click();
 await page.waitForTimeout(300);
 const form = page.locator('div.fixed.inset-0.z-\\[60\\]').first();
 await form.locator('label').filter({ hasText: 'Nome completo' }).locator('input').fill('Colaborador UI');
-await form.locator('label').filter({ hasText: 'Email de entrada' }).locator('input').fill(collaboratorEmail);
+await form.locator('label').filter({ hasText: 'Utilizador de entrada' }).locator('input').fill(collaboratorEmail);
 await form.locator('label').filter({ hasText: 'Password inicial' }).locator('input').fill(collaboratorPassword);
 await form.locator('label').filter({ hasText: 'Repetir password' }).locator('input').fill(collaboratorPassword);
 await form.locator('label').filter({ hasText: 'Cargo' }).locator('select').selectOption('contabilista');
@@ -263,6 +263,53 @@ await page.setViewportSize({ width: 375, height: 812 });
 await page.waitForTimeout(250);
 await page.screenshot({ path: 'docs/equipa-tecnica-revogada-375.png' });
 check(pageErrors.length === 0, `sem exceções JavaScript (${pageErrors.join(' | ')})`);
+// Login sem email: utilizador simples criado pelo dono entra pela AuthView.
+const utilizadorSimples = `balcao${stamp.toString(36).slice(-5)}`;
+const passwordSimples = 'Balcao2026!';
+await ownerPage.bringToFront();
+await ownerPage.getByRole('button', { name: /Criar acesso/i }).first().click();
+await ownerPage.waitForTimeout(300);
+const form2 = ownerPage.locator('div.fixed.inset-0.z-\\[60\\]').first();
+await form2.locator('label').filter({ hasText: 'Nome completo' }).locator('input').fill('Balcão Sem Email');
+await form2.locator('label').filter({ hasText: 'Utilizador de entrada' }).locator('input').fill(utilizadorSimples);
+await form2.locator('label').filter({ hasText: 'Password inicial' }).locator('input').fill(passwordSimples);
+await form2.locator('label').filter({ hasText: 'Repetir password' }).locator('input').fill(passwordSimples);
+await form2.locator('label').filter({ hasText: 'Cargo' }).locator('select').selectOption('contabilista');
+await ownerPage.setViewportSize({ width: 1280, height: 900 });
+await form2.getByRole('button', { name: /^Criar acesso$/ }).click();
+await ownerPage.waitForTimeout(2200);
+const semEmailCriado = /Acesso criado/i.test(await ownerPage.locator('body').innerText());
+check(semEmailCriado, 'dono cria acesso com utilizador simples (sem @)');
+if (semEmailCriado) {
+  await ownerPage.locator('div.fixed.inset-0.z-\\[65\\]').first().getByRole('button', { name: /^Concluir$/ }).click();
+  await ownerPage.waitForTimeout(600);
+
+  const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const p2 = await ctx2.newPage();
+  const respostas = [];
+  p2.on('response', async (r) => {
+    if (r.url().includes('/api/colaborador-login')) {
+      respostas.push(`${r.status()} ${(await r.text().catch(() => '')).slice(0, 160)}`);
+    }
+  });
+  await loginOn(p2, utilizadorSimples, passwordSimples);
+  let entrou = false;
+  for (let i = 0; i < 12; i++) {
+    // Entrou = saiu do ecrã de autenticação e está na app (a conta técnica
+    // entra direto no gabinete, sem selector).
+    const t = await p2.locator('body').innerText();
+    entrou = /Lista de Empresas|Gabinete|Carteira/i.test(t) && !/Indique o email ou o utilizador/i.test(t);
+    if (entrou) break;
+    await p2.waitForTimeout(500);
+  }
+  check(entrou, 'entra com utilizador sem email pelo ecrã de login');
+  if (!entrou) {
+    console.log('[debug login]', (await p2.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 400));
+    console.log('[debug api]', respostas.join(' | ') || 'sem chamada a /api/colaborador-login');
+  }
+  await ctx2.close();
+}
+
 await ownerContext.close();
 
 await browser.close();

@@ -67,6 +67,20 @@ export function emailValido(email: string): boolean {
   return email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 }
 
+/**
+ * Identificador de entrada de um colaborador.
+ *
+ * O dono cria o login; não é preciso existir email. Aceita:
+ *  - um utilizador simples: `ana`, `ana.silva`, `recepcao-2` (3 a 40 chars);
+ *  - ou um email, para os acessos que já foram criados assim.
+ */
+export function identificadorValido(valor: string): boolean {
+  const v = String(valor || '').trim().toLowerCase();
+  if (!v || v.length > 254) return false;
+  if (emailValido(v)) return true;
+  return /^[a-z0-9][a-z0-9._-]{2,39}$/.test(v);
+}
+
 export function passwordValida(password: string): boolean {
   return password.length >= 8
     && password.length <= 128
@@ -471,7 +485,7 @@ export async function criarCredencial(
   if (!podeAtribuirCargo(meta, auth, role)) {
     throw new AccessError('cargo_superior_ao_seu', 403);
   }
-  if (!emailValido(email)) throw new AccessError('email_invalido', 400);
+  if (!identificadorValido(email)) throw new AccessError('identificador_invalido', 400);
   if (email.endsWith('@auth.estudo360.pt')) throw new AccessError('email_reservado', 400);
   if (email === normalizeEmail(meta.ownerEmail)) throw new AccessError('email_do_dono', 409);
   if (password === email) throw new AccessError('password_fraca', 400);
@@ -815,7 +829,7 @@ export async function loginTecnico(
 ): Promise<Record<string, unknown>> {
   const email = normalizeEmail(body.email);
   const password = String(body.password || '');
-  if (!emailValido(email) || !password || password.length > 128) {
+  if (!identificadorValido(email) || !password || password.length > 128) {
     throw new AccessError('credenciais_invalidas', 401);
   }
   const emailHash = await hashEmail(email);
