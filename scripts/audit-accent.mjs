@@ -71,13 +71,15 @@ if (naApp) {
   ok(usos >= 3, `elementos usam o accent no ecrã atual (${usos})`);
 } else {
   const regras = await page.evaluate(async () => {
-    const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).map((l) => l.href);
     let n = 0;
+    const contar = (css) => (css.match(/var\(--accent\)/g) || []).length;
+    // Produção: folhas externas. Dev: estilos injetados pelo Vite.
+    for (const el of Array.from(document.querySelectorAll('style'))) {
+      n += contar(el.textContent || '');
+    }
+    const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).map((l) => l.href);
     for (const href of links) {
-      try {
-        const css = await (await fetch(href)).text();
-        n += (css.match(/var\(--accent\)/g) || []).length;
-      } catch { /* folha externa inacessível */ }
+      try { n += contar(await (await fetch(href)).text()); } catch { /* inacessível */ }
     }
     return n;
   });
