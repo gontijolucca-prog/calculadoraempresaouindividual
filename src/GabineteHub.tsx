@@ -141,7 +141,7 @@ export function GabineteGallery({ onOpen }: { onOpen: (tab: GabTab) => void }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
         >
-          <p className="text-[10px] font-[800] uppercase tracking-[2px] text-[#0677FF]">Centro de operação</p>
+          <p className="text-[10px] font-[800] uppercase tracking-[2px] text-[var(--accent)]">Centro de operação</p>
           <h1 className="mt-1 text-[28px] font-[800] tracking-[-0.6px] text-[#0B1D2D] sm:text-[34px]">Gabinete</h1>
           <p className="mt-1.5 max-w-2xl text-[13.5px] font-[500] leading-relaxed text-slate-500">
             Escolha por onde começar — cada função ajuda a organizar o escritório e fica sincronizada para toda a equipa.
@@ -155,16 +155,16 @@ export function GabineteGallery({ onOpen }: { onOpen: (tab: GabTab) => void }) {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.05 }}
-          className="group mt-7 flex w-full items-center gap-4 rounded-[18px] border border-[#E2E8F0] bg-white p-5 text-left shadow-sm transition-all hover:border-[#0677FF]/50 hover:shadow-md sm:p-6"
+          className="group mt-7 flex w-full items-center gap-4 rounded-[18px] border border-[#E2E8F0] bg-white p-5 text-left shadow-sm transition-all hover:border-[var(--accent)]/50 hover:shadow-md sm:p-6"
         >
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-[#0677FF]/10">
-            <DashboardIcon className="h-6 w-6 text-[#0677FF]" />
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-[var(--accent)]/10">
+            <DashboardIcon className="h-6 w-6 text-[var(--accent)]" />
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="text-[16px] font-[800] leading-tight text-[#0B1D2D]">{dashboard.titulo}</h2>
             <p className="mt-0.5 text-[12.5px] font-[500] leading-relaxed text-slate-500">{dashboard.resumo}</p>
           </div>
-          <ArrowRight className="h-5 w-5 shrink-0 text-slate-300 transition-all group-hover:translate-x-0.5 group-hover:text-[#0677FF]" />
+          <ArrowRight className="h-5 w-5 shrink-0 text-slate-300 transition-all group-hover:translate-x-0.5 group-hover:text-[var(--accent)]" />
         </motion.button>
 
         <p className="mb-3 mt-8 text-[11px] font-[800] uppercase tracking-[1.5px] text-slate-400">Funções do Gabinete</p>
@@ -180,14 +180,14 @@ export function GabineteGallery({ onOpen }: { onOpen: (tab: GabTab) => void }) {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.08 + i * 0.03 }}
-                className="group flex flex-col rounded-[16px] border border-[#E2E8F0] bg-white p-[18px] text-left shadow-sm transition-all hover:border-[#0677FF]/50 hover:shadow-md"
+                className="group flex flex-col rounded-[16px] border border-[#E2E8F0] bg-white p-[18px] text-left shadow-sm transition-all hover:border-[var(--accent)]/50 hover:shadow-md"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#0677FF]/10">
-                    <Icon className="h-5 w-5 text-[#0677FF]" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[var(--accent)]/10">
+                    <Icon className="h-5 w-5 text-[var(--accent)]" />
                   </div>
                   <h3 className="min-w-0 flex-1 break-words text-[14px] font-[800] leading-tight text-[#0B1D2D]">{def.titulo}</h3>
-                  <ArrowRight className="h-4 w-4 shrink-0 text-slate-300 transition-all group-hover:translate-x-0.5 group-hover:text-[#0677FF]" />
+                  <ArrowRight className="h-4 w-4 shrink-0 text-slate-300 transition-all group-hover:translate-x-0.5 group-hover:text-[var(--accent)]" />
                 </div>
                 <p className="mt-2.5 line-clamp-3 text-[12px] font-[500] leading-relaxed text-slate-500">{def.resumo}</p>
               </motion.button>

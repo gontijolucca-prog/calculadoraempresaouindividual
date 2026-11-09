@@ -456,7 +456,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="flex items-center gap-2 text-[15px] font-[800] text-[#0B1D2D]">
-              <Users className="h-4 w-4 text-[#2563EB]" /> Equipa do gabinete
+              <Users className="h-4 w-4 text-[var(--accent-strong)]" /> Equipa do gabinete
             </h2>
             <p className="mt-1 max-w-[720px] text-[12.5px] leading-5 text-[#64748B]">
               O dono ou um administrador cria o email e a password. Não é enviado nenhum email e a pessoa entra diretamente neste gabinete.
@@ -512,7 +512,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
             {q || filtroRole !== 'todos' ? 'Nenhum colaborador corresponde à pesquisa.' : 'Ainda sem colaboradores neste gabinete.'}
           </p>
           {!q && filtroRole === 'todos' && podeGerirAcessos && (
-            <button onClick={abrirNovo} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-[#0677FF] px-4 py-2 text-sm font-[600] text-white">
+            <button onClick={abrirNovo} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-[600] text-white">
               <Plus className="h-4 w-4" /> Criar o primeiro acesso
             </button>
           )}
@@ -540,7 +540,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
                         <div className="flex items-center gap-3">
                           <span
                             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-[700] text-white"
-                            style={{ background: colaborador.cor || (colaborador.role === 'admin' ? '#0F172A' : colaborador.role === 'contabilista' ? '#2563EB' : '#D97706') }}
+                            style={{ background: colaborador.cor || (colaborador.role === 'admin' ? '#0F172A' : colaborador.role === 'contabilista' ? 'var(--accent-strong)' : '#D97706') }}
                           >
                             {colaborador.initials || getColaboradorInitials(colaborador.nome)}
                           </span>
@@ -567,7 +567,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap items-center justify-end gap-1">
                           {podeGerirAcessos && temCredencial && (
-                            <button onClick={() => abrirReset(colaborador)} className="rounded-lg p-1.5 text-[#2563EB] hover:bg-blue-50" title="Repor password">
+                            <button onClick={() => abrirReset(colaborador)} className="rounded-lg p-1.5 text-[var(--accent-strong)] hover:bg-blue-50" title="Repor password">
                               <KeyRound className="h-3.5 w-3.5" />
                             </button>
                           )}
@@ -594,7 +594,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
 
       <div className="rounded-xl border border-[#E2E8F0] bg-white p-4">
         <h3 className="flex items-center gap-2 text-[13px] font-[700] text-[#0B1D2D]">
-          <Shield className="h-4 w-4 text-[#2563EB]" /> Associações por cliente
+          <Shield className="h-4 w-4 text-[var(--accent-strong)]" /> Associações por cliente
         </h3>
         <p className="mt-1 text-[12px] text-[#64748B]">Define responsável, apoio e supervisor de cada cliente. Estes nomes aparecem na Visão geral.</p>
         <div className="mt-3 space-y-2">
@@ -800,7 +800,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
                 <div key={item.label} className="flex items-center gap-2 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5">
                   <span className="w-20 shrink-0 text-[10.5px] font-[700] uppercase tracking-[0.7px] text-[#64748B]">{item.label}</span>
                   <span className="min-w-0 flex-1 break-all font-mono text-[12.5px] font-[600] text-[#0F172A]">{item.value}</span>
-                  <button onClick={() => void copiar(item.value, item.label)} className="rounded-lg p-1.5 text-[#2563EB] hover:bg-blue-50" title={`Copiar ${item.label}`}>
+                  <button onClick={() => void copiar(item.value, item.label)} className="rounded-lg p-1.5 text-[var(--accent-strong)] hover:bg-blue-50" title={`Copiar ${item.label}`}>
                     {copiado === item.label ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </button>
                 </div>
@@ -849,7 +849,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
                           setShowCargos(false);
                           setShowRoleModal(true);
                         }}
-                        className="inline-flex items-center gap-1 rounded-lg border border-[#E2E8F0] px-2 py-1 text-[11.5px] font-[600] text-[#2563EB] hover:bg-[#EFF6FF]"
+                        className="inline-flex items-center gap-1 rounded-lg border border-[#E2E8F0] px-2 py-1 text-[11.5px] font-[600] text-[var(--accent-strong)] hover:bg-[#EFF6FF]"
                       >
                         <Pencil className="h-3.5 w-3.5" /> Editar
                       </button>
@@ -897,7 +897,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
                     type="checkbox"
                     checked={rolePerms.includes(permission)}
                     onChange={() => setRolePerms((previous) => previous.includes(permission) ? previous.filter((item) => item !== permission) : [...previous, permission])}
-                    className="mt-0.5 h-4 w-4 accent-[#0677FF]"
+                    className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
                   />
                   {PERMISSION_LABELS[permission]}
                 </label>

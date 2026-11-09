@@ -120,8 +120,8 @@ export default function SimIntro({ view, onSimular, onVoltar }: {
     >
       <div className="w-full max-w-xl bg-white rounded-[24px] border border-[#E2E8F0] shadow-sm p-7 sm:p-9">
         <div className="flex items-center gap-4 mb-5">
-          <div className="w-14 h-14 rounded-[16px] bg-[#0677FF]/10 flex items-center justify-center shrink-0">
-            <Icon className="w-7 h-7 text-[#0677FF]" />
+          <div className="w-14 h-14 rounded-[16px] bg-[var(--accent)]/10 flex items-center justify-center shrink-0">
+            <Icon className="w-7 h-7 text-[var(--accent)]" />
           </div>
           <div>
             <p className="text-[10px] font-[800] uppercase tracking-[2px] text-[#6B7280]">Simulador</p>
@@ -133,17 +133,17 @@ export default function SimIntro({ view, onSimular, onVoltar }: {
 
         <div className="grid sm:grid-cols-2 gap-4 mb-7">
           <div className="bg-[#F5F7FA] rounded-[14px] p-4">
-            <h2 className="text-[11px] font-[800] uppercase tracking-[1px] text-[#0677FF] mb-2">Vais precisar de</h2>
+            <h2 className="text-[11px] font-[800] uppercase tracking-[1px] text-[var(--accent)] mb-2">Vais precisar de</h2>
             <ul className="space-y-1.5">
               {dados.map((d, i) => (
                 <li key={i} className="text-[13px] text-[#475569] font-[500] flex gap-2">
-                  <span className="text-[#0677FF] font-[800]">·</span>{d}
+                  <span className="text-[var(--accent)] font-[800]">·</span>{d}
                 </li>
               ))}
             </ul>
           </div>
           <div className="bg-[#F5F7FA] rounded-[14px] p-4">
-            <h2 className="text-[11px] font-[800] uppercase tracking-[1px] text-[#0677FF] mb-2">No fim recebes</h2>
+            <h2 className="text-[11px] font-[800] uppercase tracking-[1px] text-[var(--accent)] mb-2">No fim recebes</h2>
             <p className="text-[13px] text-[#475569] font-[500] leading-relaxed">{resultado}</p>
           </div>
         </div>
@@ -153,7 +153,7 @@ export default function SimIntro({ view, onSimular, onVoltar }: {
             type="button"
             onClick={onSimular}
             autoFocus
-            className="flex-1 inline-flex items-center justify-center gap-2 bg-[#0677FF] text-white px-5 py-3.5 rounded-[12px] text-[15px] font-[800] hover:bg-[#0556CC] active:scale-[0.98] transition-all shadow-md shadow-[#0677FF]/25"
+            className="flex-1 inline-flex items-center justify-center gap-2 bg-[var(--accent)] text-white px-5 py-3.5 rounded-[12px] text-[15px] font-[800] hover:bg-[var(--accent-strong)] active:scale-[0.98] transition-all shadow-md shadow-[var(--accent)]/25"
           >
             <Play className="w-4 h-4" strokeWidth={2.6} /> Simular
           </button>

@@ -88,7 +88,7 @@ const FILL_BADGE: Record<string, { txt: string; cls: string }> = {
   completo: { txt: 'Preenchido', cls: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
   parcial:  { txt: 'Parcial',    cls: 'text-amber-700 bg-amber-50 border-amber-200' },
   modelo:   { txt: 'Modelo',     cls: 'text-slate-500 bg-slate-50 border-slate-200' },
-  pacote:   { txt: 'Pacote',     cls: 'text-[#0677FF] bg-[#0677FF]/10 border-[#0677FF]/20' },
+  pacote:   { txt: 'Pacote',     cls: 'text-[var(--accent)] bg-[var(--accent)]/10 border-[var(--accent)]/20' },
 };
 
 export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, onGoToOfficeSettings, currentEmpresaId, initialDocId }: {
@@ -263,12 +263,12 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                       onClick={() => setDocId(d.id)}
                       className={`w-full text-left flex items-start gap-3 p-3.5 rounded-[14px] border transition-all ${
                         active
-                          ? 'border-[#0677FF] bg-[#0677FF]/[0.04] shadow-[0_2px_10px_-6px_rgba(6,119,255,0.5)]'
-                          : 'border-slate-200/80 bg-white hover:border-[#0677FF]/40'
+                          ? 'border-[var(--accent)] bg-[var(--accent)]/[0.04] shadow-[0_2px_10px_-6px_rgba(6,119,255,0.5)]'
+                          : 'border-slate-200/80 bg-white hover:border-[var(--accent)]/40'
                       }`}
                     >
-                      <span className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center ${active ? 'border-[#0677FF]' : 'border-slate-300'}`}>
-                        {active && <span className="w-[9px] h-[9px] rounded-full bg-[#0677FF]" />}
+                      <span className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center ${active ? 'border-[var(--accent)]' : 'border-slate-300'}`}>
+                        {active && <span className="w-[9px] h-[9px] rounded-full bg-[var(--accent)]" />}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2 flex-wrap">
@@ -292,12 +292,12 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                       onClick={() => setDocId('previsa')}
                       className={`w-full text-left flex items-start gap-3 p-3.5 rounded-[14px] border transition-all ${
                         active
-                          ? 'border-[#0677FF] bg-[#0677FF]/[0.04] shadow-[0_2px_10px_-6px_rgba(6,119,255,0.5)]'
-                          : 'border-slate-200/80 bg-white hover:border-[#0677FF]/40'
+                          ? 'border-[var(--accent)] bg-[var(--accent)]/[0.04] shadow-[0_2px_10px_-6px_rgba(6,119,255,0.5)]'
+                          : 'border-slate-200/80 bg-white hover:border-[var(--accent)]/40'
                       }`}
                     >
-                      <span className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center ${active ? 'border-[#0677FF]' : 'border-slate-300'}`}>
-                        {active && <span className="w-[9px] h-[9px] rounded-full bg-[#0677FF]" />}
+                      <span className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center ${active ? 'border-[var(--accent)]' : 'border-slate-300'}`}>
+                        {active && <span className="w-[9px] h-[9px] rounded-full bg-[var(--accent)]" />}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2 flex-wrap">
@@ -493,8 +493,8 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
       <div className="max-w-6xl mx-auto px-6 py-10">
         {/* Header */}
         <div className="flex items-center gap-3 mb-1 no-print">
-          <div className="w-11 h-11 rounded-[12px] bg-[#0677FF]/10 flex items-center justify-center shrink-0">
-            <FileDown className="w-5 h-5 text-[#0677FF]" />
+          <div className="w-11 h-11 rounded-[12px] bg-[var(--accent)]/10 flex items-center justify-center shrink-0">
+            <FileDown className="w-5 h-5 text-[var(--accent)]" />
           </div>
           <div>
             <h1 className="text-[22px] font-[800] text-[#0B1D2D] leading-tight tracking-[-0.4px]">Relatórios — {CATEGORIAS.find(c => c.id === categoria)?.label}</h1>
@@ -542,7 +542,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                   aria-haspopup="listbox"
                   aria-expanded={empresaOpen}
                   aria-controls="empresa-listbox"
-                  className="w-full flex items-center gap-2 pl-4 pr-10 py-3 rounded-[12px] border border-slate-200 bg-white text-[14px] font-[600] text-[#0B1D2D] text-left focus:outline-none focus:border-[#0677FF] focus:ring-2 focus:ring-[#0677FF]/15 transition cursor-pointer"
+                  className="w-full flex items-center gap-2 pl-4 pr-10 py-3 rounded-[12px] border border-slate-200 bg-white text-[14px] font-[600] text-[#0B1D2D] text-left focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition cursor-pointer"
                 >
                   <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
                   <span className="truncate">{empresaLabel}</span>
@@ -582,9 +582,9 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                               aria-selected={active}
                               onClick={() => { setEmpresaId(e.id); setEmpresaOpen(false); }}
                               onMouseEnter={() => setHighlight(i)}
-                              className={`w-full text-left flex items-center gap-2.5 px-3 py-2.5 transition-colors ${hl ? 'bg-[#0677FF]/[0.08]' : active ? 'bg-[#0677FF]/[0.04]' : ''}`}
+                              className={`w-full text-left flex items-center gap-2.5 px-3 py-2.5 transition-colors ${hl ? 'bg-[var(--accent)]/[0.08]' : active ? 'bg-[var(--accent)]/[0.04]' : ''}`}
                             >
-                              <span className={`w-4 h-4 shrink-0 flex items-center justify-center ${active ? 'text-[#0677FF]' : 'text-transparent'}`}>
+                              <span className={`w-4 h-4 shrink-0 flex items-center justify-center ${active ? 'text-[var(--accent)]' : 'text-transparent'}`}>
                                 <Check className="w-4 h-4" />
                               </span>
                               <span className="min-w-0 flex-1">
@@ -616,7 +616,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                       onClick={() => goCategoria(c.id)}
                       title={c.label}
                       className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-2 rounded-[9px] text-[11px] font-[800] transition-all ${
-                        active ? 'bg-white text-[#0677FF] shadow-sm' : 'text-slate-500 hover:text-[#0F172A]'
+                        active ? 'bg-white text-[var(--accent)] shadow-sm' : 'text-slate-500 hover:text-[#0F172A]'
                       }`}
                     >
                       <c.Icon className="w-3.5 h-3.5 shrink-0" />
@@ -653,16 +653,16 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                       onClick={() => setDocId(d.id)}
                       className={`w-full text-left flex items-start gap-3 p-3.5 rounded-[14px] border transition-all ${
                         active
-                          ? 'border-[#0677FF] bg-[#0677FF]/[0.04] shadow-[0_2px_10px_-6px_rgba(6,119,255,0.5)]'
-                          : 'border-slate-200/80 bg-white hover:border-[#0677FF]/40'
+                          ? 'border-[var(--accent)] bg-[var(--accent)]/[0.04] shadow-[0_2px_10px_-6px_rgba(6,119,255,0.5)]'
+                          : 'border-slate-200/80 bg-white hover:border-[var(--accent)]/40'
                       }`}
                     >
-                      <span className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center ${active ? 'border-[#0677FF]' : 'border-slate-300'}`}>
-                        {active && <span className="w-[9px] h-[9px] rounded-full bg-[#0677FF]" />}
+                      <span className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center ${active ? 'border-[var(--accent)]' : 'border-slate-300'}`}>
+                        {active && <span className="w-[9px] h-[9px] rounded-full bg-[var(--accent)]" />}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2 flex-wrap">
-                          <Icon className="w-3.5 h-3.5 text-[#0677FF] shrink-0" />
+                          <Icon className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
                           <span className="text-[13.5px] font-[800] text-[#0F172A] leading-tight">{d.label}</span>
                           <span className={`text-[9px] font-[800] uppercase tracking-[0.4px] px-1.5 py-0.5 rounded-[5px] border ${FILL_BADGE.pacote.cls}`}>{FILL_BADGE.pacote.txt}</span>
                         </span>
@@ -708,7 +708,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                         type="button"
                         onClick={handleDownloadWord}
                         disabled={!emp}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-[12px] text-[14px] font-[800] text-white bg-[#0677FF] hover:bg-[#0560d8] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-[12px] text-[14px] font-[800] text-white bg-[var(--accent)] hover:bg-[var(--accent-strong)] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                       >
                         <Download className="w-4.5 h-4.5" />
                         Descarregar em Word
@@ -720,8 +720,8 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                       disabled={!emp || printingPkg}
                       className={`w-full flex items-center justify-center gap-2 px-4 rounded-[12px] font-[800] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all ${
                         pkg
-                          ? 'py-3.5 text-[14px] text-white bg-[#0677FF] hover:bg-[#0560d8]'
-                          : 'py-3 text-[13.5px] text-[#0677FF] bg-white border border-[#0677FF]/30 hover:bg-[#0677FF]/[0.04]'
+                          ? 'py-3.5 text-[14px] text-white bg-[var(--accent)] hover:bg-[var(--accent-strong)]'
+                          : 'py-3 text-[13.5px] text-[var(--accent)] bg-white border border-[var(--accent)]/30 hover:bg-[var(--accent)]/[0.04]'
                       }`}
                     >
                       {printingPkg ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <Printer className="w-4.5 h-4.5" />}
@@ -761,7 +761,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                     type="button"
                     onClick={pkg ? handlePrintPkg : handlePrintWord}
                     disabled={!emp || printingPkg}
-                    className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[12.5px] font-[800] text-white bg-[#0677FF] hover:bg-[#0560d8] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-[0_2px_10px_-4px_rgba(6,119,255,0.6)]"
+                    className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[12.5px] font-[800] text-white bg-[var(--accent)] hover:bg-[var(--accent-strong)] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-[0_2px_10px_-4px_rgba(6,119,255,0.6)]"
                   >
                     {printingPkg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
                     {printingPkg ? 'A preparar…' : 'Imprimir / PDF'}
@@ -821,7 +821,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                       Esta empresa ainda não tem valores no Previsa — o PDF sai com os campos a zeros.
                       {onOpenPrevisa && emp && (
                         <> {' '}
-                          <button type="button" onClick={() => onOpenPrevisa(emp.id)} className="font-[700] text-[#0677FF] underline hover:text-[#0560d8]">
+                          <button type="button" onClick={() => onOpenPrevisa(emp.id)} className="font-[700] text-[var(--accent)] underline hover:text-[var(--accent-strong)]">
                             Abrir o Previsa →
                           </button>
                         </>

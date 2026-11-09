@@ -4,7 +4,7 @@
  * ao passar o rato, fecha com pequeno atraso e também funciona por teclado.
  */
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Search } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export interface TopMenuItem {
@@ -47,6 +47,17 @@ export default function TopMenus({ groups }: { groups: TopMenuGroup[] }) {
 
   return (
     <nav aria-label="Menu principal" className="relative flex items-center gap-0.5">
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new CustomEvent('estudo360:open-search'))}
+        title="Pesquisar (⌘K)"
+        aria-label="Pesquisar em toda a aplicação"
+        className="mr-1 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[12px] font-semibold text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900"
+      >
+        <Search className="h-3.5 w-3.5" aria-hidden="true" />
+        <span className="hidden lg:inline">Pesquisar</span>
+        <kbd className="hidden rounded border border-slate-200 px-1 font-mono text-[9px] text-slate-400 lg:inline">⌘K</kbd>
+      </button>
       {groups.map((g) => {
         const temFilhos = g.items.length > 0;
         const ativo = g.current || g.items.some((i) => i.current);
@@ -97,16 +108,16 @@ export default function TopMenus({ groups }: { groups: TopMenuGroup[] }) {
                       onClick={() => { setAberto(null); item.onClick(); }}
                       className={cn(
                         'flex items-start gap-2.5 rounded-xl px-3 py-2 text-left transition-colors',
-                        item.current ? 'bg-[#0677FF]/10' : 'hover:bg-slate-50',
+                        item.current ? 'bg-[var(--accent)]/10' : 'hover:bg-slate-50',
                       )}
                     >
                       {item.Icon && (
-                        <span className={cn('mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg', item.current ? 'bg-[#0677FF] text-white' : 'bg-slate-100 text-slate-600')}>
+                        <span className={cn('mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg', item.current ? 'bg-[var(--accent)] text-white' : 'bg-slate-100 text-slate-600')}>
                           <item.Icon className="h-4 w-4" />
                         </span>
                       )}
                       <span className="min-w-0">
-                        <span className={cn('block truncate text-[13px] font-[700]', item.current ? 'text-[#0677FF]' : 'text-[#0F172A]')}>{item.label}</span>
+                        <span className={cn('block truncate text-[13px] font-[700]', item.current ? 'text-[var(--accent)]' : 'text-[#0F172A]')}>{item.label}</span>
                         {item.desc && <span className="mt-0.5 block text-[11.5px] leading-snug text-slate-500">{item.desc}</span>}
                       </span>
                     </button>

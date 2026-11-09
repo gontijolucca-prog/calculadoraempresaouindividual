@@ -85,7 +85,7 @@ export function Combobox({ value, onChange, options, placeholder = 'Pesquisar...
                 onChange={(e) => { setQuery(e.target.value); setHighlightIdx(-1); }}
                 onKeyDown={handleKeyDown}
                 placeholder="Filtrar..."
-                className="w-full pl-8 pr-8 py-2 bg-[#F5F7FA] border border-[#E2E8F0] rounded-[6px] text-[13px] focus:border-[#0677FF] outline-none"
+                className="w-full pl-8 pr-8 py-2 bg-[#F5F7FA] border border-[#E2E8F0] rounded-[6px] text-[13px] focus:border-[var(--accent)] outline-none"
               />
               {query && (
                 <button type="button" onClick={() => setQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#64748B]">
@@ -105,7 +105,7 @@ export function Combobox({ value, onChange, options, placeholder = 'Pesquisar...
                   onClick={() => select(o.value)}
                   className={cn(
                     'w-full text-left px-3 py-2 text-[13px] transition-colors',
-                    o.value === value ? 'bg-[#0677FF]/10 text-[#0677FF] font-[600]' : 'hover:bg-[#F5F7FA]',
+                    o.value === value ? 'bg-[var(--accent)]/10 text-[var(--accent)] font-[600]' : 'hover:bg-[#F5F7FA]',
                     i === highlightIdx && 'bg-[#F1F5F9]'
                   )}
                 >

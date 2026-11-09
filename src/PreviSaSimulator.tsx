@@ -65,7 +65,7 @@ function NumInput({ label, value, onChange, help, indent = false, readOnly = fal
         readOnly={readOnly}
         onChange={e => onChange?.(numInput(e.target.value))}
         className={cn(
-          'w-full text-right text-[13px] font-[600] text-[#0F172A] tabular-nums px-2 py-1 border-r border-slate-300 bg-transparent focus:outline-none focus:bg-[#0677FF]/10 focus:ring-1 focus:ring-inset focus:ring-[#0677FF]',
+          'w-full text-right text-[13px] font-[600] text-[#0F172A] tabular-nums px-2 py-1 border-r border-slate-300 bg-transparent focus:outline-none focus:bg-[var(--accent)]/10 focus:ring-1 focus:ring-inset focus:ring-[var(--accent)]',
           readOnly && 'text-slate-400 cursor-default',
         )}
         placeholder="0,00"
@@ -102,7 +102,7 @@ function PctInput({ label, value, onChange, help }: {
             const n = parseFloat(e.target.value);
             onChange(Number.isFinite(n) && n >= 0 ? n / 100 : 0);
           }}
-          className="w-full h-full text-right text-[13px] font-[600] text-[#0F172A] tabular-nums px-3 pr-6 bg-transparent focus:outline-none focus:bg-[#0677FF]/5 focus:ring-1 focus:ring-inset focus:ring-[#0677FF]"
+          className="w-full h-full text-right text-[13px] font-[600] text-[#0F172A] tabular-nums px-3 pr-6 bg-transparent focus:outline-none focus:bg-[var(--accent)]/5 focus:ring-1 focus:ring-inset focus:ring-[var(--accent)]"
           placeholder="0,000"
         />
         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">%</span>
@@ -118,12 +118,12 @@ function ResultRow({ label, value, highlight = false, sub = false, positive = fa
   return (
     <div className={cn(
       'flex items-center justify-between py-1.5 px-3 border-b border-slate-100 last:border-b-0',
-      highlight && 'bg-[#0677FF]/8 border border-[#0677FF]/20 rounded-[8px]',
+      highlight && 'bg-[var(--accent)]/8 border border-[var(--accent)]/20 rounded-[8px]',
       sub && !highlight && 'pl-6',
     )}>
-      <span className={cn('text-[12px] font-[500] text-slate-600', highlight && 'font-[700] text-[#0677FF]')}>{label}</span>
+      <span className={cn('text-[12px] font-[500] text-slate-600', highlight && 'font-[700] text-[var(--accent)]')}>{label}</span>
       <span className={cn('text-[13px] font-[700] tabular-nums',
-        highlight ? 'text-[#0677FF]' : positive ? 'text-emerald-700' : 'text-[#0F172A]')}>
+        highlight ? 'text-[var(--accent)]' : positive ? 'text-emerald-700' : 'text-[#0F172A]')}>
         {typeof value === 'number' ? fmt(value) + ' €' : value}
       </span>
     </div>
@@ -158,15 +158,15 @@ function CalcRow({ label, value, highlight = false, indent = false }: {
   label: string; value: number; highlight?: boolean; indent?: boolean;
 }) {
   const { code, desc } = splitCode(label);
-  const bd = highlight ? 'border-[#0677FF]/40' : 'border-slate-400';
-  const tc = highlight ? 'text-[#0677FF]' : 'text-[#0B1D2D]';
+  const bd = highlight ? 'border-[var(--accent)]/40' : 'border-slate-400';
+  const tc = highlight ? 'text-[var(--accent)]' : 'text-[#0B1D2D]';
   return (
     <div className={cn(
       'grid', GRID_COLS, 'items-stretch border-b',
-      highlight ? 'bg-[#0677FF]/10 border-[#0677FF]/40' : 'bg-[#E3E3E3] border-slate-400',
+      highlight ? 'bg-[var(--accent)]/10 border-[var(--accent)]/40' : 'bg-[#E3E3E3] border-slate-400',
     )}>
       <div className={cn('flex items-center px-2 py-1.5 border-r text-[12px] font-[800]', tc, bd)}>{desc}</div>
-      <div className={cn('flex items-center justify-center text-[10px] font-[800] tabular-nums border-r', highlight ? 'text-[#0677FF]' : 'text-slate-500', bd)}>{code}</div>
+      <div className={cn('flex items-center justify-center text-[10px] font-[800] tabular-nums border-r', highlight ? 'text-[var(--accent)]' : 'text-slate-500', bd)}>{code}</div>
       <div className={cn('flex items-center justify-end px-2 text-[13px] font-[800] tabular-nums border-r', tc, bd)}>{fmt(value)} €</div>
       <div className="overflow-hidden" />
     </div>
@@ -295,7 +295,7 @@ function SheetBar({ tab }: { tab: Tab }) {
   return (
     <div className="flex items-stretch rounded-[8px] overflow-hidden border border-[#0B1D2D] shadow-sm">
       {info.code && (
-        <div className="flex items-center justify-center px-3 bg-[#0677FF] text-white text-[14px] font-[800] tracking-[0.5px] tabular-nums">{info.code}</div>
+        <div className="flex items-center justify-center px-3 bg-[var(--accent)] text-white text-[14px] font-[800] tracking-[0.5px] tabular-nums">{info.code}</div>
       )}
       <div className="flex-1 flex items-center px-4 py-2.5 bg-[#0B1D2D] text-white text-[14px] font-[700] uppercase tracking-[0.6px]">{info.title}</div>
     </div>
@@ -349,7 +349,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
   React.useEffect(() => { if (!ready) setSimulated(false); }, [ready]);
 
 
-  const inputClass = 'w-full text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30 focus:border-[#0677FF]';
+  const inputClass = 'w-full text-[13px] font-[600] border border-slate-200 rounded-[8px] px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)]';
 
   const wrapSet = (setSt: (u: Partial<PreviSaState>) => void) =>
     <K extends keyof PreviSaState>(key: K, value: PreviSaState[K]) =>
@@ -403,11 +403,11 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                   </select>
                 </div>
                 <label className="flex items-center gap-3 cursor-pointer py-1">
-                  <input type="checkbox" checked={st.isPME} onChange={e => s('isPME', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
+                  <input type="checkbox" checked={st.isPME} onChange={e => s('isPME', e.target.checked)} className="w-4 h-4 accent-[var(--accent)]" />
                   <span className="text-[13px] font-[600] text-[#0F172A]">PME — taxa reduzida nos primeiros €50.000</span>
                 </label>
                 <label className="flex items-center gap-3 cursor-pointer py-1">
-                  <input type="checkbox" checked={st.regimeSimplificado} onChange={e => s('regimeSimplificado', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
+                  <input type="checkbox" checked={st.regimeSimplificado} onChange={e => s('regimeSimplificado', e.target.checked)} className="w-4 h-4 accent-[var(--accent)]" />
                   <span className="text-[13px] font-[600] text-[#0F172A]">Regime simplificado de IRC (art. 86.º-A — exclui TA de representação, ajudas de custo, lucros distribuídos, indemnizações e bónus)</span>
                 </label>
                 <NumInput label="Volume de Negócios (€) *" value={st.volumeNegocios} onChange={v => s('volumeNegocios', v)} help="Para PPC/PAC" />
@@ -430,7 +430,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
             <Section title="Cálculo do RAI (Resultado Antes de Impostos)">
               <div className="py-2">
                 <label className="flex items-center gap-3 cursor-pointer mb-3">
-                  <input type="checkbox" checked={st.useRaiCalc} onChange={e => s('useRaiCalc', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
+                  <input type="checkbox" checked={st.useRaiCalc} onChange={e => s('useRaiCalc', e.target.checked)} className="w-4 h-4 accent-[var(--accent)]" />
                   <span className="text-[13px] font-[600] text-[#0F172A]">Calcular RAI a partir da demonstração de resultados</span>
                 </label>
                 {!st.useRaiCalc && (
@@ -502,7 +502,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <NumInput label="707 — Alteração regime contratos construção (−)" value={st.c707} onChange={v => s('c707', v)} indent />
               <div className="flex items-center gap-3 py-1.5">
                 <label className="flex-1 text-[12px] font-[500] text-slate-600">Ignorar cálculo automático do 708 (usar RAI direto)</label>
-                <input type="checkbox" checked={st.c708_override} onChange={e => s('c708_override', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
+                <input type="checkbox" checked={st.c708_override} onChange={e => s('c708_override', e.target.checked)} className="w-4 h-4 accent-[var(--accent)]" />
               </div>
               <CalcRow label="708 — Base de apuramento" value={stepRes.c708} highlight />
             </Section>
@@ -577,7 +577,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 <span className="font-[700] tabular-nums">{fmt(stepRes.lucroTributavel * (st.limiteMaisPP ? 0.75 : 0.65))} €</span>
               </div>
               <label className="flex items-center gap-3 py-1.5 cursor-pointer">
-                <input type="checkbox" checked={st.limiteMaisPP} onChange={e => s('limiteMaisPP', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
+                <input type="checkbox" checked={st.limiteMaisPP} onChange={e => s('limiteMaisPP', e.target.checked)} className="w-4 h-4 accent-[var(--accent)]" />
                 <span className="text-[12px] font-[500] text-slate-600">Limite 75% — tenho saldo de prejuízos de <b>2020/2021</b> a deduzir (Lei 27-A/2020, art. 11.º n.º 2; art. 52.º CIRC)</span>
               </label>
               <p className="text-[11px] text-slate-400 leading-snug">O limite sobe de 65% para 75% apenas na medida dos prejuízos de 2020 e/ou 2021 deduzidos. O total deduzido nunca excede 65% do LT quando estes saldos não existam.</p>
@@ -619,7 +619,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
           <div className="flex flex-col gap-4">
             <Section title="Tributações Autónomas — Viaturas">
               <label className="flex items-center gap-3 py-1.5 cursor-pointer">
-                <input type="checkbox" checked={st.agravamentoTA} onChange={e => s('agravamentoTA', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
+                <input type="checkbox" checked={st.agravamentoTA} onChange={e => s('agravamentoTA', e.target.checked)} className="w-4 h-4 accent-[var(--accent)]" />
                 <span className="text-[12px] font-[500] text-slate-600">Agravamento +10 p.p. (prejuízo fiscal no período — só se NÃO cumprir o art. 95.º n.º 5 LOE 2026: lucro num dos 3 períodos anteriores + declarações em dia, ou início de atividade/2 períodos seguintes)</span>
               </label>
 
@@ -640,7 +640,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                       <label className="block text-[10px] font-[600] text-slate-400 mb-0.5">Combustível</label>
                       <select value={v.combustivel}
                         onChange={e => updateV(v.id, { combustivel: e.target.value as FuelType })}
-                        className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30">
+                        className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30">
                         <option value="convencional">Convencional / GPL</option>
                         <option value="plug_in">Plug-in híbrido</option>
                         <option value="plug_in_5050">Plug-in 50%/50%</option>
@@ -653,7 +653,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                       <input type="number" value={v.custoHistorico || ''}
                         onChange={e => updateV(v.id, { custoHistorico: numInput(e.target.value) })}
                         placeholder="0,00"
-                        className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30 text-right" />
+                        className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 text-right" />
                     </div>
                   </div>
                   <div>
@@ -661,17 +661,17 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                     <input type="number" value={v.encargos || ''}
                       onChange={e => updateV(v.id, { encargos: numInput(e.target.value) })}
                       placeholder="0,00"
-                      className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30 text-right" />
+                      className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 text-right" />
                   </div>
                   <div className="flex justify-between text-[11px] font-[600]">
                     <span className="text-slate-500">TA calculada:</span>
-                    <span className="text-[#0677FF]">{fmt(calcTAVeiculo(v, st.agravamentoTA))} €</span>
+                    <span className="text-[var(--accent)]">{fmt(calcTAVeiculo(v, st.agravamentoTA))} €</span>
                   </div>
                 </div>
               ))}
 
               <button type="button" onClick={addV}
-                className="mt-3 flex items-center gap-2 px-3 py-2 text-[12px] font-[600] text-[#0677FF] border border-dashed border-[#0677FF]/40 rounded-[8px] hover:bg-[#0677FF]/5 transition-colors w-full justify-center">
+                className="mt-3 flex items-center gap-2 px-3 py-2 text-[12px] font-[600] text-[var(--accent)] border border-dashed border-[var(--accent)]/40 rounded-[8px] hover:bg-[var(--accent)]/5 transition-colors w-full justify-center">
                 <Plus className="w-4 h-4" />
                 Adicionar viatura
               </button>
@@ -785,7 +785,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
   const resultsContent = (
     <div data-sim-results data-sim-title="Previsa" className="flex flex-col gap-3 lg:sticky lg:top-6 self-start">
       <div className="bg-white border border-slate-200 rounded-[16px] overflow-hidden">
-        <div className="h-1 bg-gradient-to-r from-[#0677FF] to-[#b83030]" />
+        <div className="h-1 bg-gradient-to-r from-[var(--accent)] to-[#b83030]" />
         <div className="p-4">
           <p className="text-[11px] font-[700] uppercase tracking-[0.5px] text-slate-400 mb-3">Resumo IRC {state.periodo}</p>
           <div className="space-y-0.5">
@@ -905,7 +905,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               className={cn(
                 'px-4 py-3 text-[12px] font-[600] border-b-2 transition-colors whitespace-nowrap',
                 tab === t
-                  ? 'border-[#0677FF] text-[#0677FF]'
+                  ? 'border-[var(--accent)] text-[var(--accent)]'
                   : 'border-transparent text-slate-500 hover:text-[#0F172A] hover:border-slate-300',
               )}>
               {t}
@@ -965,11 +965,11 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                     </select>
                   </div>
                   <label className="flex items-center gap-3 cursor-pointer py-1">
-                    <input type="checkbox" checked={state.isPME} onChange={e => set('isPME', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
+                    <input type="checkbox" checked={state.isPME} onChange={e => set('isPME', e.target.checked)} className="w-4 h-4 accent-[var(--accent)]" />
                     <span className="text-[13px] font-[600] text-[#0F172A]">PME — taxa reduzida nos primeiros €50.000</span>
                   </label>
                   <label className="flex items-center gap-3 cursor-pointer py-1">
-                    <input type="checkbox" checked={state.regimeSimplificado} onChange={e => set('regimeSimplificado', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
+                    <input type="checkbox" checked={state.regimeSimplificado} onChange={e => set('regimeSimplificado', e.target.checked)} className="w-4 h-4 accent-[var(--accent)]" />
                     <span className="text-[13px] font-[600] text-[#0F172A]">Regime simplificado de IRC (art. 86.º-A — exclui TA de representação, ajudas de custo, lucros distribuídos, indemnizações e bónus)</span>
                   </label>
                   <NumInput label="Volume de Negócios (€)" value={state.volumeNegocios} onChange={v => set('volumeNegocios', v)} help="Para PPC/PAC" />
@@ -983,7 +983,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
               <Section title="Cálculo do RAI (Resultado Antes de Impostos)">
                 <div className="py-2">
                   <label className="flex items-center gap-3 cursor-pointer mb-3">
-                    <input type="checkbox" checked={state.useRaiCalc} onChange={e => set('useRaiCalc', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
+                    <input type="checkbox" checked={state.useRaiCalc} onChange={e => set('useRaiCalc', e.target.checked)} className="w-4 h-4 accent-[var(--accent)]" />
                     <span className="text-[13px] font-[600] text-[#0F172A]">Calcular RAI a partir da demonstração de resultados</span>
                   </label>
                   {!state.useRaiCalc && (
@@ -1046,7 +1046,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                 <NumInput label="707 — Alteração regime contratos construção (−)" value={state.c707} onChange={v => set('c707', v)} indent />
                 <div className="flex items-center gap-3 py-1.5">
                   <label className="flex-1 text-[12px] font-[500] text-slate-600">Ignorar cálculo automático do 708 (usar RAI direto)</label>
-                  <input type="checkbox" checked={state.c708_override} onChange={e => set('c708_override', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
+                  <input type="checkbox" checked={state.c708_override} onChange={e => set('c708_override', e.target.checked)} className="w-4 h-4 accent-[var(--accent)]" />
                 </div>
                 <CalcRow label="708 — Base de apuramento" value={res.c708} highlight />
               </Section>
@@ -1112,7 +1112,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                   <span className="font-[700] tabular-nums">{fmt(res.lucroTributavel * (state.limiteMaisPP ? 0.75 : 0.65))} €</span>
                 </div>
                 <label className="flex items-center gap-3 py-1.5 cursor-pointer">
-                  <input type="checkbox" checked={state.limiteMaisPP} onChange={e => set('limiteMaisPP', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
+                  <input type="checkbox" checked={state.limiteMaisPP} onChange={e => set('limiteMaisPP', e.target.checked)} className="w-4 h-4 accent-[var(--accent)]" />
                   <span className="text-[12px] font-[500] text-slate-600">Limite 75% — tenho saldo de prejuízos de <b>2020/2021</b> a deduzir (Lei 27-A/2020, art. 11.º n.º 2; art. 52.º CIRC)</span>
                 </label>
                 <p className="text-[11px] text-slate-400 leading-snug">O limite sobe de 65% para 75% apenas na medida dos prejuízos de 2020 e/ou 2021 deduzidos.</p>
@@ -1131,7 +1131,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
             {tab === 'TA' && (<>
               <Section title="Tributações Autónomas — Viaturas">
                 <label className="flex items-center gap-3 py-1.5 cursor-pointer">
-                  <input type="checkbox" checked={state.agravamentoTA} onChange={e => set('agravamentoTA', e.target.checked)} className="w-4 h-4 accent-[#0677FF]" />
+                  <input type="checkbox" checked={state.agravamentoTA} onChange={e => set('agravamentoTA', e.target.checked)} className="w-4 h-4 accent-[var(--accent)]" />
                   <span className="text-[12px] font-[500] text-slate-600">Agravamento +10 p.p. (prejuízo fiscal no período — só se NÃO cumprir o art. 95.º n.º 5 LOE 2026)</span>
                 </label>
 
@@ -1152,7 +1152,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                         <label className="block text-[10px] font-[600] text-slate-400 mb-0.5">Combustível</label>
                         <select value={v.combustivel}
                           onChange={e => updateViatura(v.id, { combustivel: e.target.value as FuelType })}
-                          className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30">
+                          className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30">
                           <option value="convencional">Convencional / GPL</option>
                           <option value="plug_in">Plug-in híbrido</option>
                           <option value="plug_in_5050">Plug-in 50%/50%</option>
@@ -1165,7 +1165,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                         <input type="number" value={v.custoHistorico || ''}
                           onChange={e => updateViatura(v.id, { custoHistorico: numInput(e.target.value) })}
                           placeholder="0,00"
-                          className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30 text-right" />
+                          className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 text-right" />
                       </div>
                     </div>
                     <div>
@@ -1173,17 +1173,17 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                       <input type="number" value={v.encargos || ''}
                         onChange={e => updateViatura(v.id, { encargos: numInput(e.target.value) })}
                         placeholder="0,00"
-                        className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30 text-right" />
+                        className="w-full text-[12px] border border-slate-200 rounded-[6px] px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30 text-right" />
                     </div>
                     <div className="flex justify-between text-[11px] font-[600]">
                       <span className="text-slate-500">TA calculada:</span>
-                      <span className="text-[#0677FF]">{fmt(calcTAVeiculo(v, state.agravamentoTA))} €</span>
+                      <span className="text-[var(--accent)]">{fmt(calcTAVeiculo(v, state.agravamentoTA))} €</span>
                     </div>
                   </div>
                 ))}
 
                 <button type="button" onClick={addViatura}
-                  className="mt-3 flex items-center gap-2 px-3 py-2 text-[12px] font-[600] text-[#0677FF] border border-dashed border-[#0677FF]/40 rounded-[8px] hover:bg-[#0677FF]/5 transition-colors w-full justify-center">
+                  className="mt-3 flex items-center gap-2 px-3 py-2 text-[12px] font-[600] text-[var(--accent)] border border-dashed border-[var(--accent)]/40 rounded-[8px] hover:bg-[var(--accent)]/5 transition-colors w-full justify-center">
                   <Plus className="w-4 h-4" />
                   Adicionar viatura
                 </button>
@@ -1300,7 +1300,7 @@ interface AlertaBoxProps {
 }
 const AlertaBox: React.FC<AlertaBoxProps> = ({ alerta }) => {
   const cores = {
-    info:    { bg: 'bg-[#0677FF]/8',  border: 'border-[#0677FF]/30',  text: 'text-[#0677FF]' },
+    info:    { bg: 'bg-[var(--accent)]/8',  border: 'border-[var(--accent)]/30',  text: 'text-[var(--accent)]' },
     warning: { bg: 'bg-amber-50',     border: 'border-amber-300',     text: 'text-amber-800' },
     error:   { bg: 'bg-red-50',       border: 'border-red-300',       text: 'text-red-800' },
   }[alerta.severidade];
@@ -1422,7 +1422,7 @@ function UpdateToolsPanel({
           ['atividadesIsentas',  'Atividades parcialmente isentas'],
         ] as [keyof PreviSaState, string][]).map(([key, label]) => (
           <label key={key} className="flex items-center gap-2 py-0.5 cursor-pointer">
-            <input type="checkbox" checked={Boolean(state[key])} onChange={() => toggle(key)} className="w-3.5 h-3.5 accent-[#0677FF]" />
+            <input type="checkbox" checked={Boolean(state[key])} onChange={() => toggle(key)} className="w-3.5 h-3.5 accent-[var(--accent)]" />
             <span className="text-[11px] font-[500] text-slate-600">{label}</span>
           </label>
         ))}
@@ -1515,7 +1515,7 @@ function PrejCard({ st, s, res }: { st: PreviSaState; s: (k: keyof PreviSaState,
 
       {/* Tabela por ano de origem (apurado | deduzido | saldo | elegível | obs) */}
       <button type="button" onClick={() => setOpen(!open)}
-        className="mt-4 flex items-center gap-2 text-[11px] font-[700] text-[#0677FF] uppercase tracking-[0.5px]">
+        className="mt-4 flex items-center gap-2 text-[11px] font-[700] text-[var(--accent)] uppercase tracking-[0.5px]">
         {open ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         Prejuízos por ano de origem ({rows.length})
       </button>
@@ -1559,7 +1559,7 @@ function PrejCard({ st, s, res }: { st: PreviSaState; s: (k: keyof PreviSaState,
                     <td className="px-2 py-1.5 text-center">
                       <input type="checkbox" checked={st[kEl] as boolean}
                         onChange={e => s(kEl, e.target.checked)}
-                        className="w-3.5 h-3.5 accent-[#0677FF]" />
+                        className="w-3.5 h-3.5 accent-[var(--accent)]" />
                     </td>
                     <td className="px-2 py-1.5">
                       <input type="text" value={st[kObs] as string}

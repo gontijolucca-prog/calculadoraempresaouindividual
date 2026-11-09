@@ -128,7 +128,7 @@ export default function ExportPackageModal({
       >
         {/* Header */}
         <header className="shrink-0 px-6 py-4 bg-white border-b border-slate-200 flex items-center gap-4 no-print">
-          <div className="w-10 h-10 rounded-[12px] bg-gradient-to-br from-[#0677FF] to-[#0B1D2D] flex items-center justify-center text-white shrink-0">
+          <div className="w-10 h-10 rounded-[12px] bg-gradient-to-br from-[var(--accent)] to-[#0B1D2D] flex items-center justify-center text-white shrink-0">
             <Printer className="w-5 h-5" />
           </div>
           <div className="min-w-0 flex-1">
@@ -185,7 +185,7 @@ export default function ExportPackageModal({
                   className={[
                     'flex items-center gap-2 md:gap-2.5 px-2.5 md:px-4 py-2.5 md:py-3 rounded-t-[10px] border-b-[3px] transition-all text-left',
                     isActive
-                      ? 'bg-[#F5F7FA] border-[#0677FF] text-[#0F172A]'
+                      ? 'bg-[#F5F7FA] border-[var(--accent)] text-[#0F172A]'
                       : 'bg-white border-transparent text-slate-500 hover:text-[#0F172A] hover:bg-slate-50',
                     isMinutaSkipped ? 'opacity-50' : '',
                   ].join(' ')}
@@ -211,7 +211,7 @@ export default function ExportPackageModal({
                     type="checkbox"
                     checked={includeMinuta}
                     onChange={e => setIncludeMinuta(e.target.checked)}
-                    className="w-3.5 h-3.5 accent-[#0677FF]"
+                    className="w-3.5 h-3.5 accent-[var(--accent)]"
                   />
                   Incluir
                 </label>
@@ -219,7 +219,7 @@ export default function ExportPackageModal({
               <button
                 type="button"
                 onClick={printActive}
-                className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 rounded-[10px] bg-[#0677FF] text-white text-[12px] font-[800] hover:bg-[#0556CC] active:scale-[0.98] transition-all shadow-md shadow-[#0677FF]/30"
+                className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 rounded-[10px] bg-[var(--accent)] text-white text-[12px] font-[800] hover:bg-[var(--accent-strong)] active:scale-[0.98] transition-all shadow-md shadow-[var(--accent)]/30"
               >
                 <Printer className="w-4 h-4" />
                 <span className="hidden sm:inline">Imprimir / PDF</span>
@@ -288,7 +288,7 @@ export default function ExportPackageModal({
                     <button
                       type="button"
                       onClick={() => setIncludeMinuta(true)}
-                      className="mt-5 px-4 py-2 rounded-[10px] bg-[#0677FF] text-white text-[12px] font-[800] hover:bg-[#0556CC] transition-colors"
+                      className="mt-5 px-4 py-2 rounded-[10px] bg-[var(--accent)] text-white text-[12px] font-[800] hover:bg-[var(--accent-strong)] transition-colors"
                     >
                       Voltar a incluir
                     </button>

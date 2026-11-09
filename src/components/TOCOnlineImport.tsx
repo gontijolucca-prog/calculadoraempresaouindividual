@@ -194,13 +194,13 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
     clearTocDraft();
   };
 
-  const inputCls = 'w-full px-3 py-2.5 rounded-xl border border-[#E2E8F0] bg-[#F5F7FA] text-[13px] focus:bg-white focus:border-[#0677FF] outline-none font-mono';
+  const inputCls = 'w-full px-3 py-2.5 rounded-xl border border-[#E2E8F0] bg-[#F5F7FA] text-[13px] focus:bg-white focus:border-[var(--accent)] outline-none font-mono';
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-label="Importar do TOConline">
       <button type="button" aria-label="Fechar" onClick={onClose} className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default" />
       <div className="relative bg-white rounded-[20px] shadow-2xl max-w-2xl w-full max-h-[88vh] overflow-y-auto">
-        <div className="h-1.5 bg-gradient-to-r from-[#0677FF] to-[#00C2FF] w-full rounded-t-[20px]" />
+        <div className="h-1.5 bg-gradient-to-r from-[var(--accent)] to-[#00C2FF] w-full rounded-t-[20px]" />
         <div className="p-6 sm:p-7">
           <div className="flex items-start justify-between mb-1">
             <div>
@@ -246,7 +246,7 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
                     type="button"
                     disabled={!codigoManual.trim() || !validCfg}
                     onClick={handleCodigo}
-                    className="shrink-0 px-4 py-2.5 rounded-xl bg-[#0677FF] text-white text-[12.5px] font-[700] disabled:opacity-50"
+                    className="shrink-0 px-4 py-2.5 rounded-xl bg-[var(--accent)] text-white text-[12.5px] font-[700] disabled:opacity-50"
                   >Usar código</button>
                 </div>
               </details>
@@ -279,7 +279,7 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
                   </>
                 ) : (
                   <>
-                    <button onClick={handleFetch} disabled={loading} className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#0677FF] text-white text-[14px] font-[700] hover:bg-[#0556CC] disabled:opacity-60">
+                    <button onClick={handleFetch} disabled={loading} className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[var(--accent)] text-white text-[14px] font-[700] hover:bg-[var(--accent-strong)] disabled:opacity-60">
                       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} {loading ? 'A buscar…' : 'Buscar clientes'}
                     </button>
                     <button onClick={handleDisconnect} className="inline-flex items-center gap-1.5 px-4 py-3 rounded-xl border border-[#E2E8F0] text-[13px] font-[600] text-[#64748B] hover:bg-zinc-50">
@@ -293,7 +293,7 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
           )}
 
           {step === 'fetching' && (
-            <div className="py-12 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-[#0677FF]" /><p className="mt-3 text-[14px] text-[#475569]">A buscar clientes no TOConline…</p></div>
+            <div className="py-12 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-[var(--accent)]" /><p className="mt-3 text-[14px] text-[#475569]">A buscar clientes no TOConline…</p></div>
           )}
 
           {step === 'preview' && done === null && (
@@ -305,13 +305,13 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
 
               <div className="mt-3 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 space-y-2.5">
                 <div className="flex flex-wrap gap-2">
-                  <input value={fq} onChange={(e) => setFq(e.target.value)} placeholder="Procurar nome, NIF, email ou localidade…" className="flex-1 min-w-[220px] px-3 py-2 rounded-lg border border-[#E2E8F0] text-[13px] bg-white focus:outline-none focus:border-[#0677FF]" />
+                  <input value={fq} onChange={(e) => setFq(e.target.value)} placeholder="Procurar nome, NIF, email ou localidade…" className="flex-1 min-w-[220px] px-3 py-2 rounded-lg border border-[#E2E8F0] text-[13px] bg-white focus:outline-none focus:border-[var(--accent)]" />
                   <select value={floc} onChange={(e) => setFloc(e.target.value)} className="px-3 py-2 rounded-lg border border-[#E2E8F0] text-[13px] bg-white">
                     <option value="">Todas as localidades</option>
                     {localidades.map((l) => <option key={l} value={l}>{l}</option>)}
                   </select>
                   <label className="inline-flex items-center gap-1.5 px-3 py-2 text-[12.5px] font-[600] text-[#334155]">
-                    <input type="checkbox" checked={soNovos} onChange={(e) => setSoNovos(e.target.checked)} className="w-4 h-4 accent-[#0677FF]" /> Só novos
+                    <input type="checkbox" checked={soNovos} onChange={(e) => setSoNovos(e.target.checked)} className="w-4 h-4 accent-[var(--accent)]" /> Só novos
                   </label>
                 </div>
 
@@ -321,7 +321,7 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
                     const on = ftipos.includes(tp);
                     return (
                       <button key={tp} type="button" onClick={() => setFtipos((prev) => alterna(prev, tp))}
-                        className={`px-2.5 py-1 rounded-full border text-[11.5px] font-[700] transition-colors ${on ? 'bg-[#0677FF] text-white border-[#0677FF]' : 'bg-white text-[#475569] border-[#E2E8F0] hover:border-[#0677FF]/50'}`}>
+                        className={`px-2.5 py-1 rounded-full border text-[11.5px] font-[700] transition-colors ${on ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-white text-[#475569] border-[#E2E8F0] hover:border-[var(--accent)]/50'}`}>
                         {ROTULO_TIPO[tp]} <span className="font-[600] opacity-70">{contaTipo(tp)}</span>
                       </button>
                     );
@@ -337,7 +337,7 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
                         className={`w-7 h-7 rounded-lg border text-[11.5px] font-[700] ${on ? 'bg-[#0B1D2D] text-white border-[#0B1D2D]' : 'bg-white text-[#475569] border-[#E2E8F0]'}`}>{d}</button>
                     );
                   })}
-                  <button type="button" onClick={limparFiltros} className="ml-1 text-[11.5px] font-[700] text-[#0677FF]">Limpar filtros</button>
+                  <button type="button" onClick={limparFiltros} className="ml-1 text-[11.5px] font-[700] text-[var(--accent)]">Limpar filtros</button>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 pt-0.5">
@@ -356,7 +356,7 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
                   const bloqueado = !d.nif || existe || repetido;
                   return (
                     <label key={i} className={`flex items-center gap-3 px-3.5 py-2.5 text-[13px] ${bloqueado ? 'opacity-45' : 'hover:bg-zinc-50 cursor-pointer'}`}>
-                      <input type="checkbox" checked={sel.has(i)} disabled={bloqueado} onChange={() => setSel((prev) => { const n = new Set(prev); if (n.has(i)) n.delete(i); else n.add(i); return n; })} className="w-4 h-4 accent-[#0677FF]" />
+                      <input type="checkbox" checked={sel.has(i)} disabled={bloqueado} onChange={() => setSel((prev) => { const n = new Set(prev); if (n.has(i)) n.delete(i); else n.add(i); return n; })} className="w-4 h-4 accent-[var(--accent)]" />
                       <span className="flex-1 min-w-0">
                         <span className="font-[600] text-[#0B1D2D] truncate block">{d.nome || '—'}</span>
                         <span className="text-[#64748B] text-[12px]">
@@ -385,7 +385,7 @@ export default function TOCOnlineImport({ onClose, onImport, existingNifs }: Pro
 
               <div className="flex flex-wrap justify-end gap-2 mt-4">
                 <button onClick={() => { setStep('config'); }} className="px-4 py-2.5 rounded-xl border border-[#E2E8F0] text-[13px] font-[600]">Voltar</button>
-                <button onClick={handleImport} disabled={selecionados.length === 0} className="px-5 py-2.5 rounded-xl bg-[#0677FF] text-white text-[13px] font-[700] hover:bg-[#0556CC] disabled:opacity-50">
+                <button onClick={handleImport} disabled={selecionados.length === 0} className="px-5 py-2.5 rounded-xl bg-[var(--accent)] text-white text-[13px] font-[700] hover:bg-[var(--accent-strong)] disabled:opacity-50">
                   Importar {selecionados.length} selecionado{selecionados.length === 1 ? '' : 's'}
                 </button>
               </div>

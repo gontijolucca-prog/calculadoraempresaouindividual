@@ -43,7 +43,7 @@ export default function GamaCopyButton({
       <button
         type="button"
         onClick={() => setAberto(v => !v)}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-[700] text-[#334155] hover:border-[#0677FF]"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-[700] text-[#334155] hover:border-[var(--accent)]"
         title="Gerar o texto da proposta para colar no Gamma"
       >
         <Presentation className="w-4 h-4" /> Gamma
@@ -72,11 +72,11 @@ export default function GamaCopyButton({
             <button
               type="button"
               onClick={copiar}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#0677FF] px-3 py-1.5 text-[12px] font-[800] text-white hover:bg-[#0059c9]"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[12px] font-[800] text-white hover:bg-[#0059c9]"
             >
               <Copy className="w-3.5 h-3.5" /> {copiado ? 'Copiado ✓' : 'Copiar + abrir Gamma'}
             </button>
-            <a href={GAMA_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11.5px] font-[700] text-[#0677FF]">
+            <a href={GAMA_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11.5px] font-[700] text-[var(--accent)]">
               Abrir Gamma <ExternalLink className="w-3 h-3" />
             </a>
           </div>

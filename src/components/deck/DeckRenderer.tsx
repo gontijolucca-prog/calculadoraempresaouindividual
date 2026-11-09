@@ -26,7 +26,7 @@ interface ThemeColors {
 }
 
 export function themeColors(tema: DeckTheme, brand: DeckBrand): ThemeColors {
-  const accent = brand.corPrimaria || '#0677FF';
+  const accent = brand.corPrimaria || 'var(--accent)';
   if (tema === 'escuro') {
     return { bg: '#0B1220', fg: '#F8FAFC', muted: '#94A3B8', soft: 'rgba(255,255,255,0.06)', accent, onAccent: '#FFFFFF' };
   }
@@ -86,7 +86,7 @@ function Frame({ card, tema, brand, index, total, children }: {
         style={{
           position: 'absolute',
           inset: 0,
-          background: `radial-gradient(120% 90% at 100% 0%, ${t.accent}2e, transparent 62%)`,
+          background: `radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, ${t.accent} 18%, transparent), transparent 62%)`,
           pointerEvents: 'none',
         }}
       />

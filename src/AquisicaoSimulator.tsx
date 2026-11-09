@@ -122,7 +122,7 @@ export default function AquisicaoSimulator({
           <button
             type="button"
             onClick={exportarPdf}
-            className="inline-flex items-center gap-2 rounded-[10px] bg-[#0677FF] px-4 py-2.5 text-[13px] font-[700] text-white hover:bg-blue-600"
+            className="inline-flex items-center gap-2 rounded-[10px] bg-[var(--accent)] px-4 py-2.5 text-[13px] font-[700] text-white hover:bg-blue-600"
           >
             <Download className="h-4 w-4" /> Descarregar PDF
           </button>

@@ -169,7 +169,7 @@ export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEm
               <button
                 type="button"
                 onClick={startNova}
-                className="inline-flex items-center gap-2 bg-[#0677FF] text-white px-4 py-2.5 rounded-[10px] text-[13px] font-[700] hover:bg-[#0556CC] active:scale-[0.98] transition-all shadow-md shadow-[#0677FF]/25"
+                className="inline-flex items-center gap-2 bg-[var(--accent)] text-white px-4 py-2.5 rounded-[10px] text-[13px] font-[700] hover:bg-[var(--accent-strong)] active:scale-[0.98] transition-all shadow-md shadow-[var(--accent)]/25"
               >
                 <Plus className="w-4 h-4" /> Novo cliente
               </button>
@@ -189,7 +189,7 @@ export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEm
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Procurar por nome ou NIF…"
-            className="w-full pl-10 pr-4 py-3 bg-white border border-[#E5E9F0] rounded-[12px] text-[14px] font-[500] text-[#0B1D2D] placeholder:text-[#94A3B8] focus:border-[#0677FF] outline-none transition-colors"
+            className="w-full pl-10 pr-4 py-3 bg-white border border-[#E5E9F0] rounded-[12px] text-[14px] font-[500] text-[#0B1D2D] placeholder:text-[#94A3B8] focus:border-[var(--accent)] outline-none transition-colors"
           />
         </div>
 
@@ -255,7 +255,7 @@ export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEm
             className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
           />
           <div className="relative bg-white rounded-[22px] shadow-2xl max-w-xl w-full overflow-hidden">
-            <div className="h-1.5 bg-gradient-to-r from-[#0677FF] to-[#00C2FF] w-full" />
+            <div className="h-1.5 bg-gradient-to-r from-[var(--accent)] to-[#00C2FF] w-full" />
             <div className="p-7">
               <div className="flex items-start justify-between mb-1">
                 <h2 id="nova-modal-title" className="text-[22px] font-[800] text-[#0B1D2D] leading-tight">
@@ -278,9 +278,9 @@ export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEm
                 <button
                   type="button"
                   onClick={() => novaSaftInputRef.current?.click()}
-                  className="order-2 text-left p-5 rounded-[14px] border-2 border-[#E5E9F0] hover:border-[#0677FF] hover:bg-[#0677FF]/4 transition-all group focus-visible:border-[#0677FF]"
+                  className="order-2 text-left p-5 rounded-[14px] border-2 border-[#E5E9F0] hover:border-[var(--accent)] hover:bg-[var(--accent)]/4 transition-all group focus-visible:border-[var(--accent)]"
                 >
-                  <div className="w-10 h-10 rounded-[10px] bg-[#0677FF]/12 text-[#0677FF] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                  <div className="w-10 h-10 rounded-[10px] bg-[var(--accent)]/12 text-[var(--accent)] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                     <FileText className="w-5 h-5" />
                   </div>
                   <div className="text-[15px] font-[800] text-[#0B1D2D]">Tenho o ficheiro SAF-T</div>
@@ -308,9 +308,9 @@ export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEm
                 <button
                   type="button"
                   onClick={() => loteSaftInputRef.current?.click()}
-                  className="mt-3 w-full text-left p-5 rounded-[14px] border-2 border-dashed border-[#E5E9F0] hover:border-[#0677FF] hover:bg-[#0677FF]/4 transition-all group focus-visible:border-[#0677FF] flex items-center gap-4"
+                  className="mt-3 w-full text-left p-5 rounded-[14px] border-2 border-dashed border-[#E5E9F0] hover:border-[var(--accent)] hover:bg-[var(--accent)]/4 transition-all group focus-visible:border-[var(--accent)] flex items-center gap-4"
                 >
-                  <div className="w-10 h-10 shrink-0 rounded-[10px] bg-[#0677FF]/12 text-[#0677FF] flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <div className="w-10 h-10 shrink-0 rounded-[10px] bg-[var(--accent)]/12 text-[var(--accent)] flex items-center justify-center group-hover:scale-105 transition-transform">
                     <Files className="w-5 h-5" />
                   </div>
                   <div>
@@ -365,7 +365,7 @@ export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEm
             className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
           />
           <div className="relative bg-white rounded-[22px] shadow-2xl max-w-lg w-full overflow-hidden">
-            <div className="h-1.5 bg-gradient-to-r from-[#0677FF] to-[#00C2FF] w-full" />
+            <div className="h-1.5 bg-gradient-to-r from-[var(--accent)] to-[#00C2FF] w-full" />
             <div className="p-7">
               <h2 id="lote-saft-title" className="text-[22px] font-[800] text-[#0B1D2D] leading-tight mb-1">
                 {lote.fase === 'correr' ? 'A importar SAF-Ts…' : 'Lote de SAF-Ts importado'}
@@ -373,7 +373,7 @@ export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEm
 
               {lote.fase === 'correr' ? (
                 <div className="flex items-center gap-3 py-6">
-                  <Loader2 className="w-5 h-5 text-[#0677FF] animate-spin shrink-0" />
+                  <Loader2 className="w-5 h-5 text-[var(--accent)] animate-spin shrink-0" />
                   <p className="text-[14px] font-[700] text-[#0B1D2D]">
                     {lote.feitos} de {lote.total} ficheiro{lote.total === 1 ? '' : 's'} processado{lote.total === 1 ? '' : 's'}…
                   </p>
@@ -420,7 +420,7 @@ export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEm
                   <button
                     type="button"
                     onClick={() => setLote(null)}
-                    className="mt-5 w-full bg-[#0677FF] text-white py-3 rounded-[12px] text-[14px] font-[800] hover:bg-[#0556CC] active:scale-[0.99] transition-all"
+                    className="mt-5 w-full bg-[var(--accent)] text-white py-3 rounded-[12px] text-[14px] font-[800] hover:bg-[var(--accent-strong)] active:scale-[0.99] transition-all"
                   >
                     Fechar
                   </button>
@@ -472,7 +472,7 @@ const CardHistorico: React.FC<{ empId: string; onRestore: (rec: SimulationRecord
         return (
           <div key={rec.id} className="flex items-center gap-2.5 px-3 py-2 rounded-[10px] hover:bg-[#F5F7FA] transition-colors">
             <div className="w-8 h-8 rounded-[8px] bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
-              <Icon className="w-4 h-4 text-[#0677FF]" />
+              <Icon className="w-4 h-4 text-[var(--accent)]" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
@@ -484,7 +484,7 @@ const CardHistorico: React.FC<{ empId: string; onRestore: (rec: SimulationRecord
             <button
               type="button"
               onClick={() => onRestore(rec)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[12px] font-[700] text-[#0677FF] bg-[#0677FF]/10 hover:bg-[#0677FF]/15 active:scale-[0.97] transition-all shrink-0"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[12px] font-[700] text-[var(--accent)] bg-[var(--accent)]/10 hover:bg-[var(--accent)]/15 active:scale-[0.97] transition-all shrink-0"
               title="Reabrir esta simulação no simulador"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -536,7 +536,7 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
   return (
     <li className={cn(
       'bg-white border rounded-[14px] transition-all',
-      active ? 'border-[#0677FF] ring-1 ring-[#0677FF]/30 shadow-md' : 'border-[#E5E9F0] hover:border-[#0677FF]/40 hover:shadow-md',
+      active ? 'border-[var(--accent)] ring-1 ring-[var(--accent)]/30 shadow-md' : 'border-[#E5E9F0] hover:border-[var(--accent)]/40 hover:shadow-md',
     )}>
       {/* No mobile empilha: linha do nome em cima, ações por baixo — antes os
           5 botões + nome partilhavam a mesma linha de 375px e sobrepunham-se. */}
@@ -547,13 +547,13 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
           title={`Abrir ${displayNome}`}
           className="flex-1 flex items-center gap-4 text-left px-5 py-4 min-w-0"
         >
-          <div className="w-11 h-11 rounded-[10px] bg-[#0677FF]/10 text-[#0677FF] font-[800] text-[14px] flex items-center justify-center shrink-0">
+          <div className="w-11 h-11 rounded-[10px] bg-[var(--accent)]/10 text-[var(--accent)] font-[800] text-[14px] flex items-center justify-center shrink-0">
             {initials}
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-[15px] font-[700] text-[#0B1D2D] truncate">
               {displayNome}
-              {active && <span className="ml-2 align-middle text-[10px] font-[800] uppercase tracking-[0.5px] text-[#0677FF] bg-[#0677FF]/10 px-1.5 py-0.5 rounded-full">a trabalhar</span>}
+              {active && <span className="ml-2 align-middle text-[10px] font-[800] uppercase tracking-[0.5px] text-[var(--accent)] bg-[var(--accent)]/10 px-1.5 py-0.5 rounded-full">a trabalhar</span>}
             </div>
             <div className="text-[12px] text-[#6B7280] font-[500] mt-0.5 flex items-center gap-2 flex-wrap">
               <span>{emp.nif ? `NIF ${emp.nif}` : 'Sem NIF'}</span>
@@ -574,7 +574,7 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
             onClick={() => onNavigate(emp.id, 'hub')}
             title={`Abrir os simuladores de ${displayNome}`}
             aria-label={`Abrir os simuladores de ${displayNome}`}
-            className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] bg-[#0677FF]/10 text-[#0677FF] text-[12px] font-[700] whitespace-nowrap hover:bg-[#0677FF] hover:text-white transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] bg-[var(--accent)]/10 text-[var(--accent)] text-[12px] font-[700] whitespace-nowrap hover:bg-[var(--accent)] hover:text-white transition-colors"
           >
             <Calculator className="w-3.5 h-3.5" />
             <span>Simuladores</span>
@@ -584,7 +584,7 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
             onClick={() => onNavigate(emp.id, 'gabinete')}
             title={`Abrir a visão geral de ${displayNome}`}
             aria-label={`Abrir a visão geral de ${displayNome}`}
-            className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] bg-[#0677FF]/10 text-[#0677FF] text-[12px] font-[700] whitespace-nowrap hover:bg-[#0677FF] hover:text-white transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] bg-[var(--accent)]/10 text-[var(--accent)] text-[12px] font-[700] whitespace-nowrap hover:bg-[var(--accent)] hover:text-white transition-colors"
           >
             <LayoutDashboard className="w-3.5 h-3.5" />
             <span>Visão geral</span>
@@ -594,7 +594,7 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
             onClick={() => onNavigate(emp.id, 'profile')}
             title={`Abrir o perfil de ${displayNome}`}
             aria-label={`Abrir o perfil de ${displayNome}`}
-            className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] bg-[#0677FF]/10 text-[#0677FF] text-[12px] font-[700] whitespace-nowrap hover:bg-[#0677FF] hover:text-white transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] bg-[var(--accent)]/10 text-[var(--accent)] text-[12px] font-[700] whitespace-nowrap hover:bg-[var(--accent)] hover:text-white transition-colors"
           >
             <UserCircle className="w-3.5 h-3.5" />
             <span>Ficha do cliente</span>
@@ -605,9 +605,9 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
             aria-expanded={expanded}
             title="Mostrar histórico de simulações"
             aria-label={`Histórico de simulações de ${displayNome}`}
-            className="p-2 rounded-[8px] text-[#6B7280] hover:text-[#0677FF] hover:bg-[#0677FF]/8 transition-colors"
+            className="p-2 rounded-[8px] text-[#6B7280] hover:text-[var(--accent)] hover:bg-[var(--accent)]/8 transition-colors"
           >
-            <ChevronDown className={cn('w-4 h-4 transition-transform', expanded ? 'text-[#0677FF]' : '-rotate-90')} />
+            <ChevronDown className={cn('w-4 h-4 transition-transform', expanded ? 'text-[var(--accent)]' : '-rotate-90')} />
           </button>
           <input
             ref={inputRef}
@@ -635,7 +635,7 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
               type="button"
               onClick={() => inputRef.current?.click()}
               title={`Importar SAF-T para ${displayNome}`}
-              className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] bg-slate-100 text-slate-600 text-[12px] font-[700] whitespace-nowrap hover:bg-[#0677FF] hover:text-white transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-2 rounded-[8px] bg-slate-100 text-slate-600 text-[12px] font-[700] whitespace-nowrap hover:bg-[var(--accent)] hover:text-white transition-colors"
             >
               <FileUp className="w-3.5 h-3.5" />
               <span>Importar SAF-T</span>
@@ -681,8 +681,8 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
       {expanded && (
         <div className="border-t border-[#EEF2F7] px-3 py-2">
           <div className="flex items-center gap-2 px-3 pt-1 pb-2">
-            <History className="w-3.5 h-3.5 text-[#0677FF]" />
-            <span className="text-[10px] font-[800] uppercase tracking-[1px] text-[#0677FF]">Histórico de simulações</span>
+            <History className="w-3.5 h-3.5 text-[var(--accent)]" />
+            <span className="text-[10px] font-[800] uppercase tracking-[1px] text-[var(--accent)]">Histórico de simulações</span>
           </div>
           <CardHistorico empId={emp.id} onRestore={onRestore} onChanged={onHistoricoChanged} refreshKey={refreshKey} />
         </div>
@@ -701,7 +701,7 @@ function EmptyState({ onNova, hasQuery }: { onNova: () => void; hasQuery: boolea
   }
   return (
     <div className="text-center py-16 px-6 bg-white border border-dashed border-[#E5E9F0] rounded-[16px]">
-      <div className="w-14 h-14 rounded-full bg-[#0677FF]/10 text-[#0677FF] flex items-center justify-center mx-auto mb-4">
+      <div className="w-14 h-14 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center mx-auto mb-4">
         <Building2 className="w-6 h-6" />
       </div>
       <h2 className="text-[18px] font-[800] text-[#0B1D2D] mb-1">Ainda não tem clientes</h2>
@@ -711,7 +711,7 @@ function EmptyState({ onNova, hasQuery }: { onNova: () => void; hasQuery: boolea
       <button
         type="button"
         onClick={onNova}
-        className="inline-flex items-center gap-2 bg-[#0677FF] text-white px-5 py-3 rounded-[10px] text-[13px] font-[700] hover:bg-[#0556CC] active:scale-[0.98] transition-all shadow-md shadow-[#0677FF]/25"
+        className="inline-flex items-center gap-2 bg-[var(--accent)] text-white px-5 py-3 rounded-[10px] text-[13px] font-[700] hover:bg-[var(--accent-strong)] active:scale-[0.98] transition-all shadow-md shadow-[var(--accent)]/25"
       >
         <Plus className="w-4 h-4" /> Criar primeiro cliente
       </button>
@@ -761,7 +761,7 @@ function DeleteConfirmModal({ name, onConfirm, onCancel }: { name: string; onCon
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
           autoComplete="off"
-          className="w-full mb-4 px-3 py-2.5 rounded-[10px] border border-[#E2E8F0] text-[13px] font-[600] text-[#0B1D2D] focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30"
+          className="w-full mb-4 px-3 py-2.5 rounded-[10px] border border-[#E2E8F0] text-[13px] font-[600] text-[#0B1D2D] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
         />
         <div className="flex gap-3">
           <button

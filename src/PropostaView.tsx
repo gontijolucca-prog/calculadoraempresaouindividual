@@ -145,7 +145,7 @@ export default function PropostaView({ office, honorarios, onOpen, onGoToOfficeS
       <header className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-[22px] md:text-[26px] font-[800] text-[#0F172A] tracking-tight inline-flex items-center gap-2">
-            <Presentation className="w-6 h-6 text-[#0677FF]" /> Fazer Proposta
+            <Presentation className="w-6 h-6 text-[var(--accent)]" /> Fazer Proposta
           </h1>
           <p className="text-[13px] text-[#64748B] font-[500] mt-1 max-w-[620px]">
             Gera uma proposta comercial com AI a partir dos dados do escritório, do cliente e da tabela de honorários. Editável card a card, com PDF e link público.
@@ -153,7 +153,7 @@ export default function PropostaView({ office, honorarios, onOpen, onGoToOfficeS
         </div>
         <button
           onClick={() => { setCreating(true); setPasso('escolha'); setCaminho(null); setGammaTxt(null); }}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0677FF] text-white text-[13px] font-[700] hover:bg-[#0059c9] transition-colors"
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[var(--accent)] text-white text-[13px] font-[700] hover:bg-[#0059c9] transition-colors"
         >
           <Plus className="w-4 h-4" /> Nova proposta
         </button>
@@ -187,14 +187,14 @@ export default function PropostaView({ office, honorarios, onOpen, onGoToOfficeS
             <div className="mt-4 grid md:grid-cols-2 gap-3">
               <button
                 onClick={() => { setCaminho('app'); setPasso('briefing'); }}
-                className="text-left rounded-xl border border-[#E2E8F0] p-4 hover:border-[#0677FF] hover:bg-[#F8FBFF] transition-colors"
+                className="text-left rounded-xl border border-[#E2E8F0] p-4 hover:border-[var(--accent)] hover:bg-[#F8FBFF] transition-colors"
               >
-                <span className="inline-flex items-center gap-2 text-[13.5px] font-[800] text-[#0677FF]"><Sparkles className="w-4 h-4" /> Gerar no Estudo360</span>
+                <span className="inline-flex items-center gap-2 text-[13.5px] font-[800] text-[var(--accent)]"><Sparkles className="w-4 h-4" /> Gerar no Estudo360</span>
                 <span className="mt-1.5 block text-[12px] text-[#64748B]">Proposta de 7 blocos, editável, com PDF e link público. O preço vem da tabela.</span>
               </button>
               <button
                 onClick={() => { setCaminho('gamma'); setPasso('briefing'); }}
-                className="text-left rounded-xl border border-[#E2E8F0] p-4 hover:border-[#0677FF] hover:bg-[#F8FBFF] transition-colors"
+                className="text-left rounded-xl border border-[#E2E8F0] p-4 hover:border-[var(--accent)] hover:bg-[#F8FBFF] transition-colors"
               >
                 <span className="inline-flex items-center gap-2 text-[13.5px] font-[800] text-[#0F172A]"><Presentation className="w-4 h-4" /> Levar para o Gamma</span>
                 <span className="mt-1.5 block text-[12px] text-[#64748B]">O mesmo conteúdo em texto pronto a colar no gamma.app. Sem chave, custo zero.</span>
@@ -221,7 +221,7 @@ export default function PropostaView({ office, honorarios, onOpen, onGoToOfficeS
                   <div className="flex gap-2">
                     {DECK_THEMES.map((t) => (
                       <button key={t} onClick={() => setTema(t)}
-                        className={`flex-1 px-3 py-2.5 rounded-xl border text-[12px] font-[700] ${tema === t ? 'border-[#0677FF] bg-[#EFF6FF] text-[#0677FF]' : 'border-[#E2E8F0] text-[#64748B] hover:border-[#CBD5E1]'}`}>
+                        className={`flex-1 px-3 py-2.5 rounded-xl border text-[12px] font-[700] ${tema === t ? 'border-[var(--accent)] bg-[#EFF6FF] text-[var(--accent)]' : 'border-[#E2E8F0] text-[#64748B] hover:border-[#CBD5E1]'}`}>
                         {t === 'claro' ? 'Claro' : t === 'escuro' ? 'Escuro' : 'Marca'}
                       </button>
                     ))}
@@ -270,7 +270,7 @@ export default function PropostaView({ office, honorarios, onOpen, onGoToOfficeS
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 {caminho === 'app' ? (
-                  <button onClick={criarNaApp} disabled={busy} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0677FF] text-white text-[13px] font-[700] hover:bg-[#0059c9] disabled:opacity-60">
+                  <button onClick={criarNaApp} disabled={busy} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[var(--accent)] text-white text-[13px] font-[700] hover:bg-[#0059c9] disabled:opacity-60">
                     {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />} Criar proposta
                   </button>
                 ) : (
@@ -279,7 +279,7 @@ export default function PropostaView({ office, honorarios, onOpen, onGoToOfficeS
                       <Presentation className="w-4 h-4" /> Gerar texto
                     </button>
                     {gammaTxt && (
-                      <button onClick={copiarGamma} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0677FF] text-white text-[13px] font-[700] hover:bg-[#0059c9]">
+                      <button onClick={copiarGamma} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[var(--accent)] text-white text-[13px] font-[700] hover:bg-[#0059c9]">
                         <Copy className="w-4 h-4" /> Copiar + abrir Gamma
                       </button>
                     )}
@@ -322,7 +322,7 @@ export default function PropostaView({ office, honorarios, onOpen, onGoToOfficeS
               <div className="mt-3 flex items-center gap-3 text-[11px] font-[600] text-[#94A3B8]">
                 <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(m.updatedAt).toLocaleDateString('pt-PT')}</span>
                 {m.slug && (
-                  <span className="inline-flex items-center gap-1 text-[#0677FF]"><Link2 className="w-3 h-3" /> link ativo</span>
+                  <span className="inline-flex items-center gap-1 text-[var(--accent)]"><Link2 className="w-3 h-3" /> link ativo</span>
                 )}
               </div>
               <div className="mt-3 flex items-center gap-2 flex-wrap">
@@ -339,7 +339,7 @@ export default function PropostaView({ office, honorarios, onOpen, onGoToOfficeS
                   Abrir <ArrowRight className="w-3.5 h-3.5" />
                 </button>
                 {m.slug && (
-                  <button onClick={() => copiar(m.slug!)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#E2E8F0] text-[11.5px] font-[700] text-[#334155] hover:border-[#0677FF]">
+                  <button onClick={() => copiar(m.slug!)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#E2E8F0] text-[11.5px] font-[700] text-[#334155] hover:border-[var(--accent)]">
                     <Copy className="w-3.5 h-3.5" /> {copied === m.slug ? 'Copiado' : 'Copiar link'}
                   </button>
                 )}

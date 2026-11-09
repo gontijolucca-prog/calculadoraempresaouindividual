@@ -284,7 +284,7 @@ export default function ImoveisEmpresa({ initialState, onStateChange, profile }:
                 isEni ? 'ENI: afetação parcial do imóvel à atividade — regras de separação patrimonial' : 'Responsabilidade limitada da empresa protege o imóvel de dívidas pessoais',
               ].map((p, i) => (
                 <div key={i} className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#0677FF] mt-[6px] shrink-0" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] mt-[6px] shrink-0" />
                   <span className="text-[12px] text-[#475569]">{p}</span>
                 </div>
               ))}

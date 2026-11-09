@@ -7,7 +7,7 @@ import { UpdateNotification } from './components/UpdateNotification';
 import { useUnsavedEdits } from './hooks/useUnsavedEdits';
 import { initVersionChecker, stopVersionChecker } from './lib/version-checker';
 import { logAudit, flushAuditQueue } from './lib/audit';
-import LegalInfo from './LegalInfo';
+const LegalInfo = lazy(() => import('./LegalInfo'));
 import PropostaView from './PropostaView';
 import PropostaEditor from './PropostaEditor';
 import type { DeckDoc } from './lib/deck/types';
@@ -67,6 +67,8 @@ import { can, deriveRole, tabsGabinete } from './lib/permissions';
 import type { GabineteRole } from './lib/gabinetes';
 import { loadFromStorage, saveToStorage, clearStorage } from './lib/storage';
 import { loadOfficeSettings, saveOfficeSettings, type OfficeSettings } from './lib/officeSettings';
+import { applyAccent } from './lib/accent';
+import CommandPalette from './components/CommandPalette';
 import { loadHonorariosConfig, saveHonorariosConfig, type HonorariosConfig } from './lib/honorarios';
 
 // Code-split heavy simulators — keeps the initial bundle small.
@@ -325,7 +327,7 @@ function ViewLoading() {
   return (
     <div role="status" aria-live="polite" className="h-full flex items-center justify-center bg-[#F5F7FA]">
       <div className="flex flex-col items-center gap-3">
-        <Loader2 className="w-8 h-8 text-[#0677FF] animate-spin" aria-hidden="true" />
+        <Loader2 className="w-8 h-8 text-[var(--accent)] animate-spin" aria-hidden="true" />
         <p className="text-[12px] font-[600] text-[#94A3B8]">A carregar…</p>
       </div>
     </div>
@@ -339,8 +341,8 @@ function NoEmpresaGate({ onGo }: { onGo: () => void }) {
   return (
     <div className="h-full flex items-center justify-center bg-[#F5F7FA] px-6">
       <div className="text-center max-w-sm">
-        <div className="w-16 h-16 rounded-full bg-[#0677FF]/10 flex items-center justify-center mx-auto mb-4">
-          <Loader2 className="w-7 h-7 text-[#0677FF]" aria-hidden="true" style={{ animation: 'none' }} />
+        <div className="w-16 h-16 rounded-full bg-[var(--accent)]/10 flex items-center justify-center mx-auto mb-4">
+          <Loader2 className="w-7 h-7 text-[var(--accent)]" aria-hidden="true" style={{ animation: 'none' }} />
         </div>
         <h2 className="text-[18px] font-[800] text-[#0F172A]">Escolha primeiro um cliente</h2>
         <p className="text-[13px] text-[#64748B] font-[500] mt-2 leading-relaxed">
@@ -350,7 +352,7 @@ function NoEmpresaGate({ onGo }: { onGo: () => void }) {
         <button
           type="button"
           onClick={onGo}
-          className="mt-5 inline-flex items-center gap-2 px-5 py-3 rounded-[12px] text-[14px] font-[800] text-white bg-gradient-to-r from-[#0677FF] to-[#044BB6] hover:brightness-105 active:scale-[0.98] transition-all shadow-lg shadow-[#0677FF]/30"
+          className="mt-5 inline-flex items-center gap-2 px-5 py-3 rounded-[12px] text-[14px] font-[800] text-white bg-gradient-to-r from-[var(--accent)] to-[var(--accent-strong)] hover:brightness-105 active:scale-[0.98] transition-all shadow-lg shadow-[var(--accent)]/30"
         >
           Ir para a Lista de Empresas
         </button>
@@ -618,6 +620,8 @@ function AppContent() {
   useEffect(() => { saveToStorage('mode', mode); }, [mode]);
   useEffect(() => { saveToStorage('lastView', view); }, [view]);
   useEffect(() => { saveOfficeSettings(officeSettings); }, [officeSettings]);
+  // Accent do escritório em todo o site (botões, links, gráficos, estados).
+  useEffect(() => { applyAccent(officeSettings.corPrimaria); }, [officeSettings.corPrimaria]);
   useEffect(() => { saveHonorariosConfig(honorariosConfig); }, [honorariosConfig]);
   // Branding, IBAN e honorários são definições de cada gabinete. Ao trocar,
   // recarrega o conjunto do novo tenant em vez de manter o anterior em memória.
@@ -931,12 +935,38 @@ function AppContent() {
   const botSaftInputRef = useRef<HTMLInputElement>(null);
   const botSaftTargetRef = useRef<'novo' | 'empresa'>('novo');
 
+  // Pesquisa global (⌘K / Ctrl+K). Fecha com Esc; não abre enquanto escreve
+  // num campo, para não sequestrar o atalho de quem está a preencher dados.
+  const [paletteAberta, setPaletteAberta] = useState(false);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const alvo = e.target as HTMLElement | null;
+      const aEscrever = !!alvo && (alvo.tagName === 'INPUT' || alvo.tagName === 'TEXTAREA' || alvo.tagName === 'SELECT' || alvo.isContentEditable);
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteAberta((v) => !v);
+        return;
+      }
+      if (e.key === '/' && !aEscrever && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        setPaletteAberta(true);
+      }
+    };
+    const onOpenSearch = () => setPaletteAberta(true);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('estudo360:open-search', onOpenSearch);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('estudo360:open-search', onOpenSearch);
+    };
+  }, []);
+
   // ── Gate de autenticação seguro ──────────────────────────────────────────
   if (authLoading || accessLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F5F7FA]">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 text-[#0677FF] animate-spin" />
+          <Loader2 className="w-8 h-8 text-[var(--accent)] animate-spin" />
           <p className="text-[13px] font-[600] text-[#64748B]">A verificar sessão…</p>
         </div>
       </div>
@@ -977,7 +1007,7 @@ function AppContent() {
     const _needsChoice = isAuthenticated && !employeeProfile && !_activeGabineteId;
     if (_needsChoice) {
       return (
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#F5F7FA]"><Loader2 className="w-8 h-8 text-[#0677FF] animate-spin" /></div>}>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#F5F7FA]"><Loader2 className="w-8 h-8 text-[var(--accent)] animate-spin" /></div>}>
           <GabineteSelector
             key={gabineteNonce}
             onChosen={() => {
@@ -1787,7 +1817,9 @@ function AppContent() {
           <ExportarRelatorio office={officeSettings} honorarios={honorariosConfig} currentEmpresaId={currentEmpresaId} initialDocId={relatorioDocPreselect} onOpenPrevisa={(empId) => navigateClient(empId, 'previsa')} onGoToOfficeSettings={() => setView('office-settings')} />
         )}
         {view === 'legal' && (
-          <LegalInfo onBack={closeLegal} clientProfile={clientProfile} vehicleState={vehicleState} ticketState={ticketState} initialAnchor={legalAnchor} />
+          <Suspense fallback={<ViewLoading />}>
+            <LegalInfo onBack={closeLegal} clientProfile={clientProfile} vehicleState={vehicleState} ticketState={ticketState} initialAnchor={legalAnchor} />
+          </Suspense>
         )}
         {view === 'gabinete' && (
           <Suspense fallback={<div className="p-8 text-center text-zinc-500">A carregar Gabinete…</div>}>
@@ -1973,7 +2005,7 @@ function AppContent() {
           />
           <div className="relative bg-white rounded-[24px] shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
             {/* Accent bar */}
-            <div className="h-1.5 bg-gradient-to-r from-[#0677FF] to-[#0B1D2D] w-full shrink-0" />
+            <div className="h-1.5 bg-gradient-to-r from-[var(--accent)] to-[#0B1D2D] w-full shrink-0" />
 
             {/* Header */}
             <div className="px-6 pt-5 pb-4 flex items-center justify-between shrink-0 border-b border-slate-100">
@@ -2022,7 +2054,7 @@ function AppContent() {
                     <SaftSection title={group} count={items.length}>
                       {items.map((d, i) => (
                         <div key={i} className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3 py-1.5 border-b border-slate-50 last:border-0">
-                          <span className="text-[11px] font-[600] text-[#0677FF] sm:shrink-0 sm:w-[150px] leading-snug">{d.label}</span>
+                          <span className="text-[11px] font-[600] text-[var(--accent)] sm:shrink-0 sm:w-[150px] leading-snug">{d.label}</span>
                           <span className="text-[12px] font-[500] text-[#0F172A] leading-snug break-words min-w-0">{d.value}</span>
                         </div>
                       ))}
@@ -2135,7 +2167,7 @@ function AppContent() {
             <button
               type="button"
               onClick={() => setView(view === 'tax' ? 'profile' : 'tax')}
-              className="min-w-0 inline-flex items-center gap-1.5 px-3 py-2.5 rounded-[12px] text-[12.5px] sm:text-[14px] sm:px-4 font-[700] text-[#0677FF] bg-[#0677FF]/10 hover:bg-[#0677FF]/15 active:scale-[0.98] transition-all"
+              className="min-w-0 inline-flex items-center gap-1.5 px-3 py-2.5 rounded-[12px] text-[12.5px] sm:text-[14px] sm:px-4 font-[700] text-[var(--accent)] bg-[var(--accent)]/10 hover:bg-[var(--accent)]/15 active:scale-[0.98] transition-all"
             >
               {view === 'tax'
                 ? <><ArrowLeft className="w-4 h-4 shrink-0" strokeWidth={2.5} /> <span className="truncate">Voltar ao perfil</span></>
@@ -2146,7 +2178,7 @@ function AppContent() {
               onClick={handleSaveNewClient}
               className="inline-flex items-center gap-1.5 px-3 sm:px-5 py-2.5 rounded-[12px] text-[12.5px] sm:text-[14px] font-[800] text-white active:scale-[0.98] transition-all whitespace-nowrap"
               style={{
-                background: 'linear-gradient(135deg, #0677FF 0%, #044BB6 100%)',
+                background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%)',
                 boxShadow: '0 0 0 1px rgba(6,119,255,0.35), 0 8px 22px -8px rgba(6,119,255,0.6)',
               }}
             >
@@ -2187,6 +2219,17 @@ function AppContent() {
         view={view as ViewKey}
         iniciar={tourRequest}
         onEnd={(_v) => { /* sem follow-up do bot — fica quieto */ }}
+      />
+
+      <CommandPalette
+        aberto={paletteAberta}
+        onFechar={() => setPaletteAberta(false)}
+        role={gabRole}
+        onAbrirEmpresa={(id, vista) => {
+          if (selectEmpresa(id)) { if (vista) navigateClient(id, vista); }
+        }}
+        onAbrirGabinete={(tab) => { setView('gabinete'); setGabineteTab(tab); }}
+        onMudarVista={(v) => setView(v as ViewType)}
       />
 
       {/* Disclaimer legal — sempre visível enquanto logged in */}

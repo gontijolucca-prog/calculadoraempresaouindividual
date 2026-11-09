@@ -65,8 +65,8 @@ export default function SimulacoesHistory({ empresaId, empresaNome, onRestore, o
       <div className="max-w-3xl mx-auto px-5 sm:px-8 py-8">
         {/* Header */}
         <div className="flex items-start gap-3 mb-6">
-          <div className="w-11 h-11 rounded-[12px] bg-[#0677FF]/10 flex items-center justify-center shrink-0">
-            <History className="w-5 h-5 text-[#0677FF]" />
+          <div className="w-11 h-11 rounded-[12px] bg-[var(--accent)]/10 flex items-center justify-center shrink-0">
+            <History className="w-5 h-5 text-[var(--accent)]" />
           </div>
           <div className="min-w-0">
             <h1 className="text-[22px] font-[800] text-[#0B1D2D] leading-tight tracking-[-0.4px]">
@@ -85,7 +85,7 @@ export default function SimulacoesHistory({ empresaId, empresaNome, onRestore, o
             </div>
             <h2 className="text-[15px] font-[800] text-[#0F172A]">Ainda não há simulações guardadas</h2>
             <p className="text-[13px] text-[#64748B] font-[500] mt-2 leading-relaxed max-w-md mx-auto">
-              Abre um simulador e preenche-o: a simulação fica <strong className="text-[#0677FF]">guardada automaticamente</strong> aqui,
+              Abre um simulador e preenche-o: a simulação fica <strong className="text-[var(--accent)]">guardada automaticamente</strong> aqui,
               associada a este cliente, e pode ser reaberta a qualquer momento.
             </p>
           </div>
@@ -98,17 +98,17 @@ export default function SimulacoesHistory({ empresaId, empresaNome, onRestore, o
               return (
                 <div
                   key={rec.id}
-                  className="group bg-white rounded-[14px] border border-slate-200/70 hover:border-[#0677FF]/40 hover:shadow-[0_4px_16px_-8px_rgba(6,119,255,0.35)] transition-all p-4 flex items-start gap-4"
+                  className="group bg-white rounded-[14px] border border-slate-200/70 hover:border-[var(--accent)]/40 hover:shadow-[0_4px_16px_-8px_rgba(6,119,255,0.35)] transition-all p-4 flex items-start gap-4"
                 >
                   <div className="w-10 h-10 rounded-[10px] bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
-                    <Icon className="w-[18px] h-[18px] text-[#0677FF]" />
+                    <Icon className="w-[18px] h-[18px] text-[var(--accent)]" />
                   </div>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[14px] font-[800] text-[#0F172A] leading-tight">{label}</span>
                       {rec.auto && (
-                        <span className="text-[9px] font-[800] uppercase tracking-[0.5px] text-[#0677FF] bg-[#0677FF]/10 px-1.5 py-0.5 rounded-[5px]">Auto</span>
+                        <span className="text-[9px] font-[800] uppercase tracking-[0.5px] text-[var(--accent)] bg-[var(--accent)]/10 px-1.5 py-0.5 rounded-[5px]">Auto</span>
                       )}
                       <span className="text-[10px] font-[700] uppercase tracking-[0.5px] text-slate-400">
                         {fmtDate(rec.createdAt)}
@@ -120,11 +120,11 @@ export default function SimulacoesHistory({ empresaId, empresaNome, onRestore, o
                         {rec.detalhes.map((d, i) => (
                           <span key={i} className={
                             d.r
-                              ? 'inline-flex items-baseline gap-1 text-[11px] bg-[#0677FF]/8 border border-[#0677FF]/25 rounded-[6px] px-2 py-0.5'
+                              ? 'inline-flex items-baseline gap-1 text-[11px] bg-[var(--accent)]/8 border border-[var(--accent)]/25 rounded-[6px] px-2 py-0.5'
                               : 'inline-flex items-baseline gap-1 text-[11px] bg-slate-50 border border-slate-200/80 rounded-[6px] px-2 py-0.5'
                           }>
-                            <span className={d.r ? 'text-[#0677FF] font-[700]' : 'text-slate-400 font-[600]'}>{d.label}:</span>
-                            <span className={d.r ? 'text-[#0677FF] font-[800] tabular-nums' : 'text-[#0F172A] font-[700] tabular-nums'}>{d.valor}</span>
+                            <span className={d.r ? 'text-[var(--accent)] font-[700]' : 'text-slate-400 font-[600]'}>{d.label}:</span>
+                            <span className={d.r ? 'text-[var(--accent)] font-[800] tabular-nums' : 'text-[#0F172A] font-[700] tabular-nums'}>{d.valor}</span>
                           </span>
                         ))}
                       </div>
@@ -135,7 +135,7 @@ export default function SimulacoesHistory({ empresaId, empresaNome, onRestore, o
                     <button
                       type="button"
                       onClick={() => onRestore(rec)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-[12px] font-[700] text-[#0677FF] bg-[#0677FF]/10 hover:bg-[#0677FF]/15 active:scale-[0.97] transition-all"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-[12px] font-[700] text-[var(--accent)] bg-[var(--accent)]/10 hover:bg-[var(--accent)]/15 active:scale-[0.97] transition-all"
                       title="Reabrir esta simulação no simulador"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />

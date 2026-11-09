@@ -58,7 +58,7 @@ export default function PropostaPublica({ slug }: Props) {
 
   const brand = {
     nome: deck.escritorio?.nome || 'Estudo 360°',
-    corPrimaria: deck.escritorio?.corPrimaria || '#0677FF',
+    corPrimaria: deck.escritorio?.corPrimaria || 'var(--accent)',
     logoDataUrl: deck.escritorio?.logoDataUrl,
     email: deck.escritorio?.email,
     telefone: deck.escritorio?.telefone,
@@ -80,7 +80,7 @@ export default function PropostaPublica({ slug }: Props) {
           </div>
           <button
             onClick={() => window.print()}
-            className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-[700] text-[#334155] hover:border-[#0677FF] shrink-0"
+            className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-[700] text-[#334155] hover:border-[var(--accent)] shrink-0"
           >
             <Printer className="w-4 h-4" /> PDF
           </button>

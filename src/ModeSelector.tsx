@@ -107,7 +107,7 @@ export default function ModeSelector({ onSelect, onLogout }: Props) {
           <BrandMark className="w-10 h-10" />
           <div className="leading-none">
             <div className="text-[15px] font-[800] text-[#0B1D2D] tracking-[-0.2px]">
-              ESTUDO<span className="text-[#0677FF]">360°</span>
+              ESTUDO<span className="text-[var(--accent)]">360°</span>
             </div>
             <div className="text-[10px] font-[600] text-[#6B7280] uppercase tracking-[2px] mt-1">
               Análise · Estratégia · Decisão
@@ -140,7 +140,7 @@ export default function ModeSelector({ onSelect, onLogout }: Props) {
           className="text-center max-w-2xl mb-14"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 mb-6 shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#0677FF] animate-pulse" aria-hidden="true" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" aria-hidden="true" />
             <span className="text-[10px] font-[800] uppercase tracking-[2px] text-[#64748B]">
               Escolha uma área
             </span>
@@ -149,7 +149,7 @@ export default function ModeSelector({ onSelect, onLogout }: Props) {
             Como pretende
             <br />
             <span className="font-[800] text-[#0B1D2D]">
-              trabalhar <span className="italic font-[700] text-[#0677FF]">hoje?</span>
+              trabalhar <span className="italic font-[700] text-[var(--accent)]">hoje?</span>
             </span>
           </h1>
           <p className="text-[14px] sm:text-[15px] font-[500] text-[#64748B] mt-5 max-w-xl mx-auto leading-relaxed">

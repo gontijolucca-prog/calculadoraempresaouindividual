@@ -459,7 +459,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
             <div style={{ display: 'flex', gap: 8 }}>
               <button
                 onClick={() => window.print()}
-                style={{ background: '#0677FF', color: 'white', border: 'none', padding: '8px 18px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}
+                style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '8px 18px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}
               >
                 <Download size={15} /> Transferir PDF
               </button>
@@ -713,7 +713,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
                     <DR2 l1="Dias por mês:" v1={`${ticketState.daysPerMonth}`} l2="Meses:" v2={`${ticketState.months}`} />
                   </div>
                   <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                    <MetricCard label="Custo Total Tickets/Ano" value={ptEur(tickR.ticketCost)} bg="#eff6ff" color="#2563eb" />
+                    <MetricCard label="Custo Total Tickets/Ano" value={ptEur(tickR.ticketCost)} bg="#eff6ff" color="var(--accent-strong)" />
                     <MetricCard label="Poupança SS (23,75%)/Ano" value={ptEur(tickR.savings)} bg="#ecfdf5" color="#059669" />
                     <MetricCard label="Custo Dedutível (60%)/Ano" value={ptEur(tickR.custoDedutivelEmpresa)} bg="#fdf2f2" color={brand.color} />
                   </div>
@@ -735,7 +735,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
                     </div>
                   ) : (
                     <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                      <MetricCard label="Contribuição Mensal" value={ptEur(ssR.mensal)} bg="#eff6ff" color="#2563eb" />
+                      <MetricCard label="Contribuição Mensal" value={ptEur(ssR.mensal)} bg="#eff6ff" color="var(--accent-strong)" />
                       <MetricCard label="Contribuição Trimestral" value={ptEur(ssR.trimestral)} bg="#fdf2f2" color={brand.color} />
                       <MetricCard label="Contribuição Anual" value={ptEur(ssR.anual)} bg="#ecfdf5" color="#059669" />
                     </div>

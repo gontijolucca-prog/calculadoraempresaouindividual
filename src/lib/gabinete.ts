@@ -1359,6 +1359,13 @@ function makeSubscriber<T>(col: string, mapFn?: (d: unknown) => T) {
           // remove campo interno _updatedAtServer se vier
           items.push(mapFn ? mapFn(data) : data);
         });
+        // Snapshot VAZIO vindo da cache local (offline/quota) não é verdade do
+        // servidor: escrevê-lo apagava a cache e a coleção aparecia vazia até
+        // voltar a rede. Só aceitamos vazio quando veio mesmo do servidor.
+        if (snap.empty && snap.metadata?.fromCache) {
+          const local = readCache<T>(col, []);
+          if (local.length > 0) { cb(local); return; }
+        }
         // O snapshot é a verdade do servidor, mas não pode apagar escritas que
         // ainda estão na outbox (quota/rede): funde-as por id antes de gravar.
         const pendentes = listOps().filter((op) => op.path === colPath(col));
@@ -1420,6 +1427,16 @@ export const subscribeModelos = makeSubscriber<ModeloComunicacao>('modelos');
 export const subscribeEnvios = makeSubscriber<EnvioComunicacao>('envios');
 export const subscribeTempos = makeSubscriber<Tempo>('tempos');
 export const subscribeActas = makeSubscriber<Acta>('actas');
+
+// Escrita genérica por coleção — usada pelo restauro de cópia de segurança.
+// Mantém o caminho local-first (cache + outbox) das escritas normais.
+export function guardarRegistoGabinete(col: string, id: string, data: Record<string, unknown>): void {
+  queueSet(colPath(col), id, { ...data, id });
+  const cache = readCache<Record<string, unknown>>(col, []);
+  const idx = cache.findIndex((x) => x.id === id);
+  const next = idx >= 0 ? cache.map((x) => (x.id === id ? { ...data, id } : x)) : [...cache, { ...data, id }];
+  writeCache(col, next);
+}
 
 // One-shot fetch (para seed/migração)
 export async function fetchAll<T>(col: string): Promise<T[]> {

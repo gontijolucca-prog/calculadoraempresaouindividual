@@ -114,8 +114,8 @@ function DownloadPicker({ bridge }: { bridge: BotBridge }) {
     return <p className="mt-2 text-[12px] font-[600] text-[#64748B]">Ainda não há clientes guardados — cria primeiro um cliente.</p>;
   }
   return (
-    <div className="mt-2.5 rounded-[12px] border border-[#0677FF]/25 bg-[#0677FF]/5 p-3">
-      <div className="text-[11px] font-[800] uppercase tracking-[0.4px] text-[#0677FF] mb-2">
+    <div className="mt-2.5 rounded-[12px] border border-[var(--accent)]/25 bg-[var(--accent)]/5 p-3">
+      <div className="text-[11px] font-[800] uppercase tracking-[0.4px] text-[var(--accent)] mb-2">
         {clientName ? <>Documento para <span className="normal-case">{clientName}</span></> : 'De que cliente é o documento?'}
       </div>
       {!clientName && (
@@ -123,7 +123,7 @@ function DownloadPicker({ bridge }: { bridge: BotBridge }) {
           {clients.map((c) => (
             <button key={c.id} type="button"
               onClick={() => { bridge.selectClient?.(c.name); setClientName(c.name); }}
-              className="text-[12px] font-[700] px-3 py-1.5 rounded-full bg-white border border-[#0677FF]/30 text-[#0677FF] hover:bg-[#0677FF] hover:text-white active:scale-[0.97] transition-all">
+              className="text-[12px] font-[700] px-3 py-1.5 rounded-full bg-white border border-[var(--accent)]/30 text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white active:scale-[0.97] transition-all">
               {c.name}
             </button>
           ))}
@@ -140,13 +140,13 @@ function DownloadPicker({ bridge }: { bridge: BotBridge }) {
                   setDownloading(false);
                   setDone(res?.ok ? `Descarreguei: ${res.label ?? d.label}` : 'Não consegui gerar esse documento.');
                 }}
-                className="text-[12px] font-[700] px-3 py-1.5 rounded-full bg-white border border-[#0677FF]/30 text-[#0677FF] hover:bg-[#0677FF] hover:text-white active:scale-[0.97] transition-all disabled:opacity-50">
+                className="text-[12px] font-[700] px-3 py-1.5 rounded-full bg-white border border-[var(--accent)]/30 text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white active:scale-[0.97] transition-all disabled:opacity-50">
                 {d.label}
               </button>
             ))}
           </div>
           <button type="button" onClick={() => setClientName(null)}
-            className="mt-2 text-[11px] font-[700] text-[#64748B] hover:text-[#0677FF] hover:underline">
+            className="mt-2 text-[11px] font-[700] text-[#64748B] hover:text-[var(--accent)] hover:underline">
             ← trocar de cliente
           </button>
         </>
@@ -155,7 +155,7 @@ function DownloadPicker({ bridge }: { bridge: BotBridge }) {
         <div className="flex items-center gap-1.5 text-[12px] font-[700] text-emerald-600">
           <Check className="w-3.5 h-3.5" strokeWidth={3} /> {done}
           <button type="button" onClick={() => setDone(null)}
-            className="ml-2 text-[11px] font-[700] text-[#64748B] hover:text-[#0677FF] hover:underline">outro documento</button>
+            className="ml-2 text-[11px] font-[700] text-[#64748B] hover:text-[var(--accent)] hover:underline">outro documento</button>
         </div>
       )}
     </div>
@@ -415,13 +415,13 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
           tabIndex={scrollHidden ? -1 : 0}
           className={`no-print fixed z-[90] right-5 lg:right-6 flex items-center gap-2.5 justify-center w-11 h-11 lg:w-auto lg:h-auto lg:py-3 lg:pl-3.5 lg:pr-4 py-0 rounded-full text-white font-[800] text-[14px] active:scale-[0.97] transition-all duration-200 group ${liftBottom ? 'bottom-40 lg:bottom-24' : 'bottom-5 lg:bottom-6'} ${scrollHidden ? 'opacity-0 translate-y-3 pointer-events-none' : ''} ${destaque ? 'guia-destaque' : ''}`}
           style={{
-            background: 'linear-gradient(135deg, #0677FF 0%, #00C2FF 100%)',
+            background: 'linear-gradient(135deg, var(--accent) 0%, #00C2FF 100%)',
             boxShadow: '0 8px 28px -8px rgba(6,119,255,0.65), 0 0 0 1px rgba(6,119,255,0.25)',
           }}
         >
           <span className="relative flex items-center justify-center w-8 h-8 rounded-full bg-white/20">
             <span className="text-[10px] font-[900] tracking-[0.3px]" aria-hidden>{personInitials}</span>
-            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#00FFA3] border-2 border-[#0677FF]" />
+            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#00FFA3] border-2 border-[var(--accent)]" />
           </span>
           <span className="hidden lg:inline">AI Contabilista</span>
         </button>
@@ -446,7 +446,7 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
           >
             {/* Header */}
             <div className="shrink-0 px-4 py-3 flex items-center gap-3 text-white"
-              style={{ background: 'linear-gradient(135deg, #0B1D2D 0%, #0677FF 100%)' }}>
+              style={{ background: 'linear-gradient(135deg, #0B1D2D 0%, var(--accent) 100%)' }}>
               <span className="relative flex items-center justify-center w-9 h-9 rounded-full bg-white/15 shrink-0">
                 <span className="text-[11px] font-[900] tracking-[0.3px]" aria-hidden>{personInitials}</span>
                 <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#00FFA3] border-2 border-[#0B1D2D]" />
@@ -476,14 +476,14 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
                     m.role === 'user'
                       ? 'max-w-[85%] rounded-[16px] rounded-br-[5px] px-3.5 py-2.5 text-[13.5px] font-[500] leading-relaxed text-white'
                       : 'max-w-[88%] rounded-[16px] rounded-bl-[5px] px-3.5 py-2.5 text-[13.5px] font-[500] leading-relaxed text-[#0F172A] bg-white border border-slate-200'
-                  } style={m.role === 'user' ? { background: 'linear-gradient(135deg, #0677FF 0%, #044BB6 100%)' } : undefined}>
+                  } style={m.role === 'user' ? { background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%)' } : undefined}>
                     {renderText(m.content)}
 
                     {/* Notas de ações auto-aplicadas — clicáveis para repetir a ação */}
                     {m.notes?.map((n, k) => n.action ? (
                       <button key={k} type="button" onClick={() => repeatAction(n.action!)}
                         title="Clica para repetir esta ação"
-                        className="mt-2 flex items-center gap-1.5 text-[11.5px] font-[700] text-[#0677FF] hover:underline active:scale-[0.98] transition-all text-left">
+                        className="mt-2 flex items-center gap-1.5 text-[11.5px] font-[700] text-[var(--accent)] hover:underline active:scale-[0.98] transition-all text-left">
                         <RotateCcw className="w-3.5 h-3.5" strokeWidth={2.5} /> {n.text}
                       </button>
                     ) : (
@@ -494,8 +494,8 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
 
                     {/* Cartão de confirmação de preenchimento */}
                     {m.pendingFill && !m.fillApplied && (
-                      <div className="mt-2.5 rounded-[12px] border border-[#0677FF]/25 bg-[#0677FF]/5 p-3">
-                        <div className="text-[11px] font-[800] uppercase tracking-[0.4px] text-[#0677FF] mb-1.5">
+                      <div className="mt-2.5 rounded-[12px] border border-[var(--accent)]/25 bg-[var(--accent)]/5 p-3">
+                        <div className="text-[11px] font-[800] uppercase tracking-[0.4px] text-[var(--accent)] mb-1.5">
                           Preencher {VIEW_LABEL[m.pendingFill.target] ?? m.pendingFill.target}?
                         </div>
                         <ul className="space-y-1 mb-2.5">
@@ -509,7 +509,7 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
                         <div className="flex gap-2">
                           <button type="button" onClick={() => confirmFill(i)}
                             className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-[9px] text-[12.5px] font-[800] text-white active:scale-[0.98] transition-all"
-                            style={{ background: 'linear-gradient(135deg, #0677FF 0%, #044BB6 100%)' }}>
+                            style={{ background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%)' }}>
                             <Check className="w-3.5 h-3.5" strokeWidth={3} /> Aplicar
                           </button>
                           <button type="button" onClick={() => cancelFill(i)}
@@ -532,14 +532,14 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
                             setMsgs((prev) => [...prev, { role: 'assistant', content: 'Para importar para um cliente existente, escolhe primeiro o cliente. Diz-me o nome dele.' }]);
                           }
                         }}
-                        className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-[800] px-3 py-2 rounded-xl bg-[#0677FF] text-white hover:bg-[#0560d6] active:scale-[0.97] transition-all">
+                        className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-[800] px-3 py-2 rounded-xl bg-[var(--accent)] text-white hover:bg-[#0560d6] active:scale-[0.97] transition-all">
                         <FileUp className="w-4 h-4" strokeWidth={2.4} />
                         {m.saftCta === 'empresa' ? 'Carregar SAF-T no cliente ativo' : 'Carregar SAF-T (cliente novo)'}
                       </button>
                     )}
                     {m.saftCta === 'escolher' && (
-                      <div className="mt-2.5 rounded-[12px] border border-[#0677FF]/25 bg-[#0677FF]/5 p-3">
-                        <div className="text-[11px] font-[800] uppercase tracking-[0.4px] text-[#0677FF] mb-2">Para que cliente é o SAF-T?</div>
+                      <div className="mt-2.5 rounded-[12px] border border-[var(--accent)]/25 bg-[var(--accent)]/5 p-3">
+                        <div className="text-[11px] font-[800] uppercase tracking-[0.4px] text-[var(--accent)] mb-2">Para que cliente é o SAF-T?</div>
                         <div className="flex flex-wrap gap-1.5">
                           {(bridge.listClients?.() ?? []).map((c) => (
                             <button key={c.id} type="button"
@@ -548,12 +548,12 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
                                 bridge.selectClient?.(c.name);
                                 bridge.openSaftUpload?.('empresa');
                               }}
-                              className="text-[12px] font-[700] px-3 py-1.5 rounded-full bg-white border border-[#0677FF]/30 text-[#0677FF] hover:bg-[#0677FF] hover:text-white active:scale-[0.97] transition-all">
+                              className="text-[12px] font-[700] px-3 py-1.5 rounded-full bg-white border border-[var(--accent)]/30 text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white active:scale-[0.97] transition-all">
                               {c.name}
                             </button>
                           ))}
                           <button type="button" onClick={() => bridge.openSaftUpload?.('novo')}
-                            className="inline-flex items-center gap-1 text-[12px] font-[800] px-3 py-1.5 rounded-full bg-[#0677FF] text-white hover:bg-[#0560d6] active:scale-[0.97] transition-all">
+                            className="inline-flex items-center gap-1 text-[12px] font-[800] px-3 py-1.5 rounded-full bg-[var(--accent)] text-white hover:bg-[#0560d6] active:scale-[0.97] transition-all">
                             <FileUp className="w-3.5 h-3.5" strokeWidth={2.4} /> Cliente novo
                           </button>
                         </div>
@@ -563,21 +563,21 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
                       <DownloadPicker bridge={bridge} />
                     )}
                     {m.tourOffer && (
-                      <div className={`mt-2.5 rounded-[12px] border border-[#0677FF]/25 bg-[#0677FF]/5 p-3 ${destaque ? 'guia-card-destaque' : ''}`}>
-                        <div className="text-[11px] font-[800] uppercase tracking-[0.4px] text-[#0677FF] mb-1">
+                      <div className={`mt-2.5 rounded-[12px] border border-[var(--accent)]/25 bg-[var(--accent)]/5 p-3 ${destaque ? 'guia-card-destaque' : ''}`}>
+                        <div className="text-[11px] font-[800] uppercase tracking-[0.4px] text-[var(--accent)] mb-1">
                           Visita guiada · {m.tourOffer.titulo}
                         </div>
                         <p className="text-[12px] text-slate-600 leading-relaxed">{m.tourOffer.intro}</p>
                         <label className="mt-2 flex items-center gap-2 text-[11.5px] text-slate-500 cursor-pointer select-none">
                           <input type="checkbox"
                             onChange={(e) => { if (e.target.checked) bridge.setTourDisabled?.(view); }}
-                            className="accent-[#0677FF]" />
+                            className="accent-[var(--accent)]" />
                           Não perguntar novamente nesta ferramenta
                         </label>
                         <div className="mt-2 flex gap-2">
                           <button type="button"
                             onClick={() => bridge.startTour?.(view)}
-                            className="inline-flex items-center gap-1.5 text-[12px] font-[800] px-3 py-2 rounded-xl bg-[#0677FF] text-white hover:bg-[#0560d6] active:scale-[0.97] transition-all">
+                            className="inline-flex items-center gap-1.5 text-[12px] font-[800] px-3 py-2 rounded-xl bg-[var(--accent)] text-white hover:bg-[#0560d6] active:scale-[0.97] transition-all">
                             Ver tour · {viewTitle || m.tourOffer.titulo}
                           </button>
                           <button type="button"
@@ -595,7 +595,7 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
                     <div className="flex flex-wrap gap-1.5 pl-0.5">
                       {m.replies.map((opt, k) => (
                         <button key={k} type="button" onClick={() => send(opt)} aria-label={`Sugestão: ${opt}`}
-                          className="text-left text-[12px] font-[700] px-3 py-1.5 rounded-full bg-white border border-[#0677FF]/30 text-[#0677FF] max-w-full whitespace-normal break-words hover:bg-[#0677FF] hover:text-white hover:border-[#0677FF] active:scale-[0.97] transition-all">
+                          className="text-left text-[12px] font-[700] px-3 py-1.5 rounded-full bg-white border border-[var(--accent)]/30 text-[var(--accent)] max-w-full whitespace-normal break-words hover:bg-[var(--accent)] hover:text-white hover:border-[var(--accent)] active:scale-[0.97] transition-all">
                           {opt}
                         </button>
                       ))}
@@ -609,7 +609,7 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
                 <div className="flex flex-wrap gap-1.5 pt-1">
                   {QUICK.map((q) => (
                     <button key={q} type="button" onClick={() => send(q)}
-                      className="text-left text-[12px] font-[600] px-2.5 py-1.5 rounded-full bg-white border border-slate-200 text-[#334155] hover:border-[#0677FF] hover:text-[#0677FF] transition-colors">
+                      className="text-left text-[12px] font-[600] px-2.5 py-1.5 rounded-full bg-white border border-slate-200 text-[#334155] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
                       {q}
                     </button>
                   ))}
@@ -620,9 +620,9 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
                 <div className="flex justify-start">
                   <div className="rounded-[16px] rounded-bl-[5px] px-4 py-3 bg-white border border-slate-200">
                     <div className="flex gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#0677FF] animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#0677FF] animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#0677FF] animate-bounce" style={{ animationDelay: '300ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-bounce" style={{ animationDelay: '300ms' }} />
                     </div>
                   </div>
                 </div>
@@ -641,7 +641,7 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
                   }}
                   rows={1}
                   placeholder="Escreva a sua pergunta…"
-                  className="flex-1 resize-none max-h-28 px-3 py-2.5 rounded-[12px] bg-[#F5F7FA] border border-slate-200 text-[14px] font-[500] text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0677FF] focus:ring-2 focus:ring-[#0677FF]/15 transition-all"
+                  className="flex-1 resize-none max-h-28 px-3 py-2.5 rounded-[12px] bg-[#F5F7FA] border border-slate-200 text-[14px] font-[500] text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"
                   style={{ fontSize: 16 }}
                 />
                 <button
@@ -650,7 +650,7 @@ export default function AIContabilista({ ref, bridge, liftBottom = false, view, 
                   disabled={!input.trim() || busy}
                   aria-label="Enviar"
                   className="shrink-0 w-10 h-10 rounded-[12px] flex items-center justify-center text-white disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.95] transition-all"
-                  style={{ background: 'linear-gradient(135deg, #0677FF 0%, #044BB6 100%)' }}
+                  style={{ background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%)' }}
                 >
                   <Send className="w-4.5 h-4.5" strokeWidth={2.4} style={{ width: 18, height: 18 }} />
                 </button>

@@ -29,7 +29,7 @@ export function UpdateNotification({
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-50 rounded-lg border border-[#0677FF] bg-white/95 shadow-xl backdrop-blur-sm"
+      className="fixed bottom-6 right-6 z-50 rounded-lg border border-[var(--accent)] bg-white/95 shadow-xl backdrop-blur-sm"
       role="alert"
       aria-live="polite"
     >
@@ -57,7 +57,7 @@ export function UpdateNotification({
             onClick={() => {
               manualReload();
             }}
-            className="w-full mt-3 px-3 py-2 rounded bg-[#0677FF] text-white text-sm font-medium hover:bg-[#0B5BC4] transition-colors"
+            className="w-full mt-3 px-3 py-2 rounded bg-[var(--accent)] text-white text-sm font-medium hover:bg-[#0B5BC4] transition-colors"
           >
             Recarregar agora
           </button>

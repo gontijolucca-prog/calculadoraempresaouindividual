@@ -403,7 +403,7 @@ export function SimulatorPrintButton({ compact = false }: { compact?: boolean })
         onClick={onPdf}
         title="Descarregar esta simulação em PDF"
         aria-label="Descarregar simulação em PDF"
-        className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[9px] bg-[#0677FF] px-3 py-2.5 text-[12px] font-[700] text-white transition-colors hover:bg-blue-600 ${compact ? 'sm:px-2.5' : ''}`}
+        className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[9px] bg-[var(--accent)] px-3 py-2.5 text-[12px] font-[700] text-white transition-colors hover:bg-blue-600 ${compact ? 'sm:px-2.5' : ''}`}
       >
         <Download className="h-4 w-4" />
         <span className="hidden sm:inline">Descarregar PDF</span>
@@ -415,7 +415,7 @@ export function SimulatorPrintButton({ compact = false }: { compact?: boolean })
         aria-label="Imprimir simulação em A4"
         className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[9px] border border-[#D7E2EE] bg-white px-3 py-2.5 text-[12px] font-[700] text-[#475569] transition-colors hover:border-[var(--brand-bordeaux-neon)] hover:bg-[var(--brand-bordeaux-soft)] hover:text-[var(--brand-bordeaux)] ${compact ? 'sm:px-2.5' : ''}`}
       >
-        <Printer className="h-4 w-4 text-[#0677FF]" />
+        <Printer className="h-4 w-4 text-[var(--accent)]" />
         <span className="hidden sm:inline">Imprimir A4</span>
       </button>
     </>

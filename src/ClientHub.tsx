@@ -21,7 +21,7 @@ export default function ClientHub({ clientName, onNavigate }: {
     <div className="h-full overflow-y-auto bg-[#F5F7FA]">
       <div className="max-w-5xl mx-auto px-6 py-10">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-          <p className="text-[10px] font-[800] uppercase tracking-[2px] text-[#0677FF]">A trabalhar em</p>
+          <p className="text-[10px] font-[800] uppercase tracking-[2px] text-[var(--accent)]">A trabalhar em</p>
           <h1 className="mt-1 text-[26px] font-[800] text-[#0B1D2D] tracking-[-0.5px] leading-tight">{clientName}</h1>
           <p className="mt-1.5 text-[13.5px] text-slate-500 font-[500]">Escolha por onde começar — tudo o que fizer fica guardado neste cliente.</p>
         </motion.div>
@@ -31,10 +31,10 @@ export default function ClientHub({ clientName, onNavigate }: {
           type="button"
           onClick={() => onNavigate('profile')}
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.05 }}
-          className="group mt-7 w-full text-left flex items-center gap-4 bg-white rounded-[18px] border border-[#E2E8F0] hover:border-[#0677FF]/50 shadow-sm hover:shadow-md p-5 transition-all"
+          className="group mt-7 w-full text-left flex items-center gap-4 bg-white rounded-[18px] border border-[#E2E8F0] hover:border-[var(--accent)]/50 shadow-sm hover:shadow-md p-5 transition-all"
         >
-          <div className="w-12 h-12 rounded-[14px] bg-[#0677FF]/10 flex items-center justify-center shrink-0">
-            <UserCircle className="w-6 h-6 text-[#0677FF]" />
+          <div className="w-12 h-12 rounded-[14px] bg-[var(--accent)]/10 flex items-center justify-center shrink-0">
+            <UserCircle className="w-6 h-6 text-[var(--accent)]" />
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="text-[16px] font-[800] text-[#0B1D2D] leading-tight">Perfil do Cliente</h2>
@@ -42,7 +42,7 @@ export default function ClientHub({ clientName, onNavigate }: {
               Identificação, dados empresariais, fiscais &amp; família, custos e objetivos — alimenta todos os simuladores.
             </p>
           </div>
-          <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-[#0677FF] group-hover:translate-x-0.5 transition-all shrink-0" />
+          <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-[var(--accent)] group-hover:translate-x-0.5 transition-all shrink-0" />
         </motion.button>
 
         {/* Rows 2–3 — simuladores */}
@@ -61,15 +61,15 @@ export default function ClientHub({ clientName, onNavigate }: {
                 onClick={() => onNavigate(id)}
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.08 + i * 0.03 }}
-                className="group text-left flex flex-col bg-white rounded-[16px] border border-[#E2E8F0] hover:border-[#0677FF]/50 shadow-sm hover:shadow-md transition-all"
+                className="group text-left flex flex-col bg-white rounded-[16px] border border-[#E2E8F0] hover:border-[var(--accent)]/50 shadow-sm hover:shadow-md transition-all"
                 style={{ padding: 18 }}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-[12px] bg-[#0677FF]/10 flex items-center justify-center shrink-0">
-                    <Icon className="w-5 h-5 text-[#0677FF]" />
+                  <div className="w-10 h-10 rounded-[12px] bg-[var(--accent)]/10 flex items-center justify-center shrink-0">
+                    <Icon className="w-5 h-5 text-[var(--accent)]" />
                   </div>
                   <h3 className="text-[14px] font-[800] text-[#0B1D2D] leading-tight flex-1 min-w-0">{titulo}</h3>
-                  <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-[#0677FF] group-hover:translate-x-0.5 transition-all shrink-0" />
+                  <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-[var(--accent)] group-hover:translate-x-0.5 transition-all shrink-0" />
                 </div>
                 <p className="mt-2.5 text-[12px] text-slate-500 font-[500] leading-relaxed" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                   {resumo}

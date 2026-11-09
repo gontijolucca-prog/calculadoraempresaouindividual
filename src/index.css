@@ -2,6 +2,14 @@
 @import "tailwindcss";
 
 @theme {
+  /* Accent do escritório. O valor é trocado em runtime por applyAccent()
+     a partir de Definições → Identidade Visual. O fallback é o azul da marca,
+     por isso a app continua correta antes de qualquer configuração. */
+  --accent: #0677FF;
+  --accent-strong: #0556CC;
+  --accent-soft: rgba(6, 119, 255, 0.10);
+  --accent-ring: rgba(6, 119, 255, 0.30);
+
   --font-sans: "Montserrat", "Helvetica Neue", Helvetica, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 

@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Estudo360 · Arquitetura</title>
+<style>
+  :root{--ink:#0b1d2d;--muted:#5b6b7c;--line:#e2e8f0;--blue:#0677ff;--bg:#f6f8fb;--paper:#fff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+  header{padding:40px 24px 24px;max-width:1180px;margin:0 auto}
+  h1{font-size:34px;line-height:1.1;margin:0 0 8px;letter-spacing:-.5px}
+  header p{margin:0;color:var(--muted);max-width:70ch}
+  main{max-width:1180px;margin:0 auto;padding:0 24px 80px;display:grid;gap:22px}
+  section{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px 20px}
+  h2{font-size:13px;letter-spacing:.9px;text-transform:uppercase;color:var(--blue);margin:0 0 6px}
+  h3{font-size:19px;margin:0 0 4px}
+  .note{color:var(--muted);font-size:13.5px;margin:0 0 16px}
+  .mermaid{overflow:auto}
+  nav{position:sticky;top:0;background:rgba(246,248,251,.9);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);z-index:5}
+  nav div{max-width:1180px;margin:0 auto;padding:10px 24px;display:flex;gap:16px;flex-wrap:wrap;font-size:13px}
+  nav a{color:var(--muted);text-decoration:none;font-weight:600}
+  nav a:hover{color:var(--blue)}
+  footer{max-width:1180px;margin:0 auto;padding:0 24px 60px;color:var(--muted);font-size:12.5px}
+</style>
+</head>
+<body>
+<nav><div>
+  <a href="#visao">Visão geral</a>
+  <a href="#auth">Entrada e acessos</a>
+  <a href="#dados">Dados e sincronização</a>
+  <a href="#gabinete">Gabinete e equipa</a>
+  <a href="#simuladores">Simuladores</a>
+  <a href="#documentos">Documentos</a>
+  <a href="#servidor">Servidor</a>
+</div></nav>
+
+<header>
+  <h1>Estudo360 · como funciona</h1>
+  <p>Mapa completo do código real: entrada, acessos da equipa, dados por gabinete, simuladores fiscais, documentos exportáveis e o servidor. Cada caixa corresponde a módulos existentes no repositório.</p>
+</header>
+
+<main>
+<section id="visao">
+  <h2>01 · Visão geral</h2>
+  <h3>Camadas da aplicação</h3>
+  <p class="note">React + Vite no browser; Firestore para dados; Cloudflare Functions para o que não pode correr no cliente.</p>
+  <pre class="mermaid">
+flowchart TB
+  U[Utilizador] --> W[React + Vite]
+  W --> V{Vista ativa}
+  V -->|Carteira| E[EmpresasList / ClientProfile]
+  V -->|Gabinete| G[Gabinete · 10 separadores]
+  V -->|Simuladores| S[11 simuladores]
+  V -->|Relatórios| R[ExportarRelatorio]
+  V -->|Proposta| P[PropostaEditor]
+  W --> A[AuthContext]
+  W --> L[Camada lib/*]
+  L --> FS[(Firestore)]
+  L --> LS[(localStorage + outbox)]
+  W --> F[Cloudflare Functions]
+  F --> FS
+  F --> EXT[TOConline · AI · Firebase Admin]
+  </pre>
+</section>
+
+<section id="auth">
+  <h2>02 · Entrada e acessos</h2>
+  <h3>Conta normal vs acesso criado pelo gabinete</h3>
+  <p class="note">Duas identidades separadas: a conta Firebase da pessoa e a credencial técnica criada pelo dono. Ambas podem abrir o mesmo gabinete; só a conta normal pode criar gabinetes.</p>
+  <pre class="mermaid">
+flowchart TD
+  A[Login] --> B{Email + password}
+  B -->|Firebase Auth| C{Conta normal?}
+  B -->|Falha| D[/api/colaborador-login/]
+  D --> E{Credencial ativa?}
+  E -->|Sim| F[Custom token]
+  E -->|Revogada| G[Token só para ecrã 'acesso removido']
+  C -->|Sim| H[ID token Firebase]
+  F --> I[Claims: employeeOnly, credentialId, gabineteId]
+  H --> J[Sem claims de colaborador]
+  I --> K[Gabinete fixo · sem selector nem criação]
+  J --> L[Selector de gabinetes]
+  L --> M{Dono/admin de algum gabinete?}
+  M -->|Sim| N[Gabinete ativo]
+  M -->|Não| O[Pode criar gabinete]
+  </pre>
+</section>
+
+<section id="dados">
+  <h2>03 · Dados e sincronização</h2>
+  <h3>local-first com fila de saída</h3>
+  <p class="note">Toda a escrita atualiza primeiro a memória/localStorage. Firestore recebe em segundo plano; o que falhar fica na outbox e é repetido.</p>
+  <pre class="mermaid">
+flowchart LR
+  A[Ação do utilizador] --> B[queueSet / queueRemove]
+  B --> C[(localStorage · cache)]
+  C --> D{setDoc/deleteDoc}
+  D -->|ok| E[Firestore]
+  D -->|falha| F[Outbox]
+  F -->|45 s ou nova alteração| D
+  E --> G[onSnapshot]
+  G --> H[Merge LWW por _updatedAt]
+  H --> C
+  subgraph Coleções
+    I[gabinetes/id · ownerUid, memberUids, members, customRoles]
+    J[gabinete/id/col/doc · clientes, tarefas, obrigações, cofre...]
+    K[empresas/scopeId/chunks · carteira por gabinete]
+    L[updates · notas da reunião, append-only]
+  end
+  E --- I
+  E --- J
+  E --- K
+  E --- L
+  </pre>
+</section>
+
+<section id="gabinete">
+  <h2>04 · Gabinete e equipa</h2>
+  <h3>Quem pode o quê</h3>
+  <p class="note">Cargo define permissões no ecrã e nas regras do Firestore. Cargos personalizados são gravados no documento do gabinete.</p>
+  <pre class="mermaid">
+flowchart TD
+  O[Dono do gabinete] --> AD[Admin]
+  AD --> CO[Contabilista]
+  AD --> ES[Estagiária]
+  AD --> CR[Cargo personalizado]
+  CR --> P1[10 permissões selecionáveis]
+  P1 --> P2[trabalho diário · clientes · obrigações · cofre · apagar · restaurar · purgar · equipa · acessos · gabinete]
+  AD --> AC[Criar acesso: email + password]
+  AC --> CRED[(employeeCredentials · índice por hash do email)]
+  AC --> MEM[memberUids + members.role]
+  AC --> AUD[(audit_events · sem passwords)]
+  AD --> RM[Remover acesso]
+  RM --> REV[memberUids − uid · members.uid apagado · Auth desativado]
+  </pre>
+</section>
+
+<section id="simuladores">
+  <h2>05 · Simuladores</h2>
+  <h3>Do perfil ao resultado</h3>
+  <p class="note">Todos partem do perfil do cliente e de libs de cálculo isoladas, cobertas por testes golden.</p>
+  <pre class="mermaid">
+flowchart LR
+  P[Perfil do cliente] --> M[Motores fiscais]
+  M --> S1[Fiscal · ENI vs Lda]
+  M --> S2[Viaturas · TA, IVA, depreciação]
+  M --> S3[Aquisição · compra, crédito, leasing, renting]
+  M --> S4[Tickets · SS independente]
+  M --> S5[Diagnóstico · Imóveis · IMT]
+  M --> S6[Salário líquido · IRS]
+  M --> S7[Previsa · Modelo 22 + PPC]
+  S1 --> R[Resultado + pressupostos]
+  S7 --> R
+  R --> H[(Histórico por cliente)]
+  R --> D[PDF de uma folha]
+  </pre>
+</section>
+
+<section id="documentos">
+  <h2>06 · Documentos</h2>
+  <h3>Exportações e formatos</h3>
+  <p class="note">PDFs A4 com paleta azul; Word editável para os documentos de encerramento.</p>
+  <pre class="mermaid">
+flowchart TD
+  A[Documento] --> B{Formato}
+  B -->|PDF| C[RelatorioPdf · jsPDF]
+  B -->|Word| D[wordDocs · HTML .doc]
+  B -->|Impressão| E[printElement / paged]
+  C --> F[1 página A4 · matriz ou tabela]
+  D --> G[Documento editável · A4]
+  E --> H[Contrato integral 2–3 páginas]
+  E --> I[Mapas A4 paisagem]
+  A --> J[26 exemplos públicos no changelog]
+  </pre>
+</section>
+
+<section id="servidor">
+  <h2>07 · Servidor</h2>
+  <h3>Cloudflare Functions</h3>
+  <p class="note">Só entra aqui o que precisa de segredo, admin ou CORS: nada de passwords no browser.</p>
+  <pre class="mermaid">
+flowchart LR
+  W[Browser] -->|Bearer ID token| E1[/api/equipa-contas/]
+  W --> E2[/api/colaborador-login/]
+  W --> E3[/api/vincular-conta/]
+  W --> E4[/api/toconline/]
+  W --> E5[/api/chat/]
+  W --> E6[/api/deck/]
+  E1 --> ADM[Firebase Admin · service account]
+  E2 --> ADM
+  E3 --> ADM
+  ADM --> FS[(Firestore)]
+  ADM --> AUTH[Firebase Auth]
+  E4 --> TOC[TOConline API]
+  E5 --> IA[Kilo / OpenCode / OpenRouter]
+  E6 --> IA
+  </pre>
+</section>
+</main>
+
+<footer>Gerado a partir do código em <code>src/</code>, <code>functions/</code> e <code>firestore.rules</code>. Diagramas Mermaid — faz zoom com o browser.</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#ffffff',
+      primaryBorderColor: '#0677ff',
+      primaryTextColor: '#0b1d2d',
+      lineColor: '#94a3b8',
+      fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif',
+      fontSize: '14px'
+    },
+    flowchart: { curve: 'basis', padding: 14 }
+  });
+</script>
+</body>
+</html>

@@ -152,7 +152,7 @@ export function NotificacoesBell({
       >
         <Bell className="h-4 w-4" />
         {badge.total > 0 && (
-          <span className={`absolute -right-1 -top-1 inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full px-1 text-[10px] font-[800] text-white ${badge.atrasados > 0 ? 'bg-[#DC2626]' : 'bg-[#0677FF]'}`}>
+          <span className={`absolute -right-1 -top-1 inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full px-1 text-[10px] font-[800] text-white ${badge.atrasados > 0 ? 'bg-[#DC2626]' : 'bg-[var(--accent)]'}`}>
             {badge.total > 9 ? '9+' : badge.total}
           </span>
         )}
@@ -179,7 +179,7 @@ export function NotificacoesBell({
             ) : (
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[11.5px] text-zinc-600">Recebe um aviso no computador quando um prazo aperta.</span>
-                <button onClick={ativar} className="shrink-0 rounded-full bg-[#0677FF] px-2.5 py-1 text-[11px] font-[700] text-white hover:bg-blue-600">Ativar</button>
+                <button onClick={ativar} className="shrink-0 rounded-full bg-[var(--accent)] px-2.5 py-1 text-[11px] font-[700] text-white hover:bg-blue-600">Ativar</button>
               </div>
             )}
             {aviso && <div className="mt-1.5 text-[11px] text-zinc-500">{aviso}</div>}

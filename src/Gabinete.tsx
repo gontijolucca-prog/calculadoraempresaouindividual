@@ -227,7 +227,7 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
       {activeEmpresaNome && (
         <div className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-3">
           <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm flex items-center gap-2">
-            <span className="font-semibold text-[#0677FF]">A trabalhar: {activeEmpresaNome}</span>
+            <span className="font-semibold text-[var(--accent)]">A trabalhar: {activeEmpresaNome}</span>
             <span className="text-zinc-500">— agenda, tarefas e obrigações filtradas para este cliente.</span>
           </div>
         </div>
@@ -577,7 +577,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
             <option value="trimestral">Trimestral</option>
             <option value="mensal">Mensal</option>
           </select>
-          <button onClick={()=>setShowGerir(!showGerir)} className={`ml-auto shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerir ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher obrigações visíveis — grava permanente">
+          <button onClick={()=>setShowGerir(!showGerir)} className={`ml-auto shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerir ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[var(--accent)] text-white border-[var(--accent)] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher obrigações visíveis — grava permanente">
             <Plus className="w-3.5 h-3.5" /> Gerir obrigações
           </button>
         </div>
@@ -589,7 +589,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
             </div>
             <div className="flex gap-2">
               <input value={novaObrLabel} onChange={e=>setNovaObrLabel(e.target.value)} placeholder="Nova obrigação (ex: Modelo 30)" className="flex-1 px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" onKeyDown={e=>{ if(e.key==='Enter') handleAddObr(); }} />
-              <button onClick={handleAddObr} className="px-4 py-2 rounded-lg bg-[#0677FF] text-white text-sm font-semibold hover:bg-blue-600">Adicionar</button>
+              <button onClick={handleAddObr} className="px-4 py-2 rounded-lg bg-[var(--accent)] text-white text-sm font-semibold hover:bg-blue-600">Adicionar</button>
               <button onClick={()=>{ if(confirm('Repor lista original (7 obrigações)?')){ resetCatalogo(); setCatalogoState(getCatalogo()); showToast('✓ Lista reposta — gravado'); } }} className="px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm font-medium hover:bg-zinc-100">Repor</button>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -711,7 +711,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
         <div data-print-toolbar className="flex flex-wrap items-center gap-2 px-3 py-2.5 bg-[#F1F1F1] border-t border-zinc-300 text-xs print:bg-white">
           <button onClick={e=>imprimirMapa(e,'Quadro Resumo de Obrigações')} className="px-3 py-1.5 rounded border border-zinc-400 bg-gradient-to-b from-white to-zinc-100 hover:from-zinc-50 hover:to-zinc-200 text-zinc-800 font-medium shadow-sm">Imprimir</button>
 
-          <button onClick={handleExportPdf} className="px-3 py-1.5 rounded border border-[#0677FF] bg-[#0677FF] text-white font-medium shadow-sm hover:bg-blue-600">Exportar PDF</button>
+          <button onClick={handleExportPdf} className="px-3 py-1.5 rounded border border-[var(--accent)] bg-[var(--accent)] text-white font-medium shadow-sm hover:bg-blue-600">Exportar PDF</button>
           <button onClick={expandirTodos} className="px-3 py-1.5 rounded border border-zinc-400 bg-gradient-to-b from-white to-zinc-100 hover:from-zinc-50 hover:to-zinc-200 text-zinc-800 font-medium shadow-sm">Expandir todos</button>
           <button onClick={colapsarTodos} className="px-3 py-1.5 rounded border border-zinc-400 bg-gradient-to-b from-white to-zinc-100 hover:from-zinc-50 hover:to-zinc-200 text-zinc-800 font-medium shadow-sm">Colapsar todos</button>
           <div className="ml-auto flex flex-wrap items-center gap-4 text-[12px] text-zinc-700">
@@ -967,7 +967,7 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
         </div>
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-200 mt-2">
           {canEdit && <button onClick={()=>setShowPilaresMC(true)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-300 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50" title="Escolher pilares por empresa (nomes e visibilidade) — grava permanente">Pilares por empresa</button>}
-          {canEdit && <button onClick={()=>setShowGerirMC(!showGerirMC)} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerirMC ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
+          {canEdit && <button onClick={()=>setShowGerirMC(!showGerirMC)} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerirMC ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[var(--accent)] text-white border-[var(--accent)] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
             <Plus className="w-3.5 h-3.5" /> Gerir pilares
           </button>}
           {mcVisiveis !== null && <span className="text-xs text-zinc-500 whitespace-nowrap">{mcVisiveis.length}/{pilares.length} visíveis</span>}
@@ -983,7 +983,7 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
             <div className="flex flex-wrap gap-2">
               <input value={novaMCLabel} onChange={e=>setNovaMCLabel(e.target.value)} placeholder="Nome curto (ex: Tesouraria)" className="flex-1 min-w-[200px] max-w-[340px] px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm" />
               <input value={novaMCFull} onChange={e=>setNovaMCFull(e.target.value)} placeholder="Nome completo (opcional)" className="flex-1 min-w-[200px] max-w-[340px] px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm" />
-              <button onClick={handleAddMC} className="px-4 py-2 rounded-lg bg-[#0677FF] text-white text-sm font-semibold hover:bg-blue-600">Adicionar</button>
+              <button onClick={handleAddMC} className="px-4 py-2 rounded-lg bg-[var(--accent)] text-white text-sm font-semibold hover:bg-blue-600">Adicionar</button>
               <button onClick={()=>{ if(confirm('Repor pilares originais (7)?')){ resetMapaControloPilares(); setPilaresRaw(getMapaControloPilares()); showToastMC('✓ Reposto — gravado'); } }} className="px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm">Repor</button>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -1078,7 +1078,7 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
           <div className="flex gap-1.5">
             <button onClick={e=>imprimirMapa(e,'Mapa de Controlo')} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Imprimir</button>
             <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Exportar CSV</button>
-            <button onClick={exportPDF} className="px-3 py-1.5 rounded border border-[#0677FF] bg-[#0677FF] text-white">Exportar PDF</button>
+            <button onClick={exportPDF} className="px-3 py-1.5 rounded border border-[var(--accent)] bg-[var(--accent)] text-white">Exportar PDF</button>
             <button onClick={()=>{ const s=new Set<string>(); clientesFiltrados.forEach(c=>s.add(c.id)); setCollapsed(new Set()); }} className="hidden sm:inline-flex px-3 py-1.5 rounded border border-zinc-400 bg-white">Expandir todos</button>
             <button onClick={()=>setCollapsed(new Set(clientesFiltrados.map(c=>c.id)))} className="hidden sm:inline-flex px-3 py-1.5 rounded border border-zinc-400 bg-white">Colapsar todos</button>
           </div>
@@ -1325,7 +1325,7 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
         </div>
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-200 mt-2">
           {canEdit && <button onClick={()=>setShowPilaresRH(true)} className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-300 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-50" title="Escolher pilares por empresa (nomes e visibilidade) — grava permanente">Pilares por empresa</button>}
-          {canEdit && <button onClick={()=>setShowGerirRH(!showGerirRH)} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerirRH ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[#0677FF] text-white border-[#0677FF] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
+          {canEdit && <button onClick={()=>setShowGerirRH(!showGerirRH)} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors shadow-sm ${showGerirRH ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-[var(--accent)] text-white border-[var(--accent)] hover:bg-blue-600'}`} title="Adicionar, apagar e escolher pilares visíveis — grava permanente">
             <Plus className="w-3.5 h-3.5" /> Gerir pilares
           </button>}
           {rhVisiveis !== null && <span className="text-xs text-zinc-500 whitespace-nowrap">{rhVisiveis.length}/{pilares.length} visíveis</span>}
@@ -1341,7 +1341,7 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
             <div className="flex flex-wrap gap-2">
               <input value={novaRHLabel} onChange={e=>setNovaRHLabel(e.target.value)} placeholder="Nome curto (ex: Formação)" className="flex-1 min-w-[200px] max-w-[340px] px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm" />
               <input value={novaRHFull} onChange={e=>setNovaRHFull(e.target.value)} placeholder="Nome completo (opcional)" className="flex-1 min-w-[200px] max-w-[340px] px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm" />
-              <button onClick={handleAddRH} className="px-4 py-2 rounded-lg bg-[#0677FF] text-white text-sm font-semibold hover:bg-blue-600">Adicionar</button>
+              <button onClick={handleAddRH} className="px-4 py-2 rounded-lg bg-[var(--accent)] text-white text-sm font-semibold hover:bg-blue-600">Adicionar</button>
               <button onClick={()=>{ if(confirm('Repor pilares originais (6)?')){ resetMapaRHPilares(); setPilaresRaw(getMapaRHPilares()); showToastRH('✓ Reposto — gravado'); } }} className="px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm">Repor</button>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -1436,7 +1436,7 @@ function MapaRHView({ clientes, obrigacoes, canEdit = true }: { clientes:Gabinet
           <div className="flex gap-1.5">
             <button onClick={e=>imprimirMapa(e,'Mapa RH')} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Imprimir</button>
             <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Exportar CSV</button>
-            <button onClick={exportPDF} className="px-3 py-1.5 rounded border border-[#0677FF] bg-[#0677FF] text-white">Exportar PDF</button>
+            <button onClick={exportPDF} className="px-3 py-1.5 rounded border border-[var(--accent)] bg-[var(--accent)] text-white">Exportar PDF</button>
             <button onClick={()=>{ const s=new Set<string>(); clientesFiltrados.forEach(c=>s.add(c.id)); setCollapsed(new Set()); }} className="hidden sm:inline-flex px-3 py-1.5 rounded border border-zinc-400 bg-white">Expandir todos</button>
             <button onClick={()=>setCollapsed(new Set(clientesFiltrados.map(c=>c.id)))} className="hidden sm:inline-flex px-3 py-1.5 rounded border border-zinc-400 bg-white">Colapsar todos</button>
           </div>
@@ -1489,7 +1489,7 @@ function AgendaView({ tarefas, obrigacoes, alertas, clientes }: { tarefas: Taref
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold capitalize flex items-center gap-2"><Calendar className="w-5 h-5 text-[#0677FF]" /> {mesLabel}</h2>
+        <h2 className="text-lg font-bold capitalize flex items-center gap-2"><Calendar className="w-5 h-5 text-[var(--accent)]" /> {mesLabel}</h2>
         <div className="flex gap-1">
           <button onClick={() => setCur(d => { const n=new Date(d); n.setMonth(n.getMonth()-1); return n; })} className="p-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50"><ChevronLeft className="w-4 h-4" /></button>
           <button onClick={() => { const n=new Date(); n.setDate(1); setCur(n); setSel(n.getDate()); }} className="px-3 py-2 rounded-xl border border-zinc-200 bg-white text-sm hover:bg-zinc-50">Hoje</button>
@@ -1508,8 +1508,8 @@ function AgendaView({ tarefas, obrigacoes, alertas, clientes }: { tarefas: Taref
               const isSel = sel===d;
               const isToday = new Date().getFullYear()===cur.getFullYear() && new Date().getMonth()===cur.getMonth() && new Date().getDate()===d;
               return (
-                <button key={d} onClick={()=>setSel(d)} className={`h-[84px] rounded-xl border text-left p-2 flex flex-col gap-1 transition ${isSel ? 'bg-[#0677FF] text-white border-[#0677FF] shadow' : isToday ? 'bg-blue-50 border-blue-200' : 'bg-white border-zinc-200 hover:bg-zinc-50'}`}>
-                  <span className={`text-sm font-bold ${isSel ? 'text-white' : isToday ? 'text-[#0677FF]' : 'text-zinc-900'}`}>{d}</span>
+                <button key={d} onClick={()=>setSel(d)} className={`h-[84px] rounded-xl border text-left p-2 flex flex-col gap-1 transition ${isSel ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow' : isToday ? 'bg-blue-50 border-blue-200' : 'bg-white border-zinc-200 hover:bg-zinc-50'}`}>
+                  <span className={`text-sm font-bold ${isSel ? 'text-white' : isToday ? 'text-[var(--accent)]' : 'text-zinc-900'}`}>{d}</span>
                   {count>0 && (
                     <div className="space-y-0.5">
                       {ev.tarefas.slice(0,2).map(t=> <div key={t.id} className={`text-[10px] truncate px-1.5 py-0.5 rounded-full ${isSel ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'}`}>{t.titulo.slice(0,18)}</div>)}
@@ -1697,11 +1697,11 @@ function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmp
         <button onClick={()=>setVerArquivadas(v=>!v)} className={`px-3 py-2.5 rounded-xl border text-sm font-medium flex items-center gap-1.5 ${verArquivadas ? 'bg-[#0F172A] text-white border-[#0F172A]' : 'bg-white border-zinc-200 hover:bg-zinc-50'}`}>
           <Archive className="w-4 h-4" /> {verArquivadas ? 'Ver ativas' : `Arquivadas (${arquivadas.length})`}
         </button>
-        <button onClick={()=>{ setForm({ tipo:'tarefa', prioridade:'media', estado:'todo' }); setShowNew(true); }} className="px-4 py-2.5 rounded-xl bg-[#0677FF] text-white text-sm font-medium flex items-center gap-2"><Plus className="w-4 h-4" /> Nova tarefa</button>
+        <button onClick={()=>{ setForm({ tipo:'tarefa', prioridade:'media', estado:'todo' }); setShowNew(true); }} className="px-4 py-2.5 rounded-xl bg-[var(--accent)] text-white text-sm font-medium flex items-center gap-2"><Plus className="w-4 h-4" /> Nova tarefa</button>
       </div>
 
       <div className="flex items-center gap-2 text-xs text-zinc-500 px-1">
-        <Calendar className="w-3.5 h-3.5 text-[#0677FF]" />
+        <Calendar className="w-3.5 h-3.5 text-[var(--accent)]" />
         <span><strong className="text-zinc-700 capitalize">{mesLabel}</strong> — {listaFiltrada.length} itens • ordenado por urgência e estado</span>
         <span className="ml-auto hidden sm:inline text-zinc-400">Filtros por cliente, estado e prioridade • clica para mudar estado</span>
       </div>
@@ -1742,7 +1742,7 @@ function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmp
                     return (
                       <tr key={item.id} className="hover:bg-blue-50/40">
                         <td className="px-4 py-3">
-                          <div className="font-medium leading-tight line-clamp-1 flex items-center gap-2"><span className="text-[10px] px-2 py-0.5 rounded-full bg-[#0677FF] text-white font-bold uppercase">Fiscal</span> {item.titulo}</div>
+                          <div className="font-medium leading-tight line-clamp-1 flex items-center gap-2"><span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--accent)] text-white font-bold uppercase">Fiscal</span> {item.titulo}</div>
                           <div className="text-xs text-zinc-500">{o.tipo}</div>
                         </td>
                         <td className="px-3 py-3 text-zinc-600 text-xs">{item.clienteNome}</td>
@@ -1817,7 +1817,7 @@ function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmp
                 <select value={form.estado} onChange={e=>setForm({...form, estado:e.target.value as never})} className="px-3 py-2.5 rounded-xl border border-zinc-200 bg-white text-sm"><option value="todo">A fazer</option><option value="doing">Em curso</option><option value="done">Feito</option><option value="atrasada">Atrasada</option></select>
               </div>
             </div>
-            <div className="flex justify-end gap-2 mt-6"><button onClick={()=>{ setShowNew(false); setForm({ tipo:'tarefa', prioridade:'media', estado:'todo' }); }} className="px-4 py-2.5 rounded-xl border border-zinc-200 text-sm">Cancelar</button><button onClick={handleSave} className="px-4 py-2.5 rounded-xl bg-[#0677FF] text-white text-sm font-medium">Guardar tarefa</button></div>
+            <div className="flex justify-end gap-2 mt-6"><button onClick={()=>{ setShowNew(false); setForm({ tipo:'tarefa', prioridade:'media', estado:'todo' }); }} className="px-4 py-2.5 rounded-xl border border-zinc-200 text-sm">Cancelar</button><button onClick={handleSave} className="px-4 py-2.5 rounded-xl bg-[var(--accent)] text-white text-sm font-medium">Guardar tarefa</button></div>
           </div>
         </div>
       )}
@@ -2106,7 +2106,7 @@ function CofreView({ cofre, clientes, canDelete = true }: { cofre:CofreEntrada[]
               <option value="">Todos os clientes</option>
               {clientesCofre.map(([id,nome]) => <option key={id} value={id}>{nome}</option>)}
             </select>
-            <button onClick={startCreate} className="ml-auto px-4 py-2 rounded-full bg-[#0677FF] text-white text-sm font-medium flex items-center gap-2"><Plus className="w-4 h-4" /> Adicionar</button>
+            <button onClick={startCreate} className="ml-auto px-4 py-2 rounded-full bg-[var(--accent)] text-white text-sm font-medium flex items-center gap-2"><Plus className="w-4 h-4" /> Adicionar</button>
           </div>
           <div className="py-16 text-center">
             <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center mx-auto"><Lock className="w-6 h-6 text-zinc-400" /></div>
@@ -2302,7 +2302,7 @@ function EscolherCliente({ clientes, onSelect, onGoEmpresas }: { clientes: Gabin
           ))}
         </div>
       ) : (
-        <button onClick={() => onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[#0677FF] text-white text-sm">Ir para Lista de Empresas</button>
+        <button onClick={() => onGoEmpresas?.()} className="mt-3 px-4 py-2 rounded-xl bg-[var(--accent)] text-white text-sm">Ir para Lista de Empresas</button>
       )}
     </div>
   );

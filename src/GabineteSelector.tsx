@@ -102,7 +102,7 @@ export default function GabineteSelector({ onChosen }: Props) {
       <header className="px-6 py-4 flex items-center justify-between max-w-6xl mx-auto w-full">
         <div className="flex items-center gap-2.5">
           <img src="/logo.svg" alt="" className="w-8 h-8 object-contain logo-orb" />
-          <span className="text-[16px] font-[800] tracking-[-0.2px] text-[#0B1D2D]">ESTUDO<span className="text-[#0677FF]">360°</span></span>
+          <span className="text-[16px] font-[800] tracking-[-0.2px] text-[#0B1D2D]">ESTUDO<span className="text-[var(--accent)]">360°</span></span>
           <span className="ml-2 text-[11px] font-[700] tracking-[1px] uppercase px-2 py-1 rounded-full bg-white border border-[#E2E8F0] text-[#64748B]">Gabinetes</span>
         </div>
         <div className="flex items-center gap-3">
@@ -126,14 +126,14 @@ export default function GabineteSelector({ onChosen }: Props) {
 
             {loading ? (
               <div className="bg-white rounded-[20px] border border-[#E2E8F0] p-10 flex flex-col items-center gap-3">
-                <Loader2 className="w-6 h-6 text-[#0677FF] animate-spin" />
+                <Loader2 className="w-6 h-6 text-[var(--accent)] animate-spin" />
                 <span className="text-[13px] font-[600] text-[#64748B]">A carregar gabinetes…</span>
               </div>
             ) : (
               <>
                 <div className="bg-white rounded-[20px] border border-[#E2E8F0] shadow-sm overflow-hidden">
                   <div className="px-5 py-3 bg-[#F5F7FA] border-b border-[#E2E8F0] flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-[#0677FF]" />
+                    <Building2 className="w-4 h-4 text-[var(--accent)]" />
                     <span className="text-[11px] font-[800] tracking-[1px] uppercase text-[#0F172A]">Os seus gabinetes</span>
                     <span className="ml-auto text-[11px] font-[700] text-[#94A3B8]">{meus.length}</span>
                   </div>
@@ -153,7 +153,7 @@ export default function GabineteSelector({ onChosen }: Props) {
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
                                 <span className="text-[14px] font-[800] text-[#0B1D2D] truncate">{g.nome}</span>
-                                {isActive && <span className="text-[10px] font-[800] tracking-[0.5px] uppercase px-2 py-0.5 rounded-full bg-[#0677FF] text-white">Ativo</span>}
+                                {isActive && <span className="text-[10px] font-[800] tracking-[0.5px] uppercase px-2 py-0.5 rounded-full bg-[var(--accent)] text-white">Ativo</span>}
                               </div>
                               <div className="text-[12px] text-[#64748B] truncate">
                                 {g.nif ? `NIF ${g.nif} · ` : ''}{role} · {g.memberUids.length} membro(s)
@@ -175,7 +175,7 @@ export default function GabineteSelector({ onChosen }: Props) {
             {!employeeProfile && (
               <div className="bg-white rounded-[20px] border border-[#E2E8F0] shadow-sm p-6">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-[#EFF6FF] text-[#0677FF] flex items-center justify-center"><KeyRound className="w-4 h-4" /></div>
+                  <div className="w-8 h-8 rounded-full bg-[#EFF6FF] text-[var(--accent)] flex items-center justify-center"><KeyRound className="w-4 h-4" /></div>
                   <div>
                     <h2 className="text-[16px] font-[800] text-[#0B1D2D]">Já tem um acesso criado pelo gabinete?</h2>
                     <p className="text-[12px] text-[#64748B] mt-0.5">{accountEmail}</p>
@@ -184,7 +184,7 @@ export default function GabineteSelector({ onChosen }: Props) {
                 {!linkOpen ? (
                   <>
                     <p className="mt-3 text-[13px] text-[#64748B] leading-relaxed">Use a password que o dono ou administrador criou para este email. Assim, a sua conta fica associada ao gabinete certo.</p>
-                    <button onClick={() => { setLinkOpen(true); setError(null); }} className="mt-4 w-full inline-flex items-center justify-center gap-2 border border-[#0677FF]/25 bg-[#EFF6FF] text-[#0558C9] py-3 rounded-xl text-[14px] font-[800] hover:bg-[#E3F0FF]">
+                    <button onClick={() => { setLinkOpen(true); setError(null); }} className="mt-4 w-full inline-flex items-center justify-center gap-2 border border-[var(--accent)]/25 bg-[#EFF6FF] text-[#0558C9] py-3 rounded-xl text-[14px] font-[800] hover:bg-[#E3F0FF]">
                       <KeyRound className="w-4 h-4" /> Confirmar acesso ao gabinete
                     </button>
                   </>
@@ -197,7 +197,7 @@ export default function GabineteSelector({ onChosen }: Props) {
                           type={showLinkPassword ? 'text' : 'password'}
                           value={linkPassword}
                           onChange={(e) => setLinkPassword(e.target.value)}
-                          className="w-full px-3 pr-11 py-3 rounded-xl border border-[#E2E8F0] bg-[#F5F7FA] text-[14px] focus:bg-white focus:border-[#0677FF] outline-none"
+                          className="w-full px-3 pr-11 py-3 rounded-xl border border-[#E2E8F0] bg-[#F5F7FA] text-[14px] focus:bg-white focus:border-[var(--accent)] outline-none"
                           autoComplete="current-password"
                           autoFocus
                         />
@@ -209,7 +209,7 @@ export default function GabineteSelector({ onChosen }: Props) {
                     {linkSuccess && <div className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2 text-[12.5px] font-[600] text-emerald-700"><Check className="w-4 h-4" /> {linkSuccess}</div>}
                     <div className="flex gap-2">
                       <button type="button" onClick={() => { setLinkOpen(false); setLinkPassword(''); setError(null); }} className="flex-1 py-3 rounded-xl border border-[#E2E8F0] bg-white text-[14px] font-[700] text-[#475569]">Cancelar</button>
-                      <button type="submit" disabled={linkBusy} className="flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-[#0677FF] text-white text-[14px] font-[800] hover:bg-[#0558c9] disabled:opacity-60">
+                      <button type="submit" disabled={linkBusy} className="flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-[var(--accent)] text-white text-[14px] font-[800] hover:bg-[var(--accent-strong)] disabled:opacity-60">
                         {linkBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />} Confirmar
                       </button>
                     </div>
@@ -234,15 +234,15 @@ export default function GabineteSelector({ onChosen }: Props) {
                 <form onSubmit={handleCreate} className="space-y-3">
                   <label className="block">
                     <span className="text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B]">Nome do gabinete *</span>
-                    <input value={newNome} onChange={e => setNewNome(e.target.value)} placeholder="Ex: Silva & Associados" className="mt-1 w-full px-3 py-3 rounded-xl border border-[#E2E8F0] bg-[#F5F7FA] text-[14px] focus:bg-white focus:border-[#0677FF] outline-none" autoFocus />
+                    <input value={newNome} onChange={e => setNewNome(e.target.value)} placeholder="Ex: Silva & Associados" className="mt-1 w-full px-3 py-3 rounded-xl border border-[#E2E8F0] bg-[#F5F7FA] text-[14px] focus:bg-white focus:border-[var(--accent)] outline-none" autoFocus />
                   </label>
                   <label className="block">
                     <span className="text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B]">NIF (opcional)</span>
-                    <input value={newNif} onChange={e => setNewNif(e.target.value)} placeholder="500000000" className="mt-1 w-full px-3 py-3 rounded-xl border border-[#E2E8F0] bg-[#F5F7FA] text-[14px] focus:bg-white focus:border-[#0677FF] outline-none" />
+                    <input value={newNif} onChange={e => setNewNif(e.target.value)} placeholder="500000000" className="mt-1 w-full px-3 py-3 rounded-xl border border-[#E2E8F0] bg-[#F5F7FA] text-[14px] focus:bg-white focus:border-[var(--accent)] outline-none" />
                   </label>
                   <div className="flex gap-2">
                     <button type="button" onClick={() => setCreating(false)} className="flex-1 py-3 rounded-xl border border-[#E2E8F0] bg-white text-[14px] font-[700] text-[#475569]">Cancelar</button>
-                    <button type="submit" disabled={busyId === 'create'} className="flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-[#0677FF] text-white text-[14px] font-[800] hover:bg-[#0558c9] disabled:opacity-60">
+                    <button type="submit" disabled={busyId === 'create'} className="flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-[var(--accent)] text-white text-[14px] font-[800] hover:bg-[var(--accent-strong)] disabled:opacity-60">
                       {busyId === 'create' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Criar e entrar
                     </button>
                   </div>

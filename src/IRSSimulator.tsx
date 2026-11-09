@@ -99,7 +99,7 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="text-[22px] font-[800] text-[#0F172A] leading-tight tracking-[-0.4px] flex items-center gap-2">
-              <Receipt className="w-6 h-6 text-[#0677FF]" strokeWidth={2.25} /> Simulador de IRS
+              <Receipt className="w-6 h-6 text-[var(--accent)]" strokeWidth={2.25} /> Simulador de IRS
             </h1>
             <p className="text-[13px] font-[500] text-[#64748B] mt-1.5 leading-relaxed">
               Estimativa do IRS anual (Modelo 3) segundo o CIRS. Atualiza a cada alteração.
@@ -110,7 +110,7 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
 
         {/* Dados do agregado */}
         <section className="flex flex-col gap-4">
-          <h2 className={sectionTitleCls}><Users className="w-4 h-4 text-[#0677FF]" /> Agregado familiar</h2>
+          <h2 className={sectionTitleCls}><Users className="w-4 h-4 text-[var(--accent)]" /> Agregado familiar</h2>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelCls}>Tributação</label>
@@ -143,7 +143,7 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
             </div>
           </div>
           <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={!!(s as any).monoparental} onChange={(e) => set({ monoparental: e.target.checked } as any)} className="w-4 h-4 rounded border-[#E2E8F0] text-[#0677FF] focus:ring-[#0677FF]" />
+            <input type="checkbox" checked={!!(s as any).monoparental} onChange={(e) => set({ monoparental: e.target.checked } as any)} className="w-4 h-4 rounded border-[#E2E8F0] text-[var(--accent)] focus:ring-[var(--accent)]" />
             <span className="text-[13px] font-[500] text-[#475569]">Família monoparental</span>
             <Tip>Dedutibilidade majorada: 45% (em vez de 35%) com teto €335 (em vez de €250).</Tip>
           </label>
@@ -234,14 +234,14 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
               </div>
             </fieldset>
           ))}
-          <button type="button" onClick={addPessoa} className="self-start inline-flex items-center gap-1.5 px-3 py-2 rounded-[8px] border-2 border-dashed border-[#CBD5E1] text-[12px] font-[700] text-[#475569] hover:border-[#0677FF] hover:text-[#0F172A] transition-colors">
+          <button type="button" onClick={addPessoa} className="self-start inline-flex items-center gap-1.5 px-3 py-2 rounded-[8px] border-2 border-dashed border-[#CBD5E1] text-[12px] font-[700] text-[#475569] hover:border-[var(--accent)] hover:text-[#0F172A] transition-colors">
             <Plus className="w-4 h-4" /> Adicionar Sujeito Passivo B
           </button>
         </section>
 
         {/* Despesas dedutíveis */}
         <section className="flex flex-col gap-3">
-          <h2 className={sectionTitleCls}><Wallet className="w-4 h-4 text-[#0677FF]" /> Despesas dedutíveis (anuais)</h2>
+          <h2 className={sectionTitleCls}><Wallet className="w-4 h-4 text-[var(--accent)]" /> Despesas dedutíveis (anuais)</h2>
           <div className="grid grid-cols-2 gap-3">
             {([
               ['gerais', 'Despesas gerais (€)', '35%'],
@@ -262,7 +262,7 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
 
         {/* Rendimentos adicionais — anexos E/F/G */}
         <section className="flex flex-col gap-3">
-          <h2 className={sectionTitleCls}><Wallet className="w-4 h-4 text-[#0677FF]" /> Rendimentos adicionais (anexos E/F/G)</h2>
+          <h2 className={sectionTitleCls}><Wallet className="w-4 h-4 text-[var(--accent)]" /> Rendimentos adicionais (anexos E/F/G)</h2>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelCls}>Capitais — juros/dividendos (€)</label>
@@ -411,7 +411,7 @@ export default function IRSSimulator({ initialState, onStateChange }: Props) {
             </div>
 
             <div className="bg-white rounded-[16px] border border-[#E2E8F0] p-5">
-              <h3 className="text-[12px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3 flex items-center gap-2"><Sliders className="w-3.5 h-3.5 text-[#0677FF]" /> E se…</h3>
+              <h3 className="text-[12px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3 flex items-center gap-2"><Sliders className="w-3.5 h-3.5 text-[var(--accent)]" /> E se…</h3>
               <div className="space-y-3.5">
                 <div>
                   <label className="flex items-center justify-between text-[11px] font-[600] text-[#64748B] mb-1">

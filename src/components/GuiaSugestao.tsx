@@ -51,7 +51,7 @@ export default function GuiaSugestao({
         type="button"
         onClick={() => setMenu(v => !v)}
         className="group flex items-center justify-center gap-2.5 w-11 h-11 lg:w-auto lg:h-auto lg:pl-4 lg:pr-3.5 lg:py-3 rounded-full text-white font-[800] text-[13.5px] tracking-tight shadow-[0_10px_30px_-6px_rgba(6,119,255,0.45)] hover:scale-[1.04] hover:shadow-[0_14px_36px_-6px_rgba(6,119,255,0.55)] transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-        style={{ background: 'linear-gradient(135deg, #0B1D2D 0%, #0677FF 115%)' }}
+        style={{ background: 'linear-gradient(135deg, #0B1D2D 0%, var(--accent) 115%)' }}
         title={`Aprender a usar: ${g.titulo}`}
         aria-expanded={menu}
         aria-label="Aprender esta página — guia"
@@ -89,7 +89,7 @@ export default function GuiaSugestao({
               <button
                 type="button"
                 onClick={() => { setMenu(false); onStart(view); }}
-                className="flex items-center justify-center gap-2 rounded-[12px] bg-[#0677FF] text-white text-[13.5px] font-[800] px-4 py-2.5 hover:bg-blue-600 transition-colors"
+                className="flex items-center justify-center gap-2 rounded-[12px] bg-[var(--accent)] text-white text-[13.5px] font-[800] px-4 py-2.5 hover:bg-blue-600 transition-colors"
               >
                 <GraduationCap className="w-4 h-4" /> Ver guia agora ({g.passos.length + 1} passos)
               </button>

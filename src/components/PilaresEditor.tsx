@@ -171,7 +171,7 @@ export function PilaresEditor({
         <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-zinc-100 pt-3">
           <input value={novoCurto} onChange={e => setNovoCurto(e.target.value)} placeholder="Nome curto (ex: IVA)" className="w-[130px] rounded-lg border border-zinc-300 px-2 py-1.5 text-[12px]" />
           <input value={novoLongo} onChange={e => setNovoLongo(e.target.value)} placeholder="Nome completo (opcional)" className="min-w-[160px] flex-1 rounded-lg border border-zinc-300 px-2 py-1.5 text-[12px]" onKeyDown={e => { if (e.key === 'Enter') void adicionar(); }} />
-          <button onClick={adicionar} className="inline-flex items-center gap-1 rounded-lg bg-[#0677FF] px-3 py-1.5 text-[11.5px] font-[700] text-white"><Plus className="h-3.5 w-3.5" /> Adicionar</button>
+          <button onClick={adicionar} className="inline-flex items-center gap-1 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[11.5px] font-[700] text-white"><Plus className="h-3.5 w-3.5" /> Adicionar</button>
           <button onClick={repor} className="inline-flex items-center gap-1 rounded-lg border border-zinc-300 px-2.5 py-1.5 text-[11.5px] font-[600] text-zinc-600"><RotateCcw className="h-3.5 w-3.5" /> Repor</button>
         </div>
 

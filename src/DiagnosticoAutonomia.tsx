@@ -140,7 +140,7 @@ function RadarChart({ scores }: { scores: number[] }) {
         <line key={i} x1={cx} y1={cy} x2={op.x} y2={op.y} stroke="#E2E8F0" strokeWidth={0.8} />
       ))}
       {/* Score polygon */}
-      <path d={toPath(scorePoints)} fill="rgba(120,29,29,0.18)" stroke="#0677FF" strokeWidth={2} />
+      <path d={toPath(scorePoints)} fill="rgba(120,29,29,0.18)" stroke='var(--accent)' strokeWidth={2} />
       {/* Score dots */}
       {scorePoints.map((p, i) => (
         <circle key={i} cx={p.x} cy={p.y} r={4} fill={scoreColor(scores[i])} stroke="white" strokeWidth={1.5} />
@@ -312,7 +312,7 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
                 onClick={() => setSt({ [key]: !st[key as keyof DiagnosticoState] } as Partial<DiagnosticoState>)}
                 className={cn(
                   "w-5 h-5 rounded-[4px] border-2 flex items-center justify-center transition-colors shrink-0",
-                  st[key as keyof DiagnosticoState] ? "bg-[#0677FF] border-[#0677FF]" : "border-[#E2E8F0] bg-white"
+                  st[key as keyof DiagnosticoState] ? "bg-[var(--accent)] border-[var(--accent)]" : "border-[#E2E8F0] bg-white"
                 )}
               >
                 {st[key as keyof DiagnosticoState] && <CheckCircle className="w-3 h-3 text-white" />}
@@ -526,7 +526,7 @@ export default function DiagnosticoAutonomia({ initialState, onStateChange }: Pr
                 onClick={() => setState({ [key]: !d[key as keyof DiagnosticoState] } as Partial<DiagnosticoState>)}
                 className={cn(
                   "w-5 h-5 rounded-[4px] border-2 flex items-center justify-center transition-colors shrink-0",
-                  d[key as keyof DiagnosticoState] ? "bg-[#0677FF] border-[#0677FF]" : "border-[#E2E8F0] bg-white"
+                  d[key as keyof DiagnosticoState] ? "bg-[var(--accent)] border-[var(--accent)]" : "border-[#E2E8F0] bg-white"
                 )}
               >
                 {d[key as keyof DiagnosticoState] && <CheckCircle className="w-3 h-3 text-white" />}

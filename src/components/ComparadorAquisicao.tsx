@@ -141,7 +141,7 @@ export function ComparadorAquisicao({ state, onChange }: { state: SimState; onCh
             <tr>
               <th className="w-[190px] px-2 py-2 text-left font-[700] text-[#64748B]"> </th>
               {MODOS.map(m => (
-                <th key={m} className={`px-2 py-2 text-right font-[800] ${m === melhor ? 'text-[#0677FF]' : 'text-[#0F172A]'}`}>
+                <th key={m} className={`px-2 py-2 text-right font-[800] ${m === melhor ? 'text-[var(--accent)]' : 'text-[#0F172A]'}`}>
                   <button
                     type="button"
                     onClick={() => onChange({ modoAquisicao: m })}

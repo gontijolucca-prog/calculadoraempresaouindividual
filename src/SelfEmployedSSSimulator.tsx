@@ -173,18 +173,18 @@ export default function SelfEmployedSSSimulator({ initialState, onStateChange }:
               <p className="text-[12px] text-[#64748B] font-[500]">Estimativa por mês</p>
             </div>
 
-            <div className="bg-white border-2 border-[#0677FF] rounded-[24px] p-[24px] md:p-[28px] flex flex-col shadow-sm ring-4 ring-[#0677FF]/10">
+            <div className="bg-white border-2 border-[var(--accent)] rounded-[24px] p-[24px] md:p-[28px] flex flex-col shadow-sm ring-4 ring-[var(--accent)]/10">
               <div className="flex items-center gap-[12px] mb-[16px]">
-                <div className="bg-[#FDF2F2] text-[#0677FF] p-[10px] rounded-[14px]">
+                <div className="bg-[#FDF2F2] text-[var(--accent)] p-[10px] rounded-[14px]">
                   <Calendar className="w-[20px] h-[20px]" />
                 </div>
                 <h3 className="text-[15px] font-[700] text-[#0F172A]">Trimestral <Tip>O valor a pagar à Segurança Social de 3 em 3 meses. Pagamentos em janeiro, abril, julho e outubro, até ao dia 20.</Tip></h3>
               </div>
-              <div className="text-[36px] font-[800] text-[#0677FF] tracking-[-1px] mb-[8px]">
+              <div className="text-[36px] font-[800] text-[var(--accent)] tracking-[-1px] mb-[8px]">
                 {ptEur(result.trimestral)}
               </div>
               <p className="text-[12px] text-[#64748B] font-[500]">Valor a pagar cada trimestre</p>
-              <div className="mt-3 text-[11px] bg-[#FDF2F2] text-[#0677FF] font-[700] rounded-[8px] px-3 py-1.5 text-center">
+              <div className="mt-3 text-[11px] bg-[#FDF2F2] text-[var(--accent)] font-[700] rounded-[8px] px-3 py-1.5 text-center">
                 Jan • Abr • Jul • Out (até dia 20)
               </div>
             </div>

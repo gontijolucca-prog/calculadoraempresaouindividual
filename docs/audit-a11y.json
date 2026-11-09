@@ -1,0 +1,184 @@
+{
+  "geradoEm": "2026-11-09T00:49:11.855Z",
+  "resumo": {
+    "totalNome": 0,
+    "totalLabel": 0,
+    "totalAlt": 0
+  },
+  "relatorio": [
+    {
+      "ecra": "empresas",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "profile",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "tax",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "vehicle",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "ticket",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "selfss",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "diagnostico",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "imoveis",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "imt",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "salario",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "irs",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "legal",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "previsa",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "aquisicao",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "office-settings",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "proposta",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "historico",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "exportar",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "hub",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "gabinete/dashboard",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "gabinete/visao-geral",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "gabinete/mapa-controlo",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "gabinete/mapa-rh",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "gabinete/equipa",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "gabinete/tarefas",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "gabinete/agenda",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "gabinete/obrigacoes",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "gabinete/cofre",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    },
+    {
+      "ecra": "gabinete/lixeira",
+      "semNome": [],
+      "semLabel": [],
+      "semAlt": []
+    }
+  ]
+}

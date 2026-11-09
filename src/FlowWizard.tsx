@@ -82,7 +82,7 @@ export function FlowWizard<T>({
       {/* Top progress bar */}
       <div className="shrink-0 w-full h-1.5 bg-[#F1F5F9]" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Progresso do wizard">
         <motion.div
-          className="h-full bg-[#0677FF]"
+          className="h-full bg-[var(--accent)]"
           initial={false}
           animate={{ width: `${progress}%` }}
           transition={{ duration: 0.5, ease: PREMIUM_EASE }}

@@ -70,7 +70,7 @@ export default function PropostaEditor({ deck: initial, office, honorarios, clie
   const brand = useMemo(
     () => ({
       nome: office.nome || 'Estudo 360°',
-      corPrimaria: office.corPrimaria || '#0677FF',
+      corPrimaria: office.corPrimaria || 'var(--accent)',
       logoDataUrl: office.logoDataUrl,
       email: office.email,
       telefone: office.telefone,
@@ -262,7 +262,7 @@ export default function PropostaEditor({ deck: initial, office, honorarios, clie
         <input
           value={deck.titulo}
           onChange={(e) => patch({ titulo: e.target.value.slice(0, 90) })}
-          className="flex-1 min-w-[180px] max-w-[420px] px-3 py-1.5 rounded-lg border border-[#E2E8F0] text-[14px] font-[700] text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30"
+          className="flex-1 min-w-[180px] max-w-[420px] px-3 py-1.5 rounded-lg border border-[#E2E8F0] text-[14px] font-[700] text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
           aria-label="Título da proposta"
         />
         <select
@@ -277,14 +277,14 @@ export default function PropostaEditor({ deck: initial, office, honorarios, clie
           {saved ? <><Check className="w-3.5 h-3.5" /> Guardado</> : <><Loader2 className="w-3.5 h-3.5 animate-spin" /> A guardar…</>}
         </span>
         <div className="ml-auto flex items-center gap-2">
-          <button onClick={rewriteCard} disabled={busyAi || !card} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-[700] text-[#334155] hover:border-[#0677FF] disabled:opacity-50">
+          <button onClick={rewriteCard} disabled={busyAi || !card} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-[700] text-[#334155] hover:border-[var(--accent)] disabled:opacity-50">
             {busyAi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Regerar card
           </button>
           <GamaCopyButton office={office} honorarios={honorarios} cliente={cliente} briefing={deck.respostas} />
-          <button onClick={exportPdf} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-[700] text-[#334155] hover:border-[#0677FF]">
+          <button onClick={exportPdf} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-[12px] font-[700] text-[#334155] hover:border-[var(--accent)]">
             <Printer className="w-4 h-4" /> PDF · 1 página
           </button>
-          <button onClick={publish} disabled={pubBusy} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#0677FF] text-white text-[12px] font-[700] hover:bg-[#0059c9] disabled:opacity-60">
+          <button onClick={publish} disabled={pubBusy} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[var(--accent)] text-white text-[12px] font-[700] hover:bg-[#0059c9] disabled:opacity-60">
             {pubBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />} {deck.slug ? 'Atualizar link' : 'Publicar'}
           </button>
         </div>
@@ -308,7 +308,7 @@ export default function PropostaEditor({ deck: initial, office, honorarios, clie
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => { if (dragFrom.current !== null) move(dragFrom.current, i); dragFrom.current = null; }}
               onClick={() => setActive(i)}
-              className={`group flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer border shrink-0 min-w-[150px] lg:min-w-0 ${i === active ? 'border-[#0677FF] bg-[#EFF6FF]' : 'border-transparent hover:bg-[#F8FAFC]'}`}
+              className={`group flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer border shrink-0 min-w-[150px] lg:min-w-0 ${i === active ? 'border-[var(--accent)] bg-[#EFF6FF]' : 'border-transparent hover:bg-[#F8FAFC]'}`}
             >
               <GripVertical className="w-3.5 h-3.5 text-[#CBD5E1] shrink-0" />
               <span className="w-5 h-5 rounded bg-[#F1F5F9] text-[10px] font-[800] text-[#64748B] flex items-center justify-center shrink-0">{i + 1}</span>
@@ -332,7 +332,7 @@ export default function PropostaEditor({ deck: initial, office, honorarios, clie
             <button onClick={() => move(active, active + 1)} disabled={active >= deck.cards.length - 1} className="flex-1 py-1.5 rounded-lg border border-[#E2E8F0] text-[11px] font-[700] text-[#64748B] disabled:opacity-40 inline-flex items-center justify-center gap-1"><ArrowDown className="w-3 h-3" /> Descer</button>
           </div>
           <div className="relative pt-1 shrink-0 min-w-[150px] lg:min-w-0">
-            <button onClick={() => setAddOpen((v) => !v)} className="w-full py-2 rounded-lg border border-dashed border-[#CBD5E1] text-[12px] font-[700] text-[#0677FF] hover:bg-[#EFF6FF] inline-flex items-center justify-center gap-1">
+            <button onClick={() => setAddOpen((v) => !v)} className="w-full py-2 rounded-lg border border-dashed border-[#CBD5E1] text-[12px] font-[700] text-[var(--accent)] hover:bg-[#EFF6FF] inline-flex items-center justify-center gap-1">
               <Plus className="w-3.5 h-3.5" /> Adicionar card
             </button>
             {addOpen && (
@@ -375,7 +375,7 @@ export default function PropostaEditor({ deck: initial, office, honorarios, clie
                   <span className="text-[11px] font-[800] uppercase tracking-wide text-[#64748B]">Itens</span>
                   <button
                     onClick={() => patchCard(card.id, { items: [...items, { label: 'Novo item' }] })}
-                    className="text-[11px] font-[700] text-[#0677FF] inline-flex items-center gap-1"
+                    className="text-[11px] font-[700] text-[var(--accent)] inline-flex items-center gap-1"
                   >
                     <Plus className="w-3 h-3" /> Juntar
                   </button>
@@ -448,15 +448,15 @@ export default function PropostaEditor({ deck: initial, office, honorarios, clie
             </div>
             <div className="mt-4 flex items-center gap-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-2">
               <code className="flex-1 text-[12px] font-mono text-[#0F172A] truncate">{publicUrl(deck.slug)}</code>
-              <button onClick={copyLink} className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#0677FF] text-white text-[11px] font-[700]">
+              <button onClick={copyLink} className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--accent)] text-white text-[11px] font-[700]">
                 {copied ? <><Check className="w-3.5 h-3.5" /> Copiado</> : <><Copy className="w-3.5 h-3.5" /> Copiar</>}
               </button>
             </div>
             <div className="mt-4 flex items-center gap-2 flex-wrap">
-              <a href={publicUrl(deck.slug)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#E2E8F0] text-[12px] font-[700] text-[#334155] hover:border-[#0677FF]">
+              <a href={publicUrl(deck.slug)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#E2E8F0] text-[12px] font-[700] text-[#334155] hover:border-[var(--accent)]">
                 <ExternalLink className="w-4 h-4" /> Abrir link
               </a>
-              <a href={`mailto:?subject=${encodeURIComponent(deck.titulo)}&body=${encodeURIComponent(publicUrl(deck.slug))}`} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#E2E8F0] text-[12px] font-[700] text-[#334155] hover:border-[#0677FF]">
+              <a href={`mailto:?subject=${encodeURIComponent(deck.titulo)}&body=${encodeURIComponent(publicUrl(deck.slug))}`} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#E2E8F0] text-[12px] font-[700] text-[#334155] hover:border-[var(--accent)]">
                 Enviar por email
               </a>
               <button onClick={revoke} disabled={pubBusy} className="ml-auto text-[12px] font-[700] text-red-600 hover:underline disabled:opacity-50">Revogar link</button>
@@ -469,7 +469,7 @@ export default function PropostaEditor({ deck: initial, office, honorarios, clie
   );
 }
 
-const inputCls = 'w-full px-2.5 py-1.5 rounded-lg border border-[#E2E8F0] text-[12px] text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0677FF]/30';
+const inputCls = 'w-full px-2.5 py-1.5 rounded-lg border border-[#E2E8F0] text-[12px] text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

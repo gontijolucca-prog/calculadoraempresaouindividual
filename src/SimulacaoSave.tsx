@@ -72,7 +72,7 @@ export function SaveSimulacaoFab() {
             right: 'calc(env(safe-area-inset-right, 0px) + 16px)',
             background: saved
               ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
-              : 'linear-gradient(135deg, #0677FF 0%, #044BB6 100%)',
+              : 'linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%)',
             boxShadow: saved
               ? '0 0 0 1px rgba(5,150,105,0.35), 0 8px 24px -6px rgba(5,150,105,0.55), 0 0 32px rgba(5,150,105,0.40)'
               : '0 0 0 1px rgba(6,119,255,0.35), 0 8px 24px -6px rgba(6,119,255,0.55), 0 0 32px rgba(6,119,255,0.45)',

@@ -155,7 +155,7 @@ export default function TopBarGlobal({ title, subtitle, onGo, onOpenMenu, nav, a
               {sync.queued > 0 ? `${sync.queued} por enviar — Repetir` : 'Falha — Repetir'}
             </button>
           ) : sync.pending > 0 ? (
-            <span className="text-[#0677FF]">A sincronizar…</span>
+            <span className="text-[var(--accent)]">A sincronizar…</span>
           ) : (
             <span className="text-emerald-700">Sincronizado ✓</span>
           )}
@@ -194,7 +194,7 @@ export default function TopBarGlobal({ title, subtitle, onGo, onOpenMenu, nav, a
                 onChange={(event) => setCurrentPassword(event.target.value)}
                 placeholder="Password atual"
                 autoComplete="current-password"
-                className="w-full rounded-xl border border-zinc-200 bg-[#F8FAFC] px-3 py-2.5 text-[13px] outline-none focus:border-[#0677FF] focus:bg-white"
+                className="w-full rounded-xl border border-zinc-200 bg-[#F8FAFC] px-3 py-2.5 text-[13px] outline-none focus:border-[var(--accent)] focus:bg-white"
               />
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -202,7 +202,7 @@ export default function TopBarGlobal({ title, subtitle, onGo, onOpenMenu, nav, a
                 onChange={(event) => setNewPassword(event.target.value)}
                 placeholder="Nova password"
                 autoComplete="new-password"
-                className="w-full rounded-xl border border-zinc-200 bg-[#F8FAFC] px-3 py-2.5 text-[13px] outline-none focus:border-[#0677FF] focus:bg-white"
+                className="w-full rounded-xl border border-zinc-200 bg-[#F8FAFC] px-3 py-2.5 text-[13px] outline-none focus:border-[var(--accent)] focus:bg-white"
               />
               <div className="relative">
                 <input
@@ -212,7 +212,7 @@ export default function TopBarGlobal({ title, subtitle, onGo, onOpenMenu, nav, a
                   onKeyDown={(event) => { if (event.key === 'Enter') void submitPassword(); }}
                   placeholder="Repetir nova password"
                   autoComplete="new-password"
-                  className="w-full rounded-xl border border-zinc-200 bg-[#F8FAFC] px-3 py-2.5 pr-10 text-[13px] outline-none focus:border-[#0677FF] focus:bg-white"
+                  className="w-full rounded-xl border border-zinc-200 bg-[#F8FAFC] px-3 py-2.5 pr-10 text-[13px] outline-none focus:border-[var(--accent)] focus:bg-white"
                 />
                 <button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-zinc-400 hover:text-zinc-700" aria-label={showPassword ? 'Ocultar passwords' : 'Mostrar passwords'}>
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

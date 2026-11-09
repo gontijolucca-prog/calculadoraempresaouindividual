@@ -15,7 +15,7 @@ function fmtDate(ts: number): string {
 }
 
 const STATUS_META: Record<Suggestion['status'], { label: string; cls: string }> = {
-  novo: { label: 'Novo', cls: 'bg-[#0677FF]/10 text-[#0677FF]' },
+  novo: { label: 'Novo', cls: 'bg-[var(--accent)]/10 text-[var(--accent)]' },
   visto: { label: 'Visto', cls: 'bg-amber-100 text-amber-700' },
   feito: { label: 'Feito', cls: 'bg-emerald-100 text-emerald-700' },
 };
@@ -58,7 +58,7 @@ export default function SuggestionsAdmin() {
     <div className="no-print fixed inset-0 z-[200] bg-[#F5F7FA] flex flex-col">
       {/* Header */}
       <div className="shrink-0 px-5 py-4 flex items-center gap-3 text-white"
-        style={{ background: 'linear-gradient(135deg, #0B1D2D 0%, #0677FF 100%)' }}>
+        style={{ background: 'linear-gradient(135deg, #0B1D2D 0%, var(--accent) 100%)' }}>
         <Inbox className="w-6 h-6" strokeWidth={2.2} />
         <div className="flex-1 min-w-0">
           <div className="text-[17px] font-[800] leading-tight">Sugestões do AI Contabilista</div>
@@ -95,7 +95,7 @@ export default function SuggestionsAdmin() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <span className={`text-[10.5px] font-[800] uppercase tracking-[0.4px] px-2 py-0.5 rounded-full ${meta.cls}`}>{meta.label}</span>
-                      {s.area && <span className="text-[11px] font-[700] text-[#0677FF] bg-[#0677FF]/8 px-2 py-0.5 rounded-full">{s.area}</span>}
+                      {s.area && <span className="text-[11px] font-[700] text-[var(--accent)] bg-[var(--accent)]/8 px-2 py-0.5 rounded-full">{s.area}</span>}
                       <span className="inline-flex items-center gap-1 text-[10.5px] font-[600] text-[#94A3B8]">
                         {s.origem === 'cloud' ? <Cloud className="w-3 h-3" /> : <HardDrive className="w-3 h-3" />}
                         {s.origem === 'cloud' ? 'cloud' : 'local'}

@@ -150,7 +150,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
      SHARED SECTION JSX (reused across all modes)
   ════════════════════════════════════════════════ */
   const sectionHeader = (icon: React.ReactNode, title: string) => (
-    <h3 className="text-[14px] font-[800] text-[#0677FF] mb-4 flex items-center border-b pb-2">
+    <h3 className="text-[14px] font-[800] text-[var(--accent)] mb-4 flex items-center border-b pb-2">
       {icon}{title}
     </h3>
   );
@@ -173,7 +173,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
         </div>
         <label className="flex flex-col justify-end gap-2 p-3 bg-slate-50 border border-slate-200 rounded-[8px] cursor-pointer hover:bg-slate-100 transition-colors">
           <span className={lblCls}>Atividade <Tip>Indique se a atividade empresarial é a sua principal fonte de rendimento. Afeta a taxa de Segurança Social aplicável.</Tip></span>
-          <div className="flex items-center gap-2"><input type="checkbox" checked={isMainAct} onChange={e=>setState({isMainAct: e.target.checked})} className="w-4 h-4 accent-[#0677FF]" /><span className="text-[13px] font-[600] text-slate-700">Principal</span></div>
+          <div className="flex items-center gap-2"><input type="checkbox" checked={isMainAct} onChange={e=>setState({isMainAct: e.target.checked})} className="w-4 h-4 accent-[var(--accent)]" /><span className="text-[13px] font-[600] text-slate-700">Principal</span></div>
         </label>
         <div>
           <label className={lblCls}>Rend. Atual / Ano <Tip>O rendimento bruto que recebe atualmente (antes de impostos e descontos). Serve para comparar o que ganha como empregado vs. empresário.</Tip></label>
@@ -287,14 +287,14 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
     <button
       type="button"
       onClick={() => setState({ vistaCompleta: true })}
-      className="w-full text-left flex items-center gap-3 rounded-[16px] border border-[#0677FF]/30 bg-[#0677FF]/[0.05] hover:bg-[#0677FF]/[0.09] px-5 py-4 transition-colors"
+      className="w-full text-left flex items-center gap-3 rounded-[16px] border border-[var(--accent)]/30 bg-[var(--accent)]/[0.05] hover:bg-[var(--accent)]/[0.09] px-5 py-4 transition-colors"
     >
       <span className="text-[20px]" aria-hidden="true">⚖️</span>
       <span className="min-w-0 flex-1">
         <span className="block text-[13.5px] font-[800] text-[#0B1D2D]">Análise completa de enquadramento 2026</span>
         <span className="block text-[12px] text-slate-600 font-[500]">Valida os regimes legalmente possíveis (IRS/IRC simplificado, IVA art. 53.º, trimestral/mensal) e compara só os cenários elegíveis — com rendimentos por natureza, dividendos e tesouraria do IVA.</span>
       </span>
-      <span className="text-[12px] font-[800] text-[#0677FF] shrink-0">Abrir →</span>
+      <span className="text-[12px] font-[800] text-[var(--accent)] shrink-0">Abrir →</span>
     </button>
   );
 
@@ -464,7 +464,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
         </div>
         <div className="flex justify-between items-center">
           <span className="text-[11px] font-[700] text-slate-500 uppercase tracking-widest flex items-center gap-1">Cash-Flow Holding Y1 <Tip>Cash-Flow da sociedade (Holding) = lucro da empresa mais a remuneração do gerente, antes de distribuir dividendos. Y1 = Ano 1.</Tip></span>
-          <span className="text-[18px] font-[800] text-[#0677FF]">{ptEur(results.lda.cashFlow)}</span>
+          <span className="text-[18px] font-[800] text-[var(--accent)]">{ptEur(results.lda.cashFlow)}</span>
         </div>
         {!results.transparenciaFiscal && results.lda.profit > 0 && (
           <div className="flex justify-between items-center border-t border-slate-200 pt-2">
@@ -886,7 +886,7 @@ const taxInputs = (
             )},
           ].map(({ title, icon, content }, i) => (
             <div key={i} className="border border-slate-100 rounded-[12px] p-3">
-              <div className="text-[12px] font-[800] text-[#0677FF] mb-2">{icon}{title}</div>
+              <div className="text-[12px] font-[800] text-[var(--accent)] mb-2">{icon}{title}</div>
               {content}
             </div>
           ))}

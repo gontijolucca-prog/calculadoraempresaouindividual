@@ -219,7 +219,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
       aria-current={current ? 'page' : undefined}
       className={cn(
         'w-full flex items-center gap-2.5 px-3 py-[7px] rounded-[8px] text-[12.5px] font-[600] transition-colors text-left',
-        current ? 'bg-[#0677FF]/12 text-[#0677FF]' : 'text-slate-500 hover:text-[#0F172A] hover:bg-slate-100'
+        current ? 'bg-[var(--accent)]/12 text-[var(--accent)]' : 'text-slate-500 hover:text-[#0F172A] hover:bg-slate-100'
       )}
     >
       <Icon className="w-[15px] h-[15px] shrink-0" />
@@ -267,7 +267,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
           <button type="button" onClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }} className="flex items-center gap-2.5 rounded-[8px] hover:bg-slate-50 px-1 py-1 -mx-1 transition-colors" aria-label="Ir para a Lista de Empresas">
             <Logo className="w-9 h-9" />
             <div className="text-left leading-none">
-              <div className="text-[14px] font-[800] text-[#0B1D2D] tracking-[-0.2px]">ESTUDO<span className="text-[#0677FF]">360°</span></div>
+              <div className="text-[14px] font-[800] text-[#0B1D2D] tracking-[-0.2px]">ESTUDO<span className="text-[var(--accent)]">360°</span></div>
               <div className="text-[9px] font-[600] text-[#6B7280] uppercase tracking-[2px] mt-[3px]">Análise · Estratégia · Decisão</div>
             </div>
           </button>

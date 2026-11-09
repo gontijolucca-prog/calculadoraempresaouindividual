@@ -30,10 +30,10 @@ export default function EnquadramentoCompleto({ value, onChange, onVoltar, saftP
   const set = (patch: Partial<InputEnq2026>) => onChange(patch);
   const setRend = (k: keyof InputEnq2026['rend'], v: number) => onChange({ rend: { ...input.rend, [k]: v } });
 
-  const inputCls = "w-full px-3 py-[9px] bg-[#F1F5F9] border-2 border-[#E2E8F0] rounded-[8px] text-[13.5px] font-[600] text-[#0F172A] focus:border-[#0677FF] outline-none mt-1 transition-all focus:bg-white";
+  const inputCls = "w-full px-3 py-[9px] bg-[#F1F5F9] border-2 border-[#E2E8F0] rounded-[8px] text-[13.5px] font-[600] text-[#0F172A] focus:border-[var(--accent)] outline-none mt-1 transition-all focus:bg-white";
   const lblCls = "text-[10.5px] font-[700] uppercase tracking-[0.5px] text-[#475569] leading-tight";
   const secCls = "bg-white border border-slate-200 rounded-[16px] p-5";
-  const secHdr = "text-[12px] font-[800] uppercase tracking-[1px] text-[#0677FF] mb-3";
+  const secHdr = "text-[12px] font-[800] uppercase tracking-[1px] text-[var(--accent)] mb-3";
 
   const Num = ({ label, k, step = 100 }: { label: string; k: keyof InputEnq2026; step?: number }) => (
     <label className="block">
@@ -51,7 +51,7 @@ export default function EnquadramentoCompleto({ value, onChange, onVoltar, saftP
   );
   const Bool = ({ label, k }: { label: string; k: 'microentidade' | 'revisaoLegalContas' | 'renunciouSimplificado3Anos' }) => (
     <label className="flex items-center gap-2 text-[12.5px] font-[600] text-slate-700 cursor-pointer">
-      <input type="checkbox" checked={input[k]} onChange={e => set({ [k]: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" />
+      <input type="checkbox" checked={input[k]} onChange={e => set({ [k]: e.target.checked })} className="w-4 h-4 accent-[var(--accent)]" />
       {label}
     </label>
   );
@@ -100,7 +100,7 @@ export default function EnquadramentoCompleto({ value, onChange, onVoltar, saftP
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[12px] bg-[#0677FF]/10 flex items-center justify-center"><Scale className="w-5 h-5 text-[#0677FF]" /></div>
+          <div className="w-10 h-10 rounded-[12px] bg-[var(--accent)]/10 flex items-center justify-center"><Scale className="w-5 h-5 text-[var(--accent)]" /></div>
           <div>
             <h2 className="text-[18px] font-[800] text-[#0B1D2D] leading-tight">Análise completa de enquadramento 2026</h2>
             <p className="text-[12px] text-slate-500 font-[500]">1.º valida o que é legalmente possível; 2.º compara só os cenários elegíveis.</p>
@@ -234,7 +234,7 @@ export default function EnquadramentoCompleto({ value, onChange, onVoltar, saftP
 
       {/* ── Recomendação ── */}
       {r.recomendacao && (
-        <div className="rounded-[16px] p-5 text-white" style={{ background: 'linear-gradient(135deg, #0B1D2D 0%, #0677FF 100%)' }}>
+        <div className="rounded-[16px] p-5 text-white" style={{ background: 'linear-gradient(135deg, #0B1D2D 0%, var(--accent) 100%)' }}>
           <div className="flex items-start gap-3 flex-wrap">
             <Trophy className="w-6 h-6 text-amber-300 shrink-0 mt-0.5" />
             <div className="min-w-0 flex-1">
@@ -260,7 +260,7 @@ export default function EnquadramentoCompleto({ value, onChange, onVoltar, saftP
                 <th className="py-2 pr-3 font-[700] text-slate-400 text-[10.5px] uppercase tracking-[0.5px]">Indicador</th>
                 {top.map((c, i) => (
                   <th key={c.id} className="py-2 px-3 font-[800] text-[#0B1D2D] leading-tight">
-                    {i === 0 && <span className="block text-[9px] font-[800] uppercase tracking-[1px] text-[#0677FF]">Recomendado</span>}
+                    {i === 0 && <span className="block text-[9px] font-[800] uppercase tracking-[1px] text-[var(--accent)]">Recomendado</span>}
                     {c.label}
                   </th>
                 ))}
@@ -276,7 +276,7 @@ export default function EnquadramentoCompleto({ value, onChange, onVoltar, saftP
               <tr className="border-t-2 border-slate-200 bg-slate-50/60">
                 <td className="py-2.5 pr-3 font-[800] text-[#0B1D2D]">Disponibilidade líquida anual</td>
                 {top.map((c, i) => (
-                  <td key={c.id} className={`py-2.5 px-3 font-[800] tabular-nums text-[14px] ${i === 0 ? 'text-[#0677FF]' : 'text-[#0B1D2D]'}`}>{eur(c.disponivel)}</td>
+                  <td key={c.id} className={`py-2.5 px-3 font-[800] tabular-nums text-[14px] ${i === 0 ? 'text-[var(--accent)]' : 'text-[#0B1D2D]'}`}>{eur(c.disponivel)}</td>
                 ))}
               </tr>
             </tbody>

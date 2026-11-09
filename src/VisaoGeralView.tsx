@@ -312,7 +312,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
         <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Building2 className="w-4 h-4 text-[#64748B]" /> Resumo da empresa</h3>
-            {canEditFicha && <button onClick={handleEditClienteOpen} className="text-[12px] font-[500] text-[#2563EB]">Editar</button>}
+            {canEditFicha && <button onClick={handleEditClienteOpen} className="text-[12px] font-[500] text-[var(--accent-strong)]">Editar</button>}
           </div>
           <div className="space-y-2">
             {[
@@ -366,7 +366,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><span className="w-5 h-5 rounded-full bg-[#FFF7ED] border border-[#FED7AA] flex items-center justify-center text-[11px]">◉</span> Situação atual</h3>
               {canEditFicha && (
-                <button onClick={() => { setSituacaoEdit([...(cliente?.situacaoAtual || [])]); setShowEditSituacao(true); }} className="text-[12px] font-[500] text-[#2563EB]">Editar</button>
+                <button onClick={() => { setSituacaoEdit([...(cliente?.situacaoAtual || [])]); setShowEditSituacao(true); }} className="text-[12px] font-[500] text-[var(--accent-strong)]">Editar</button>
               )}
             </div>
             {situacaoItems.length === 0 ? (
@@ -388,7 +388,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
               <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#065F46]"><CheckSquare className="w-4 h-4" /> Tarefas principais</h3>
               <div className="flex items-center gap-2">
                 <button onClick={()=>setShowAddTarefa(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#BBF7D0] text-[#065F46] hover:bg-emerald-50">+ Nova</button>
-                <button onClick={() => onGo?.('tarefas')} className="text-[12px] font-[500] text-[#2563EB]">Ver todas ({tarefasClienteTotal})</button>
+                <button onClick={() => onGo?.('tarefas')} className="text-[12px] font-[500] text-[var(--accent-strong)]">Ver todas ({tarefasClienteTotal})</button>
               </div>
             </div>
             <div className="space-y-2">
@@ -423,7 +423,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
           <div className="bg-[#FFF1F2] rounded-xl border border-[#FECACA] p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#991B1B]"><AlertTriangle className="w-4 h-4 text-[#DC2626]" /> Alertas</h3>
-              <button onClick={()=>setShowAddAlerta(true)} className="text-[12px] font-[500] text-[#2563EB]">+ Adicionar</button>
+              <button onClick={()=>setShowAddAlerta(true)} className="text-[12px] font-[500] text-[var(--accent-strong)]">+ Adicionar</button>
             </div>
             <ul className="space-y-2">
               {alertasExibir.length===0 ? <li className="text-[12px] text-[#94A3B8] border-2 border-dashed border-[#FECACA] rounded-lg p-3 text-center">Sem alertas abertos</li> : alertasExibir.map(a => (
@@ -446,7 +446,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#1E40AF] whitespace-nowrap"><Calendar className="w-4 h-4 shrink-0" /> Próximos prazos</h3>
               <div className="flex items-center gap-2">
-                <button onClick={() => onGo?.('obrigacoes')} className="text-[12px] font-[500] text-[#2563EB]">Ver todos</button>
+                <button onClick={() => onGo?.('obrigacoes')} className="text-[12px] font-[500] text-[var(--accent-strong)]">Ver todos</button>
                 <button onClick={() => setShowAddAlerta(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#BFDBFE] text-[#1E40AF] hover:bg-blue-50">+ Alerta</button>
               </div>
             </div>
@@ -483,7 +483,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
       <div id="sec-orientacoes" className="bg-[#FFFBEB] rounded-xl border border-[#FDE68A] p-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-[13px] font-[700] text-[#78350F]">Orientações à equipa</h3>
-          {canEditFicha && <button onClick={()=>{ setOrientEdit(orientacoes); setShowEditOrient(true); }} className="text-[12px] font-[500] text-[#2563EB]">Editar</button>}
+          {canEditFicha && <button onClick={()=>{ setOrientEdit(orientacoes); setShowEditOrient(true); }} className="text-[12px] font-[500] text-[var(--accent-strong)]">Editar</button>}
         </div>
         {orientacoes ? (
           <ul className="list-disc pl-5 space-y-1 text-[12.5px] leading-[18px] text-[#78350F]">
@@ -500,8 +500,8 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <div id="sec-docs" className="bg-white rounded-xl border border-[#E2E8F0] p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><FileText className="w-4 h-4 text-[#2563EB]" /> Documentos importantes</h3>
-            <button onClick={()=>setShowAddDoc(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#E2E8F0] text-[#2563EB] hover:bg-zinc-50">+ Adicionar</button>
+            <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><FileText className="w-4 h-4 text-[var(--accent-strong)]" /> Documentos importantes</h3>
+            <button onClick={()=>setShowAddDoc(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#E2E8F0] text-[var(--accent-strong)] hover:bg-zinc-50">+ Adicionar</button>
           </div>
           <ul className="space-y-1.5">
             {docsExibir.length===0 ? <li className="text-[12px] text-[#94A3B8] border-2 border-dashed rounded-lg p-3 text-center">Sem documentos</li> : docsExibir.map(d => (
@@ -518,8 +518,8 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
 
         <div id="sec-contactos" className="bg-white rounded-xl border border-[#E2E8F0] p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Users className="w-4 h-4 text-[#2563EB]" /> Contactos</h3>
-            <button onClick={()=>setShowAddContacto(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#E2E8F0] text-[#2563EB] hover:bg-zinc-50">+ Adicionar</button>
+            <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Users className="w-4 h-4 text-[var(--accent-strong)]" /> Contactos</h3>
+            <button onClick={()=>setShowAddContacto(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#E2E8F0] text-[var(--accent-strong)] hover:bg-zinc-50">+ Adicionar</button>
           </div>
           <ul className="space-y-3">
             {contactosExibir.length===0 ? <li className="text-[12px] text-[#94A3B8] border-2 border-dashed rounded-lg p-3 text-center">Sem contactos</li> : contactosExibir.map(c => (
@@ -533,7 +533,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  {c.telefone && <a href={`tel:${c.telefone}`} className="w-6 h-6 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-[#2563EB] hover:bg-zinc-50"><Phone className="w-3 h-3" /></a>}
+                  {c.telefone && <a href={`tel:${c.telefone}`} className="w-6 h-6 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-[var(--accent-strong)] hover:bg-zinc-50"><Phone className="w-3 h-3" /></a>}
                   {c.email && <a href={`mailto:${c.email}`} className="w-6 h-6 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-[#64748B] hover:bg-zinc-50"><Mail className="w-3 h-3" /></a>}
                   {!c.email && <span className="w-6 h-6 rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center text-zinc-300"><Mail className="w-3 h-3" /></span>}
                   <span className="w-6 h-6 rounded-full bg-[#DCFCE7] border border-[#BBF7D0] flex items-center justify-center text-[#16A34A]"><MessageCircle className="w-3 h-3" /></span>
@@ -547,14 +547,14 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
         {canVerCofre && (
           <div className="bg-white rounded-xl border border-[#E2E8F0] p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Lock className="w-4 h-4 text-[#2563EB]" /> Acessos</h3>
-              <button onClick={onOpenCofre} className="text-[12px] font-[500] text-[#2563EB] flex items-center gap-1">◎ Abrir cofre</button>
+              <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Lock className="w-4 h-4 text-[var(--accent-strong)]" /> Acessos</h3>
+              <button onClick={onOpenCofre} className="text-[12px] font-[500] text-[var(--accent-strong)] flex items-center gap-1">◎ Abrir cofre</button>
             </div>
             <ul className="space-y-2.5">
               {cofreItems.length === 0 ? <li className="text-[12px] text-[#94A3B8] border-2 border-dashed rounded-lg p-3 text-center">Sem acessos guardados</li> : cofreItems.map(c => (
                 <li key={c.id} className="flex items-center justify-between text-[12.5px] py-1">
                   <span className="flex items-center gap-2 min-w-0"><span className="w-9 text-center text-[10px] font-[700] px-1 py-1 rounded bg-[#F1F5F9] border border-[#E2E8F0] text-[#475569] shrink-0">{c.categoria || '—'}</span> <span className="text-[#334155] truncate">{c.titulo}</span></span>
-                  <button onClick={onOpenCofre} className="text-[11px] font-[500] text-[#2563EB] shrink-0">ver no cofre</button>
+                  <button onClick={onOpenCofre} className="text-[11px] font-[500] text-[var(--accent-strong)] shrink-0">ver no cofre</button>
                 </li>
               ))}
             </ul>
@@ -565,8 +565,8 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
       {/* Histórico */}
       <div id="sec-historico" className="bg-white rounded-xl border border-[#E2E8F0] p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Clock className="w-4 h-4 text-[#2563EB]" /> Histórico / Últimas ocorrências</h3>
-          <button onClick={()=>setShowAddOcorr(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#E2E8F0] text-[#2563EB]">+ Ocorrência</button>
+          <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Clock className="w-4 h-4 text-[var(--accent-strong)]" /> Histórico / Últimas ocorrências</h3>
+          <button onClick={()=>setShowAddOcorr(true)} className="text-[11px] font-[600] px-2 py-1 rounded-full bg-white border border-[#E2E8F0] text-[var(--accent-strong)]">+ Ocorrência</button>
         </div>
         <div className="relative">
           <div className="absolute left-[42px] top-2 bottom-2 w-px bg-[#E2E8F0] hidden sm:block" />
@@ -711,7 +711,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
                   <button onClick={()=>setSituacaoEdit(situacaoEdit.filter((_, j)=>j!==i))} className="p-2 hover:bg-rose-50 rounded text-rose-600"><Trash2 className="w-4 h-4" /></button>
                 </div>
               ))}
-              <button onClick={()=>setSituacaoEdit([...situacaoEdit, {texto:'', cor:'green'}])} className="text-sm text-[#2563EB] flex items-center gap-1"><Plus className="w-3 h-3" /> Adicionar linha</button>
+              <button onClick={()=>setSituacaoEdit([...situacaoEdit, {texto:'', cor:'green'}])} className="text-sm text-[var(--accent-strong)] flex items-center gap-1"><Plus className="w-3 h-3" /> Adicionar linha</button>
             </div>
             <div className="flex justify-end gap-2">
               <button onClick={()=>setShowEditSituacao(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button>
@@ -771,14 +771,14 @@ function ObrigacoesCard({ cliente, catalogo, readOnly }: { cliente: GabineteClie
         <h3 className="text-[13px] font-[700] flex items-center gap-2 text-[#0B1D2D]"><Calendar className="w-4 h-4 text-[#64748B]" /> Obrigações</h3>
         <div className="flex items-center gap-2">
           <span className="text-[11px] text-[#64748B]">{ativas.length}/{catalogo.length} ativas</span>
-          {!readOnly && <button onClick={()=>setShowAdd(v=>!v)} className="text-[11px] font-[600] px-2 py-0.5 rounded-full bg-white border border-[#E2E8F0] text-[#2563EB] hover:bg-zinc-50">+ Nova</button>}
+          {!readOnly && <button onClick={()=>setShowAdd(v=>!v)} className="text-[11px] font-[600] px-2 py-0.5 rounded-full bg-white border border-[#E2E8F0] text-[var(--accent-strong)] hover:bg-zinc-50">+ Nova</button>}
         </div>
       </div>
       <p className="text-[11px] text-[#94A3B8] mb-2.5">{readOnly ? 'O que está marcado aparece no Quadro e nos mapas.' : 'O que está marcado aparece no Quadro e nos mapas.'}</p>
       {showAdd && !readOnly && (
         <div className="flex gap-1.5 mb-2.5">
           <input value={novoLabel} onChange={e=>setNovoLabel(e.target.value)} placeholder="Nova obrigação (ex: Modelo 30)" className="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-[#E2E8F0] bg-white text-[12px]" onKeyDown={e=>{ if (e.key==='Enter') handleAdd(); }} />
-          <button onClick={handleAdd} disabled={adding || !novoLabel.trim()} className="px-3 py-1.5 rounded-lg bg-[#0677FF] text-white text-[11px] font-[600] disabled:opacity-50">Adicionar</button>
+          <button onClick={handleAdd} disabled={adding || !novoLabel.trim()} className="px-3 py-1.5 rounded-lg bg-[var(--accent)] text-white text-[11px] font-[600] disabled:opacity-50">Adicionar</button>
           <button onClick={()=>{ setShowAdd(false); setNovoLabel(''); }} className="px-2.5 py-1.5 rounded-lg border border-[#E2E8F0] text-[11px] font-[500] text-[#64748B]">Cancelar</button>
         </div>
       )}

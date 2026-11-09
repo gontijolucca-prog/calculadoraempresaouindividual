@@ -1,9 +1,10 @@
 import React, { useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { Building2, Image as ImageIcon, Upload, Trash2, Save, Calculator, Plus, X, Info, Download } from 'lucide-react';
+import { Building2, Image as ImageIcon, Upload, Trash2, Save, Calculator, Plus, X, Info, Download, DatabaseBackup, ShieldCheck, AlertTriangle, Loader2 } from 'lucide-react';
 import type { OfficeSettings, EntidadeOutorgante } from './lib/officeSettings';
 import { officeSettingsAreComplete } from './lib/officeSettings';
 import type { HonorariosConfig, TipoEntidadeCliente } from './lib/honorarios';
+import { criarBackupGabinete, descarregarBackup, validarBackup, restaurarBackupGabinete, resumoBackup } from './lib/backupGabinete';
 
 interface Props {
   office: OfficeSettings;
@@ -12,9 +13,9 @@ interface Props {
   onHonorariosChange: (c: HonorariosConfig) => void;
 }
 
-type Tab = 'escritorio' | 'honorarios';
+type Tab = 'escritorio' | 'honorarios' | 'backup';
 
-const inputCls = "w-full px-3 py-2 bg-[#F5F7FA] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] font-[600] text-[#0F172A] focus:border-[#0677FF] outline-none transition-all";
+const inputCls = "w-full px-3 py-2 bg-[#F5F7FA] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] font-[600] text-[#0F172A] focus:border-[var(--accent)] outline-none transition-all";
 const labelCls = "block text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B] mb-1.5";
 const sectionTitleCls = "text-[13px] font-[800] uppercase tracking-[1px] text-[#0F172A] mb-3";
 const eur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(v || 0);
@@ -57,6 +58,7 @@ export default function OfficeSettingsView({ office, onOfficeChange, honorarios,
         <div className="flex gap-1 mb-6 border-b border-[#E2E8F0]" role="tablist">
           <TabButton active={tab === 'escritorio'} onClick={() => setTab('escritorio')} icon={Building2}>Dados do Escritório</TabButton>
           <TabButton active={tab === 'honorarios'} onClick={() => setTab('honorarios')} icon={Calculator}>Tabela de Honorários</TabButton>
+          <TabButton active={tab === 'backup'} onClick={() => setTab('backup')} icon={DatabaseBackup}>Cópia de segurança</TabButton>
         </div>
 
         {tab === 'escritorio' && (
@@ -65,6 +67,7 @@ export default function OfficeSettingsView({ office, onOfficeChange, honorarios,
         {tab === 'honorarios' && (
           <HonorariosForm config={honorarios} onChange={onHonorariosChange} />
         )}
+        {tab === 'backup' && <BackupForm />}
       </div>
     </motion.div>
   );
@@ -78,7 +81,7 @@ function TabButton({ active, onClick, icon: Icon, children }: { active: boolean;
       onClick={onClick}
       className={`flex items-center gap-2 px-4 py-2.5 text-[13px] font-[700] border-b-2 -mb-px transition-colors ${
         active
-          ? 'text-[#0F172A] border-[#0677FF]'
+          ? 'text-[#0F172A] border-[var(--accent)]'
           : 'text-[#64748B] border-transparent hover:text-[#0F172A]'
       }`}
     >
@@ -153,7 +156,7 @@ function EscritorioForm({ office, onChange }: { office: OfficeSettings; onChange
               <label className={labelCls}>Cor primária do branding</label>
               <div className="flex gap-2 items-center">
                 <input type="color" value={office.corPrimaria} onChange={e => set('corPrimaria', e.target.value)} className="w-12 h-10 rounded-[8px] border-2 border-[#E2E8F0] cursor-pointer" />
-                <input type="text" value={office.corPrimaria} onChange={e => set('corPrimaria', e.target.value)} className={inputCls + ' max-w-[140px] font-mono'} placeholder="#0677FF" />
+                <input type="text" value={office.corPrimaria} onChange={e => set('corPrimaria', e.target.value)} className={inputCls + ' max-w-[140px] font-mono'} placeholder='var(--accent)' />
                 <div className="w-32 h-10 rounded-[8px] shrink-0 border border-[#E2E8F0]" style={{ backgroundColor: office.corPrimaria }} aria-hidden="true" />
               </div>
               <p className="text-[11px] text-[#64748B] mt-1">Usada em cabeçalhos de proposta, contratos e PDFs.</p>
@@ -289,6 +292,143 @@ function EscritorioForm({ office, onChange }: { office: OfficeSettings; onChange
   );
 }
 
+function BackupForm() {
+  const [aGerar, setAGerar] = useState(false);
+  const [aRestaurar, setARestaurar] = useState(false);
+  const [msg, setMsg] = useState<{ kind: 'ok' | 'erro'; texto: string } | null>(null);
+  const [previsto, setPrevisto] = useState<ReturnType<typeof validarBackup> | null>(null);
+  const [nomeFicheiro, setNomeFicheiro] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const exportar = async () => {
+    setMsg(null);
+    setAGerar(true);
+    try {
+      const backup = await criarBackupGabinete();
+      descarregarBackup(backup);
+      const total = Object.values(backup.contagens).reduce((a, b) => a + b, 0);
+      setMsg({ kind: 'ok', texto: `Cópia criada: ${total} registo(s) em ${Object.keys(backup.contagens).length} coleções.` });
+    } catch (e) {
+      setMsg({ kind: 'erro', texto: e instanceof Error ? e.message : 'Não foi possível criar a cópia.' });
+    } finally {
+      setAGerar(false);
+    }
+  };
+
+  const lerFicheiro = async (file: File) => {
+    setMsg(null);
+    setPrevisto(null);
+    setNomeFicheiro(file.name);
+    try {
+      const texto = await file.text();
+      const dados = JSON.parse(texto);
+      setPrevisto(validarBackup(dados));
+    } catch {
+      setPrevisto({ ok: false, erro: 'Não consegui ler o ficheiro. Confirme que é um .json exportado pelo Estudo360.' });
+    }
+  };
+
+  const restaurar = async () => {
+    if (!previsto || previsto.ok !== true) return;
+    setARestaurar(true);
+    setMsg(null);
+    try {
+      const r = await restaurarBackupGabinete(previsto.backup);
+      setMsg({ kind: 'ok', texto: `${r.importados} registo(s) restaurados e ${r.empresas} cliente(s) na carteira. A sincronização continua em segundo plano.` });
+      setPrevisto(null);
+      setNomeFicheiro('');
+      if (inputRef.current) inputRef.current.value = '';
+    } catch (e) {
+      setMsg({ kind: 'erro', texto: e instanceof Error ? e.message : 'Não foi possível restaurar.' });
+    } finally {
+      setARestaurar(false);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="bg-white border border-[#E2E8F0] rounded-[14px] p-6">
+        <h2 className={sectionTitleCls}>Exportar cópia de segurança</h2>
+        <p className="text-[13px] text-[#64748B] font-[500] mb-4 max-w-[62ch]">
+          Um único ficheiro com a carteira de clientes, fichas, obrigações, tarefas, contactos, documentos e cofre.
+          As passwords do cofre mantêm-se cifradas e só abrem com a sua passphrase.
+        </p>
+        <button
+          type="button"
+          onClick={exportar}
+          disabled={aGerar}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-[10px] bg-[var(--accent)] text-white text-[13px] font-[800] hover:bg-[var(--accent-strong)] disabled:opacity-60 transition-colors"
+        >
+          {aGerar ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          {aGerar ? 'A preparar…' : 'Exportar gabinete'}
+        </button>
+      </div>
+
+      <div className="bg-white border border-[#E2E8F0] rounded-[14px] p-6">
+        <h2 className={sectionTitleCls}>Restaurar a partir de uma cópia</h2>
+        <p className="text-[13px] text-[#64748B] font-[500] mb-4 max-w-[62ch]">
+          Os registos da cópia são repostos neste gabinete. Nada é apagado: o que já existe é substituído pelo conteúdo do ficheiro.
+        </p>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="application/json,.json"
+          data-testid="backup-file"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) void lerFicheiro(f); }}
+          className="block w-full text-[12.5px] text-[#64748B] file:mr-3 file:px-3 file:py-2 file:rounded-[8px] file:border-0 file:bg-[#F1F5F9] file:text-[#0F172A] file:text-[12px] file:font-[700] hover:file:bg-[#E2E8F0]"
+        />
+
+        {previsto && previsto.ok === false && (
+          <div className="mt-4 flex items-start gap-2 p-3 rounded-[10px] bg-red-50 border border-red-200">
+            <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+            <p className="text-[12.5px] text-red-900 font-[600]">{nomeFicheiro}: {previsto.erro}</p>
+          </div>
+        )}
+
+        {previsto && previsto.ok === true && (
+          <div className="mt-4 rounded-[10px] border border-[#E2E8F0] overflow-hidden">
+            <div className="px-3 py-2 bg-[#F8FAFC] flex items-center gap-2 text-[12px] font-[700] text-[#0F172A]">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" /> Cópia válida · {previsto.backup.gabinete.nome}
+            </div>
+            <div className="px-3 py-2 text-[12px] text-[#64748B] font-[500]">
+              Criada em {new Date(previsto.backup.criadoEm).toLocaleString('pt-PT')}.
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 px-3 pb-3">
+              {resumoBackup(previsto.backup).map((r) => (
+                <div key={r.label} className="flex justify-between text-[12px]">
+                  <span className="text-[#64748B] font-[500] truncate">{r.label}</span>
+                  <span className="font-[700] text-[#0F172A] tabular-nums">{r.valor}</span>
+                </div>
+              ))}
+            </div>
+            <div className="px-3 py-3 border-t border-[#E2E8F0]">
+              <button
+                type="button"
+                onClick={restaurar}
+                disabled={aRestaurar}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-[10px] bg-[#0F172A] text-white text-[13px] font-[800] hover:bg-[#1E293B] disabled:opacity-60 transition-colors"
+              >
+                {aRestaurar ? <Loader2 className="w-4 h-4 animate-spin" /> : <DatabaseBackup className="w-4 h-4" />}
+                {aRestaurar ? 'A restaurar…' : 'Restaurar neste gabinete'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {msg && (
+        <div
+          role="status"
+          className={`flex items-start gap-2 p-3 rounded-[10px] border ${msg.kind === 'ok' ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-red-50 border-red-200 text-red-900'}`}
+        >
+          {msg.kind === 'ok' ? <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5" /> : <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />}
+          <p className="text-[12.5px] font-[600]">{msg.texto}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RadioCard({ checked, onClick, title, subtitle }: { checked: boolean; onClick: () => void; title: string; subtitle: string }) {
   return (
     <button
@@ -296,11 +436,11 @@ function RadioCard({ checked, onClick, title, subtitle }: { checked: boolean; on
       onClick={onClick}
       aria-pressed={checked}
       className={`text-left p-3 rounded-[10px] border-2 transition-all ${
-        checked ? 'border-[#0677FF] bg-[#0677FF]/5' : 'border-[#E2E8F0] bg-white hover:border-[#CBD5E1]'
+        checked ? 'border-[var(--accent)] bg-[var(--accent)]/5' : 'border-[#E2E8F0] bg-white hover:border-[#CBD5E1]'
       }`}
     >
       <div className="flex items-center gap-2">
-        <span className={`w-4 h-4 rounded-full border-2 ${checked ? 'border-[#0677FF] bg-[#0677FF]' : 'border-[#CBD5E1]'}`} aria-hidden="true" />
+        <span className={`w-4 h-4 rounded-full border-2 ${checked ? 'border-[var(--accent)] bg-[var(--accent)]' : 'border-[#CBD5E1]'}`} aria-hidden="true" />
         <span className="text-[13px] font-[700] text-[#0F172A]">{title}</span>
       </div>
       <p className="text-[11px] text-[#64748B] font-[500] mt-1 pl-6">{subtitle}</p>
@@ -378,7 +518,7 @@ function HonorariosForm({ config, onChange }: { config: HonorariosConfig; onChan
       <section className="bg-white rounded-[16px] border border-[#E2E8F0] p-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className={sectionTitleCls + ' mb-0'}>Catálogo de Serviços Extra</h2>
-          <button onClick={addServico} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0677FF] text-white text-[12px] font-[700] rounded-[8px] hover:bg-[#0556CC] transition-colors">
+          <button onClick={addServico} className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--accent)] text-white text-[12px] font-[700] rounded-[8px] hover:bg-[var(--accent-strong)] transition-colors">
             <Plus className="w-3.5 h-3.5" /> Adicionar
           </button>
         </div>
@@ -389,7 +529,7 @@ function HonorariosForm({ config, onChange }: { config: HonorariosConfig; onChan
               <input type="text" value={s.descricao} onChange={e => setServico(i, { descricao: e.target.value })} className={inputCls} placeholder="Descrição" />
               <input type="number" min={0} step={5} value={s.precoMensal === 0 ? '' : s.precoMensal} onChange={e => setServico(i, { precoMensal: Number(e.target.value) || 0 })} className={inputCls + ' text-right'} placeholder="€/mês" />
               <label className="flex items-center justify-center gap-1 text-[11px] font-[700] text-[#475569] cursor-pointer">
-                <input type="checkbox" checked={s.ativoPorDefeito} onChange={e => setServico(i, { ativoPorDefeito: e.target.checked })} className="w-4 h-4 accent-[#0677FF]" />
+                <input type="checkbox" checked={s.ativoPorDefeito} onChange={e => setServico(i, { ativoPorDefeito: e.target.checked })} className="w-4 h-4 accent-[var(--accent)]" />
                 Default
               </label>
               <button onClick={() => removeServico(i)} className="p-2 text-[#B91C1C] hover:bg-[#FEF2F2] rounded-[6px] transition-colors" aria-label="Remover">
