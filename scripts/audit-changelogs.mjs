@@ -15,6 +15,7 @@ const check = (condition, label) => {
 };
 
 for (const [path, marker] of [
+  ['estudo360-novidades-semana-09-11.html', 'O trabalho fica guardado'],
   ['estudo360-novidades-semana-03-11.html', 'Mais simples de usar'],
   ['estudo360-novidades-semana-26-10.html', 'Tudo o que mudou desde 16/10'],
   ['estudo360-novidades-e-svat.html', 'O primeiro registo'],

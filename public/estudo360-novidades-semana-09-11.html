@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Estudo360 · Novidades de 09/11</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,300;9..144,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#fff;--paper-2:#fafaf7;--ink:#14181e;--muted:#667085;--soft:#98a2b3;
+    --line:#e7e6e1;--line-2:#d8d7d1;--blue:#0677ff;--blue-soft:#eef6ff;
+    --green:#0e9f6e;--amber:#b45309;--rose:#be123c;--gold:#b06d35;
+    --shadow:0 14px 36px rgba(20,24,30,.055);--radius:11px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper-2);color:var(--ink);font-family:Montserrat,"Helvetica Neue",sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 24px}
+  .mono{font-family:"JetBrains Mono",monospace}
+  .serif{font-family:Fraunces,Georgia,serif}
+  .top{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);backdrop-filter:blur(12px)}
+  .top-in{display:flex;align-items:center;gap:12px;padding:12px 0}
+  .logo{width:31px;height:31px;flex:none}
+  .brand{font-size:14.5px;font-weight:700;letter-spacing:-.2px;white-space:nowrap}
+  .brand span{color:var(--blue)}
+  .top nav{margin-left:auto;display:flex;gap:2px;min-width:0}
+  .top nav a{font-size:12.5px;font-weight:500;color:var(--muted);text-decoration:none;padding:8px 11px;border-radius:8px;white-space:nowrap}
+  .top nav a:hover{color:var(--ink);background:var(--paper-2)}
+  .hero{background:var(--paper);border-bottom:1px solid var(--line)}
+  .hero-in{display:grid;grid-template-columns:1.22fr .78fr;gap:44px;align-items:center;padding:62px 0 56px}
+  .kicker{display:inline-flex;align-items:center;gap:8px;font-family:"JetBrains Mono",monospace;font-size:10.5px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+  .kicker i{width:7px;height:7px;background:var(--blue);border-radius:2px}
+  h1{font-family:Fraunces,Georgia,serif;font-size:clamp(32px,4.5vw,52px);font-weight:700;line-height:1.04;letter-spacing:-1.3px;margin:16px 0 15px}
+  h1 em{font-style:italic;color:var(--blue)}
+  .hero .sub{max-width:590px;margin:0;color:var(--muted);font-size:15.5px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+  .chip{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:var(--paper);font-size:11.8px;color:var(--muted)}
+  .chip b{color:var(--ink);font-weight:600}
+  .cta{display:flex;flex-wrap:wrap;gap:9px;margin-top:24px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 17px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600}
+  .btn.primary{background:var(--ink);color:#fff}.btn.primary:hover{background:#000}
+  .btn.ghost{border:1px solid var(--line-2);background:var(--paper)}.btn.ghost:hover{background:var(--paper-2)}
+  .hero-card{background:var(--paper);border:1px solid var(--line);border-radius:13px;padding:22px;box-shadow:var(--shadow)}
+  .hero-card .num{font-family:Fraunces,Georgia,serif;font-size:45px;font-weight:700;line-height:1;letter-spacing:-1.5px}
+  .hero-card .num small{font-size:20px;color:var(--blue)}
+  .hero-card .lbl{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .hero-card hr{border:0;border-top:1px solid var(--line);margin:17px 0 6px}
+  .hero-card .row{display:flex;justify-content:space-between;gap:18px;border-top:1px solid var(--line);padding:7px 0;font-size:12.2px;color:var(--muted)}
+  .hero-card .row:first-of-type{border-top:0}
+  .hero-card .row b{color:var(--ink);font-weight:600;text-align:right}
+  section{padding:58px 0 12px;scroll-margin-top:68px}
+  .sec-head{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;margin-bottom:24px}
+  .overline{font-family:"JetBrains Mono",monospace;font-size:10.5px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+  .sec-head h2{font-family:Fraunces,Georgia,serif;font-size:clamp(25px,3vw,35px);line-height:1.08;letter-spacing:-.7px;margin:6px 0 0}
+  .side{font-size:11.5px;color:var(--soft);padding-bottom:5px;white-space:nowrap}
+  .timeline{position:relative}
+  .timeline::before{content:"";position:absolute;left:22px;top:12px;bottom:42px;width:1px;background:var(--line)}
+  .day{position:relative;padding-left:64px;margin-bottom:38px}
+  .when{position:absolute;left:0;top:0;width:46px;display:flex;flex-direction:column;align-items:center;gap:5px}
+  .knob{width:31px;height:31px;border-radius:50%;border:1px solid var(--line-2);background:var(--paper);display:flex;align-items:center;justify-content:center;font-family:"JetBrains Mono",monospace;font-size:10.5px;font-weight:600}
+  .fulldate{position:relative;z-index:2;white-space:nowrap;background:var(--paper);padding:1px 4px;border-radius:4px;font-family:"JetBrains Mono",monospace;font-size:9.4px;font-weight:600;color:var(--muted)}
+  .day h3{margin:2px 0 2px;font-size:16px;font-weight:650;letter-spacing:-.2px}
+  .note{margin:0 0 13px;color:var(--muted);font-size:12.5px}
+  .card{display:flex;align-items:flex-start;gap:13px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+  .card + .card{margin-top:8px}
+  .card:hover{border-color:var(--line-2);background:#fdfdfb}
+  .ic{flex:none;width:30px;height:30px;border-radius:8px;background:#f4f4f0;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .body{min-width:0}
+  .tag{display:inline-flex;align-items:center;gap:6px;margin-bottom:5px;padding:3px 9px;border:1px solid var(--line);border-radius:999px;font-family:"JetBrains Mono",monospace;font-size:9px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+  .tag::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--soft)}
+  .tag.green::before{background:var(--green)}.tag.blue::before{background:var(--blue)}.tag.amber::before{background:var(--amber)}
+  .txt{font-size:13.5px}.txt b{font-weight:650}
+  .extra{margin-top:3px;font-size:12.2px;color:var(--muted)}
+  .test{display:block;margin-top:7px;padding:6px 9px;border:1px solid #cfe2ff;border-radius:7px;background:var(--blue-soft);color:#0558c9;font-size:11.5px;font-weight:550;line-height:1.45}
+  .test b{font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.7px;text-transform:uppercase;margin-right:5px}
+  .test-rule{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:-5px 0 22px;padding:12px 15px;border:1px solid var(--line);border-left:2px solid var(--blue);border-radius:0 9px 9px 0;background:var(--paper);font-size:12.5px;color:var(--muted)}
+  .test-rule b{color:var(--ink)}
+  .test-rule span{flex:none;padding:4px 8px;border-radius:999px;background:var(--blue-soft);color:#0558c9;font-family:"JetBrains Mono",monospace;font-size:9px;font-weight:600;letter-spacing:.7px;text-transform:uppercase}
+  .hero-day .card{border-left:2px solid var(--blue)}
+  .highlight{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:20px 0 4px}
+  .stat{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .stat b{display:block;font-family:Fraunces,Georgia,serif;font-size:25px;line-height:1}
+  .stat span{display:block;margin-top:5px;font-size:11.5px;color:var(--muted)}
+  .svat,.next-card{background:var(--paper);border:1px solid var(--line);border-radius:13px;padding:26px;box-shadow:var(--shadow)}
+  .status-row{display:flex;align-items:flex-start;gap:13px}
+  .status-icon{width:38px;height:38px;border-radius:10px;background:#fff7ed;color:var(--amber);display:flex;align-items:center;justify-content:center;flex:none}
+  .svat h2,.next-card h2{font-family:Fraunces,Georgia,serif;font-size:28px;line-height:1.12;letter-spacing:-.5px;margin:0 0 7px}
+  .lead{font-size:13.5px;color:var(--muted);margin:0}
+  .matrix{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:20px 0}
+  .matrix .m{border:1px solid var(--line);border-radius:9px;padding:11px 12px;background:var(--paper-2)}
+  .matrix b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted)}
+  .matrix span{display:block;margin-top:3px;font-size:12.5px;font-weight:600}
+  .honest{border-left:2px solid var(--amber);background:var(--paper-2);padding:13px 15px;border-radius:0 9px 9px 0;color:var(--muted);font-size:12.5px}
+  .honest b{color:var(--ink)}
+  .files{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:20px}
+  .file{display:flex;align-items:flex-start;gap:10px;text-decoration:none;border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--paper)}
+  .file:hover{background:var(--paper-2);border-color:var(--line-2)}
+  .file .fn{flex:none;padding:2px 6px;border:1px solid var(--line);border-radius:5px;background:var(--paper-2);font-family:"JetBrains Mono",monospace;font-size:9.5px}
+  .file .fc{min-width:0}
+  .file b{display:block;font-size:11.8px}.file span{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+  .doc-intro{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:8px;font-size:12.5px;color:var(--muted)}
+  .doc-intro b{color:var(--ink)}
+  .closed-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .closed{border:1px solid var(--line);border-left:2px solid var(--blue);border-radius:0 9px 9px 0;background:var(--paper);padding:12px 13px}
+  .closed .ok{display:inline-flex;align-items:center;gap:5px;margin-bottom:5px;font-family:"JetBrains Mono",monospace;font-size:8.5px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:#0558c9}
+  .closed .ok::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--blue)}
+  .closed b{display:block;font-size:12.5px;line-height:1.4}
+  .closed span{display:block;margin-top:4px;font-size:11px;line-height:1.5;color:var(--muted)}
+  .next-top{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}
+  .np-status{display:inline-flex;align-items:center;gap:7px;padding-top:3px;font-size:11.5px;color:var(--muted)}
+  .dotk{width:7px;height:7px;border-radius:50%;background:#c6cbd3}.dotk.ok{background:var(--green)}.dotk.err{background:var(--rose)}
+  .np-view{white-space:pre-wrap;min-height:78px;border:1px solid var(--line);border-radius:10px;background:var(--paper-2);padding:15px 16px;font-size:13.5px;line-height:1.75}
+  .np-meta{margin-top:8px;font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--soft)}
+  #npText{display:block;width:100%;min-height:210px;resize:vertical;border:1px solid var(--line);border-radius:10px;background:var(--paper-2);padding:15px 16px;font-family:Montserrat,"Helvetica Neue",sans-serif;font-size:13.5px;line-height:1.7;color:var(--ink);outline:none}
+  #npText:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(6,119,255,.12);background:#fff}
+  .np-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+  button{font:inherit}
+  .npbtn{border:0;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:10px 17px;border-radius:8px;font-size:12.5px;font-weight:600}
+  .npbtn.primary{background:var(--ink);color:#fff}.npbtn.ghost{border:1px solid var(--line-2);background:var(--paper);color:var(--ink)}
+  .npmsg{font-size:12px;color:var(--muted)}
+  .history{display:none;margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+  .history-item{padding:9px 0;border-top:1px solid var(--line);font-size:12.5px;white-space:pre-wrap}
+  .history-item:first-child{border-top:0}
+  footer{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:42px;padding:29px 0 52px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+  footer b{color:var(--ink);font-weight:600}
+  footer a{color:var(--muted);text-decoration:none}footer a:hover{color:var(--blue)}
+  .reveal{opacity:1;transform:translateY(10px);transition:transform .55s cubic-bezier(.22,1,.36,1);transition-delay:var(--d,0ms)}
+  .reveal.in{transform:none}
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{transform:none;transition:none}}
+  @media(max-width:860px){
+    .hero-in{grid-template-columns:1fr;gap:26px;padding:44px 0}
+    .hero-card{max-width:500px}
+    .files,.closed-grid{grid-template-columns:1fr}
+    .sec-head{flex-direction:column;align-items:flex-start}
+    .side{white-space:normal}
+  }
+  @media(max-width:680px){
+    .wrap{padding:0 17px}
+    .top-in{flex-wrap:wrap;padding:9px 0;gap:4px 10px}
+    .top nav{margin-left:0;width:100%;overflow-x:auto;scrollbar-width:none}.top nav::-webkit-scrollbar{display:none}
+    .top nav a{padding:6px 9px;font-size:11.4px}
+    section{padding-top:46px}
+    .hero-card .num{font-size:38px}
+    .hero-card .num small{display:block;margin-top:7px;font-family:Montserrat,"Helvetica Neue",sans-serif;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:0}
+    .test-rule{align-items:flex-start;flex-direction:column;gap:9px}
+    .doc-intro{align-items:flex-start;flex-direction:column;gap:4px}
+    .day{padding-left:52px}.timeline::before{left:18px}.when{width:36px}.knob{width:29px;height:29px}
+    .highlight,.matrix{grid-template-columns:1fr}
+    .svat,.next-card{padding:20px 17px}
+  }
+  @media print{.top,.cta,.np-actions{display:none}body{background:#fff}.card,.file,.svat,.next-card{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="wrap top-in">
+    <img class="logo" src="/logo.svg" alt="">
+    <div class="brand">Estudo<span>360</span></div>
+    <nav aria-label="Navegação da atualização">
+      <a href="#novidades">Novidades</a>
+      <a href="#notas-2810">Notas 28/10</a>
+      <a href="#documentos">26 PDFs</a>
+      <a href="#svat">SVAT</a>
+      <a href="#proximos">Próximos passos</a>
+      <a href="estudo360-novidades-semana-26-10">Reunião de 28/10</a>
+      <a href="estudo360-novidades-e-svat">Arquivo inicial</a>
+    </nav>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap hero-in">
+    <div>
+      <span class="kicker"><i></i>Atualizações · semana de 09/11</span>
+      <h1>O trabalho fica guardado.<br><em>E encontra-se num instante.</em></h1>
+      <p class="sub">Só alterações que podem ser abertas e testadas na reunião. O registo anterior fica preservado e esta é a versão mais recente.</p>
+      <div class="chips">
+        <span class="chip"><b>100%</b> testável na app</span>
+        <span class="chip"><b>Cópia</b> de segurança do gabinete</span>
+        <span class="chip"><b>Pesquisa</b> em toda a app</span>
+        <span class="chip"><b>Notas</b> sem conta</span>
+      </div>
+      <div class="cta">
+        <a class="btn primary" href="#novidades">Ver o que mudou</a>
+        <a class="btn ghost" href="#documentos">Rever os 26 PDFs</a>
+      </div>
+    </div>
+    <aside class="hero-card reveal">
+      <div class="num">100<small>% testável</small></div>
+      <div class="lbl">cada cartão indica onde experimentar</div>
+      <hr>
+      <div class="row"><span>Período revisto</span><b>Semana de 09/11</b></div>
+      <div class="row"><span>Acesso da equipa</span><b>Sem email</b></div>
+      <div class="row"><span>Documentos</span><b>1 folha A4</b></div>
+      <div class="row"><span>Notas de 28/10</span><b>5 de 6 concluídas</b></div>
+    </aside>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="novidades">
+    <div class="sec-head reveal">
+      <div><div class="overline">Registo cronológico</div><h2>O que mudou esta semana</h2></div>
+      <div class="side">Só o que o cliente consegue confirmar</div>
+    </div>
+
+    <div class="test-rule reveal"><div><b>Regra deste changelog:</b> trabalho interno, testes e alterações sem ecrã visível ficam fora desta lista.</div><span>Só testável</span></div>
+
+    <div class="timeline">
+      <article class="day hero-day">
+        <div class="when"><div class="knob">09</div><div class="fulldate">09/11</div></div>
+        <h3>Proteger o trabalho e ganhar tempo</h3>
+        <p class="note">Nove novidades que se confirmam em poucos minutos.</p>
+
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></div>
+          <div class="body"><span class="tag green">Novo</span><div class="txt"><b>Cópia de segurança do gabinete.</b> Um ficheiro único com clientes, fichas, obrigações, tarefas, contactos, documentos e cofre. Pode restaurá-lo mais tarde, neste ou noutro computador.</div><div class="extra">As passwords do cofre continuam cifradas: sem a sua passphrase, o ficheiro não as revela.</div><div class="test"><b>Testar</b>Definições do Escritório → Cópia de segurança → Exportar gabinete, e depois escolher o mesmo ficheiro para ver o resumo antes de restaurar.</div></div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg></div>
+          <div class="body"><span class="tag blue">Novo</span><div class="txt"><b>Pesquisa em toda a aplicação.</b> Um atalho encontra clientes, tarefas, obrigações, credenciais, ecrãs e menus — sem andar a abrir separadores.</div><div class="extra">Abre com ⌘K (Mac) ou Ctrl+K, pela lupa na barra de topo, ou com a tecla «/».</div><div class="test"><b>Testar</b>Carregar em ⌘K, escrever parte do nome de um cliente e confirmar que aparece; Enter abre.</div></div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <div class="body"><span class="tag amber">Melhoria</span><div class="txt"><b>A cor do escritório passa a pintar o site inteiro.</b> Antes só aparecia nos documentos exportados; agora botões, realces e estados usam a mesma cor.</div><div class="test"><b>Testar</b>Definições do Escritório → Identidade Visual → escolher outra cor e confirmar que os botões mudam sem recarregar.</div></div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v14H4z"/><path d="M8 8h8M8 12h5"/><path d="M8 21h8"/></svg></div>
+          <div class="body"><span class="tag green">Novo</span><div class="txt"><b>As notas da reunião escrevem-se sem conta.</b> O link pessoal traz uma chave; sem ela a página é só de leitura.</div><div class="extra">Cada gravação cria uma versão nova que ninguém pode apagar. Pode navegar entre as notas das semanas anteriores na secção «Próximos passos».</div><div class="test"><b>Testar</b>Abrir o link com a chave, escrever uma linha em «Próximos passos» e recarregar a página: o texto continua lá.</div></div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg></div>
+          <div class="body"><span class="tag blue">Alteração</span><div class="txt"><b>Os acessos da equipa já não precisam de email.</b> O dono cria um utilizador simples — «ana», «recepcao-2» — e uma password. Não é enviada nenhuma mensagem.</div><div class="extra">Os acessos antigos, criados com email, continuam a entrar como antes.</div><div class="test"><b>Testar</b>Gabinete → Equipa → Criar acesso, escrever um utilizador sem @ e entrar com ele na página inicial.</div></div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v12H4z"/><path d="M8 21h8M12 17v4"/></svg></div>
+          <div class="body"><span class="tag amber">Alteração</span><div class="txt"><b>As propostas passam a ser só para o Gamma.</b> Deixou de haver dois caminhos: gera o texto, copia e cola no gamma.app.</div><div class="extra">As propostas antigas continuam na lista, para não perder os links já partilhados.</div><div class="test"><b>Testar</b>Ferramentas → Fazer Proposta → Nova proposta → escolher cliente → Gerar texto → Copiar + abrir Gamma.</div></div>
+        </div>
+      </article>
+
+      <article class="day" id="notas-2810">
+        <div class="when"><div class="knob">08</div><div class="fulldate">08/11</div></div>
+        <h3>Notas da reunião de 28/10 fechadas</h3>
+        <p class="note">O que ficou pedido na reunião anterior e agora está resolvido.</p>
+
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"/><path d="M5 8h8a3 3 0 0 1 0 6H7"/><path d="M5 14h9a3 3 0 0 1 0 6H8"/></svg></div>
+          <div class="body"><span class="tag green">Concluído</span><div class="txt"><b>O PPC passou a ser só uma estimativa.</b> Mostra a base, a taxa e as três prestações, com o ano seguinte ao exercício simulado.</div><div class="extra">Deixou de pedir pagamentos nem reavaliações: é previsão, não lançamento.</div><div class="test"><b>Testar</b>Previsa → cartão do PPC → confirmar as três prestações e o ano.</div></div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M9 13h6M9 17h6"/></svg></div>
+          <div class="body"><span class="tag green">Concluído</span><div class="txt"><b>O contrato imprime o documento completo, como no ecrã.</b> Deixou de sair resumido numa folha.</div><div class="test"><b>Testar</b>Relatórios → Pacote cliente → Contrato → Imprimir: aparecem todas as cláusulas e as assinaturas.</div></div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h7"/></svg></div>
+          <div class="body"><span class="tag green">Concluído</span><div class="txt"><b>Todos os botões de exportação foram revistos.</b> O que dizia «Exportar XLS» passou a «Exportar CSV», porque era isso que saía.</div><div class="extra">Nomes e anos conferidos em 12 documentos exportáveis.</div><div class="test"><b>Testar</b>Gabinete → Mapa de controlo → Exportar CSV e abrir o ficheiro no Excel.</div></div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <div class="body"><span class="tag green">Concluído</span><div class="txt"><b>Logótipo e cor de accent em todo o site.</b> O símbolo aparece na entrada, no selector de gabinetes, na barra lateral e no topo.</div><div class="test"><b>Testar</b>Percorrer a entrada, a lista de empresas e o gabinete: o símbolo é o mesmo em todos.</div></div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></div>
+          <div class="body"><span class="tag amber">Pendente</span><div class="txt"><b>Redesenho dos documentos com referências visuais.</b> Foi aplicada hierarquia editorial, mas falta a base de exemplos que o cliente quer usar.</div><div class="extra">Para fechar: enviar 1 a 3 referências de design.</div><div class="test"><b>Testar</b>Abrir dois documentos em <b>Relatórios</b> e dizer o que deve mudar.</div></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="documentos">
+    <div class="sec-head reveal">
+      <div><div class="overline">Revisão documental</div><h2>26 PDFs, um exemplo de cada</h2></div>
+      <div class="side">A4 · azul e branco</div>
+    </div>
+    <div class="doc-intro reveal"><span>Cada ligação abre o PDF real exportado, organizado apenas em azul e branco.</span><span><b>26/26</b> revistos</span></div>
+    <div class="files reveal">
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/01-simulacao-fiscal.pdf" target="_blank" rel="noopener"><span class="fn">01</span><span class="fc"><b>Simulador Fiscal</b><span>ENI vs Sociedade, parâmetros, comparação, recomendação e enquadramento.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/02-simulacao-viaturas.pdf" target="_blank" rel="noopener"><span class="fn">02</span><span class="fc"><b>Simulador de Viaturas</b><span>IVA, tributação autónoma, depreciação e formas de aquisição.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/03-simulacao-aquisicao.pdf" target="_blank" rel="noopener"><span class="fn">03</span><span class="fc"><b>Simulador de Aquisição</b><span>Compra, crédito, leasing e renting com o regime fiscal escolhido.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/04-simulacao-tickets.pdf" target="_blank" rel="noopener"><span class="fn">04</span><span class="fc"><b>Tickets e Benefícios</b><span>Custo, poupança, limites isentos e enquadramento fiscal.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/05-seguranca-social-independente.pdf" target="_blank" rel="noopener"><span class="fn">05</span><span class="fc"><b>SS Independente</b><span>Base de incidência, contribuição mensal, anual e regras aplicáveis.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/06-diagnostico-autonomia.pdf" target="_blank" rel="noopener"><span class="fn">06</span><span class="fc"><b>Diagnóstico de Autonomia</b><span>Cinco pilares, scores, pontos fortes, riscos e plano de ação.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/07-imoveis-na-empresa.pdf" target="_blank" rel="noopener"><span class="fn">07</span><span class="fc"><b>Imóveis na Empresa</b><span>Arrendamento, comodato ou entrada em espécie, IMT, selo e impacto fiscal.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/08-simulacao-imt.pdf" target="_blank" rel="noopener"><span class="fn">08</span><span class="fc"><b>IMT e Imposto do Selo</b><span>Valor, localização, tipo de imóvel, taxa, benefícios e total.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/09-salario-liquido.pdf" target="_blank" rel="noopener"><span class="fn">09</span><span class="fc"><b>Salário Líquido</b><span>Bruto, descontos, líquido, custo empregador e pressupostos.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/10-simulacao-irs.pdf" target="_blank" rel="noopener"><span class="fn">10</span><span class="fc"><b>IRS — Modelo 3</b><span>Agregado, rendimentos, deduções, taxa, imposto e resultado.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/11-previsa-modelo-22.pdf" target="_blank" rel="noopener"><span class="fn">11</span><span class="fc"><b>Previsa — Modelo 22</b><span>Q07, Q09, Q10, IRC, derramas, tributação autónoma e notas.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/12-ficha-simulacao-cliente.pdf" target="_blank" rel="noopener"><span class="fn">12</span><span class="fc"><b>Ficha de simulação do cliente</b><span>Resumo executivo com identificação, fiscalidade, resultados e honorários.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/13-ficha-360-gabinete.pdf" target="_blank" rel="noopener"><span class="fn">13</span><span class="fc"><b>Ficha 360 do gabinete</b><span>Cliente, obrigações, alertas, contactos, tarefas e orientações.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/14-quadro-obrigacoes.pdf" target="_blank" rel="noopener"><span class="fn">14</span><span class="fc"><b>Quadro Resumo de Obrigações</b><span>Matriz anual de obrigações por cliente e estado.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/15-mapa-controlo.pdf" target="_blank" rel="noopener"><span class="fn">15</span><span class="fc"><b>Mapa de Controlo</b><span>Pilares de controlo por cliente e mês, com filtros refletidos no PDF.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/16-mapa-rh.pdf" target="_blank" rel="noopener"><span class="fn">16</span><span class="fc"><b>Mapa RH</b><span>Pilares de recursos humanos por cliente e mês.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/17-proposta-honorarios.pdf" target="_blank" rel="noopener"><span class="fn">17</span><span class="fc"><b>Proposta de Honorários</b><span>Serviços, mensalidade, totais, condições e dados do escritório.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/18-contrato-prestacao-servicos.pdf" target="_blank" rel="noopener"><span class="fn">18</span><span class="fc"><b>Contrato de Prestação de Serviços</b><span>Partes, objeto, serviços, honorários, confidencialidade, RGPD, duração, foro e assinaturas.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/19-proposta-comercial.pdf" target="_blank" rel="noopener"><span class="fn">19</span><span class="fc"><b>Proposta Comercial</b><span>Síntese dos sete blocos da proposta com branding e próximo passo.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/20-demonstracao-resultados.pdf" target="_blank" rel="noopener"><span class="fn">20</span><span class="fc"><b>Demonstração dos Resultados</b><span>Rendimentos, gastos, EBITDA, resultado operacional, impostos e líquido.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/21-alteracoes-capital-proprio.pdf" target="_blank" rel="noopener"><span class="fn">21</span><span class="fc"><b>Alterações no Capital Próprio</b><span>Capital, reservas, resultados e movimentos do período.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/22-fluxos-caixa.pdf" target="_blank" rel="noopener"><span class="fn">22</span><span class="fc"><b>Fluxos de Caixa</b><span>Atividades operacionais, investimento, financiamento e variação de caixa.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/23-balanco.pdf" target="_blank" rel="noopener"><span class="fn">23</span><span class="fc"><b>Balanço</b><span>Ativo, capital próprio, passivo, totais e comparação com abertura.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/24-demonstracoes-financeiras-sintese.pdf" target="_blank" rel="noopener"><span class="fn">24</span><span class="fc"><b>Demonstrações Financeiras — Síntese</b><span>Visão consolidada de Balanço, Resultados, Capital Próprio e Fluxos.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/25-ata-assembleia-geral.pdf" target="_blank" rel="noopener"><span class="fn">25</span><span class="fc"><b>Ata de Assembleia Geral</b><span>Convocatória, sócios, deliberações, resultado e assinaturas.</span></span></a>
+      <a class="file" data-pdf href="exemplos-exportacoes-2026-11-03/26-declaracao-responsabilidade.pdf" target="_blank" rel="noopener"><span class="fn">26</span><span class="fc"><b>Declaração de Responsabilidade</b><span>Entidade, contabilista, cédula, declarações e assinatura da gerência.</span></span></a>
+    </div>
+  </section>
+
+  <section id="svat">
+    <div class="sec-head reveal">
+      <div><div class="overline">Certificação SVAT</div><h2>Estado real, sem promessas</h2></div>
+      <div class="side">Revisto em 03/11/2026</div>
+    </div>
+    <div class="svat reveal">
+      <div class="status-row">
+        <div class="status-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 9v5M12 17h.01"/></svg></div>
+        <div><h2>Primeiro passo: pedir à AT para confirmar o enquadramento.</h2><p class="lead">A Portaria n.º 293/2017 aplica o SVAT a programas de contabilidade que produzem e exportam SAF-T de contabilidade. O Estudo360 lê e guarda SAF-T, mas não produz escrituração nem exporta esse ficheiro.</p></div>
+      </div>
+      <div class="matrix">
+        <div class="m"><b>Requisitos a-g</b><span>Existem controlos úteis, mas cobertura parcial</span></div>
+        <div class="m"><b>Requisito h)</b><span>Não implementado: sem exportação SAF-T</span></div>
+        <div class="m"><b>Requisito i)</b><span>Não implementado: sem escrituração contabilística</span></div>
+      </div>
+      <div class="honest"><b>Não foi submetido nenhum pedido nem apresentado o Mod. 334.</b> A próxima ação é pedir à Autoridade Tributária a classificação do produto. O dossier abaixo serve para essa consulta e para manter as provas técnicas organizadas; não é uma declaração de aprovação.</div>
+      <div class="files">
+        <a class="file" href="docs-candidatura-svat/00-LEIA-PRIMEIRO.pdf"><span class="fn">00</span><span class="fc"><b>Leia primeiro</b><span>Resumo da situação e próximos atos</span></span></a>
+        <a class="file" href="docs-candidatura-svat/01-Memoria-Descritiva.pdf"><span class="fn">01</span><span class="fc"><b>Memória descritiva</b><span>Âmbito real do Estudo360</span></span></a>
+        <a class="file" href="docs-candidatura-svat/02-Matriz-Conformidade.pdf"><span class="fn">02</span><span class="fc"><b>Matriz de conformidade</b><span>Os 9 requisitos, sem inflação</span></span></a>
+        <a class="file" href="docs-candidatura-svat/03-Dicionario-Dados.pdf"><span class="fn">03</span><span class="fc"><b>Dicionário de dados</b><span>Coleções e campos relevantes</span></span></a>
+        <a class="file" href="docs-candidatura-svat/04-Checklist-Submissao.pdf"><span class="fn">04</span><span class="fc"><b>Checklist</b><span>O que falta confirmar antes de enviar</span></span></a>
+        <a class="file" href="docs-candidatura-svat/05-Guia-E-balcao-Passo-a-Passo.pdf"><span class="fn">05</span><span class="fc"><b>Guia do e-balcão</b><span>Outras Obrigações → SVAT → Submissão</span></span></a>
+        <a class="file" href="docs-candidatura-svat/06-Texto-Pronto-para-colar.pdf"><span class="fn">06</span><span class="fc"><b>Pedido de classificação</b><span>Texto pronto para adaptar</span></span></a>
+        <a class="file" href="docs-candidatura-svat/07-Declaracao-Produtor.pdf"><span class="fn">07</span><span class="fc"><b>Declaração do produtor</b><span>Minuta, por assinar</span></span></a>
+        <a class="file" href="docs-candidatura-svat/08-Identidade-e-Uso.pdf"><span class="fn">08</span><span class="fc"><b>Identidade e uso</b><span>Sem selo ou logótipo da AT</span></span></a>
+        <a class="file" href="docs-candidatura-svat/09-Anexos-Tecnicos.pdf"><span class="fn">09</span><span class="fc"><b>Anexos técnicos</b><span>Provas e limitações declaradas</span></span></a>
+      </div>
+      <p style="margin:14px 0 0;font-size:12px;color:var(--muted)">Fonte oficial: <a href="https://info.portaldasfinancas.gov.pt/pt/apoio_ao_contribuinte/Negocios/Faturacao/SAF_T_PT/SVAT/Paginas/default.aspx" target="_blank" rel="noopener" style="color:var(--blue);font-weight:600">Selo de Validação AT (SVAT)</a>. O pedido deve seguir pelo e-balcão em <b>Outras Obrigações → SVAT → Submissão</b>.</p>
+    </div>
+  </section>
+
+  <section id="proximos">
+    <div class="sec-head reveal">
+      <div><div class="overline">Reuniões</div><h2>Próximos passos</h2></div>
+      <div class="side">Cada gravação fica guardada para sempre</div>
+    </div>
+    <div class="next-card reveal">
+      <div class="next-top">
+        <div>
+          <h2 style="font-size:20px">O que ficou decidido</h2>
+          <p class="lead" style="margin-top:4px">Escolha a semana, escreva e guarde. Ninguém apaga versões antigas; pode consultar as anteriores no fundo.</p>
+        </div>
+        <div class="np-status"><span class="dotk" id="npDot"></span><span id="npStatus">A carregar</span></div>
+      </div>
+
+      <label for="npSemana" style="display:block;font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin:0 0 6px">Semana</label>
+      <select id="npSemana" style="width:100%;margin-bottom:14px;padding:11px 12px;border:1px solid var(--line);border-radius:9px;font:inherit;background:var(--paper)">
+        <option value="proximos:semana-09-11">Semana de 09/11 — esta reunião</option>
+        <option value="proximos:semana-03-11">Semana de 03/11</option>
+        <option value="proximos:semana-26-10">Semana de 28/10</option>
+      </select>
+
+      <div class="np-view" id="npView">Ainda não há passos registados.</div>
+      <div class="np-meta" id="npMeta"></div>
+
+      <div id="npEditor" style="display:none;margin-top:14px">
+        <textarea id="npText" maxlength="4000" spellcheck="true" placeholder="Escreva aqui os próximos passos da reunião."></textarea>
+        <div class="np-actions"><button class="npbtn primary" id="npSave" type="button">Guardar nova versão</button><span class="npmsg" id="npMsg"></span></div>
+        <p class="np-hint" id="npHint">Guardado no site. Pode fechar a página: as notas ficam. Ctrl/⌘+Enter guarda.</p>
+      </div>
+      <div id="npLocked" style="display:none;margin-top:14px">
+        <p class="lead" style="margin:0">Esta página é só de leitura. Para escrever, abra o seu link de edição.</p>
+      </div>
+
+      <div class="history" id="npHist"><div class="overline" style="margin-bottom:5px">Versões anteriores</div><div id="npHistList"></div></div>
+    </div>
+  </section>
+
+  <footer>
+    <span><b>Estudo360</b> · Registo da semana de 09/11</span>
+    <span><a href="estudo360-novidades-semana-03-11">Semana de 03/11</a> · <a href="estudo360-novidades-semana-26-10">Reunião de 28/10</a> · <a href="estudo360-novidades-e-svat">Arquivo inicial</a> · estudo360.pt</span>
+  </footer>
+</main>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in');
+        io.unobserve(entry.target);
+      }
+    }
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach((element, index) => {
+    element.style.setProperty('--d', `${(index % 5) * 55}ms`);
+    io.observe(element);
+  });
+</script>
+
+<script type="module">
+  const emulators = new URLSearchParams(location.search).has('emu');
+  const FIREBASE_CONFIG = {
+    apiKey: 'AIzaSyChJKEBjPKZcRVF4R_n07UoUB9Q0q_EzM',
+    authDomain: 'estudo360-app.firebaseapp.com',
+    projectId: emulators ? 'demo-estudo360-audit' : 'estudo360-app',
+    storageBucket: 'estudo360-app.firebasestorage.app',
+    messagingSenderId: '297215704391',
+    appId: '1:297215704391:web:74168b37a27cc99669a062',
+  };
+  const MARKER_INICIAL = 'proximos:semana-09-11';
+  const seletorSemana = document.getElementById('npSemana');
+  let MARKER = MARKER_INICIAL;
+  const LOCAL_KEY = `estudo360:np:${MARKER}`;
+  const view = document.getElementById('npView');
+  const meta = document.getElementById('npMeta');
+  const status = document.getElementById('npStatus');
+  const dot = document.getElementById('npDot');
+  const editor = document.getElementById('npEditor');
+  const text = document.getElementById('npText');
+  const message = document.getElementById('npMsg');
+  const history = document.getElementById('npHist');
+  const historyList = document.getElementById('npHistList');
+  const setStatus = (kind, label) => {
+    dot.className = `dotk ${kind || ''}`.trim();
+    status.textContent = label;
+  };
+  const formatDate = (value) => new Intl.DateTimeFormat('pt-PT', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(new Date(Number(value) || Date.now()));
+
+  try {
+    // Só leitura pública: as notas são lidas sem sessão. Escrever passa pelo
+    // /api/notas com a chave do link, por isso não é preciso Auth aqui.
+    const [{ initializeApp }, firestoreModule] = await Promise.all([
+      import('https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js'),
+      import('https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js'),
+    ]);
+    const app = initializeApp(FIREBASE_CONFIG);
+    const db = firestoreModule.getFirestore(app);
+    if (emulators) {
+      firestoreModule.connectFirestoreEmulator(db, '127.0.0.1', 8180);
+    }
+
+    let entries = [];
+    const readEntries = async () => {
+      try {
+        const query = firestoreModule.query(
+          firestoreModule.collection(db, 'updates'),
+          firestoreModule.where('autor', '==', MARKER),
+        );
+        const snapshot = await firestoreModule.getDocs(query);
+        entries = snapshot.docs
+          .map((document) => ({ id: document.id, ...document.data() }))
+          .filter((entry) => typeof entry.text === 'string' && entry.text.trim())
+          .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+      } catch {
+        setStatus('err', 'Sem ligação - a mostrar a cópia local');
+        const local = localStorage.getItem(LOCAL_KEY);
+        if (local) view.textContent = local;
+        return;
+      }
+
+      const latest = entries[0];
+      if (latest) {
+        view.textContent = latest.text;
+        meta.textContent = `Guardado a ${formatDate(latest.createdAt)} - ${entries.length} versão(ões) preservada(s)`;
+        localStorage.setItem(LOCAL_KEY, latest.text);
+        if (!text.value) text.value = latest.text;
+      } else {
+        view.textContent = 'Ainda não há passos registados.';
+        meta.textContent = '';
+      }
+
+      if (entries.length > 1) {
+        history.style.display = 'block';
+        historyList.replaceChildren(...entries.slice(1, 8).map((entry) => {
+          const item = document.createElement('div');
+          item.className = 'history-item';
+          const date = document.createElement('div');
+          date.className = 'mono';
+          date.style.cssText = 'font-size:10px;color:#98a2b3;margin-bottom:3px';
+          date.textContent = formatDate(entry.createdAt);
+          const body = document.createElement('div');
+          body.textContent = entry.text;
+          item.append(date, body);
+          return item;
+        }));
+      } else {
+        history.style.display = 'none';
+      }
+      setStatus('ok', latest ? 'Ligado ao site' : 'Pronto');
+    };
+
+    // Escrever não exige conta: o link de edição traz uma chave (?k=…).
+    // O servidor só conhece o hash da chave; sem ela a página é de leitura.
+    const CHAVE_STORAGE = 'estudo360:np-chave:reunioes';
+    const locked = document.getElementById('npLocked');
+    const hint = document.getElementById('npHint');
+
+    const chaveDoLink = () => {
+      try { return new URLSearchParams(location.search).get('k') || ''; } catch { return ''; }
+    };
+    let chave = chaveDoLink();
+    if (chave && /^[a-f0-9]{32,64}$/i.test(chave)) {
+      try { localStorage.setItem(CHAVE_STORAGE, chave); } catch {}
+    } else {
+      try { chave = localStorage.getItem(CHAVE_STORAGE) || ''; } catch { chave = ''; }
+    }
+
+    const podeEscrever = /^[a-f0-9]{32,64}$/i.test(chave);
+    editor.style.display = podeEscrever ? 'block' : 'none';
+    locked.style.display = podeEscrever ? 'none' : 'block';
+    if (podeEscrever) {
+      hint.textContent = 'Guardado no site. Pode fechar a página: as notas ficam. O link com a chave é pessoal — não o partilhe.';
+    }
+
+    // Rascunho local: se a rede falhar a meio, o texto não se perde.
+    const RASCUNHO = () => `estudo360:np-rascunho:${MARKER}`;
+    try {
+      const r = localStorage.getItem(RASCUNHO());
+      if (r && !text.value) text.value = r;
+    } catch {}
+    text.addEventListener('input', () => {
+      try { localStorage.setItem(RASCUNHO(), text.value); } catch {}
+    });
+
+    document.getElementById('npSave')?.addEventListener('click', async () => {
+      const value = text.value.trim();
+      if (!podeEscrever) { locked.style.display = 'block'; return; }
+      if (!value) { message.textContent = 'Escreva primeiro os próximos passos.'; return; }
+      if (value.length > 4000) { message.textContent = 'Texto demasiado longo (máximo 4000 caracteres).'; return; }
+
+      message.textContent = 'A guardar...';
+      try {
+        const resposta = await fetch('/api/notas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chave, texto: value, marcador: MARKER }),
+        });
+        if (resposta.ok) {
+          message.textContent = 'Versão guardada.';
+          try { localStorage.removeItem(RASCUNHO()); } catch {}
+          await readEntries();
+          return;
+        }
+        if (resposta.status === 401) {
+          message.textContent = 'Esta chave já não é válida. Abra o seu link de edição mais recente.';
+        } else if (resposta.status === 400) {
+          message.textContent = 'Não foi possível guardar: verifique o texto.';
+        } else {
+          message.textContent = 'O serviço não respondeu. O texto ficou guardado neste dispositivo — tente outra vez.';
+        }
+      } catch {
+        message.textContent = 'Sem ligação. O texto ficou guardado neste dispositivo — tente outra vez.';
+      }
+    });
+
+    // Ctrl/⌘+Enter guarda sem tirar as mãos do teclado.
+    text.addEventListener('keydown', (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        event.preventDefault();
+        document.getElementById('npSave')?.click();
+      }
+    });
+
+    seletorSemana?.addEventListener('change', async () => {
+      MARKER = seletorSemana.value;
+      text.value = '';
+      message.textContent = '';
+      view.textContent = 'A carregar…';
+      meta.textContent = '';
+      history.style.display = 'none';
+      try {
+        const r = localStorage.getItem(RASCUNHO());
+        if (r) text.value = r;
+      } catch {}
+      await readEntries();
+    });
+
+    await readEntries();
+  } catch {
+    setStatus('err', 'Sem ligação - a mostrar a cópia local');
+    const local = localStorage.getItem(LOCAL_KEY);
+    if (local) view.textContent = local;
+  }
+</script>
+</body>
+</html>
