@@ -1,25 +1,22 @@
 /**
- * "Fazer Proposta" — entrada do módulo: lista as propostas guardadas e cria
- * uma nova a partir de um cliente (ou versão geral do escritório).
+ * "Fazer Proposta" — entrada do módulo.
  *
- * Fluxo: escolher cliente → criar deck base (template) → abrir editor, que
- * pede o texto à AI em background e cai no template se ela falhar.
+ * Só existe um caminho: gerar o texto para o Gamma (copiar e colar em
+ * gamma.app). A criação interna de propostas foi retirada; as propostas
+ * antigas continuam listadas para não perder links já partilhados.
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Clock, Copy, FileText, Link2, Loader2, Plus, Presentation, Settings as SettingsIcon, Sparkles, Trash2, X } from 'lucide-react';
+import { ArrowRight, Clock, Copy, Link2, Plus, Presentation, Settings as SettingsIcon, Trash2, X } from 'lucide-react';
 import type { OfficeSettings } from './lib/officeSettings';
 import { officeSettingsAreComplete } from './lib/officeSettings';
 import type { HonorariosConfig } from './lib/honorarios';
 import { listEmpresas, getCurrentEmpresaId } from './lib/empresas';
 import { type DeckCliente } from './lib/deck/build';
-import { buildPropostaTailored, type BriefingCliente } from './lib/deck/tailoring';
+import { type BriefingCliente } from './lib/deck/tailoring';
 import { buildGamaPrompt } from './lib/gamaPrompt';
-import { logAudit } from './lib/audit';
-import { DECK_THEMES, type DeckDoc, type DeckTheme } from './lib/deck/types';
+import { type DeckDoc } from './lib/deck/types';
 import { publicUrl } from './lib/deck/share';
 import { listMetas, removeDeck, syncMetas, type DeckMeta } from './lib/deck/store';
-import { useAuth } from './lib/auth';
-import { getGabineteOfficeId } from './lib/gabinete';
 
 interface Props {
   office: OfficeSettings;
@@ -28,26 +25,14 @@ interface Props {
   onGoToOfficeSettings: () => void;
 }
 
-function newDeckId(): string {
-  const c = globalThis.crypto;
-  if (c?.randomUUID) return `d_${c.randomUUID().replace(/-/g, '').slice(0, 20)}`;
-  return `d_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
-}
-
 export default function PropostaView({ office, honorarios, onOpen, onGoToOfficeSettings }: Props) {
-  const { user, accountEmail } = useAuth();
   const [metas, setMetas] = useState<DeckMeta[]>(() => listMetas());
   const [creating, setCreating] = useState(false);
-  const [passo, setPasso] = useState<'escolha' | 'briefing'>('escolha');
-  const [caminho, setCaminho] = useState<'app' | 'gamma' | null>(null);
+
   const [briefing, setBriefing] = useState<BriefingCliente>({});
-  const [ajuste, setAjuste] = useState('');
-  const [motivoAjuste, setMotivoAjuste] = useState('');
   const [gammaTxt, setGammaTxt] = useState<string | null>(null);
   // Já entra no cliente ativo: a proposta sai logo à medida dele.
   const [clienteId, setClienteId] = useState(() => getCurrentEmpresaId() || '');
-  const [tema, setTema] = useState<DeckTheme>('claro');
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -79,41 +64,7 @@ export default function PropostaView({ office, honorarios, onOpen, onGoToOfficeS
   };
 
   /** Caminho 1: gera a proposta dentro do Estudo360 (7 blocos, preço real). */
-  const criarNaApp = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      const cliente = clienteSelecionado();
-      const valorAjuste = Number(ajuste.replace(',', '.')) || 0;
-      const deck = buildPropostaTailored({
-        id: newDeckId(),
-        office,
-        honorarios,
-        cliente,
-        briefing,
-        tema,
-        ownerUid: user?.uid || '',
-        gabineteId: getGabineteOfficeId(),
-        ajuste: valorAjuste || motivoAjuste.trim()
-          ? { mensal: valorAjuste, motivo: motivoAjuste.trim() || 'Ajuste comercial', por: accountEmail || user?.uid || 'local' }
-          : undefined,
-      });
-      if (valorAjuste) {
-        logAudit('proposta_ajuste_preco', `Proposta ${cliente?.nome || 'geral'}`, {
-          ajusteMensal: valorAjuste, motivo: motivoAjuste.trim(), clienteId: cliente?.id ?? null,
-        });
-      }
-      setCreating(false);
-      setPasso('escolha');
-      onOpen(deck, cliente, false);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Não consegui criar a proposta.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  /** Caminho 2: a mesma estrutura, em texto para colar no Gamma. */
+  /** Texto pronto a colar no gamma.app. */
   const criarNoGamma = () => {
     const cliente = clienteSelecionado();
     setGammaTxt(buildGamaPrompt(office, honorarios, cliente, { briefing }));
@@ -148,11 +99,11 @@ export default function PropostaView({ office, honorarios, onOpen, onGoToOfficeS
             <Presentation className="w-6 h-6 text-[var(--accent)]" /> Fazer Proposta
           </h1>
           <p className="text-[13px] text-[#64748B] font-[500] mt-1 max-w-[620px]">
-            Gera uma proposta comercial com AI a partir dos dados do escritório, do cliente e da tabela de honorários. Editável card a card, com PDF e link público.
+            Gera o texto da proposta a partir dos dados do escritório, do cliente e da tabela de honorários. Copia e cola no Gamma para montar o documento.
           </p>
         </div>
         <button
-          onClick={() => { setCreating(true); setPasso('escolha'); setCaminho(null); setGammaTxt(null); }}
+          onClick={() => { setCreating(true); setGammaTxt(null); }}
           className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[var(--accent)] text-white text-[13px] font-[700] hover:bg-[#0059c9] transition-colors"
         >
           <Plus className="w-4 h-4" /> Nova proposta
@@ -178,54 +129,20 @@ export default function PropostaView({ office, honorarios, onOpen, onGoToOfficeS
         <div className="mt-5 bg-white rounded-2xl border border-[#E2E8F0] p-5">
           <div className="flex items-center justify-between">
             <h2 className="text-[15px] font-[800] text-[#0F172A]">
-              {passo === 'escolha' ? 'Nova proposta — como queres gerar?' : caminho === 'gamma' ? 'Nova proposta no Gamma' : 'Nova proposta no Estudo360'}
+              Nova proposta para o Gamma
             </h2>
-            <button onClick={() => { setCreating(false); setPasso('escolha'); setCaminho(null); }} className="p-1 text-[#94A3B8] hover:text-[#0F172A]"><X className="w-4 h-4" /></button>
+            <button onClick={() => { setCreating(false); setGammaTxt(null); }} className="p-1 text-[#94A3B8] hover:text-[#0F172A]" aria-label="Fechar"><X className="w-4 h-4" /></button>
           </div>
 
-          {passo === 'escolha' && (
-            <div className="mt-4 grid md:grid-cols-2 gap-3">
-              <button
-                onClick={() => { setCaminho('app'); setPasso('briefing'); }}
-                className="text-left rounded-xl border border-[#E2E8F0] p-4 hover:border-[var(--accent)] hover:bg-[#F8FBFF] transition-colors"
-              >
-                <span className="inline-flex items-center gap-2 text-[13.5px] font-[800] text-[var(--accent)]"><Sparkles className="w-4 h-4" /> Gerar no Estudo360</span>
-                <span className="mt-1.5 block text-[12px] text-[#64748B]">Proposta de 7 blocos, editável, com PDF e link público. O preço vem da tabela.</span>
-              </button>
-              <button
-                onClick={() => { setCaminho('gamma'); setPasso('briefing'); }}
-                className="text-left rounded-xl border border-[#E2E8F0] p-4 hover:border-[var(--accent)] hover:bg-[#F8FBFF] transition-colors"
-              >
-                <span className="inline-flex items-center gap-2 text-[13.5px] font-[800] text-[#0F172A]"><Presentation className="w-4 h-4" /> Levar para o Gamma</span>
-                <span className="mt-1.5 block text-[12px] text-[#64748B]">O mesmo conteúdo em texto pronto a colar no gamma.app. Sem chave, custo zero.</span>
-              </button>
-            </div>
-          )}
-
-          {passo === 'briefing' && caminho && (
+          {(
             <>
-              <button onClick={() => { setPasso('escolha'); setCaminho(null); setGammaTxt(null); }} className="mt-3 inline-flex items-center gap-1 text-[11.5px] font-[700] text-[#64748B] hover:text-[#0F172A]">
-                <ArrowRight className="w-3.5 h-3.5 rotate-180" /> Trocar caminho
-              </button>
-
-              <div className="mt-3 grid md:grid-cols-2 gap-4">
+              <div className="mt-3 grid gap-4">
                 <label className="block">
                   <span className="block text-[11px] font-[800] uppercase tracking-wide text-[#64748B] mb-1.5">Cliente</span>
                   <select value={clienteId} onChange={(e) => setClienteId(e.target.value)} className="w-full px-3 py-2.5 rounded-xl border border-[#E2E8F0] text-[13px] font-[600] text-[#0F172A] bg-white">
                     <option value="">Versão geral do escritório (sem cliente)</option>
                     {empresas.map((e) => <option key={e.id} value={e.id}>{e.nome}{e.nif ? ` · ${e.nif}` : ''}</option>)}
                   </select>
-                </label>
-                <label className="block">
-                  <span className="block text-[11px] font-[800] uppercase tracking-wide text-[#64748B] mb-1.5">Tema</span>
-                  <div className="flex gap-2">
-                    {DECK_THEMES.map((t) => (
-                      <button key={t} onClick={() => setTema(t)}
-                        className={`flex-1 px-3 py-2.5 rounded-xl border text-[12px] font-[700] ${tema === t ? 'border-[var(--accent)] bg-[#EFF6FF] text-[var(--accent)]' : 'border-[#E2E8F0] text-[#64748B] hover:border-[#CBD5E1]'}`}>
-                        {t === 'claro' ? 'Claro' : t === 'escuro' ? 'Escuro' : 'Marca'}
-                      </button>
-                    ))}
-                  </div>
                 </label>
               </div>
 
@@ -251,39 +168,14 @@ export default function PropostaView({ office, honorarios, onOpen, onGoToOfficeS
                 </div>
               </div>
 
-              {caminho === 'app' && (
-                <div className="mt-4">
-                  <p className="text-[11px] font-[800] uppercase tracking-wide text-[#64748B]">Preço (tabela + ajuste registado)</p>
-                  <div className="mt-2 grid md:grid-cols-2 gap-3">
-                    <label className="block">
-                      <span className="block text-[11.5px] font-[700] text-[#334155] mb-1">Ajuste €/mês (negativo = desconto)</span>
-                      <input value={ajuste} onChange={(e) => setAjuste(e.target.value)} inputMode="decimal" placeholder="ex.: -25" className="w-full px-3 py-2 rounded-xl border border-[#E2E8F0] text-[13px]" />
-                    </label>
-                    <label className="block">
-                      <span className="block text-[11.5px] font-[700] text-[#334155] mb-1">Motivo do ajuste</span>
-                      <input value={motivoAjuste} onChange={(e) => setMotivoAjuste(e.target.value)} placeholder="ex.: cliente antigo / mais anos de contrato" className="w-full px-3 py-2 rounded-xl border border-[#E2E8F0] text-[13px]" />
-                    </label>
-                  </div>
-                  <p className="mt-1.5 text-[11px] text-[#94A3B8]">O ajuste fica no registo de auditoria (quem, quando e porquê).</p>
-                </div>
-              )}
-
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                {caminho === 'app' ? (
-                  <button onClick={criarNaApp} disabled={busy} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[var(--accent)] text-white text-[13px] font-[700] hover:bg-[#0059c9] disabled:opacity-60">
-                    {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />} Criar proposta
+                <button onClick={criarNoGamma} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0F172A] text-white text-[13px] font-[700] hover:bg-black">
+                  <Presentation className="w-4 h-4" /> Gerar texto
+                </button>
+                {gammaTxt && (
+                  <button onClick={copiarGamma} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[var(--accent)] text-white text-[13px] font-[700] hover:bg-[#0059c9]">
+                    <Copy className="w-4 h-4" /> Copiar + abrir Gamma
                   </button>
-                ) : (
-                  <>
-                    <button onClick={criarNoGamma} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0F172A] text-white text-[13px] font-[700] hover:bg-black">
-                      <Presentation className="w-4 h-4" /> Gerar texto
-                    </button>
-                    {gammaTxt && (
-                      <button onClick={copiarGamma} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[var(--accent)] text-white text-[13px] font-[700] hover:bg-[#0059c9]">
-                        <Copy className="w-4 h-4" /> Copiar + abrir Gamma
-                      </button>
-                    )}
-                  </>
                 )}
                 <span className="text-[11px] text-[#94A3B8] font-[500]">Preço sempre da tabela de honorários.</span>
               </div>

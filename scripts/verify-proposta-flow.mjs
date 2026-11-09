@@ -1,5 +1,5 @@
 /**
- * Prova do fluxo novo de propostas: escolha obrigatória (app ou Gamma), as 4
+ * Prova do fluxo de propostas: só Gamma (texto para colar), as 4
  * perguntas, proposta de 7 blocos com preço real e texto Gamma com os mesmos
  * blocos.
  *
@@ -41,59 +41,30 @@ await page.evaluate(() => {
 await page.reload({ waitUntil: 'load' });
 await page.waitForTimeout(2500);
 
-// Passo 1: escolha obrigatória
+// Passo 1: um único caminho — Gamma
 await page.getByRole('button', { name: /Nova proposta/i }).click();
 await page.waitForTimeout(400);
-ok(await page.getByRole('button', { name: /Gerar no Estudo360/i }).count() === 1, 'ecrã de escolha: opção Estudo360');
-ok(await page.getByRole('button', { name: /Levar para o Gamma/i }).count() === 1, 'ecrã de escolha: opção Gamma');
-ok(await page.locator('text=Criar proposta').count() === 0, 'não dá para criar sem escolher caminho');
+ok(await page.getByRole('button', { name: /Gerar no Estudo360/i }).count() === 0, 'caminho interno removido');
+ok(await page.getByText(/Nova proposta para o Gamma/i).count() >= 1, 'painel identifica o Gamma');
+ok(await page.getByRole('button', { name: /^Gerar texto$/i }).count() === 1, 'botão Gerar texto presente');
 
-// Caminho app
-await page.getByRole('button', { name: /Gerar no Estudo360/i }).click();
-await page.waitForTimeout(500);
-const inputs = page.locator('input[placeholder^="ex.:"], input[placeholder^="ex.:"]');
+// 4 perguntas
 ok(await page.locator('input[placeholder*="pessoas"]').count() >= 1, 'pergunta Dimensão presente');
 ok(await page.locator('input[placeholder*="contas"]').count() >= 1, 'pergunta Objetivo presente');
 const dimensaoPrefill = await page.locator('input[placeholder*="pessoas"]').first().inputValue();
 ok(/6/.test(dimensaoPrefill), `dimensão pré-preenchida do perfil (${dimensaoPrefill})`);
 
-await page.locator('input[placeholder*="contas"]').first().fill('fechar contas a tempo e reduzir impostos');
 await page.locator('select').first().selectOption('e1');
 await page.waitForTimeout(300);
-await page.getByRole('button', { name: /Criar proposta/i }).click();
-await page.waitForTimeout(2500);
-
-const editor = await page.evaluate(() => document.body.innerText);
-ok(/Cliente|Proposta/i.test(editor), 'editor da proposta abriu');
-const cards = await page.locator('.deck-page, [data-deck-card]').count();
-ok(cards >= 7, `proposta com ${cards} cards (esperado 7)`);
-await page.screenshot({ path: path.join(OUT, 'proposta-tailored.png'), fullPage: false });
-
-// PDF: 3–8 páginas (1 card por página), nunca mais de 8
-await page.evaluate(() => { window.__prints = 0; window.print = () => { window.__prints += 1; }; });
-await page.getByRole('button', { name: /^PDF$/ }).first().click();
-await page.waitForTimeout(600);
-const deck = await page.evaluate(() => ({
-  cards: document.querySelectorAll('.deck-page').length,
-  prints: window.__prints || 0,
-}));
-ok(deck.cards >= 3 && deck.cards <= 8, `PDF da proposta com ${deck.cards} páginas (3–8)`);
-ok(deck.prints >= 1, 'PDF da proposta dispara impressão');
-
-// Caminho Gamma: voltar e gerar texto
-await page.getByRole('button', { name: /Propostas/i }).first().click();
-await page.waitForTimeout(1200);
-await page.getByRole('button', { name: /Nova proposta/i }).click();
-await page.getByRole('button', { name: /Levar para o Gamma/i }).click();
-await page.waitForTimeout(400);
-await page.locator('select').first().selectOption('e1');
-await page.locator('input[placeholder*="contas"]').first().fill('fechar contas a tempo');
-await page.getByRole('button', { name: /Gerar texto/i }).click();
+await page.locator('input[placeholder*="contas"]').first().fill('fechar contas a tempo e reduzir impostos');
+await page.getByRole('button', { name: /^Gerar texto$/i }).click();
 await page.waitForTimeout(800);
+
 const texto = await page.locator('pre').first().textContent().catch(() => '');
 ok(!!texto && texto.includes('## Diagnóstico') && texto.includes('## Investimento') && texto.includes('## Plano de arranque'), 'texto Gamma com os 7 blocos');
 ok(!!texto && texto.includes('fechar contas a tempo'), 'texto Gamma usa o objetivo respondido');
 ok(!!texto && /€\/mês/.test(texto), 'texto Gamma tem preço mensal');
+ok(await page.getByRole('button', { name: /Copiar \+ abrir Gamma/i }).count() === 1, 'botão para copiar e abrir Gamma');
 await page.screenshot({ path: path.join(OUT, 'proposta-gamma.png'), fullPage: false });
 
 ok(!falhas.some((f) => f.startsWith('pageerror')), 'sem exceções de página');
