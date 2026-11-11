@@ -56,6 +56,12 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
         await signUpWithEmail(email.trim(), password, name.trim());
         setInfo('Conta criada. Já pode entrar no gabinete.');
       } else if (mode === 'reset') {
+        // O utilizador criado pelo gabinete não tem email: a reposição é feita
+        // por quem administra o gabinete, dentro de Equipa → Repor password.
+        if (!email.includes('@')) {
+          setInfo('Este acesso não usa email. Peça a quem administra o gabinete para repor a password em Equipa → Repor password.');
+          return;
+        }
         await resetPassword(email.trim());
         setInfo('Se existir conta com esse email, enviámos instruções para repor a password.');
       }

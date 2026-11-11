@@ -484,7 +484,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
             <input
               value={q}
               onChange={(event) => setQ(event.target.value)}
-              placeholder="Pesquisar nome, email ou cargo…"
+              placeholder="Pesquisar nome, utilizador ou cargo…"
               className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 pl-9 pr-3 text-sm"
             />
           </div>
@@ -526,7 +526,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
               <thead className="bg-[#F8FAFC] text-xs text-[#64748B]">
                 <tr>
                   <th className="px-4 py-3 text-left font-[600]">Colaborador</th>
-                  <th className="px-4 py-3 text-left font-[600]">Email</th>
+                  <th className="px-4 py-3 text-left font-[600]">Utilizador</th>
                   <th className="px-4 py-3 text-left font-[600]">Cargo</th>
                   <th className="px-4 py-3 text-left font-[600]">Estado</th>
                   <th className="px-4 py-3 text-right font-[600]">Ações</th>
@@ -656,7 +656,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
               <button onClick={() => setFormOpen(false)} disabled={formSaving} className="rounded-lg p-1 hover:bg-zinc-100"><X className="h-4 w-4" /></button>
             </div>
             <p className="mt-1 text-[12px] leading-5 text-[#64748B]">
-              {editing ? 'Pode alterar o nome e o cargo. O email identifica este login e não é alterado aqui.' : 'Não será enviado qualquer email. Guarde e entregue estas credenciais ao colaborador.'}
+              {editing ? 'Pode alterar o nome e o cargo. O utilizador identifica este login e não é alterado aqui.' : 'Não será enviado qualquer email. Guarde e entregue estas credenciais ao colaborador.'}
             </p>
             <div className="mt-4 space-y-3">
               <label className="block">
@@ -728,7 +728,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
               <h3 className="text-[17px] font-[700] text-[#0F172A]">Repor password</h3>
               <button onClick={() => setResetTarget(null)} disabled={resetSaving} className="rounded-lg p-1 hover:bg-zinc-100"><X className="h-4 w-4" /></button>
             </div>
-            <p className="mt-1 text-[12px] leading-5 text-[#64748B]">{resetTarget.nome} · {resetTarget.email}</p>
+            <p className="mt-1 text-[12px] leading-5 text-[#64748B]">{resetTarget.nome} · utilizador: {resetTarget.email}</p>
             <div className="mt-4 space-y-3">
               <div className="relative">
                 <input
@@ -795,7 +795,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
             <div className="mt-4 space-y-2">
               {[
                 { label: 'Nome', value: credenciais.nome },
-                { label: 'Email', value: credenciais.email },
+                { label: 'Utilizador', value: credenciais.email },
                 { label: 'Password', value: credenciais.password },
                 { label: 'Cargo', value: labelDoCargo(credenciais.role, gabMeta) },
               ].map((item) => (
@@ -810,7 +810,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
             </div>
             <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
               <button
-                onClick={() => void copiar(`Email: ${credenciais.email}\nPassword: ${credenciais.password}\nEntrar em: https://estudo360.pt`, 'tudo')}
+                onClick={() => void copiar(`Utilizador: ${credenciais.email}\nPassword: ${credenciais.password}\nEntrar em: https://estudo360.pt`, 'tudo')}
                 className="rounded-xl border border-[#E2E8F0] px-4 py-2.5 text-sm font-[600]"
               >
                 {copiado === 'tudo' ? 'Credenciais copiadas' : 'Copiar credenciais'}
