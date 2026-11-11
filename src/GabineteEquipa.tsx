@@ -117,6 +117,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const [credenciais, setCredenciais] = useState<CredenciaisVisiveis | null>(null);
   const [copiado, setCopiado] = useState('');
+  const edicaoDeCredencial = !!editing && /^cred_[a-f0-9]{24}$/.test(editing.credentialId || editing.id);
 
   const [resetTarget, setResetTarget] = useState<Colaborador | null>(null);
   const [resetPassword, setResetPassword] = useState('');
@@ -235,13 +236,16 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
     setFormErro('');
     const nome = formNome.trim();
     const email = formEmail.trim().toLowerCase();
+    const credencialEditada = editing ? (editing.credentialId || editing.id) : '';
     if (nome.length < 2) {
       setFormErro('Indique o nome completo do colaborador.');
       return;
     }
     // O dono cria o login: serve um utilizador simples ("ana", "recepcao-2")
-    // ou um email, para os acessos antigos continuarem a entrar.
-    if (!editing && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) && !/^[a-z0-9][a-z0-9._-]{2,39}$/.test(email)) {
+    // ou um email, para os acessos antigos continuarem a entrar. Ao editar,
+    // só se valida quando o identificador muda (o antigo pode ser um email).
+    const identificadorMuda = !editing || (edicaoDeCredencial && email !== (editing.email || '').trim().toLowerCase());
+    if (identificadorMuda && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) && !/^[a-z0-9][a-z0-9._-]{2,39}$/.test(email)) {
       setFormErro('Indique um utilizador (3 a 40 caracteres: letras, números, ponto, hífen ou _) ou um email.');
       return;
     }
@@ -264,12 +268,12 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
     setFormSaving(true);
     try {
       if (editing) {
-        const credentialId = editing.credentialId || editing.id;
-        if (/^cred_[a-f0-9]{24}$/.test(credentialId)) {
+        if (edicaoDeCredencial) {
           const resposta = await atualizarAcessoEquipa({
-            credentialId,
+            credentialId: credencialEditada,
             nome,
             role: formRole,
+            ...(identificadorMuda ? { identificador: email } : {}),
           });
           guardarColaboradorLocal(resposta.colaborador);
         } else {
@@ -282,7 +286,9 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
             updatedAt: Date.now(),
           });
         }
-        setAviso(`${nome} atualizado.`);
+        setAviso(edicaoDeCredencial && identificadorMuda
+          ? `${nome} atualizado. Entra agora com «${email}».`
+          : `${nome} atualizado.`);
       } else {
         const resposta = await criarAcessoEquipa({
           gabineteId,
@@ -656,7 +662,11 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
               <button onClick={() => setFormOpen(false)} disabled={formSaving} className="rounded-lg p-1 hover:bg-zinc-100"><X className="h-4 w-4" /></button>
             </div>
             <p className="mt-1 text-[12px] leading-5 text-[#64748B]">
-              {editing ? 'Pode alterar o nome e o cargo. O utilizador identifica este login e não é alterado aqui.' : 'Não será enviado qualquer email. Guarde e entregue estas credenciais ao colaborador.'}
+              {editing
+                ? (edicaoDeCredencial
+                  ? 'Pode alterar o nome, o utilizador e o cargo. Se mudar o utilizador, o antigo deixa de entrar e a password mantém-se.'
+                  : 'Pode alterar o nome e o cargo. Este acesso antigo entra por email e não pode ser renomeado aqui.')
+                : 'Não será enviado qualquer email. Guarde e entregue estas credenciais ao colaborador.'}
             </p>
             <div className="mt-4 space-y-3">
               <label className="block">
@@ -665,7 +675,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
               </label>
               <label className="block">
                 <span className="text-[10.5px] font-[700] uppercase tracking-[0.8px] text-[#64748B]">Utilizador de entrada</span>
-                <input value={formEmail} onChange={(event) => setFormEmail(event.target.value)} type="text" autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder="ex.: ana.silva (não precisa de email)" disabled={!!editing} className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-sm disabled:bg-zinc-100 disabled:text-zinc-500" />
+                <input value={formEmail} onChange={(event) => setFormEmail(event.target.value)} type="text" autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder={editing ? '' : 'ex.: ana.silva (não precisa de email)'} disabled={!!editing && !edicaoDeCredencial} className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-sm disabled:bg-zinc-100 disabled:text-zinc-500" />
               </label>
               <label className="block">
                 <span className="text-[10.5px] font-[700] uppercase tracking-[0.8px] text-[#64748B]">Cargo</span>

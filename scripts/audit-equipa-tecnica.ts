@@ -344,6 +344,101 @@ check(link.status === 200, `conta normal criada depois confirma o acesso com a p
 gabMeta = await getFirestoreDoc<Record<string, any>>(env, `gabinetes/${gid}`);
 check((gabMeta?.data.memberUids || []).includes(normalLater.uid), 'conta criada depois aparece no gabinete');
 
+// ── Renomear o utilizador de entrada (email → utilizador) ──────────────────
+// Gabinete próprio para o teste: o email original existe noutro gabinete e o
+// login desempata por password, o que tornaria as asserções ambíguas.
+const renameGid = `${gid}_rename`;
+await patchFirestoreDoc(env, `gabinetes/${renameGid}`, {
+  id: renameGid,
+  nome: 'Gabinete Renomear E2E',
+  ownerUid: owner.uid,
+  ownerEmail: owner.email,
+  memberUids: [owner.uid],
+  members: { [owner.uid]: { role: 'admin', email: owner.email, addedAt: Date.now() } },
+  customRoles: {},
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+});
+const renameEmail = `renomear+${stamp}@empresa.pt`;
+const renamePassword = 'Renomear12345!';
+const renameCreate = await callFunction(equipaPost, '/api/equipa-contas', {
+  action: 'criar',
+  gabineteId: renameGid,
+  nome: 'Rita Renomear',
+  email: renameEmail,
+  password: renamePassword,
+  role: 'contabilista',
+}, owner.token);
+check(renameCreate.status === 201, `acesso para renomear criado (${renameCreate.status})`);
+const renameCredentialId = String(renameCreate.data.credencialId || '');
+const renameUid = `emp_${renameCredentialId.slice(5)}`;
+const novoUtilizador = `rita.${stamp.toString(36)}`;
+const renomear = await callFunction(equipaPost, '/api/equipa-contas', {
+  action: 'atualizar',
+  credentialId: renameCredentialId,
+  nome: 'Rita Renomear',
+  role: 'contabilista',
+  identificador: novoUtilizador,
+}, owner.token);
+check(renomear.status === 200, `dono muda o utilizador de entrada (${renomear.status}) ${JSON.stringify(renomear.data).slice(0, 160)}`);
+check(String(renomear.data.colaborador?.email || '') === novoUtilizador, 'resposta devolve o novo utilizador');
+
+const loginNovo = await callFunction(loginPost, '/api/colaborador-login', { email: novoUtilizador, password: renamePassword });
+check(loginNovo.status === 200 && !!loginNovo.data.token, `entra com o novo utilizador (${loginNovo.status})`);
+const loginAntigo = await callFunction(loginPost, '/api/colaborador-login', { email: renameEmail, password: renamePassword });
+check(loginAntigo.status === 401, 'o utilizador antigo deixa de entrar');
+
+const indiceNovo = await getFirestoreDoc<Record<string, unknown>>(
+  env,
+  `employeeLoginIndexes/${await hashEmail(novoUtilizador)}`,
+);
+check(Array.isArray(indiceNovo?.data.credentialIds) && (indiceNovo?.data.credentialIds as string[]).includes(renameCredentialId), 'índice novo aponta para a credencial');
+const indiceAntigo = await getFirestoreDoc<Record<string, unknown>>(
+  env,
+  `employeeLoginIndexes/${await hashEmail(renameEmail)}`,
+);
+check(!indiceAntigo, 'índice antigo é apagado');
+const perfilRenomeado = await getFirestoreDoc<Record<string, unknown>>(env, `employeeProfiles/${renameUid}`);
+check(String(perfilRenomeado?.data.email || '') === novoUtilizador, 'perfil técnico mostra o novo utilizador');
+const membroRenomeado = await getFirestoreDoc<Record<string, any>>(env, `gabinetes/${renameGid}`);
+check(String(membroRenomeado?.data.members?.[renameUid]?.email || '') === novoUtilizador, 'membro do gabinete mostra o novo utilizador');
+
+const ocupado = `ocupado.${stamp.toString(36)}`;
+await callFunction(equipaPost, '/api/equipa-contas', {
+  action: 'criar',
+  gabineteId: renameGid,
+  nome: 'Outro Colaborador',
+  email: ocupado,
+  password: 'Outro12345!',
+  role: 'estagiaria',
+}, owner.token);
+const conflito = await callFunction(equipaPost, '/api/equipa-contas', {
+  action: 'atualizar',
+  credentialId: renameCredentialId,
+  nome: 'Rita Renomear',
+  role: 'contabilista',
+  identificador: ocupado,
+}, owner.token);
+check(conflito.status === 409 && conflito.data.erro === 'utilizador_em_uso', `utilizador já usado no mesmo gabinete é recusado (${conflito.status})`);
+const invalido = await callFunction(equipaPost, '/api/equipa-contas', {
+  action: 'atualizar',
+  credentialId: renameCredentialId,
+  nome: 'Rita Renomear',
+  role: 'contabilista',
+  identificador: 'ab',
+}, owner.token);
+check(invalido.status === 400 && invalido.data.erro === 'identificador_invalido', `utilizador inválido é recusado (${invalido.status})`);
+
+const voltar = await callFunction(equipaPost, '/api/equipa-contas', {
+  action: 'atualizar',
+  credentialId: renameCredentialId,
+  nome: 'Rita Renomear',
+  role: 'contabilista',
+  identificador: renameEmail,
+}, owner.token);
+check(voltar.status === 200, `volta ao identificador original (${voltar.status})`);
+check((await callFunction(loginPost, '/api/colaborador-login', { email: renameEmail, password: renamePassword })).status === 200, 'login original volta a funcionar');
+
 const remove = await callFunction(equipaPost, '/api/equipa-contas', {
   action: 'remover',
   credentialId,
@@ -368,6 +463,7 @@ check(auditTypes.has('create_employee_credential'), 'auditoria regista criação
 check(auditTypes.has('reset_employee_password'), 'auditoria regista reposição');
 check(auditTypes.has('change_own_employee_password'), 'auditoria regista alteração própria');
 check(auditTypes.has('revoke_employee_access'), 'auditoria regista revogação');
+check(auditTypes.has('rename_employee_identifier'), 'auditoria regista mudança de utilizador');
 check(!JSON.stringify(audits).includes(password1) && !JSON.stringify(audits).includes(password2) && !JSON.stringify(audits).includes(password3), 'auditoria não contém passwords');
 
 console.log(failures ? `\nFAIL — ${failures} falha(s)` : '\nPASS — fluxo E2E dos acessos da equipa OK');

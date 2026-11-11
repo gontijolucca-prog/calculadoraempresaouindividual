@@ -46,6 +46,7 @@ const MENSAGENS: Record<string, string> = {
   servico_acessos_indisponivel: 'O serviço de acessos está temporariamente indisponível. Tente novamente.',
   nao_foi_possivel_criar_acesso: 'Não foi possível criar o acesso. Tente novamente.',
   credencial_nao_encontrada: 'Este acesso já não existe. Atualize a página.',
+  utilizador_em_uso: 'Já existe um acesso com esse utilizador neste gabinete. Escolha outro.',
   dono_nao_pode_ser_removido: 'O dono do gabinete não pode ser removido.',
   origem_nao_autorizada: 'Este pedido não foi feito a partir do Estudo360.',
 };
@@ -99,6 +100,7 @@ export function atualizarAcessoEquipa(input: {
   credentialId: string;
   nome: string;
   role: ColaboradorRole;
+  identificador?: string;
 }): Promise<{ ok: true; colaborador: Colaborador }> {
   return postApi('/api/equipa-contas', { action: 'atualizar', ...input });
 }

@@ -400,6 +400,26 @@ async function guardarIndice(
   }, {}, fetchImpl);
 }
 
+async function removerDoIndice(
+  env: Env,
+  email: string,
+  credentialId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<void> {
+  const emailHash = await hashEmail(email);
+  const atual = await carregarIndice(env, emailHash, fetchImpl);
+  if (!atual?.credentialIds?.length) return;
+  const restantes = atual.credentialIds.filter((id) => id !== credentialId);
+  if (!restantes.length) {
+    await deleteFirestoreDoc(env, `employeeLoginIndexes/${emailHash}`, fetchImpl);
+    return;
+  }
+  await patchFirestoreDoc(env, `employeeLoginIndexes/${emailHash}`, {
+    credentialIds: restantes,
+    updatedAt: Date.now(),
+  }, { merge: true }, fetchImpl);
+}
+
 async function guardarPerfil(
   env: Env,
   cred: EmployeeCredential,
@@ -634,32 +654,59 @@ export async function atualizarCredencial(
     throw new AccessError('cargo_superior_ao_seu', 403);
   }
 
+  // O utilizador de entrada pode ser renomeado (ex.: conta antiga com email a
+  // passar a "ana.silva"). O login técnico não muda: só o índice de entrada.
+  const pedido = body.identificador === undefined ? '' : normalizeEmail(body.identificador);
+  let email = cred.email;
+  let emailHash = cred.emailHash;
+  if (pedido && pedido !== cred.email) {
+    if (!identificadorValido(pedido)) throw new AccessError('identificador_invalido', 400);
+    const novoHash = await hashEmail(pedido);
+    const indice = await carregarIndice(env, novoHash);
+    // O mesmo identificador pode existir noutro gabinete (é a password que
+    // desempata no login). Dentro deste gabinete tem de ser único.
+    const outros = (indice?.credentialIds || []).filter((id) => id !== credentialId);
+    const credenciais = await Promise.all(outros.slice(0, 20).map((id) => carregarCredencial(env, id)));
+    const emUso = credenciais.some((c) => c && c.gabineteId === cred.gabineteId && c.status === 'active');
+    if (emUso) throw new AccessError('utilizador_em_uso', 409);
+    email = pedido;
+    emailHash = novoHash;
+  }
+  const mudouIdentificador = email !== cred.email;
+
   const updated: EmployeeCredential = {
     ...cred,
     nome,
     role,
+    email,
+    emailHash,
     updatedAt: Date.now(),
   };
   await Promise.all([
     atualizarMembros(env, cred.gabineteId, [
-      { uid: cred.uid, email: cred.email, role },
+      { uid: cred.uid, email, role },
       ...(cred.normalUid && cred.normalMembershipAddedByCredential
-        ? [{ uid: cred.normalUid, email: cred.email, role }]
+        ? [{ uid: cred.normalUid, email, role }]
         : []),
     ]),
     patchFirestoreDoc(env, `employeeCredentials/${credentialId}`, {
       nome,
       role,
+      email,
+      emailHash,
       updatedAt: updated.updatedAt,
     }, { merge: true }),
+    ...(mudouIdentificador
+      ? [guardarIndice(env, email, credentialId), removerDoIndice(env, cred.email, credentialId)]
+      : []),
     guardarPerfil(env, updated),
     guardarColaborador(env, updated),
     writeAccessAudit(env, {
       uid: auth.uid,
       email: auth.email,
       gabineteId: cred.gabineteId,
-      type: 'update_employee_credential',
-      detail: credentialId,
+      type: mudouIdentificador ? 'rename_employee_identifier' : 'update_employee_credential',
+      detail: mudouIdentificador ? `${cred.email} -> ${email}` : credentialId,
     }),
   ]);
   return { ok: true, colaborador: publicCollaborator(updated) };
