@@ -13,6 +13,7 @@ import {
 } from './lib/wordDocs';
 import Proposta from './Proposta';
 import MinutaContrato from './MinutaContrato';
+import PacoteCapa from './PacoteCapa';
 import { defaultProfile, type ClientProfile } from './ClientProfile';
 import { printViaPaged, printHtmlUmaFolha } from './lib/printPaged';
 import { imprimirUmaFolha } from './lib/printElement';
@@ -34,15 +35,17 @@ import { calculate } from './lib/previsaCalc';
 // ─── Pacote do cliente (documentos React, impressão/PDF) ──────────────────────
 // A Simulação Fiscal sai da página de Relatórios — imprime-se na página do
 // próprio simulador. Aqui ficam só Proposta e Minuta.
-type PkgId = 'proposta' | 'minuta';
+type PkgId = 'capa' | 'proposta' | 'minuta';
 const PACKAGE_DOCS: { id: PkgId; label: string; descricao: string; Icon: typeof Calculator }[] = [
+  { id: 'capa',     label: 'Capa do pacote',                 descricao: 'Folha de rosto com cliente, ano e conteúdo.', Icon: FileText },
   { id: 'proposta',  label: 'Proposta de Honorários', descricao: 'Carta de honorários (Pacote do Cliente).',    Icon: FileText },
   { id: 'minuta',    label: 'Contrato de Prestação de Serviços',     descricao: 'Modelo OCC preenchido (Pacote do Cliente).',  Icon: FileSignature },
 ];
-const PKG_IDS: PkgId[] = ['proposta', 'minuta'];
+const PKG_IDS: PkgId[] = ['capa', 'proposta', 'minuta'];
 const isPkg = (id: string): id is PkgId => (PKG_IDS as string[]).includes(id);
 // id do elemento printRoot de cada documento do pacote (para o paged.js).
 const PKG_ROOT_ID: Record<PkgId, string> = {
+  capa: 'pacote-capa-root',
   proposta: 'proposta-print-root',
   minuta: 'minuta-print-root',
 };
@@ -455,6 +458,15 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
     const root = pkgWrapRef.current?.querySelector(`#${PKG_ROOT_ID[docId]}`) as HTMLElement | null;
     if (!root) { window.print(); return; }
 
+    // Capa do pacote: folha única, sem paginação do paged.js.
+    if (docId === 'capa') {
+      setPrintingPkg(true);
+      window.addEventListener('afterprint', () => setPrintingPkg(false), { once: true });
+      setTimeout(() => window.print(), 60);
+      setTimeout(() => setPrintingPkg(false), 60000);
+      return;
+    }
+
     // Contrato: imprime integralmente o que está no preview (2–3 páginas).
     // O componente já tem CSS de impressão que isola a folha e respeita as
     // quebras entre cláusulas.
@@ -775,6 +787,9 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                 <div ref={pkgWrapRef} className="rounded-[14px] border border-slate-200 bg-[#E2E8F0] p-3 shadow-[0_2px_14px_-8px_rgba(15,23,42,0.25)]">
                   {emp && profile && (
                     <div style={{ zoom: pkgScale }}>
+                      {docId === 'capa' && (
+                        <PacoteCapa profile={profile} office={office} />
+                      )}
                       {docId === 'proposta' && (
                         <Proposta profile={profile} office={office} honorarios={honorarios} />
                       )}

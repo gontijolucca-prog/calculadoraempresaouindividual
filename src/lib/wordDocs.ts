@@ -184,6 +184,12 @@ const STYLE = `
   .sigs .line { border-top: 0.75pt solid ${C.medium}; margin: 0 18pt; padding-top: 3pt; }
   .ftr { margin-top: 18pt; padding-top: 4pt; border-top: 0.5pt solid ${C.line}; color: ${C.blue}; font-size: 8pt; text-align: right; }
   .meta { color: ${C.medium}; font-size: 9pt; }
+  .chart { display: grid; gap: 2.5pt; margin: 0 0 7pt; }
+  .chart .row { display: grid; grid-template-columns: 118pt 1fr 62pt; align-items: center; gap: 6pt; font-size: 8.4pt; color: ${C.medium}; }
+  .chart .bar { height: 5pt; background: ${C.light}; }
+  .chart .bar i { display: block; height: 100%; background: ${C.blue}; }
+  .chart .bar i.neg { background: ${C.medium}; opacity: .55; }
+  .chart .val { text-align: right; font-variant-numeric: tabular-nums; color: ${C.dark}; font-weight: 700; white-space: nowrap; }
   .pgbreak { page-break-before: always; }
   /* Tabela larga (Alterações no Capital Próprio): compacta para caber em A4. */
   table.compact td, table.compact th { padding: 2.5pt 2.8pt; font-size: 7.2pt; }
@@ -240,6 +246,16 @@ function assinaturas(): string {
 
 // ─── Builders ─────────────────────────────────────────────────────────────────
 
+/** Mini-gráfico de barras: uma cor, sem eixos, pensado para caber em A4. */
+function barras(rows: { label: string; valor: number | null }[]): string {
+  const max = Math.max(1, ...rows.map((r) => Math.abs(Number(r.valor) || 0)));
+  return `<div class="chart">${rows.map((r) => {
+    const v = Number(r.valor) || 0;
+    const w = Math.max(1.5, Math.round((Math.abs(v) / max) * 100));
+    return `<div class="row"><span>${r.label}</span><span class="bar"><i class="${v < 0 ? 'neg' : ''}" style="width:${w}%"></i></span><span class="val">${v ? val(v) : DASH}</span></div>`;
+  }).join('')}</div>`;
+}
+
 export function buildDemonstracaoResultados(emp: EmpresaRecord, office: OfficeSettings): string {
   const c = ctx(emp, office);
   const d = drLinhas(c.prev);
@@ -255,6 +271,11 @@ export function buildDemonstracaoResultados(emp: EmpresaRecord, office: OfficeSe
   <div class="kpi"><small>Resultado antes de impostos</small><strong>${val(d.rai) || '&mdash;'}</strong></div>
   <div class="kpi"><small>Resultado l&iacute;quido</small><strong>${val(liquido) || '&mdash;'}</strong></div>
 </div>
+${barras([
+  { label: 'Vendas e servi&ccedil;os', valor: d.vendas },
+  { label: 'Gastos totais', valor: -(d.cmvCmc + d.fse + d.pessoal + d.outrosGastos + d.deprec) },
+  { label: 'Resultado l&iacute;quido', valor: liquido },
+])}
 ${margemLiquida != null ? `<p class="meta" style="margin:0 0 7pt"><b>Margem l&iacute;quida:</b> ${margemLiquida.toFixed(1).replace('.', ',')}% do volume de vendas e servi&ccedil;os.</p>` : ''}
 <table class="dr">
 <tr><th style="text-align:left">Rendimentos e Gastos</th><th class="num">Notas</th><th class="num">${c.ano}</th><th class="num">${c.anoAnt}</th></tr>
@@ -317,6 +338,11 @@ export function buildFluxosCaixa(emp: EmpresaRecord, office: OfficeSettings): st
   const variacao = caixaFim != null && caixaIni != null ? caixaFim - caixaIni
                  : (totalOp != null ? totalOp + z(totalInv) + z(totalFin) : null);
   const body = `${cabecalho(c, `Fluxos de Caixa de 1 de janeiro de ${c.ano} a 31 de dezembro de ${c.ano}`)}
+${barras([
+  { label: 'Atividades operacionais', valor: totalOp },
+  { label: 'Atividades de investimento', valor: totalInv },
+  { label: 'Atividades de financiamento', valor: totalFin },
+])}
 <table class="dr">
 <tr><th style="text-align:left">Rubrica</th><th class="num">Notas</th><th class="num">${c.ano}</th></tr>
 ${sec('Fluxos de caixa das atividades operacionais')}

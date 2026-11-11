@@ -28,7 +28,7 @@
 - `npm run audit:pdf-palette` → **0 falhas em 26 PDFs**.
 - Amostra gerada fora do browser: 1 página A4, 3 secções numeradas, totais com regra dupla.
 
-## Próximo passo (se o cliente quiser mais)
+## Também entregue
 
-- Capa própria para o «Pacote cliente» (título grande + cliente + ano, sem cabeçalho de relatório).
-- Mini-gráficos (barras finas) nas demonstrações, com uma só cor e sem eixos.
+- **Capa do «Pacote cliente»** (`src/PacoteCapa.tsx`): espinha de acento, título grande, cliente, NIF/ano, conteúdo e rodapé. Documento próprio no menu do pacote.
+- **Mini-gráficos de barras** (`barras()` em `src/lib/wordDocs.ts`): Resultados (vendas, gastos, líquido) e Fluxos (operacional, investimento, financiamento). Uma cor, sem eixos, valores à direita.
