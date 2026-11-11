@@ -383,8 +383,9 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
               </div>
             </div>
 
+        <SectionLabel>Propostas</SectionLabel>
+        <NavItem label="Gerar proposta" Icon={Presentation} onClick={() => go('proposta')} current={view === 'proposta'} title="Gera o texto da proposta para colar no Gamma" />
         <SectionLabel>Ferramentas</SectionLabel>
-        <NavItem label="Fazer Proposta" Icon={Presentation} onClick={() => go('proposta')} current={view === 'proposta'} title="Gera o texto da proposta para colar no Gamma" />
         <NavItem label="Base Legal" Icon={Info} onClick={() => runAction(openLegal)} current={view === 'legal'} />
       </nav>
 
@@ -426,9 +427,14 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
       ],
     },
     {
+      id: 'propostas', label: 'Propostas', current: view === 'proposta', align: 'right',
+      items: [
+        { label: 'Gerar proposta', desc: 'Texto pronto para colar no Gamma', Icon: Presentation, current: view === 'proposta', onClick: () => go('proposta') },
+      ],
+    },
+    {
       id: 'ferramentas', label: 'Ferramentas', align: 'right',
       items: [
-        { label: 'Fazer Proposta', desc: 'Texto pronto para colar no Gamma', Icon: Presentation, current: view === 'proposta', onClick: () => go('proposta') },
         { label: 'Base Legal', desc: 'Referências legais e cálculo', Icon: Info, current: view === 'legal', onClick: () => runAction(openLegal) },
         { label: 'Definições do Escritório', desc: 'Dados do gabinete e honorários', Icon: Settings, current: view === 'office-settings', onClick: () => go('office-settings') },
         ...(onLogout ? [{ label: 'Sair', desc: 'Terminar sessão', Icon: LogOut, onClick: () => runAction(onLogout) }] : []),

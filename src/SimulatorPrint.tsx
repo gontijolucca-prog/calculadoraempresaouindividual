@@ -5,8 +5,6 @@ import { detailSimulacao, type SimView } from './lib/simSummary';
 import { resultSimulacao } from './lib/simResults';
 import { calcViatura } from './lib/viaturas';
 import { compararModos, ETIQUETA_MODO, MODOS, type FinanciamentoInput } from './lib/viaturasFinanciamento';
-import { RelatorioPdf } from './lib/reportPdf';
-import { downloadPrevisaPdf } from './lib/previsaPdf';
 import { calcIMT, type TipoImovel, type Localizacao } from './lib/imt';
 import type { ClientProfile } from './ClientProfile';
 import type { OfficeSettings } from './lib/officeSettings';
@@ -237,13 +235,17 @@ export function SimulatorPrintButton({ compact = false }: { compact?: boolean })
   const ctx = useContext(PrintContext);
   if (!ctx?.view) return null;
 
-  const onPdf = () => {
+  const onPdf = async () => {
+    const [{ RelatorioPdf }, previsaPdf] = await Promise.all([
+      import('./lib/reportPdf'),
+      import('./lib/previsaPdf'),
+    ]);
     const v = ctx.view!;
     const txt = PRINT_TITLES[v];
     const office = ctx.office || ({} as OfficeSettings);
     const profile = ctx.profile || ({} as ClientProfile);
     if (v === 'previsa') {
-      void downloadPrevisaPdf(
+      void previsaPdf.downloadPrevisaPdf(
         ctx.state as PreviSaState,
         profile.nomeCliente?.trim() || 'Empresa',
         {

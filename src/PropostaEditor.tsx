@@ -21,7 +21,6 @@ import { publicUrl, SHARE_DAYS } from './lib/deck/share';
 import { publishDeck, revokeDeck, saveDeck } from './lib/deck/store';
 import { DeckCardView } from './components/deck/DeckRenderer';
 import GamaCopyButton from './components/GamaCopyButton';
-import { RelatorioPdf } from './lib/reportPdf';
 
 interface Props {
   deck: DeckDoc;
@@ -215,7 +214,7 @@ export default function PropostaEditor({ deck: initial, office, honorarios, clie
     } catch { /* clipboard bloqueado — o link fica visível para copiar à mão */ }
   }, [deck.slug]);
 
-  const exportPdf = useCallback(() => {
+  const exportPdf = useCallback(async () => {
     const resumoCard = (c: DeckCard) => {
       const itens = (c.items || []).map((item) => [
         item.label,
@@ -224,6 +223,7 @@ export default function PropostaEditor({ deck: initial, office, honorarios, clie
       ].filter(Boolean).join(' - ')).join(' | ');
       return [c.subtitle, c.body, itens].filter(Boolean).join(' ');
     };
+    const { RelatorioPdf } = await import('./lib/reportPdf');
     const pdf = new RelatorioPdf({
       titulo: deck.titulo || 'Proposta de Serviços',
       subtitulo: `${deck.cards.length} blocos da proposta numa única folha A4`,

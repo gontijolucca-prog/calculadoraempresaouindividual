@@ -83,10 +83,10 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
             </button>
           ) : null}
           <img src="/logo.svg" alt="" className="w-8 h-8 object-contain logo-orb" />
-          <span className="text-[16px] font-[700] tracking-[-0.2px] text-[#1A1A18]">estudo<span className="font-[400] text-[#B06D35]">360</span></span>
+          <span className="text-[16px] font-[700] tracking-[-0.2px] text-[#1A1A18]">estudo<span className="font-[400] text-[#8A5223]">360</span></span>
         </div>
-        <div className="hidden sm:flex items-center gap-2 text-[11px] font-[500] text-[#1A1A18]/40">
-          <ShieldCheck className="w-4 h-4 text-[#B06D35]" /> Dados protegidos por conta
+        <div className="hidden sm:flex items-center gap-2 text-[11px] font-[500] text-[#6B6A66]">
+          <ShieldCheck className="w-4 h-4 text-[#8A5223]" /> Dados protegidos por conta
         </div>
       </header>
 
@@ -94,20 +94,20 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
         <div className="w-full max-w-6xl grid lg:grid-cols-[1.05fr_0.9fr] gap-10 items-start">
           {/* Esquerda — calma, sem jargão */}
           <div className="hidden lg:block pt-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#1A1A18]/[0.06] text-[11px] font-[600] tracking-[1.2px] uppercase text-[#1A1A18]/40">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#B06D35]" /> Acesso seguro
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#1A1A18]/[0.06] text-[11px] font-[600] tracking-[1.2px] uppercase text-[#6B6A66]">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#8A5223]" /> Acesso seguro
             </div>
             <h1 className="mt-4 leading-[0.9] tracking-[-0.03em]" style={{fontFamily:'Cormorant Garamond, serif'}}>
               <span className="block text-[44px] font-[300] text-[#1A1A18]">Cada conta,</span>
-              <span className="block text-[44px] font-[300] italic text-[#B06D35]">os seus clientes.</span>
+              <span className="block text-[44px] font-[300] italic text-[#8A5223]">os seus clientes.</span>
             </h1>
-            <p className="mt-4 text-[15px] leading-relaxed text-[#1A1A18]/50 max-w-[460px]">
+            <p className="mt-4 text-[15px] leading-relaxed text-[#6B6A66] max-w-[460px]">
               A sua conta é privada. Só vê os seus clientes e o seu cofre. Sem misturas.
             </p>
-            <ul className="mt-6 space-y-3 text-[13px] text-[#1A1A18]/60">
-              <li className="flex gap-2"><CheckCircle className="w-4 h-4 text-[#B06D35] mt-0.5" /> Só vê o que é seu</li>
-              <li className="flex gap-2"><CheckCircle className="w-4 h-4 text-[#B06D35] mt-0.5" /> Cofre protegido — só abre com a sua palavra-passe</li>
-              <li className="flex gap-2"><CheckCircle className="w-4 h-4 text-[#B06D35] mt-0.5" /> Funciona em qualquer computador</li>
+            <ul className="mt-6 space-y-3 text-[13px] text-[#6B6A66]">
+              <li className="flex gap-2"><CheckCircle className="w-4 h-4 text-[#8A5223] mt-0.5" /> Só vê o que é seu</li>
+              <li className="flex gap-2"><CheckCircle className="w-4 h-4 text-[#8A5223] mt-0.5" /> Cofre protegido — só abre com a sua palavra-passe</li>
+              <li className="flex gap-2"><CheckCircle className="w-4 h-4 text-[#8A5223] mt-0.5" /> Funciona em qualquer computador</li>
             </ul>
           </div>
 
@@ -116,8 +116,8 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-[22px] font-[600] tracking-[-0.02em] text-[#1A1A18]" style={{fontFamily:'Cormorant Garamond, serif'}}>{mode === 'login' ? 'Entrar' : mode === 'signup' ? 'Criar conta' : 'Recuperar acesso'}</h2>
               <div className="flex gap-1 bg-[#F5F0E8] p-1 rounded-full">
-                <button onClick={() => { setMode('login'); setError(null); setInfo(null); }} className={`px-3.5 py-1.5 rounded-full text-[13px] font-[600] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${mode==='login' ? 'bg-white shadow text-[#1A1A18]' : 'text-[#1A1A18]/40'}`}>Entrar</button>
-                <button onClick={() => { setMode('signup'); setError(null); setInfo(null); }} className={`px-3.5 py-1.5 rounded-full text-[13px] font-[600] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${mode==='signup' ? 'bg-white shadow text-[#1A1A18]' : 'text-[#1A1A18]/40'}`}>Criar</button>
+                <button onClick={() => { setMode('login'); setError(null); setInfo(null); }} className={`px-3.5 py-1.5 rounded-full text-[13px] font-[600] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${mode==='login' ? 'bg-white shadow text-[#1A1A18]' : 'text-[#6B6A66]'}`}>Entrar</button>
+                <button onClick={() => { setMode('signup'); setError(null); setInfo(null); }} className={`px-3.5 py-1.5 rounded-full text-[13px] font-[600] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${mode==='signup' ? 'bg-white shadow text-[#1A1A18]' : 'text-[#6B6A66]'}`}>Criar</button>
               </div>
             </div>
 
@@ -127,33 +127,33 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
             <form onSubmit={handleSubmit} className="space-y-4">
               {mode === 'signup' && (
                 <label className="block">
-                  <span className="text-[11px] font-[600] tracking-[1px] uppercase text-[#1A1A18]/35">Nome</span>
+                  <span className="text-[11px] font-[600] tracking-[1px] uppercase text-[#6B6A66]">Nome</span>
                   <div className="relative mt-1">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A18]/25" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6A66]" />
                     <input value={name} onChange={e=>setName(e.target.value)} placeholder="O seu nome" className="w-full pl-9 pr-3 py-3 rounded-xl border border-[#1A1A18]/10 bg-[#FDFBF7] text-[14px] focus:bg-white focus:border-[#B06D35]/30 focus:ring-2 focus:ring-[#B06D35]/10 outline-none transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" autoComplete="name" />
                   </div>
                 </label>
               )}
               <label className="block">
-                <span className="text-[11px] font-[600] tracking-[1px] uppercase text-[#1A1A18]/35">Email</span>
+                <span className="text-[11px] font-[600] tracking-[1px] uppercase text-[#6B6A66]">Email</span>
                 <div className="relative mt-1">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A18]/25" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6A66]" />
                   <input type="text" inputMode="email" autoCapitalize="none" spellCheck={false} value={email} onChange={e=>setEmail(e.target.value)} placeholder="email ou utilizador" className="w-full pl-9 pr-3 py-3 rounded-xl border border-[#1A1A18]/10 bg-[#FDFBF7] text-[14px] focus:bg-white focus:border-[#B06D35]/30 focus:ring-2 focus:ring-[#B06D35]/10 outline-none transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" autoComplete="username" required />
                 </div>
               </label>
               {mode !== 'reset' && (
                 <label className="block">
-                  <span className="text-[11px] font-[600] tracking-[1px] uppercase text-[#1A1A18]/35">Password</span>
+                  <span className="text-[11px] font-[600] tracking-[1px] uppercase text-[#6B6A66]">Password</span>
                   <div className="relative mt-1">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A18]/25" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6A66]" />
                     <input type={showPass ? 'text' : 'password'} value={password} onChange={e=>setPassword(e.target.value)} placeholder="Mínimo 8 caracteres" className="w-full pl-9 pr-10 py-3 rounded-xl border border-[#1A1A18]/10 bg-[#FDFBF7] text-[14px] focus:bg-white focus:border-[#B06D35]/30 focus:ring-2 focus:ring-[#B06D35]/10 outline-none transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" autoComplete={mode==='signup' ? 'new-password' : 'current-password'} required />
-                    <button type="button" onClick={()=>setShowPass(v=>!v)} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-[#1A1A18]/30 hover:text-[#1A1A18]/60 transition-colors">{showPass ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
+                    <button type="button" onClick={()=>setShowPass(v=>!v)} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-[#6B6A66] hover:text-[#6B6A66] transition-colors">{showPass ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
                   </div>
-                  {mode==='signup' && <p className="text-[11px] text-[#1A1A18]/30 mt-1">Utilize 8 ou mais caracteres.</p>}
+                  {mode==='signup' && <p className="text-[11px] text-[#6B6A66] mt-1">Utilize 8 ou mais caracteres.</p>}
                 </label>
               )}
               {mode === 'login' && (
-                <label className="flex items-center gap-2 text-[13px] text-[#1A1A18]/60 cursor-pointer select-none">
+                <label className="flex items-center gap-2 text-[13px] text-[#6B6A66] cursor-pointer select-none">
                   <input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)} className="w-4 h-4 rounded accent-[#B06D35]" />
                   Lembrar-me neste dispositivo
                 </label>
@@ -166,14 +166,14 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
             </form>
 
             <div className="mt-4 flex justify-between text-[13px]">
-              {mode !== 'reset' ? <button onClick={()=>setMode('reset')} className="text-[#B06D35] hover:underline">Esqueceu-se da password?</button> : <button onClick={()=>setMode('login')} className="text-[#B06D35] hover:underline">Voltar a entrar</button>}
-              <span className="text-[#1A1A18]/25 hidden sm:inline-flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5" /> Ligação segura</span>
+              {mode !== 'reset' ? <button onClick={()=>setMode('reset')} className="text-[#8A5223] hover:underline">Esqueceu-se da password?</button> : <button onClick={()=>setMode('login')} className="text-[#8A5223] hover:underline">Voltar a entrar</button>}
+              <span className="text-[#6B6A66] hidden sm:inline-flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5" /> Ligação segura</span>
             </div>
           </motion.div>
         </div>
       </div>
 
-      <footer className="py-4 text-center text-[11px] text-[#1A1A18]/25">Ao criar conta aceita os termos. O seu cofre é privado.</footer>
+      <footer className="py-4 text-center text-[11px] text-[#6B6A66]">Ao criar conta aceita os termos. O seu cofre é privado.</footer>
     </div>
   );
 }

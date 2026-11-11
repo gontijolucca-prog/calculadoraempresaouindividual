@@ -29,9 +29,9 @@ describe('cofre round-trip', () => {
     assert.equal(await decryptSecret(b, PASS), SEGREDO);
   });
 
-  it('guarda metadados esperados (iter 120k, v1)', async () => {
+  it('guarda metadados esperados (iter 600k, v1)', async () => {
     const c = await encryptSecret('x'.repeat(10), PASS);
-    assert.equal(c.iter, 120_000);
+    assert.equal(c.iter, 600_000);
     assert.equal(c.v, 1);
   });
 });

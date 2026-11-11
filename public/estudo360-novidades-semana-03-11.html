@@ -521,15 +521,6 @@
 </script>
 
 <script type="module">
-  const emulators = new URLSearchParams(location.search).has('emu');
-  const FIREBASE_CONFIG = {
-    apiKey: 'AIzaSyChJKEBjPKZcRVF4R_n07UoUB9Q0q_EzM',
-    authDomain: 'estudo360-app.firebaseapp.com',
-    projectId: emulators ? 'demo-estudo360-audit' : 'estudo360-app',
-    storageBucket: 'estudo360-app.firebasestorage.app',
-    messagingSenderId: '297215704391',
-    appId: '1:297215704391:web:74168b37a27cc99669a062',
-  };
   const MARKER = 'proximos:semana-03-11';
   const LOCAL_KEY = `estudo360:np:${MARKER}`;
   const view = document.getElementById('npView');
@@ -553,32 +544,29 @@
   try {
     // Só leitura pública: as notas são lidas sem sessão. Escrever passa pelo
     // /api/notas com a chave do link, por isso não é preciso Auth aqui.
-    const [{ initializeApp }, firestoreModule] = await Promise.all([
-      import('https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js'),
-      import('https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js'),
-    ]);
-    const app = initializeApp(FIREBASE_CONFIG);
-    const db = firestoreModule.getFirestore(app);
-    if (emulators) {
-      firestoreModule.connectFirestoreEmulator(db, '127.0.0.1', 8180);
-    }
 
     let entries = [];
     const readEntries = async () => {
       try {
-        const query = firestoreModule.query(
-          firestoreModule.collection(db, 'updates'),
-          firestoreModule.where('autor', '==', MARKER),
-        );
-        const snapshot = await firestoreModule.getDocs(query);
-        entries = snapshot.docs
-          .map((document) => ({ id: document.id, ...document.data() }))
+        const chaveLeitura = (() => {
+          try {
+            return new URLSearchParams(location.search).get('k')
+              || localStorage.getItem('estudo360:np-chave:reunioes')
+              || '';
+          } catch { return ''; }
+        })();
+        if (!chaveLeitura) throw new Error('sem-chave');
+        const resposta = await fetch(`/api/notas?m=${encodeURIComponent(MARKER)}&k=${encodeURIComponent(chaveLeitura)}`, { cache: 'no-store' });
+        if (!resposta.ok) throw new Error(String(resposta.status));
+        const dados = await resposta.json();
+        entries = (dados.entries || [])
           .filter((entry) => typeof entry.text === 'string' && entry.text.trim())
           .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
       } catch {
-        setStatus('err', 'Sem ligação - a mostrar a cópia local');
-        const local = localStorage.getItem(LOCAL_KEY);
-        if (local) view.textContent = local;
+        setStatus('err', 'Notas privadas');
+        view.textContent = 'As notas desta reunião são privadas. Abra o seu link de edição (com a chave) para as ver.';
+        meta.textContent = '';
+        history.style.display = 'none';
         return;
       }
 
@@ -687,7 +675,7 @@
 
     await readEntries();
   } catch {
-    setStatus('err', 'Sem ligação - a mostrar a cópia local');
+    setStatus('err', 'Notas privadas');
     const local = localStorage.getItem(LOCAL_KEY);
     if (local) view.textContent = local;
   }

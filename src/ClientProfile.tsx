@@ -4,8 +4,6 @@ import { User, Building2, FileText, Ticket, Wallet, MapPin } from 'lucide-react'
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { Tip } from './Tip';
-import { jsPDF } from 'jspdf';
-import { RelatorioPdf } from './lib/reportPdf';
 import { PDF_RGB } from './lib/pdfTheme';
 import ExportPackageModal from './ExportPackageModal';
 import { consumeOpenPackage, consumeFlowToggle } from './lib/profileIntent';
@@ -317,6 +315,10 @@ export default function ClientProfile({
   // ─── PDF GENERATION ───────────────────────────────────────────────────────
 
   const generatePDF = async () => {
+    const [{ jsPDF }, { RelatorioPdf }] = await Promise.all([
+      import('jspdf'),
+      import('./lib/reportPdf'),
+    ]);
     const logoGenerico = await svgLogoToPng();
     const logoDataUrl = logoGenerico;
     const officeName = office?.nome?.trim() || 'Estudo 360';

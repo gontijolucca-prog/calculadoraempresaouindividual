@@ -5,7 +5,7 @@
  * Se o utilizador perder a passphrase, perde o cofre (avisar no onboarding).
  */
 
-const ITER = 120_000;
+const ITER = 600_000;
 const ALGO = 'AES-GCM';
 const HASH = 'SHA-256';
 const SALT_LEN = 16;

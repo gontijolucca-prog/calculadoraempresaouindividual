@@ -16,7 +16,6 @@ import MinutaContrato from './MinutaContrato';
 import { defaultProfile, type ClientProfile } from './ClientProfile';
 import { printViaPaged, printHtmlUmaFolha } from './lib/printPaged';
 import { imprimirUmaFolha } from './lib/printElement';
-import { downloadPrevisaPdf } from './lib/previsaPdf';
 import { defaultPreviSaState, type PreviSaState } from './previSaState';
 import { calculate } from './lib/previsaCalc';
 
@@ -328,6 +327,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
     if (!emp || downloadingPrevisa) return;
     setDownloadingPrevisa(true);
     try {
+      const { downloadPrevisaPdf } = await import('./lib/previsaPdf');
       await downloadPrevisaPdf(previsaState, emp.nome || emp.profile?.nomeCliente || '', office);
     } catch (e) {
       console.error('Falha ao gerar o PDF do Previsa:', e);

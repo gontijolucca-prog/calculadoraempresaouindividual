@@ -14,7 +14,9 @@ service cloud.firestore {
     }
 
     match /updates/{docId} {
-      allow read: if true;
+      // As notas da reunião deixaram de ser públicas: a página lê-as pelo
+      // /api/notas com a chave do link. Sem chave, nem o Firestore as expõe.
+      allow read: if isAppAdmin();
       // Admin da app ou administrador de um gabinete (as notas da reunião são
       // escritas por quem gere o gabinete, não só pela conta admin@).
       allow create: if (isAppAdmin()

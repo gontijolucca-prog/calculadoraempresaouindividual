@@ -55,7 +55,6 @@ import { prepararEmpresaSAFT, LOTE_SAFT_XML_BUDGET, type SaftLoteResumo } from '
 import { migrarEmpresasParaGabinete, listClientesCache } from './lib/gabinete';
 import { enforceProfileRules } from './lib/profileRules';
 import { DOC_TYPES, downloadAsWord } from './lib/wordDocs';
-import { downloadPrevisaPdf } from './lib/previsaPdf';
 import { raiFromPrevisa } from './lib/previsaCalc';
 import GuiaSistema from './components/GuiaSistema';
 import GuiaSugestao from './components/GuiaSugestao';
@@ -83,7 +82,7 @@ const SalarioLiquidoSimulator = lazy(() => import('./SalarioLiquidoSimulator'));
 const IRSSimulator = lazy(() => import('./IRSSimulator'));
 const PreviSaSimulator = lazy(() => import('./PreviSaSimulator'));
 const AquisicaoSimulator = lazy(() => import('./AquisicaoSimulator'));
-import { defaultAquisicaoState, type AquisicaoState } from './AquisicaoSimulator';
+import { defaultAquisicaoState, type AquisicaoState } from './lib/aquisicaoState';
 const OfficeSettingsView = lazy(() => import('./OfficeSettingsView'));
 const Gabinete = lazy(() => import('./Gabinete'));
 const GabineteSelector = lazy(() => import('./GabineteSelector'));
@@ -1666,7 +1665,7 @@ function AppContent() {
       if (!emp) return { ok: false, reason: 'sem-cliente' };
       try {
         if (docId === 'previsa') {
-          await downloadPrevisaPdf(previSaState, emp.nome || emp.profile?.nomeCliente || '', officeSettings);
+          { const { downloadPrevisaPdf } = await import('./lib/previsaPdf'); await downloadPrevisaPdf(previSaState, emp.nome || emp.profile?.nomeCliente || '', officeSettings); }
           return { ok: true, label: 'Previsa (PDF Modelo 22)' };
         }
         const def = DOC_TYPES.find((d) => d.id === docId);

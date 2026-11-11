@@ -246,7 +246,6 @@ export default defineConfig(({mode}) => {
             'vendor-firebase': ['firebase/app', 'firebase/firestore', 'firebase/auth'],
             'vendor-charts': ['recharts'],
             'vendor-icons': ['lucide-react'],
-            'vendor-pdf': ['jspdf', 'html2canvas'],
           },
         },
       },

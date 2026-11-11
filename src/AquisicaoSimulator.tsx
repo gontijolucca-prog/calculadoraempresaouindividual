@@ -7,28 +7,8 @@ import { compararModos, ETIQUETA_MODO, MODOS, type FinanciamentoInput, type Modo
 import { RelatorioPdf } from './lib/reportPdf';
 import { loadOfficeSettings } from './lib/officeSettings';
 
-export interface AquisicaoState {
-  categoria: 'passageiros' | 'comercial' | 'comercial_n1' | 'moto';
-  motor: string;
-  ivaRegime: 'normal' | 'second_hand' | 'leasing';
-  activity: string;
-  regimeTributario: 'irc' | 'irs';
-  price: number;
-  maintenanceCost: number;
-  insuranceCost: number;
-  fuelCost: number;
-  /** Campos marcados como "não aplicável" (desativados e a 0). */
-  na?: string[];
-  modoAquisicao?: ModoAquisicao;
-  financiamento?: Record<string, unknown>;
-}
-
-export const defaultAquisicaoState: AquisicaoState = {
-  categoria: 'passageiros', motor: 'diesel', ivaRegime: 'normal', activity: 'other',
-  regimeTributario: 'irc', price: 0, maintenanceCost: 0, insuranceCost: 0, fuelCost: 0,
-  modoAquisicao: 'compra',
-  financiamento: { entrada: 0, duracaoMeses: 48, tanPercent: 6, valorResidual: 0 },
-};
+export type { AquisicaoState } from './lib/aquisicaoState';
+import { defaultAquisicaoState, type AquisicaoState } from './lib/aquisicaoState';
 
 const eur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(Number.isFinite(v) ? v : 0);
 const inputCls = 'w-full rounded-[8px] border-2 border-[#E2E8F0] bg-white px-3 py-2.5 text-[13.5px] font-[600] text-[#0F172A] outline-none focus:border-[#0F172A]';

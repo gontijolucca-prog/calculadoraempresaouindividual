@@ -1,0 +1,36 @@
+name: Firestore backup
+
+on:
+  schedule:
+    # Todos os dias às 03:10 UTC.
+    - cron: '10 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Exportar Firestore (cifrado)
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          BACKUP_KEY: ${{ secrets.BACKUP_KEY }}
+          BACKUP_OUT: firestore-backup.enc
+        run: node scripts/backup-firestore.mjs
+
+      - name: Guardar artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: firestore-backup-${{ github.run_id }}
+          path: firestore-backup.enc
+          retention-days: 30
+          if-no-files-found: error

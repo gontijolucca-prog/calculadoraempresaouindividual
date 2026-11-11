@@ -8,7 +8,7 @@
  * Cada gravação cria um documento novo em `updates` (append-only): nenhuma
  * versão anterior pode ser alterada ou apagada, nem pelo próprio servidor.
  */
-import { getFirestoreDoc, patchFirestoreDoc } from '../_firebaseAdmin';
+import { firestoreList, getFirestoreDoc, patchFirestoreDoc } from '../_firebaseAdmin';
 
 type Env = Record<string, unknown>;
 
@@ -64,6 +64,39 @@ export async function onRequestOptions({ request }: { request: Request }): Promi
       'Access-Control-Max-Age': '86400',
     },
   });
+}
+
+export async function onRequestGet({ request, env }: { request: Request; env: Env }): Promise<Response> {
+  const url = new URL(request.url);
+  const origin = request.headers.get('Origin');
+  const permitido = ORIGENS.has(String(origin)) ? String(origin) : null;
+  const marcador = url.searchParams.get('m') || '';
+  const chave = url.searchParams.get('k') || '';
+
+  if (!/^[a-z0-9:_-]{4,64}$/.test(marcador)) return json({ erro: 'marcador_invalido' }, 400, permitido);
+  if (!chaveValida(chave)) return json({ erro: 'chave_invalida' }, 401, permitido);
+
+  try {
+    const cfg = await getFirestoreDoc<{ chaveHash?: string }>(env, 'notasPainel/reuniao');
+    const esperado = typeof cfg?.data?.chaveHash === 'string' ? cfg.data.chaveHash : '';
+    if (!esperado) return json({ erro: 'sem_chave_configurada' }, 503, permitido);
+    const recebido = await sha256Hex(String(chave));
+    if (!iguaisSeguro(recebido, esperado)) return json({ erro: 'chave_incorreta' }, 401, permitido);
+
+    const docs = await firestoreList(env, 'updates');
+    const entries = docs
+      .filter((doc) => doc.data.autor === marcador && typeof doc.data.text === 'string' && String(doc.data.text).trim())
+      .map((doc) => ({
+        id: doc.path.split('/').pop() || '',
+        text: String(doc.data.text),
+        createdAt: Number(doc.data.createdAt) || 0,
+      }))
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, 20);
+    return json({ ok: true, entries }, 200, permitido);
+  } catch (e) {
+    return json({ erro: 'servico_indisponivel', detalhe: e instanceof Error ? e.message : String(e) }, 502, permitido);
+  }
 }
 
 export async function onRequestPost({ request, env }: { request: Request; env: Env }): Promise<Response> {
