@@ -218,7 +218,7 @@
 
         <div class="card reveal">
           <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
-          <div class="body"><span class="tag green">Alteração</span><div class="txt"><b>As notas vivem no link e são de quem o tem.</b> Quem recebe o link lê e escreve; quem abre a página sem a chave só lê. Vale para as semanas todas, no seletor «Semana».</div><div class="extra">Cada gravação continua a criar uma versão nova que ninguém apaga.</div><div class="test"><b>Testar</b>Partilhar o link com <b>?k=</b>, escrever noutro computador e confirmar que grava; abrir sem a chave e confirmar que só lê.</div></div>
+          <div class="body"><span class="tag green">Alteração</span><div class="txt"><b>As notas vivem no link e são de quem o tem.</b> Quem abre a página lê e escreve — sem conta, sem chave obrigatória. Vale para as semanas todas, no seletor «Semana».</div><div class="extra">Cada gravação continua a criar uma versão nova que ninguém apaga.</div><div class="test"><b>Testar</b>Partilhar o link, escrever noutro computador e confirmar que grava para todos.</div></div>
         </div>
 
         <div class="card reveal">
@@ -551,11 +551,13 @@
       try { chave = localStorage.getItem(CHAVE_STORAGE) || ''; } catch { chave = ''; }
     }
 
-    const podeEscrever = /^[a-f0-9]{32,64}$/i.test(chave);
+    // Escreve quem tem a página: o link é o segredo. A chave continua a ser
+    // guardada quando existe, mas já não bloqueia a caixa de texto.
+    const podeEscrever = true;
     editor.style.display = podeEscrever ? 'block' : 'none';
     locked.style.display = podeEscrever ? 'none' : 'block';
     if (podeEscrever) {
-      hint.textContent = 'Guardado no site. Pode fechar a página: as notas ficam. O link com a chave é pessoal — não o partilhe.';
+      hint.textContent = 'Guardado no site. Pode fechar a página: as notas ficam. Quem tiver este link também pode escrever — cada gravação fica como versão nova.';
     }
 
     // Rascunho local: se a rede falhar a meio, o texto não se perde.

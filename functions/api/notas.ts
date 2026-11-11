@@ -66,6 +66,17 @@ export async function onRequestOptions({ request }: { request: Request }): Promi
   });
 }
 
+/** Limite simples por instância: trava rajadas sem bloquear o uso normal. */
+const GRAVACOES = new Map<string, number[]>();
+function limiteDeEscrita(ip: string): boolean {
+  const agora = Date.now();
+  const janela = (GRAVACOES.get(ip) || []).filter((t) => agora - t < 60 * 60 * 1000);
+  janela.push(agora);
+  GRAVACOES.set(ip, janela);
+  if (GRAVACOES.size > 500) GRAVACOES.clear();
+  return janela.length > 40;
+}
+
 export async function onRequestGet({ request, env }: { request: Request; env: Env }): Promise<Response> {
   const url = new URL(request.url);
   const origin = request.headers.get('Origin');
@@ -100,23 +111,19 @@ export async function onRequestPost({ request, env }: { request: Request; env: E
   let body: Record<string, unknown>;
   try { body = (await request.json()) as Record<string, unknown>; } catch { return json({ erro: 'json_invalido' }, 400, permitido); }
 
-  const chave = body.chave;
   const texto = typeof body.texto === 'string' ? body.texto.trim() : '';
   const marcador = typeof body.marcador === 'string' ? body.marcador : 'proximos:semana-03-11';
 
-  if (!chaveValida(chave)) return json({ erro: 'chave_invalida' }, 401, permitido);
   if (!texto) return json({ erro: 'texto_vazio' }, 400, permitido);
   if (texto.length > 4000) return json({ erro: 'texto_longo' }, 400, permitido);
   if (!/^[a-z0-9:_-]{4,64}$/.test(marcador)) return json({ erro: 'marcador_invalido' }, 400, permitido);
+  // Escreve quem tem a página: o link é o segredo. Cada gravação é uma versão
+  // nova (append-only), por isso nada se perde, mesmo com escrita aberta.
+  if (limiteDeEscrita(request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || 'sem-ip')) {
+    return json({ erro: 'demasiadas_gravacoes' }, 429, permitido);
+  }
 
   try {
-    const cfg = await getFirestoreDoc<{ chaveHash?: string }>(env, 'notasPainel/reuniao');
-    const esperado = typeof cfg?.data?.chaveHash === 'string' ? cfg.data.chaveHash : '';
-    if (!esperado) return json({ erro: 'sem_chave_configurada' }, 503, permitido);
-
-    const recebido = await sha256Hex(String(chave));
-    if (!iguaisSeguro(recebido, esperado)) return json({ erro: 'chave_incorreta' }, 401, permitido);
-
     const id = `nota_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
     await patchFirestoreDoc(env, `updates/${id}`, {
       text: texto,

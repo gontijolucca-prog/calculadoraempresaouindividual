@@ -616,11 +616,13 @@
       try { chave = localStorage.getItem(CHAVE_STORAGE) || ''; } catch { chave = ''; }
     }
 
-    const podeEscrever = /^[a-f0-9]{32,64}$/i.test(chave);
+    // Escreve quem tem a página: o link é o segredo. A chave continua a ser
+    // guardada quando existe, mas já não bloqueia a caixa de texto.
+    const podeEscrever = true;
     editor.style.display = podeEscrever ? 'block' : 'none';
     locked.style.display = podeEscrever ? 'none' : 'block';
     if (podeEscrever) {
-      hint.textContent = 'Guardado no site. Pode fechar a página: as notas ficam. O link com a chave é pessoal — não o partilhe.';
+      hint.textContent = 'Guardado no site. Pode fechar a página: as notas ficam. Quem tiver este link também pode escrever — cada gravação fica como versão nova.';
     }
 
     // Rascunho local: se a rede falhar a meio, o texto não se perde.
