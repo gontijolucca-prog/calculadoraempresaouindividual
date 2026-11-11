@@ -97,6 +97,7 @@ export class RelatorioPdf {
   private forcarUmaFolha = false;
   private esgotado = false;
   private notaOmitida = false;
+  private nSec = 0;
 
   constructor(opts: PdfOptions, fator = 1) {
     this.opts = opts;
@@ -162,11 +163,11 @@ export class RelatorioPdf {
     this.y += this.v(8);
 
     d.setFont('helvetica', 'bold');
-    d.setFontSize(this.fs(20));
+    d.setFontSize(this.fs(21));
     d.setTextColor(...PDF_RGB.dark);
     const titulo = d.splitTextToSize(sanitizePdf(this.opts.titulo), this.largura - this.margem * 2);
     d.text(titulo, this.margem, this.y);
-    this.y += titulo.length * this.v(7) + 1;
+    this.y += titulo.length * this.v(7.8) + 1;
 
     if (this.opts.subtitulo) {
       d.setFont('helvetica', 'normal');
@@ -178,23 +179,26 @@ export class RelatorioPdf {
     }
 
     if (this.opts.cliente || this.opts.nif) {
-      const boxH = this.v(13);
-      d.setFillColor(...PDF_RGB.pale);
+      const yBase = this.y;
       d.setDrawColor(...PDF_RGB.line);
       d.setLineWidth(0.3);
-      d.roundedRect(this.margem, this.y, this.largura - this.margem * 2, boxH, 2, 2, 'FD');
-      d.setFontSize(this.fs(6.8));
+      d.line(this.margem, yBase, this.largura - this.margem, yBase);
       d.setFont('helvetica', 'bold');
+      d.setFontSize(this.fs(6.2));
       d.setTextColor(...PDF_RGB.medium);
-      d.text('CLIENTE / EMPRESA', this.margem + 3, this.y + this.v(4));
-      d.text('NIF', this.largura - this.margem - 40, this.y + this.v(4));
-      d.setFontSize(this.fs(9.5));
+      d.text('CLIENTE / EMPRESA', this.margem, yBase + this.v(4), { charSpace: 0.4 });
+      d.text('NIF', this.largura - this.margem - 30, yBase + this.v(4), { charSpace: 0.4 });
+      d.setFont('helvetica', 'bold');
+      d.setFontSize(this.fs(10));
       d.setTextColor(...PDF_RGB.dark);
-      const larguraNome = this.largura - this.margem * 2 - 50;
-      const nomeLinhas = d.splitTextToSize(sanitizePdf(this.opts.cliente || '—'), larguraNome - d.getTextWidth('...'));
-      d.text(nomeLinhas.length > 1 ? `${nomeLinhas[0].replace(/\s+$/, '')}...` : nomeLinhas[0], this.margem + 3, this.y + this.v(9.2));
-      d.text(sanitizePdf(this.opts.nif || '—'), this.largura - this.margem - 40, this.y + this.v(9.2));
-      this.y += boxH + this.v(6);
+      const larguraNome = this.largura - this.margem * 2 - 36;
+      const nomeLinhas = d.splitTextToSize(sanitizePdf(this.opts.cliente || '—'), larguraNome);
+      d.text(nomeLinhas.length > 1 ? `${String(nomeLinhas[0]).replace(/\s+$/, '')}...` : nomeLinhas[0], this.margem, yBase + this.v(9.6));
+      d.text(sanitizePdf(this.opts.nif || '—'), this.largura - this.margem - 30, yBase + this.v(9.6));
+      d.setDrawColor(...PDF_RGB.line);
+      d.setLineWidth(0.3);
+      d.line(this.margem, yBase + this.v(12.2), this.largura - this.margem, yBase + this.v(12.2));
+      this.y = yBase + this.v(15);
     }
     this.y += this.v(2);
   }
@@ -255,18 +259,21 @@ export class RelatorioPdf {
     if (this.esgotado) return this;
     if (!this.garantirAltura(this.v(14))) return this;
     const d = this.doc;
-    d.setFillColor(...PDF_RGB.blue);
-    d.circle(this.margem + 1.4, this.y + this.v(1.6), 1.2, 'F');
+    this.nSec += 1;
+    const numero = String(this.nSec).padStart(2, '0');
     d.setFont('helvetica', 'bold');
-    d.setFontSize(this.fs(8.2));
+    d.setFontSize(this.fs(7));
+    d.setTextColor(...PDF_RGB.blue);
+    d.text(numero, this.margem, this.y + this.v(2.8));
+    d.setFontSize(this.fs(8.4));
     d.setTextColor(...PDF_RGB.dark);
     // Micro-rótulo com tracking: hierarquia editorial, sem mudar a paleta.
-    d.text(titulo.toUpperCase(), this.margem + 5, this.y + this.v(2.8), { charSpace: 0.55 });
+    d.text(titulo.toUpperCase(), this.margem + 8, this.y + this.v(2.8), { charSpace: 0.7 });
     this.y += this.v(5.4);
-    // Filete que arranca no ponto e vai até à margem direita.
+    // Filete que arranca no número e vai até à margem direita.
     d.setDrawColor(...PDF_RGB.line);
     d.setLineWidth(0.35);
-    d.line(this.margem + 5, this.y, this.largura - this.margem, this.y);
+    d.line(this.margem + 8, this.y, this.largura - this.margem, this.y);
     this.y += this.v(4.4);
     return this;
   }
@@ -281,6 +288,7 @@ export class RelatorioPdf {
 
     for (let i = 0; i < linhas.length; i++) {
       const linha = linhas[i];
+      const ehTotal = /^(total|soma|resultado|valor final|a pagar|a receber)/i.test(String(linha.label).trim());
       const linhasValor = d.splitTextToSize(sanitizePdf(linha.valor || '—'), largura * 0.42) as string[];
       const linhasLabel = d.splitTextToSize(sanitizePdf(linha.label), largura * 0.54) as string[];
       const h = Math.max(alturaLinha, Math.max(linhasValor.length, linhasLabel.length) * this.v(4.2) + this.v(3));
@@ -295,7 +303,13 @@ export class RelatorioPdf {
         this.esgotado = true;
         break;
       }
-      if (i % 2 === 1) {
+      if (ehTotal) {
+        d.setDrawColor(...PDF_RGB.dark);
+        d.setLineWidth(0.5);
+        d.line(this.margem, this.y, this.largura - this.margem, this.y);
+        d.setLineWidth(0.2);
+        d.line(this.margem, this.y + 0.9, this.largura - this.margem, this.y + 0.9);
+      } else if (i % 2 === 1) {
         d.setFillColor(...PDF_RGB.pale);
         d.rect(this.margem, this.y, largura, h, 'F');
       }
@@ -306,7 +320,8 @@ export class RelatorioPdf {
       } else {
         d.setTextColor(...PDF_RGB.medium);
       }
-      d.setFont('helvetica', 'normal');
+      d.setFont('helvetica', ehTotal ? 'bold' : 'normal');
+      d.setTextColor(...(ehTotal ? PDF_RGB.dark : PDF_RGB.medium));
       d.text(linhasLabel, this.margem + 2.5, this.y + this.v(4.4));
       d.setFont('helvetica', 'bold');
       if (opts.destaquePrimeira && i === 0) d.setTextColor(...PDF_RGB.white);
@@ -438,17 +453,24 @@ export class RelatorioPdf {
     const d = this.doc;
     const total = d.getNumberOfPages();
     const escritorio = (this.opts.escritorio?.nome || 'Estudo 360').trim();
+    const notaBase = this.opts.rodape
+      || `Cálculos indicativos — confirme com o seu Contabilista Certificado.${this.notaOmitida ? ' Nota legal omitida por falta de espaço.' : ''}`;
     for (let p = 1; p <= total; p++) {
       d.setPage(p);
       d.setDrawColor(...PDF_RGB.line);
       d.setLineWidth(0.3);
       d.line(this.margem, this.altura - 12, this.largura - this.margem, this.altura - 12);
       d.setFont('helvetica', 'normal');
-      d.setFontSize(6.8);
+      d.setFontSize(6.6);
       d.setTextColor(...PDF_RGB.medium);
-      const rodape = 'Cálculos indicativos — confirme com o seu Contabilista Certificado.';
-      d.text(this.opts.rodape || (rodape + (this.notaOmitida ? ' Nota legal omitida por falta de espaço.' : '') + ' · Página 1 de 1'), this.margem, this.altura - 7.5);
-      d.text(`${escritorio} · ${new Intl.DateTimeFormat('pt-PT').format(new Date())}`, this.largura - this.margem, this.altura - 7.5, { align: 'right' });
+      d.text(sanitizePdf(notaBase), this.margem, this.altura - 7.5, { maxWidth: 118 });
+      d.setFont('helvetica', 'bold');
+      d.setTextColor(...PDF_RGB.blue);
+      d.text(String(p), this.largura - this.margem - 6, this.altura - 7.5, { align: 'right' });
+      d.setFont('helvetica', 'normal');
+      d.setTextColor(...PDF_RGB.medium);
+      d.text(`/ ${total}`, this.largura - this.margem, this.altura - 7.5, { align: 'right' });
+      d.text(sanitizePdf(escritorio), this.largura - this.margem - 14, this.altura - 7.5, { align: 'right' });
     }
   }
 
@@ -493,6 +515,12 @@ export class RelatorioPdf {
     const { doc, fator } = this.escolherParaUmaFolha();
     doc.save(`${slugFicheiro(base)}.pdf`);
     return fator;
+  }
+
+  /** PDF final em bytes (para testes e geração fora do browser). */
+  paraBytes(): Uint8Array {
+    const { doc } = this.escolherParaUmaFolha();
+    return new Uint8Array(doc.output('arraybuffer') as ArrayBuffer);
   }
 
   /** Nº de páginas com que o ficheiro sai (para testes). */
