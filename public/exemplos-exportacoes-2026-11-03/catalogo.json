@@ -1,5 +1,5 @@
 {
-  "data": "2026-11-11T11:57:55.447Z",
+  "data": "2026-11-11T16:40:22.048Z",
   "total": 26,
   "documentos": [
     {
@@ -8,8 +8,8 @@
       "descricao": "ENI vs Sociedade, parâmetros, comparação, recomendação, enquadramento e escritório.",
       "formato": "A4 retrato",
       "paginas": 1,
-      "bytes": 19285,
-      "sha256": "9d78a31b3a85c02d65392782727a60d381d1955b05664cfa27dee189ac19b550"
+      "bytes": 21909,
+      "sha256": "9a732393f0b2468509634e42650bd9a9f9adb090dd0698785d3cd54bc4abed1a"
     },
     {
       "ficheiro": "02-simulacao-viaturas.pdf",
@@ -17,8 +17,8 @@
       "descricao": "IVA, tributação autónoma, depreciação e comparação de formas de aquisição.",
       "formato": "A4 retrato",
       "paginas": 1,
-      "bytes": 21702,
-      "sha256": "91b8552e5b2959851f9dbe25928890731dec1c61a4a46a820af2dad69ed94977"
+      "bytes": 24315,
+      "sha256": "20d48c3ca081d8b35d808e468d51972f86f9b81a3e1a46240ac63549e48124f8"
     },
     {
       "ficheiro": "03-simulacao-aquisicao.pdf",
@@ -26,8 +26,8 @@
       "descricao": "Compra, crédito, leasing e renting com o regime fiscal escolhido.",
       "formato": "A4 retrato",
       "paginas": 1,
-      "bytes": 16991,
-      "sha256": "c11d3a7e95d4190bab8bd0f7b35928a976fac153ee3133bec09f57f1447a3a6c"
+      "bytes": 18696,
+      "sha256": "61c65866c1e1e3060cab3d54e84a2afe991ccb3cc9981e5fe5b57dcb240220e8"
     },
     {
       "ficheiro": "04-simulacao-tickets.pdf",
@@ -35,8 +35,8 @@
       "descricao": "Custo, poupança, limites isentos e enquadramento fiscal.",
       "formato": "A4 retrato",
       "paginas": 1,
-      "bytes": 17854,
-      "sha256": "512b422898c2e16505a96e43ab924e79d65a6d6d68f5f8bc6f330c5e4b84b9cc"
+      "bytes": 19579,
+      "sha256": "7a63db60f426ed152da60a946dc6a892018fdcae25854f161936a6770f28ea2e"
     },
     {
       "ficheiro": "05-seguranca-social-independente.pdf",
@@ -44,8 +44,8 @@
       "descricao": "Base de incidência, contribuição mensal, anual e regras aplicáveis.",
       "formato": "A4 retrato",
       "paginas": 1,
-      "bytes": 17607,
-      "sha256": "ec64202a86d75148e77ad8d9f6f5c57539f3059aabd60adee8a7b118f8fdfe36"
+      "bytes": 19023,
+      "sha256": "9cf3a6798aaf57e18ea25342408c3872031fc64ad7f865b0465c0cb860224156"
     },
     {
       "ficheiro": "06-diagnostico-autonomia.pdf",
@@ -53,8 +53,8 @@
       "descricao": "Cinco pilares, scores, pontos fortes, riscos e plano de ação.",
       "formato": "A4 retrato",
       "paginas": 1,
-      "bytes": 20317,
-      "sha256": "e8417915793b31ee8b8ec78fe95eefefb3651382276932cc1a76fc49c32aea8c"
+      "bytes": 22604,
+      "sha256": "67ee67f3c3edc680452b7e22405fc0bde7cd00805501dd615d3b47a832645e03"
     },
     {
       "ficheiro": "07-imoveis-na-empresa.pdf",
@@ -62,8 +62,8 @@
       "descricao": "Arrendamento/comodato vs entrada em espécie, IMT, selo e impacto fiscal.",
       "formato": "A4 retrato",
       "paginas": 1,
-      "bytes": 18071,
-      "sha256": "034cc246cab792f4bee8ce36b473a9960e8ac69f56ded2700ffeccd9dd5323b0"
+      "bytes": 19787,
+      "sha256": "16155a67ebb03a369c12897ee20a0d1850772b48966fad3b72f14d6446c1644f"
     },
     {
       "ficheiro": "08-simulacao-imt.pdf",
@@ -71,8 +71,8 @@
       "descricao": "Valor, localização, tipo de imóvel, taxa, benefícios e total.",
       "formato": "A4 retrato",
       "paginas": 1,
-      "bytes": 19316,
-      "sha256": "65493bed8f931070c3fe73ed98093a17a2d79b058eee009b625482ee489d61ef"
+      "bytes": 21114,
+      "sha256": "011c9873a782bcc4c2c5f87c0c2e2aa8142fdcac2503ef24c412e4357d2acedc"
     },
     {
       "ficheiro": "09-salario-liquido.pdf",
@@ -80,8 +80,8 @@
       "descricao": "Bruto, descontos, líquido, custo empregador e pressupostos.",
       "formato": "A4 retrato",
       "paginas": 1,
-      "bytes": 18035,
-      "sha256": "95d470e3ffda05c46e2c68d2b64a758a358068de0f4f47a1329d3a85408897db"
+      "bytes": 19749,
+      "sha256": "cc6e156ed47d08fc25087c550acb5612d0e96363bc80c6dbcd3898ea72f87682"
     },
     {
       "ficheiro": "10-simulacao-irs.pdf",
@@ -89,8 +89,8 @@
       "descricao": "Agregado, rendimentos, deduções, taxa, imposto e resultado.",
       "formato": "A4 retrato",
       "paginas": 1,
-      "bytes": 17551,
-      "sha256": "bc5366fa2ed34159e12a2351dfaf15ad8a16dec777763bf8dc13be3b86649e98"
+      "bytes": 18968,
+      "sha256": "b06a3705b105a43c984847474c9cc0f9a48cbe8a695fc7d6ce30f10183898c61"
     },
     {
       "ficheiro": "11-previsa-modelo-22.pdf",
@@ -99,7 +99,7 @@
       "formato": "A4 retrato",
       "paginas": 1,
       "bytes": 21734,
-      "sha256": "ed9d949a4dbb2e87d2a507d7c161db64a181812612266af8a504685cec06b053"
+      "sha256": "eb9a9ec7f0286e1f448ea530d24b22b06981ef7a0b13955090773364b888b3aa"
     },
     {
       "ficheiro": "12-ficha-simulacao-cliente.pdf",

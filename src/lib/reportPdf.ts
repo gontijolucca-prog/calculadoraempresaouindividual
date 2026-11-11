@@ -130,77 +130,79 @@ export class RelatorioPdf {
     const d = this.doc;
     const esc = this.opts.escritorio || {};
     const nome = (esc.nome || 'Estudo 360').trim();
-    const xTexto = this.margem + 16;
+    const hoje = new Intl.DateTimeFormat('pt-PT', { dateStyle: 'long' }).format(new Date());
 
+    // Fio de topo — assinatura discreta do documento.
     d.setFillColor(...PDF_RGB.blue);
-    d.roundedRect(this.margem, this.y, 12, 12, 2.5, 2.5, 'F');
+    d.rect(0, 0, this.largura, 1.6, 'F');
+
+    // Cabeça: marca à esquerda, data à direita.
+    d.setFillColor(...PDF_RGB.blue);
+    d.roundedRect(this.margem, this.y, 10, 10, 2, 2, 'F');
     d.setTextColor(...PDF_RGB.white);
     d.setFont('helvetica', 'bold');
-    d.setFontSize(this.fs(11));
-    d.text('360', this.margem + 6, this.y + 7.6, { align: 'center' });
+    d.setFontSize(this.fs(9));
+    d.text('360', this.margem + 5, this.y + 6.4, { align: 'center' });
 
     d.setFont('helvetica', 'bold');
-    d.setFontSize(this.fs(10.5));
+    d.setFontSize(this.fs(9.6));
     d.setTextColor(...PDF_RGB.dark);
-    d.text(sanitizePdf(nome), xTexto, this.y + 4.6);
+    d.text(sanitizePdf(nome), this.margem + 13, this.y + 4.2);
     d.setFont('helvetica', 'normal');
-    d.setFontSize(this.fs(7.5));
+    d.setFontSize(this.fs(6.1));
     d.setTextColor(...PDF_RGB.medium);
-    d.text(nome === 'Estudo 360' ? 'Estudo 360 · Análise · Estratégia · Decisão' : 'Relatório confidencial', xTexto, this.y + 8.6);
-    d.setTextColor(...PDF_RGB.medium);
-    d.text(
-      `RELATÓRIO · ${new Intl.DateTimeFormat('pt-PT', { dateStyle: 'long' }).format(new Date())}`,
-      this.largura - this.margem, this.y + 4.6, { align: 'right' },
-    );
+    d.text('DOCUMENTO CONFIDENCIAL · ESTUDO 360', this.margem + 13, this.y + 7.9, { charSpace: 0.45 });
+    d.text(hoje.toUpperCase(), this.largura - this.margem, this.y + 4.2, { align: 'right', charSpace: 0.45 });
 
-    d.setFillColor(...PDF_RGB.blue);
-    d.rect(0, 0, this.largura, 2.2, 'F');
+    this.y += this.v(19);
 
-    this.y += this.v(16);
-    d.setDrawColor(...PDF_RGB.blue);
-    d.setLineWidth(0.7);
-    d.line(this.margem, this.y, this.largura - this.margem, this.y);
-    this.y += this.v(8);
-
-    d.setFont('helvetica', 'bold');
-    d.setFontSize(this.fs(21));
+    // Título em serifa — é isto que dá cara de documento, não de ecrã.
+    d.setFont('times', 'bold');
+    d.setFontSize(this.fs(23));
     d.setTextColor(...PDF_RGB.dark);
     const titulo = d.splitTextToSize(sanitizePdf(this.opts.titulo), this.largura - this.margem * 2);
     d.text(titulo, this.margem, this.y);
-    this.y += titulo.length * this.v(7.8) + 1;
+    this.y += titulo.length * this.v(8.6) + 1.5;
 
     if (this.opts.subtitulo) {
       d.setFont('helvetica', 'normal');
-      d.setFontSize(this.fs(9.5));
+      d.setFontSize(this.fs(9));
       d.setTextColor(...PDF_RGB.medium);
       const sub = d.splitTextToSize(sanitizePdf(this.opts.subtitulo), this.largura - this.margem * 2);
       d.text(sub, this.margem, this.y);
-      this.y += sub.length * this.v(4.6) + 1;
+      this.y += sub.length * this.v(4.4) + 1;
     }
 
-    if (this.opts.cliente || this.opts.nif) {
-      const yBase = this.y;
-      d.setDrawColor(...PDF_RGB.line);
-      d.setLineWidth(0.3);
-      d.line(this.margem, yBase, this.largura - this.margem, yBase);
+    // Faixa de identificação: cliente, NIF e emissão em colunas.
+    const yBase = this.y + this.v(3);
+    d.setDrawColor(...PDF_RGB.blue);
+    d.setLineWidth(0.5);
+    d.line(this.margem, yBase, this.largura - this.margem, yBase);
+    const xNif = this.margem + 108;
+    const xData = this.margem + 140;
+    const rotulo = (txt: string, x: number) => {
       d.setFont('helvetica', 'bold');
-      d.setFontSize(this.fs(6.2));
+      d.setFontSize(this.fs(5.9));
       d.setTextColor(...PDF_RGB.medium);
-      d.text('CLIENTE / EMPRESA', this.margem, yBase + this.v(4), { charSpace: 0.4 });
-      d.text('NIF', this.largura - this.margem - 30, yBase + this.v(4), { charSpace: 0.4 });
-      d.setFont('helvetica', 'bold');
-      d.setFontSize(this.fs(10));
-      d.setTextColor(...PDF_RGB.dark);
-      const larguraNome = this.largura - this.margem * 2 - 36;
-      const nomeLinhas = d.splitTextToSize(sanitizePdf(this.opts.cliente || '—'), larguraNome);
-      d.text(nomeLinhas.length > 1 ? `${String(nomeLinhas[0]).replace(/\s+$/, '')}...` : nomeLinhas[0], this.margem, yBase + this.v(9.6));
-      d.text(sanitizePdf(this.opts.nif || '—'), this.largura - this.margem - 30, yBase + this.v(9.6));
-      d.setDrawColor(...PDF_RGB.line);
-      d.setLineWidth(0.3);
-      d.line(this.margem, yBase + this.v(12.2), this.largura - this.margem, yBase + this.v(12.2));
-      this.y = yBase + this.v(15);
-    }
-    this.y += this.v(2);
+      d.text(txt, x, yBase + this.v(4.2), { charSpace: 0.5 });
+    };
+    rotulo('CLIENTE / EMPRESA', this.margem);
+    rotulo('NIF', xNif);
+    rotulo('EMITIDO', xData);
+    d.setFont('helvetica', 'bold');
+    d.setFontSize(this.fs(9.2));
+    d.setTextColor(...PDF_RGB.dark);
+    const larguraNome = 100;
+    const nomeLinhas = d.splitTextToSize(sanitizePdf(this.opts.cliente || '—'), larguraNome);
+    d.text(nomeLinhas.length > 1 ? `${String(nomeLinhas[0]).replace(/\s+$/, '')}...` : nomeLinhas[0], this.margem, yBase + this.v(9));
+    d.text(sanitizePdf(this.opts.nif || '—'), xNif, yBase + this.v(9));
+    d.setFont('helvetica', 'normal');
+    d.setFontSize(this.fs(8));
+    d.text(sanitizePdf(hoje), xData, yBase + this.v(9));
+    d.setDrawColor(...PDF_RGB.line);
+    d.setLineWidth(0.3);
+    d.line(this.margem, yBase + this.v(11.6), this.largura - this.margem, yBase + this.v(11.6));
+    this.y = yBase + this.v(15);
   }
 
   private cabecaDePagina(): number {
@@ -309,29 +311,42 @@ export class RelatorioPdf {
         d.line(this.margem, this.y, this.largura - this.margem, this.y);
         d.setLineWidth(0.2);
         d.line(this.margem, this.y + 0.9, this.largura - this.margem, this.y + 0.9);
-      } else if (i % 2 === 1) {
-        d.setFillColor(...PDF_RGB.pale);
-        d.rect(this.margem, this.y, largura, h, 'F');
       }
       if (opts.destaquePrimeira && i === 0) {
-        d.setFillColor(...PDF_RGB.blue);
-        d.roundedRect(this.margem, this.y, largura, h, 1.5, 1.5, 'F');
-        d.setTextColor(...PDF_RGB.white);
+        d.setTextColor(...PDF_RGB.dark);
       } else {
         d.setTextColor(...PDF_RGB.medium);
       }
-      d.setFont('helvetica', ehTotal ? 'bold' : 'normal');
-      d.setTextColor(...(ehTotal ? PDF_RGB.dark : PDF_RGB.medium));
-      d.text(linhasLabel, this.margem + 2.5, this.y + this.v(4.4));
-      d.setFont('helvetica', 'bold');
-      if (opts.destaquePrimeira && i === 0) d.setTextColor(...PDF_RGB.white);
-      else d.setTextColor(...PDF_RGB.dark);
-      d.text(linhasValor, this.largura - this.margem - 2.5, this.y + this.v(4.4), { align: 'right' });
-      if (!(opts.destaquePrimeira && i === 0)) {
-        d.setDrawColor(...PDF_RGB.line);
-        d.setLineWidth(0.2);
-        d.line(this.margem, this.y + h, this.largura - this.margem, this.y + h);
+      const cabecalhoTabela = opts.destaquePrimeira && i === 0;
+      // Linha de pontos entre rótulo e valor (só quando o rótulo cabe numa linha).
+      if (!cabecalhoTabela && linhasLabel.length === 1 && !ehTotal) {
+        d.setFont('helvetica', 'normal');
+        d.setFontSize(this.fs(8.8));
+        const fimRotulo = this.margem + 2.5 + d.getTextWidth(String(linha.label));
+        const inicioValor = this.largura - this.margem - 2.5 - Math.min(d.getTextWidth(String(linha.valor || '')), largura * 0.42) - 2;
+        if (inicioValor - fimRotulo > 6) {
+          d.setDrawColor(...PDF_RGB.line);
+          d.setLineWidth(0.15);
+          d.setLineDashPattern([0.4, 1.4], 0);
+          d.line(fimRotulo + 2, this.y + this.v(4.1), inicioValor, this.y + this.v(4.1));
+          d.setLineDashPattern([], 0);
+        }
       }
+      d.setFont('helvetica', (ehTotal || cabecalhoTabela) ? 'bold' : 'normal');
+      d.setTextColor(...(ehTotal || cabecalhoTabela ? PDF_RGB.dark : PDF_RGB.medium));
+      if (cabecalhoTabela) {
+        d.setFontSize(this.fs(6.2));
+        d.text(String(linhasLabel).toUpperCase(), this.margem + 2.5, this.y + this.v(4.4), { charSpace: 0.5 });
+        d.setFontSize(this.fs(8.6));
+      } else {
+        d.text(linhasLabel, this.margem + 2.5, this.y + this.v(4.4));
+      }
+      d.setFont('helvetica', 'bold');
+      d.setTextColor(...PDF_RGB.dark);
+      d.text(linhasValor, this.largura - this.margem - 2.5, this.y + this.v(4.4), { align: 'right' });
+      d.setDrawColor(...PDF_RGB.line);
+      d.setLineWidth(0.2);
+      d.line(this.margem, this.y + h, this.largura - this.margem, this.y + h);
       this.y += h;
     }
     this.y += this.v(4);
