@@ -81,6 +81,7 @@ type Operacao =
   | { m: 'tabela'; a: [LinhaTabela[], { destaquePrimeira?: boolean }?] }
   | { m: 'matriz'; a: [string[], string[][]] }
   | { m: 'paragrafo'; a: [string] }
+  | { m: 'destaques'; a: [Array<{ label: string; valor: string }>] }
   | { m: 'nota'; a: [string] }
   | { m: 'espaco'; a: [number] };
 
@@ -257,6 +258,56 @@ export class RelatorioPdf {
     return this;
   }
 
+  /** Faixa de números-chave (até 3), como a abertura de um relatório anual. */
+  destaques(itens: Array<{ label: string; valor: string }>): this {
+    if (!itens.length) return this;
+    if (!this.aGravar) this.ops.push({ m: 'destaques', a: [itens] });
+    return this._destaques(itens);
+  }
+
+  private _destaques(itens: Array<{ label: string; valor: string }>): this {
+    if (this.esgotado) return this;
+    const d = this.doc;
+    const vistos = new Set<string>();
+    const lista = itens.filter((i) => {
+      const chave = String(i.label).trim().toUpperCase().slice(0, 28);
+      if (vistos.has(chave)) return false;
+      vistos.add(chave);
+      return true;
+    }).slice(0, 3);
+    const largura = this.largura - this.margem * 2;
+    const col = largura / lista.length;
+    const altura = this.v(20);
+    if (!this.garantirAltura(altura + this.v(4))) return this;
+
+    d.setDrawColor(...PDF_RGB.line);
+    d.setLineWidth(0.3);
+    d.line(this.margem, this.y, this.largura - this.margem, this.y);
+
+    lista.forEach((item, i) => {
+      const x = this.margem + col * i;
+      if (i > 0) {
+        d.setDrawColor(...PDF_RGB.line);
+        d.line(x - 4, this.y + this.v(3), x - 4, this.y + altura - this.v(2));
+      }
+      d.setFont('helvetica', 'bold');
+      d.setFontSize(this.fs(5.9));
+      d.setTextColor(...PDF_RGB.medium);
+      d.text(String(item.label).toUpperCase().slice(0, 28), x, this.y + this.v(5), { charSpace: 0.5 });
+      d.setFont('times', 'bold');
+      d.setFontSize(this.fs(18));
+      d.setTextColor(...PDF_RGB.dark);
+      d.text(sanitizePdf(item.valor), x, this.y + this.v(14.2));
+    });
+
+    this.y += altura;
+    d.setDrawColor(...PDF_RGB.line);
+    d.setLineWidth(0.3);
+    d.line(this.margem, this.y, this.largura - this.margem, this.y);
+    this.y += this.v(5);
+    return this;
+  }
+
   private _seccao(titulo: string): this {
     if (this.esgotado) return this;
     if (!this.garantirAltura(this.v(14))) return this;
@@ -291,9 +342,14 @@ export class RelatorioPdf {
     for (let i = 0; i < linhas.length; i++) {
       const linha = linhas[i];
       const ehTotal = /^(total|soma|resultado|valor final|a pagar|a receber)/i.test(String(linha.label).trim());
-      const linhasValor = d.splitTextToSize(sanitizePdf(linha.valor || '—'), largura * 0.42) as string[];
-      const linhasLabel = d.splitTextToSize(sanitizePdf(linha.label), largura * 0.54) as string[];
-      const h = Math.max(alturaLinha, Math.max(linhasValor.length, linhasLabel.length) * this.v(4.2) + this.v(3));
+      const valorLongo = d.getTextWidth(sanitizePdf(linha.valor || '—')) > largura * 0.42;
+      const linhasValor = valorLongo
+        ? d.splitTextToSize(sanitizePdf(linha.valor || '—'), largura - 5) as string[]
+        : d.splitTextToSize(sanitizePdf(linha.valor || '—'), largura * 0.42) as string[];
+      const linhasLabel = d.splitTextToSize(sanitizePdf(linha.label), valorLongo ? largura - 5 : largura * 0.54) as string[];
+      const h = valorLongo
+        ? Math.max(alturaLinha, (linhasLabel.length + linhasValor.length) * this.v(4.2) + this.v(2.4))
+        : Math.max(alturaLinha, Math.max(linhasValor.length, linhasLabel.length) * this.v(4.2) + this.v(3));
       if (!this.garantirAltura(h)) {
         const faltam = linhas.length - i;
         d.setFont('helvetica', 'italic');
@@ -319,7 +375,7 @@ export class RelatorioPdf {
       }
       const cabecalhoTabela = opts.destaquePrimeira && i === 0;
       // Linha de pontos entre rótulo e valor (só quando o rótulo cabe numa linha).
-      if (!cabecalhoTabela && linhasLabel.length === 1 && !ehTotal) {
+      if (!cabecalhoTabela && !valorLongo && linhasLabel.length === 1 && !ehTotal) {
         d.setFont('helvetica', 'normal');
         d.setFontSize(this.fs(8.8));
         const fimRotulo = this.margem + 2.5 + d.getTextWidth(String(linha.label));
@@ -343,7 +399,13 @@ export class RelatorioPdf {
       }
       d.setFont('helvetica', 'bold');
       d.setTextColor(...PDF_RGB.dark);
-      d.text(linhasValor, this.largura - this.margem - 2.5, this.y + this.v(4.4), { align: 'right' });
+      if (valorLongo) {
+        d.setFont('helvetica', 'normal');
+        d.setFontSize(this.fs(7.6));
+        d.text(linhasValor, this.largura - this.margem - 2.5, this.y + this.v(4.4) + linhasLabel.length * this.v(4.2), { align: 'right' });
+      } else {
+        d.text(linhasValor, this.largura - this.margem - 2.5, this.y + this.v(4.4), { align: 'right' });
+      }
       d.setDrawColor(...PDF_RGB.line);
       d.setLineWidth(0.2);
       d.line(this.margem, this.y + h, this.largura - this.margem, this.y + h);
@@ -499,6 +561,7 @@ export class RelatorioPdf {
         case 'matriz': this._matriz(op.a[0], op.a[1]); break;
         case 'paragrafo': this._paragrafo(op.a[0]); break;
         case 'nota': this._nota(op.a[0]); break;
+        case 'destaques': this._destaques(op.a[0]); break;
         case 'espaco': this.y += this.v(op.a[0]); break;
       }
     }

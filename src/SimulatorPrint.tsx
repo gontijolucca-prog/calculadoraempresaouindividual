@@ -272,8 +272,20 @@ export function SimulatorPrintButton({ compact = false }: { compact?: boolean })
     });
     const inputs = [...detailSimulacao(v, ctx.state), ...extraInputs(v, ctx.state)];
     const results = [...resultSimulacao(v, ctx.state, profile), ...extraResults(v, ctx.state, profile)];
+    // Três números-chave: os primeiros resultados com valor, dando prioridade
+    // a líquidos/totais/diferenças — a abertura que se lê em 3 segundos.
+    const vistos = new Set<string>();
+    const comValor = results.filter((r) => {
+      const chave = String(r.label).trim().toLowerCase();
+      if (!/\d/.test(r.valor) || !chave || vistos.has(chave)) return false;
+      vistos.add(chave);
+      return true;
+    });
+    const preferidos = comValor.filter((r) => /l[ií]quido|total|diferen|poupan|custo|mensalidade|imposto|resultado/i.test(r.label));
+    const escolhidos = (preferidos.length >= 3 ? preferidos : [...preferidos, ...comValor]).slice(0, 3);
+    if (escolhidos.length === 3) pdf.destaques(escolhidos);
     pdf.seccao('Parâmetros da simulação').tabela(inputs);
-    pdf.seccao('Resultado da simulação').tabela(results, { destaquePrimeira: true });
+    pdf.seccao('Resultado da simulação').tabela(results);
 
     if (v === 'vehicle') {
       const s = (ctx.state || {}) as Record<string, unknown>;
