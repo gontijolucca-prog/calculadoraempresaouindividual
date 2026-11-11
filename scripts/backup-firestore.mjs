@@ -63,9 +63,29 @@ async function accessToken() {
   return data.access_token;
 }
 
-async function dump(token) {
+async function listCollectionIds(token, parent) {
   const project = sa.project_id;
   const base = `https://firestore.googleapis.com/v1/projects/${project}/databases/(default)/documents`;
+  const url = `${base}${parent ? `/${parent}` : ''}:listCollectionIds`;
+  const ids = [];
+  let pageToken = '';
+  do {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pageSize: 1000, ...(pageToken ? { pageToken } : {}) }),
+    });
+    if (!res.ok) throw new Error(`listCollectionIds ${res.status}: ${(await res.text()).slice(0, 160)}`);
+    const data = await res.json();
+    for (const id of data.collectionIds || []) ids.push(id);
+    pageToken = data.nextPageToken || '';
+  } while (pageToken);
+  return ids;
+}
+
+async function listDocuments(token, collectionPath) {
+  const project = sa.project_id;
+  const base = `https://firestore.googleapis.com/v1/projects/${project}/databases/(default)/documents/${collectionPath}`;
   const docs = [];
   let pageToken = '';
   do {
@@ -73,12 +93,29 @@ async function dump(token) {
     url.searchParams.set('pageSize', '1000');
     if (pageToken) url.searchParams.set('pageToken', pageToken);
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    if (!res.ok) throw new Error(`list ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    if (res.status === 404) return docs;
+    if (!res.ok) throw new Error(`list ${res.status} em ${collectionPath}: ${(await res.text()).slice(0, 160)}`);
     const data = await res.json();
     for (const doc of data.documents || []) docs.push(doc);
     pageToken = data.nextPageToken || '';
   } while (pageToken);
   return docs;
+}
+
+/** Percorre coleções e subcoleções (limite de profundidade para não fugir). */
+async function dump(token, parent = '', depth = 0, acc = []) {
+  if (depth > 5) return acc;
+  const collections = await listCollectionIds(token, parent);
+  for (const collectionId of collections) {
+    const collectionPath = parent ? `${parent}/${collectionId}` : collectionId;
+    const docs = await listDocuments(token, collectionPath);
+    for (const doc of docs) {
+      acc.push(doc);
+      const docPath = String(doc.name || '').split('/documents/')[1];
+      if (docPath) await dump(token, docPath, depth + 1, acc);
+    }
+  }
+  return acc;
 }
 
 function encrypt(text) {
