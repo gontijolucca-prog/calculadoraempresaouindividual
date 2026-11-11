@@ -71,18 +71,12 @@ export async function onRequestGet({ request, env }: { request: Request; env: En
   const origin = request.headers.get('Origin');
   const permitido = ORIGENS.has(String(origin)) ? String(origin) : null;
   const marcador = url.searchParams.get('m') || '';
-  const chave = url.searchParams.get('k') || '';
 
   if (!/^[a-z0-9:_-]{4,64}$/.test(marcador)) return json({ erro: 'marcador_invalido' }, 400, permitido);
-  if (!chaveValida(chave)) return json({ erro: 'chave_invalida' }, 401, permitido);
 
   try {
-    const cfg = await getFirestoreDoc<{ chaveHash?: string }>(env, 'notasPainel/reuniao');
-    const esperado = typeof cfg?.data?.chaveHash === 'string' ? cfg.data.chaveHash : '';
-    if (!esperado) return json({ erro: 'sem_chave_configurada' }, 503, permitido);
-    const recebido = await sha256Hex(String(chave));
-    if (!iguaisSeguro(recebido, esperado)) return json({ erro: 'chave_incorreta' }, 401, permitido);
-
+    // Leitura aberta a quem tem a página (o link é o segredo). A escrita
+    // continua a exigir a chave; esta rota só devolve texto de notas.
     const docs = await firestoreList(env, 'updates');
     const entries = docs
       .filter((doc) => doc.data.autor === marcador && typeof doc.data.text === 'string' && String(doc.data.text).trim())

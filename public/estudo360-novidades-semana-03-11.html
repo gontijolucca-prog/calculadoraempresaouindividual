@@ -555,18 +555,17 @@
               || '';
           } catch { return ''; }
         })();
-        if (!chaveLeitura) throw new Error('sem-chave');
-        const resposta = await fetch(`/api/notas?m=${encodeURIComponent(MARKER)}&k=${encodeURIComponent(chaveLeitura)}`, { cache: 'no-store' });
+        const parametroChave = chaveLeitura ? `&k=${encodeURIComponent(chaveLeitura)}` : '';
+        const resposta = await fetch(`/api/notas?m=${encodeURIComponent(MARKER)}${parametroChave}`, { cache: 'no-store' });
         if (!resposta.ok) throw new Error(String(resposta.status));
         const dados = await resposta.json();
         entries = (dados.entries || [])
           .filter((entry) => typeof entry.text === 'string' && entry.text.trim())
           .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
       } catch {
-        setStatus('err', 'Notas privadas');
-        view.textContent = 'As notas desta reunião são privadas. Abra o seu link de edição (com a chave) para as ver.';
-        meta.textContent = '';
-        history.style.display = 'none';
+        setStatus('err', 'Sem ligação - a mostrar a cópia local');
+        const local = localStorage.getItem(`${LOCAL_KEY}`);
+        if (local) view.textContent = local;
         return;
       }
 

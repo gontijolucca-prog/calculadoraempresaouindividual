@@ -182,7 +182,7 @@
         <span class="chip"><b>100%</b> testável na app</span>
         <span class="chip"><b>Cópia</b> de segurança do gabinete</span>
         <span class="chip"><b>Pesquisa</b> em toda a app</span>
-        <span class="chip"><b>Notas</b> privadas</span>
+        <span class="chip"><b>Notas</b> no link</span>
       </div>
       <div class="cta">
         <a class="btn primary" href="#novidades">Ver o que mudou</a>
@@ -218,7 +218,7 @@
 
         <div class="card reveal">
           <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
-          <div class="body"><span class="tag green">Alteração</span><div class="txt"><b>As notas da reunião passaram a ser privadas.</b> Sem a chave do seu link, ninguém lê nem as notas novas nem as anteriores — a página diz apenas que são privadas.</div><div class="extra">O servidor guarda só o resumo da chave; a leitura passou a ser feita por si, não pela base de dados aberta.</div><div class="test"><b>Testar</b>Abrir a página sem <b>?k=</b> e confirmar a mensagem; abrir com o seu link e ver as versões.</div></div>
+          <div class="body"><span class="tag green">Alteração</span><div class="txt"><b>As notas vivem no link e são de quem o tem.</b> Quem recebe o link lê e escreve; quem abre a página sem a chave só lê. Vale para as semanas todas, no seletor «Semana».</div><div class="extra">Cada gravação continua a criar uma versão nova que ninguém apaga.</div><div class="test"><b>Testar</b>Partilhar o link com <b>?k=</b>, escrever noutro computador e confirmar que grava; abrir sem a chave e confirmar que só lê.</div></div>
         </div>
 
         <div class="card reveal">
@@ -419,7 +419,7 @@
         <p class="np-hint" id="npHint">Guardado no site. Pode fechar a página: as notas ficam. Ctrl/⌘+Enter guarda.</p>
       </div>
       <div id="npLocked" style="display:none;margin-top:14px">
-        <p class="lead" style="margin:0">Esta página é só de leitura. Para escrever, abra o seu link de edição.</p>
+        <p class="lead" style="margin:0">Só de leitura. Para escrever, abra o link partilhado (com a chave).</p>
       </div>
 
       <div class="history" id="npHist"><div class="overline" style="margin-bottom:5px">Versões anteriores</div><div id="npHistList"></div></div>
@@ -484,18 +484,17 @@
               || '';
           } catch { return ''; }
         })();
-        if (!chaveLeitura) throw new Error('sem-chave');
-        const resposta = await fetch(`/api/notas?m=${encodeURIComponent(MARKER)}&k=${encodeURIComponent(chaveLeitura)}`, { cache: 'no-store' });
+        const parametroChave = chaveLeitura ? `&k=${encodeURIComponent(chaveLeitura)}` : '';
+        const resposta = await fetch(`/api/notas?m=${encodeURIComponent(MARKER)}${parametroChave}`, { cache: 'no-store' });
         if (!resposta.ok) throw new Error(String(resposta.status));
         const dados = await resposta.json();
         entries = (dados.entries || [])
           .filter((entry) => typeof entry.text === 'string' && entry.text.trim())
           .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
       } catch {
-        setStatus('err', 'Notas privadas');
-        view.textContent = 'As notas desta reunião são privadas. Abra o seu link de edição (com a chave) para as ver.';
-        meta.textContent = '';
-        history.style.display = 'none';
+        setStatus('err', 'Sem ligação - a mostrar a cópia local');
+        const local = localStorage.getItem(`${LOCAL_KEY}`);
+        if (local) view.textContent = local;
         return;
       }
 
