@@ -187,7 +187,7 @@ export default function LandingPage({ onEnter, onCreateAccount }: Props) {
         </div>
         <div style={{ marginTop: 44, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <button onClick={onEnter} className="lp-btn lp-primary">Entrar</button>
-          <a href="mailto:geral@pontofinal.site" className="lp-btn lp-ghost" style={{ textDecoration: 'none' }}>Falar com quem fez</a>
+          {onCreateAccount && <button onClick={onCreateAccount} className="lp-btn lp-ghost">Criar conta</button>}
         </div>
       </section>
 
