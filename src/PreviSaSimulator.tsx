@@ -373,7 +373,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                   </div>
                   <div>
                     <label className="block text-[11px] font-[600] text-slate-500 mb-1">Período</label>
-                    <input type="number" value={st.periodo} onChange={e => s('periodo', parseInt(e.target.value) || 2024)} className={inputClass} />
+                    <input type="number" value={st.periodo} onChange={e => s('periodo', parseInt(e.target.value) || new Date().getFullYear())} className={inputClass} />
                   </div>
                 </div>
                 <div>
@@ -747,7 +747,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
 
             <Section title="Pagamentos e Deduções" cols>
               <NumInput label="356 — PEC (só saldo ANTIGO a deduzir)" value={st.pecPagamentos} onChange={v => s('pecPagamentos', v)}
-                help="PEC extinto desde 2022 (Lei 12/2022) — aqui apenas saldos de 2020/2021 a deduzir (2020 termina em 2026; 2021 em 2027)" />
+                help="PEC extinto (Lei 12/2022) — aqui apenas saldos antigos (2020/2021) que ainda possa deduzir" />
               <NumInput label="359 — Retenções na fonte" value={st.retencoesFonte} onChange={v => s('retencoesFonte', v)} />
               <NumInput label="360 — PC — pagamentos por conta" value={st.pcPagamentos} onChange={v => s('pcPagamentos', v)}
                 help="PC já efetuados DURANTE este período" />
@@ -935,7 +935,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
                     </div>
                     <div>
                       <label className="block text-[11px] font-[600] text-slate-500 mb-1">Período</label>
-                      <input type="number" value={state.periodo} onChange={e => set('periodo', parseInt(e.target.value) || 2024)} className={inputClass} />
+                      <input type="number" value={state.periodo} onChange={e => set('periodo', parseInt(e.target.value) || new Date().getFullYear())} className={inputClass} />
                     </div>
                   </div>
                   <div>
@@ -1250,7 +1250,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
 
               <Section title="Pagamentos e Deduções" cols>
                 <NumInput label="356 — PEC (só saldo ANTIGO a deduzir)" value={state.pecPagamentos} onChange={v => set('pecPagamentos', v)}
-                  help={`Estimado: ${fmt(res.pecCalculado)} €`} />
+                  help="PEC extinto (Lei 12/2022) — sem estimativa; só saldos antigos" />
                 <NumInput label="359 — Retenções na fonte" value={state.retencoesFonte} onChange={v => set('retencoesFonte', v)} />
                 <NumInput label="360 — PC — pagamentos por conta" value={state.pcPagamentos} onChange={v => set('pcPagamentos', v)}
                   help="PC já efetuados DURANTE este período" />

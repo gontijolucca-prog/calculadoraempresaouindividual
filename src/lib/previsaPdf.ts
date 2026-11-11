@@ -116,12 +116,20 @@ export async function downloadPrevisaPdf(state: PreviSaState, nome: string, escr
   doc.text(fmt(r.c367 || 0), 196, yF + 10.5, { align: 'right' });
 
   // O PPC do ano seguinte não entra no total deste período — fica separado.
+  // O cliente pediu as três prestações e o ano, não só o total.
   const ppc = Number(r.ppcProximoAno || 0);
   if (ppc) {
+    const prestacao = Math.ceil(ppc / 3);
+    const anoPpc = (Number(state.periodo) || new Date().getFullYear()) + 1;
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.6);
+    doc.setFontSize(7.4);
     doc.setTextColor(...PDF_RGB.medium);
-    doc.text(sanitizePdf(`PPC do próximo período (estimativa, fora deste total): ${fmt(ppc)}`), 10, yF + 22);
+    doc.text(
+      sanitizePdf(`PPC ${anoPpc} (estimativa, fora deste total): 3 × ${fmt(prestacao)} = ${fmt(ppc)} — jul · set · 15 dez`),
+      10,
+      yF + 22,
+      { maxWidth: 190 },
+    );
   }
 
   // Rendimentos e gastos considerados no apuramento.
