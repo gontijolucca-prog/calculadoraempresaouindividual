@@ -49,7 +49,7 @@ export default function LandingPage({ onEnter, onCreateAccount }: Props) {
       <header style={{ borderBottom: '1px solid var(--line)', background: '#fff', position: 'sticky', top: 0, zIndex: 20 }}>
         <div className="lp-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ width: 26, height: 26, borderRadius: 3, background: 'var(--blue)', display: 'inline-block' }} />
+            <img src="/logo.svg" alt="Estudo 360" width={30} height={30} className="logo-orb" style={{ width: 30, height: 30, objectFit: 'contain' }} draggable={false} />
             <span style={{ fontWeight: 700, letterSpacing: '-.02em', fontSize: 17 }}>estudo<span style={{ color: 'var(--blue-btn)' }}>360</span></span>
             <span className="lp-mono lp-hide-sm" style={{ color: '#5A6B7B', marginLeft: 14 }}>contabilidade</span>
           </div>
@@ -193,7 +193,10 @@ export default function LandingPage({ onEnter, onCreateAccount }: Props) {
 
       <footer style={{ borderTop: '1px solid var(--line)' }}>
         <div className="lp-wrap lp-mono" style={{ display: 'flex', justifyContent: 'space-between', gap: 16, paddingTop: 22, paddingBottom: 28, color: '#5A6B7B', flexWrap: 'wrap' }}>
-          <span>Estudo 360 · plataforma de apoio à decisão</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <img src="/logo.svg" alt="" width={16} height={16} style={{ width: 16, height: 16, objectFit: 'contain' }} draggable={false} aria-hidden="true" />
+            Estudo 360 · plataforma de apoio à decisão
+          </span>
           <span>Cálculos indicativos · confirme com o contabilista</span>
         </div>
       </footer>
