@@ -182,7 +182,7 @@
         <span class="chip"><b>100%</b> testável na app</span>
         <span class="chip"><b>Cópia</b> de segurança do gabinete</span>
         <span class="chip"><b>Pesquisa</b> em toda a app</span>
-        <span class="chip"><b>Notas</b> sem conta</span>
+        <span class="chip"><b>Notas</b> privadas</span>
       </div>
       <div class="cta">
         <a class="btn primary" href="#novidades">Ver o que mudou</a>
@@ -196,7 +196,7 @@
       <div class="row"><span>Período revisto</span><b>Semana de 09/11</b></div>
       <div class="row"><span>Acesso da equipa</span><b>Sem email</b></div>
       <div class="row"><span>Documentos</span><b>1 folha A4</b></div>
-      <div class="row"><span>Notas de 28/10</span><b>5 de 6 concluídas</b></div>
+      <div class="row"><span>Notas de 28/10</span><b>6 de 6 concluídas</b></div>
     </aside>
   </div>
 </header>
@@ -212,9 +212,45 @@
 
     <div class="timeline">
       <article class="day hero-day">
+        <div class="when"><div class="knob">11</div><div class="fulldate">11/11</div></div>
+        <h3>Segurança e acabamento</h3>
+        <p class="note">Seis alterações que se confirmam em poucos minutos.</p>
+
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+          <div class="body"><span class="tag green">Alteração</span><div class="txt"><b>As notas da reunião passaram a ser privadas.</b> Sem a chave do seu link, ninguém lê nem as notas novas nem as anteriores — a página diz apenas que são privadas.</div><div class="extra">O servidor guarda só o resumo da chave; a leitura passou a ser feita por si, não pela base de dados aberta.</div><div class="test"><b>Testar</b>Abrir a página sem <b>?k=</b> e confirmar a mensagem; abrir com o seu link e ver as versões.</div></div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg></div>
+          <div class="body"><span class="tag green">Novo</span><div class="txt"><b>Renomear o utilizador de um colaborador.</b> As contas antigas criadas com email podem passar a «ana.silva» sem perder a password.</div><div class="extra">O utilizador antigo deixa de entrar logo que guarda; o novo é único dentro do gabinete.</div><div class="test"><b>Testar</b>Gabinete → Equipa → Editar → mudar o utilizador → sair e entrar com o novo.</div></div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div>
+          <div class="body"><span class="tag blue">Alteração</span><div class="txt"><b>As propostas têm menu próprio.</b> Saíram de «Ferramentas» para «Propostas»; os relatórios ficam com Demonstrações, Encerramento de contas e Pacote cliente.</div><div class="test"><b>Testar</b>Lateral → Propostas → Gerar proposta; e Relatórios → os três grupos.</div></div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M9 13h6M9 17h6"/></svg></div>
+          <div class="body"><span class="tag green">Novo</span><div class="txt"><b>O pacote do cliente começa com uma capa.</b> Cliente, NIF, ano e o que o pacote contém, numa folha própria antes da proposta e do contrato.</div><div class="test"><b>Testar</b>Relatórios → Pacote cliente → Capa do pacote → Imprimir.</div></div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
+          <div class="body"><span class="tag blue">Melhoria</span><div class="txt"><b>Documentos redesenhados e com gráficos.</b> Secções numeradas, totais com regra dupla, capa própria e barras nos resultados e nos fluxos.</div><div class="extra">Inspirado em relatórios anuais reais: tabelas financeiras legíveis, uma só cor, sem eixos nem decoração.</div><div class="test"><b>Testar</b>Relatórios → Demonstrações → abrir Resultados e Fluxos: barras no topo, totais destacados.</div></div>
+        </div>
+
+        <div class="card reveal">
+          <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"/><path d="M5 8h8a3 3 0 0 1 0 6H7"/></svg></div>
+          <div class="body"><span class="tag green">Correção</span><div class="txt"><b>O PPC sai no PDF com as três prestações e o ano.</b> E o ano da simulação deixou de cair para 2024 quando o campo ficava vazio.</div><div class="test"><b>Testar</b>Previsa → gerar PDF → confirmar «3 × prestação = total — jul · set · 15 dez».</div></div>
+        </div>
+      </article>
+
+      <article class="day hero-day">
         <div class="when"><div class="knob">09</div><div class="fulldate">09/11</div></div>
         <h3>Proteger o trabalho e ganhar tempo</h3>
-        <p class="note">Nove novidades que se confirmam em poucos minutos.</p>
+        <p class="note">Seis novidades que se confirmam em poucos minutos.</p>
 
         <div class="card reveal">
           <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></div>
@@ -233,7 +269,7 @@
 
         <div class="card reveal">
           <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v14H4z"/><path d="M8 8h8M8 12h5"/><path d="M8 21h8"/></svg></div>
-          <div class="body"><span class="tag green">Novo</span><div class="txt"><b>As notas da reunião escrevem-se sem conta.</b> O link pessoal traz uma chave; sem ela a página é só de leitura.</div><div class="extra">Cada gravação cria uma versão nova que ninguém pode apagar. Pode navegar entre as notas das semanas anteriores na secção «Próximos passos».</div><div class="test"><b>Testar</b>Abrir o link com a chave, escrever uma linha em «Próximos passos» e recarregar a página: o texto continua lá.</div></div>
+          <div class="body"><span class="tag green">Novo</span><div class="txt"><b>As notas da reunião escrevem-se sem conta.</b> O link pessoal traz uma chave; a escrita não pede login nem email.</div><div class="extra">Cada gravação cria uma versão nova que ninguém pode apagar. Desde 11/11 as notas só são visíveis com o link que tem a chave — sem ela, a página diz que são privadas.</div><div class="test"><b>Testar</b>Abrir o link com a chave, escrever uma linha em «Próximos passos» e recarregar a página: o texto continua lá.</div></div>
         </div>
 
         <div class="card reveal">
@@ -243,7 +279,7 @@
 
         <div class="card reveal">
           <div class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v12H4z"/><path d="M8 21h8M12 17v4"/></svg></div>
-          <div class="body"><span class="tag amber">Alteração</span><div class="txt"><b>As propostas passam a ser só para o Gamma.</b> Deixou de haver dois caminhos: gera o texto, copia e cola no gamma.app.</div><div class="extra">As propostas antigas continuam na lista, para não perder os links já partilhados.</div><div class="test"><b>Testar</b>Ferramentas → Fazer Proposta → Nova proposta → escolher cliente → Gerar texto → Copiar + abrir Gamma.</div></div>
+          <div class="body"><span class="tag amber">Alteração</span><div class="txt"><b>As propostas passam a ser só para o Gamma.</b> Deixou de haver dois caminhos: gera o texto, copia e cola no gamma.app.</div><div class="extra">As propostas antigas continuam na lista, para não perder os links já partilhados.</div><div class="test"><b>Testar</b>Propostas → Gerar proposta → escolher cliente → Gerar texto → Copiar + abrir Gamma.</div></div>
         </div>
       </article>
 

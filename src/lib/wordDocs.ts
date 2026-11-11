@@ -166,7 +166,7 @@ const STYLE = `
   .kpi strong { display: block; color: ${C.dark}; font-size: 10pt; margin-top: 1pt; }
   table { border-collapse: collapse; width: 100%; max-width: 100%; page-break-inside: auto; }
   table.dr { table-layout: fixed; }
-  table.dr td, table.dr th { padding: 3pt 4pt; font-size: 9.5pt; border-bottom: 0.5pt solid ${C.line}; overflow-wrap: break-word; word-break: break-word; }
+  table.dr td, table.dr th { padding: 2.5pt 4pt; font-size: 9.5pt; border-bottom: 0.5pt solid ${C.line}; overflow-wrap: break-word; word-break: break-word; }
   table.dr th { color: ${C.white}; background: ${C.dark}; border-bottom: 1pt solid ${C.blue}; }
   thead { display: table-header-group; }
   tr { page-break-inside: avoid; }
@@ -179,14 +179,14 @@ const STYLE = `
   p { line-height: 1.5; margin: 6pt 0; text-align: justify; orphans: 2; widows: 2; }
   ul { margin: 4pt 0; page-break-inside: avoid; }
   li { margin: 3pt 0; line-height: 1.45; }
-  .sigs { display: table; width: 100%; margin-top: 36pt; page-break-inside: avoid; }
+  .sigs { display: table; width: 100%; margin-top: 22pt; page-break-inside: avoid; }
   .sigs .c { display: table-cell; width: 50%; text-align: center; font-size: 9.5pt; padding-top: 24pt; }
   .sigs .line { border-top: 0.75pt solid ${C.medium}; margin: 0 18pt; padding-top: 3pt; }
-  .ftr { margin-top: 18pt; padding-top: 4pt; border-top: 0.5pt solid ${C.line}; color: ${C.blue}; font-size: 8pt; text-align: right; }
+  .ftr { margin-top: 6pt; padding-top: 4pt; border-top: 0.5pt solid ${C.line}; color: ${C.blue}; font-size: 8pt; text-align: right; }
   .meta { color: ${C.medium}; font-size: 9pt; }
-  .chart { display: grid; gap: 2.5pt; margin: 0 0 7pt; }
-  .chart .row { display: grid; grid-template-columns: 118pt 1fr 62pt; align-items: center; gap: 6pt; font-size: 8.4pt; color: ${C.medium}; }
-  .chart .bar { height: 5pt; background: ${C.light}; }
+  .chart { display: grid; gap: 1.6pt; margin: 0 0 5pt; }
+  .chart .row { display: grid; grid-template-columns: 118pt 1fr 62pt; align-items: center; gap: 5pt; font-size: 8.2pt; color: ${C.medium}; }
+  .chart .bar { height: 4.2pt; background: ${C.light}; }
   .chart .bar i { display: block; height: 100%; background: ${C.blue}; }
   .chart .bar i.neg { background: ${C.medium}; opacity: .55; }
   .chart .val { text-align: right; font-variant-numeric: tabular-nums; color: ${C.dark}; font-weight: 700; white-space: nowrap; }
@@ -431,7 +431,7 @@ ${rodape(c)}`;
 }
 
 /** Corpo do Balanço — partilhado pelo documento próprio e pelo pacote DF. */
-function buildBalancoBody(c: Ctx): string {
+function buildBalancoBody(c: Ctx, comQuebra = true): string {
   // Preenchido a partir da contabilidade (perfil); totais calculados.
   const k = c.cont;
   const z = (v: number | null) => v ?? 0;
@@ -466,7 +466,7 @@ function buildBalancoBody(c: Ctx): string {
   const brow = (label: string, v: number | null, tot = false, vAnt: number | null = null) =>
     `<tr class="${tot ? 'tot' : ''}"><td class="${tot ? '' : 'ind'}">${label}</td><td class="num"></td><td class="num">${v != null ? val(v) : (tot ? '' : DASH)}</td><td class="num">${vAnt != null ? val(vAnt) : ''}</td></tr>`;
   const bsec = (label: string) => `<tr class="tot"><td colspan="4" class="sec">${label}</td></tr>`;
-  return `<div class="pgbreak">${cabecalho(c, `Balan&ccedil;o em 31 de dezembro de ${c.ano}`)}
+  return `<div class="${comQuebra ? 'pgbreak' : ''}">${cabecalho(c, `Balan&ccedil;o em 31 de dezembro de ${c.ano}`)}
 <table class="dr">
 <tr><th style="text-align:left">Rubricas</th><th class="num">Notas</th><th class="num">${c.ano}</th><th class="num">${c.anoAnt}</th></tr>
 ${bsec('ATIVO')}
@@ -503,7 +503,7 @@ ${rodape(c)}</div>`;
 /** Balanço como documento único (também incluído no pacote DF). */
 export function buildBalanco(emp: EmpresaRecord, office: OfficeSettings): string {
   const c = ctx(emp, office);
-  return wordShell(`Balanco ${c.ano}`, buildBalancoBody(c));
+  return wordShell(`Balanco ${c.ano}`, buildBalancoBody(c, false));
 }
 
 export function buildDemonstracoesFinanceiras(emp: EmpresaRecord, office: OfficeSettings): string {

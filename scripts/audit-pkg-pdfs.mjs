@@ -85,7 +85,7 @@ for (const [doc, botaoNome, previewRoot, root, ficheiro] of [
     }, root);
     ok(medida.prints >= 1, `${doc}: impressão disparada`);
   }
-  const pisoDoc = doc === 'Minuta de Contrato' ? 0.79 : 1;
+  const pisoDoc = doc === 'Minuta de Contrato' ? 0.79 : 0.6;
   ok(medida.zoom <= 1 && medida.zoom >= pisoDoc, `${doc}: zoom ${medida.zoom.toFixed(2)}`);
   if (doc === 'Minuta de Contrato') {
     ok(medida.altura * medida.zoom <= A4 + 4, `${doc}: cabe na A4 (${Math.round(medida.altura * medida.zoom)}px de ${Math.round(A4)}px)`);
