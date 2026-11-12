@@ -1084,9 +1084,13 @@ export default function ClientProfile({
               </div>
               <label className={labelClass}>Quem são os sócios</label>
               <div className="space-y-2">
+                <div className="grid grid-cols-[1fr_120px] gap-2 px-1 text-[10px] font-[800] uppercase tracking-[0.5px] text-[#94A3B8]">
+                  <span>Nome *</span>
+                  <span>% capital</span>
+                </div>
                 {st.societaria.socios.map((socio, i) => (
                   <div key={i} className="grid grid-cols-[1fr_120px] gap-2 items-center">
-                    <input required type="text" value={socio.nome} onChange={e => {
+                    <input required type="text" value={socio.nome} aria-label={`Sócio ${i + 1} — nome`} onChange={e => {
                       const next = [...st.societaria.socios]; next[i] = { ...next[i], nome: e.target.value }; setSoc({ socios: next });
                     }} className={inputClass} placeholder={`Sócio ${i+1} — nome`} />
                     <input type="number" min={0} max={100} value={socio.percentagem === 0 ? '' : socio.percentagem} onChange={e => {
