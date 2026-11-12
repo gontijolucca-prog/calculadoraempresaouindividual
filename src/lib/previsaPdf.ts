@@ -249,7 +249,7 @@ export function criarPrevisãoPdf(state: PreviSaState, nome: string, escritorio:
     'Q09 — Matéria coletável: lucro tributável após prejuízos fiscais e benefícios aplicáveis.',
     'Q10 — Liquidação: IRC, derramas e tributações autónomas, menos deduções e pagamentos por conta.',
     'PEC extinto (Lei 12/2022). PPC calculado sobre IRC menos retenções, com o limiar legal.',
-    'Documento indicativo gerado a partir dos inputs do Previsão — confirme sempre com o seu TOC.',
+    'Documento indicativo gerado a partir dos inputs do simulador Previsão — confirme sempre com o seu TOC.',
   ];
   notas.forEach((n, i) => doc.text(sanitizePdf(n), 10, yN + 7 + i * 5.4, { maxWidth: 190 }));
 
