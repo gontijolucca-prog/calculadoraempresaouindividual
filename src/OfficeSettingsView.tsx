@@ -523,6 +523,13 @@ function HonorariosForm({ config, onChange }: { config: HonorariosConfig; onChan
           </button>
         </div>
         <div className="space-y-2">
+          <div className="grid grid-cols-[1fr_2fr_100px_100px_36px] gap-2 px-2 text-[10px] font-[800] uppercase tracking-[0.5px] text-[#94A3B8]">
+            <span>Nome *</span>
+            <span>Descrição</span>
+            <span>Preço *</span>
+            <span>Default</span>
+            <span />
+          </div>
           {config.servicosExtra.map((s, i) => (
             <div key={s.id} className="grid grid-cols-[1fr_2fr_100px_100px_36px] gap-2 items-center p-2 bg-[#F5F7FA] rounded-[10px]">
               <input required type="text" value={s.nome} onChange={e => setServico(i, { nome: e.target.value })} className={inputCls} placeholder="Nome" aria-label={`Serviço ${i + 1} — nome`} />
