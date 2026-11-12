@@ -369,13 +369,8 @@ await makeMap('10-quadro-obrigacoes.pdf', 'Quadro Resumo de Obrigações — amo
 await makeMap('11-mapa-controlo.pdf', 'Mapa de Controlo — amostra completa', 'controlo');
 await makeMap('12-mapa-rh.pdf', 'Mapa RH — amostra completa', 'rh');
 
-await reloadView('proposta');
-await page.getByRole('button', { name: /Nova proposta/i }).first().click();
-await page.getByRole('button', { name: /Gerar no Estudo360/i }).first().click();
-await page.getByPlaceholder(/fechar contas a tempo/i).first().fill('fechar contas a tempo e melhorar a decisão');
-await page.getByRole('button', { name: /Criar proposta/i }).first().click();
-await page.waitForTimeout(1800);
-await download('13-proposta-comercial.pdf', page.getByRole('button', { name: /PDF · 1 página/i }).first(), 'Proposta comercial');
+// A proposta deixou de ser gerada dentro da app (passou a texto para o Gamma);
+// o exemplo 19 é produzido pelo exportador de propostas, não por este teste.
 
 ok(pageErrors.length === 0, `sem exceções JavaScript (${pageErrors.join(' | ')})`);
 await browser.close();

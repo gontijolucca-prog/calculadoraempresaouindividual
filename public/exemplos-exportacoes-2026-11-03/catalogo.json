@@ -1,5 +1,5 @@
 {
-  "data": "2026-11-11T16:52:36.135Z",
+  "data": "2026-11-12T00:43:21.827Z",
   "total": 26,
   "documentos": [
     {
@@ -107,8 +107,8 @@
       "descricao": "Resumo executivo com identificação, fiscalidade, resultados e honorários.",
       "formato": "A4 retrato",
       "paginas": 1,
-      "bytes": 21621,
-      "sha256": "a1c607a96b5fdb2700f09bda38547e0e946f77dd4fd142064c0a7a2817f34ef2"
+      "bytes": 24317,
+      "sha256": "b71239d94045fbfc4c4d59042c5eca534d2e7c2a37a860c673e70e1eb25bf5f9"
     },
     {
       "ficheiro": "13-ficha-360-gabinete.pdf",
@@ -116,8 +116,8 @@
       "descricao": "Cliente, obrigações, alertas, contactos, tarefas, situação e orientações.",
       "formato": "A4 retrato",
       "paginas": 1,
-      "bytes": 18064,
-      "sha256": "15e5189f493524a39e3626264219c399d853023619673f745fda57852fa56c07"
+      "bytes": 20673,
+      "sha256": "b02a7d89d2d0d1e5b2747dc313045254051c225254c55489fce6f8e0e7e3b6f5"
     },
     {
       "ficheiro": "14-quadro-obrigacoes.pdf",
@@ -125,8 +125,8 @@
       "descricao": "Matriz anual de obrigações por cliente e estado.",
       "formato": "A4 paisagem",
       "paginas": 1,
-      "bytes": 45355,
-      "sha256": "b2ea6eeecdd41d53061c74b58442ad65078000b6ffa55f3295c1b002fa82b66e"
+      "bytes": 48248,
+      "sha256": "dcf71be88c2488d2fc5f276c3a08b080a0a9bf19cb00a0699348e6591a4bbd5a"
     },
     {
       "ficheiro": "15-mapa-controlo.pdf",
@@ -134,8 +134,8 @@
       "descricao": "Pilares de controlo por cliente e mês, com filtros refletidos no PDF.",
       "formato": "A4 paisagem",
       "paginas": 1,
-      "bytes": 45566,
-      "sha256": "91c6145713b140d5a7dd4d431be0051498a8291b93148db67c8b7e2b897a7c90"
+      "bytes": 48459,
+      "sha256": "6c7ddc990924f2e680985a5d9380ae99dee81b05b8ae18fcd569afea0fed310b"
     },
     {
       "ficheiro": "16-mapa-rh.pdf",
@@ -143,8 +143,8 @@
       "descricao": "Pilares de recursos humanos por cliente e mês.",
       "formato": "A4 paisagem",
       "paginas": 1,
-      "bytes": 40218,
-      "sha256": "1b662374c5f0e0b6e410adf358791ff1640b21cfffa27dce97ff90af89e22fb3"
+      "bytes": 42793,
+      "sha256": "43350ff760f9ed3229bbd7157a339b02117bfefdcc6b255f3c8f18648c605c1a"
     },
     {
       "ficheiro": "17-proposta-honorarios.pdf",

@@ -1,6 +1,6 @@
 # Exemplos de exportações — Estudo360
 
-Gerado em 11/11/2026. Todos os ficheiros têm exactamente uma página A4 e usam apenas azul e branco.
+Gerado em 12/11/2026. Todos os ficheiros têm exactamente uma página A4 e usam apenas azul e branco.
 
 | # | Documento | Onde testar | Conteúdo principal |
 |---|---|---|---|
