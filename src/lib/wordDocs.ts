@@ -73,6 +73,8 @@ function ctx(emp: EmpresaRecord, office: OfficeSettings): Ctx {
   const nome = (emp.nome || emp.profile?.nomeCliente || 'Empresa').trim();
   const nif = (emp.nif || emp.profile?.nif || '').trim();
   const ano = prev.periodo || new Date().getFullYear() - 1;
+  const cor = String(office.corPrimaria || '').trim();
+  COR_ATUAL = /^#[0-9a-f]{6}$/i.test(cor) ? cor : C.blue;
   const sociedade = office.tipo === 'sociedade';
   const contabilista = (sociedade ? (office.contabilistaResponsavel || office.nome) : office.nome) || '';
   return {
@@ -203,6 +205,7 @@ const STYLE = `
   }
 `;
 
+let COR_ATUAL: string = C.blue;
 function wordShell(title: string, body: string): string {
   return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
 <head>
@@ -210,7 +213,7 @@ function wordShell(title: string, body: string): string {
 <meta name="ProgId" content="Word.Document">
 <meta name="Generator" content="Estudo 360">
 <title>${esc(title)}</title>
-<style>${STYLE}</style>
+<style>${STYLE.replaceAll(C.blue, COR_ATUAL)}</style>
 </head>
 <body>${body}</body>
 </html>`;
