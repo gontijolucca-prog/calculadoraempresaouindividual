@@ -6,6 +6,7 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
+  sendEmailVerification,
   setPersistence,
   browserLocalPersistence,
   browserSessionPersistence,
@@ -37,6 +38,7 @@ interface AuthContextType {
   signUpWithEmail: (email: string, password: string, displayName?: string) => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  resendVerification: () => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
   reloadUser: () => Promise<void>;
 }
@@ -50,10 +52,10 @@ export function useAuth() {
 }
 
 
-/** Continue URL do email: volta ao site certo depois de confirmar. */
-function acoesEmail(): { url: string; handleCodeInApp: boolean } {
+/** Continue URL do email: volta ao site certo depois de confirmar ou repor. */
+function acoesEmail(motivo: 'verificado' | 'recuperado'): { url: string; handleCodeInApp: boolean } {
   const base = typeof window !== 'undefined' && import.meta.env.DEV ? window.location.origin : 'https://estudo360.pt';
-  return { url: `${base}/?verificado=1`, handleCodeInApp: false };
+  return { url: `${base}/?email=${motivo}`, handleCodeInApp: false };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -168,6 +170,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     if (cred.user) {
       void logAuthEvent(cred.user, 'signup');
+      // Email de confirmação. Falha aqui não pode abortar o registo: o aviso
+      // dentro da app permite reenviar.
+      await sendEmailVerification(cred.user, acoesEmail('verificado')).catch(() => {});
     }
   };
 
@@ -216,7 +221,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resetPassword = async (email: string) => {
     auth.languageCode = 'pt-PT';
-    await sendPasswordResetEmail(auth, email, acoesEmail());
+    try {
+      await sendPasswordResetEmail(auth, email, acoesEmail('recuperado'));
+    } catch (error) {
+      const code = String((error as { code?: string })?.code || '');
+      // Sem proteção de enumeração no projeto, um email desconhecido dá
+      // user-not-found. A UI mostra sempre a mesma mensagem neutra — não
+      // revelar se a conta existe.
+      if (code === 'auth/user-not-found') return;
+      throw error;
+    }
+  };
+
+  /** Reenvia o email de confirmação da conta atual (aviso dentro da app). */
+  const resendVerification = async () => {
+    const u = auth.currentUser;
+    if (!u) throw new Error('Sessão inválida.');
+    if (!u.email) throw new Error('Esta conta não usa email — a password é reposta pelo gabinete.');
+    if (u.emailVerified) return;
+    auth.languageCode = 'pt-PT';
+    await sendEmailVerification(u, acoesEmail('verificado'));
   };
 
   const changePassword = async (currentPassword: string, newPassword: string) => {
@@ -249,6 +273,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUpWithEmail,
       logout,
       resetPassword,
+      resendVerification,
       changePassword,
       reloadUser,
     }}>
