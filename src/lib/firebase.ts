@@ -18,6 +18,27 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
+// App Check (reCAPTCHA Enterprise) — em modo MONITOR: os tokens passam a ser
+// enviados e medidos no Firebase, sem bloquear pedidos. A aplicação da regra
+// (enforcement) faz-se no console, depois de ver os números.
+// Em dev usa o debug token (impresso na consola) para não partir o localhost.
+const APP_CHECK_SITE_KEY =
+  (import.meta as any)?.env?.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY || '6LdcHx0uAAAAACQGBZz98Ma9GPRa5tIZlm7Ic21X';
+try {
+  if (typeof window !== 'undefined' && APP_CHECK_SITE_KEY) {
+    if ((import.meta as any)?.env?.DEV) {
+      (self as unknown as Record<string, unknown>).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+    }
+    // Import dinâmico: o pacote app-check só é descarregado quando há chave.
+    import('firebase/app-check').then(({ initializeAppCheck, ReCaptchaEnterpriseProvider }) => {
+      initializeAppCheck(app, {
+        provider: new ReCaptchaEnterpriseProvider(APP_CHECK_SITE_KEY),
+        isTokenAutoRefreshEnabled: true,
+      });
+    }).catch(() => { /* sem rede/SDK: a app funciona sem App Check */ });
+  }
+} catch { /* nunca bloquear o arranque por causa do App Check */ }
+
 // Firestore com cache persistente offline-first (IndexedDB) — torna a app
 // "reliable memory": tudo fica guardado localmente e sincroniza live quando há rede.
 // Usa persistentLocalCache (SDK v12) com fallback para enableIndexedDbPersistence.
