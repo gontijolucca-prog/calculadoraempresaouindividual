@@ -671,11 +671,11 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
             <div className="mt-4 space-y-3">
               <label className="block">
                 <span className="text-[10.5px] font-[700] uppercase tracking-[0.8px] text-[#64748B]">Nome completo</span>
-                <input value={formNome} onChange={(event) => setFormNome(event.target.value)} autoFocus className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-sm" />
+                <input required value={formNome} onChange={(event) => setFormNome(event.target.value)} autoFocus className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-sm" />
               </label>
               <label className="block">
                 <span className="text-[10.5px] font-[700] uppercase tracking-[0.8px] text-[#64748B]">Utilizador de entrada</span>
-                <input value={formEmail} onChange={(event) => setFormEmail(event.target.value)} type="text" autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder={editing ? '' : 'ex.: ana.silva (não precisa de email)'} disabled={!!editing && !edicaoDeCredencial} className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-sm disabled:bg-zinc-100 disabled:text-zinc-500" />
+                <input required value={formEmail} onChange={(event) => setFormEmail(event.target.value)} type="text" autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder={editing ? '' : 'ex.: ana.silva (não precisa de email)'} disabled={!!editing && !edicaoDeCredencial} className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-sm disabled:bg-zinc-100 disabled:text-zinc-500" />
               </label>
               <label className="block">
                 <span className="text-[10.5px] font-[700] uppercase tracking-[0.8px] text-[#64748B]">Cargo</span>
@@ -695,6 +695,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
                     <div className="relative mt-1">
                       <input
                         type={mostrarPassword ? 'text' : 'password'}
+                        required
                         value={formPassword}
                         onChange={(event) => setFormPassword(event.target.value)}
                         autoComplete="new-password"
@@ -709,6 +710,7 @@ export default function GabineteEquipa({ role }: { role: GabineteRole }) {
                     <span className="text-[10.5px] font-[700] uppercase tracking-[0.8px] text-[#64748B]">Repetir password</span>
                     <input
                       type={mostrarPassword ? 'text' : 'password'}
+                      required
                       value={formConfirm}
                       onChange={(event) => setFormConfirm(event.target.value)}
                       autoComplete="new-password"
