@@ -715,17 +715,6 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                   </button>
                 ) : (
                   <>
-                    {!pkg && (
-                      <button
-                        type="button"
-                        onClick={handleDownloadWord}
-                        disabled={!emp}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-[12px] text-[14px] font-[800] text-white bg-[var(--accent)] hover:bg-[var(--accent-strong)] active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
-                      >
-                        <Download className="w-4.5 h-4.5" />
-                        Descarregar em Word
-                      </button>
-                    )}
                     <button
                       type="button"
                       onClick={pkg ? handlePrintPkg : handlePrintWord}
@@ -747,7 +736,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                   ? 'Sai uma folha A4 com todos os resultados e valores finais do Previsa.'
                   : pkg
                     ? 'Edita o documento na folha e imprime ou guarda como PDF.'
-                    : 'Descarregue o que vê na folha — com as suas edições. O Word abre o .doc editável.'}
+                    : 'Descarregue o que vê na folha. No diálogo, escolha «Margens: predefinição» e ative «Gráficos de fundo».'}
               </p>
             </div>
 
