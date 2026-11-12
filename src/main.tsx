@@ -1,3 +1,4 @@
+import { instalarMarcasObrigatorias } from './lib/requiredMarks';
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
@@ -13,6 +14,7 @@ import './index.css';
 // Link público da proposta: /p/<slug> — sem login, sem App (nem auth gate).
 const publicSlug = slugFromPath(window.location.pathname);
 
+instalarMarcasObrigatorias();
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
