@@ -24,7 +24,7 @@ type ViewType =
 const TOPBAR_TITLES: Partial<Record<ViewType, string>> = {
   empresas: 'Lista de Empresas', profile: 'Perfil do Cliente', tax: 'Fiscal', vehicle: 'Viaturas',
   aquisicao: 'Aquisição', ticket: 'Tickets', selfss: 'SS Independente', diagnostico: 'Diagnóstico',
-  imoveis: 'Imóveis', imt: 'IMT', salario: 'Salário', irs: 'IRS', previsa: 'Previsa',
+  imoveis: 'Imóveis', imt: 'IMT', salario: 'Salário', irs: 'IRS', previsa: 'Previsão',
   legal: 'Base Legal', gabinete: 'Gabinete', proposta: 'Fazer Proposta', historico: 'Histórico', custos: 'Custos Diferidos',
   exportar: 'Exportar', hub: 'Simuladores', 'office-settings': 'Escritório',
 };
@@ -86,7 +86,7 @@ const NAV_ITEMS = [
   { id: 'imt'        as ViewType, label: 'IMT',          Icon: Building,   group: 'sim'     },
   { id: 'salario'    as ViewType, label: 'Salário',      Icon: Banknote,   group: 'sim'     },
   { id: 'irs'        as ViewType, label: 'IRS',          Icon: Receipt,    group: 'sim'     },
-  { id: 'previsa'    as ViewType, label: 'Previsa',      Icon: TrendingUp,     group: 'sim' },
+  { id: 'previsa'    as ViewType, label: 'Previsão',      Icon: TrendingUp,     group: 'sim' },
   { id: 'custos'     as ViewType, label: 'Custos Diferidos', Icon: CalendarClock, group: 'sim' },
 ] as const;
 
@@ -110,7 +110,7 @@ const NAV_TIPS: Record<string, string> = {
   imt: 'Imposto Municipal sobre Transmissões: calcula o IMT e o Imposto de Selo na compra de imóveis.',
   salario: 'Calcula o salário líquido mensal de um trabalhador e o custo total para a empresa.',
   irs: 'Simulador de IRS anual (Modelo 3): rendimento coletável, escalões, IRS Jovem, deduções à coleta e benefício municipal — estima reembolso ou imposto a pagar.',
-  previsa: 'Simulador Previsa — previsão de IRC (Modelo 22): apuramento Q07, matéria coletável Q09, tributações autónomas, PEC/PC e liquidação.',
+  previsa: 'Simulador Previsão — previsão de IRC (Modelo 22): apuramento Q07, matéria coletável Q09, tributações autónomas, PEC/PC e liquidação.',
   custos: 'Acréscimos e diferimentos: reparte um gasto ou proveito pelos anos do contrato e mostra o saldo diferido a 31 de dezembro.',
 };
 
@@ -375,7 +375,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                 <p className="px-3 pt-2 pb-1 text-[10px] font-[800] uppercase tracking-[1.2px] text-slate-400">Processo de fecho</p>
                 <ClientNavItem label="Encerramento de contas" Icon={FileDown}
                   onClick={() => { onOpenRelatorios?.('acta'); setDrawerOpen(false); }}
-                  title="Ata de Assembleia Geral, Previsa (Modelo 22) e Declaração de Responsabilidade." />
+                  title="Ata de Assembleia Geral, Previsão (Modelo 22) e Declaração de Responsabilidade." />
                 <ClientNavItem label="Demonstrações" Icon={FileDown}
                   onClick={() => { onOpenRelatorios?.('balanco'); setDrawerOpen(false); }}
                   title="Balanço, Demonstração de Resultados, Alterações no CP, Fluxos de Caixa e pacote completo." />
@@ -425,12 +425,15 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
       })),
     },
     {
-      id: 'relatorios', label: 'Relatórios', current: active === 'exportar', align: 'right',
+      id: 'processo-fecho', label: 'Processo de fecho', align: 'right',
       items: [
-        { heading: true, label: 'Processo de fecho', onClick: () => {} },
-        { label: 'Encerramento de contas', desc: 'Ata, Previsa e declaração de responsabilidade', Icon: FileDown, onClick: () => { onOpenRelatorios?.('acta'); setDrawerOpen(false); } },
+        { label: 'Encerramento de contas', desc: 'Ata, Previsão e declaração de responsabilidade', Icon: FileDown, onClick: () => { onOpenRelatorios?.('acta'); setDrawerOpen(false); } },
         { label: 'Demonstrações', desc: 'Balanço, resultados, fluxos e pacote completo', Icon: FileDown, onClick: () => { onOpenRelatorios?.('balanco'); setDrawerOpen(false); } },
-        { heading: true, label: 'Pacote cliente', onClick: () => {} },
+      ],
+    },
+    {
+      id: 'pacote-cliente', label: 'Pacote cliente', align: 'right',
+      items: [
         { label: 'Pacote do cliente', desc: 'Capa, proposta de honorários e contrato', Icon: FileDown, onClick: () => { onOpenRelatorios?.('proposta'); setDrawerOpen(false); } },
         { label: 'Fazer proposta', desc: 'Texto pronto para colar no Gamma', Icon: Presentation, current: view === 'proposta', onClick: () => go('proposta') },
       ],
