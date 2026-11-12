@@ -10,6 +10,7 @@ import {
 import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
 import { cn } from './lib/utils';
 import TopBarGlobal from './components/TopBarGlobal';
+import { VerificacaoEmail } from './components/VerificacaoEmail';
 import TopMenus, { type TopMenuGroup } from './components/TopMenus';
 import type { AppMode } from './ModeSelector';
 
@@ -465,6 +466,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
           activeClientName={activeClientName}
           onClientClick={() => { onSelectMode('empresa'); setDrawerOpen(false); }}
         />
+        <VerificacaoEmail />
         {menuFeedback && (
           <div data-menu-feedback="1" role="status" aria-live="polite"
             className="pointer-events-none fixed left-1/2 top-16 z-40 -translate-x-1/2 rounded-full bg-[#0F172A] px-4 py-2 text-xs font-semibold text-white shadow-lg">
