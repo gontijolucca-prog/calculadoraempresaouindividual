@@ -1,6 +1,5 @@
 import React, { createContext, useContext } from 'react';
-import { Download, Printer } from 'lucide-react';
-import { printViaPaged, printHtmlViaPaged } from './lib/printPaged';
+import { Download } from 'lucide-react';
 import { detailSimulacao, type SimView } from './lib/simSummary';
 import { resultSimulacao } from './lib/simResults';
 import { calcViatura } from './lib/viaturas';
@@ -156,81 +155,6 @@ function rowsHtml(rows: { label: string; valor: string }[]): string {
   return `<div class="rows">${rows.map((row) => `<div class="row"><span>${esc(row.label)}</span><strong>${esc(row.valor)}</strong></div>`).join('')}</div>`;
 }
 
-function buildReport(ctx: SimulatorPrintContextValue): string {
-  if (!ctx.view) return '';
-  const title = PRINT_TITLES[ctx.view];
-  const profile = ctx.profile || ({} as ClientProfile);
-  const office = ctx.office || ({} as OfficeSettings);
-  const inputRows = [...detailSimulacao(ctx.view, ctx.state), ...extraInputs(ctx.view, ctx.state)];
-  const resultRows = [...resultSimulacao(ctx.view, ctx.state, profile), ...extraResults(ctx.view, ctx.state, profile)];
-  const officeName = office.nome?.trim() || 'Estudo 360';
-  const clientName = profile.nomeCliente?.trim() || 'Por preencher (Perfil do cliente)';
-  const clientNif = profile.nif?.trim() || 'Por preencher';
-  const date = new Intl.DateTimeFormat('pt-PT', { dateStyle: 'long' }).format(new Date());
-  const color = C.blue;
-  const logo = `<div class="logo-fallback" style="background:${color}">360</div>`;
-  const legal = 'Cálculos indicativos — confirme os valores e o enquadramento com o seu Contabilista Certificado.';
-
-  return `
-<style>
-  * { box-sizing: border-box; }
-  body { margin: 0; background: ${C.white}; color: ${C.dark}; font-family: Montserrat, Arial, sans-serif; font-size: 10pt; line-height: 1.45; }
-  .sim-report { max-width: 180mm; margin: 0 auto; }
-  .report-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16mm; padding: 0 0 8mm; border-bottom: 2px solid ${esc(color)}; }
-  .brand { display:flex; align-items:center; gap:4mm; min-width:0; }
-  .logo { max-width: 42mm; max-height: 18mm; object-fit: contain; object-position:left center; }
-  .logo-fallback { width: 18mm; height: 18mm; border-radius: 5mm; color:${C.white}; display:flex; align-items:center; justify-content:center; font-size:16pt; font-weight:800; }
-  .office { font-size:8pt; color:${C.medium}; margin-top:1mm; }
-  .doc-meta { text-align:right; color:${C.medium}; font-size:8pt; white-space:nowrap; }
-  h1 { font-size: 22pt; line-height:1.12; letter-spacing:-.4px; margin:9mm 0 0; }
-  .subtitle { margin:2mm 0 7mm; color:${C.medium}; font-size:10pt; }
-  .client-box { display:grid; grid-template-columns: 1fr 42mm; gap:6mm; background:${C.pale}; border:1px solid ${C.line}; border-radius:4mm; padding:4mm 5mm; margin-bottom:8mm; }
-  .meta-label { color:${C.medium}; font-size:7.5pt; font-weight:800; letter-spacing:.7px; text-transform:uppercase; }
-  .meta-value { margin-top:1mm; font-size:10.5pt; font-weight:700; }
-  .section { break-inside:avoid; page-break-inside:avoid; margin: 0 0 7mm; }
-  .section-title { display:flex; align-items:center; gap:2mm; color:${color}; font-size:9pt; font-weight:800; letter-spacing:1px; text-transform:uppercase; border-bottom:1px solid ${C.line}; padding-bottom:2mm; margin-bottom:3mm; }
-  .section-title:before { content:''; width:3mm; height:3mm; border-radius:50%; background:${esc(color)}; }
-  .rows { border:1px solid ${C.line}; border-radius:3mm; overflow:hidden; }
-  .row { display:flex; justify-content:space-between; align-items:baseline; gap:8mm; padding:2.8mm 4mm; border-bottom:1px solid ${C.line}; }
-  .row:last-child { border-bottom:0; }
-  .row:nth-child(even) { background:${C.pale}; }
-  .row span { color:${C.medium}; min-width:0; }
-  .row strong { text-align:right; color:${C.dark}; font-weight:700; white-space:nowrap; }
-  .result-box { border:2px solid ${color}; border-radius:4mm; padding:5mm; background:${C.pale}; }
-  .result-box .row strong { color:${color}; font-size:10.5pt; }
-  .result-box .row:first-child { background:${color}; color:${C.white}; border-radius:2mm; margin:-1mm -1mm 2mm; padding:3.5mm 4mm; }
-  .result-box .row:first-child span, .result-box .row:first-child strong { color:${C.white}; }
-  .empty { color:${C.medium}; background:${C.pale}; border:1px dashed ${C.line}; border-radius:3mm; padding:5mm; margin:0; }
-  .note { border-left:3px solid ${C.blue}; background:${C.pale}; color:${C.dark}; padding:3.5mm 4mm; border-radius:0 3mm 3mm 0; font-size:8.5pt; break-inside:avoid; }
-  @media (max-width: 700px) { .report-head { gap:5mm; } .client-box { grid-template-columns:1fr; } .doc-meta { text-align:left; } h1 { font-size:19pt; } }
-</style>
-<article class="sim-report">
-  <header class="report-head">
-    <div class="brand">${logo}<div><strong>${esc(officeName)}</strong><div class="office">Estudo 360 · Análise · Estratégia · Decisão</div></div></div>
-    <div class="doc-meta">RELATÓRIO DE SIMULAÇÃO<br>${esc(date)}</div>
-  </header>
-  <h1>${esc(title)}</h1>
-  <p class="subtitle">Relatório resumido da simulação efetuada.</p>
-  <div class="client-box">
-    <div><div class="meta-label">Cliente / Empresa</div><div class="meta-value">${esc(clientName)}</div></div>
-    <div><div class="meta-label">NIF</div><div class="meta-value">${esc(clientNif)}</div></div>
-  </div>
-  <section class="section">
-    <div class="section-title">Parâmetros da simulação</div>
-    ${rowsHtml(inputRows)}
-  </section>
-  <section class="section">
-    <div class="section-title">Resultado da simulação</div>
-    <div class="result-box">${rowsHtml(resultRows)}</div>
-  </section>
-  <section class="section">
-    <div class="section-title">Como se calcula</div>
-    <p class="note" style="border-color:${color};background:${C.pale};color:${C.dark};">${esc(PRINT_METHOD[ctx.view])}</p>
-  </section>
-  <div class="note">${esc(legal)}</div>
-</article>`;
-}
-
 export function SimulatorPrintButton({ compact = false }: { compact?: boolean }) {
   const ctx = useContext(PrintContext);
   if (!ctx?.view) return null;
@@ -356,60 +280,6 @@ export function SimulatorPrintButton({ compact = false }: { compact?: boolean })
     pdf.save();
   };
 
-  const onPrint = () => {
-    // Preferir impressão fiel ao que o utilizador vê: clonar o nó dos resultados (mesmas cores/cards/gradientes)
-    try {
-      const node = document.querySelector('[data-sim-results]') as HTMLElement | null;
-      if (node) {
-        // Marca o relatório com o branding do escritório para header do print
-        const title = PRINT_TITLES[ctx.view];
-        // Inject temporary header into clone via CSS variable: the node already contains the results; we wrap it
-        // printViaPaged will preserve bg-* Tailwind colors via extracted <style> + inline computed bg if needed
-        // Envolve com header A4 (mesmo que buildReport) mas mantendo o DOM dos cards:
-        // Criamos um container temporário com o header + clone
-        const tmp = document.createElement('div');
-        tmp.style.position='absolute'; tmp.style.left='-9999px'; tmp.style.top='0';
-        tmp.setAttribute('data-print','sim-report-live');
-        const officeName = (ctx.office as unknown as { nome?: string })?.nome?.trim() || 'Estudo 360';
-        const clientName = (ctx.profile as unknown as { nomeCliente?: string })?.nomeCliente?.trim() || '—';
-        const clientNif = (ctx.profile as unknown as { nif?: string })?.nif?.trim() || '—';
-        const date = new Intl.DateTimeFormat('pt-PT', { dateStyle: 'long' }).format(new Date());
-        const color = C.blue;
-        const logo = `<div class="logo-fallback" style="background:${color}">360</div>`;
-        // Clone the results node (deep)
-        const clone = node.cloneNode(true) as HTMLElement;
-        // Extract branding header HTML (same as buildReport but reusing live results DOM)
-        tmp.innerHTML = `
-          <div class="sim-report-live" style="font-family: Montserrat, Arial, sans-serif; color: ${C.dark};">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16mm;padding:0 0 6mm;border-bottom:2px solid ${color};margin-bottom:6mm;">
-              <div style="display:flex;align-items:center;gap:4mm;">
-                ${logo}
-                <div><div style="font-weight:800">${esc(officeName)}</div><div style="font-size:8pt;color:${C.medium}">Estudo 360 · Análise · Estratégia · Decisão</div></div>
-              </div>
-              <div style="text-align:right;color:${C.medium};font-size:8pt">RELATÓRIO<br>${esc(date)}</div>
-            </div>
-            <h1 style="font-size:18pt;line-height:1.15;margin:2mm 0 1mm;font-weight:800;letter-spacing:-0.3px">${esc(title)}</h1>
-            <div style="display:grid;grid-template-columns:1fr 42mm;gap:4mm;background:${C.pale};border:1px solid ${C.line};border-radius:4mm;padding:3mm 4mm;margin-bottom:6mm;font-size:9pt;">
-              <div><div style="font-size:7.5pt;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:${C.medium}">Cliente / Empresa</div><div style="font-weight:700;margin-top:1mm">${esc(clientName)}</div></div>
-              <div><div style="font-size:7.5pt;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:${C.medium}">NIF</div><div style="font-weight:700;margin-top:1mm">${esc(clientNif)}</div></div>
-            </div>
-          </div>`;
-        const wrapper = tmp.firstElementChild as HTMLElement;
-        // Append the live results clone after header
-        wrapper.appendChild(clone);
-        document.body.appendChild(tmp);
-        printViaPaged(tmp, { title, footerLeft: officeName, footerRight: '' });
-        setTimeout(()=> tmp.remove(), 1500);
-        return;
-      }
-    } catch {}
-    // Fallback: relatório listado clássico
-    printHtmlViaPaged(buildReport(ctx), {
-      title: PRINT_TITLES[ctx.view],
-      footerLeft: ctx.office.nome?.trim() || '',
-      footerRight: '',
-    });
-  };
   return (
     <>
       <button
@@ -421,16 +291,6 @@ export function SimulatorPrintButton({ compact = false }: { compact?: boolean })
       >
         <Download className="h-4 w-4" />
         <span className="hidden sm:inline">Descarregar PDF</span>
-      </button>
-      <button
-        type="button"
-        onClick={onPrint}
-        title="Imprimir esta simulação em A4"
-        aria-label="Imprimir simulação em A4"
-        className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[9px] border border-[#D7E2EE] bg-white px-3 py-2.5 text-[12px] font-[700] text-[#475569] transition-colors hover:border-[var(--brand-bordeaux-neon)] hover:bg-[var(--brand-bordeaux-soft)] hover:text-[var(--brand-bordeaux)] ${compact ? 'sm:px-2.5' : ''}`}
-      >
-        <Printer className="h-4 w-4 text-[var(--accent)]" />
-        <span className="hidden sm:inline">Imprimir A4</span>
       </button>
     </>
   );
