@@ -91,6 +91,8 @@ export interface ClientProfile {
   nrDependentes: number;
   beneficioJovem: boolean;
   tipoEntidade: 'eni' | 'lda' | 'unipessoal' | 'sa' | 'socio_unico';
+  /** Distingue ENI profissional liberal (recibos verdes) de empresário em nome individual. */
+  eniPerfil?: 'liberal' | 'empresa';
   faturaçaoAnualPrevista: number;
   nrFuncionarios: number;
   veiculos: any[];
@@ -828,8 +830,20 @@ export default function ClientProfile({
         <div className="grid grid-cols-2 gap-x-4 gap-y-4">
           <div>
             <label className={labelClass}>Tipo de Entidade <Tip>A forma jurídica do negócio: ENI é Empresário em Nome Individual (sem empresa criada), Lda. é uma sociedade de responsabilidade limitada, SA é uma sociedade anónima.</Tip></label>
-            <select value={st.tipoEntidade} onChange={e => setSt({ tipoEntidade: e.target.value, ...regimeForFat(e.target.value, st.regimeContabilidade, st.faturaçaoAnualPrevista) })} className={inputClass}>
-              <option value="eni">ENI (Recibos Verdes)</option>
+            <select
+              value={st.tipoEntidade === 'eni' && st.eniPerfil === 'empresa' ? 'eni_empresa' : st.tipoEntidade}
+              onChange={e => {
+                const v = e.target.value;
+                if (v === 'eni' || v === 'eni_empresa') {
+                  setSt({ tipoEntidade: 'eni', eniPerfil: v === 'eni_empresa' ? 'empresa' : 'liberal', ...regimeForFat('eni', st.regimeContabilidade, st.faturaçaoAnualPrevista) });
+                } else {
+                  setSt({ tipoEntidade: v as ClientProfile['tipoEntidade'], ...regimeForFat(v, st.regimeContabilidade, st.faturaçaoAnualPrevista) });
+                }
+              }}
+              className={inputClass}
+            >
+              <option value="eni">ENI (Recibos Verdes) — profissional liberal</option>
+              <option value="eni_empresa">ENI (Empresário em Nome Individual)</option>
               <option value="lda">Lda (Sociedade)</option>
               <option value="unipessoal">Unipessoal Lda</option>
               <option value="sa">S.A.</option>
@@ -1491,8 +1505,20 @@ export default function ClientProfile({
             <div className="grid grid-cols-2 gap-x-4 gap-y-4">
               <div>
                 <label className={labelClass}>Tipo de Entidade <Tip>A forma jurídica do negócio: ENI é Empresário em Nome Individual (sem empresa criada), Lda. é uma sociedade de responsabilidade limitada, SA é uma sociedade anónima.</Tip></label>
-                <select value={profile.tipoEntidade} onChange={e => onChange({ ...profile, tipoEntidade: e.target.value as ClientProfile['tipoEntidade'], ...regimeForFat(e.target.value, profile.regimeContabilidade, profile.faturaçaoAnualPrevista) })} className={inputClass}>
-                  <option value="eni">ENI (Recibos Verdes)</option>
+                <select
+                  value={profile.tipoEntidade === 'eni' && profile.eniPerfil === 'empresa' ? 'eni_empresa' : profile.tipoEntidade}
+                  onChange={e => {
+                    const v = e.target.value;
+                    if (v === 'eni' || v === 'eni_empresa') {
+                      onChange({ ...profile, tipoEntidade: 'eni', eniPerfil: v === 'eni_empresa' ? 'empresa' : 'liberal', ...regimeForFat('eni', profile.regimeContabilidade, profile.faturaçaoAnualPrevista) });
+                    } else {
+                      onChange({ ...profile, tipoEntidade: v as ClientProfile['tipoEntidade'], ...regimeForFat(v, profile.regimeContabilidade, profile.faturaçaoAnualPrevista) });
+                    }
+                  }}
+                  className={inputClass}
+                >
+                  <option value="eni">ENI (Recibos Verdes) — profissional liberal</option>
+                  <option value="eni_empresa">ENI (Empresário em Nome Individual)</option>
                   <option value="lda">Lda (Sociedade)</option>
                   <option value="unipessoal">Unipessoal Lda</option>
                   <option value="sa">S.A.</option>
@@ -1669,6 +1695,7 @@ export const defaultProfile: ClientProfile = {
   nrDependentes: 0,
   beneficioJovem: false,
   tipoEntidade: 'eni',
+  eniPerfil: 'liberal',
   faturaçaoAnualPrevista: 0,
   nrFuncionarios: 0,
   veiculos: [],
