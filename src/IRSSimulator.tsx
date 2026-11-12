@@ -11,6 +11,7 @@ import { SimTwoStep } from './components/SimTwoStep';
 import { isSimReady } from './lib/simRequired';
 import {
   simular,
+  toSimState as toSim,
   MUNICIPIOS_BM,
   EXPLICACOES_M3,
   type IRSSim,
@@ -31,24 +32,6 @@ const ptPct = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'percent', 
 const inputCls = 'w-full px-[14px] py-[11px] bg-[#F5F7FA] border-2 border-[#E2E8F0] rounded-[8px] text-[14px] font-[600] text-[#0F172A] focus:border-[#0F172A] transition-all outline-none';
 const labelCls = 'block text-[11px] font-[700] uppercase tracking-[1px] text-[#64748B] mb-[6px]';
 const sectionTitleCls = 'flex items-center gap-2 text-[12px] font-[800] uppercase tracking-[1px] text-[#0F172A]';
-
-function toSim(s: IRSState): IRSSim {
-  return {
-    agregado: s.agregado,
-    cenario: s.cenario,
-    dependentes: +s.dependentes,
-    dep0a3: +s.dep0a3,
-    dep4a6: +s.dep4a6,
-    regiao: s.regiao,
-    concelho: s.concelho,
-    despesas: s.despesas,
-    pagamentosConta: +s.pagamentosConta,
-    beneficioMunicipal: +(s.beneficioMunicipal || 0),
-    perdas: +(s.perdas || 0),
-    rendimentosAutonomos: s.rendimentosAutonomos,
-    monoparental: !!(s as any).monoparental,
-  } as IRSSim;
-}
 
 export default function IRSSimulator({ initialState, onStateChange }: Props) {
   const s = initialState;

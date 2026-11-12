@@ -557,6 +557,29 @@ export interface IRSState {
   wifPpr: number;
 }
 
+/**
+ * Estado guardado do simulador → entrada de `simular()`. Vive aqui (e não no
+ * componente) para os relatórios/PDF usarem exactamente o mesmo cálculo do
+ * ecrã — antes usavam um cálculo simplificado e os números divergiam.
+ */
+export function toSimState(s: IRSState): IRSSim {
+  return {
+    agregado: s.agregado,
+    cenario: s.cenario,
+    dependentes: +s.dependentes,
+    dep0a3: +s.dep0a3,
+    dep4a6: +s.dep4a6,
+    regiao: s.regiao,
+    concelho: s.concelho,
+    despesas: s.despesas,
+    pagamentosConta: +s.pagamentosConta,
+    beneficioMunicipal: +(s.beneficioMunicipal || 0),
+    perdas: +(s.perdas || 0),
+    rendimentosAutonomos: s.rendimentosAutonomos,
+    monoparental: !!(s as { monoparental?: boolean }).monoparental,
+  } as IRSSim;
+}
+
 export function defaultIRSState(): IRSState {
   return {
     cenario: 'individual',

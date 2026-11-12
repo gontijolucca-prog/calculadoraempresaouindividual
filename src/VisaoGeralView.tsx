@@ -176,6 +176,17 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
     });
   };
 
+  // Campos obrigatórios (auditoria de 12-nov-2026): o botão de gravar fica
+  // bloqueado enquanto os campos com * não estiverem válidos.
+  const clienteValido = !!formCliente.nome?.trim()
+    && /^\d{9}$/.test(String(formCliente.nif || ''))
+    && !!formCliente.caes?.trim()
+    && !!formCliente.tipoSociedade
+    && !!formCliente.regimeIva
+    && !!formCliente.inicioAtividade;
+  const contactoValido = !!contactoForm.nome?.trim()
+    && (!!contactoForm.telefone?.trim() || !!contactoForm.email?.trim());
+
   const handleEditClienteOpen = () => {
     if (!cliente) return;
     setFormCliente({ nome: cliente.nome, nif: cliente.nif, caes: cliente.caes, caeDescricao: cliente.caeDescricao, tipoSociedade: cliente.tipoSociedade, gerentes: cliente.gerentes, nrTrabalhadores: cliente.nrTrabalhadores, inicioAtividade: cliente.inicioAtividade, responsavelId: cliente.responsavelId, responsavelInterno: cliente.responsavelInterno, apoioId: cliente.apoioId, apoioAdministrativo: cliente.apoioAdministrativo, supervisorId: cliente.supervisorId, supervisor: cliente.supervisor, obrigacoesAtivas: getObrigacoesAtivas(cliente) });
@@ -591,13 +602,13 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
           <div className="w-full max-w-[560px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
             <div className="flex items-center justify-between"><h3 className="font-semibold">Editar cliente</h3><button onClick={()=>setShowEditCliente(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
             <div className="grid grid-cols-2 gap-3">
-              <input value={formCliente.nome||''} onChange={e=>setFormCliente({...formCliente, nome:e.target.value})} placeholder="Nome" className="col-span-2 px-3 py-2 rounded-xl border text-sm" />
-              <input value={formCliente.nif||''} onChange={e=>setFormCliente({...formCliente, nif:e.target.value.replace(/\D/g,'')})} placeholder="NIF" className="px-3 py-2 rounded-xl border text-sm" />
-              <input value={formCliente.caes||''} onChange={e=>setFormCliente({...formCliente, caes:e.target.value})} placeholder="CAE" className="px-3 py-2 rounded-xl border text-sm" />
+              <input value={formCliente.nome||''} onChange={e=>setFormCliente({...formCliente, nome:e.target.value})} required placeholder="Nome *" className="col-span-2 px-3 py-2 rounded-xl border text-sm" />
+              <input value={formCliente.nif||''} onChange={e=>setFormCliente({...formCliente, nif:e.target.value.replace(/\D/g,'')})} required inputMode="numeric" pattern="\d{9}" maxLength={9} placeholder="NIF *" className="px-3 py-2 rounded-xl border text-sm" />
+              <input value={formCliente.caes||''} onChange={e=>setFormCliente({...formCliente, caes:e.target.value})} required placeholder="CAE *" className="px-3 py-2 rounded-xl border text-sm" />
               <input value={formCliente.caeDescricao||''} onChange={e=>setFormCliente({...formCliente, caeDescricao:e.target.value})} placeholder="CAE — descrição" className="col-span-2 px-3 py-2 rounded-xl border text-sm" />
               <input value={Array.isArray(formCliente.gerentes) ? formCliente.gerentes.join(', ') : (formCliente.gerentes as unknown as string) || ''} onChange={e=>setFormCliente({...formCliente, gerentes: e.target.value.split(',').map(s=>s.trim()).filter(Boolean) as unknown as string[]})} placeholder="Gerentes (separados por vírgula)" className="col-span-2 px-3 py-2 rounded-xl border text-sm" />
               <input value={formCliente.nrTrabalhadores != null ? String(formCliente.nrTrabalhadores) : ''} onChange={e=>setFormCliente({...formCliente, nrTrabalhadores: e.target.value === '' ? undefined : parseInt(e.target.value, 10) || 0})} placeholder="N. trabalhadores" className="px-3 py-2 rounded-xl border text-sm" />
-              <select value={formCliente.regimeIva||''} onChange={e=>setFormCliente({...formCliente, regimeIva:e.target.value as GabineteCliente['regimeIva']})} className="px-3 py-2 rounded-xl border text-sm bg-white">
+              <select required aria-label="Regime de IVA *" value={formCliente.regimeIva||''} onChange={e=>setFormCliente({...formCliente, regimeIva:e.target.value as GabineteCliente['regimeIva']})} className="px-3 py-2 rounded-xl border text-sm bg-white">
                 <option value="">Regime IVA…</option>
                 <option value="mensal">Mensal</option>
                 <option value="trimestral">Trimestral</option>
@@ -609,13 +620,13 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
                 <option value="simplificado">Simplificado</option>
                 <option value="transparencia">Transparência</option>
               </select>
-              <select value={formCliente.tipoSociedade||''} onChange={e=>setFormCliente({...formCliente, tipoSociedade:e.target.value})} className="px-3 py-2 rounded-xl border text-sm bg-white">
+              <select required aria-label="Tipo de sociedade *" value={formCliente.tipoSociedade||''} onChange={e=>setFormCliente({...formCliente, tipoSociedade:e.target.value})} className="px-3 py-2 rounded-xl border text-sm bg-white">
                 <option value="">Tipo de sociedade…</option>
                 <option value="Sociedade por quotas">Sociedade por quotas</option>
                 <option value="Sociedade unipessoal">Sociedade unipessoal</option>
                 <option value="Empresário individual">Empresário individual</option>
               </select>
-              <input type="date" value={formCliente.inicioAtividade ? new Date(formCliente.inicioAtividade).toISOString().slice(0,10) : ''} onChange={e=>setFormCliente({...formCliente, inicioAtividade: e.target.value ? new Date(`${e.target.value}T12:00:00`).getTime() : undefined})} className="px-3 py-2 rounded-xl border text-sm" />
+              <input required aria-label="Início de atividade *" type="date" value={formCliente.inicioAtividade ? new Date(formCliente.inicioAtividade).toISOString().slice(0,10) : ''} onChange={e=>setFormCliente({...formCliente, inicioAtividade: e.target.value ? new Date(`${e.target.value}T12:00:00`).getTime() : undefined})} className="px-3 py-2 rounded-xl border text-sm" />
             </div>
             <div className="space-y-2">
               <div className="text-[12px] font-[600] text-zinc-600">Obrigações ativas (aparecem no Quadro e nos mapas)</div>
@@ -636,7 +647,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
                 })}
               </div>
             </div>
-            <div className="flex justify-end gap-2"><button onClick={()=>setShowEditCliente(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleSaveCliente} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Guardar</button></div>
+            <div className="flex justify-end gap-2"><button onClick={()=>setShowEditCliente(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleSaveCliente} disabled={!clienteValido} title={clienteValido ? undefined : 'Preenche os campos com *'} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm disabled:opacity-40 disabled:cursor-not-allowed">Guardar</button></div>
           </div>
         </div>
       )}
@@ -644,11 +655,11 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddAlerta(false)}>
           <div className="w-full max-w-[480px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
             <div className="flex items-center justify-between"><h3 className="font-semibold">Novo alerta</h3><button onClick={()=>setShowAddAlerta(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
-            <textarea value={alertaTexto} onChange={e=>setAlertaTexto(e.target.value)} placeholder="Texto do alerta..." rows={3} className="w-full px-3 py-2 rounded-xl border text-sm" />
+            <textarea value={alertaTexto} onChange={e=>setAlertaTexto(e.target.value)} required placeholder="Texto do alerta... *" rows={3} className="w-full px-3 py-2 rounded-xl border text-sm" />
             <label className="block text-[12px] text-zinc-600">Vencimento (opcional — entra nos próximos prazos)
               <input type="date" value={alertaVenc} onChange={e=>setAlertaVenc(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border text-sm" />
             </label>
-            <div className="flex justify-end gap-2"><button onClick={()=>setShowAddAlerta(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddAlerta} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Adicionar</button></div>
+            <div className="flex justify-end gap-2"><button onClick={()=>setShowAddAlerta(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddAlerta} disabled={!alertaTexto.trim()} title={alertaTexto.trim() ? undefined : 'Escreve o texto do alerta ( * )'} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm disabled:opacity-40 disabled:cursor-not-allowed">Adicionar</button></div>
           </div>
         </div>
       )}
@@ -656,7 +667,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddTarefa(false)}>
           <div className="w-full max-w-[480px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
             <div className="flex items-center justify-between"><h3 className="font-semibold">Nova tarefa</h3><button onClick={()=>setShowAddTarefa(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
-            <input value={tarefaTitulo} onChange={e=>setTarefaTitulo(e.target.value)} placeholder="Título da tarefa" className="w-full px-3 py-2 rounded-xl border text-sm" />
+            <input value={tarefaTitulo} onChange={e=>setTarefaTitulo(e.target.value)} required placeholder="Título da tarefa *" className="w-full px-3 py-2 rounded-xl border text-sm" />
             <div className="grid grid-cols-2 gap-3">
               <select value={tarefaEstado} onChange={e=>setTarefaEstado(e.target.value as Tarefa['estado'])} className="px-3 py-2 rounded-xl border bg-white text-sm">
                 <option value="todo">Por fazer</option>
@@ -666,7 +677,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
               </select>
               <input type="date" value={tarefaPrazo} onChange={e=>setTarefaPrazo(e.target.value)} className="px-3 py-2 rounded-xl border text-sm" />
             </div>
-            <div className="flex justify-end gap-2"><button onClick={()=>setShowAddTarefa(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddTarefa} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Criar tarefa</button></div>
+            <div className="flex justify-end gap-2"><button onClick={()=>setShowAddTarefa(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddTarefa} disabled={!tarefaTitulo.trim()} title={tarefaTitulo.trim() ? undefined : 'Escreve o título ( * )'} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm disabled:opacity-40 disabled:cursor-not-allowed">Criar tarefa</button></div>
           </div>
         </div>
       )}
@@ -674,10 +685,10 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddContacto(false)}>
           <div className="w-full max-w-[480px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
             <div className="flex items-center justify-between"><h3 className="font-semibold">Novo contacto</h3><button onClick={()=>setShowAddContacto(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
-            <input value={contactoForm.nome||''} onChange={e=>setContactoForm({...contactoForm, nome:e.target.value})} placeholder="Nome" className="w-full px-3 py-2 rounded-xl border text-sm" />
-            <div className="grid grid-cols-2 gap-3"><input value={contactoForm.cargo||''} onChange={e=>setContactoForm({...contactoForm, cargo:e.target.value})} placeholder="Cargo" className="px-3 py-2 rounded-xl border text-sm" /><input value={contactoForm.telefone||''} onChange={e=>setContactoForm({...contactoForm, telefone:e.target.value})} placeholder="Telefone" className="px-3 py-2 rounded-xl border text-sm" /></div>
-            <input value={contactoForm.email||''} onChange={e=>setContactoForm({...contactoForm, email:e.target.value})} placeholder="Email" className="w-full px-3 py-2 rounded-xl border text-sm" />
-            <div className="flex justify-end gap-2"><button onClick={()=>setShowAddContacto(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddContacto} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Adicionar</button></div>
+            <input value={contactoForm.nome||''} onChange={e=>setContactoForm({...contactoForm, nome:e.target.value})} required placeholder="Nome *" className="w-full px-3 py-2 rounded-xl border text-sm" />
+            <div className="grid grid-cols-2 gap-3"><input value={contactoForm.cargo||''} onChange={e=>setContactoForm({...contactoForm, cargo:e.target.value})} placeholder="Cargo" className="px-3 py-2 rounded-xl border text-sm" /><input value={contactoForm.telefone||''} onChange={e=>setContactoForm({...contactoForm, telefone:e.target.value})} required placeholder="Telefone *" className="px-3 py-2 rounded-xl border text-sm" /></div>
+            <input value={contactoForm.email||''} onChange={e=>setContactoForm({...contactoForm, email:e.target.value})} required placeholder="Email *" className="w-full px-3 py-2 rounded-xl border text-sm" />
+            <div className="flex justify-end gap-2"><button onClick={()=>setShowAddContacto(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddContacto} disabled={!contactoValido} title={contactoValido ? undefined : 'Nome e telefone ou email são obrigatórios'} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm disabled:opacity-40 disabled:cursor-not-allowed">Adicionar</button></div>
           </div>
         </div>
       )}
@@ -685,8 +696,8 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddDoc(false)}>
           <div className="w-full max-w-[480px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
             <div className="flex items-center justify-between"><h3 className="font-semibold">Novo documento</h3><button onClick={()=>setShowAddDoc(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
-            <input value={docNome} onChange={e=>setDocNome(e.target.value)} placeholder="Nome do ficheiro (ex: Contrato.pdf)" className="w-full px-3 py-2 rounded-xl border text-sm" />
-            <div className="flex justify-end gap-2"><button onClick={()=>setShowAddDoc(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddDoc} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Adicionar</button></div>
+            <input value={docNome} onChange={e=>setDocNome(e.target.value)} required placeholder="Nome do ficheiro (ex: Contrato.pdf) *" className="w-full px-3 py-2 rounded-xl border text-sm" />
+            <div className="flex justify-end gap-2"><button onClick={()=>setShowAddDoc(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddDoc} disabled={!docNome.trim()} title={docNome.trim() ? undefined : 'Indica o nome do documento ( * )'} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm disabled:opacity-40 disabled:cursor-not-allowed">Adicionar</button></div>
           </div>
         </div>
       )}
@@ -694,8 +705,8 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddOcorr(false)}>
           <div className="w-full max-w-[480px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
             <div className="flex items-center justify-between"><h3 className="font-semibold">Nova ocorrência</h3><button onClick={()=>setShowAddOcorr(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
-            <textarea value={ocorrDesc} onChange={e=>setOcorrDesc(e.target.value)} placeholder="Descricao..." rows={3} className="w-full px-3 py-2 rounded-xl border text-sm" />
-            <div className="flex justify-end gap-2"><button onClick={()=>setShowAddOcorr(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddOcorr} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm">Adicionar</button></div>
+            <textarea value={ocorrDesc} onChange={e=>setOcorrDesc(e.target.value)} required placeholder="Descrição... *" rows={3} className="w-full px-3 py-2 rounded-xl border text-sm" />
+            <div className="flex justify-end gap-2"><button onClick={()=>setShowAddOcorr(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddOcorr} disabled={!ocorrDesc.trim()} title={ocorrDesc.trim() ? undefined : 'Descreve a ocorrência ( * )'} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm disabled:opacity-40 disabled:cursor-not-allowed">Adicionar</button></div>
           </div>
         </div>
       )}

@@ -10,6 +10,7 @@ import {
   calcTicketSavings, calcSelfSSContribution, calculateIRC,
 } from './pt2026';
 import { calcSalarioLiquido } from './salario';
+import { simular, toSimState, type IRSState } from './irs';
 import { DED_ESPECIFICA_CAT_A_2026, LIMIAR_JUSTIFICACAO_15PCT } from './fiscal';
 import { raiFromPrevisão, totalRendimentosClasse7, totalGastosClasse6 } from './previsaCalc';
 
@@ -87,7 +88,8 @@ export function resultSimulacao(tipo: string, state: unknown, profile?: Profilei
           duodecimos: !!s.duodecimos, subsidioAlimentacaoDiario: num(s.subsidioAlimentacaoDiario),
           tipoSubsidio: s.tipoSubsidio ?? 'cartao', diasSubsidio: num(s.diasSubsidio) || 22,
           irsJovem: !!s.irsJovem, anosAtividade: num(s.anosAtividade), idade: num(s.idade) || 30,
-          taxaSeguroTrabalho: num(s.taxaSeguroTrabalho) || 0.01,
+          // O estado guarda a taxa em %, o cálculo espera fração (1 → 0,01).
+          taxaSeguroTrabalho: (num(s.taxaSeguroTrabalho) || 0) / 100,
           deficiente: !!s.deficiente,
         });
         return [
@@ -96,10 +98,14 @@ export function resultSimulacao(tipo: string, state: unknown, profile?: Profilei
         ];
       }
       case 'irs': {
-        const ag = Array.isArray(s.agregado) ? s.agregado : [];
-        const rend = ag.reduce((t: number, x: any) => t + num(x?.rendTrabalho) + num(x?.rendEmpresarial), 0);
-        if (rend <= 0) return [];
-        return [{ label: 'IRS estimado', valor: eur(calculateIRS(rend)) }, { label: 'Taxa efetiva', valor: `${((calculateIRS(rend) / rend) * 100).toFixed(1)}%` }];
+        // Mesmo motor do ecrã (simular), não o cálculo simplificado antigo:
+        // o relatório tem de mostrar os mesmos números que o simulador.
+        const r = simular(toSimState(s as IRSState));
+        if (!(r.rendGlobal > 0)) return [];
+        return [
+          { label: r.apurado < 0 ? 'IRS a reembolsar' : 'IRS a pagar', valor: eur(Math.abs(r.apurado)) },
+          { label: 'Taxa efetiva', valor: `${(r.taxaEfetiva * 100).toFixed(2)}%` },
+        ];
       }
       case 'previsa': {
         const rend = totalRendimentosClasse7(s as any);
