@@ -5,8 +5,7 @@ import {
   ClipboardList, Upload, LogOut, Receipt,
   ChevronDown, ChevronRight, TrendingUp, Settings, UserPlus, Building2,
   Menu, X, Clock, Briefcase, ListOrdered, Package, History, FileDown, LayoutDashboard, LayoutGrid, Table2,
-  CheckSquare, Calendar, Lock, Users, Presentation, ListChecks, Trash2, Scale,
-} from 'lucide-react';
+  CheckSquare, Calendar, Lock, Users, Presentation, ListChecks, Trash2, Scale, CalendarClock } from 'lucide-react';
 import { requestOpenPackage, requestFlowToggle } from './lib/profileIntent';
 import { cn } from './lib/utils';
 import TopBarGlobal from './components/TopBarGlobal';
@@ -17,7 +16,7 @@ import type { AppMode } from './ModeSelector';
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'aquisicao' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal'
-  | 'previsa' | 'office-settings' | 'empresas' | 'historico' | 'exportar' | 'hub'
+  | 'previsa' | 'custos' | 'office-settings' | 'empresas' | 'historico' | 'exportar' | 'hub'
   | 'gabinete' | 'proposta';
 
 
@@ -26,7 +25,7 @@ const TOPBAR_TITLES: Partial<Record<ViewType, string>> = {
   empresas: 'Lista de Empresas', profile: 'Perfil do Cliente', tax: 'Fiscal', vehicle: 'Viaturas',
   aquisicao: 'Aquisição', ticket: 'Tickets', selfss: 'SS Independente', diagnostico: 'Diagnóstico',
   imoveis: 'Imóveis', imt: 'IMT', salario: 'Salário', irs: 'IRS', previsa: 'Previsa',
-  legal: 'Base Legal', gabinete: 'Gabinete', proposta: 'Fazer Proposta', historico: 'Histórico',
+  legal: 'Base Legal', gabinete: 'Gabinete', proposta: 'Fazer Proposta', historico: 'Histórico', custos: 'Custos Diferidos',
   exportar: 'Exportar', hub: 'Simuladores', 'office-settings': 'Escritório',
 };
 
@@ -62,7 +61,7 @@ export interface LayoutProps {
 // Which simulator views are reachable from each mode (besides legal which is always open).
 const VIEWS_BY_MODE: Record<AppMode, ViewType[]> = {
   'novo-cliente': ['profile'],
-  empresa: ['gabinete', 'empresas', 'profile', 'historico', 'tax', 'vehicle', 'aquisicao', 'ticket', 'selfss', 'imoveis', 'imt', 'salario', 'irs', 'diagnostico', 'previsa'],
+  empresa: ['gabinete', 'empresas', 'profile', 'historico', 'tax', 'vehicle', 'aquisicao', 'ticket', 'selfss', 'imoveis', 'imt', 'salario', 'irs', 'diagnostico', 'previsa', 'custos'],
 };
 
 const MODE_META: Record<AppMode, { label: string; Icon: typeof Building2; color: string; soft: string }> = {
@@ -88,6 +87,7 @@ const NAV_ITEMS = [
   { id: 'salario'    as ViewType, label: 'Salário',      Icon: Banknote,   group: 'sim'     },
   { id: 'irs'        as ViewType, label: 'IRS',          Icon: Receipt,    group: 'sim'     },
   { id: 'previsa'    as ViewType, label: 'Previsa',      Icon: TrendingUp,     group: 'sim' },
+  { id: 'custos'     as ViewType, label: 'Custos Diferidos', Icon: CalendarClock, group: 'sim' },
 ] as const;
 
 /** Opções de navegação por cliente — mesma semântica dos cartões da Lista. */
@@ -111,6 +111,7 @@ const NAV_TIPS: Record<string, string> = {
   salario: 'Calcula o salário líquido mensal de um trabalhador e o custo total para a empresa.',
   irs: 'Simulador de IRS anual (Modelo 3): rendimento coletável, escalões, IRS Jovem, deduções à coleta e benefício municipal — estima reembolso ou imposto a pagar.',
   previsa: 'Simulador Previsa — previsão de IRC (Modelo 22): apuramento Q07, matéria coletável Q09, tributações autónomas, PEC/PC e liquidação.',
+  custos: 'Acréscimos e diferimentos: reparte um gasto ou proveito pelos anos do contrato e mostra o saldo diferido a 31 de dezembro.',
 };
 
 function Logo({ className = 'w-7 h-7' }: { className?: string }) {

@@ -9,6 +9,7 @@ import { initVersionChecker, stopVersionChecker } from './lib/version-checker';
 import { logAudit, flushAuditQueue } from './lib/audit';
 const LegalInfo = lazy(() => import('./LegalInfo'));
 import PropostaView from './PropostaView';
+import CustosDiferidosSimulator from './CustosDiferidosSimulator';
 import PropostaEditor from './PropostaEditor';
 import type { DeckDoc } from './lib/deck/types';
 import type { DeckCliente } from './lib/deck/build';
@@ -102,7 +103,7 @@ const AIContabilista = lazy(() => import('./ai/AIContabilista'));
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal'
-  | 'previsa' | 'aquisicao' | 'office-settings' | 'empresas' | 'historico' | 'exportar' | 'hub'
+  | 'previsa' | 'aquisicao' | 'custos' | 'office-settings' | 'empresas' | 'historico' | 'exportar' | 'hub'
   | 'gabinete' | 'proposta';
 
 // Default landing view when the user picks a mode.
@@ -127,6 +128,7 @@ const VIEW_TITLES: Record<ViewType, string> = {
   legal: 'Base Legal & Referências',
   previsa: 'Simulador Previsa',
   aquisicao: 'Aquisição de viatura',
+  custos: 'Custos Diferidos',
   'office-settings': 'Definições do Escritório',
   'proposta': 'Fazer Proposta',
   historico: 'Histórico de Simulações',
@@ -1799,6 +1801,9 @@ function AppContent() {
           : simGate)}
         {view === 'irs' && (currentEmpresaId
           ? <IRSSimulator initialState={irsState} onStateChange={handleIRSStateChange} />
+          : simGate)}
+        {view === 'custos' && (currentEmpresaId
+          ? <CustosDiferidosSimulator />
           : simGate)}
         {view === 'previsa' && (currentEmpresaId
           ? <PreviSaSimulator initialState={previSaState} onStateChange={handlePreviSaStateChange} />

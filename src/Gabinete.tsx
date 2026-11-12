@@ -1795,7 +1795,7 @@ function TarefasView({ tarefas, clientes, obrigacoes, activeEmpresaId, activeEmp
             <div className="grid grid-cols-1 gap-3 mt-4">
               <div>
                 <label className="block text-[11px] font-[700] uppercase tracking-[1px] text-zinc-500 mb-1">Título <span className="text-red-500">*</span></label>
-                <input value={form.titulo||''} onChange={e=>setForm({...form, titulo:e.target.value})} placeholder="ex: Pedir documentos em falta" className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
+                <input required value={form.titulo||''} onChange={e=>setForm({...form, titulo:e.target.value})} placeholder="ex: Pedir documentos em falta" className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
               </div>
               <textarea value={form.descricao||''} onChange={e=>setForm({...form, descricao:e.target.value})} placeholder="Descrição (opcional)" rows={2} className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-sm" />
               <div className="grid grid-cols-2 gap-3">
