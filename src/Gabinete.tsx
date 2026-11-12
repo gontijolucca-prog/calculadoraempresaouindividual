@@ -2191,18 +2191,18 @@ function CofreView({ cofre, clientes, canDelete = true }: { cofre:CofreEntrada[]
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 mb-1">Título *</label>
-                  <input value={form.titulo||''} onChange={e=>setForm({...form, titulo:e.target.value})} placeholder="ex: Portal das Finanças" className="w-full px-3 py-2.5 rounded-xl border border-zinc-300 bg-white text-sm" />
+                  <input required value={form.titulo||''} onChange={e=>setForm({...form, titulo:e.target.value})} placeholder="ex: Portal das Finanças" className="w-full px-3 py-2.5 rounded-xl border border-zinc-300 bg-white text-sm" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <select value={form.categoria as string} onChange={e=>setForm({...form, categoria:e.target.value as any})} className="w-full px-3 py-2.5 rounded-xl border border-zinc-300 bg-white text-sm"><option value="AT">AT</option><option value="SS">SS</option><option value="BANCO">Banco</option><option value="EMAIL">Email</option><option value="EFATURA">E-fatura</option><option value="OUTRO">Outro</option></select>
                   <select value={(form.clienteId as string)||''} onChange={e=>setForm({...form, clienteId:e.target.value||undefined})} className="w-full px-3 py-2.5 rounded-xl border border-zinc-300 bg-white text-sm"><option value="">Sem cliente</option>{clientes.map(c=> <option key={c.id} value={c.id}>{c.nome}</option>)}</select>
                 </div>
-                <div><label className="block text-xs font-semibold text-zinc-700 mb-1">Utilizador</label><input value={form.username||''} onChange={e=>setForm({...form, username:e.target.value})} placeholder="NIF ou utilizador" className="w-full px-3 py-2.5 rounded-xl border border-zinc-300 bg-white text-sm" /></div>
+                <div><label className="block text-xs font-semibold text-zinc-700 mb-1">Utilizador</label><input required value={form.username||''} onChange={e=>setForm({...form, username:e.target.value})} placeholder="NIF ou utilizador" className="w-full px-3 py-2.5 rounded-xl border border-zinc-300 bg-white text-sm" /></div>
                 <div><label className="block text-xs font-semibold text-zinc-700 mb-1">Site / URL</label><input value={form.url||''} onChange={e=>setForm({...form, url:e.target.value})} placeholder="https://..." className="w-full px-3 py-2.5 rounded-xl border border-zinc-300 bg-white text-sm" /></div>
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 mb-1">Password *</label>
                   <div className="relative">
-                    <input value={(form as any).secretPlain||''} onChange={e=>setForm({...form, secretPlain:e.target.value} as any)} placeholder="••••••••" type={showSecret ? 'text' : 'password'} className="w-full pr-10 pl-3 py-2.5 rounded-xl border border-zinc-300 bg-white text-sm font-mono" />
+                    <input required={!form.id} value={(form as any).secretPlain||''} onChange={e=>setForm({...form, secretPlain:e.target.value} as any)} placeholder="••••••••" type={showSecret ? 'text' : 'password'} className="w-full pr-10 pl-3 py-2.5 rounded-xl border border-zinc-300 bg-white text-sm font-mono" />
                     <button type="button" onClick={()=>setShowSecret(v=>!v)} className="absolute right-1 top-1/2 -translate-y-1/2 p-2 rounded-md hover:bg-zinc-100 text-zinc-500">{showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
                   </div>
                 </div>
@@ -2265,9 +2265,9 @@ function CofreView({ cofre, clientes, canDelete = true }: { cofre:CofreEntrada[]
         {editing ? (
           <div className="space-y-3">
             <div className="flex items-center justify-between"><h3 className="font-semibold">{form.id ? 'Editar' : 'Novo'}</h3><button onClick={cancelEdit} className="p-2"><X className="w-5 h-5" /></button></div>
-            <input value={form.titulo||''} onChange={e=>setForm({...form, titulo:e.target.value})} placeholder="Título *" className="w-full px-3 py-2.5 rounded-xl border border-zinc-300 text-sm" />
-            <input value={form.username||''} onChange={e=>setForm({...form, username:e.target.value})} placeholder="Utilizador" className="w-full px-3 py-2.5 rounded-xl border border-zinc-300 text-sm" />
-            <div className="relative"><input value={(form as any).secretPlain||''} onChange={e=>setForm({...form, secretPlain:e.target.value} as any)} placeholder="Password *" type={showSecret?'text':'password'} className="w-full pr-10 pl-3 py-2.5 rounded-xl border border-zinc-300 text-sm font-mono" /><button onClick={()=>setShowSecret(v=>!v)} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5">{showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div>
+            <input required value={form.titulo||''} onChange={e=>setForm({...form, titulo:e.target.value})} placeholder="Título *" className="w-full px-3 py-2.5 rounded-xl border border-zinc-300 text-sm" />
+            <input required value={form.username||''} onChange={e=>setForm({...form, username:e.target.value})} placeholder="Utilizador" className="w-full px-3 py-2.5 rounded-xl border border-zinc-300 text-sm" />
+            <div className="relative"><input required={!form.id} value={(form as any).secretPlain||''} onChange={e=>setForm({...form, secretPlain:e.target.value} as any)} placeholder="Password *" type={showSecret?'text':'password'} className="w-full pr-10 pl-3 py-2.5 rounded-xl border border-zinc-300 text-sm font-mono" /><button onClick={()=>setShowSecret(v=>!v)} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5">{showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div>
             <div className="flex gap-2"><button onClick={cancelEdit} className="flex-1 py-2.5 rounded-full border border-zinc-300">Cancelar</button><button onClick={handleSave} className="flex-1 py-2.5 rounded-full bg-[#0B57D0] text-white">Guardar</button></div>
           </div>
         ) : selected ? (

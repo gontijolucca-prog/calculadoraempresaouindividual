@@ -16,9 +16,9 @@ Regra: `[x]` só quando o campo é usado no submit, no cálculo ou já tem valid
 - [x] NIF — isValidNIFPT + upsertEmpresa; exigido nos documentos
 
 ## 3. Cofre
-- [ ] Serviço / título — falta mapear submit
-- [ ] Utilizador — falta mapear submit
-- [ ] Password — falta mapear submit
+- [x] Serviço / título — handleSave rejeita vazio
+- [x] Utilizador — gravado, pesquisado e copiado
+- [x] Password — handleSave rejeita vazio (novo registo)
 
 ## 4. Definições do escritório
 - [ ] Nome do escritório — usado no topo
