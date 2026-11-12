@@ -206,12 +206,12 @@ function EscritorioForm({ office, onChange }: { office: OfficeSettings; onChange
 
           <div className="col-span-2">
             <label className={labelCls}>{office.tipo === 'individual' ? 'Nome do Contabilista' : 'Firma / Denominação Social'}</label>
-            <input type="text" value={office.nome} onChange={e => set('nome', e.target.value)} className={inputCls} placeholder={office.tipo === 'individual' ? 'João Pereira da Silva' : 'Pereira & Associados, Lda'} />
+            <input required type="text" value={office.nome} onChange={e => set('nome', e.target.value)} className={inputCls} placeholder={office.tipo === 'individual' ? 'João Pereira da Silva' : 'Pereira & Associados, Lda'} />
           </div>
 
           <div>
             <label className={labelCls}>{office.tipo === 'individual' ? 'NIF' : 'NIPC'}</label>
-            <input type="text" inputMode="numeric" maxLength={9} value={office.nif} onChange={e => set('nif', e.target.value.replace(/\D/g, '').slice(0, 9))} className={inputCls} placeholder="123456789" />
+            <input required type="text" inputMode="numeric" maxLength={9} value={office.nif} onChange={e => set('nif', e.target.value.replace(/\D/g, '').slice(0, 9))} className={inputCls} placeholder="123456789" />
           </div>
 
           <div>
@@ -475,9 +475,9 @@ function HonorariosForm({ config, onChange }: { config: HonorariosConfig; onChan
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {(Object.keys(config.baseMensal) as TipoEntidadeCliente[]).map(tipo => (
             <div key={tipo} className="flex items-center gap-3 p-3 bg-[#F5F7FA] rounded-[10px]">
-              <span className="text-[13px] font-[700] text-[#0F172A] flex-1">{TIPO_LABELS[tipo]}</span>
+              <label htmlFor={`base-${tipo}`} className="text-[13px] font-[700] text-[#0F172A] flex-1">{TIPO_LABELS[tipo]}</label>
               <div className="flex items-center gap-1">
-                <input type="number" min={0} step={5} value={config.baseMensal[tipo] === 0 ? '' : config.baseMensal[tipo]} onChange={e => setBase(tipo, Number(e.target.value) || 0)} className={inputCls + ' w-24 text-right'} />
+                <input id={`base-${tipo}`} required type="number" min={0} step={5} value={config.baseMensal[tipo] === 0 ? '' : config.baseMensal[tipo]} onChange={e => setBase(tipo, Number(e.target.value) || 0)} className={inputCls + ' w-24 text-right'} />
                 <span className="text-[12px] font-[700] text-[#64748B]">€/mês</span>
               </div>
             </div>
@@ -491,11 +491,11 @@ function HonorariosForm({ config, onChange }: { config: HonorariosConfig; onChan
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Colaboradores incluídos no valor base</label>
-            <input type="number" min={0} value={config.funcionariosIncluidos === 0 ? '' : config.funcionariosIncluidos} onChange={e => set('funcionariosIncluidos', Number(e.target.value) || 0)} className={inputCls} />
+            <input required type="number" min={0} value={config.funcionariosIncluidos === 0 ? '' : config.funcionariosIncluidos} onChange={e => set('funcionariosIncluidos', Number(e.target.value) || 0)} className={inputCls} />
           </div>
           <div>
             <label className={labelCls}>Acréscimo €/mês por funcionário adicional</label>
-            <input type="number" min={0} step={1} value={config.acrescimoPorFuncionario === 0 ? '' : config.acrescimoPorFuncionario} onChange={e => set('acrescimoPorFuncionario', Number(e.target.value) || 0)} className={inputCls} />
+            <input required type="number" min={0} step={1} value={config.acrescimoPorFuncionario === 0 ? '' : config.acrescimoPorFuncionario} onChange={e => set('acrescimoPorFuncionario', Number(e.target.value) || 0)} className={inputCls} />
           </div>
         </div>
       </section>
@@ -525,9 +525,9 @@ function HonorariosForm({ config, onChange }: { config: HonorariosConfig; onChan
         <div className="space-y-2">
           {config.servicosExtra.map((s, i) => (
             <div key={s.id} className="grid grid-cols-[1fr_2fr_100px_100px_36px] gap-2 items-center p-2 bg-[#F5F7FA] rounded-[10px]">
-              <input type="text" value={s.nome} onChange={e => setServico(i, { nome: e.target.value })} className={inputCls} placeholder="Nome" />
-              <input type="text" value={s.descricao} onChange={e => setServico(i, { descricao: e.target.value })} className={inputCls} placeholder="Descrição" />
-              <input type="number" min={0} step={5} value={s.precoMensal === 0 ? '' : s.precoMensal} onChange={e => setServico(i, { precoMensal: Number(e.target.value) || 0 })} className={inputCls + ' text-right'} placeholder="€/mês" />
+              <input required type="text" value={s.nome} onChange={e => setServico(i, { nome: e.target.value })} className={inputCls} placeholder="Nome" aria-label={`Serviço ${i + 1} — nome`} />
+              <input type="text" value={s.descricao} onChange={e => setServico(i, { descricao: e.target.value })} className={inputCls} placeholder="Descrição" aria-label={`Serviço ${i + 1} — descrição`} />
+              <input required type="number" min={0} step={5} value={s.precoMensal === 0 ? '' : s.precoMensal} onChange={e => setServico(i, { precoMensal: Number(e.target.value) || 0 })} className={inputCls + ' text-right'} placeholder="€/mês" aria-label={`Serviço ${i + 1} — preço mensal`} />
               <label className="flex items-center justify-center gap-1 text-[11px] font-[700] text-[#475569] cursor-pointer">
                 <input type="checkbox" checked={s.ativoPorDefeito} onChange={e => setServico(i, { ativoPorDefeito: e.target.checked })} className="w-4 h-4 accent-[var(--accent)]" />
                 Default

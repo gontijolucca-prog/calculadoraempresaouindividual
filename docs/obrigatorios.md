@@ -21,11 +21,11 @@ Regra: `[x]` só quando o campo é usado no submit, no cálculo ou já tem valid
 - [x] Password — handleSave rejeita vazio (novo registo)
 
 ## 4. Definições do escritório
-- [ ] Nome do escritório — usado no topo
-- [ ] NIF — usado nos documentos
-- [ ] Identidade (logo, cor) — usada nos PDFs
+- [x] Nome do escritório — officeSettingsAreComplete + topo/PDFs
+- [x] NIF — officeSettingsAreComplete + PDFs/contratos
+- [ ] Identidade (logo, cor) — tem valor por omissão
 
 ## 5. Proposta
-- [ ] Cliente — falta mapear submit
-- [ ] Serviços — falta mapear cálculo
-- [ ] Honorários — falta mapear cálculo
+- [ ] Cliente — cliente opcional por design
+- [x] Serviços — nome e preço em calcularProposta
+- [x] Honorários — base e acréscimos em calcularProposta
