@@ -1322,27 +1322,76 @@ const AlertaBox: React.FC<AlertaBoxProps> = ({ alerta }) => {
 //      compara IRC estimado vs PPC pagos e recomenda suspender/limitar/pagar,
 //      sempre com aviso de juros compensatórios + confirmação guardada.
 function GestorPPC({
-  state, res,
+  state, setState, res,
 }: {
   state: PreviSaState;
   setState: React.Dispatch<React.SetStateAction<PreviSaState>>;
   res: CalcResult;
 }) {
-  // Só estimativa: a base é o IRC liquidado do período simulado e as três
-  // prestações vencem no ano seguinte (julho, setembro, 15 de dezembro).
-  // Não há registo de pagamentos nem reavaliação nesta vista.
+  const s = (key: keyof PreviSaState, value: unknown) => setState(prev => ({ ...prev, [key]: value }));
+
+  // Estimativa para o ano seguinte (base = IRC do período simulado).
   const totalAnual = res.ppcProximoAno;
   const ppcBase = res.ppcProximoAno / (res.ppcTaxa || 1);
   const prestacao = res.ppcProximoAno > 0 ? Math.ceil(res.ppcProximoAno / 3) : 0;
   const dispensado = ppcBase <= 200 && ppcBase > 0;
   const anoPpc = (Number(state.periodo) || new Date().getFullYear()) + 1;
+  // 3.º PPC do ANO simulado (art. 107.º) — decisão com os pagamentos já feitos
+  // e o IRC que se estima vir a pagar. O valor da prestação vem da Modelo 22
+  // do ano anterior, por isso é um input (não se inventa).
+  const anoAtual = Number(state.periodo) || new Date().getFullYear();
+  const rec3 = state.ppcPrestacaoAno > 0 ? reavaliar3PPC(state, state.ppcPrestacaoAno) : null;
+  const pago3 = (state.ppcPago1 ? state.ppcPrestacaoAno : 0) + (state.ppcPago2 ? state.ppcPrestacaoAno : 0);
 
   return (
     <div className="bg-white border border-slate-200 rounded-[12px] p-4 flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] font-[700] uppercase tracking-[0.5px] text-slate-400">PPC estimado · art. 104.º CIRC</p>
-        <span className="text-[10px] text-slate-400">{anoPpc}</span>
+        <p className="text-[10px] font-[700] uppercase tracking-[0.5px] text-slate-400">Gestor PPC</p>
+        <span className="text-[10px] text-slate-400">art. 104/105/107 CIRC</span>
       </div>
+
+      {/* 3.º PPC do ano que está a ser simulado */}
+      <div className="rounded-[10px] border border-slate-200 overflow-hidden">
+        <div className="bg-slate-50 px-3 py-2 text-[11px] font-[700] text-slate-600 flex items-center justify-between">
+          <span>3.º PPC do período {anoAtual}</span>
+          <span className="text-[10px] font-[600] text-slate-400">art. 107.º CIRC</span>
+        </div>
+        <div className="p-3 flex flex-col gap-2.5">
+          <div className="grid grid-cols-2 gap-2">
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-[700] uppercase tracking-[0.5px] text-slate-400">Cada prestação (€)</span>
+              <input type="number" min={0} step={0.01} value={state.ppcPrestacaoAno || ''} onChange={e => s('ppcPrestacaoAno', Number(e.target.value) || 0)} placeholder="da Modelo 22 anterior" className="w-full rounded-[8px] border border-slate-200 px-2.5 py-2 text-[12px] font-[600] text-slate-700 outline-none focus:border-slate-400" />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-[700] uppercase tracking-[0.5px] text-slate-400">IRC estimado (€)</span>
+              <input type="number" min={0} step={0.01} value={state.ppcIrcEstimado || ''} onChange={e => s('ppcIrcEstimado', Number(e.target.value) || 0)} placeholder="usa o desta simulação" className="w-full rounded-[8px] border border-slate-200 px-2.5 py-2 text-[12px] font-[600] text-slate-700 outline-none focus:border-slate-400" />
+            </label>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => s('ppcPago1', !state.ppcPago1)} className={`flex-1 rounded-[8px] border px-2 py-1.5 text-[11px] font-[700] transition ${state.ppcPago1 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}>
+              {state.ppcPago1 ? '1.º pago ✓' : '1.º por pagar'}
+            </button>
+            <button type="button" onClick={() => s('ppcPago2', !state.ppcPago2)} className={`flex-1 rounded-[8px] border px-2 py-1.5 text-[11px] font-[700] transition ${state.ppcPago2 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}>
+              {state.ppcPago2 ? '2.º pago ✓' : '2.º por pagar'}
+            </button>
+          </div>
+          {rec3 ? (
+            <div className={`rounded-[8px] px-3 py-2 text-[11px] font-[600] leading-snug ${rec3.tipo === 'pagar' ? 'bg-slate-50 text-slate-600' : 'bg-emerald-50 text-emerald-800'}`}>
+              <div className="font-[800]">
+                {rec3.tipo === 'suspender' && 'Não pagar o 3.º PPC — suspender'}
+                {rec3.tipo === 'limitar' && `Pagar apenas ${fmt(rec3.valor)} €`}
+                {rec3.tipo === 'pagar' && `Pagar a prestação normal: ${fmt(rec3.valor)} €`}
+              </div>
+              <div className="mt-[2px] font-[500] text-[10.5px] opacity-80">{rec3.motivo}</div>
+              <div className="mt-1 text-[10px] font-[600] opacity-70">PPC do ano: {fmt(state.ppcPrestacaoAno)} € · já pago: {fmt(pago3)} €</div>
+            </div>
+          ) : (
+            <p className="text-[10.5px] text-slate-400 leading-relaxed">Indique o valor de cada prestação para avaliar se o 3.º PPC é devido.</p>
+          )}
+        </div>
+      </div>
+
+      <p className="text-[10px] font-[700] uppercase tracking-[0.5px] text-slate-400">PPC estimado {anoPpc} · art. 104.º</p>
 
       {totalAnual > 0 ? (
         <div className="rounded-[10px] border border-slate-200 overflow-hidden">

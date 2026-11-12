@@ -156,6 +156,7 @@ export interface PreviSaState {
   c366: number;           // Juros compensatórios
   c369: number;           // Juros de mora
   // ── Gestor PPC — Sandrine 11-jun (art. 104/105/107) ──────────────
+  ppcPrestacaoAno: number;  // PPC do ANO simulado — valor de cada prestação
   ppcPago1: boolean;        // 1.º PPC (julho) já pago
   ppcPago2: boolean;        // 2.º PPC (setembro) já pago
   ppcIrcEstimado: number;   // IRC estimado do período atual (para reavaliar o 3.º)
@@ -229,7 +230,7 @@ export function defaultPreviSaState(): PreviSaState {
     retencoesFonte: 0, pecPagamentos: 0, pcPagamentos: 0, pacPagamentos: 0,
     c363: 0, c372: 0, c379: 0, c366: 0, c369: 0,
     // Gestor PPC
-    ppcPago1: false, ppcPago2: false, ppcIrcEstimado: 0, ppcReavaliadoEm: 0, ppcLimitarValor: 0,
+    ppcPrestacaoAno: 0, ppcPago1: false, ppcPago2: false, ppcIrcEstimado: 0, ppcReavaliadoEm: 0, ppcLimitarValor: 0,
     // Derrama Municipal
     taxaDerramaMunicipal: 0,
     // Validação

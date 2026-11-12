@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import type { PreviSaState } from '../previSaState';
-import { calculate } from './previsaCalc';
+import { calculate, reavaliar3PPC } from './previsaCalc';
 import { sanitizePdf, slugFicheiro } from './reportPdf';
 import { paletaRgb } from './pdfTheme';
 
@@ -148,8 +148,34 @@ export function criarPrevisaPdf(state: PreviSaState, nome: string, escritorio: P
   doc.setTextColor(...P.blue);
   doc.text(fmt(r.c367 || 0), 196, yF + 10.5, { align: 'right' });
 
-  // O PPC do ano seguinte não entra no total deste período — fica separado.
-  // O cliente pediu as três prestações e o ano, não só o total.
+  // 3.º PPC do ANO simulado (art. 107.º) — primeiro a decisão do ano corrente,
+  // depois a estimativa para o ano seguinte (que não entra no total).
+  let yPpc = yF + 21;
+  const ppcAno = Number(state.ppcPrestacaoAno || 0);
+  if (ppcAno > 0) {
+    const rec = reavaliar3PPC(state, ppcAno);
+    const acao = rec.tipo === 'suspender'
+      ? 'não pagar — suspender'
+      : rec.tipo === 'limitar'
+        ? `pagar ${fmt(rec.valor)} (limitado)`
+        : `pagar ${fmt(rec.valor)}`;
+    const razao = rec.tipo === 'suspender'
+      ? 'PPC já pagos ≥ IRC estimado'
+      : rec.tipo === 'limitar'
+        ? '3.º PPC normal acima da diferença em falta'
+        : 'diferença ≥ 3.º PPC normal';
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.4);
+    doc.setTextColor(...P.dark);
+    doc.text(sanitizePdf(`3.º PPC ${state.periodo || ''} — ${acao}`), 10, yPpc);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.setTextColor(...P.medium);
+    const pagoAno = (state.ppcPago1 ? ppcAno : 0) + (state.ppcPago2 ? ppcAno : 0);
+    doc.text(sanitizePdf(`Prestação ${fmt(ppcAno)} · já pago ${fmt(pagoAno)} · ${razao} · art. 107.º CIRC`), 10, yPpc + 3.6, { maxWidth: 190 });
+    yPpc += 9;
+  }
+
   const ppc = Number(r.ppcProximoAno || 0);
   if (ppc) {
     const prestacao = Math.ceil(ppc / 3);
@@ -160,13 +186,14 @@ export function criarPrevisaPdf(state: PreviSaState, nome: string, escritorio: P
     doc.text(
       sanitizePdf(`PPC ${anoPpc} (estimativa, fora deste total): 3 × ${fmt(prestacao)} = ${fmt(ppc)} — jul · set · 15 dez`),
       10,
-      yF + 22,
+      yPpc,
       { maxWidth: 190 },
     );
+    yPpc += 4;
   }
 
   // Rendimentos e gastos considerados no apuramento.
-  const yDet = yF + (ppc ? 31 : 24);
+  const yDet = yPpc + (ppcAno || ppc ? 5 : 3);
   const detalhe = (
     tituloTxt: string,
     x: number,
