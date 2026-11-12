@@ -234,7 +234,7 @@ export const GUIAS: Record<ViewKey, Guia> = {
     passos: [
       { titulo: '1 · Empresa', corpo: 'Escolha o cliente a que o documento diz respeito — os dados vêm do perfil e do PreviSa dele.', alvo: { texto: '1 · Empresa' } },
       { titulo: '2 · Documento', corpo: 'Seleciona o documento (Demonstração de Resultados, Balanço, Fluxos de Caixa, Ata de AG, Declaração de Responsabilidade…) e exporta.', alvo: { texto: '2 · Documento' } },
-      { titulo: 'Modelo 22 em Excel', corpo: 'O PreviSa também exporta a previsão do Modelo 22 para Excel — pronto a enviar para o cliente ou para a AT.', alvo: { texto: 'Previsa — Modelo 22 (Excel)' } },
+      { titulo: 'Modelo 22 em Excel', corpo: 'O PreviSa também exporta a previsão do Modelo 22 para Excel — pronto a enviar para o cliente ou para a AT.', alvo: { texto: 'Previsão — Modelo 22 (Excel)' } },
     ],
   },
 

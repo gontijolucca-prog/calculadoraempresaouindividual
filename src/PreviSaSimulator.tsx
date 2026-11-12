@@ -21,7 +21,7 @@ const fmt = (n: number) => n.toLocaleString('pt-PT', { minimumFractionDigits: 2,
 const pct = (n: number) => (n * 100).toFixed(2) + '%';
 
 // ── Layout em folha de cálculo ────────────────────────────────────────────────
-// Réplica fiel do Previsa em Excel. No Excel a ordem das colunas é, da esquerda
+// Réplica fiel do Previsão em Excel. No Excel a ordem das colunas é, da esquerda
 // para a direita: Descrição · C (código do campo M22) · Valor · Observações.
 // Mantemos exatamente essa ordem para quem usa o Excel não reaprender nada.
 // A 4.ª coluna (Observações) colapsa a 0 em ecrãs estreitos.
@@ -36,7 +36,7 @@ function splitCode(label: string): { code: string; desc: string } {
 }
 
 // Cabeçalho de colunas da grelha — réplica da linha de cabeçalho cinzenta (#E3E3E3)
-// do Previsa em Excel: «Descrição · C · Valor · Observações e comentários».
+// do Previsão em Excel: «Descrição · C · Valor · Observações e comentários».
 function GridHead() {
   return (
     <div className={cn('grid', GRID_COLS, 'bg-[#E3E3E3] border-b border-slate-400 text-[10px] font-[700] text-slate-700')}>
@@ -132,7 +132,7 @@ function ResultRow({ label, value, highlight = false, sub = false, positive = fa
 
 // Bloco de uma folha de cálculo. Sem cantos redondos, sem afastamentos: a barra
 // de título é uma faixa fundida (como uma linha de cabeçalho do Excel) e a grelha
-// encosta às margens. Para quem usa o Previsa em Excel, é a mesma folha.
+// encosta às margens. Para quem usa o Previsão em Excel, é a mesma folha.
 function Section({ title, defaultOpen = true, cols = false, children }: { title: string; defaultOpen?: boolean; cols?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
@@ -278,7 +278,7 @@ const DEDUZIR_LABELS: [string, string][] = [
 const TABS = ['Identificação', 'Rendimentos', 'Q07 Apuramento', 'Q09 Mat. Coletável', 'TA', 'Q10 Cálculo'] as const;
 type Tab = typeof TABS[number];
 
-// Cada separador corresponde a uma folha do Previsa em Excel. Reproduzimos a barra
+// Cada separador corresponde a uma folha do Previsão em Excel. Reproduzimos a barra
 // de título azul-escura (faixa de cabeçalho da folha) com o nome oficial do quadro.
 const SHEET_INFO: Record<Tab, { code: string; title: string }> = {
   'Identificação':       { code: '',     title: 'Identificação da Empresa e Regime' },
@@ -783,7 +783,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
   ];
 
   const resultsContent = (
-    <div data-sim-results data-sim-title="Previsa" className="flex flex-col gap-3 lg:sticky lg:top-6 self-start">
+    <div data-sim-results data-sim-title="Previsão" className="flex flex-col gap-3 lg:sticky lg:top-6 self-start">
       <div className="bg-white border border-slate-200 rounded-[16px] overflow-hidden">
         <div className="h-1 bg-gradient-to-r from-[var(--accent)] to-[#b83030]" />
         <div className="p-4">
@@ -868,7 +868,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
       <FlowWizard
         open={flowMode}
         onClose={exitFlow}
-        title="Simulador Previsa"
+        title="Simulador Previsão"
         icon={Calculator}
         steps={steps}
         resultsStep={{ label: 'Resumo do Modelo 22', description: 'Resultado da previsão de IRC para o período.', render: (!simulated || !ready) ? <SimGatePlaceholder view="previsa" state={state} simulated={simulated} /> : resultsContent }}
@@ -889,7 +889,7 @@ export default function PreviSaSimulator({ initialState, onStateChange }: Props 
       {/* Header */}
       <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-4 shrink-0 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-[20px] font-[800] text-[#0F172A]">Simulador Previsa</h1>
+          <h1 className="text-[20px] font-[800] text-[#0F172A]">Simulador Previsão</h1>
           <p className="text-[12px] text-slate-500 font-[500] mt-0.5">IRC — Modelo 22 · Previsão de IRC</p>
         </div>
         {simulated && ready && <SimulatorPrintButton />}

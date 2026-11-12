@@ -89,7 +89,7 @@ const ECRAS: Array<{ id: string; titulo: string; detalhe: string }> = [
   { id: 'imt', titulo: 'IMT', detalhe: 'Imposto municipal' },
   { id: 'salario', titulo: 'Salário líquido', detalhe: 'Retenção na fonte' },
   { id: 'irs', titulo: 'IRS', detalhe: 'Simulador anual' },
-  { id: 'previsa', titulo: 'Previsa', detalhe: 'Modelo 22' },
+  { id: 'previsa', titulo: 'Previsão', detalhe: 'Modelo 22' },
   { id: 'historico', titulo: 'Histórico de simulações', detalhe: 'Simulações guardadas' },
   { id: 'exportar', titulo: 'Relatórios', detalhe: 'Documentos e PDFs' },
   { id: 'proposta', titulo: 'Propostas', detalhe: 'Proposta comercial' },

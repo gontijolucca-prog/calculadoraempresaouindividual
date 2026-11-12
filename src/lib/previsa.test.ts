@@ -1,4 +1,4 @@
-// Casos-teste golden do motor Previsa (IRC Modelo 22). Correr: npx tsx src/lib/previsa.test.ts
+// Casos-teste golden do motor Previsão (IRC Modelo 22). Correr: npx tsx src/lib/previsa.test.ts
 // Cobrem as partes ESTÁVEIS (coleta IRC PME/geral, derrama estadual por escalões,
 // tributação autónoma de viaturas, matéria coletável). NÃO cobrem o PEC, cuja
 // fórmula/limite em 2026 está por confirmar (ver AUDITORIA-FISCAL-PENDENTE.md).
@@ -99,7 +99,7 @@ function approx(label: string, got: number, exp: number, tol = 0.5) {
 }
 
 if (fails) { console.error(`\n${fails} caso(s) FALHARAM`); process.exit(1); }
-else console.log('\nTodos os casos golden do Previsa passaram.');
+else console.log('\nTodos os casos golden do Previsão passaram.');
 
 
 // ── PPC — reavaliação do 3.º PPC (Sandrine 11-jun, art. 107.º) ──

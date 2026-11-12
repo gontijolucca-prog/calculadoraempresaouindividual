@@ -56,7 +56,7 @@ import { prepararEmpresaSAFT, LOTE_SAFT_XML_BUDGET, type SaftLoteResumo } from '
 import { migrarEmpresasParaGabinete, listClientesCache } from './lib/gabinete';
 import { enforceProfileRules } from './lib/profileRules';
 import { DOC_TYPES, downloadAsWord } from './lib/wordDocs';
-import { raiFromPrevisa } from './lib/previsaCalc';
+import { raiFromPrevisão } from './lib/previsaCalc';
 import GuiaSistema from './components/GuiaSistema';
 import GuiaSugestao from './components/GuiaSugestao';
 import MiniDock from './components/MiniDock';
@@ -126,7 +126,7 @@ const VIEW_TITLES: Record<ViewType, string> = {
   salario: 'Salário Líquido',
   irs: 'Simulador de IRS',
   legal: 'Base Legal & Referências',
-  previsa: 'Simulador Previsa',
+  previsa: 'Simulador Previsão',
   aquisicao: 'Aquisição de viatura',
   custos: 'Custos Diferidos',
   'office-settings': 'Definições do Escritório',
@@ -531,7 +531,7 @@ function AppContent() {
     })();
   }, []);
   const [previSaState, setPreviSaState] = useState<PreviSaState>(() => {
-    // Arranca com o Previsa da empresa ativa (se houver) — senão, limpo.
+    // Arranca com o Previsão da empresa ativa (se houver) — senão, limpo.
     const empId = getCurrentEmpresaId();
     const emp = empId ? getEmpresa(empId) : null;
     return { ...defaultPreviSaState(), ...(emp?.previsa ?? {}) };
@@ -686,7 +686,7 @@ function AppContent() {
     syncProfileIntoEmpresa(currentEmpresaId, clientProfile);
   }, [clientProfile, currentEmpresaId]);
 
-  // Persiste o estado do Previsa na empresa atual (espelha o sync do perfil).
+  // Persiste o estado do Previsão na empresa atual (espelha o sync do perfil).
   // DEPOIS do sync do perfil de propósito: quando ambos mudam (ex.: abrir
   // empresa), este corre a seguir, lê a empresa já com o perfil novo e só
   // acrescenta `previsa` — sem sobrepor a escrita do perfil.
@@ -846,7 +846,7 @@ function AppContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, gabineteNonce]);
 
-  // Cross-fill: Diagnóstico vai buscar dados ao Previsa quando ainda está vazio
+  // Cross-fill: Diagnóstico vai buscar dados ao Previsão quando ainda está vazio
   useEffect(() => {
     if (!currentEmpresaId) return;
     if (previSaState.volumeNegocios > 0 && diagnosticoState.volumeNegocios === 0) {
@@ -854,7 +854,7 @@ function AppContent() {
     }
   }, [previSaState.volumeNegocios, currentEmpresaId]);
 
-  // Cross-fill: perfil alimenta Previsa/Tax/Diagnóstico quando ainda vazios
+  // Cross-fill: perfil alimenta Previsão/Tax/Diagnóstico quando ainda vazios
   useEffect(() => {
     if (!currentEmpresaId) return;
     const vol = clientProfile.faturaçaoAnualPrevista;
@@ -1032,7 +1032,7 @@ function AppContent() {
   // Trocar de modo directamente a partir da sidebar. "Novo Cliente" é sempre um
   // rascunho LIMPO e não ligado a nenhuma empresa — só entra na lista quando se
   // carrega em "Guardar cliente". Por isso, ao entrar nesse modo, esvaziamos o
-  // perfil/Previsa e largamos a empresa ativa.
+  // perfil/Previsão e largamos a empresa ativa.
   const selectMode = (m: AppMode) => {
     setMode(m);
     if (m === 'novo-cliente') {
@@ -1044,13 +1044,13 @@ function AppContent() {
     setView(DEFAULT_VIEW_BY_MODE[m]);
   };
 
-  // Seleciona o cliente ativo (perfil + Previsa) sem mudar de vista.
+  // Seleciona o cliente ativo (perfil + Previsão) sem mudar de vista.
   const selectEmpresa = (id: string): boolean => {
     const emp = getEmpresa(id);
     if (!emp) return false;
     setCurrentEmpresaId(id);
     setCurrentEmpresaIdState(id);
-    // Carrega o estado COMPLETO desta empresa (perfil + simuladores + Previsa).
+    // Carrega o estado COMPLETO desta empresa (perfil + simuladores + Previsão).
     // Cada cliente tem o seu — não há herança do cliente anterior.
     loadEmpresaIntoState(emp);
     return true;
@@ -1202,7 +1202,7 @@ function AppContent() {
           now: Date.now(),
           orcamentoXml: orcamento,
           baseProfile: defaultProfile,
-          basePrevisa: defaultPreviSaState(),
+          basePrevisão: defaultPreviSaState(),
         });
         if (d.tipo === 'criada') {
           upsertEmpresa(d.empresa);
@@ -1360,11 +1360,11 @@ function AppContent() {
         seedFreshFromProfile(newProfile);
         setView('profile');
         setSaftData(result);
-        // Previsa parte de um estado LIMPO + o que o SAF-T preencheu — evita
+        // Previsão parte de um estado LIMPO + o que o SAF-T preencheu — evita
         // herdar dados de uma empresa importada antes. Guarda-se também na empresa
         // (abaixo) para persistir e sincronizar como os outros dados do cliente.
-        const newPrevisa: PreviSaState = { ...defaultPreviSaState(), ...(result.previsa ?? {}) };
-        setPreviSaState(newPrevisa);
+        const newPrevisão: PreviSaState = { ...defaultPreviSaState(), ...(result.previsa ?? {}) };
+        setPreviSaState(newPrevisão);
 
         // Guarda o SAF-T em bruto na empresa atual para poder re-exportá-lo
         // depois. Usa o id da storage (o state pode estar stale neste callback
@@ -1381,7 +1381,7 @@ function AppContent() {
           // silencioso do Exportar não correr (e para um REimport não ficar
           // bloqueado por uma marca antiga).
           logAudit('import_saft', file.name, { empresa: emp?.nome, saftWarnings: ((result as any)?.warnings?.length ?? 0) }, empId);
-          if (emp) upsertEmpresa({ ...emp, saftXml: normalizeXmlEncodingToUtf8(text), saftFileName: file.name, saftImportedAt: Date.now(), saftReprocessadoEm: Date.now(), saftReparseRev: SAFT_REPARSE_REV, previsa: newPrevisa });
+          if (emp) upsertEmpresa({ ...emp, saftXml: normalizeXmlEncodingToUtf8(text), saftFileName: file.name, saftImportedAt: Date.now(), saftReprocessadoEm: Date.now(), saftReparseRev: SAFT_REPARSE_REV, previsa: newPrevisão });
         }
 
         // Em vez do resumo modal, abre logo o visualizador "Dados extraídos do
@@ -1450,7 +1450,7 @@ function AppContent() {
   };
 
   // Carrega o estado COMPLETO de uma empresa (perfil + todos os simuladores +
-  // Previsa) a partir do seu registo. Cada cliente tem o SEU estado: ao trocar
+  // Previsão) a partir do seu registo. Cada cliente tem o SEU estado: ao trocar
   // de empresa carrega-se o que ficou guardado nessa empresa, ou — se ainda não
   // tiver dados de um simulador — semeia-se a partir do perfil DESSA empresa.
   // Nunca se herda o estado do cliente anterior (dados não-transversais entre
@@ -1473,10 +1473,10 @@ function AppContent() {
     } else {
       const diag = getInitialDiagnosticoState(profile, tax);
       if (previsaForInit.volumeNegocios > 0) diag.volumeNegocios = previsaForInit.volumeNegocios;
-      // Se o diagnóstico ainda vem vazio mas o Previsa já tem RAI, usa-o como proxy de resultado
+      // Se o diagnóstico ainda vem vazio mas o Previsão já tem RAI, usa-o como proxy de resultado
       if (diag.resultadoLiquido === 0) {
         const rai = previsaForInit.useRaiCalc
-            ? raiFromPrevisa(previsaForInit)
+            ? raiFromPrevisão(previsaForInit)
             : previsaForInit.c701_rai;
         if (rai !== 0) diag.resultadoLiquido = rai;
       }
@@ -1657,7 +1657,7 @@ function AppContent() {
       return { ok: true };
     },
     listDownloadableDocs: () => [
-      { id: 'previsa', label: 'Previsa (Modelo 22)' },
+      { id: 'previsa', label: 'Previsão (Modelo 22)' },
       ...DOC_TYPES.map((d) => ({ id: d.id, label: d.label })),
     ],
     downloadDoc: async (docId) => {
@@ -1667,8 +1667,8 @@ function AppContent() {
       if (!emp) return { ok: false, reason: 'sem-cliente' };
       try {
         if (docId === 'previsa') {
-          { const { downloadPrevisaPdf } = await import('./lib/previsaPdf'); await downloadPrevisaPdf(previSaState, emp.nome || emp.profile?.nomeCliente || '', officeSettings); }
-          return { ok: true, label: 'Previsa (PDF Modelo 22)' };
+          { const { downloadPrevisãoPdf } = await import('./lib/previsaPdf'); await downloadPrevisãoPdf(previSaState, emp.nome || emp.profile?.nomeCliente || '', officeSettings); }
+          return { ok: true, label: 'Previsão (PDF Modelo 22)' };
         }
         const def = DOC_TYPES.find((d) => d.id === docId);
         if (!def) return { ok: false, reason: 'desconhecido' };
@@ -1818,7 +1818,7 @@ function AppContent() {
           />
         )}
         {view === 'exportar' && (
-          <ExportarRelatorio office={officeSettings} honorarios={honorariosConfig} currentEmpresaId={currentEmpresaId} initialDocId={relatorioDocPreselect} onOpenPrevisa={(empId) => navigateClient(empId, 'previsa')} onGoToOfficeSettings={() => setView('office-settings')} />
+          <ExportarRelatorio office={officeSettings} honorarios={honorariosConfig} currentEmpresaId={currentEmpresaId} initialDocId={relatorioDocPreselect} onOpenPrevisão={(empId) => navigateClient(empId, 'previsa')} onGoToOfficeSettings={() => setView('office-settings')} />
         )}
         {view === 'legal' && (
           <Suspense fallback={<ViewLoading />}>

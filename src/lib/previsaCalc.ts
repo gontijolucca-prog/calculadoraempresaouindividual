@@ -1,5 +1,5 @@
 /**
- * Motor de cálculo do Previsa (IRC Modelo 22) — extraído do PreviSaSimulator
+ * Motor de cálculo do Previsão (IRC Modelo 22) — extraído do PreviSaSimulator
  * para poder ser reutilizado fora do componente (ex.: wordDocs estima o imposto
  * sobre o rendimento do período na Demonstração de Resultados e na Ata).
  * Função pura: PreviSaState → CalcResult, sem dependências de React.
@@ -236,7 +236,7 @@ export function totalSaldoElegivel(s: PreviSaState): number {
   return saldosPorAno(s).reduce((acc, r) => acc + (r.elegivel ? r.saldo : 0), 0);
 }
 
-// ─── RAI — fonte ÚNICA (evita fórmulas divergentes entre Previsa, SAF-T,
+// ─── RAI — fonte ÚNICA (evita fórmulas divergentes entre Previsão, SAF-T,
 // Diagnóstico e histórico de simulações) ─────────────────────────────────────
 const n = (v: number | undefined): number => Number(v) || 0;
 
@@ -253,7 +253,7 @@ export function totalGastosClasse6(s: PreviSaState): number {
 }
 
 /** RAI = rendimentos (7) − gastos (6) ± imposto diferido (8122). */
-export function raiFromPrevisa(s: PreviSaState): number {
+export function raiFromPrevisão(s: PreviSaState): number {
   return totalRendimentosClasse7(s) - totalGastosClasse6(s) + n(s.rai_8122_db) - n(s.rai_8122_cr);
 }
 
@@ -264,7 +264,7 @@ export function calculate(s: PreviSaState): CalcResult {
   // mostrado pelo leitor de SAF-T a partir dos mesmos dados.
   const totalRendimentos = totalRendimentosClasse7(s);
   const totalGastos = totalGastosClasse6(s);
-  const raiCalc = raiFromPrevisa(s);
+  const raiCalc = raiFromPrevisão(s);
 
   const effectiveRai = s.useRaiCalc ? raiCalc : s.c701_rai;
 
@@ -448,7 +448,7 @@ export function calculate(s: PreviSaState): CalcResult {
 
 /**
  * Imposto sobre o rendimento do período ESTIMADO (gasto contabilístico) a partir
- * do estado Previsa: IRC liquidado (coleta + derramas − deduções) + tributações
+ * do estado Previsão: IRC liquidado (coleta + derramas − deduções) + tributações
  * autónomas. Usado para preencher a DR e a Ata quando o SAF-T não traz a conta
  * 812. Devolve null sem dados de rendimentos/gastos (estado vazio).
  */

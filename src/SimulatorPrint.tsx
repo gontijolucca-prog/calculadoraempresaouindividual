@@ -33,7 +33,7 @@ const PRINT_TITLES: Record<SimView, string> = {
   imt: 'Simulação de IMT e Imposto do Selo',
   salario: 'Simulação de Salário Líquido',
   irs: 'Simulação de IRS — Modelo 3',
-  previsa: 'Simulação Previsa — IRC Modelo 22',
+  previsa: 'Simulação Previsão — IRC Modelo 22',
 };
 
 const PRINT_METHOD: Record<SimView, string> = {
@@ -169,7 +169,7 @@ export function SimulatorPrintButton({ compact = false }: { compact?: boolean })
     const office = ctx.office || ({} as OfficeSettings);
     const profile = ctx.profile || ({} as ClientProfile);
     if (v === 'previsa') {
-      void previsaPdf.downloadPrevisaPdf(
+      void previsaPdf.downloadPrevisãoPdf(
         ctx.state as PreviSaState,
         profile.nomeCliente?.trim() || 'Empresa',
         {

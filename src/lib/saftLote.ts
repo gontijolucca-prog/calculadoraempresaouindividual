@@ -45,9 +45,9 @@ export function prepararEmpresaSAFT(args: {
   orcamentoXml: number;
   /** Sementes: defaultProfile / defaultPreviSaState() do App. */
   baseProfile: ClientProfile;
-  basePrevisa: PreviSaState;
+  basePrevisão: PreviSaState;
 }): SaftLoteDestino {
-  const { id, fileName, text, result, existentes, now, baseProfile, basePrevisa } = args;
+  const { id, fileName, text, result, existentes, now, baseProfile, basePrevisão } = args;
   if (!result?.profile || Object.keys(result.profile).length === 0) {
     return { tipo: 'erro', erro: 'Nenhum campo reconhecido no ficheiro.' };
   }
@@ -72,7 +72,7 @@ export function prepararEmpresaSAFT(args: {
     createdAt: now,
     updatedAt: now,
     profile,
-    previsa: { ...basePrevisa, ...(result.previsa ?? {}) },
+    previsa: { ...basePrevisão, ...(result.previsa ?? {}) },
     ...(xmlGuardado
       ? { saftXml: xml, saftFileName: fileName, saftImportedAt: now, saftReprocessadoEm: now, saftReparseRev: SAFT_REPARSE_REV }
       : {}),

@@ -103,7 +103,7 @@ function hojePorExtenso(): string {
 
 /**
  * Imposto sobre o rendimento do período: o valor REAL da contabilidade (conta
- * 812 do SAF-T / perfil) quando existe; senão a ESTIMATIVA do motor Previsa
+ * 812 do SAF-T / perfil) quando existe; senão a ESTIMATIVA do motor Previsão
  * (IRC liquidado + tributações autónomas) calculada dos dados desta empresa.
  * Devolve também a origem, para o documento assinalar estimativas.
  */
@@ -124,7 +124,7 @@ function resultadoLiquido(c: Ctx): { valor: number | null; estimado: boolean } {
   return { valor: null, estimado: false };
 }
 
-// ─── Demonstração de Resultados por Naturezas (a partir do Previsa) ───────────
+// ─── Demonstração de Resultados por Naturezas (a partir do Previsão) ───────────
 
 function drLinhas(p: PreviSaState) {
   const vendas = p.rai_711 + p.rai_712 + p.rai_72;
@@ -305,7 +305,7 @@ ${r('Total resultado antes de impostos', d.rai, { tot: true })}
 ${r('Imposto sobre o rendimento do per&iacute;odo', imposto != null ? -imposto : null)}
 ${r('Total resultado l&iacute;quido do per&iacute;odo', liquido, { tot: true })}
 </table>
-${impostoEst && imposto != null ? '<p class="meta">Nota: o imposto sobre o rendimento &eacute; uma estimativa do Previsa (IRC liquidado + tributa&ccedil;&otilde;es aut&oacute;nomas) &mdash; substitua pelo valor da conta 812 ao fechar as contas.</p>' : ''}
+${impostoEst && imposto != null ? '<p class="meta">Nota: o imposto sobre o rendimento &eacute; uma estimativa do Previsão (IRC liquidado + tributa&ccedil;&otilde;es aut&oacute;nomas) &mdash; substitua pelo valor da conta 812 ao fechar as contas.</p>' : ''}
 ${assinaturas()}
 ${rodape(c)}`;
   return wordShell(`Demonstracao de Resultados ${c.ano}`, body);
@@ -653,9 +653,9 @@ export function buildActaAG(emp: EmpresaRecord, office: OfficeSettings): string 
   // Data da AG de aprovação de contas: por defeito o prazo legal (até 3 meses
   // após o fecho — art. 65.º-A CSC), i.e. 31 de março do ano seguinte. Editável.
   const dataAG = `31 de mar&ccedil;o de ${c.ano + 1}`;
-  // Resultado líquido a aplicar: contabilidade (818) ou estimativa do Previsa.
+  // Resultado líquido a aplicar: contabilidade (818) ou estimativa do Previsão.
   const { valor: rlValor, estimado: rlEstimado } = resultadoLiquido(c);
-  const rlTxt = rlValor != null ? `&euro; ${fmt(rlValor)}${rlEstimado ? ' <span class="meta">(estimativa Previsa &mdash; confirmar no fecho)</span>' : ''}` : DASH;
+  const rlTxt = rlValor != null ? `&euro; ${fmt(rlValor)}${rlEstimado ? ' <span class="meta">(estimativa Previsão &mdash; confirmar no fecho)</span>' : ''}` : DASH;
   const linhasSocios = socios.length
     ? socios.map(s => `<li>${s.nome?.trim() ? esc(s.nome) : FILL}; titular de quota social com valor nominal de ${quota(s.percentagem)}${s.percentagem ? ` (${fmt(s.percentagem)}% do capital)` : ''}.</li>`).join('')
     : `<li>${FILL}; titular de quota social com valor nominal de ${DASH}.</li>`;
@@ -695,8 +695,8 @@ export interface DocTypeDef {
   descricao: string;
   /** 'completo' = preenchido dos dados da app; 'parcial' = identificação + alguns campos; 'modelo' = estrutura em branco. */
   fill: 'completo' | 'parcial' | 'modelo';
-  /** Precisa de dados do Previsa para ficar útil. */
-  precisaPrevisa: boolean;
+  /** Precisa de dados do Previsão para ficar útil. */
+  precisaPrevisão: boolean;
   build: (emp: EmpresaRecord, office: OfficeSettings) => string;
   filename: (emp: EmpresaRecord) => string;
 }
@@ -704,50 +704,50 @@ export interface DocTypeDef {
 export const DOC_TYPES: DocTypeDef[] = [
   {
     id: 'dr', label: 'Demonstração dos Resultados por Naturezas',
-    descricao: 'Preenchida com os valores do Previsa desta empresa.',
-    fill: 'completo', precisaPrevisa: true,
+    descricao: 'Preenchida com os valores do Previsão desta empresa.',
+    fill: 'completo', precisaPrevisão: true,
     build: buildDemonstracaoResultados,
     filename: (e) => `Demonstracao_Resultados_${slug(e.nome || '')}`,
   },
   {
     id: 'declaracao', label: 'Declaração de Responsabilidade Final de Exercício',
     descricao: 'Contabilista, entidade, NIF e ano preenchidos. (Código Deontológico dos CC)',
-    fill: 'completo', precisaPrevisa: false,
+    fill: 'completo', precisaPrevisão: false,
     build: buildDeclaracaoResponsabilidade,
     filename: (e) => `Declaracao_Responsabilidade_${slug(e.nome || '')}`,
   },
   {
     id: 'acta', label: 'Ata de Assembleia Geral de Sócios',
     descricao: 'Sócios, capital social e gerente preenchidos a partir da ficha do cliente.',
-    fill: 'completo', precisaPrevisa: false,
+    fill: 'completo', precisaPrevisão: false,
     build: buildActaAG,
     filename: (e) => `Ata_Assembleia_Geral_${slug(e.nome || '')}`,
   },
   {
     id: 'alteracoes', label: 'Demonstração das Alterações no Capital Próprio',
     descricao: 'Capital, reservas e resultado preenchidos; movimentos do período para completar.',
-    fill: 'parcial', precisaPrevisa: false,
+    fill: 'parcial', precisaPrevisão: false,
     build: buildAlteracoesCapitalProprio,
     filename: (e) => `Alteracoes_Capital_Proprio_${slug(e.nome || '')}`,
   },
   {
     id: 'fluxos', label: 'Demonstração de Fluxos de Caixa',
     descricao: 'Preenchida com os movimentos de caixa do SAF-T (método directo).',
-    fill: 'completo', precisaPrevisa: false,
+    fill: 'completo', precisaPrevisão: false,
     build: buildFluxosCaixa,
     filename: (e) => `Fluxos_Caixa_${slug(e.nome || '')}`,
   },
   {
     id: 'balanco', label: 'Balanço',
     descricao: 'Preenchido a partir da contabilidade (perfil/SAF-T); coluna do ano anterior com os saldos de abertura.',
-    fill: 'parcial', precisaPrevisa: false,
+    fill: 'parcial', precisaPrevisão: false,
     build: buildBalanco,
     filename: (e) => `Balanco_${slug(e.nome || '')}`,
   },
   {
     id: 'df', label: 'Demonstrações Financeiras — Síntese',
     descricao: 'Visão consolidada de Balanço, Resultados, Capital Próprio e Fluxos numa página; peças detalhadas disponíveis separadamente.',
-    fill: 'parcial', precisaPrevisa: true,
+    fill: 'parcial', precisaPrevisão: true,
     build: buildDemonstracoesFinanceiras,
     filename: (e) => `Demonstracoes_Financeiras_${slug(e.nome || '')}`,
   },
@@ -755,8 +755,8 @@ export const DOC_TYPES: DocTypeDef[] = [
 
 // ─── Estado de preenchimento real (badge dinâmico) ────────────────────────────
 
-/** Há dados contabilísticos no Previsa desta empresa? */
-export function hasPrevisaData(emp: EmpresaRecord): boolean {
+/** Há dados contabilísticos no Previsão desta empresa? */
+export function hasPrevisãoData(emp: EmpresaRecord): boolean {
   const s = (emp.previsa ?? {}) as Record<string, unknown>;
   return Object.entries(s).some(([k, v]) =>
     (k.startsWith('rai_') || k === 'volumeNegocios') && typeof v === 'number' && v !== 0,
@@ -768,7 +768,7 @@ export function hasPrevisaData(emp: EmpresaRecord): boolean {
  * o `fill` estático do DOC_TYPES descreve o melhor caso (com todos os dados);
  * aqui verificamos os dados que o builder de facto usa e devolvemos o estado
  * honesto. Sem isto, o badge dizia "Preenchido" mesmo com o documento a sair
- * em branco (Previsa vazio, ficha societária por preencher, etc.).
+ * em branco (Previsão vazio, ficha societária por preencher, etc.).
  */
 /** Campos dos fluxos de caixa (método directo) derivados dos diários do SAF-T. */
 const FC_KEYS: (keyof ContabilidadeData)[] = [
@@ -789,7 +789,7 @@ export function fillStatusFor(id: DocTypeId, emp: EmpresaRecord, office: OfficeS
   const temGerente = !!soc?.gerenteNome?.trim();
   const temIdent = !!((emp.nome || emp.profile?.nomeCliente) && (emp.nif || emp.profile?.nif));
   const temCC = !!(office.tipo === 'sociedade' ? (office.contabilistaResponsavel || office.nome) : office.nome);
-  const previsa = hasPrevisaData(emp);
+  const previsa = hasPrevisãoData(emp);
   const nFc = FC_KEYS.filter(kk => cv(cont, kk) !== null).length;
   const temCaixa = cv(cont, 'caixaDepositos') !== null || cv(cont, 'caixaInicio') !== null;
   const temBalanco = (['ativoFixoTangivel', 'clientes', 'caixaDepositos', 'capitalRealizado', 'fornecedores', 'resultadoLiquido'] as (keyof ContabilidadeData)[])

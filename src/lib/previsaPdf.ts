@@ -4,7 +4,7 @@ import { calculate, reavaliar3PPC } from './previsaCalc';
 import { sanitizePdf, slugFicheiro } from './reportPdf';
 import { paletaRgb } from './pdfTheme';
 
-export interface PrevisaEscritorio {
+export interface PrevisãoEscritorio {
   nome?: string;
   logoDataUrl?: string;
   corPrimaria?: string;
@@ -23,11 +23,11 @@ function fmt(n: number): string {
 }
 
 /**
- * PDF do Previsa — UMA única folha A4, com todos os resultados e valores
+ * PDF do Previsão — UMA única folha A4, com todos os resultados e valores
  * finais (apuramento + liquidação), marca do escritório e notas de leitura.
  * Sem Excel: o documento é este PDF.
  */
-export function criarPrevisaPdf(state: PreviSaState, nome: string, escritorio: PrevisaEscritorio = {}): jsPDF {
+export function criarPrevisãoPdf(state: PreviSaState, nome: string, escritorio: PrevisãoEscritorio = {}): jsPDF {
   const r = calculate(state) as any;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = 210;
@@ -78,7 +78,7 @@ export function criarPrevisaPdf(state: PreviSaState, nome: string, escritorio: P
   doc.setFont('times', 'bold');
   doc.setFontSize(19);
   doc.setTextColor(...P.dark);
-  doc.text('Previsa — Modelo 22', 10, 33);
+  doc.text('Previsão — Modelo 22', 10, 33);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.4);
   doc.setTextColor(...P.medium);
@@ -249,7 +249,7 @@ export function criarPrevisaPdf(state: PreviSaState, nome: string, escritorio: P
     'Q09 — Matéria coletável: lucro tributável após prejuízos fiscais e benefícios aplicáveis.',
     'Q10 — Liquidação: IRC, derramas e tributações autónomas, menos deduções e pagamentos por conta.',
     'PEC extinto (Lei 12/2022). PPC calculado sobre IRC menos retenções, com o limiar legal.',
-    'Documento indicativo gerado a partir dos inputs do Previsa — confirme sempre com o seu TOC.',
+    'Documento indicativo gerado a partir dos inputs do Previsão — confirme sempre com o seu TOC.',
   ];
   notas.forEach((n, i) => doc.text(sanitizePdf(n), 10, yN + 7 + i * 5.4, { maxWidth: 190 }));
 
@@ -317,9 +317,9 @@ export function criarPrevisaPdf(state: PreviSaState, nome: string, escritorio: P
   return doc;
 }
 
-/** Descarrega o PDF do Previsa (uma folha A4). */
-export async function downloadPrevisaPdf(state: PreviSaState, nome: string, escritorio: PrevisaEscritorio = {}) {
-  const doc = criarPrevisaPdf(state, nome, escritorio);
-  const filename = `${slugFicheiro('Previsa ' + (nome || 'Empresa') + ' ' + (state.periodo || new Date().getFullYear()))}.pdf`;
+/** Descarrega o PDF do Previsão (uma folha A4). */
+export async function downloadPrevisãoPdf(state: PreviSaState, nome: string, escritorio: PrevisãoEscritorio = {}) {
+  const doc = criarPrevisãoPdf(state, nome, escritorio);
+  const filename = `${slugFicheiro('Previsão ' + (nome || 'Empresa') + ' ' + (state.periodo || new Date().getFullYear()))}.pdf`;
   doc.save(filename);
 }

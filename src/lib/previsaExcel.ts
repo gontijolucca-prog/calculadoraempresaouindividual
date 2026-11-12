@@ -1,5 +1,5 @@
 /**
- * Descarregar o Previsa preenchido — IGUAL ao modelo original PrevisaV25_01.xls.
+ * Descarregar o Previsão preenchido — IGUAL ao modelo original PrevisãoV25_01.xls.
  *
  * O template é o PRÓPRIO ficheiro original convertido uma única vez para .xlsx
  * (public/previsa-template.xlsx, via LibreOffice — preserva as 13 folhas,
@@ -61,7 +61,7 @@ function setCellXml(xml: string, ref: string, value: number | string): string {
   const rowNum = ref.replace(/^[A-Z]+/, '');
   const rowRe = new RegExp(`<row r="${rowNum}"[^>]*>`);
   const rm = rowRe.exec(xml);
-  if (!rm) throw new Error(`Modelo Previsa: linha ${rowNum} não existe para a célula ${ref}`);
+  if (!rm) throw new Error(`Modelo Previsão: linha ${rowNum} não existe para a célula ${ref}`);
   const cellTag = `<c r="${ref}"${body}`;
   if (rm[0].endsWith('/>')) {
     // linha vazia auto-fechada → abre-a e mete a célula lá dentro
@@ -88,13 +88,13 @@ function stripCachedFormulaValues(xml: string): string {
 
 /**
  * Núcleo puro (testável fora do browser): template .xlsx em bytes + estado do
- * Previsa → bytes do .xlsx preenchido.
+ * Previsão → bytes do .xlsx preenchido.
  */
-export function buildPrevisaXlsx(template: Uint8Array, state: PreviSaState): Uint8Array {
+export function buildPrevisãoXlsx(template: Uint8Array, state: PreviSaState): Uint8Array {
   const files = unzipSync(template);
   const read = (path: string) => {
     const f = files[path];
-    if (!f) throw new Error(`Modelo Previsa: falta ${path} no .xlsx`);
+    if (!f) throw new Error(`Modelo Previsão: falta ${path} no .xlsx`);
     return strFromU8(f);
   };
 
@@ -238,7 +238,7 @@ export function buildPrevisaXlsx(template: Uint8Array, state: PreviSaState): Uin
   const edited = new Map<string, string>();
   for (const [sheet, ref, value] of edits) {
     const path = sheetFile.get(sheet);
-    if (!path) throw new Error(`Modelo Previsa: folha "${sheet}" não encontrada`);
+    if (!path) throw new Error(`Modelo Previsão: folha "${sheet}" não encontrada`);
     const xml = edited.get(path) ?? read(path);
     edited.set(path, setCellXml(xml, ref, value));
   }
@@ -263,19 +263,19 @@ export function buildPrevisaXlsx(template: Uint8Array, state: PreviSaState): Uin
   return zipSync(files, { level: 6 });
 }
 
-export async function downloadPrevisaExcel(state: PreviSaState, fileLabel?: string): Promise<void> {
+export async function downloadPrevisãoExcel(state: PreviSaState, fileLabel?: string): Promise<void> {
   const base = (import.meta as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? '/';
   const url = `${base}previsa-template.xlsx`.replace(/([^:])\/\//g, '$1/');
   const resp = await fetch(url);
-  if (!resp.ok) throw new Error(`Modelo Previsa não encontrado (${resp.status})`);
-  const out = buildPrevisaXlsx(new Uint8Array(await resp.arrayBuffer()), state);
+  if (!resp.ok) throw new Error(`Modelo Previsão não encontrado (${resp.status})`);
+  const out = buildPrevisãoXlsx(new Uint8Array(await resp.arrayBuffer()), state);
 
   const slug = (fileLabel || state.designacao || 'empresa')
     .normalize('NFD').replace(/[^\w]+/g, '_').replace(/^_+|_+$/g, '') || 'empresa';
   const blob = new Blob([out as BlobPart], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `Previsa_${slug}_${state.periodo || ''}.xlsx`;
+  a.download = `Previsão_${slug}_${state.periodo || ''}.xlsx`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

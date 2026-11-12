@@ -53,8 +53,8 @@ export interface EmpresaRecord {
   // campos novos, subir a revisão faz as empresas existentes re-derivarem.
   saftReparseRev?: number;
   simulacoes?: SimulationRecord[];  // histórico de simulações deste cliente
-  // Estado do simulador Previsa (IRC Modelo 22) deste cliente. Ao contrário dos
-  // outros simuladores — que se re-semeiam a partir do `profile` — o Previsa tem
+  // Estado do simulador Previsão (IRC Modelo 22) deste cliente. Ao contrário dos
+  // outros simuladores — que se re-semeiam a partir do `profile` — o Previsão tem
   // detalhe contabilístico (rai_*, TA, etc.) que não cabe no perfil, por isso é
   // guardado aqui para persistir entre sessões e sincronizar entre dispositivos.
   previsa?: Partial<PreviSaState>;
@@ -62,7 +62,7 @@ export interface EmpresaRecord {
   // 'ticket','selfss','diagnostico','imoveis','imt','salario','irs'). Isola os
   // dados ENTRE empresas — os simuladores não se auto-preenchem de um cliente
   // para outro. DENTRO da mesma empresa os dados continuam transversais, porque
-  // todos derivam do mesmo `profile`. (O Previsa fica em `previsa`, à parte.)
+  // todos derivam do mesmo `profile`. (O Previsão fica em `previsa`, à parte.)
   sims?: Record<string, unknown>;
   /** Dados extra vindos do TOConline (não cabem no perfil). */
   toc?: {

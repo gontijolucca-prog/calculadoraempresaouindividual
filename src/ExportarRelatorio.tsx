@@ -9,7 +9,7 @@ import { loadFromStorage, saveToStorage } from './lib/storage';
 import { officeSettingsAreComplete, type OfficeSettings } from './lib/officeSettings';
 import type { HonorariosConfig } from './lib/honorarios';
 import {
-  DOC_TYPES, downloadAsWord, makeEditableHtml, serializeEditedDoc, fillStatusFor, hasPrevisaData,
+  DOC_TYPES, downloadAsWord, makeEditableHtml, serializeEditedDoc, fillStatusFor, hasPrevisãoData,
 } from './lib/wordDocs';
 import Proposta from './Proposta';
 import MinutaContrato from './MinutaContrato';
@@ -93,10 +93,10 @@ const FILL_BADGE: Record<string, { txt: string; cls: string }> = {
   pacote:   { txt: 'Pacote',     cls: 'text-[var(--accent)] bg-[var(--accent)]/10 border-[var(--accent)]/20' },
 };
 
-export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, onGoToOfficeSettings, currentEmpresaId, initialDocId }: {
+export default function ExportarRelatorio({ office, honorarios, onOpenPrevisão, onGoToOfficeSettings, currentEmpresaId, initialDocId }: {
   office: OfficeSettings;
   honorarios: HonorariosConfig;
-  onOpenPrevisa?: (empresaId: string) => void;
+  onOpenPrevisão?: (empresaId: string) => void;
   onGoToOfficeSettings?: () => void;
   /** Empresa "a trabalhar" — fica pré-selecionada ao entrar no Exportar. */
   currentEmpresaId?: string | null;
@@ -283,9 +283,9 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                   );
   };
 
-  const renderPrevisaDoc = () => {
-                  const active = isPrevisa;
-                  const badge = FILL_BADGE[emp && hasPrevisaData(emp) ? 'completo' : 'modelo'];
+  const renderPrevisãoDoc = () => {
+                  const active = isPrevisão;
+                  const badge = FILL_BADGE[emp && hasPrevisãoData(emp) ? 'completo' : 'modelo'];
                   return (
                     <button
                       type="button"
@@ -304,39 +304,39 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2 flex-wrap">
                           <FileText className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                          <span className="text-[13.5px] font-[800] text-[#0F172A] leading-tight">Previsa — Modelo 22 (PDF)</span>
+                          <span className="text-[13.5px] font-[800] text-[#0F172A] leading-tight">Previsão — Modelo 22 (PDF)</span>
                           <span className={`text-[9px] font-[800] uppercase tracking-[0.4px] px-1.5 py-0.5 rounded-[5px] border ${badge.cls}`}>{badge.txt}</span>
                         </span>
-                        <span className="block text-[12px] text-slate-500 font-[500] mt-0.5">Resumo do Previsa numa única folha, com os resultados e valores finais.</span>
+                        <span className="block text-[12px] text-slate-500 font-[500] mt-0.5">Resumo do Previsão numa única folha, com os resultados e valores finais.</span>
                       </span>
                     </button>
                   );
   };
 
   const pkg = isPkg(docId);
-  // Previsa (Excel Modelo 22) — documento especial: não é Word-HTML nem React,
+  // Previsão (Excel Modelo 22) — documento especial: não é Word-HTML nem React,
   // é o ficheiro original .xlsx preenchido e descarregado.
-  const isPrevisa = docId === 'previsa';
+  const isPrevisão = docId === 'previsa';
   const def = DOC_TYPES.find(d => d.id === docId) ?? DOC_TYPES[0];
-  const avisoPrevisa = !pkg && !!emp && !hasPrevisaData(emp) && (isPrevisa || def.precisaPrevisa);
+  const avisoPrevisão = !pkg && !!emp && !hasPrevisãoData(emp) && (isPrevisão || def.precisaPrevisão);
 
   const previsaState = useMemo<PreviSaState>(
     () => ({ ...defaultPreviSaState(), ...((emp?.previsa ?? {}) as Partial<PreviSaState>) }),
     [emp],
   );
-  const previsaRes = useMemo(() => (isPrevisa ? calculate(previsaState) : null), [isPrevisa, previsaState]);
-  const [downloadingPrevisa, setDownloadingPrevisa] = useState(false);
-  const handleDownloadPrevisa = async () => {
-    if (!emp || downloadingPrevisa) return;
-    setDownloadingPrevisa(true);
+  const previsaRes = useMemo(() => (isPrevisão ? calculate(previsaState) : null), [isPrevisão, previsaState]);
+  const [downloadingPrevisão, setDownloadingPrevisão] = useState(false);
+  const handleDownloadPrevisão = async () => {
+    if (!emp || downloadingPrevisão) return;
+    setDownloadingPrevisão(true);
     try {
-      const { downloadPrevisaPdf } = await import('./lib/previsaPdf');
-      await downloadPrevisaPdf(previsaState, emp.nome || emp.profile?.nomeCliente || '', office);
+      const { downloadPrevisãoPdf } = await import('./lib/previsaPdf');
+      await downloadPrevisãoPdf(previsaState, emp.nome || emp.profile?.nomeCliente || '', office);
     } catch (e) {
-      console.error('Falha ao gerar o PDF do Previsa:', e);
-      alert('Não foi possível gerar o PDF do Previsa. Tente novamente.');
+      console.error('Falha ao gerar o PDF do Previsão:', e);
+      alert('Não foi possível gerar o PDF do Previsão. Tente novamente.');
     } finally {
-      setDownloadingPrevisa(false);
+      setDownloadingPrevisão(false);
     }
   };
 
@@ -348,8 +348,8 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
 
   // HTML base do documento Word (só para docs da contabilista).
   const docHtml = useMemo(
-    () => (!pkg && !isPrevisa && emp ? def.build(emp, office) : ''),
-    [pkg, isPrevisa, emp, def, office],
+    () => (!pkg && !isPrevisão && emp ? def.build(emp, office) : ''),
+    [pkg, isPrevisão, emp, def, office],
   );
 
   // Carrega o documento Word editável no iframe quando muda a seleção, e
@@ -441,8 +441,8 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
 
   const docLabel = pkg
     ? (PACKAGE_DOCS.find(d => d.id === docId)?.label ?? '')
-    : isPrevisa
-      ? 'Previsa — Modelo 22 (PDF)'
+    : isPrevisão
+      ? 'Previsão — Modelo 22 (PDF)'
       : def.label;
 
   // Imprime o documento do pacote via paged.js: margens em todas as páginas,
@@ -647,7 +647,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
               {categoria === 'fecho' && (
                 <div className="space-y-2" role="radiogroup" aria-label="Documentos de encerramento de contas">
                   {DOC_TYPES.filter(d => FECHO_GROUP.includes(d.id)).map(renderWordDoc)}
-                  {renderPrevisaDoc()}
+                  {renderPrevisãoDoc()}
                 </div>
               )}
 
@@ -686,15 +686,15 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
               </div>
               )}
 
-              {/* Aviso: documento precisa de dados do Previsa que faltam */}
-              {avisoPrevisa && (
+              {/* Aviso: documento precisa de dados do Previsão que faltam */}
+              {avisoPrevisão && (
                 <div className="mt-4 flex items-start gap-2.5 rounded-[12px] border border-amber-200 bg-amber-50 px-4 py-3">
                   <FileText className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <p className="text-[12.5px] text-amber-800 font-[500] leading-relaxed">
-                    Esta empresa ainda não tem valores no Previsa — o documento sai com a estrutura mas a zeros.{' '}
-                    {onOpenPrevisa && emp && (
-                      <button type="button" onClick={() => onOpenPrevisa(emp.id)} className="font-[700] underline hover:text-amber-900">
-                        Abrir o Previsa →
+                    Esta empresa ainda não tem valores no Previsão — o documento sai com a estrutura mas a zeros.{' '}
+                    {onOpenPrevisão && emp && (
+                      <button type="button" onClick={() => onOpenPrevisão(emp.id)} className="font-[700] underline hover:text-amber-900">
+                        Abrir o Previsão →
                       </button>
                     )}
                   </p>
@@ -703,15 +703,15 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
 
               {/* Ações */}
               <div className="mt-6 flex flex-col gap-2.5">
-                {isPrevisa ? (
+                {isPrevisão ? (
                   <button
                     type="button"
-                    onClick={handleDownloadPrevisa}
-                    disabled={!emp || downloadingPrevisa}
+                    onClick={handleDownloadPrevisão}
+                    disabled={!emp || downloadingPrevisão}
                     className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-[12px] text-[14px] font-[800] text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
                   >
-                    {downloadingPrevisa ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <FileText className="w-4.5 h-4.5" />}
-                    {downloadingPrevisa ? 'A gerar PDF…' : 'Descarregar PDF'}
+                    {downloadingPrevisão ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <FileText className="w-4.5 h-4.5" />}
+                    {downloadingPrevisão ? 'A gerar PDF…' : 'Descarregar PDF'}
                   </button>
                 ) : (
                   <>
@@ -732,8 +732,8 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                 )}
               </div>
               <p className="mt-2.5 text-[11.5px] text-slate-400 font-[500] text-center text-balance">
-                {isPrevisa
-                  ? 'Sai uma folha A4 com todos os resultados e valores finais do Previsa.'
+                {isPrevisão
+                  ? 'Sai uma folha A4 com todos os resultados e valores finais do Previsão.'
                   : pkg
                     ? 'Edita o documento na folha e imprime ou guarda como PDF.'
                     : 'Descarregue o que vê na folha. No diálogo, escolha «Margens: predefinição» e ative «Gráficos de fundo».'}
@@ -744,18 +744,18 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
             <div className="min-w-0">
               <div className="flex items-center justify-between gap-3 mb-2 no-print">
                 <div className="flex items-center gap-1.5 text-[11px] font-[800] uppercase tracking-[0.6px] text-slate-400">
-                  {isPrevisa ? <FileText className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
-                  3 · {docLabel}{isPrevisa ? '' : ' — editável'}
+                  {isPrevisão ? <FileText className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
+                  3 · {docLabel}{isPrevisão ? '' : ' — editável'}
                 </div>
-                {isPrevisa ? (
+                {isPrevisão ? (
                   <button
                     type="button"
-                    onClick={handleDownloadPrevisa}
-                    disabled={!emp || downloadingPrevisa}
+                    onClick={handleDownloadPrevisão}
+                    disabled={!emp || downloadingPrevisão}
                     className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-[10px] text-[12.5px] font-[800] text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-[0_2px_10px_-4px_rgba(5,150,105,0.5)]"
                   >
-                    {downloadingPrevisa ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-                    {downloadingPrevisa ? 'A gerar…' : 'Descarregar PDF'}
+                    {downloadingPrevisão ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                    {downloadingPrevisão ? 'A gerar…' : 'Descarregar PDF'}
                   </button>
                 ) : (
                   <button
@@ -788,8 +788,8 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                     </div>
                   )}
                 </div>
-              ) : isPrevisa ? (
-                // Previsa: não há pré-visualização do .xlsx — mostra o resumo
+              ) : isPrevisão ? (
+                // Previsão: não há pré-visualização do .xlsx — mostra o resumo
                 // do Modelo 22 calculado com os dados desta empresa e explica
                 // o que sai no ficheiro.
                 <div className="rounded-[14px] border border-slate-200 bg-white p-6 shadow-[0_2px_14px_-8px_rgba(15,23,42,0.25)] no-print">
@@ -799,7 +799,7 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                     </div>
                     <div className="min-w-0">
                       <p className="text-[15px] font-[800] text-[#0B1D2D] leading-tight truncate">{previsaState.designacao || emp?.nome || 'Empresa'}</p>
-                      <p className="text-[12.5px] text-slate-500 font-[500]">Período {previsaState.periodo || '—'} · modelo PrevisaV25 (13 folhas)</p>
+                      <p className="text-[12.5px] text-slate-500 font-[500]">Período {previsaState.periodo || '—'} · modelo PrevisãoV25 (13 folhas)</p>
                     </div>
                   </div>
                   {previsaRes && (previsaRes.totalRendimentos !== 0 || previsaRes.totalGastos !== 0 || previsaState.c701_rai !== 0) ? (
@@ -822,18 +822,18 @@ export default function ExportarRelatorio({ office, honorarios, onOpenPrevisa, o
                     </div>
                   ) : (
                     <p className="mt-5 text-[13px] text-slate-500 font-[500] leading-relaxed">
-                      Esta empresa ainda não tem valores no Previsa — o PDF sai com os campos a zeros.
-                      {onOpenPrevisa && emp && (
+                      Esta empresa ainda não tem valores no Previsão — o PDF sai com os campos a zeros.
+                      {onOpenPrevisão && emp && (
                         <> {' '}
-                          <button type="button" onClick={() => onOpenPrevisa(emp.id)} className="font-[700] text-[var(--accent)] underline hover:text-[var(--accent-strong)]">
-                            Abrir o Previsa →
+                          <button type="button" onClick={() => onOpenPrevisão(emp.id)} className="font-[700] text-[var(--accent)] underline hover:text-[var(--accent-strong)]">
+                            Abrir o Previsão →
                           </button>
                         </>
                       )}
                     </p>
                   )}
                   <p className="mt-5 text-[12px] text-slate-400 font-[500] leading-relaxed">
-                    O ficheiro descarregado é o modelo original do Previsa com as células de input preenchidas
+                    O ficheiro descarregado é o modelo original do Previsão com as células de input preenchidas
                     (rendimentos e gastos por conta, regime, dimensão e identificação) — formatação, fórmulas e as
                     O PDF resume os quadros essenciais numa folha. Os restantes quadros (Q07, Q10,
                     prejuízos, tributações autónomas) preenchem-se no próprio ficheiro ou aqui no simulador.

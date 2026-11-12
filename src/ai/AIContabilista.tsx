@@ -76,7 +76,7 @@ const VIEW_LABEL: Record<string, string> = {
   empresas: 'Lista de Empresas', profile: 'Perfil do Cliente', tax: 'Simulador Fiscal',
   vehicle: 'Simulador de Viaturas', ticket: 'Tickets de Refeição', selfss: 'SS de Independente',
   diagnostico: 'Diagnóstico de Autonomia', imoveis: 'Imóveis na Empresa', imt: 'Simulador IMT',
-  salario: 'Salário Líquido', irs: 'Simulador de IRS', previsa: 'Simulador Previsa',
+  salario: 'Salário Líquido', irs: 'Simulador de IRS', previsa: 'Simulador Previsão',
   historico: 'Histórico', exportar: 'Exportar documentos', 'office-settings': 'Definições do Escritório',
   legal: 'Base Legal',
 };

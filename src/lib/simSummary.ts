@@ -31,7 +31,7 @@ export const SIM_LABELS: Record<SimView, string> = {
   imt: 'Simulador IMT',
   salario: 'Salário Líquido',
   irs: 'Simulador de IRS',
-  previsa: 'Simulador Previsa',
+  previsa: 'Simulador Previsão',
 };
 
 export function isSimView(v: string): v is SimView {

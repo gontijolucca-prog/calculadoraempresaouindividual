@@ -13,7 +13,7 @@ export default function LandingPage({ onEnter, onCreateAccount }: Props) {
   const simuladores: [string, string][] = [
     ['Fiscal', 'ENI vs sociedade, lado a lado.'],
     ['IRS', 'Modelo 3: escalões, IRS Jovem, deduções e reembolso.'],
-    ['Previsa', 'IRC do Modelo 22: Q07, Q09, Q10, derramas e PPC.'],
+    ['Previsão', 'IRC do Modelo 22: Q07, Q09, Q10, derramas e PPC.'],
     ['Viaturas', 'IVA dedutível e tributação autónoma, por categoria.'],
     ['Aquisição', 'Compra, crédito, leasing e renting com o mesmo regime.'],
     ['Salário', 'Líquido do trabalhador e custo para a empresa.'],
@@ -26,7 +26,7 @@ export default function LandingPage({ onEnter, onCreateAccount }: Props) {
 
   const documentos: [string, string][] = [
     ['Demonstrações', 'Balanço, resultados, capital próprio, fluxos e síntese.'],
-    ['Encerramento', 'Ata da assembleia, Previsa e declaração de responsabilidade.'],
+    ['Encerramento', 'Ata da assembleia, Previsão e declaração de responsabilidade.'],
     ['Pacote cliente', 'Capa, proposta de honorários e contrato de prestação.'],
     ['Mapas', 'Controlo mensal e recursos humanos, com filtros aplicados ao PDF.'],
     ['Simuladores', 'Uma folha por simulação, com os números-chave em destaque.'],
@@ -136,7 +136,7 @@ export default function LandingPage({ onEnter, onCreateAccount }: Props) {
             <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 6, boxShadow: '18px 22px 0 -10px #EAF3FF', overflow: 'hidden' }}>
               <div style={{ height: 6, background: 'var(--blue)' }} />
               <div style={{ padding: '18px 20px 22px' }}>
-                <div className="lp-mono" style={{ color: '#5A6B7B' }}>Previsa · Modelo 22 · 2026</div>
+                <div className="lp-mono" style={{ color: '#5A6B7B' }}>Previsão · Modelo 22 · 2026</div>
                 <div className="lp-serif" style={{ fontSize: 26, marginTop: 6 }}>Padaria do Bairro, Lda.</div>
                 <div style={{ marginTop: 18, borderTop: '1px solid var(--line)' }}>
                   {[

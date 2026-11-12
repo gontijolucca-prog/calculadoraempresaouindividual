@@ -95,11 +95,11 @@ export const SIM_INTROS: Record<string, SimIntroDef> = {
     resultado: 'Imposto final estimado — reembolso ou valor a pagar — com o detalhe por escalões e deduções.',
   },
   previsa: {
-    titulo: 'Simulador Previsa (IRC)',
+    titulo: 'Simulador Previsão (IRC)',
     Icon: TrendingUp,
     resumo: 'Prevê o IRC do exercício (Modelo 22): apuramento do lucro tributável, tributações autónomas e liquidação final. Exporta em PDF.',
     dados: ['Rendimentos e gastos do exercício', 'Correções fiscais (Q07)', 'Prejuízos anteriores e pagamentos por conta'],
-    resultado: 'IRC estimado com matéria coletável, derrama e tributações autónomas — pronto a exportar no formato Previsa.',
+    resultado: 'IRC estimado com matéria coletável, derrama e tributações autónomas — pronto a exportar no formato Previsão.',
   },
 };
 

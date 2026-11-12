@@ -11,7 +11,7 @@ import {
 } from './pt2026';
 import { calcSalarioLiquido } from './salario';
 import { DED_ESPECIFICA_CAT_A_2026, LIMIAR_JUSTIFICACAO_15PCT } from './fiscal';
-import { raiFromPrevisa, totalRendimentosClasse7, totalGastosClasse6 } from './previsaCalc';
+import { raiFromPrevisão, totalRendimentosClasse7, totalGastosClasse6 } from './previsaCalc';
 
 const eur = (n: number) =>
   new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number.isFinite(n) ? n : 0);
@@ -104,7 +104,7 @@ export function resultSimulacao(tipo: string, state: unknown, profile?: Profilei
       case 'previsa': {
         const rend = totalRendimentosClasse7(s as any);
         const gastos = totalGastosClasse6(s as any);
-        const rai = s.useRaiCalc ? raiFromPrevisa(s as any) : num(s.c701_rai);
+        const rai = s.useRaiCalc ? raiFromPrevisão(s as any) : num(s.c701_rai);
         if (rend === 0 && gastos === 0 && !num(s.c701_rai)) return [];
         const lucro = Math.max(0, rai);
         return [

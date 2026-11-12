@@ -17,7 +17,7 @@ const baseProfile = {
   nif: '',
   contabilidade: { caixaDepositos: 0, saftImportado: false },
 } as unknown as ClientProfile;
-const basePrevisa = { nif: '', designacao: '', volumeNegocios: 0 } as unknown as PreviSaState;
+const basePrevisão = { nif: '', designacao: '', volumeNegocios: 0 } as unknown as PreviSaState;
 
 function mkResult(
   profile: Record<string, unknown> = {},
@@ -47,7 +47,7 @@ function args(over: Partial<Parameters<typeof prepararEmpresaSAFT>[0]> = {}) {
     now: NOW,
     orcamentoXml: LOTE_SAFT_XML_BUDGET,
     baseProfile,
-    basePrevisa,
+    basePrevisão,
     ...over,
   };
 }

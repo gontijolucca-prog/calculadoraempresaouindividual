@@ -7,7 +7,7 @@
  *    ou "outros serviços" consoante a atividade do perfil;
  *  - gastos = classe 6 SÓ rubricas de caixa dedutíveis (CMV/CMC/62/63/68/69 —
  *    excluímos 64-67, não-cash, para a disponibilidade não sair distorcida);
- *  - tributações autónomas = motor do Previsa (calculate().taTotal), testado;
+ *  - tributações autónomas = motor do Previsão (calculate().taTotal), testado;
  *  - total do balanço = soma do ativo (mesma fórmula do Diagnóstico).
  * Valores guardados pelo utilizador (enq2026) têm SEMPRE precedência.
  */
@@ -63,12 +63,12 @@ export function seedEnqFromSaft(emp: EmpresaRecord | null | undefined, profile: 
     preenchidos.push('gastos reais (CMV/CMC + FSE 62 + pessoal 63 + outros 68/69; sem depreciações/provisões)');
   }
 
-  // ── Tributações autónomas: motor do Previsa (sem duplicar fórmulas) ──
+  // ── Tributações autónomas: motor do Previsão (sem duplicar fórmulas) ──
   if (n(pv.ta_representacao) || n(pv.ta_ajadasCusto) || n(pv.ta_despNaoDocPrincipal) || (pv.viaturas?.length ?? 0) > 0) {
     const ta = calculate({ ...defaultPreviSaState(), ...pv }).taTotal;
     if (ta > 0) {
       seed.taManual = r2(ta);
-      preenchidos.push('tributações autónomas (motor do Previsa sobre o SAF-T)');
+      preenchidos.push('tributações autónomas (motor do Previsão sobre o SAF-T)');
     }
   }
 
