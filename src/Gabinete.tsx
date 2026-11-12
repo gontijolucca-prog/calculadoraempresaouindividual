@@ -588,7 +588,7 @@ function Dashboard({ clientes, tarefas, obrigacoes, cofre, onGo, canEdit = true 
               <button onClick={()=>setShowGerir(false)} className="p-1.5 rounded-lg hover:bg-zinc-200 text-zinc-500"><X className="w-4 h-4" /></button>
             </div>
             <div className="flex gap-2">
-              <input value={novaObrLabel} onChange={e=>setNovaObrLabel(e.target.value)} placeholder="Nova obrigação (ex: Modelo 30)" className="flex-1 px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" onKeyDown={e=>{ if(e.key==='Enter') handleAddObr(); }} />
+              <input required value={novaObrLabel} onChange={e=>setNovaObrLabel(e.target.value)} placeholder="Nova obrigação (ex: Modelo 30)" className="flex-1 px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" onKeyDown={e=>{ if(e.key==='Enter') handleAddObr(); }} />
               <button onClick={handleAddObr} className="px-4 py-2 rounded-lg bg-[var(--accent)] text-white text-sm font-semibold hover:bg-blue-600">Adicionar</button>
               <button onClick={()=>{ if(confirm('Repor lista original (7 obrigações)?')){ resetCatalogo(); setCatalogoState(getCatalogo()); showToast('✓ Lista reposta — gravado'); } }} className="px-3 py-2 rounded-lg border border-zinc-300 bg-white text-sm font-medium hover:bg-zinc-100">Repor</button>
             </div>
