@@ -108,7 +108,11 @@ export class RelatorioPdf {
     this.largura = this.doc.internal.pageSize.getWidth();
     this.altura = this.doc.internal.pageSize.getHeight();
     this.y = MM.topo;
-    this.cor = PDF_RGB.blue;
+    const hex = String(opts.escritorio?.corPrimaria || '').trim();
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+    this.cor = m
+      ? [parseInt(m[1].slice(0,2),16), parseInt(m[1].slice(2,4),16), parseInt(m[1].slice(4,6),16)]
+      : PDF_RGB.blue;
     // Metadados: o PDF fica identificável em qualquer leitor (portabilidade).
     try {
       this.doc.setProperties({
@@ -134,16 +138,21 @@ export class RelatorioPdf {
     const hoje = new Intl.DateTimeFormat('pt-PT', { dateStyle: 'long' }).format(new Date());
 
     // Fio de topo — assinatura discreta do documento.
-    d.setFillColor(...PDF_RGB.blue);
+    d.setFillColor(...this.cor);
     d.rect(0, 0, this.largura, 1.6, 'F');
 
-    // Cabeça: marca à esquerda, data à direita.
-    d.setFillColor(...PDF_RGB.blue);
-    d.roundedRect(this.margem, this.y, 10, 10, 2, 2, 'F');
-    d.setTextColor(...PDF_RGB.white);
-    d.setFont('helvetica', 'bold');
-    d.setFontSize(this.fs(9));
-    d.text('360', this.margem + 5, this.y + 6.4, { align: 'center' });
+    // Cabeça: logo do escritório (se existir) ou a marca, data à direita.
+    const logo = String(esc.logoDataUrl || '');
+    if (logo.startsWith('data:image')) {
+      try { d.addImage(logo, 'PNG', this.margem, this.y, 10, 10); } catch { /* svg/formatos estranhos */ }
+    } else {
+      d.setFillColor(...this.cor);
+      d.roundedRect(this.margem, this.y, 10, 10, 2, 2, 'F');
+      d.setTextColor(...PDF_RGB.white);
+      d.setFont('helvetica', 'bold');
+      d.setFontSize(this.fs(9));
+      d.text('360', this.margem + 5, this.y + 6.4, { align: 'center' });
+    }
 
     d.setFont('helvetica', 'bold');
     d.setFontSize(this.fs(9.6));
@@ -176,7 +185,7 @@ export class RelatorioPdf {
 
     // Faixa de identificação: cliente, NIF e emissão em colunas.
     const yBase = this.y + this.v(3);
-    d.setDrawColor(...PDF_RGB.blue);
+    d.setDrawColor(...this.cor);
     d.setLineWidth(0.5);
     d.line(this.margem, yBase, this.largura - this.margem, yBase);
     const xNif = this.margem + 108;
@@ -316,7 +325,7 @@ export class RelatorioPdf {
     const numero = String(this.nSec).padStart(2, '0');
     d.setFont('helvetica', 'bold');
     d.setFontSize(this.fs(7));
-    d.setTextColor(...PDF_RGB.blue);
+    d.setTextColor(...this.cor);
     d.text(numero, this.margem, this.y + this.v(2.8));
     d.setFontSize(this.fs(8.4));
     d.setTextColor(...PDF_RGB.dark);
@@ -542,7 +551,7 @@ export class RelatorioPdf {
       d.setTextColor(...PDF_RGB.medium);
       d.text(sanitizePdf(notaBase), this.margem, this.altura - 7.5, { maxWidth: 118 });
       d.setFont('helvetica', 'bold');
-      d.setTextColor(...PDF_RGB.blue);
+      d.setTextColor(...this.cor);
       d.text(String(p), this.largura - this.margem - 6, this.altura - 7.5, { align: 'right' });
       d.setFont('helvetica', 'normal');
       d.setTextColor(...PDF_RGB.medium);
