@@ -371,21 +371,25 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
             <div className={cn("grid transition-all duration-700 ease-in-out motion-reduce:transition-none", relatoriosOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
               <div className="overflow-hidden">
               <div className="mt-0.5 ml-2.5 pl-2 border-l-2 border-slate-200 space-y-0.5">
-                <ClientNavItem label="Demonstrações" Icon={FileDown}
-                  onClick={() => { onOpenRelatorios?.('balanco'); setDrawerOpen(false); }}
-                  title="Balanço, Demonstração de Resultados, Alterações no CP, Fluxos de Caixa e pacote completo." />
+                <p className="px-3 pt-2 pb-1 text-[10px] font-[800] uppercase tracking-[1.2px] text-slate-400">Processo de fecho</p>
                 <ClientNavItem label="Encerramento de contas" Icon={FileDown}
                   onClick={() => { onOpenRelatorios?.('acta'); setDrawerOpen(false); }}
                   title="Ata de Assembleia Geral, Previsa (Modelo 22) e Declaração de Responsabilidade." />
-                <ClientNavItem label="Pacote cliente" Icon={FileDown}
-                  onClick={() => { onOpenRelatorios?.('simulacao'); setDrawerOpen(false); }}
-                  title="Simulação Fiscal, Proposta de Honorários e Contrato." />
+                <ClientNavItem label="Demonstrações" Icon={FileDown}
+                  onClick={() => { onOpenRelatorios?.('balanco'); setDrawerOpen(false); }}
+                  title="Balanço, Demonstração de Resultados, Alterações no CP, Fluxos de Caixa e pacote completo." />
+                <p className="px-3 pt-3 pb-1 text-[10px] font-[800] uppercase tracking-[1.2px] text-slate-400">Pacote cliente</p>
+                <ClientNavItem label="Pacote do cliente" Icon={FileDown}
+                  onClick={() => { onOpenRelatorios?.('proposta'); setDrawerOpen(false); }}
+                  title="Capa, Proposta de Honorários e Contrato." />
+                <ClientNavItem label="Fazer proposta" Icon={Presentation}
+                  onClick={() => { go('proposta'); }}
+                  current={view === 'proposta'}
+                  title="Gera o texto da proposta para colar no Gamma" />
               </div>
               </div>
             </div>
 
-        <SectionLabel>Propostas</SectionLabel>
-        <NavItem label="Gerar proposta" Icon={Presentation} onClick={() => go('proposta')} current={view === 'proposta'} title="Gera o texto da proposta para colar no Gamma" />
         <SectionLabel>Ferramentas</SectionLabel>
         <NavItem label="Base Legal" Icon={Info} onClick={() => runAction(openLegal)} current={view === 'legal'} />
       </nav>
@@ -422,15 +426,12 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
     {
       id: 'relatorios', label: 'Relatórios', current: active === 'exportar', align: 'right',
       items: [
-        { label: 'Demonstrações', desc: 'Balanço, resultados, fluxos e pacote completo', Icon: FileDown, onClick: () => { onOpenRelatorios?.('balanco'); setDrawerOpen(false); } },
+        { heading: true, label: 'Processo de fecho', onClick: () => {} },
         { label: 'Encerramento de contas', desc: 'Ata, Previsa e declaração de responsabilidade', Icon: FileDown, onClick: () => { onOpenRelatorios?.('acta'); setDrawerOpen(false); } },
-        { label: 'Pacote cliente', desc: 'Proposta de honorários e contrato', Icon: FileDown, onClick: () => { onOpenRelatorios?.('proposta'); setDrawerOpen(false); } },
-      ],
-    },
-    {
-      id: 'propostas', label: 'Propostas', current: view === 'proposta', align: 'right',
-      items: [
-        { label: 'Gerar proposta', desc: 'Texto pronto para colar no Gamma', Icon: Presentation, current: view === 'proposta', onClick: () => go('proposta') },
+        { label: 'Demonstrações', desc: 'Balanço, resultados, fluxos e pacote completo', Icon: FileDown, onClick: () => { onOpenRelatorios?.('balanco'); setDrawerOpen(false); } },
+        { heading: true, label: 'Pacote cliente', onClick: () => {} },
+        { label: 'Pacote do cliente', desc: 'Capa, proposta de honorários e contrato', Icon: FileDown, onClick: () => { onOpenRelatorios?.('proposta'); setDrawerOpen(false); } },
+        { label: 'Fazer proposta', desc: 'Texto pronto para colar no Gamma', Icon: Presentation, current: view === 'proposta', onClick: () => go('proposta') },
       ],
     },
     {

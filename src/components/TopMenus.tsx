@@ -13,6 +13,8 @@ export interface TopMenuItem {
   Icon?: React.ComponentType<{ className?: string }>;
   onClick: () => void;
   current?: boolean;
+  /** Cabeçalho de secção dentro do dropdown (não é clicável). */
+  heading?: boolean;
 }
 export interface TopMenuGroup {
   id: string;
@@ -100,7 +102,11 @@ export default function TopMenus({ groups }: { groups: TopMenuGroup[] }) {
                 )}
               >
                 <div className={cn('grid gap-1', g.items.length > 6 ? 'grid-cols-2' : 'grid-cols-1')}>
-                  {g.items.map((item) => (
+                  {g.items.map((item) => item.heading ? (
+                    <div key={`h-${item.label}`} role="presentation" className="col-span-full px-3 pt-2 pb-1 text-[10px] font-[800] uppercase tracking-[1.2px] text-slate-400">
+                      {item.label}
+                    </div>
+                  ) : (
                     <button
                       key={item.label}
                       type="button"
