@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import type { ClientProfile } from './ClientProfile';
 import type { OfficeSettings } from './lib/officeSettings';
 import { type HonorariosConfig, type PropostaResultado, calcularProposta } from './lib/honorarios';
-import { PDF_COLORS as C } from './lib/pdfTheme';
+import { PDF_COLORS, paletaPdf, type PaletaPdf } from './lib/pdfTheme';
+
+// Paleta do documento — definida no render a partir do accent do escritório.
+let C: PaletaPdf = PDF_COLORS;
 
 interface Props {
   profile: ClientProfile;
@@ -50,6 +53,7 @@ export default function MinutaContrato({
   dataInicio, periodicidadeBalancetes = 'mensal', periodicidadeMaterial = 'trimestral',
   printRootId = 'minuta-print-root',
 }: Props) {
+  C = paletaPdf(office.corPrimaria);
   const proposta: PropostaResultado = calcularProposta(profile, honorarios, servicosIds);
 
   // Inferência: se cliente é uma sociedade (não ENI), assume pessoa coletiva.
@@ -143,6 +147,9 @@ export default function MinutaContrato({
       <div className="mc-page" contentEditable suppressContentEditableWarning>
         <div className="mc-band" />
 
+        {office.logoDataUrl && (
+          <img src={office.logoDataUrl} alt="" style={{ display: 'block', margin: '0 auto 4mm', maxHeight: '16mm', maxWidth: '40mm', objectFit: 'contain' }} />
+        )}
         <div className="mc-kicker">{office.nome || 'Contabilidade Certificada'}</div>
         <h1>Contrato de Prestação de Serviços</h1>
         <div className="mc-rule" />

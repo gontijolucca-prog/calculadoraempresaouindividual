@@ -3,7 +3,10 @@ import type { ClientProfile } from './ClientProfile';
 import type { OfficeSettings } from './lib/officeSettings';
 import { calcularProposta, type HonorariosConfig } from './lib/honorarios';
 import { imprimirUmaFolha } from './lib/printElement';
-import { PDF_COLORS as C } from './lib/pdfTheme';
+import { PDF_COLORS, paletaPdf, type PaletaPdf } from './lib/pdfTheme';
+
+// Paleta do documento — definida no render a partir do accent do escritório.
+let C: PaletaPdf = PDF_COLORS;
 
 interface Props {
   profile: ClientProfile;
@@ -41,6 +44,8 @@ export default function Proposta({ profile, office, honorarios, servicosIds, onS
     setLocalIds(next);
     onServicosIdsChange?.(next);
   };
+
+  C = paletaPdf(office.corPrimaria);
 
   const proposta = useMemo(
     () => calcularProposta(profile, honorarios, idsAtuais),
@@ -162,7 +167,11 @@ export default function Proposta({ profile, office, honorarios, servicosIds, onS
         {/* Cabeçalho */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 14 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ width: 31, height: 31, borderRadius: 8, background: C.blue, color: C.white, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '9pt', marginBottom: 7 }}>360</div>
+            {office.logoDataUrl ? (
+              <img src={office.logoDataUrl} alt="" style={{ maxWidth: 58, maxHeight: 44, objectFit: 'contain', display: 'block', marginBottom: 7 }} />
+            ) : (
+              <div style={{ width: 31, height: 31, borderRadius: 8, background: C.blue, color: C.white, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '9pt', marginBottom: 7 }}>360</div>
+            )}
             <div style={{ fontWeight: 800, fontSize: '14pt', color: C.dark }}>{office.nome || '— configure o nome do escritório nas Definições —'}</div>
             <div style={{ fontSize: '9pt', color: C.medium, marginTop: 2, lineHeight: 1.5 }}>
               {office.tipo === 'sociedade' ? `NIPC ${office.nif || '—'}` : `Contabilista Certificado · NIF ${office.nif || '—'}`}<br/>

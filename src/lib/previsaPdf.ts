@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import type { PreviSaState } from '../previSaState';
 import { calculate } from './previsaCalc';
 import { sanitizePdf, slugFicheiro } from './reportPdf';
-import { PDF_RGB } from './pdfTheme';
+import { paletaRgb } from './pdfTheme';
 
 export interface PrevisaEscritorio {
   nome?: string;
@@ -27,56 +27,89 @@ function fmt(n: number): string {
  * finais (apuramento + liquidação), marca do escritório e notas de leitura.
  * Sem Excel: o documento é este PDF.
  */
-export async function downloadPrevisaPdf(state: PreviSaState, nome: string, escritorio: PrevisaEscritorio = {}) {
+export function criarPrevisaPdf(state: PreviSaState, nome: string, escritorio: PrevisaEscritorio = {}): jsPDF {
   const r = calculate(state) as any;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = 210;
+  const P = paletaRgb(escritorio.corPrimaria);
 
-  // Cabeçalho azul sólido, sem logótipos externos que possam introduzir cores.
-  doc.setFillColor(...PDF_RGB.dark);
-  doc.rect(0, 0, W, 24, 'F');
-  doc.setFillColor(...PDF_RGB.blue);
-  doc.rect(0, 24, W, 1.4, 'F');
-  doc.setFillColor(...PDF_RGB.blue);
-  doc.roundedRect(10, 5, 12, 12, 2.5, 2.5, 'F');
-  doc.setTextColor(...PDF_RGB.white);
+  // Cabeçalho de documento (não de site): filete de accent, logo do escritório,
+  // identificação e título em serifa — o mesmo modelo dos restantes PDFs.
+  doc.setFillColor(...P.blue);
+  doc.rect(0, 0, W, 1.6, 'F');
+
+  const logo = String(escritorio.logoDataUrl || '');
+  let xTexto = 10;
+  if (logo.startsWith('data:image')) {
+    const formato = logo.includes('image/png') ? 'PNG' : 'JPEG';
+    try { doc.addImage(logo, formato, 10, 8, 14, 14); xTexto = 28; } catch { /* formato exótico */ }
+  }
+  if (xTexto === 10) {
+    doc.setFillColor(...P.blue);
+    doc.roundedRect(10, 8, 12, 12, 2.5, 2.5, 'F');
+    doc.setTextColor(...P.white);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text('360', 16, 15.6, { align: 'center' });
+    xTexto = 26;
+  }
+
+  const occ = [escritorio.cedulaProfissional ? `Cédula ${escritorio.cedulaProfissional}` : '', escritorio.numeroInscricaoOCC ? `OCC ${escritorio.numeroInscricaoOCC}` : ''].filter(Boolean).join(' · ');
+  const contacto = [escritorio.email, escritorio.telefone].filter(Boolean).join(' · ');
+  const morada = [escritorio.morada, escritorio.codigoPostal, escritorio.localidade].filter(Boolean).join(', ');
+
+  doc.setTextColor(...P.dark);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.text('360', 16, 12.6, { align: 'center' });
-  const xTexto = 26;
-  doc.setTextColor(...PDF_RGB.white);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.text('Previsa — Modelo 22', xTexto, 11);
-  doc.setFontSize(7.5);
+  doc.setFontSize(10.5);
+  doc.text(sanitizePdf(escritorio.nome || 'Estudo 360'), xTexto, 12.6);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...PDF_RGB.light);
-  doc.text(sanitizePdf(escritorio.nome || 'Estudo 360'), xTexto, 16);
-  doc.text(sanitizePdf(`${nome || 'Empresa'} · Período ${state.periodo || '—'}`), 10, 21);
+  doc.setFontSize(6.6);
+  doc.setTextColor(...P.medium);
+  doc.text(sanitizePdf([escritorio.nif ? `NIF ${escritorio.nif}` : '', occ, contacto].filter(Boolean).join(' · ')), xTexto, 16.6, { maxWidth: 130 });
+  if (morada) doc.text(sanitizePdf(morada), xTexto, 20.2, { maxWidth: 130 });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.2);
+  doc.setTextColor(...P.medium);
+  doc.text('DOCUMENTO CONFIDENCIAL', 200, 11, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.text(new Date().toLocaleDateString('pt-PT'), 200, 15, { align: 'right' });
+
+  doc.setFont('times', 'bold');
+  doc.setFontSize(19);
+  doc.setTextColor(...P.dark);
+  doc.text('Previsa — Modelo 22', 10, 33);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.4);
+  doc.setTextColor(...P.medium);
+  doc.text(sanitizePdf(`${nome || 'Empresa'} · Período ${state.periodo || '—'}`), 10, 38.4);
+  doc.setDrawColor(...P.line);
+  doc.setLineWidth(0.3);
+  doc.line(10, 41.4, 200, 41.4);
 
   const colW = 92;
   const xL = 10;
   const xR = 108;
-  let yL = 34;
-  let yR = 34;
+  let yL = 50;
+  let yR = 50;
 
   const titulo = (txt: string, x: number, y: number) => {
-    doc.setTextColor(...PDF_RGB.dark);
+    doc.setTextColor(...P.dark);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9.5);
     doc.text(txt, x, y);
-    doc.setDrawColor(...PDF_RGB.line);
+    doc.setDrawColor(...P.line);
     doc.line(x, y + 1.5, x + colW, y + 1.5);
     return y + 8;
   };
   const linha = (label: string, val: number | string, x: number, y: number, forte = false) => {
     doc.setFont('helvetica', forte ? 'bold' : 'normal');
     doc.setFontSize(8.4);
-    const tom = forte ? PDF_RGB.dark : PDF_RGB.medium;
+    const tom = forte ? P.dark : P.medium;
     doc.setTextColor(...tom);
     doc.text(sanitizePdf(String(label).slice(0, 48)), x, y);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...PDF_RGB.dark);
+    doc.setTextColor(...P.dark);
     doc.text(typeof val === 'number' ? fmt(val) : sanitizePdf(String(val)), x + colW, y, { align: 'right' });
     return y + 7;
   };
@@ -102,17 +135,17 @@ export async function downloadPrevisaPdf(state: PreviSaState, nome: string, escr
 
   // Faixa do resultado
   const yF = Math.max(yL, yR) + 2;
-  doc.setFillColor(...PDF_RGB.light);
-  doc.setDrawColor(...PDF_RGB.line);
+  doc.setFillColor(...P.light);
+  doc.setDrawColor(...P.line);
   doc.rect(10, yF, 190, 16, 'F');
-  doc.setFillColor(...PDF_RGB.blue);
+  doc.setFillColor(...P.blue);
   doc.rect(10, yF, 3, 16, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
-  doc.setTextColor(...PDF_RGB.dark);
+  doc.setTextColor(...P.dark);
   doc.text('Resultado do período', 14, yF + 6.5);
   doc.setFontSize(14);
-  doc.setTextColor(...PDF_RGB.blue);
+  doc.setTextColor(...P.blue);
   doc.text(fmt(r.c367 || 0), 196, yF + 10.5, { align: 'right' });
 
   // O PPC do ano seguinte não entra no total deste período — fica separado.
@@ -123,7 +156,7 @@ export async function downloadPrevisaPdf(state: PreviSaState, nome: string, escr
     const anoPpc = (Number(state.periodo) || new Date().getFullYear()) + 1;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.4);
-    doc.setTextColor(...PDF_RGB.medium);
+    doc.setTextColor(...P.medium);
     doc.text(
       sanitizePdf(`PPC ${anoPpc} (estimativa, fora deste total): 3 × ${fmt(prestacao)} = ${fmt(ppc)} — jul · set · 15 dez`),
       10,
@@ -144,12 +177,12 @@ export async function downloadPrevisaPdf(state: PreviSaState, nome: string, escr
     for (const [label, value] of rows) {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.4);
-      doc.setTextColor(...PDF_RGB.medium);
+      doc.setTextColor(...P.medium);
       doc.text(sanitizePdf(label), x, yy);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...PDF_RGB.dark);
+      doc.setTextColor(...P.dark);
       doc.text(fmt(value), x + colW, yy, { align: 'right' });
-      doc.setDrawColor(...PDF_RGB.pale);
+      doc.setDrawColor(...P.pale);
       doc.line(x, yy + 1.1, x + colW, yy + 1.1);
       yy += 5.5;
     }
@@ -179,11 +212,11 @@ export async function downloadPrevisaPdf(state: PreviSaState, nome: string, escr
   const yN = Math.max(yDL, yDR) + 2;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
-  doc.setTextColor(...PDF_RGB.dark);
+  doc.setTextColor(...P.dark);
   doc.text('Como ler este resumo', 10, yN);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.4);
-  doc.setTextColor(...PDF_RGB.medium);
+  doc.setTextColor(...P.medium);
   const notas = [
     'Q07 — Apuramento: rendimentos da classe 7 menos gastos da classe 6, ajustado pelas correções fiscais.',
     'Q09 — Matéria coletável: lucro tributável após prejuízos fiscais e benefícios aplicáveis.',
@@ -196,16 +229,16 @@ export async function downloadPrevisaPdf(state: PreviSaState, nome: string, escr
   // Parâmetros considerados — evita um PDF só com números soltos.
   const yP = yN + 7 + notas.length * 5 + 5;
   if (yP + 31 < 280) {
-    doc.setFillColor(...PDF_RGB.pale);
-    doc.setDrawColor(...PDF_RGB.line);
+    doc.setFillColor(...P.pale);
+    doc.setDrawColor(...P.line);
     doc.roundedRect(10, yP, 190, 31, 2, 2, 'FD');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.6);
-    doc.setTextColor(...PDF_RGB.dark);
+    doc.setTextColor(...P.dark);
     doc.text('Enquadramento e dados do escritório', 14, yP + 6);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6.9);
-    doc.setTextColor(...PDF_RGB.medium);
+    doc.setTextColor(...P.medium);
     const st = state as unknown as Record<string, unknown>;
     const regime = String(st.regime || 'geral');
     const pme = st.isPME === false ? 'não PME' : 'PME';
@@ -234,26 +267,32 @@ export async function downloadPrevisaPdf(state: PreviSaState, nome: string, escr
     const boxW = 46;
     indicadores.forEach(([label, value], index) => {
       const x = 10 + index * 47.2;
-      doc.setFillColor(...PDF_RGB.light);
-      doc.setDrawColor(...PDF_RGB.line);
+      doc.setFillColor(...P.light);
+      doc.setDrawColor(...P.line);
       doc.roundedRect(x, yInd, boxW, 16, 1.5, 1.5, 'FD');
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(6.2);
-      doc.setTextColor(...PDF_RGB.medium);
+      doc.setTextColor(...P.medium);
       doc.text(sanitizePdf(label), x + 2.5, yInd + 5.3, { maxWidth: boxW - 5 });
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9);
-      doc.setTextColor(...PDF_RGB.dark);
+      doc.setTextColor(...P.dark);
       doc.text(sanitizePdf(value), x + 2.5, yInd + 12.3);
     });
   }
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
-  doc.setTextColor(...PDF_RGB.medium);
-  doc.text(`Gerado em ${new Date().toLocaleDateString('pt-PT')} — estudo360.pt`, 10, 287);
+  doc.setTextColor(...P.medium);
+  doc.text(`Gerado a ${new Date().toLocaleDateString('pt-PT')} · ${escritorio.nome || 'Estudo 360'}`, 10, 287);
   doc.text('Pág. 1/1', 200, 287, { align: 'right' });
 
+  return doc;
+}
+
+/** Descarrega o PDF do Previsa (uma folha A4). */
+export async function downloadPrevisaPdf(state: PreviSaState, nome: string, escritorio: PrevisaEscritorio = {}) {
+  const doc = criarPrevisaPdf(state, nome, escritorio);
   const filename = `${slugFicheiro('Previsa ' + (nome || 'Empresa') + ' ' + (state.periodo || new Date().getFullYear()))}.pdf`;
   doc.save(filename);
 }

@@ -4,7 +4,7 @@ import { User, Building2, FileText, Ticket, Wallet, MapPin } from 'lucide-react'
 import { FlowWizard, type FlowStep } from './FlowWizard';
 import { useFlowMode } from './AnimatedPage';
 import { Tip } from './Tip';
-import { PDF_RGB } from './lib/pdfTheme';
+import { paletaRgb } from './lib/pdfTheme';
 import ExportPackageModal from './ExportPackageModal';
 import { consumeOpenPackage, consumeFlowToggle } from './lib/profileIntent';
 import {
@@ -320,7 +320,7 @@ export default function ClientProfile({
       import('./lib/reportPdf'),
     ]);
     const logoGenerico = await svgLogoToPng();
-    const logoDataUrl = logoGenerico;
+    const logoDataUrl = String(office?.logoDataUrl || logoGenerico);
     const officeName = office?.nome?.trim() || 'Estudo 360';
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const fiscalSummary: { label: string; valor: string }[] = [];
@@ -332,18 +332,19 @@ export default function ClientProfile({
     const cw = pw - ml - mr; // 178 mm
 
     type RGB = [number, number, number];
-    const NAVY: RGB         = PDF_RGB.dark;
-    const MAROON: RGB       = PDF_RGB.blue;
-    const MAROON_LIGHT: RGB = PDF_RGB.light;
-    const SLATE_50: RGB     = PDF_RGB.pale;
-    const SLATE_100: RGB    = PDF_RGB.light;
-    const SLATE_200: RGB    = PDF_RGB.line;
-    const SLATE_500: RGB    = PDF_RGB.medium;
-    const SLATE_700: RGB    = PDF_RGB.dark;
-    const SLATE_900: RGB    = PDF_RGB.dark;
-    const WHITE: RGB        = PDF_RGB.white;
-    const GREEN: RGB        = PDF_RGB.blue;
-    const GREEN_LIGHT: RGB  = PDF_RGB.light;
+    const P = paletaRgb(office?.corPrimaria);
+    const NAVY: RGB         = P.dark;
+    const MAROON: RGB       = P.blue;
+    const MAROON_LIGHT: RGB = P.light;
+    const SLATE_50: RGB     = P.pale;
+    const SLATE_100: RGB    = P.light;
+    const SLATE_200: RGB    = P.line;
+    const SLATE_500: RGB    = P.medium;
+    const SLATE_700: RGB    = P.dark;
+    const SLATE_900: RGB    = P.dark;
+    const WHITE: RGB        = P.white;
+    const GREEN: RGB        = P.blue;
+    const GREEN_LIGHT: RGB  = P.light;
 
     const fill  = (c: RGB) => doc.setFillColor(c[0], c[1], c[2]);
     const textC = (c: RGB) => doc.setTextColor(c[0], c[1], c[2]);
@@ -359,7 +360,9 @@ export default function ClientProfile({
     doc.rect(0, 0, 3, 13, 'F');
     drawC(SLATE_200); doc.setLineWidth(0.2); doc.line(0, 13, pw, 13);
 
-    if (logoDataUrl) doc.addImage(logoDataUrl, 'PNG', ml, 2.5, 8, 8);
+    if (logoDataUrl) {
+      try { doc.addImage(logoDataUrl, logoDataUrl.includes('image/png') ? 'PNG' : 'JPEG', ml, 2.5, 8, 8); } catch { /* formato exótico */ }
+    }
     textC(NAVY);
     doc.setFontSize(8.5); doc.setFont('helvetica', 'bold');
     doc.text(officeName, ml + 10, 7.5);

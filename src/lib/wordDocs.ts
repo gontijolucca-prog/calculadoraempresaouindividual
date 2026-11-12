@@ -14,7 +14,7 @@ import type { ContabilidadeData } from '../ClientProfile';
 import type { PreviSaState } from '../previSaState';
 import { defaultPreviSaState } from '../previSaState';
 import { impostoEstimado } from './previsaCalc';
-import { PDF_COLORS as C } from './pdfTheme';
+import { PDF_COLORS as BASE, paletaPdf, type PaletaPdf } from './pdfTheme';
 
 // ─── Helpers de formatação ──────────────────────────────────────────────────
 
@@ -74,7 +74,8 @@ function ctx(emp: EmpresaRecord, office: OfficeSettings): Ctx {
   const nif = (emp.nif || emp.profile?.nif || '').trim();
   const ano = prev.periodo || new Date().getFullYear() - 1;
   const cor = String(office.corPrimaria || '').trim();
-  COR_ATUAL = /^#[0-9a-f]{6}$/i.test(cor) ? cor : C.blue;
+  C = paletaPdf(cor);
+  COR_ATUAL = C.blue;
   const sociedade = office.tipo === 'sociedade';
   const contabilista = (sociedade ? (office.contabilistaResponsavel || office.nome) : office.nome) || '';
   return {
@@ -149,7 +150,7 @@ function drLinhas(p: PreviSaState) {
 
 // ─── Embrulho Word-HTML ───────────────────────────────────────────────────────
 
-const STYLE = `
+const construirEstilo = () => `
   @page { size: 21cm 29.7cm; margin: 1.8cm 1.4cm; }
   * { box-sizing: border-box; }
   html { background: ${C.white}; }
@@ -197,6 +198,7 @@ const STYLE = `
   table.compact td, table.compact th { padding: 2.5pt 2.8pt; font-size: 7.2pt; }
   table.compact .num { white-space: normal; }
   table.compact .dash { letter-spacing: 0; }
+  table.compact th { font-size: 6.4pt; letter-spacing: 0; word-break: normal; overflow-wrap: normal; }
   /* Ecrã: pré-visualização fluida à largura do painel (nunca corta na horizontal).
      A paginação/medidas A4 reais vêm do @page na impressão e no Word. */
   @media screen {
@@ -205,6 +207,7 @@ const STYLE = `
   }
 `;
 
+let C: PaletaPdf = BASE;
 let COR_ATUAL: string = C.blue;
 function wordShell(title: string, body: string): string {
   return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
@@ -213,7 +216,7 @@ function wordShell(title: string, body: string): string {
 <meta name="ProgId" content="Word.Document">
 <meta name="Generator" content="Estudo 360">
 <title>${esc(title)}</title>
-<style>${STYLE.replaceAll(C.blue, COR_ATUAL)}</style>
+<style>${construirEstilo()}</style>
 </head>
 <body>${body}</body>
 </html>`;
@@ -281,7 +284,7 @@ ${barras([
 ])}
 ${margemLiquida != null ? `<p class="meta" style="margin:0 0 7pt"><b>Margem l&iacute;quida:</b> ${margemLiquida.toFixed(1).replace('.', ',')}% do volume de vendas e servi&ccedil;os.</p>` : ''}
 <table class="dr">
-<tr><th style="text-align:left">Rendimentos e Gastos</th><th class="num">Notas</th><th class="num">${c.ano}</th><th class="num">${c.anoAnt}</th></tr>
+<tr><th style="text-align:left;width:52%">Rendimentos e Gastos</th><th class="num" style="width:9%">Notas</th><th class="num" style="width:19.5%">${c.ano}</th><th class="num" style="width:19.5%">${c.anoAnt}</th></tr>
 ${r('Vendas e servi&ccedil;os prestados', d.vendas)}
 ${r('Subs&iacute;dios &agrave; explora&ccedil;&atilde;o', d.subsidios)}
 ${r('Varia&ccedil;&atilde;o nos invent&aacute;rios da produ&ccedil;&atilde;o', null)}
@@ -347,7 +350,7 @@ ${barras([
   { label: 'Atividades de financiamento', valor: totalFin },
 ])}
 <table class="dr">
-<tr><th style="text-align:left">Rubrica</th><th class="num">Notas</th><th class="num">${c.ano}</th></tr>
+<tr><th style="text-align:left;width:59%">Rubrica</th><th class="num" style="width:9%">Notas</th><th class="num" style="width:32%">${c.ano}</th></tr>
 ${sec('Fluxos de caixa das atividades operacionais')}
 ${r('Recebimentos de clientes', receb)}
 ${r('Pagamentos a fornecedores', pagForn != null ? -pagForn : null)}
@@ -397,9 +400,9 @@ export function buildAlteracoesCapitalProprio(emp: EmpresaRecord, office: Office
   const reservasIni   = cv(c.contAb, 'reservasResultadosTransitados');
   const outrasIni     = cv(c.contAb, 'outrasVariacoesCapital');
   // Colunas: 0=Capital, 3=Prémios, ... 6=Result.Transitados, 8=Ajust/Outras, 9=Result.Líquido, 10=Total.
-  const cols = ['Capital Subscrito', 'A&ccedil;&otilde;es (quotas) pr&oacute;prias', 'Outros instrum. de Cap. Pr&oacute;prio',
-    'Pr&eacute;mios de emiss&atilde;o', 'Reservas Legais', 'Outras Reservas', 'Resultados Transitados',
-    'Excedentes de Revaloriza&ccedil;&atilde;o', 'Ajustamentos / Outras Varia&ccedil;&otilde;es', 'Resultado L&iacute;quido', 'Total'];
+  const cols = ['Capital', 'A&ccedil;&otilde;es prop.', 'Outros instr.',
+    'Pr&eacute;mios', 'Res. legais', 'Out. res.', 'Res. trans.',
+    'Exced.', 'Ajust.', 'Res. l&iacute;quido', 'Total'];
   const head = `<tr><th style="text-align:left">DESCRI&Ccedil;&Atilde;O</th>${cols.map(x => `<th class="num">${x}</th>`).join('')}</tr>`;
   // overrides: mapa coluna→valor; células sem valor ficam tracejadas (vazio = traço).
   // Tabela larga (12 colunas) — traço curto para não forçar a largura das células.
@@ -419,7 +422,7 @@ export function buildAlteracoesCapitalProprio(emp: EmpresaRecord, office: Office
   const anyData = capital != null || reservasRT != null || outras != null || rl != null;
   const body = `${cabecalho(c, `Demonstra&ccedil;&atilde;o das Altera&ccedil;&otilde;es no Capital Pr&oacute;prio &mdash; ${c.ano}`)}
 <table class="dr compact" style="table-layout:fixed">
-<colgroup><col style="width:16%">${cols.slice(0, -1).map(() => '<col>').join('')}<col></colgroup>
+<colgroup><col style="width:19%">${cols.slice(0, -1).map(() => '<col>').join('')}<col></colgroup>
 ${head}
 ${row(`Posi&ccedil;&atilde;o no in&iacute;cio do per&iacute;odo ${c.ano}`, inicio, anyData)}
 ${row('Altera&ccedil;&otilde;es no per&iacute;odo', {})}
@@ -471,7 +474,7 @@ function buildBalancoBody(c: Ctx, comQuebra = true): string {
   const bsec = (label: string) => `<tr class="tot"><td colspan="4" class="sec">${label}</td></tr>`;
   return `<div class="${comQuebra ? 'pgbreak' : ''}">${cabecalho(c, `Balan&ccedil;o em 31 de dezembro de ${c.ano}`)}
 <table class="dr">
-<tr><th style="text-align:left">Rubricas</th><th class="num">Notas</th><th class="num">${c.ano}</th><th class="num">${c.anoAnt}</th></tr>
+<tr><th style="text-align:left;width:52%">Rubricas</th><th class="num" style="width:9%">Notas</th><th class="num" style="width:19.5%">${c.ano}</th><th class="num" style="width:19.5%">${c.anoAnt}</th></tr>
 ${bsec('ATIVO')}
 ${bsec('Ativo n&atilde;o corrente')}
 ${brow('Ativos fixos tang&iacute;veis', aft, false, aftA)}
