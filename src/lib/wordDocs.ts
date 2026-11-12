@@ -151,28 +151,28 @@ const STYLE = `
   @page { size: 21cm 29.7cm; margin: 1.8cm 1.4cm; }
   * { box-sizing: border-box; }
   html { background: ${C.white}; }
-  body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: ${C.dark}; margin: 0; background: ${C.white}; }
+  body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 9.6pt; color: ${C.dark}; margin: 0; background: ${C.white}; }
   .hdr { display: table; width: 100%; margin-bottom: 4pt; }
-  .hdr .l { display: table-cell; text-align: left; font-weight: bold; color: ${C.dark}; font-size: 11pt; }
-  .hdr .r { display: table-cell; text-align: right; font-weight: bold; color: ${C.blue}; font-size: 11pt; }
+  .hdr .l { display: table-cell; text-align: left; font-weight: bold; color: ${C.dark}; font-size: 10pt; letter-spacing: .2pt; }
+  .hdr .r { display: table-cell; text-align: right; font-weight: normal; color: ${C.medium}; font-size: 7.2pt; letter-spacing: .5pt; }
   .office-meta { color: ${C.medium}; font-size: 7.5pt; margin: 0 0 5pt; }
   .doc-control { display: flex; justify-content: space-between; gap: 8pt; margin: 0 0 7pt; padding: 3pt 5pt; background: ${C.light}; border: 0.5pt solid ${C.line}; color: ${C.medium}; font-size: 7.2pt; }
   .doc-control b { color: ${C.dark}; }
-  h1.title { color: ${C.dark}; font-size: 14pt; margin: 2pt 0 2pt; padding-bottom: 4pt; border-bottom: 1.5pt solid ${C.blue}; page-break-after: avoid; }
+  h1.title { font-family: Georgia, 'Times New Roman', serif; font-weight: 700; color: ${C.dark}; font-size: 17pt; line-height: 1.15; margin: 4pt 0 3pt; padding-bottom: 5pt; border-bottom: 0.8pt solid ${C.blue}; page-break-after: avoid; }
   .em-euros { text-align: right; color: ${C.blue}; font-size: 8pt; font-weight: bold; margin: 2pt 0 8pt; }
   .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5pt; margin: 0 0 8pt; }
-  .kpi { border: 0.75pt solid ${C.line}; background: ${C.pale}; padding: 4pt 5pt; }
+  .kpi { border-top: 1pt solid ${C.blue}; padding: 5pt 2pt 4pt; }
   .kpi small { display: block; color: ${C.medium}; font-size: 7pt; text-transform: uppercase; letter-spacing: .4pt; }
-  .kpi strong { display: block; color: ${C.dark}; font-size: 10pt; margin-top: 1pt; }
+  .kpi strong { display: block; font-family: Georgia, 'Times New Roman', serif; color: ${C.dark}; font-size: 13pt; margin-top: 2pt; }
   table { border-collapse: collapse; width: 100%; max-width: 100%; page-break-inside: auto; }
   table.dr { table-layout: fixed; }
   table.dr td, table.dr th { padding: 2.5pt 4pt; font-size: 9.5pt; border-bottom: 0.5pt solid ${C.line}; overflow-wrap: break-word; word-break: break-word; }
-  table.dr th { color: ${C.white}; background: ${C.dark}; border-bottom: 1pt solid ${C.blue}; }
+  table.dr th { color: ${C.dark}; background: ${C.white}; border-bottom: 0.8pt solid ${C.dark}; font-size: 7.4pt; text-transform: uppercase; letter-spacing: .4pt; }
   thead { display: table-header-group; }
   tr { page-break-inside: avoid; }
   .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .tot td { font-weight: bold; border-top: 0.75pt solid ${C.blue}; }
-  .sec { font-weight: bold; text-align: center; color: ${C.dark}; background: ${C.light}; }
+  .tot td { font-weight: bold; border-top: 0.9pt solid ${C.dark}; }
+  .sec { font-weight: bold; text-align: left; color: ${C.dark}; background: ${C.white}; border-top: 0.6pt solid ${C.line}; text-transform: uppercase; font-size: 8pt; letter-spacing: .5pt; }
   .ind { padding-left: 10pt !important; }
   .dash { color: ${C.medium}; letter-spacing: 1px; }
   .fill { color: ${C.medium}; letter-spacing: 1px; }
