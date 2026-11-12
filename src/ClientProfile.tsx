@@ -91,7 +91,7 @@ export interface ClientProfile {
   nrDependentes: number;
   beneficioJovem: boolean;
   tipoEntidade: 'eni' | 'lda' | 'unipessoal' | 'sa' | 'socio_unico';
-  /** Distingue ENI profissional liberal (recibos verdes) de empresário em nome individual. */
+  /** Distingue ENI profissional liberal de empresário em nome individual. */
   eniPerfil?: 'liberal' | 'empresa';
   faturaçaoAnualPrevista: number;
   nrFuncionarios: number;
@@ -363,14 +363,14 @@ export default function ClientProfile({
     drawC(SLATE_200); doc.setLineWidth(0.2); doc.line(0, 13, pw, 13);
 
     if (logoDataUrl) {
-      try { doc.addImage(logoDataUrl, logoDataUrl.includes('image/png') ? 'PNG' : 'JPEG', ml, 2.5, 8, 8); } catch { /* formato exótico */ }
+      try { doc.addImage(logoDataUrl, logoDataUrl.includes('image/png') ? 'PNG' : 'JPEG', ml, 1, 11, 11); } catch { /* formato exótico */ }
     }
     textC(NAVY);
     doc.setFontSize(8.5); doc.setFont('helvetica', 'bold');
-    doc.text(officeName, ml + 10, 7.5);
+    doc.text(officeName, ml + 13, 7.5);
     textC(SLATE_500);
     doc.setFontSize(6.5); doc.setFont('helvetica', 'normal');
-    doc.text(office?.contabilistaResponsavel || 'Contabilidade', ml + 10, 11);
+    doc.text(office?.contabilistaResponsavel || 'Contabilidade', ml + 13, 11);
     textC(SLATE_500);
     doc.setFontSize(7);
     doc.text('Simulação Fiscal • OE 2026', pw / 2, 8.5, { align: 'center' });
@@ -842,7 +842,7 @@ export default function ClientProfile({
               }}
               className={inputClass}
             >
-              <option value="eni">ENI (Recibos Verdes) — profissional liberal</option>
+              <option value="eni">ENI (Profissional Liberal)</option>
               <option value="eni_empresa">ENI (Empresário em Nome Individual)</option>
               <option value="lda">Lda (Sociedade)</option>
               <option value="unipessoal">Unipessoal Lda</option>
@@ -914,7 +914,7 @@ export default function ClientProfile({
           {st.tipoEntidade === 'eni' && st.faturaçaoAnualPrevista > 200000 && (
             <div className="col-span-2 flex gap-2 p-3 bg-amber-50 border border-amber-200 rounded-[8px]">
               <span className="text-amber-600 shrink-0 mt-0.5">⚠</span>
-              <p className="text-[12px] text-amber-900 font-[600]">Faturação acima de €200.000: o <strong>regime simplificado (recibos verdes) deixa de ser permitido</strong> — é obrigatória contabilidade organizada (Art. 28.º/31.º CIRS). O ENI continua legal a qualquer faturação, mas a esta escala constituir sociedade (Unipessoal/Lda) costuma ser fiscalmente mais eficiente — compare no Simulador Fiscal.</p>
+              <p className="text-[12px] text-amber-900 font-[600]">Faturação acima de €200.000: o <strong>regime simplificado deixa de ser permitido</strong> — é obrigatória contabilidade organizada (Art. 28.º/31.º CIRS). O ENI continua legal a qualquer faturação, mas a esta escala constituir sociedade (Unipessoal/Lda) costuma ser fiscalmente mais eficiente — compare no Simulador Fiscal.</p>
             </div>
           )}
           {st.tipoEntidade === 'eni' && st.regimeContabilidade === 'transparencia_fiscal' && (
@@ -1517,7 +1517,7 @@ export default function ClientProfile({
                   }}
                   className={inputClass}
                 >
-                  <option value="eni">ENI (Recibos Verdes) — profissional liberal</option>
+                  <option value="eni">ENI (Profissional Liberal)</option>
                   <option value="eni_empresa">ENI (Empresário em Nome Individual)</option>
                   <option value="lda">Lda (Sociedade)</option>
                   <option value="unipessoal">Unipessoal Lda</option>
@@ -1585,7 +1585,7 @@ export default function ClientProfile({
               {profile.tipoEntidade === 'eni' && profile.faturaçaoAnualPrevista > 200000 && (
                 <div className="col-span-2 flex gap-2 p-3 bg-amber-50 border border-amber-200 rounded-[8px]">
                   <span className="text-amber-600 shrink-0 mt-0.5">⚠</span>
-                  <p className="text-[12px] text-amber-900 font-[600]">Faturação acima de €200.000: o <strong>regime simplificado (recibos verdes) deixa de ser permitido</strong> — é obrigatória contabilidade organizada (Art. 28.º/31.º CIRS). O ENI continua legal a qualquer faturação, mas a esta escala constituir sociedade (Unipessoal/Lda) costuma ser fiscalmente mais eficiente — compare no Simulador Fiscal.</p>
+                  <p className="text-[12px] text-amber-900 font-[600]">Faturação acima de €200.000: o <strong>regime simplificado deixa de ser permitido</strong> — é obrigatória contabilidade organizada (Art. 28.º/31.º CIRS). O ENI continua legal a qualquer faturação, mas a esta escala constituir sociedade (Unipessoal/Lda) costuma ser fiscalmente mais eficiente — compare no Simulador Fiscal.</p>
                 </div>
               )}
               {profile.tipoEntidade === 'eni' && profile.regimeContabilidade === 'transparencia_fiscal' && (

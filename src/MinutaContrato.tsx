@@ -148,7 +148,7 @@ export default function MinutaContrato({
         <div className="mc-band" />
 
         {office.logoDataUrl && (
-          <img src={office.logoDataUrl} alt="" style={{ display: 'block', margin: '0 auto 4mm', maxHeight: '16mm', maxWidth: '40mm', objectFit: 'contain' }} />
+          <img src={office.logoDataUrl} alt="" style={{ display: 'block', margin: '0 auto 4mm', maxHeight: '22mm', maxWidth: '56mm', objectFit: 'contain' }} />
         )}
         <div className="mc-kicker">{office.nome || 'Contabilidade Certificada'}</div>
         <h1>Contrato de Prestação de Serviços</h1>

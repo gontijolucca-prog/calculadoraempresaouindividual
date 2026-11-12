@@ -42,7 +42,7 @@ export function criarPrevisaPdf(state: PreviSaState, nome: string, escritorio: P
   let xTexto = 10;
   if (logo.startsWith('data:image')) {
     const formato = logo.includes('image/png') ? 'PNG' : 'JPEG';
-    try { doc.addImage(logo, formato, 10, 8, 14, 14); xTexto = 28; } catch { /* formato exótico */ }
+    try { doc.addImage(logo, formato, 10, 5, 18, 18); xTexto = 32; } catch { /* formato exótico */ }
   }
   if (xTexto === 10) {
     doc.setFillColor(...P.blue);

@@ -168,7 +168,7 @@ export default function Proposta({ profile, office, honorarios, servicosIds, onS
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 14 }}>
           <div style={{ flex: 1 }}>
             {office.logoDataUrl ? (
-              <img src={office.logoDataUrl} alt="" style={{ maxWidth: 58, maxHeight: 44, objectFit: 'contain', display: 'block', marginBottom: 7 }} />
+              <img src={office.logoDataUrl} alt="" style={{ maxWidth: 76, maxHeight: 56, objectFit: 'contain', display: 'block', marginBottom: 7 }} />
             ) : (
               <div style={{ width: 31, height: 31, borderRadius: 8, background: C.blue, color: C.white, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '9pt', marginBottom: 7 }}>360</div>
             )}

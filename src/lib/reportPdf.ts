@@ -147,27 +147,27 @@ export class RelatorioPdf {
     // Cabeça: logo do escritório (se existir) ou a marca, data à direita.
     const logo = String(esc.logoDataUrl || '');
     if (logo.startsWith('data:image')) {
-      try { d.addImage(logo, 'PNG', this.margem, this.y, 10, 10); } catch { /* svg/formatos estranhos */ }
+      try { d.addImage(logo, 'PNG', this.margem, this.y, 13, 13); } catch { /* svg/formatos estranhos */ }
     } else {
       d.setFillColor(...this.cor);
-      d.roundedRect(this.margem, this.y, 10, 10, 2, 2, 'F');
+      d.roundedRect(this.margem, this.y, 13, 13, 2.5, 2.5, 'F');
       d.setTextColor(...this.pal.white);
       d.setFont('helvetica', 'bold');
       d.setFontSize(this.fs(9));
-      d.text('360', this.margem + 5, this.y + 6.4, { align: 'center' });
+      d.text('360', this.margem + 6.5, this.y + 8.2, { align: 'center' });
     }
 
     d.setFont('helvetica', 'bold');
     d.setFontSize(this.fs(9.6));
     d.setTextColor(...this.pal.dark);
-    d.text(sanitizePdf(nome), this.margem + 13, this.y + 4.2);
+    d.text(sanitizePdf(nome), this.margem + 16, this.y + 4.6);
     d.setFont('helvetica', 'normal');
     d.setFontSize(this.fs(6.1));
     d.setTextColor(...this.pal.medium);
-    d.text('DOCUMENTO CONFIDENCIAL · ESTUDO 360', this.margem + 13, this.y + 7.9, { charSpace: 0.45 });
+    d.text('DOCUMENTO CONFIDENCIAL · ESTUDO 360', this.margem + 16, this.y + 8.6, { charSpace: 0.45 });
     d.text(hoje.toUpperCase(), this.largura - this.margem, this.y + 4.2, { align: 'right', charSpace: 0.45 });
 
-    this.y += this.v(19);
+    this.y += this.v(21);
 
     // Título em serifa — é isto que dá cara de documento, não de ecrã.
     d.setFont('times', 'bold');

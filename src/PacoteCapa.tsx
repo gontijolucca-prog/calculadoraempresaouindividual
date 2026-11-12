@@ -47,7 +47,7 @@ export default function PacoteCapa({
       `}</style>
       <div className="pc-spine" aria-hidden="true" />
       {office.logoDataUrl && (
-        <img src={office.logoDataUrl} alt="" style={{ display: 'block', maxHeight: '18mm', maxWidth: '55mm', objectFit: 'contain', marginBottom: '8mm' }} />
+        <img src={office.logoDataUrl} alt="" style={{ display: 'block', maxHeight: '24mm', maxWidth: '70mm', objectFit: 'contain', marginBottom: '8mm' }} />
       )}
       <div className="pc-kicker">{escritorio} · Pacote do cliente</div>
       <h1 className="pc-title">Proposta e contrato<br />de prestação de serviços</h1>
