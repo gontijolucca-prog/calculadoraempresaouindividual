@@ -33,6 +33,9 @@ export default function TopBarGlobal({ title, subtitle, onGo, onOpenMenu, nav, a
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
 
+  const logoUrl = (() => {
+    try { return loadOfficeSettings()?.logoDataUrl || '/logo.svg'; } catch { return '/logo.svg'; }
+  })();
   useEffect(() => subscribeSync(() => setSync(getSyncSnapshot())), []);
   useEffect(() => {
     let vivo = true;
@@ -89,7 +92,7 @@ export default function TopBarGlobal({ title, subtitle, onGo, onOpenMenu, nav, a
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
             </button>
           )}
-          <img src="/logo.svg" alt="Estudo360" className="hidden sm:block h-8 w-8 shrink-0 select-none object-contain logo-orb" />
+          <img src={logoUrl} alt="Estudo360" className="hidden sm:block h-8 w-8 shrink-0 select-none object-contain logo-orb" />
           <div className="min-w-0">
             <div className="truncate font-semibold leading-none text-zinc-900">{title || 'Gabinete'}</div>
             <div className="hidden truncate text-xs text-zinc-500 sm:block">{subtitle || 'Centro de operação'}</div>
