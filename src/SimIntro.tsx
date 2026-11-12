@@ -27,7 +27,7 @@ export const SIM_INTROS: Record<string, SimIntroDef> = {
   tax: {
     titulo: 'Enquadramento Fiscal',
     Icon: Calculator,
-    resumo: 'Compara quanto sobra ao final do ano como ENI (recibos verdes) ou como sociedade (Lda/Unipessoal), com os impostos e contribuições de cada caminho.',
+    resumo: 'Compara quanto sobra ao final do ano como ENI (profissional liberal) ou como sociedade (Lda/Unipessoal), com os impostos e contribuições de cada caminho.',
     dados: ['Faturação anual prevista', 'Custos fixos e variáveis', 'Quanto precisa de levantar por mês', 'Situação profissional atual'],
     resultado: 'Rendimento líquido lado a lado (ENI vs sociedade), com IRS, IRC, Segurança Social e ponto de equilíbrio de cada opção.',
   },
@@ -55,7 +55,7 @@ export const SIM_INTROS: Record<string, SimIntroDef> = {
   selfss: {
     titulo: 'Segurança Social de Independente',
     Icon: User,
-    resumo: 'Calcula a contribuição mensal e trimestral para a Segurança Social de quem trabalha a recibos verdes ou como ENI.',
+    resumo: 'Calcula a contribuição mensal e trimestral para a Segurança Social de quem trabalha por conta própria ou como ENI.',
     dados: ['Rendimento mensal médio', 'Tipo de atividade (serviços ou vendas)', 'Se estás no 1.º ano de atividade'],
     resultado: 'Contribuição mensal, trimestral e anual, com o teto da base e a isenção do 1.º ano aplicados.',
   },

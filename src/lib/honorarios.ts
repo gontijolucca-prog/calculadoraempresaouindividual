@@ -135,7 +135,7 @@ export interface PropostaResultado {
 }
 
 const TIPO_LABELS: Record<TipoEntidadeCliente, string> = {
-  eni:         'ENI / Recibos Verdes',
+  eni:         'ENI / Profissional Liberal',
   unipessoal:  'Unipessoal Lda',
   socio_unico: 'Unipessoal Lda (Sócio Único)',
   lda:         'Sociedade por Quotas (Lda)',

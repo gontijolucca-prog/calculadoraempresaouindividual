@@ -557,7 +557,7 @@ export default function PDFPreviewEditor({ profile, taxState, vehicleState, tick
                   (em vez de vermelho saturado, que dava um ar alarmista). */}
               <div style={{ display: 'flex', marginBottom: 0, gap: 2 }}>
                 <div style={{ flex: 1, background: taxR.winner === 'ENI' ? GREEN.accent : '#64748B', color: 'white', padding: '7px 10px', fontWeight: 700, fontSize: '9pt', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>ENI (Recibos Verdes)</span>
+                  <span>ENI (Profissional Liberal)</span>
                   {taxR.winner === 'ENI' && <span style={{ fontSize: '7pt', fontWeight: 800, letterSpacing: '0.5px' }}>RECOMENDADO</span>}
                 </div>
                 <div style={{ flex: 1, background: taxR.winner === 'LDA' ? GREEN.accent : '#64748B', color: 'white', padding: '7px 10px', fontWeight: 700, fontSize: '9pt', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

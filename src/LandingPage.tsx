@@ -11,7 +11,7 @@ interface Props {
  */
 export default function LandingPage({ onEnter, onCreateAccount }: Props) {
   const simuladores: [string, string][] = [
-    ['Fiscal', 'ENI (recibos verdes) vs sociedade, lado a lado.'],
+    ['Fiscal', 'ENI vs sociedade, lado a lado.'],
     ['IRS', 'Modelo 3: escalões, IRS Jovem, deduções e reembolso.'],
     ['Previsa', 'IRC do Modelo 22: Q07, Q09, Q10, derramas e PPC.'],
     ['Viaturas', 'IVA dedutível e tributação autónoma, por categoria.'],

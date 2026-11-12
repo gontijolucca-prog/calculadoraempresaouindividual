@@ -137,7 +137,7 @@ ${sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.open
 }
 
 const TIPO_LABELS: Record<string, string> = {
-  eni: 'ENI / Recibos Verdes',
+  eni: 'ENI / Profissional Liberal',
   unipessoal: 'Unipessoal Lda',
   socio_unico: 'Unipessoal (Sócio Único)',
   lda: 'Sociedade por Quotas',

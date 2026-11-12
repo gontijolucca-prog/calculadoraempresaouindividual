@@ -30,7 +30,7 @@ export interface ViaturaInput {
   anoAquisicao?: number;
   euro6eBis?: boolean; // PHEV Euro 6e-bis <80g
   rentingDiscriminada?: boolean; // fatura renting separada
-  regimeTributario?: RegimeTributario; // irc (empresa) vs irs (recibos verdes)
+  regimeTributario?: RegimeTributario; // irc (empresa) vs irs (trabalhador independente)
 }
 
 export interface ViaturaResult {

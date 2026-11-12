@@ -157,7 +157,7 @@ export default function AquisicaoSimulator({
                 <label className={labelCls}>Regime tributário</label>
                 <select value={s.regimeTributario} onChange={e => set({ regimeTributario: e.target.value as AquisicaoState['regimeTributario'] })} className={inputCls}>
                   <option value="irc">Empresa — IRC</option>
-                  <option value="irs">Recibos verdes — IRS</option>
+                  <option value="irs">ENI — IRS</option>
                 </select>
               </div>
               <div>

@@ -100,11 +100,11 @@ const SIM_MENU_SIDEBAR = NAV_ITEMS.filter((i) => i.group === 'sim');
 
 const NAV_TIPS: Record<string, string> = {
   profile: 'Perfil do cliente em 6 passos: identificação, dados empresariais, fiscais & família, custos & investimento, viaturas/sócios/dívidas, objetivos & documentos. Alimenta todos os simuladores.',
-  tax: 'Simulador fiscal: compara a carga de IRS/IRC entre ENI (recibos verdes) e Lda para a sua situação.',
+  tax: 'Simulador fiscal: compara a carga de IRS/IRC entre ENI e Lda para a sua situação.',
   vehicle: 'Calcula o IVA recuperável na compra/manutenção de viaturas e a Tributação Autónoma sobre encargos.',
   aquisicao: 'Compara compra, crédito, leasing e renting (ALU) da mesma viatura: mensalidade, custo total, IVA e Tributação Autónoma.',
   ticket: 'Subsídio de alimentação em vales: isento de IRS e SS até ao limite legal. Calcula a poupança anual.',
-  selfss: 'Segurança Social de Independente — contribuições à SS para trabalhadores a recibos verdes ou ENI.',
+  selfss: 'Segurança Social de Independente — contribuições à SS para trabalhadores independentes ou ENI.',
   diagnostico: 'Avalia a solidez da empresa em 5 pilares: autonomia financeira, tesouraria, rentabilidade, dependência e maturidade operacional.',
   imoveis: 'Guia de decisão: arrendar o imóvel à empresa vs. transferi-lo como entrada em espécie.',
   imt: 'Imposto Municipal sobre Transmissões: calcula o IMT e o Imposto de Selo na compra de imóveis.',

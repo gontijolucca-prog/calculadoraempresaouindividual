@@ -21,7 +21,7 @@ const sectionTitleCls = "text-[13px] font-[800] uppercase tracking-[1px] text-[#
 const eur = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(v || 0);
 
 const TIPO_LABELS: Record<TipoEntidadeCliente, string> = {
-  eni: 'ENI / Recibos Verdes',
+  eni: 'ENI / Profissional Liberal',
   unipessoal: 'Unipessoal Lda',
   socio_unico: 'Unipessoal — Sócio Único',
   lda: 'Sociedade por Quotas (Lda)',

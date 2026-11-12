@@ -164,7 +164,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
           <select value={profSit} onChange={e=>setState({profSit: e.target.value})} className={inputCls}>
             <option value="tco">Trab. Conta de Outrem (TCO)</option>
             <option value="desempregado">Desempregado</option>
-            <option value="outro">Recibo Verde / Empresário</option>
+            <option value="outro">ENI / Empresário</option>
           </select>
         </div>
         <div>
@@ -557,7 +557,7 @@ export default function TaxSimulator({ initialState, onStateChange, profile }: P
               <strong className="font-mono text-[14px]">{ptEur(results.beLda)}<span className="text-[11px] text-slate-400 font-sans">/ano</span></strong>
             </div>
             <div className="bg-white p-3 rounded-[8px] flex justify-between items-center border border-amber-100">
-              <span className="text-[12px] font-[600] text-slate-500 uppercase">Recibos Verdes</span>
+              <span className="text-[12px] font-[600] text-slate-500 uppercase">ENI</span>
               <strong className="font-mono text-[14px]">{ptEur(results.beEni)}<span className="text-[11px] text-slate-400 font-sans">/ano</span></strong>
             </div>
           </div>
@@ -790,7 +790,7 @@ const taxInputs = (
                   <div className="text-[20px] font-[800] text-amber-800">{ptEur(results.beLda)}</div>
                 </div>
                 <div className="bg-white rounded-[12px] p-3 border border-amber-100">
-                  <div className="text-[10px] text-slate-500 uppercase font-[700]">Recibos Verdes</div>
+                  <div className="text-[10px] text-slate-500 uppercase font-[700]">ENI</div>
                   <div className="text-[20px] font-[800] text-amber-800">{ptEur(results.beEni)}</div>
                 </div>
               </div>

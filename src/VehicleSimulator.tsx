@@ -444,12 +444,12 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
     {
       id: 'regimeTrib',
       label: 'Regime tributário',
-      description: 'Empresa (IRC) ou recibos verdes (IRS categoria B)? As taxas são diferentes.',
+      description: 'Empresa (IRC) ou trabalhador independente (IRS categoria B)? As taxas são diferentes.',
       isVisible: () => true,
       render: (s, setS) => (
         <select value={(s as any).regimeTributario || 'irc'} onChange={e=>setS({regimeTributario: e.target.value as any} as any)} className={inputClass}>
           <option value="irc">Empresa — IRC (8%/25%/32%)</option>
-          <option value="irs">Recibos verdes — IRS (10%/20%, elétrico isento)</option>
+          <option value="irs">ENI — IRS (10%/20%, elétrico isento)</option>
         </select>
       ),
     },
@@ -599,7 +599,7 @@ export default function VehicleSimulator({ initialState, onStateChange }: Props)
             )}
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className={labelClass}>Regime tributário</label><select value={(initialState as any).regimeTributario || 'irc'} onChange={e=>onStateChange({...initialState, regimeTributario: e.target.value as any})} className={inputClass}><option value="irc">Empresa — IRC</option><option value="irs">Recibos verdes — IRS</option></select></div>
+            <div><label className={labelClass}>Regime tributário</label><select value={(initialState as any).regimeTributario || 'irc'} onChange={e=>onStateChange({...initialState, regimeTributario: e.target.value as any})} className={inputClass}><option value="irc">Empresa — IRC</option><option value="irs">ENI — IRS</option></select></div>
             {engineType === 'phev' && (<div className="flex items-end"><label className="flex items-center gap-2 text-[12px] font-[600]"><input type="checkbox" checked={!!initialState.euro6eBis} onChange={e=>onStateChange({...initialState, euro6eBis: e.target.checked})} /> Euro 6e-bis (&lt;80g)</label></div>)}
           </div>
           <div>
