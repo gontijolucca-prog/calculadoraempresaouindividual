@@ -2,17 +2,19 @@
 
 Estado: ✅ = testado e provado nesta ronda · ⚠️ = existe, falta prova automática · ⛔ = bloqueado (precisa de contas/dados).
 
-Revisão de acessos: 03/11/2026. Já não existem convites por link nem verificação
-de email. O dono cria email e password dentro do gabinete.
+Revisão de acessos: 03/11/2026. Já não existem convites por link. Contas com email
+pedem confirmação (aviso dentro da app com reenvio); colaboradores criados pelo
+gabinete usam username+password e são repostos pelo dono em Equipa.
 
 ## A. Entrada e conta
 | # | Funcionalidade | Como deve funcionar | Estado |
 |---|---|---|---|
 | A1 | Landing | Página pública, 0 erros de consola, sem overflow a 375/1024/1440 | ✅ |
-| A2 | Criar conta / entrar | Conta normal com email+password; sem verificação de email; login de colaborador criado pelo gabinete | ✅ (emulador) |
+| A2 | Criar conta / entrar | Conta normal com email+password; envia email de confirmação; aviso com reenvio até confirmar; login de colaborador criado pelo gabinete | ✅ (emulador) |
 | A3 | Escolher gabinete | Pergunta ao entrar; lista apenas gabinetes com associação efetiva; criação pede nome+NIF | ✅ (emulador) |
 | A3.1 | Confirmar acesso criado | Conta normal introduz a password secreta do gabinete; o mesmo email sozinho nunca dá acesso | ✅ (unidade + emulador) |
 | A4 | Sair | Termina sessão e volta à landing | ⚠️ |
+| A5 | Recuperar password | Email de reposição com link válido; mensagem neutra para emails desconhecidos; colaborador sem email é reposto em Equipa | ✅ (emulador) |
 
 ## B. Carteira e perfil
 | # | Funcionalidade | Como deve funcionar | Estado |
