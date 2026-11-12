@@ -13,6 +13,10 @@ function labelDe(el: HTMLElement): HTMLLabelElement | null {
     const fora = document.querySelector<HTMLLabelElement>(`label[for="${CSS.escape(id)}"]`);
     if (fora) return fora;
   }
+  // Formulários do perfil/cofre/definições usam <label> irmã antes do campo,
+  // sem `for` nem wrapper — sem este fallback o asterisco nunca aparecia.
+  const anterior = el.previousElementSibling;
+  if (anterior instanceof HTMLLabelElement) return anterior;
   return null;
 }
 
@@ -21,7 +25,10 @@ function marcar(el: HTMLElement) {
   if (!obrigatorio) return;
   el.setAttribute('aria-required', 'true');
   const label = labelDe(el);
-  if (!label || label.querySelector(`.${STAR}`)) return;
+  if (!label) return;
+  // Rótulos que já escrevem "*" à mão não ganham segundo asterisco.
+  if ((label.textContent || '').includes('*')) return;
+  if (label.querySelector(`.${STAR}`)) return;
   const span = document.createElement('span');
   span.className = STAR;
   span.textContent = ' *';
