@@ -73,20 +73,20 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#FDFBF7] flex flex-col" style={{fontFamily:'Geist, sans-serif'}}>
+    <div className="min-h-screen w-full bg-[#FFFFFF] flex flex-col" style={{fontFamily:'Geist, sans-serif'}}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Geist:wght@400;500;600;700&display=swap');`}</style>
       <header className="px-6 py-4 flex items-center justify-between max-w-6xl mx-auto w-full">
         <div className="flex items-center gap-2.5">
           {onBack ? (
-            <button onClick={onBack} className="inline-flex items-center gap-1.5 text-[13px] font-[600] px-3 py-1.5 rounded-full border border-[#1A1A18]/10 hover:bg-black/5 transition-colors">
+            <button onClick={onBack} className="inline-flex items-center gap-1.5 text-[13px] font-[600] px-3 py-1.5 rounded-full border border-[#0B1D2D]/10 hover:bg-black/5 transition-colors">
               <ArrowRight className="w-3.5 h-3.5 rotate-180" /> Voltar
             </button>
           ) : null}
           <img src="/logo.svg" alt="" className="w-8 h-8 object-contain logo-orb" />
-          <span className="text-[16px] font-[700] tracking-[-0.2px] text-[#1A1A18]">estudo<span className="font-[400] text-[#8A5223]">360</span></span>
+          <span className="text-[16px] font-[700] tracking-[-0.2px] text-[#0B1D2D]">estudo<span className="font-[400] text-[#0461D6]">360</span></span>
         </div>
         <div className="hidden sm:flex items-center gap-2 text-[11px] font-[500] text-[#6B6A66]">
-          <ShieldCheck className="w-4 h-4 text-[#8A5223]" /> Dados protegidos por conta
+          <ShieldCheck className="w-4 h-4 text-[#0461D6]" /> Dados protegidos por conta
         </div>
       </header>
 
@@ -94,35 +94,35 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
         <div className="w-full max-w-6xl grid lg:grid-cols-[1.05fr_0.9fr] gap-10 items-start">
           {/* Esquerda — calma, sem jargão */}
           <div className="hidden lg:block pt-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#1A1A18]/[0.06] text-[11px] font-[600] tracking-[1.2px] uppercase text-[#6B6A66]">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#8A5223]" /> Acesso seguro
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#0B1D2D]/[0.06] text-[11px] font-[600] tracking-[1.2px] uppercase text-[#6B6A66]">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#0461D6]" /> Acesso seguro
             </div>
-            <h1 className="mt-4 leading-[0.9] tracking-[-0.03em]" style={{fontFamily:'Cormorant Garamond, serif'}}>
-              <span className="block text-[44px] font-[300] text-[#1A1A18]">Cada conta,</span>
-              <span className="block text-[44px] font-[300] italic text-[#8A5223]">os seus clientes.</span>
+            <h1 className="mt-4 leading-[0.9] tracking-[-0.03em]" style={{fontFamily:'Fraunces, serif'}}>
+              <span className="block text-[44px] font-[300] text-[#0B1D2D]">Cada conta,</span>
+              <span className="block text-[44px] font-[300] italic text-[#0461D6]">os seus clientes.</span>
             </h1>
             <p className="mt-4 text-[15px] leading-relaxed text-[#6B6A66] max-w-[460px]">
               A sua conta é privada. Só vê os seus clientes e o seu cofre. Sem misturas.
             </p>
             <ul className="mt-6 space-y-3 text-[13px] text-[#6B6A66]">
-              <li className="flex gap-2"><CheckCircle className="w-4 h-4 text-[#8A5223] mt-0.5" /> Só vê o que é seu</li>
-              <li className="flex gap-2"><CheckCircle className="w-4 h-4 text-[#8A5223] mt-0.5" /> Cofre protegido — só abre com a sua palavra-passe</li>
-              <li className="flex gap-2"><CheckCircle className="w-4 h-4 text-[#8A5223] mt-0.5" /> Funciona em qualquer computador</li>
+              <li className="flex gap-2"><CheckCircle className="w-4 h-4 text-[#0461D6] mt-0.5" /> Só vê o que é seu</li>
+              <li className="flex gap-2"><CheckCircle className="w-4 h-4 text-[#0461D6] mt-0.5" /> Cofre protegido — só abre com a sua palavra-passe</li>
+              <li className="flex gap-2"><CheckCircle className="w-4 h-4 text-[#0461D6] mt-0.5" /> Funciona em qualquer computador</li>
             </ul>
           </div>
 
           {/* Card */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{duration:0.5, ease:[0.4,0,0.2,1]}} className="bg-white rounded-[20px] border border-[#1A1A18]/[0.06] shadow-[0_16px_48px_rgba(26,26,24,0.06)] p-6 sm:p-8">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{duration:0.5, ease:[0.4,0,0.2,1]}} className="bg-white rounded-[20px] border border-[#0B1D2D]/[0.06] shadow-[0_16px_48px_rgba(26,26,24,0.06)] p-6 sm:p-8">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-[22px] font-[600] tracking-[-0.02em] text-[#1A1A18]" style={{fontFamily:'Cormorant Garamond, serif'}}>{mode === 'login' ? 'Entrar' : mode === 'signup' ? 'Criar conta' : 'Recuperar acesso'}</h2>
-              <div className="flex gap-1 bg-[#F5F0E8] p-1 rounded-full">
-                <button onClick={() => { setMode('login'); setError(null); setInfo(null); }} className={`px-3.5 py-1.5 rounded-full text-[13px] font-[600] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${mode==='login' ? 'bg-white shadow text-[#1A1A18]' : 'text-[#6B6A66]'}`}>Entrar</button>
-                <button onClick={() => { setMode('signup'); setError(null); setInfo(null); }} className={`px-3.5 py-1.5 rounded-full text-[13px] font-[600] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${mode==='signup' ? 'bg-white shadow text-[#1A1A18]' : 'text-[#6B6A66]'}`}>Criar</button>
+              <h2 className="text-[22px] font-[600] tracking-[-0.02em] text-[#0B1D2D]" style={{fontFamily:'Fraunces, serif'}}>{mode === 'login' ? 'Entrar' : mode === 'signup' ? 'Criar conta' : 'Recuperar acesso'}</h2>
+              <div className="flex gap-1 bg-[#F3F8FF] p-1 rounded-full">
+                <button onClick={() => { setMode('login'); setError(null); setInfo(null); }} className={`px-3.5 py-1.5 rounded-full text-[13px] font-[600] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${mode==='login' ? 'bg-white shadow text-[#0B1D2D]' : 'text-[#6B6A66]'}`}>Entrar</button>
+                <button onClick={() => { setMode('signup'); setError(null); setInfo(null); }} className={`px-3.5 py-1.5 rounded-full text-[13px] font-[600] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${mode==='signup' ? 'bg-white shadow text-[#0B1D2D]' : 'text-[#6B6A66]'}`}>Criar</button>
               </div>
             </div>
 
             {error && <div className="mb-4 flex gap-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2.5 rounded-xl text-[13px]"><AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" /> <span>{error}</span></div>}
-            {info && <div className="mb-4 flex gap-2 bg-[#F5F0E8] border border-[#B06D35]/20 text-[#6B4A2A] px-3 py-2.5 rounded-xl text-[13px]"><CheckCircle className="w-4 h-4 mt-0.5 shrink-0" /> <span>{info}</span></div>}
+            {info && <div className="mb-4 flex gap-2 bg-[#F3F8FF] border border-[#0461D6]/20 text-[#6B4A2A] px-3 py-2.5 rounded-xl text-[13px]"><CheckCircle className="w-4 h-4 mt-0.5 shrink-0" /> <span>{info}</span></div>}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {mode === 'signup' && (
@@ -130,7 +130,7 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
                   <span className="text-[11px] font-[600] tracking-[1px] uppercase text-[#6B6A66]">Nome</span>
                   <div className="relative mt-1">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6A66]" />
-                    <input value={name} onChange={e=>setName(e.target.value)} placeholder="O seu nome" className="w-full pl-9 pr-3 py-3 rounded-xl border border-[#1A1A18]/10 bg-[#FDFBF7] text-[14px] focus:bg-white focus:border-[#B06D35]/30 focus:ring-2 focus:ring-[#B06D35]/10 outline-none transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" autoComplete="name" />
+                    <input value={name} onChange={e=>setName(e.target.value)} placeholder="O seu nome" className="w-full pl-9 pr-3 py-3 rounded-xl border border-[#0B1D2D]/10 bg-[#FFFFFF] text-[14px] focus:bg-white focus:border-[#0461D6]/30 focus:ring-2 focus:ring-[#0461D6]/10 outline-none transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" autoComplete="name" />
                   </div>
                 </label>
               )}
@@ -138,7 +138,7 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
                 <span className="text-[11px] font-[600] tracking-[1px] uppercase text-[#6B6A66]">Email</span>
                 <div className="relative mt-1">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6A66]" />
-                  <input type="text" inputMode="email" autoCapitalize="none" spellCheck={false} value={email} onChange={e=>setEmail(e.target.value)} placeholder="email ou utilizador" className="w-full pl-9 pr-3 py-3 rounded-xl border border-[#1A1A18]/10 bg-[#FDFBF7] text-[14px] focus:bg-white focus:border-[#B06D35]/30 focus:ring-2 focus:ring-[#B06D35]/10 outline-none transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" autoComplete="username" required />
+                  <input type="text" inputMode="email" autoCapitalize="none" spellCheck={false} value={email} onChange={e=>setEmail(e.target.value)} placeholder="email ou utilizador" className="w-full pl-9 pr-3 py-3 rounded-xl border border-[#0B1D2D]/10 bg-[#FFFFFF] text-[14px] focus:bg-white focus:border-[#0461D6]/30 focus:ring-2 focus:ring-[#0461D6]/10 outline-none transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" autoComplete="username" required />
                 </div>
               </label>
               {mode !== 'reset' && (
@@ -146,7 +146,7 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
                   <span className="text-[11px] font-[600] tracking-[1px] uppercase text-[#6B6A66]">Password</span>
                   <div className="relative mt-1">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6A66]" />
-                    <input type={showPass ? 'text' : 'password'} value={password} onChange={e=>setPassword(e.target.value)} placeholder="Mínimo 8 caracteres" className="w-full pl-9 pr-10 py-3 rounded-xl border border-[#1A1A18]/10 bg-[#FDFBF7] text-[14px] focus:bg-white focus:border-[#B06D35]/30 focus:ring-2 focus:ring-[#B06D35]/10 outline-none transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" autoComplete={mode==='signup' ? 'new-password' : 'current-password'} required />
+                    <input type={showPass ? 'text' : 'password'} value={password} onChange={e=>setPassword(e.target.value)} placeholder="Mínimo 8 caracteres" className="w-full pl-9 pr-10 py-3 rounded-xl border border-[#0B1D2D]/10 bg-[#FFFFFF] text-[14px] focus:bg-white focus:border-[#0461D6]/30 focus:ring-2 focus:ring-[#0461D6]/10 outline-none transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" autoComplete={mode==='signup' ? 'new-password' : 'current-password'} required />
                     <button type="button" onClick={()=>setShowPass(v=>!v)} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-[#6B6A66] hover:text-[#6B6A66] transition-colors">{showPass ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}</button>
                   </div>
                   {mode==='signup' && <p className="text-[11px] text-[#6B6A66] mt-1">Utilize 8 ou mais caracteres.</p>}
@@ -154,19 +154,19 @@ export default function AuthView({ initialMode = 'login', onBack }: { initialMod
               )}
               {mode === 'login' && (
                 <label className="flex items-center gap-2 text-[13px] text-[#6B6A66] cursor-pointer select-none">
-                  <input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)} className="w-4 h-4 rounded accent-[#B06D35]" />
+                  <input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)} className="w-4 h-4 rounded accent-[#0461D6]" />
                   Lembrar-me neste dispositivo
                 </label>
               )}
 
-              <button type="submit" disabled={loading} className="w-full inline-flex items-center justify-center gap-2 bg-[#1A1A18] text-[#FDFBF7] py-3.5 rounded-xl text-[14px] font-[600] hover:bg-black disabled:opacity-60 transition-colors">
+              <button type="submit" disabled={loading} className="w-full inline-flex items-center justify-center gap-2 bg-[#0B1D2D] text-[#FFFFFF] py-3.5 rounded-xl text-[14px] font-[600] hover:bg-black disabled:opacity-60 transition-colors">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
                 {mode==='login' ? 'Entrar' : mode==='signup' ? 'Criar conta' : 'Enviar instruções'}
               </button>
             </form>
 
             <div className="mt-4 flex justify-between text-[13px]">
-              {mode !== 'reset' ? <button onClick={()=>setMode('reset')} className="text-[#8A5223] hover:underline">Esqueceu-se da password?</button> : <button onClick={()=>setMode('login')} className="text-[#8A5223] hover:underline">Voltar a entrar</button>}
+              {mode !== 'reset' ? <button onClick={()=>setMode('reset')} className="text-[#0461D6] hover:underline">Esqueceu-se da password?</button> : <button onClick={()=>setMode('login')} className="text-[#0461D6] hover:underline">Voltar a entrar</button>}
               <span className="text-[#6B6A66] hidden sm:inline-flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5" /> Ligação segura</span>
             </div>
           </motion.div>
