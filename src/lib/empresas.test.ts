@@ -245,3 +245,30 @@ describe('repairMojibake', () => {
     assert.equal(repairMojibake('Empresa simples 123'), 'Empresa simples 123');
   });
 });
+
+// ── cache do registry ────────────────────────────────────────────────────
+describe('cache de listEmpresas', () => {
+  it('devolve cópia: alterar o array não contamina o registry', () => {
+    upsertEmpresa(mkEmp({ id: 'c1', nome: 'Cache Um', nif: '111222333' }));
+    upsertEmpresa(mkEmp({ id: 'c2', nome: 'Cache Dois', nif: '444555666' }));
+    const lido = listEmpresas();
+    const antes = lido.length;
+    lido.pop();
+    lido.push(mkEmp({ id: 'intruso', nif: '999888777' }));
+    assert.equal(listEmpresas().length, antes);
+    assert.equal(getEmpresa('intruso'), undefined);
+    assert.ok(getEmpresa('c1'));
+  });
+
+  it('detecta alterações feitas por fora do módulo (outra aba)', () => {
+    upsertEmpresa(mkEmp({ id: 'x1', nome: 'Antes', nif: '123123123' }));
+    assert.equal(getEmpresa('x1')?.nome, 'Antes');
+    // Simula outra aba a gravar o registry directamente no localStorage.
+    const chave = [...store.keys()].find(k => k.startsWith('estudo360:v1:empresas:'));
+    assert.ok(chave, 'registry gravado no localStorage');
+    const envelope = JSON.parse(store.get(chave!)!);
+    envelope.data = [{ ...envelope.data[0], nome: 'Depois' }];
+    store.set(chave!, JSON.stringify(envelope));
+    assert.equal(getEmpresa('x1')?.nome, 'Depois');
+  });
+});

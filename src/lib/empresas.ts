@@ -12,7 +12,7 @@
  */
 import type { ClientProfile } from '../ClientProfile';
 import type { PreviSaState } from '../previSaState';
-import { loadFromStorage, saveToStorage, clearStorage } from './storage';
+import { loadFromStorage, saveToStorage, clearStorage, peekStorage } from './storage';
 import { doc, getDoc, getDocs, setDoc, collection, onSnapshot, writeBatch } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import { repairMojibake } from './mojibake';
@@ -157,9 +157,25 @@ function setEmpresasStamp(n: number): void {
   writeScoped(STAMP_KEY, n, STAMP_KEY);
 }
 
+/**
+ * Cache do registry. `listEmpresas()` é chamado centenas de vezes por render
+ * (sidebar, listas, efeitos de auto-save) e cada chamada fazia `JSON.parse` da
+ * carteira inteira. Guarda o texto bruto lido + o array já interpretado: se o
+ * texto não mudou, devolve o que estava. A chave do cache é o próprio texto, por
+ * isso não há invalidação manual — outra aba, logout ou migração mudam o texto
+ * e provocam uma leitura nova.
+ */
+let listaCache: { raw: string | null; list: EmpresaRecord[] } | null = null;
+
 export function listEmpresas(): EmpresaRecord[] {
+  const raw = peekStorage(scopedStorageKey(REGISTRY_KEY));
+  if (listaCache && listaCache.raw === raw) return listaCache.list.slice();
   const list = readScoped<EmpresaRecord[]>(REGISTRY_KEY, [], REGISTRY_KEY);
-  return Array.isArray(list) ? list : [];
+  const registo = Array.isArray(list) ? list : [];
+  // Re-lê o texto: `readScoped` pode tê-lo migrado/gravado nesta chamada.
+  listaCache = { raw: peekStorage(scopedStorageKey(REGISTRY_KEY)), list: registo };
+  // Cópia: quem chama pode reordenar/alterar o array sem contaminar o cache.
+  return registo.slice();
 }
 
 // Mutação local: grava a lista E avança o relógio do registry. O stamp é
@@ -194,8 +210,9 @@ export function upsertEmpresa(emp: EmpresaRecord): EmpresaRecord {
   const list = listEmpresas();
   const idx = list.findIndex(e => e.id === emp.id);
   const next = { ...emp, updatedAt: Date.now() };
-  if (idx >= 0) list[idx] = next; else list.push(next);
-  saveEmpresas(list);
+  // Sem mutação in-place: `listEmpresas()` pode devolver o array do cache.
+  const nova = idx >= 0 ? list.map((e, i) => (i === idx ? next : e)) : [...list, next];
+  saveEmpresas(nova);
   return next;
 }
 

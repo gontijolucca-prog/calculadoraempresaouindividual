@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useMemo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 
 const PREMIUM_EASE = [0.32, 0.72, 0, 1] as const;
 
@@ -205,19 +205,19 @@ export function PageTransition({
   const reduced = useReducedMotion();
   if (reduced) return <>{children}</>;
 
+  // Sem `AnimatePresence mode="wait"`: esperar pela saída (0,35 s) antes de
+  // montar a vista nova atrasava cada navegação em ~0,7 s. A entrada curta
+  // chega para dar o movimento, e o conteúdo fica visível de imediato.
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={pageKey}
-        className="h-full"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.35, ease: PREMIUM_EASE }}
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
+    <motion.div
+      key={pageKey}
+      className="h-full"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.18, ease: PREMIUM_EASE }}
+    >
+      {children}
+    </motion.div>
   );
 }
 

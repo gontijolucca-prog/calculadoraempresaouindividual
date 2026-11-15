@@ -59,3 +59,17 @@ export function clearStorage(key: string): void {
     /* noop */
   }
 }
+
+/**
+ * Texto bruto gravado nessa chave (sem interpretar). Serve para caches que
+ * comparam o valor actual com o que já foi parseado — se o texto não mudou,
+ * não vale a pena voltar a chamar `JSON.parse`.
+ */
+export function peekStorage(key: string): string | null {
+  if (typeof window === 'undefined' || !window.localStorage) return null;
+  try {
+    return window.localStorage.getItem(STORAGE_PREFIX + key);
+  } catch {
+    return null;
+  }
+}
