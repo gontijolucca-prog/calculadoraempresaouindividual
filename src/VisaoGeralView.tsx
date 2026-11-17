@@ -17,6 +17,7 @@ import { toast } from './lib/toast';
 import { loadOfficeSettings } from './lib/officeSettings';
 import { exportarFichaGabinetePdf } from './lib/gabineteFichaPdf';
 import { can } from './lib/permissions';
+import { enviarDocumento, descarregarDocumento } from './lib/docsCloud';
 import type { GabineteRole } from './lib/gabinetes';
 import type { GabineteCliente, Tarefa, Obrigacao, ObrigacaoDef, CofreEntrada, GabineteDocumento, ContactoGabinete, AlertaGabinete, OcorrenciaGabinete, Colaborador } from './lib/gabinete';
 
@@ -141,6 +142,8 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
   const [contactoForm, setContactoForm] = useState<Partial<ContactoGabinete>>({});
   const [showAddDoc, setShowAddDoc] = useState(false);
   const [docNome, setDocNome] = useState('');
+  const [docFile, setDocFile] = useState<File | null>(null);
+  const [docABarra, setDocABarra] = useState(false);
   const [showAddOcorr, setShowAddOcorr] = useState(false);
   const [ocorrDesc, setOcorrDesc] = useState('');
   const [showEditSituacao, setShowEditSituacao] = useState(false);
@@ -232,10 +235,28 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
     toast('✓ Contacto gravado');
   };
   const handleAddDoc = async () => {
-    if (!cliente || !docNome.trim()) return;
-    await upsertDocumentoGeral({ id: newDocumentoGeralId(), clienteId: cliente.id, clienteNome: cliente.nome, nome: docNome.trim().endsWith('.pdf') ? docNome.trim() : docNome.trim()+'.pdf', tipo: 'OUTRO', dataUpload: Date.now() });
-    setDocNome(''); setShowAddDoc(false);
-    toast('✓ Documento gravado');
+    if (!cliente || (!docNome.trim() && !docFile)) return;
+    const nomeBase = docNome.trim() || docFile!.name;
+    setDocABarra(true);
+    try {
+      let storagePath: string | undefined;
+      let tamanho: number | undefined;
+      if (docFile) {
+        const enviado = await enviarDocumento(docFile);
+        storagePath = enviado.path;
+        tamanho = enviado.tamanho;
+      }
+      await upsertDocumentoGeral({
+        id: newDocumentoGeralId(), clienteId: cliente.id, clienteNome: cliente.nome,
+        nome: nomeBase, tipo: 'OUTRO', dataUpload: Date.now(), storagePath, tamanho,
+      });
+      setDocNome(''); setDocFile(null); setShowAddDoc(false);
+      toast(storagePath ? '✓ Documento enviado' : '✓ Documento gravado');
+    } catch (e) {
+      toast(`✗ ${e instanceof Error ? e.message : 'Falha no envio'}`);
+    } finally {
+      setDocABarra(false);
+    }
   };
   const handleAddOcorr = async () => {
     if (!cliente || !ocorrDesc.trim()) return;
@@ -517,7 +538,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
           <ul className="space-y-1.5">
             {docsExibir.length===0 ? <li className="text-[12px] text-[#94A3B8] border-2 border-dashed rounded-lg p-3 text-center">Sem documentos</li> : docsExibir.map(d => (
               <li key={d.id} className="flex items-center justify-between gap-2 text-[12.5px] group py-1">
-                <span className="flex items-center gap-1.5 truncate"><span className="w-3 h-3 rounded-[2px] bg-[#FEE2E2] border border-[#FECACA] flex items-center justify-center text-[7px] text-[#DC2626]">⧉</span> <span className="truncate text-[#334155]">{d.nome}</span></span>
+                <span className="flex items-center gap-1.5 truncate"><span className="w-3 h-3 rounded-[2px] bg-[#FEE2E2] border border-[#FECACA] flex items-center justify-center text-[7px] text-[#DC2626]">⧉</span> {d.storagePath ? <button onClick={async()=>{ try { await descarregarDocumento(d.storagePath!, d.nome); } catch(e) { toast(`✗ ${e instanceof Error ? e.message : 'Falha ao abrir'}`); } }} className="truncate text-[#0B57D0] underline underline-offset-2 hover:text-[var(--accent-strong)] text-left" title="Descarregar">{d.nome}</button> : <span className="truncate text-[#334155]">{d.nome}</span>}</span>
                 <span className="flex items-center gap-2 shrink-0">
                   <span className="text-[11px] text-[#94A3B8]">{new Date(d.dataUpload).toLocaleDateString('pt-PT')}</span>
                   {canDelete && <button onClick={async()=>{ if(confirm('Mover documento para a lixeira?')) await deleteDocumentoGeral(d.id); }} className="opacity-60 group-hover:opacity-100 focus-visible:opacity-100 p-1 hover:bg-zinc-100 rounded"><Trash2 className="w-3 h-3 text-zinc-500" /></button>}
@@ -696,8 +717,11 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4" onClick={()=>setShowAddDoc(false)}>
           <div className="w-full max-w-[480px] bg-white rounded-2xl p-6 border shadow-xl space-y-3" onClick={e=>e.stopPropagation()}>
             <div className="flex items-center justify-between"><h3 className="font-semibold">Novo documento</h3><button onClick={()=>setShowAddDoc(false)} className="p-1 hover:bg-zinc-100 rounded"><X className="w-4 h-4" /></button></div>
-            <input value={docNome} onChange={e=>setDocNome(e.target.value)} required placeholder="Nome do ficheiro (ex: Contrato.pdf) *" className="w-full px-3 py-2 rounded-xl border text-sm" />
-            <div className="flex justify-end gap-2"><button onClick={()=>setShowAddDoc(false)} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddDoc} disabled={!docNome.trim()} title={docNome.trim() ? undefined : 'Indica o nome do documento ( * )'} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm disabled:opacity-40 disabled:cursor-not-allowed">Adicionar</button></div>
+            <label className="block text-[12px] font-[600] text-[#475569]">Ficheiro (opcional, até 25 MB)
+              <input type="file" onChange={e=>{ const f=e.target.files?.[0]||null; setDocFile(f); if (f && !docNome.trim()) setDocNome(f.name); }} className="mt-1 w-full text-[12px] file:mr-2 file:px-3 file:py-1.5 file:rounded-full file:border-0 file:bg-[#F1F5F9] file:text-[12px] file:font-[600]" />
+            </label>
+            <input value={docNome} onChange={e=>setDocNome(e.target.value)} placeholder="Nome (ex: Contrato.pdf) — vazio usa o nome do ficheiro" className="w-full px-3 py-2 rounded-xl border text-sm" />
+            <div className="flex justify-end gap-2"><button onClick={()=>{setShowAddDoc(false); setDocFile(null);}} className="px-4 py-2 rounded-xl border text-sm">Cancelar</button><button onClick={handleAddDoc} disabled={(!docNome.trim() && !docFile) || docABarra} className="px-4 py-2 rounded-xl bg-[#0F172A] text-white text-sm disabled:opacity-40 disabled:cursor-not-allowed">{docABarra ? 'A enviar…' : 'Adicionar'}</button></div>
           </div>
         </div>
       )}
