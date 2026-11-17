@@ -3,11 +3,11 @@
 Data: 2026-06-08 · Estado: Fase 1 (testes golden + KB + flags). É a ferramenta mais bem construída do site.
 
 ## Resumo
-Motor `src/lib/previsaCalc.ts` — **função pura, testável, extremamente fiel ao Modelo 22**: usa os campos reais (c708, c753, c776, c347/351/358/367), Q07/Q09/Q10, derrama estadual e municipal, tributações autónomas (viaturas + despesas), PEC e PC. Cita os artigos. **Nenhum erro de cálculo encontrado nas partes verificáveis.** Único ponto sério: o **PEC** pode estar desatualizado (regime revogado/transitório).
+Motor `src/lib/previsaCalc.ts` — **função pura, testável, extremamente fiel ao Modelo 22**: usa os campos reais (c708, c753, c776, c347/351/358/367), Q07/Q09/Q10, derrama estadual e municipal, tributações autónomas (viaturas + despesas), PEC e PC. Cita os artigos. **Nenhum erro de cálculo encontrado nas partes verificáveis.** PEC **resolvido em 10-11-2026**: extinto (Lei 12/2022); o motor não estima PEC novo, só aceita saldos antigos no campo 356.
 
 ## Eixo 1 — Cobertura legal (2026)
 - IRC 19% geral / 15% PME (+ regionais Madeira/Açores/interioridade/startup), derrama estadual por escalões (art.87-A), derrama municipal, TA art.88 — todos presentes e coerentes. ⚠ Valores a confirmar — ver `AUDITORIA-FISCAL-PENDENTE.md`.
-- ⚠ **PEC**: art.93.º revogado (Lei 12/2022), regime transitório. O código usa o limite antigo (máx. 70 000 €); fontes 2026 apontam máx. ~1 000 €. **Sinalizado — não alterado sem aval de um contabilista.**
+- ✅ **PEC**: art. 93.º revogado pela Lei 12/2022 (OE2022) — **não há PEC novo em 2026**. O motor já não estima PEC (`pecCalculado = 0`); o campo 356 só serve para deduzir saldos antigos (2020/2021). O limite antigo de 70 000 € deixou de ser relevante.
 
 ## Eixo 2 — Completude
 - Cobertura quase total do Modelo 22 (apuramento, matéria coletável, prejuízos com limite 65%/75%, deduções à coleta, TA, derramas, PEC/PC, retenções). Excelente.
@@ -30,6 +30,6 @@ Motor `src/lib/previsaCalc.ts` — **função pura, testável, extremamente fiel
 3. Sinalizações internamente (PEC, taxas IRC/regionais, derramas, PC, TA).
 
 ## Fase 2 — a validar
-1. **Confirmar/atualizar o PEC** (limite 2026) com um contabilista — provavelmente reduzir o teto.
+1. ~~**Confirmar/atualizar o PEC** (limite 2026)~~ — **resolvido**: PEC extinto pela Lei 12/2022; sem PEC novo em 2026.
 2. Confirmar todas as taxas com um contabilista.
 3. Importar viaturas e rubricas do SAF-T.

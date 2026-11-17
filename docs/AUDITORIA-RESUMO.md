@@ -11,7 +11,7 @@ Data: 2026-06-08. Varrimento ferramenta-a-ferramenta nos 6 eixos (cobertura lega
 | Salário Líquido | `lib/salario.ts` | 14 | Retenção = estimativa; **região ligada** ao fator do IRS; estado civil = F2 |
 | SS Independente | `pt2026.ts` | 12 | **Teto da base 12×IAS implementado** (faltava) |
 | Fiscal ENI/Lda | `TaxSimulator` (inline) | — | **KB do bot tinha campos inventados** → corrigido |
-| Previsa / IRC | `lib/previsaCalc.ts` | 10 | Motor impecável; **PEC** sinalizado (revogado/transitório) |
+| Previsa / IRC | `lib/previsaCalc.ts` | 10 | Motor impecável; **PEC resolvido** (extinto, Lei 12/2022) |
 | IMT | `lib/imt.ts` | 7 | Comentário enganoso corrigido; motor correto |
 | Viaturas | `VehicleSimulator` (inline) | — | Coerente; sem agravamento TA com prejuízo |
 | Tickets | inline + `pt2026.ts` | — | Fator IRC do subsídio (60%) a confirmar |
@@ -50,7 +50,7 @@ Testes golden agora em 8 suites (irs, salario, selfss, previsa, imt, honorarios,
 - **Salário:** tabelas oficiais de retenção mensal + estado civil + subsídios férias/Natal.
 - **SS:** ajuste ±25%, acumulação TCO, entidade contratante.
 - **Fiscal:** extrair motor para `lib/fiscal.ts` + golden tests + **derrama municipal** + hipótese dividendos (−28%) + retenção 25%.
-- **Previsa:** confirmar/atualizar **PEC** (limite 2026); importar viaturas/rubricas do SAF-T.
+- **Previsa:** ~~confirmar/atualizar PEC~~ (resolvido: extinto, Lei 12/2022); importar viaturas/rubricas do SAF-T.
 - **Viaturas:** extrair motor para lib + golden tests; agravamento TA com prejuízo.
 - **Transversal (maior alavanca):** **pré-preencher todos os simuladores a partir do Perfil**.
 - **Validação fiscal:** confirmar TODOS os valores em `AUDITORIA-FISCAL-PENDENTE.md`.

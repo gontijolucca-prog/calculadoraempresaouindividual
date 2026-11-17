@@ -39,7 +39,7 @@ Lista de valores e regras que o simulador usa e que **precisam de confirmação 
 - [ ] **IRC PME 15%/19%** e **dedução específica Cat A 8,54×IAS** — confirmar (já no bloco IRS).
 
 ## Previsa / IRC Modelo 22 (2026) — `src/lib/previsaCalc.ts`
-- [ ] **PEC (Pagamento Especial por Conta)**: o art.93.º CIRC foi **revogado** (Lei 12/2022) mas mantém-se em regime transitório. **Confirmar se ainda se aplica em 2026 e qual o limite máximo** — o código usa máx. 70 000 € (fórmula antiga); fontes de 2026 indicam máx. ~1 000 €. Mínimo 850 € parece manter-se. **Não alterar sem confirmação.**
+- [x] **PEC (Pagamento Especial por Conta)** — **resolvido (10-11-2026)**: o art. 93.º CIRC foi **revogado pela Lei 12/2022 (OE2022)**. **Não há PEC novo em 2026.** Subsiste apenas a dedução/reembolso de saldos antigos (2020/2021), que o motor já modela no campo 356 (`pecCalculado = 0`, sem estimar PEC novo). O calendário fiscal 2026 não tem PEC. Já não há limite de 70 000 € a aplicar a PEC novo.
 - [ ] **Taxas IRC 2026**: geral **19%** (baixou de 20%), PME **15%** nos primeiros 50k. Regionais: Madeira 13,3%/10,5%, Açores 15,2%/8,75%, interioridade 12,5% (PME), startup 12,5%. Confirmar todas.
 - [ ] **Derrama estadual** (art.87-A): 0/3/5/9% nos escalões 1,5M/7,5M/35M; Açores ×0,80. Confirmar.
 - [ ] **Pagamentos por Conta (PC)**: 2,5/4,5/8,5% (continental). Confirmar.
