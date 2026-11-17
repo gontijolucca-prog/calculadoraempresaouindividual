@@ -18,6 +18,11 @@ abrir-simuladores.ps1
 .claude/
 .aider*
 public/import-empresas.json
+
+# QA local: screenshots e temporários (não entram no repo, não apagam nada)
+docs/shots/
+docs/audit-*/shots/
+tmp/
 docs-export-review/
 
 # backups locais (contêm dados de clientes)
