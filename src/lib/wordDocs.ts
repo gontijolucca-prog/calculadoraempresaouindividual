@@ -663,16 +663,17 @@ export function buildActaAG(emp: EmpresaRecord, office: OfficeSettings): string 
 <p>Reuni&atilde;o da Assembleia Geral de S&oacute;cios de <strong>${esc(c.nome)}</strong>${c.nif ? `, NIF ${esc(c.nif)}` : ''}, nos termos previstos no artigo 54.&ordm; do C&oacute;digo das Sociedades Comerciais (CSC).</p>
 <p>Data e hora da realiza&ccedil;&atilde;o da AG de s&oacute;cios: ${dataAG}, pelas ${FILL}.<br>
 Local da realiza&ccedil;&atilde;o da AG de s&oacute;cios: ${c.localEscritorio ? esc(c.localEscritorio) + ' &mdash; ' : ''}Sede Social da Entidade.</p>
-<p>Todos os S&oacute;cios estiveram presentes, representando as seguintes quotas de Capital Social:</p>
+<p>Quotas de Capital Social subscritas e realizadas pelos S&oacute;cios:</p>
 <ul>${linhasSocios}</ul>
 <p>Totalidade do Capital Social subscrito e realizado pelos S&oacute;cios: ${capital > 0 ? `&euro; ${fmt(capital)}` : DASH}.<br>
 Nome do S&oacute;cio que presidiu &agrave; AG de S&oacute;cios: ${presidente ? esc(presidente) : FILL}.</p>
-<p>Todos os S&oacute;cios concordaram que a AG re&uacute;na sem observ&acirc;ncia de formalidades pr&eacute;vias, porque est&atilde;o todos os S&oacute;cios presentes; e deliberou-se sobre a ordem de trabalhos seguinte:</p>
+<p>Dispensa de formalidades pr&eacute;vias de convocat&oacute;ria (art. 54.&ordm; CSC): ${FILL}.<br>
+Ordem de trabalhos:</p>
 <ul>
 <li>Aprecia&ccedil;&atilde;o e vota&ccedil;&atilde;o do Relat&oacute;rio de Gest&atilde;o, das Contas e das Demonstra&ccedil;&otilde;es Financeiras do per&iacute;odo econ&oacute;mico ${c.ano};</li>
 <li>Aprecia&ccedil;&atilde;o e vota&ccedil;&atilde;o da proposta do Conselho de Ger&ecirc;ncia sobre a aplica&ccedil;&atilde;o a dar ao Resultado L&iacute;quido apurado no per&iacute;odo econ&oacute;mico ${c.ano}.</li>
 </ul>
-<p><strong>Decis&otilde;es tomadas por unanimidade, por todos os S&oacute;cios presentes:</strong></p>
+<p><strong>Delibera&ccedil;&otilde;es (resultado da vota&ccedil;&atilde;o: ${FILL}):</strong></p>
 <ul>
 <li>Aprovar o Relat&oacute;rio de Gest&atilde;o, as Contas e as Demonstra&ccedil;&otilde;es Financeiras do per&iacute;odo econ&oacute;mico ${c.ano} apresentadas pelo Conselho de Ger&ecirc;ncia.</li>
 <li>Aprovar a proposta do Conselho de Ger&ecirc;ncia sobre a aplica&ccedil;&atilde;o a dar ao Resultado L&iacute;quido apurado no per&iacute;odo econ&oacute;mico ${c.ano}, nos termos seguintes: transferir o montante total de Resultado L&iacute;quido do Exerc&iacute;cio, no valor de ${rlTxt}, para a r&uacute;brica de Resultados Transitados (RT).</li>
