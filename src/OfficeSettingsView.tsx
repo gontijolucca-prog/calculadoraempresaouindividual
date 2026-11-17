@@ -5,6 +5,7 @@ import type { OfficeSettings, EntidadeOutorgante } from './lib/officeSettings';
 import { officeSettingsAreComplete } from './lib/officeSettings';
 import type { HonorariosConfig, TipoEntidadeCliente } from './lib/honorarios';
 import { criarBackupGabinete, descarregarBackup, validarBackup, restaurarBackupGabinete, resumoBackup } from './lib/backupGabinete';
+import { downloadHonorariosExcel } from './lib/honorariosExcel';
 
 interface Props {
   office: OfficeSettings;
@@ -468,6 +469,21 @@ function HonorariosForm({ config, onChange }: { config: HonorariosConfig; onChan
 
   return (
     <div className="space-y-8">
+      {/* Exportar a tabela para Excel — usada na proposta e na reunião com o cliente */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-[#F5F7FA] border border-[#E2E8F0] rounded-[12px] px-4 py-3">
+        <p className="text-[12px] text-[#64748B] font-[500] max-w-[62ch]">
+          Exporta a tabela completa — mensalidades, escalões de faturação, serviços extra e exemplos — para um ficheiro Excel.
+        </p>
+        <button
+          type="button"
+          onClick={() => downloadHonorariosExcel(config)}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-[10px] bg-[var(--accent)] text-white text-[13px] font-[800] hover:bg-[var(--accent-strong)] transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          Exportar tabela de honorários
+        </button>
+      </div>
+
       {/* Mensalidade por tipo de entidade */}
       <section className="bg-white rounded-[16px] border border-[#E2E8F0] p-6">
         <h2 className={sectionTitleCls}>Mensalidade Base por Tipo de Entidade</h2>

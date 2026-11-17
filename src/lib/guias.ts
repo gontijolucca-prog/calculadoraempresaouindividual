@@ -58,7 +58,7 @@ export const GUIAS: Record<ViewKey, Guia> = {
     passos: [
       { titulo: 'A carteira de clientes', corpo: 'Aqui estão todas as empresas do escritório. Cada uma tem o seu perfil e os seus dados — não há mistura entre clientes.', alvo: { texto: 'CRM · Carteira' } },
       { titulo: 'Criar cliente à mão', corpo: 'Regista um cliente novo sem ficheiros: preenche o perfil (nome, NIF, atividade) e os simuladores ficam prontos a trabalhar.', alvo: { texto: 'Inserir à mão' } },
-      { titulo: 'Importar do SAF-T', corpo: 'Importa a contabilidade real do cliente a partir do ficheiro SAF-T. O perfil e campos como NIF, morada e atividade são preenchidos automaticamente.', alvo: { texto: 'A partir de SAF-T' } },
+      { titulo: 'Importar do SAF-T', corpo: 'Importa a contabilidade real do cliente a partir do ficheiro SAF-T. O perfil e campos como NIF, morada e atividade são preenchidos automaticamente.', alvo: { texto: 'Tenho o ficheiro SAF-T' } },
       { titulo: 'Abrir um cliente', corpo: 'Ao abrir, carregas o perfil, o PreviSa e o estado de todos os simuladores daquele cliente — como ficaram na última sessão.', alvo: { texto: 'Abrir' } },
       { titulo: 'Histórico de simulações', corpo: 'Cada simulação guardada fica no histórico do cliente e pode ser restaurada — útil para comparar cenários (ex: antes/depois de alterações).', alvo: { texto: 'Histórico de simulações' } },
     ],
@@ -234,7 +234,7 @@ export const GUIAS: Record<ViewKey, Guia> = {
     passos: [
       { titulo: '1 · Empresa', corpo: 'Escolha o cliente a que o documento diz respeito — os dados vêm do perfil e do PreviSa dele.', alvo: { texto: '1 · Empresa' } },
       { titulo: '2 · Documento', corpo: 'Seleciona o documento (Demonstração de Resultados, Balanço, Fluxos de Caixa, Ata de AG, Declaração de Responsabilidade…) e exporta.', alvo: { texto: '2 · Documento' } },
-      { titulo: 'Modelo 22 em Excel', corpo: 'O PreviSa também exporta a previsão do Modelo 22 para Excel — pronto a enviar para o cliente ou para a AT.', alvo: { texto: 'Previsão — Modelo 22 (Excel)' } },
+      { titulo: 'Modelo 22', corpo: 'O PreviSa gera o resumo do Modelo 22 numa folha, com os resultados e valores finais — pronto a enviar para o cliente ou para a AT.', alvo: { texto: 'Previsão — Modelo 22 (PDF)' } },
     ],
   },
 
@@ -253,9 +253,9 @@ export const GUIAS: Record<ViewKey, Guia> = {
     intro: 'A gestão do dia do escritório: tarefas, obrigações dos clientes, cofre de senhas e visão do que está atrasado — tudo num só sítio, sempre atualizado.',
     acao: 'Crie a primeira tarefa ou guarde o primeiro acesso no cofre.',
     passos: [
-      { titulo: 'Visão do dia', corpo: 'KPIs no topo: tarefas que vencem hoje, atrasadas, obrigações vencidas e clientes sem tarefa há 30 dias — o que precisa de atenção hoje.', alvo: { texto: 'Tarefas hoje' } },
-      { titulo: 'Próximos 7 dias', corpo: 'Lista do que vence na semana: obrigações e tarefas juntas, por data. Clica em "Ver tudo" para ir às tarefas.', alvo: { texto: 'Próximos 7 dias' } },
-      { titulo: 'Atalhos', corpo: 'Novo cliente, nova tarefa e guardar acesso — atalhos diretos para as ações mais frequentes do escritório.', alvo: { texto: 'Atalhos' } },
+      { titulo: 'Quadro de obrigações', corpo: 'O quadro cruza clientes (linhas) com os meses do ano (colunas). Cada célula guarda uma obrigação: clicar alterna entre vazio, concluído (✓) e não concluído (✕).', alvo: { texto: 'Quadro de obrigações' } },
+      { titulo: 'Filtros', corpo: 'Filtra por cliente, gestor, estado, regime e período. "Limpar" repõe o quadro completo — os filtros não alteram os dados, só a vista.', alvo: { texto: 'Limpar' } },
+      { titulo: 'Mapa de controlo', corpo: 'Separador próprio, com as 7 fases da contabilidade por cliente e o ano inteiro colorido por fase — do documento em falta ao balancete.', alvo: { texto: 'Mapa de controlo' } },
     ],
   },
 
@@ -309,7 +309,7 @@ export const GUIAS: Record<ViewKey, Guia> = {
     passos: [
       { titulo: 'Mês e cliente', corpo: 'Escolha o mês (YYYY-MM) e filtre por cliente. As obrigações listam vencimento, tipo e estado.', alvo: { texto: 'Todos clientes' } },
       { titulo: 'Estados', corpo: 'Pendente (âmbar), Entregue (verde), Atrasada (vermelho) ou Dispensada — atualizas com um clique.', alvo: { texto: 'Entregue' } },
-      { titulo: 'Geração automática', corpo: 'Cada cliente em Clientes 360 gera IVA mensal/trimestral + 3 PPC (jul/set/15 dez) + Modelo 22 e IES — com prazos reais.', alvo: { texto: 'Obrigações são geradas automaticamente' } },
+      { titulo: 'Calendário fiscal', corpo: 'Cada cliente gera IVA, PPC, Modelo 22 e IES com prazos reais. Aqui vê-se o calendário com vencimento, obrigação, cliente, tipo e estado — dá para filtrar e marcar como entregue.', alvo: { texto: 'Calendário fiscal 2026' } },
     ],
   },
 
@@ -321,8 +321,8 @@ export const GUIAS: Record<ViewKey, Guia> = {
     intro: 'Senhas e acessos do escritório — só a sua conta vê. Guarde sem passphrase e revela com um clique.',
     acao: 'Guarda o primeiro acesso.',
     passos: [
-      { titulo: 'Guardar acesso', corpo: 'Título, categoria (AT/SS/Banco/…), cliente opcional, username e segredo. Só a sua conta vê.', alvo: { texto: 'Guardar acesso' } },
-      { titulo: 'Revelar', corpo: 'Clica em "Revelar" para ver a senha, copiar e registar a vista (audit: quem viu e quando).', alvo: { texto: 'Revelar' } },
+      { titulo: 'Guardar acesso', corpo: 'Título, categoria (AT/SS/Banco/…), cliente opcional, utilizador e password. Só a sua conta vê o segredo.', alvo: { texto: 'Guardar primeiro' } },
+      { titulo: 'Encontrar e revelar', corpo: 'Pesquisa por título, cliente ou utilizador. Para ver a password de uma entrada, usa o ícone do olho: a vista fica registada na auditoria (quem viu e quando).', alvo: { texto: 'Pesquisar passwords' } },
     ],
   },
 };

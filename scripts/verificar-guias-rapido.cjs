@@ -4,7 +4,9 @@
  * tour abre com role="dialog"/aria-modal, foco entra no tooltip, aria-live,
  * setas navegam, follow-up do bot ao fechar, "não perguntar" persiste.
  */
-const { chromium } = require('/tmp/pwtest/node_modules/playwright');
+// Usa o playwright-core do próprio projeto e o Chrome instalado (sem depender de /tmp).
+const { chromium } = require('playwright-core');
+const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
 const VIEWS = ['empresas', 'tax', 'vehicle', 'salario', 'previsa'];
 const BASE = 'http://localhost:3000';
@@ -21,7 +23,7 @@ function seed(view) {
 }
 
 (async () => {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ executablePath: CHROME, headless: true });
   const ctx = await browser.newContext({ viewport: { width: 1366, height: 850 } });
   ctx.setDefaultTimeout(7000);
   let fails = 0;

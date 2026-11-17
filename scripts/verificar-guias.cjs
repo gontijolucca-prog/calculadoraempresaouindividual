@@ -4,26 +4,32 @@
  * "Ver tour" inicia (tooltip+spotlight) → Saltar fecha → sem repetição se "não perguntar"
  * → texto "guia" reativa. Zero erros de consola.
  */
-const { chromium } = require('/tmp/pwtest/node_modules/playwright');
+// Usa o playwright-core do próprio projeto e o Chrome instalado (sem depender de /tmp).
+const { chromium } = require('playwright-core');
+const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
+// "gabinete:visao-geral" abre a vista Gabinete no separador indicado.
 const VIEWS = ['empresas', 'profile', 'tax', 'vehicle', 'ticket', 'selfss', 'diagnostico',
-  'imoveis', 'imt', 'salario', 'irs', 'previsa', 'legal', 'office-settings', 'historico', 'exportar', 'hub'];
+  'imoveis', 'imt', 'salario', 'irs', 'previsa', 'legal', 'office-settings', 'historico', 'exportar', 'hub',
+  'gabinete:dashboard', 'gabinete:visao-geral', 'gabinete:equipa', 'gabinete:agenda', 'gabinete:tarefas', 'gabinete:obrigacoes', 'gabinete:cofre'];
 
 const BASE = 'http://localhost:3000';
 
 function seedStorage(view) {
   const now = Date.now();
+  const [vista, gtab] = view.split(':');
   return [
     ['estudo360:v1:sessao', { v: 1, data: true }],
     ['estudo360:v1:mode', { v: 1, data: 'empresa' }],
-    ['estudo360:v1:lastView', { v: 1, data: view }],
+    ['estudo360:v1:lastView', { v: 1, data: vista }],
+    ['estudo360:v1:gabineteTab', { v: 1, data: gtab || 'dashboard' }],
     ['estudo360:v1:currentEmpresaId', { v: 1, data: 'demo' }],
     ['estudo360:v1:empresas', { v: 1, data: { list: [{ id: 'demo', nome: 'Cliente Demo', nif: '123456789', createdAt: now, updatedAt: now, profile: {}, sims: {} }], updatedAt: now } }],
   ];
 }
 
 (async () => {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ executablePath: CHROME, headless: true });
   const ctx = await browser.newContext({ viewport: { width: 1366, height: 850 } });
   ctx.setDefaultTimeout(8000);
   let fails = 0;
