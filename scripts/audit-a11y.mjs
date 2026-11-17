@@ -14,7 +14,7 @@ import fs from 'node:fs';
 
 const BASE = (process.env.BASE || 'http://localhost:3000/') + '?test';
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const OUT = 'docs/audit-a11y.json';
+const OUT = process.env.OUT || 'docs/audit-a11y.json';
 const env = (data) => JSON.stringify({ v: 1, data });
 
 const VISTAS = [
@@ -61,6 +61,8 @@ const recolher = () => {
   document.querySelectorAll('input, select, textarea').forEach((el) => {
     const tipo = (el.getAttribute('type') || '').toLowerCase();
     if (['hidden', 'submit', 'button', 'checkbox', 'radio', 'file'].includes(tipo)) return;
+    // Ignora o que é injetado por terceiros (reCAPTCHA do App Check), não é UI nossa.
+    if (el.closest('.g-recaptcha, [class*="g-recaptcha"], [class*="grecaptcha"]') || (el.getAttribute('class') || '').includes('g-recaptcha')) return;
     const id = el.getAttribute('id');
     const temLabel = (id && document.querySelector(`label[for="${CSS.escape(id)}"]`))
       || el.closest('label')
@@ -79,7 +81,8 @@ const recolher = () => {
 };
 
 const browser = await chromium.launch({ executablePath: CHROME, headless: true });
-const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+const VW = Number(process.env.VW || 1440), VH = Number(process.env.VH || 900);
+const page = await browser.newPage({ viewport: { width: VW, height: VH } });
 await page.route('**://firestore.googleapis.com/**', (r) => r.abort());
 await page.route('**://identitytoolkit.googleapis.com/**', (r) => r.abort());
 await page.route('**://securetoken.googleapis.com/**', (r) => r.abort());

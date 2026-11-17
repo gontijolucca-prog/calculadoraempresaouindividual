@@ -70,13 +70,14 @@ function wireCtx(ctx, logs, tag) {
 }
 
 const browser = await chromium.launch({
-  executablePath: process.env.QA_CHROME || '/Users/lucca/Library/Caches/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-mac-arm64/chrome-headless-shell',
+  executablePath: process.env.QA_CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
 });
-const ctxA = await browser.newContext({ viewport: { width: 1440, height: 950 } });
+const VW = Number(process.env.VW || 1440), VH = Number(process.env.VH || 950);
+const ctxA = await browser.newContext({ viewport: { width: VW, height: VH } });
 wireCtx(ctxA, logsA, 'A');
 const A = await ctxA.newPage();
 const logsB = [];
-const ctxB = await browser.newContext({ viewport: { width: 1440, height: 950 } });
+const ctxB = await browser.newContext({ viewport: { width: VW, height: VH } });
 wireCtx(ctxB, logsB, 'B');
 const B = await ctxB.newPage();
 

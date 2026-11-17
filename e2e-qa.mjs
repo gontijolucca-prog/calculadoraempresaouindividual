@@ -60,9 +60,10 @@ async function openGabTab(label) {
 }
 
 const browser = await chromium.launch({
-  executablePath: process.env.QA_CHROME || '/Users/lucca/Library/Caches/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-mac-arm64/chrome-headless-shell',
+  executablePath: process.env.QA_CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
 });
-const ctx = await browser.newContext({ viewport: { width: 1440, height: 950 } });
+const VW = Number(process.env.VW || 1440), VH = Number(process.env.VH || 950);
+const ctx = await browser.newContext({ viewport: { width: VW, height: VH } });
 page = await ctx.newPage();
 page.on('pageerror', e => errors.push(`pageerror: ${e.message}`));
 page.on('console', m => { if (m.type() === 'error') errors.push(`console.error: ${m.text().slice(0, 300)}`); });

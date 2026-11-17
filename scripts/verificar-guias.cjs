@@ -30,7 +30,8 @@ function seedStorage(view) {
 
 (async () => {
   const browser = await chromium.launch({ executablePath: CHROME, headless: true });
-  const ctx = await browser.newContext({ viewport: { width: 1366, height: 850 } });
+  const VW = Number(process.env.VW || 1366), VH = Number(process.env.VH || 850);
+  const ctx = await browser.newContext({ viewport: { width: VW, height: VH } });
   ctx.setDefaultTimeout(8000);
   let fails = 0;
   const errorsByView = {};
