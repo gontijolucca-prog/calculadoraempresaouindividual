@@ -60,7 +60,7 @@ As 6 de maior risco estão em `docs/PERGUNTAS-SANDRINE-2026-11.md`.
 - [ ] **Taxas IRC 2026**: geral **19%** (baixou de 20%), PME **15%** nos primeiros 50k. Regionais: Madeira 13,3%/10,5%, Açores 15,2%/8,75%, interioridade 12,5% (PME), startup 12,5%. Confirmar todas.
 - [ ] **Derrama estadual** (art.87-A): 0/3/5/9% nos escalões 1,5M/7,5M/35M; Açores ×0,80. Confirmar.
 - [ ] **Pagamentos por Conta (PC)**: 2,5/4,5/8,5% (continental). Confirmar.
-- [ ] **Tributações autónomas** (art.88): escalões de viaturas (8/25/32%), elétrico 0% (10% acima de 62 500 €), e taxas de despesas (não documentadas 50/70%, representação 10%, ajudas de custo 5%, lucros distribuídos 23%, offshores/indemnizações/bónus 35%); agravamento ×1,1 com prejuízo. Confirmar.
+- [ ] **Tributações autónomas** (art.88): escalões de viaturas (8/25/32%), elétrico 0% (10% acima de 62 500 €), e taxas de despesas (não documentadas 50/70%, representação 10%, ajudas de custo 5%, lucros distribuídos 23%, offshores/indemnizações/bónus 35%); agravamento de **+10 p.p. à taxa** com prejuízo (CIRC art. 88.º n.º 14). Confirmar.
 
 ## IMT + Imposto de Selo (2026) — `src/lib/imt.ts`
 - [ ] **Escalões CIMT 2026** (HPP e habitação secundária — limites e deduções; atualizam anualmente). Confirmar a tabela completa.
@@ -73,7 +73,7 @@ As 6 de maior risco estão em `docs/PERGUNTAS-SANDRINE-2026-11.md`.
 - [ ] **IVA dedutível por motor/atividade** (CIVA art.21): elétrico ≤62,5k 100%; PHEV compliant ≤50k 100%; GPL/GNV ≤37,5k 50% (passageiros); comercial diesel 50%, restantes 100%; combustível gasóleo/GPL/GNV 50%, elétrico 100%, gasolina 0%. Confirmar.
 - [ ] **Limites de depreciação fiscal**: 25k / 37,5k / 50k / 62,5k. Confirmar (Portaria).
 - [ ] **TA ligeiros de passageiros** (CIRC art.88): 8/25/32% (conv), 2,5/7,5/15% (PHEV), 0% e 10%>62,5k (elétrico); escalões 37,5k/45k. Confirmar.
-- [x] **Agravamento TA com prejuízo** — IMPLEMENTADO no simulador de Viaturas como **+10 p.p.** (CIRC art.88 n.14). ⚠ **DISCREPÂNCIA**: o Previsa aplica `×1,1` (10% sobre o valor) em vez de +10 p.p. à taxa. Reconciliar com um contabilista qual é o correto e alinhar os dois (não alterei o Previsa, que é o motor validado).
+- [x] **Agravamento TA com prejuízo** — IMPLEMENTADO no simulador de Viaturas como **+10 p.p.** (CIRC art.88 n.14). ✅ **Reconciliado**: os dois motores usam agora +10 p.p. à taxa (`viaturas.ts:168`, `previsaCalc.ts:108`). A dúvida antiga do ×1,1 já não existe. Falta só validar a **suspensão** do agravamento pela LOE 2026 (art. 95.º n.º 5) — ver pergunta 5 das perguntas à Sandrine.
 
 ## Tickets / Subsídio de refeição (2026) — `src/TicketSimulator.tsx` + `pt2026.ts`
 - [ ] **Limites diários** cartão 10,46 € / dinheiro 6,15 € (já no bloco Salário). Confirmar.
