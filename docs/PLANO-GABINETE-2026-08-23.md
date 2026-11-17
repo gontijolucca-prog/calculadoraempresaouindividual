@@ -170,9 +170,9 @@ Reutilizar `Input.tsx`, `Combobox.tsx`, `Layouts.tsx`, `ThemeContext`, `motion`.
 
 ### Fase 2 — Completar o que ficou pendente (Semana 4) — SEMANA DE FECHO
 
-- [ ] **S2 — Cenários elegíveis:** refinar `EnquadramentoCompleto.tsx` + `enquadramento2026.ts` para **só renderizar cenários elegíveis** (A1-A6/B1-B6), com toggle "Mostrar também inelegíveis (cinzento + motivo)". Adicionar secção "Poupança fiscal vs Tesouraria" já pedida.
-- [ ] **S3 — PPC 2 botões:** em `PreviSaSimulator.tsx` criar bloco dedicado: `Atualizar PPC (art. 105º)` (lê Modelo22 anterior, calcula base, aplica 80/95%, divide por 3, arredonda por excesso, mostra jul/set/dez) + `Simular limitação 3º PPC (art. 104º/107º)` (input "coleta esperada" → limita). Guardar em `previsa.ppc*`.
-- [ ] **S4 — Excel honorários:** `lib/previsaExcel.ts` já existe — duplicar padrão para `lib/honorariosExcel.ts` + botão em `OfficeSettingsView.tsx` "Exportar tabela de honorários"
+- [x] **S2 — Cenários elegíveis** ✅ *feito* (`EnquadramentoCompleto.tsx:59` toggle `mostrarInelegiveis`, `:301` poupança vs tesouraria): refinar `EnquadramentoCompleto.tsx` + `enquadramento2026.ts` para **só renderizar cenários elegíveis** (A1-A6/B1-B6), com toggle "Mostrar também inelegíveis (cinzento + motivo)". Adicionar secção "Poupança fiscal vs Tesouraria" já pedida.
+- [x] **S3 — PPC 2 botões** ✅ *feito* (`PreviSaSimulator.tsx:854` `<GestorPPC>`, `previsaCalc.reavaliar3PPC`): em `PreviSaSimulator.tsx` criar bloco dedicado: `Atualizar PPC (art. 105º)` (lê Modelo22 anterior, calcula base, aplica 80/95%, divide por 3, arredonda por excesso, mostra jul/set/dez) + `Simular limitação 3º PPC (art. 104º/107º)` (input "coleta esperada" → limita). Guardar em `previsa.ppc*`.
+- [ ] **S4 — Excel honorários** ⚠️ *lib pronta, botão em falta* (`lib/honorariosExcel.ts` existe e não é importado): `lib/previsaExcel.ts` já existe — duplicar padrão para `lib/honorariosExcel.ts` + botão em `OfficeSettingsView.tsx` "Exportar tabela de honorários"
 - [ ] **S1 — e-fatura:** confirmar com Sandrine se quer mesmo ligação AT ou se SAF-T chega; se sim, especificar OAuth AT (fora do MVP — deixar documentado).
 - [ ] Testes: `npm run test` + `previsa.test.ts` + `enquadramento2026.test.ts` já cobrem — acrescentar casos PPC.
 

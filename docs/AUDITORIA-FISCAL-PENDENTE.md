@@ -2,6 +2,21 @@
 
 Lista de valores e regras que o simulador usa e que **precisam de confirmação profissional** antes de os afirmarmos como certos. Nenhum destes foi inventado pela auditoria — vêm do código existente; só não temos fonte oficial confirmada. Marcar ✅ quando validado.
 
+## Estado (17-11-2026)
+
+| Categoria | Quantas | Dono |
+|---|---|---|
+| ✅ **A — fechado** (confirmado ou implementado com fonte) | 21 | — |
+| 🔧 **B — fechável por mim** (contradição com o código) | **0** | — |
+| ⏳ **C — depende da Sandrine** (validação profissional) | 73 | Sandrine |
+
+As três contradições que existiam em B foram corrigidas hoje: retenção Continente/Madeira (já implementada em `retencaoTabelas.ts`), "estado civil sem efeito" (falso — `retencao.ts` usa a situação familiar) e o limiar dos 15% (é **28 320 €** em `fiscal.ts:23`, não 27 360 €).
+
+**Fecho até 24-11.** Cada caixa aberta fecha num de três estados, por escrito: **corrigido**, **aceite com ressalva** ou **fora de âmbito**. Sem estado, passa a risco aceite — não fica aberta indefinidamente.
+
+As 6 de maior risco estão em `docs/PERGUNTAS-SANDRINE-2026-11.md`.
+
+
 ## IRS (2026) — `src/lib/irs.ts`
 - [ ] **IAS 2026 = 537,13 €** (Portaria 480-A/2025?) e **SMN 2026 = 920 €** (DL 139/2025?).
 - [ ] **Escalões 2026** (9 escalões: limites e taxas 12,5% → 48%, e parcelas a abater). Confirmar tabela completa.
@@ -15,12 +30,14 @@ Lista de valores e regras que o simulador usa e que **precisam de confirmação 
 - [ ] **Benefício municipal por concelho** (`MUNICIPIOS_BM`): confirmar a tabela de devolução de IRS por câmara para o ano em causa (Portal das Finanças).
 
 ## Salário Líquido (2026) — `src/lib/salario.ts` + `src/lib/pt2026.ts`
-- [ ] **Tabelas oficiais de retenção na fonte 2026** (Despacho) — por estado civil (solteiro / casado 1 titular / casado 2 titulares), nº de titulares, nº de dependentes e região (Continente / Madeira / Açores). **É o que falta para a retenção mensal ser fiel ao recibo.** Hoje o motor usa a liquidação anual dos escalões ÷ nº de pagamentos (estimativa).
-- [ ] **Região JÁ ligada** (08-jun) com o fator do simulador de IRS — Açores ×0,80, Madeira ×0,70 sobre a coleta. **Confirmar estas percentagens** (são as mesmas já sinalizadas no bloco IRS). **Estado civil** continua sem efeito — fica para a Fase 2 com as tabelas oficiais.
+- [x] **Tabelas de retenção Continente I–VII e Madeira** — implementadas em `src/lib/retencaoTabelas.ts` (11-jun-2026), verificadas contra o PDF oficial (76 amostras).
+- [ ] **Tabelas de retenção dos Açores 2026** — sem fonte oficial localizada; `retencaoTabelas.ts` devolve `null` e o motor aplica Continente ×0,80 **sinalizado na UI**. Falta o despacho oficial.
 - [ ] **Subsídios de férias e de Natal** — regra de tributação própria (taxa da remuneração mensal, em separado). Hoje só há o interruptor "duodécimos".
 - [ ] **SS trabalhador 11% / SS patronal 23,75%** — confirmar (e 22,3% para entidades sem fins lucrativos).
 - [ ] **Limites do subsídio de alimentação 2026**: cartão **10,46 €**/dia, dinheiro **6,15 €**/dia ("Despacho 233-A/2026"). Confirmar (2025: 10,20 / 6,00).
 - [ ] **Seguro de acidentes de trabalho** — taxa default 1% (varia por atividade); confirmar se deve ser editável/obrigatório.
+
+> Nota: o **estado civil já entra no cálculo** desde 11-jun (`retencao.ts`: situacaoFamiliar → tabelas I–VII, com e sem dependentes). A frase anterior "estado civil sem efeito" estava errada e foi removida em 17-11-2026.
 
 ## SS Independente (2026) — `calcSelfSSContribution` em `src/lib/pt2026.ts`
 - [ ] **Taxa 21,4%** (`SS_RATE_SELF_EMPLOYED`) — confirmar.
@@ -35,7 +52,7 @@ Lista de valores e regras que o simulador usa e que **precisam de confirmação 
 - [ ] **Retenção na fonte ENI serviços = 11,5%** (só informativa, não entra no líquido). Confirmar — muitas profissões do art.151.º retêm 25%.
 - [x] **Dividendos −28%** — IMPLEMENTADO (08-jun): mostra líquido com lucro retido E distribuído. Confirmar a taxa (28% liberatória art.71).
 - [ ] **PPC = 25% do IRS** — aproximação; confirmar regra dos pagamentos por conta Cat. B.
-- [ ] **Limiar justificação 15% (art.31 n.13) = 27 360 €** (valor 2025 mantido) — confirmar valor 2026.
+- [ ] **Limiar justificação 15% (art.31 n.13) = 28 320 €** (2025: 27 360 €; 2026 = 27 360 × 1,0351, `fiscal.ts:23` — **provisório até sair a Portaria**) — confirmar valor oficial 2026.
 - [ ] **IRC PME 15%/19%** e **dedução específica Cat A 8,54×IAS** — confirmar (já no bloco IRS).
 
 ## Previsa / IRC Modelo 22 (2026) — `src/lib/previsaCalc.ts`
@@ -76,7 +93,7 @@ Lista de valores e regras que o simulador usa e que **precisam de confirmação 
 Confirmação ferramenta-a-ferramenta do Anexo B (rendimentos empresariais e profissionais). Antes, o simulador só fazia `rendimento × coeficiente`. **Agora o motor (`src/lib/irs.ts`) modela o Anexo B a sério** — com os pontos abaixo implementados com **valores-base estabelecidos** e **casos-teste golden** (irs.test.ts J–N). **As taxas/limiares mudam resultados e continuam a precisar do aval de um contabilista.**
 
 **Perguntas urgentes (valores-base já no motor — confirmar/afinar):**
-- [x] **Regra dos 15% (art. 31.º n.13/14 CIRS):** IMPLEMENTADA igual ao motor Fiscal (`fiscal.ts`): para os coeficientes 0,75/0,35 e rendimento bruto > 27 360 €, exige-se justificar 15% do rendimento; justificado = despesas documentadas (`despesasCatB`) + dedução específica automática (4 587,09 €); a parte não justificada **acresce** ao coletável. **Confirmar:** (a) a fórmula exata 2026; (b) o **limiar** (2025 = **27 360 €** — mantém-se?); (c) que despesas contam como justificação.
+- [x] **Regra dos 15% (art. 31.º n.13/14 CIRS):** IMPLEMENTADA igual ao motor Fiscal (`fiscal.ts`): para os coeficientes 0,75/0,35 e rendimento bruto > **28 320 € (2026, provisório)**, exige-se justificar 15% do rendimento; justificado = despesas documentadas (`despesasCatB`) + dedução específica automática (4 587,09 €); a parte não justificada **acresce** ao coletável. **Confirmar:** (a) a fórmula exata 2026; (b) o **limiar** definitivo (Portaria em falta); (c) que despesas contam como justificação.
 - [~] **Dedução das contribuições para a SS na Cat. B:** NÃO modelada como dedução separada (em regime simplificado, o coeficiente já presume os custos e a SS só conta para a justificação dos 15%, coerente com `fiscal.ts`). **Confirmar** se em 2026 deve haver dedução autónoma das contribuições e com que limite.
 - [x] **IRS Jovem (art. 12.º-B) na Cat. B:** IMPLEMENTADO — a isenção passa a abranger Cat. A **e** Cat. B (limite 55×IAS = 29 542,15 € sobre a soma A+B do sujeito passivo). **Confirmar** que o IRS Jovem se aplica mesmo aos rendimentos da Cat. B.
 - [ ] **Caso raro — prejuízo na Cat. B organizada + IRS Jovem em simultâneo:** quando há prejuízo (lucro organizado negativo) e IRS Jovem ao mesmo tempo, o prejuízo reduz o rendimento global E a isenção (calculada sobre a Cat. A) também reduz — podem somar-se e sub-tributar. A isenção é calculada sobre a parte positiva (`max(0, Cat. B)`), o que ignora o prejuízo no cálculo da isenção mas deixa-o reduzir o global. **Confirmar** o tratamento correto da interação prejuízo × IRS Jovem (não modelado de forma especial; só afeta este caso raro).
