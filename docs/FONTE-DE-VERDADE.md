@@ -1,13 +1,13 @@
 # Fonte de verdade — Estudo 360
 
-> Atualizado: 2026-11-10. Se algo aqui não bater com a realidade, corrige-se este ficheiro primeiro.
+> Atualizado: 2026-11-17. Se algo aqui não bater com a realidade, corrige-se este ficheiro primeiro.
 
 ## Repositório canónico
 
 - **Path:** `/Volumes/Extreme SSD/Dev/GitHub/estudo360`
 - **Atalho:** `~/Documents/GitHub/estudo360` — mesmo inode (verificado 2026-11-10).
 - **GitHub:** `gontijolucca-prog/calculadoraempresaouindividual` · branch `main`
-- **NÃO usar:** `/Volumes/Extreme SSD/Dev/GitHub/calculadoraempresaouindividual` — clone antigo, 159 commits atrás em 2026-11-10.
+- **NÃO usar:** `/Volumes/Extreme SSD/Dev/GitHub/calculadoraempresaouindividual` — clone antigo, **220 commits atrás** em 2026-11-17 (159 em 2026-11-10). Tem cópia própria de `scripts/`; se um script apontar para lá, está a testar código morto.
 
 ## Comandos
 
@@ -23,7 +23,20 @@
 
 - **Porta dev:** 3000 (`package.json`: `vite --port=3000 --host=0.0.0.0`).
 - Servidor dev ativo em 2026-11-10: `127.0.0.1:3000`, cwd canónico.
-- **Node:** `v22.23.2` no PATH (`/Users/lucca/.local/bin/node`); `scripts/verify.sh` fixa `v24.14.0` em `~/.nvm/versions/node/v24.14.0`.
+- **Node:** o PATH resolve `v22.23.2` (`/Users/lucca/.local/bin/node`), mas `scripts/verify.sh` fixa `v24.14.0` (`~/.nvm/versions/node/v24.14.0`). Os testes correm nos dois; para bater com o CI, usar o `v24.14.0`.
+
+## Baseline de verificação
+
+Medido em `410397d` (2026-11-17), no repo canónico:
+
+| Gate | Resultado |
+|---|---|
+| `npm run lint` (tsc) | 0 erros |
+| `npm test` | exit 0 · 41 ficheiros (33 lib + 3 deck + 5 functions) |
+| CI (`deploy.yml`) | lint → test → audit:segredos → build → deploy |
+| Produção | `version.json` = `410397d` |
+
+Serve para distinguir uma regressão nova de uma falha que já existia.
 
 ## URLs
 

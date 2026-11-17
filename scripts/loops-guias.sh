@@ -1,6 +1,6 @@
 #!/bin/bash
 # Loops de verificação do sistema de guias — Estudo 360 (2026-08-13)
-cd /Users/lucca/Documents/GitHub/calculadoraempresaouindividual
+cd /Users/lucca/Documents/GitHub/estudo360
 RES=/tmp/loops-guias.txt
 echo "═══ LOOPS DE VERIFICAÇÃO — $(date '+%H:%M:%S') ═══" > $RES
 
