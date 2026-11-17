@@ -18,6 +18,7 @@ import { loadOfficeSettings } from './lib/officeSettings';
 import { exportarFichaGabinetePdf } from './lib/gabineteFichaPdf';
 import { can } from './lib/permissions';
 import { enviarDocumento, descarregarDocumento } from './lib/docsCloud';
+import { getActiveGabineteId } from './lib/gabinetes';
 import type { GabineteRole } from './lib/gabinetes';
 import type { GabineteCliente, Tarefa, Obrigacao, ObrigacaoDef, CofreEntrada, GabineteDocumento, ContactoGabinete, AlertaGabinete, OcorrenciaGabinete, Colaborador } from './lib/gabinete';
 
@@ -242,7 +243,7 @@ export default function VisaoGeralView({ cliente, contactos, alertas, ocorrencia
       let storagePath: string | undefined;
       let tamanho: number | undefined;
       if (docFile) {
-        const enviado = await enviarDocumento(docFile);
+        const enviado = await enviarDocumento(docFile, getActiveGabineteId() || '');
         storagePath = enviado.path;
         tamanho = enviado.tamanho;
       }

@@ -14,13 +14,17 @@ async function cabecalhoAuth(): Promise<HeadersInit> {
 
 export type DocumentoEnviado = { path: string; nome: string; tamanho: number };
 
-export async function enviarDocumento(file: File): Promise<DocumentoEnviado> {
-  const r = await fetch(`${BASE}/upload?name=${encodeURIComponent(file.name)}`, {
+// O servidor só aceita se o utilizador for membro do gabinete (verifica no Firestore
+// com o token dele). Assim os documentos são partilhados com a equipa, não só com quem enviou.
+export async function enviarDocumento(file: File, gabineteId: string): Promise<DocumentoEnviado> {
+  if (!gabineteId) throw new Error('Escolhe primeiro um gabinete.');
+  const r = await fetch(`${BASE}/upload?name=${encodeURIComponent(file.name)}&gabinete=${encodeURIComponent(gabineteId)}`, {
     method: 'POST',
     headers: { ...(await cabecalhoAuth()), 'Content-Type': 'application/octet-stream' },
     body: file,
   });
   if (r.status === 401) throw new Error('Sessão expirada — entra outra vez.');
+  if (r.status === 403) throw new Error('Sem acesso a este gabinete.');
   if (r.status === 415) throw new Error('Tipo de ficheiro não permitido (PDF, imagens, Excel, Word, CSV, XML, ZIP).');
   if (r.status === 413) throw new Error('Ficheiro demasiado grande (máximo 25 MB).');
   if (!r.ok) throw new Error(`Falha no envio (${r.status}).`);
