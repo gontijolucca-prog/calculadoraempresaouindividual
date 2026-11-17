@@ -20,7 +20,9 @@
 Cliente: Recofátima (contacto: Sandrine, WhatsApp 133921408831547@lid).
 
 ### Paths
-- Repo: `/Volumes/Extreme SSD/Mac-Lucca/Documents-store/Documents/GitHub/estudo360`
+- Repo canónico: `/Volumes/Extreme SSD/Dev/GitHub/estudo360` (atalho `~/Documents/GitHub/estudo360`)
+- Fonte de verdade: `docs/FONTE-DE-VERDADE.md`
+- Cópia obsoleta (NÃO USAR): `/Volumes/Extreme SSD/Dev/GitHub/calculadoraempresaouindividual`
 - GitHub: `gontijolucca-prog/calculadoraempresaouindividual`
 - Domain: https://estudo360.pt (CF Pages auto-deploy on push to main)
 - Node: `/Users/lucca/.nvm/versions/node/v24.14.0/bin/node`
