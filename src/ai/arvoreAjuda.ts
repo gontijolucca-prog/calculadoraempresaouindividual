@@ -244,7 +244,7 @@ export const ARVORE: Record<string, NoAjuda> = {
     opcoes: [
       { rotulo: 'Visão geral do Gabinete', proximo: 'gab-inicio' },
       { rotulo: 'Ficha 360 de um cliente', proximo: 'gab-visao' },
-      { rotulo: 'Obrigações Fiscais', proximo: 'gab-quadro' },
+      { rotulo: 'Mapa Fiscal', proximo: 'gab-quadro' },
       { rotulo: 'Mapa de contabilidade', proximo: 'gab-controlo' },
       { rotulo: 'Mapa RH', proximo: 'gab-rh' },
       { rotulo: 'Tarefas', proximo: 'gab-tarefas' },
@@ -267,7 +267,7 @@ export const ARVORE: Record<string, NoAjuda> = {
   },
   'gab-quadro': {
     id: 'gab-quadro',
-    texto: 'O quadro de Obrigações Fiscais mostra os 12 meses por cliente e marca se cada obrigação está concluída.',
+    texto: 'O Mapa Fiscal mostra os 12 meses por cliente e marca se cada obrigação está concluída.',
     destino: { view: 'gab-dashboard', guia: 'gab-dashboard' },
   },
   'gab-controlo': {

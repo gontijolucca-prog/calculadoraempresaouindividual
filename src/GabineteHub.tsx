@@ -39,7 +39,7 @@ export interface GabineteIntroDef {
 /** Ordem e texto partilhados pela galeria, pelo header e pela navegação. */
 export const GABINET_FUNCTIONS: GabineteFunction[] = [
   { id: 'visao-geral', label: 'Visão geral', icon: LayoutDashboard, desc: 'Ficha 360' },
-  { id: 'dashboard', label: 'Obrigações Fiscais', icon: Calendar, desc: 'JAN-DEZ por cliente: v Concluído · * Não concluído' },
+  { id: 'dashboard', label: 'Mapa Fiscal', icon: Calendar, desc: 'JAN-DEZ por cliente: v Concluído · * Não concluído' },
   { id: 'mapa-controlo', label: 'Mapa de contabilidade', icon: Table2, desc: '7 fases · JAN-DEZ colorido — Doc. Falta → Balancete' },
   { id: 'mapa-rh', label: 'Mapa RH', icon: Users, desc: '6 colunas RH - Salários, Ticket, IRS, DMR-AT/SS, Encargos' },
   { id: 'equipa', label: 'Equipa', icon: Users, desc: 'Colaboradores' },
@@ -71,7 +71,7 @@ export const GABINET_INTROS: Record<GabTab, GabineteIntroDef> = {
     resultado: 'Controlo mensal/trim. com filtros, exportação e cores por fase - sincronizado por gabinete.',
   },
   dashboard: {
-    titulo: 'Obrigações Fiscais',
+    titulo: 'Mapa Fiscal',
     Icon: Calendar,
     resumo: 'Quadro cliente × mês (JAN-DEZ): clica na célula para alternar v Concluído / ✕ Não concluído com fundo verde/vermelho. Filtra por cliente, gestor, ano e obrigação; expande/colapsa.',
     dados: ['Cliente + tipo de obrigação', 'Mês e ano', 'Estado (v/✕)'],

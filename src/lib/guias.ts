@@ -255,7 +255,7 @@ export const GUIAS: Record<ViewKey, Guia> = {
     intro: 'A gestão do dia do escritório: tarefas, obrigações dos clientes, cofre de senhas e visão do que está atrasado — tudo num só sítio, sempre atualizado.',
     acao: 'Crie a primeira tarefa ou guarde o primeiro acesso no cofre.',
     passos: [
-      { titulo: 'Obrigações Fiscais', corpo: 'O quadro cruza clientes (linhas) com os meses do ano (colunas). Cada célula guarda uma obrigação: clicar alterna entre vazio, concluído (✓) e não concluído (✕).', alvo: { texto: 'Obrigações Fiscais' } },
+      { titulo: 'Mapa Fiscal', corpo: 'O quadro cruza clientes (linhas) com os meses do ano (colunas). Cada célula guarda uma obrigação: clicar alterna entre vazio, concluído (✓) e não concluído (✕).', alvo: { texto: 'Mapa Fiscal' } },
       { titulo: 'Filtros', corpo: 'Filtra por cliente, gestor, estado, regime e período. "Limpar" repõe o quadro completo — os filtros não alteram os dados, só a vista.', alvo: { texto: 'Limpar' } },
       { titulo: 'Mapa de contabilidade', corpo: 'Separador próprio, com as 7 fases da contabilidade por cliente e o ano inteiro colorido por fase — do documento em falta ao balancete.', alvo: { texto: 'Mapa de contabilidade' } },
     ],
@@ -365,11 +365,11 @@ export const GUIAS: Record<ViewKey, Guia> = {
   },
 
   'gab-dashboard': {
-    titulo: 'Obrigações Fiscais',
+    titulo: 'Mapa Fiscal',
     intro: 'Grelha JAN–DEZ por cliente: cada célula marca se a obrigação desse mês está concluída.',
     acao: 'Marque um mês como concluído e confirme que fica gravado.',
     passos: [
-      { titulo: 'Uma linha por cliente', corpo: 'Cada cliente tem a sua linha; as colunas são os 12 meses do ano.', alvo: { texto: 'Obrigações Fiscais' } },
+      { titulo: 'Uma linha por cliente', corpo: 'Cada cliente tem a sua linha; as colunas são os 12 meses do ano.', alvo: { texto: 'Mapa Fiscal' } },
       { titulo: 'Marcar o mês', corpo: 'Clicar na célula alterna entre concluído e não concluído. Grava logo no gabinete.', alvo: { texto: 'Colapsar todos' } },
       { titulo: 'Gerir as obrigações do quadro', corpo: 'Escolha que obrigações aparecem como colunas do quadro.', alvo: { texto: 'Gerir obrigações do quadro' } },
     ],

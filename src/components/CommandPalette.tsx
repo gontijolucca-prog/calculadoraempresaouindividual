@@ -99,7 +99,7 @@ const ECRAS: Array<{ id: string; titulo: string; detalhe: string }> = [
 
 const TABS_GABINETE: Array<{ id: string; titulo: string; detalhe: string; perm?: PermissionAction }> = [
   { id: 'visao-geral', titulo: 'Visão geral', detalhe: 'Ficha 360 do cliente' },
-  { id: 'dashboard', titulo: 'Obrigações Fiscais', detalhe: 'Janeiro a dezembro' },
+  { id: 'dashboard', titulo: 'Mapa Fiscal', detalhe: 'Janeiro a dezembro' },
   { id: 'mapa-controlo', titulo: 'Mapa de contabilidade', detalhe: '7 fases por cliente' },
   { id: 'mapa-rh', titulo: 'Mapa RH', detalhe: 'Salários, IRS, DMR' },
   { id: 'tarefas', titulo: 'Tarefas', detalhe: 'Kanban do gabinete' },
