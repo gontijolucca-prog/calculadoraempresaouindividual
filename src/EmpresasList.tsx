@@ -771,7 +771,9 @@ const EmpresaCard: React.FC<EmpresaCardProps> = ({ emp, active, expanded, onTogg
               {emp.saftFileName && (
                 <>
                   <span aria-hidden="true">·</span>
-                  <span className="text-emerald-600">SAF-T associado</span>
+                  <span className="text-emerald-600" title={emp.saftXml ? 'Ficheiro SAF-T guardado neste dispositivo' : 'O SAF-T foi importado noutro dispositivo; o ficheiro só existe lá'}>
+                    {emp.saftXml ? 'SAF-T associado' : 'SAF-T noutro dispositivo'}
+                  </span>
                 </>
               )}
             </div>

@@ -244,8 +244,8 @@ export const ARVORE: Record<string, NoAjuda> = {
     opcoes: [
       { rotulo: 'Visão geral do Gabinete', proximo: 'gab-inicio' },
       { rotulo: 'Ficha 360 de um cliente', proximo: 'gab-visao' },
-      { rotulo: 'Quadro resumo de obrigações', proximo: 'gab-quadro' },
-      { rotulo: 'Mapa de controlo', proximo: 'gab-controlo' },
+      { rotulo: 'Obrigações Fiscais', proximo: 'gab-quadro' },
+      { rotulo: 'Mapa de contabilidade', proximo: 'gab-controlo' },
       { rotulo: 'Mapa RH', proximo: 'gab-rh' },
       { rotulo: 'Tarefas', proximo: 'gab-tarefas' },
       { rotulo: 'Agenda', proximo: 'gab-agenda' },
@@ -267,12 +267,12 @@ export const ARVORE: Record<string, NoAjuda> = {
   },
   'gab-quadro': {
     id: 'gab-quadro',
-    texto: 'O Quadro resumo mostra os 12 meses por cliente e marca se cada obrigação está concluída.',
+    texto: 'O quadro de Obrigações Fiscais mostra os 12 meses por cliente e marca se cada obrigação está concluída.',
     destino: { view: 'gab-dashboard', guia: 'gab-dashboard' },
   },
   'gab-controlo': {
     id: 'gab-controlo',
-    texto: 'O Mapa de controlo acompanha as 7 fases da contabilidade por cliente e por mês.',
+    texto: 'O Mapa de contabilidade acompanha as 7 fases da contabilidade por cliente e por mês.',
     destino: { view: 'gab-mapa-controlo', guia: 'gab-mapa-controlo' },
   },
   'gab-rh': {

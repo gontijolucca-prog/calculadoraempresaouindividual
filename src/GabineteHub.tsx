@@ -39,9 +39,8 @@ export interface GabineteIntroDef {
 /** Ordem e texto partilhados pela galeria, pelo header e pela navegação. */
 export const GABINET_FUNCTIONS: GabineteFunction[] = [
   { id: 'visao-geral', label: 'Visão geral', icon: LayoutDashboard, desc: 'Ficha 360' },
-  { id: 'dashboard', label: 'Quadro resumo obrigações', icon: Calendar, desc: 'JAN-DEZ por cliente: v Concluído · * Não concluído' },
-  { id: 'mapa-controlo', label: 'Mapa de controlo', icon: Table2, desc: '7 fases · JAN-DEZ colorido — Doc. Falta → Balancete' },
-  { id: 'mapa-rh', label: 'Mapa RH', icon: Users, desc: '6 colunas RH - Salários, Ticket, IRS, DMR-AT/SS, Encargos' },
+  { id: 'dashboard', label: 'Obrigações Fiscais', icon: Calendar, desc: 'JAN-DEZ por cliente: v Concluído · * Não concluído' },
+  { id: 'mapa-controlo', label: 'Mapa de contabilidade', icon: Table2, desc: '7 fases · JAN-DEZ colorido — Doc. Falta → Balancete' },
   { id: 'equipa', label: 'Equipa', icon: Users, desc: 'Colaboradores' },
   { id: 'tarefas', label: 'Tarefas', icon: CheckSquare, desc: 'Lista por urgência e estado' },
   { id: 'agenda', label: 'Agenda', icon: Clock, desc: 'Calendário mensal: tarefas, obrigações e alertas' },
@@ -64,14 +63,14 @@ export const GABINET_INTROS: Record<GabTab, GabineteIntroDef> = {
     resultado: 'Controlo mensal RH com filtros e exportação - por gabinete.',
   },
   'mapa-controlo': {
-    titulo: 'Mapa de controlo contabilidade',
+    titulo: 'Mapa de contabilidade',
     Icon: Table2,
     resumo: '7 fases da contabilidade por cliente e por mês/trimestre: Gestão Doc., Vendas/Receb., Compras/Pagam., Salários, AFT, Rec. Bancária e Balancete. Cores vivas por fase; clica para alternar estado.',
     dados: ['Cliente + NIF', 'Ano e trimestre', '7 fases com 3 estados (— ✓ ✕)'],
     resultado: 'Controlo mensal/trim. com filtros, exportação e cores por fase - sincronizado por gabinete.',
   },
   dashboard: {
-    titulo: 'Quadro resumo obrigações',
+    titulo: 'Obrigações Fiscais',
     Icon: Calendar,
     resumo: 'Quadro cliente × mês (JAN-DEZ): clica na célula para alternar v Concluído / ✕ Não concluído com fundo verde/vermelho. Filtra por cliente, gestor, ano e obrigação; expande/colapsa.',
     dados: ['Cliente + tipo de obrigação', 'Mês e ano', 'Estado (v/✕)'],

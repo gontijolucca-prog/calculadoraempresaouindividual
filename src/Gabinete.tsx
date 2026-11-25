@@ -56,6 +56,9 @@ const GAB_TAB_GUIA: Record<string, ViewKey> = {
 const VALID_GAB_TABS_SET = new Set<string>(['dashboard','mapa-controlo','mapa-rh','visao-geral','equipa','tarefas','cofre','gallery','agenda','obrigacoes','lixeira']);
 export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour, activeEmpresaId, activeEmpresaNome, onGoEmpresas, onSelectEmpresa }: { tab?: GabineteTab; onTabChange?: (t: GabineteTab) => void; onStartTour?: (v: ViewKey) => void; activeEmpresaId?: string | null; activeEmpresaNome?: string | null; onGoEmpresas?: () => void; onSelectEmpresa?: (id: string) => void }) {
   const [internalTab, setInternalTab] = useState<GabTab>('dashboard');
+  // Âmbito dos mapas: por omissão TODOS os clientes (o filtro do cliente ativo
+  // escondia os restantes e obrigava a trocar de empresa para ver o gabinete).
+  const [ambitoMapas, setAmbitoMapas] = useState<'todos' | 'ativo'>('todos');
   const rawTab: GabineteTab = controlledTab ?? internalTab;
   const tab: GabineteTab = VALID_GAB_TABS_SET.has(rawTab) ? rawTab : 'gallery';
   const setTab = (onTabChange ?? setInternalTab) as (t: GabineteTab) => void;
@@ -89,6 +92,15 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
   const alertasF = useMemo(() => activeClienteId ? alertasAllAtivos.filter(a => a.clienteId === activeClienteId) : alertasAllAtivos, [alertasAllAtivos, activeClienteId]);
   const ocorrenciasF = useMemo(() => activeClienteId ? ocorrenciasAllAtivas.filter(o => o.clienteId === activeClienteId) : ocorrenciasAllAtivas, [ocorrenciasAllAtivas, activeClienteId]);
   const documentosF = useMemo(() => activeClienteId ? documentosAllAtivos.filter(d => d.clienteId === activeClienteId) : documentosAllAtivos, [documentosAllAtivos, activeClienteId]);
+  // Mapas: todos os clientes ou só o que está a trabalhar.
+  const mapasComAmbito = tab === 'dashboard' || tab === 'mapa-controlo' || tab === 'mapa-rh' || tab === 'obrigacoes';
+  const soClienteAtivo = ambitoMapas === 'ativo' && !!activeClienteId;
+  const clientesMapas = useMemo(
+    () => (soClienteAtivo ? clientes.filter((c) => c.id === activeClienteId) : clientes),
+    [clientes, soClienteAtivo, activeClienteId],
+  );
+  const tarefasMapas = soClienteAtivo ? tarefas : tarefasRaw;
+  const obrigacoesMapas = soClienteAtivo ? obrigacoes : obrigacoesRaw;
   const colaboradores = useGabineteColaboradores();
   // Cargo do utilizador no gabinete ativo (dono = admin; membro sem role = contabilista).
   const [role, setRole] = useState<GabineteRole | null>(null);
@@ -228,23 +240,49 @@ export default function Gabinete({ tab: controlledTab, onTabChange, onStartTour,
         <div className="mx-auto max-w-[1400px] px-4 sm:px-6 pt-3">
           <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm flex items-center gap-2">
             <span className="font-semibold text-[var(--accent)]">A trabalhar: {activeEmpresaNome}</span>
-            <span className="text-zinc-500">— agenda, tarefas e obrigações filtradas para este cliente.</span>
+            <span className="text-zinc-500">
+              {mapasComAmbito && !soClienteAtivo
+                ? '— os mapas mostram todos os clientes; agenda e tarefas continuam neste cliente.'
+                : '— agenda, tarefas e obrigações filtradas para este cliente.'}
+            </span>
           </div>
         </div>
       )}
 
       <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6">
+        {mapasComAmbito && (
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-[800] uppercase tracking-[1.2px] text-zinc-500">Mostrar</span>
+            <button
+              type="button"
+              onClick={() => setAmbitoMapas('todos')}
+              aria-pressed={!soClienteAtivo}
+              className={`px-3 py-1.5 rounded-full text-[12px] font-[700] border transition-colors ${!soClienteAtivo ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-white text-zinc-700 border-zinc-300 hover:bg-zinc-50'}`}
+            >
+              Todos os clientes ({clientes.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setAmbitoMapas('ativo')}
+              disabled={!activeClienteId}
+              aria-pressed={soClienteAtivo}
+              className={`px-3 py-1.5 rounded-full text-[12px] font-[700] border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${soClienteAtivo ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-white text-zinc-700 border-zinc-300 hover:bg-zinc-50'}`}
+            >
+              {activeEmpresaNome || 'Cliente ativo'}
+            </button>
+          </div>
+        )}
         {tab === 'gallery' && <GabineteGallery onOpen={goFunction} />}
         {tab !== 'gallery' && (
           <>
             {tab === 'visao-geral' && (!activeEmpresaId ? <EscolherCliente clientes={clientes} onSelect={onSelectEmpresa} onGoEmpresas={onGoEmpresas} /> : <VisaoGeralView cliente={clienteAtivo} contactos={contactosF} alertas={alertasF} ocorrencias={ocorrenciasF} tarefas={tarefas} obrigacoes={obrigacoes} cofre={cofre} documentos={documentosF} colaboradores={colaboradores} role={effectiveRole} onGo={(tab)=>setTab(tab as GabineteTab)} onOpenCofre={()=>setTab('cofre')} />)}
-            {tab === 'dashboard' && <Dashboard clientes={activeClienteId ? clientes.filter(c=>c.id===activeClienteId) : clientes} tarefas={tarefas} obrigacoes={obrigacoes} cofre={cofre} onGo={goFunction} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
-            {tab === 'mapa-rh' && <MapaRHView clientes={activeClienteId ? clientes.filter(c=>c.id===activeClienteId) : clientes} obrigacoes={obrigacoes} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
-            {tab === 'mapa-controlo' && <MapaControloView clientes={activeClienteId ? clientes.filter(c=>c.id===activeClienteId) : clientes} obrigacoes={obrigacoes} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
+            {tab === 'dashboard' && <Dashboard clientes={clientesMapas} tarefas={tarefasMapas} obrigacoes={obrigacoesMapas} cofre={cofre} onGo={goFunction} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
+            {tab === 'mapa-rh' && <MapaRHView clientes={clientesMapas} obrigacoes={obrigacoesMapas} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
+            {tab === 'mapa-controlo' && <MapaControloView clientes={clientesMapas} obrigacoes={obrigacoesMapas} canEdit={can(effectiveRole, 'gerir-obrigacoes')} />}
             {tab === 'tarefas' && (!activeEmpresaId ? <EscolherCliente clientes={clientes} onSelect={onSelectEmpresa} onGoEmpresas={onGoEmpresas} /> : <TarefasView tarefas={tarefas} clientes={clientes} obrigacoes={obrigacoes} activeEmpresaId={activeClienteId} activeEmpresaNome={activeEmpresaNome} canDelete={can(effectiveRole, 'apagar')} canGerirObrigacoes={can(effectiveRole, 'gerir-obrigacoes')} />)}
             {tab === 'equipa' && ((can(effectiveRole, 'gerir-equipa') || can(effectiveRole, 'gerir-acessos')) ? <GabineteEquipa role={effectiveRole} /> : <SemPermissao titulo="Equipa" />)}
             {tab === 'agenda' && <AgendaView tarefas={tarefas} obrigacoes={obrigacoes} alertas={alertasF} clientes={clientes} />}
-            {tab === 'obrigacoes' && <ObrigacoesView obrigacoes={obrigacoes} clientes={activeClienteId ? clientes.filter(c=>c.id===activeClienteId) : clientes} activeEmpresaId={activeClienteId} canGerirObrigacoes={can(effectiveRole, 'gerir-obrigacoes')} />}
+            {tab === 'obrigacoes' && <ObrigacoesView obrigacoes={obrigacoesMapas} clientes={clientesMapas} activeEmpresaId={soClienteAtivo ? activeClienteId : null} canGerirObrigacoes={can(effectiveRole, 'gerir-obrigacoes')} />}
             {tab === 'lixeira' && (can(effectiveRole, 'restaurar') ? <LixeiraView clientesAll={clientesAll} tarefasAll={tarefasAll} obrigacoesAll={obrigacoesAll} contactosAll={contactosAll} alertasAll={alertasAll} ocorrenciasAll={ocorrenciasAll} documentosAll={documentosAll} canPurgar={can(effectiveRole, 'purgar')} /> : <SemPermissao titulo="Lixeira" />)}
             {tab === 'cofre' && (can(effectiveRole, 'ver-cofre') ? <CofreView cofre={cofre} clientes={clientes} canDelete={can(effectiveRole, 'apagar')} /> : <SemPermissao titulo="Cofre" />)}
           </>
@@ -884,7 +922,7 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
       }
     }
     const pdf = new RelatorioPdf({
-      titulo: 'Mapa de Controlo',
+      titulo: 'Mapa de contabilidade',
       subtitulo: `Ano ${ano}${trim ? ` · T${trim}` : ''} · ${clientesFiltrados.length} cliente(s) · ${linhas.length} linha(s)`,
       escritorio: escritorioPdf(),
       paisagem: true,
@@ -914,7 +952,7 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
             <option value="1">1º Trimestre</option><option value="2">2º Trimestre</option><option value="3">3º Trimestre</option><option value="4">4º Trimestre</option>
           </select>
           <div className="ml-auto flex gap-1.5">
-            <button onClick={e=>imprimirMapa(e,'Mapa de Controlo')} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Imprimir</button>
+            <button onClick={e=>imprimirMapa(e,'Mapa de contabilidade')} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Imprimir</button>
             <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-300 bg-white text-xs font-medium">Exportar CSV</button>
           </div>
         </div>
@@ -1076,7 +1114,7 @@ function MapaControloView({ clientes, obrigacoes, canEdit = true }: { clientes:G
         </div>
         <div data-print-toolbar className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 bg-[#F1F1F1] border-t border-zinc-300 text-xs">
           <div className="flex gap-1.5">
-            <button onClick={e=>imprimirMapa(e,'Mapa de Controlo')} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Imprimir</button>
+            <button onClick={e=>imprimirMapa(e,'Mapa de contabilidade')} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Imprimir</button>
             <button onClick={exportCSV} className="px-3 py-1.5 rounded border border-zinc-400 bg-white">Exportar CSV</button>
             <button onClick={exportPDF} className="px-3 py-1.5 rounded border border-[var(--accent)] bg-[var(--accent)] text-white">Exportar PDF</button>
             <button onClick={()=>{ const s=new Set<string>(); clientesFiltrados.forEach(c=>s.add(c.id)); setCollapsed(new Set()); }} className="hidden sm:inline-flex px-3 py-1.5 rounded border border-zinc-400 bg-white">Expandir todos</button>

@@ -255,9 +255,9 @@ export const GUIAS: Record<ViewKey, Guia> = {
     intro: 'A gestão do dia do escritório: tarefas, obrigações dos clientes, cofre de senhas e visão do que está atrasado — tudo num só sítio, sempre atualizado.',
     acao: 'Crie a primeira tarefa ou guarde o primeiro acesso no cofre.',
     passos: [
-      { titulo: 'Quadro de obrigações', corpo: 'O quadro cruza clientes (linhas) com os meses do ano (colunas). Cada célula guarda uma obrigação: clicar alterna entre vazio, concluído (✓) e não concluído (✕).', alvo: { texto: 'Quadro de obrigações' } },
+      { titulo: 'Obrigações Fiscais', corpo: 'O quadro cruza clientes (linhas) com os meses do ano (colunas). Cada célula guarda uma obrigação: clicar alterna entre vazio, concluído (✓) e não concluído (✕).', alvo: { texto: 'Obrigações Fiscais' } },
       { titulo: 'Filtros', corpo: 'Filtra por cliente, gestor, estado, regime e período. "Limpar" repõe o quadro completo — os filtros não alteram os dados, só a vista.', alvo: { texto: 'Limpar' } },
-      { titulo: 'Mapa de controlo', corpo: 'Separador próprio, com as 7 fases da contabilidade por cliente e o ano inteiro colorido por fase — do documento em falta ao balancete.', alvo: { texto: 'Mapa de controlo' } },
+      { titulo: 'Mapa de contabilidade', corpo: 'Separador próprio, com as 7 fases da contabilidade por cliente e o ano inteiro colorido por fase — do documento em falta ao balancete.', alvo: { texto: 'Mapa de contabilidade' } },
     ],
   },
 
@@ -365,18 +365,18 @@ export const GUIAS: Record<ViewKey, Guia> = {
   },
 
   'gab-dashboard': {
-    titulo: 'Quadro resumo de obrigações',
+    titulo: 'Obrigações Fiscais',
     intro: 'Grelha JAN–DEZ por cliente: cada célula marca se a obrigação desse mês está concluída.',
     acao: 'Marque um mês como concluído e confirme que fica gravado.',
     passos: [
-      { titulo: 'Uma linha por cliente', corpo: 'Cada cliente tem a sua linha; as colunas são os 12 meses do ano.', alvo: { texto: 'Quadro resumo obrigações' } },
+      { titulo: 'Uma linha por cliente', corpo: 'Cada cliente tem a sua linha; as colunas são os 12 meses do ano.', alvo: { texto: 'Obrigações Fiscais' } },
       { titulo: 'Marcar o mês', corpo: 'Clicar na célula alterna entre concluído e não concluído. Grava logo no gabinete.', alvo: { texto: 'Colapsar todos' } },
       { titulo: 'Gerir as obrigações do quadro', corpo: 'Escolha que obrigações aparecem como colunas do quadro.', alvo: { texto: 'Gerir obrigações do quadro' } },
     ],
   },
 
   'gab-mapa-controlo': {
-    titulo: 'Mapa de controlo',
+    titulo: 'Mapa de contabilidade',
     intro: 'As 7 fases da contabilidade por cliente, mês a mês: documento, vendas, compras, salários, AFT, reconciliação e balancete.',
     acao: 'Percorra o mapa de um cliente e marque a primeira fase como concluída.',
     passos: [
