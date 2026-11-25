@@ -63,9 +63,11 @@ service cloud.firestore {
     }
 
     function isAppAdmin() {
+      // Contas de administração do serviço: a genérica e a pessoal do Lucca.
       return request.auth != null
         && request.auth.token.email is string
-        && request.auth.token.email.lower() == 'admin@estudo360.pt';
+        && (request.auth.token.email.lower() == 'admin@estudo360.pt'
+            || request.auth.token.email.lower() == 'lucca@estudo360.pt');
     }
     function souDonoDoGabinete(gabineteId) {
       return request.auth != null && (
