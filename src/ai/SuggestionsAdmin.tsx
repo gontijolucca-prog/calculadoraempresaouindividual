@@ -23,11 +23,16 @@ const STATUS_META: Record<Suggestion['status'], { label: string; cls: string }> 
 export default function SuggestionsAdmin() {
   const [active, setActive] = useState(() => typeof location !== 'undefined' && location.hash === HASH);
   const [items, setItems] = useState<Suggestion[]>([]);
+  const [cloudOk, setCloudOk] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
-    try { setItems(await listSuggestions()); } finally { setLoading(false); }
+    try {
+      const res = await listSuggestions();
+      setItems(res.items);
+      setCloudOk(res.cloudOk);
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => {
@@ -79,11 +84,25 @@ export default function SuggestionsAdmin() {
         <div className="max-w-3xl mx-auto space-y-3">
           {items.length === 0 && !loading && (
             <div className="text-center py-20">
-              <Inbox className="w-12 h-12 text-[#CBD5E1] mx-auto mb-3" strokeWidth={1.5} />
-              <p className="text-[15px] font-[700] text-[#64748B]">Ainda não há sugestões.</p>
-              <p className="text-[13px] font-[500] text-[#94A3B8] mt-1">
-                Quando alguém pedir uma melhoria ao bot, aparece aqui.
-              </p>
+              {cloudOk ? (
+                <>
+                  <Inbox className="w-12 h-12 text-[#CBD5E1] mx-auto mb-3" strokeWidth={1.5} />
+                  <p className="text-[15px] font-[700] text-[#64748B]">Ainda não há sugestões.</p>
+                  <p className="text-[13px] font-[500] text-[#94A3B8] mt-1">
+                    Quando alguém pedir uma melhoria ao bot, aparece aqui.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Inbox className="w-12 h-12 text-amber-400 mx-auto mb-3" strokeWidth={1.5} />
+                  <p className="text-[15px] font-[700] text-[#475569]">Sem acesso à lista de sugestões.</p>
+                  <p className="text-[13px] font-[500] text-[#94A3B8] mt-1 max-w-md mx-auto leading-relaxed">
+                    As sugestões são gravadas, mas as regras de segurança só deixam lê-las à conta
+                    de administração do serviço (<span className="font-[700]">admin@estudo360.pt</span>).
+                    Esta conta não tem essa permissão.
+                  </p>
+                </>
+              )}
             </div>
           )}
 

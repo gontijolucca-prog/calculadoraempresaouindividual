@@ -74,10 +74,14 @@ export async function registerSuggestion(input: {
   }
 }
 
-/** Lê as sugestões (cloud + fila local) para a vista de administração. */
-export async function listSuggestions(): Promise<Suggestion[]> {
+/** Lê as sugestões (cloud + fila local) para a vista de administração.
+ *  `cloudOk=false` significa que a leitura à cloud foi negada (as regras só
+ *  deixam ler ao administrador do serviço) — a vista tem de o dizer, em vez de
+ *  fingir que não há sugestões. */
+export async function listSuggestions(): Promise<{ items: Suggestion[]; cloudOk: boolean }> {
   const local = loadLocalQueue();
   let cloud: Suggestion[] = [];
+  let cloudOk = true;
   try {
     const snap = await getDocs(
       query(collection(db, 'ai_suggestions'), orderBy('createdAt', 'desc'), limit(200)),
@@ -98,8 +102,9 @@ export async function listSuggestions(): Promise<Suggestion[]> {
     });
   } catch {
     cloud = [];
+    cloudOk = false;
   }
-  return [...cloud, ...local].sort((a, b) => b.createdAt - a.createdAt);
+  return { items: [...cloud, ...local].sort((a, b) => b.createdAt - a.createdAt), cloudOk };
 }
 
 /** Atualiza o estado de uma sugestão na cloud (novo → visto → feito). */

@@ -44,7 +44,7 @@ const ABRIU_KEY = 'estudo360:ajuda:abriu-sessao';
 function Folha({ no, bridge, onFechar }: { no: NoAjuda; bridge: BotBridge; onFechar: () => void }) {
   const [estado, setEstado] = useState<string | null>(null);
   const [sugestao, setSugestao] = useState('');
-  const [enviada, setEnviada] = useState(false);
+  const [enviada, setEnviada] = useState<'cloud' | 'local' | null>(null);
   const docs = no.docs ? (bridge.listDownloadableDocs?.() ?? []) : [];
 
   const verNoEcra = () => {
@@ -76,7 +76,7 @@ function Folha({ no, bridge, onFechar }: { no: NoAjuda; bridge: BotBridge; onFec
   const enviarSugestao = async () => {
     const texto = sugestao.trim();
     if (!texto) return;
-    await registerSuggestion({
+    const res = await registerSuggestion({
       title: texto.slice(0, 90),
       detail: texto,
       area: 'assistente',
@@ -84,7 +84,7 @@ function Folha({ no, bridge, onFechar }: { no: NoAjuda; bridge: BotBridge; onFec
       vista: bridge.currentView,
     });
     setSugestao('');
-    setEnviada(true);
+    setEnviada(res.cloud ? 'cloud' : 'local');
   };
 
   return (
@@ -132,7 +132,10 @@ function Folha({ no, bridge, onFechar }: { no: NoAjuda; bridge: BotBridge; onFec
       {no.sugestao && (
         enviada ? (
           <p className="flex items-center gap-1.5 text-[12px] font-[700] text-emerald-600">
-            <Check className="w-4 h-4" strokeWidth={3} /> Obrigado — a sugestão foi enviada.
+            <Check className="w-4 h-4" strokeWidth={3} />
+            {enviada === 'cloud'
+              ? 'Obrigado — a sugestão foi enviada.'
+              : 'Guardada neste dispositivo. Vai seguir assim que houver ligação.'}
           </p>
         ) : (
           <div className="flex flex-col gap-2">
@@ -145,7 +148,7 @@ function Folha({ no, bridge, onFechar }: { no: NoAjuda; bridge: BotBridge; onFec
               onChange={(e) => setSugestao(e.target.value)}
               rows={3}
               maxLength={800}
-              placeholder="Ex.: queria exportar os mapa RH para Excel…"
+              placeholder="Ex.: queria exportar o mapa RH para Excel…"
               className="resize-none px-3 py-2.5 rounded-[10px] bg-white border border-slate-200 text-[13px] font-[500] text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/15 transition-all"
               style={{ fontSize: 16 }}
             />
