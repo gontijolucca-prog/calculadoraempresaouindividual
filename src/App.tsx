@@ -100,6 +100,30 @@ import SuggestionsAdmin from './ai/SuggestionsAdmin';
 const SimulacoesHistory = lazy(() => import('./SimulacoesHistory'));
 const AIContabilista = lazy(() => import('./ai/AIContabilista'));
 
+// ── Rotas no URL (voltar/avançar do browser) ────────────────────────────────
+// O URL é um espelho do estado: #/empresas, #/gabinete/mapa-controlo,
+// #/cliente/<idEmpresa>/<vista>. Sem isto, Back saía da app e era impossível
+// voltar a uma etapa anterior.
+const GAB_TABS_ROTA = new Set(['dashboard','mapa-controlo','mapa-rh','visao-geral','equipa','tarefas','cofre','gallery','agenda','obrigacoes','lixeira']);
+
+function hashDaVista(view: string, tab: string, empresaId: string | null): string {
+  if (view === 'gabinete') return `#/gabinete${tab ? '/' + tab : ''}`;
+  if (view === 'empresas' || view === 'office-settings' || view === 'legal') return `#/${view}`;
+  if (empresaId) return `#/cliente/${empresaId}/${view}`;
+  return `#/${view}`;
+}
+
+function lerHash(hash: string): { view?: string; tab?: string; empresaId?: string } {
+  const partes = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
+  if (partes[0] === 'gabinete') {
+    return { view: 'gabinete', tab: GAB_TABS_ROTA.has(partes[1]) ? partes[1] : undefined };
+  }
+  if (partes[0] === 'cliente' && partes[1]) {
+    return { empresaId: partes[1], view: partes[2] };
+  }
+  return partes[0] ? { view: partes[0] } : {};
+}
+
 type ViewType =
   | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'legal'
@@ -456,6 +480,65 @@ function AppContent() {
   // Bump para forçar refresh da Lista de Empresas após mutações (criar/eliminar/SAFT).
   const [empresasRefresh, setEmpresasRefresh] = useState(0);
   const [currentEmpresaId, setCurrentEmpresaIdState] = useState<string | null>(() => getCurrentEmpresaId());
+
+  // ── Histórico: URL ↔ estado (botões voltar/avançar do browser) ────────────
+  const ultimoPop = useRef(0);
+  const rotaInicial = useRef(true);
+  const deepLinkAplicado = useRef(false);
+
+  // 1.º arranque autenticado: se o URL já traz uma rota, ela manda (deep link).
+  useEffect(() => {
+    if (!isAuthenticated || deepLinkAplicado.current) return;
+    deepLinkAplicado.current = true;
+    const r = lerHash(window.location.hash);
+    if (!r.view && !r.empresaId) return;
+    if (r.empresaId) {
+      const emp = getEmpresa(r.empresaId);
+      if (emp) {
+        setCurrentEmpresaId(r.empresaId);
+        setCurrentEmpresaIdState(r.empresaId);
+        loadEmpresaIntoState(emp);
+      }
+    }
+    if (r.tab && GAB_TABS_ROTA.has(r.tab)) setGabineteTab(r.tab);
+    if (r.view && r.view in VIEW_TITLES) setView(r.view as ViewType);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
+
+  // Cada navegação escreve uma entrada no histórico (a primeira substitui).
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (Date.now() - ultimoPop.current < 350) return; // veio de um popstate
+    const nova = hashDaVista(view, gabineteTab, currentEmpresaId);
+    if (window.location.hash === nova) { rotaInicial.current = false; return; }
+    if (rotaInicial.current) {
+      window.history.replaceState({ rota: nova }, '', nova);
+      rotaInicial.current = false;
+    } else {
+      window.history.pushState({ rota: nova }, '', nova);
+    }
+  }, [view, gabineteTab, currentEmpresaId, isAuthenticated]);
+
+  // Botões do browser: aplica a rota do URL ao estado.
+  useEffect(() => {
+    const onPop = () => {
+      ultimoPop.current = Date.now();
+      const r = lerHash(window.location.hash);
+      if (r.empresaId) {
+        const emp = getEmpresa(r.empresaId);
+        if (emp && getCurrentEmpresaId() !== r.empresaId) {
+          setCurrentEmpresaId(r.empresaId);
+          setCurrentEmpresaIdState(r.empresaId);
+          loadEmpresaIntoState(emp);
+        }
+      }
+      if (r.tab && GAB_TABS_ROTA.has(r.tab)) setGabineteTab(r.tab);
+      if (r.view && r.view in VIEW_TITLES) setView(r.view as ViewType);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [legalAnchor, setLegalAnchor] = useState<string | null>(null);
   const [saftModal, setSaftModal] = useState<{
     open: boolean;
