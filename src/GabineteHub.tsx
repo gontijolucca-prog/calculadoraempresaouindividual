@@ -41,6 +41,7 @@ export const GABINET_FUNCTIONS: GabineteFunction[] = [
   { id: 'visao-geral', label: 'Visão geral', icon: LayoutDashboard, desc: 'Ficha 360' },
   { id: 'dashboard', label: 'Obrigações Fiscais', icon: Calendar, desc: 'JAN-DEZ por cliente: v Concluído · * Não concluído' },
   { id: 'mapa-controlo', label: 'Mapa de contabilidade', icon: Table2, desc: '7 fases · JAN-DEZ colorido — Doc. Falta → Balancete' },
+  { id: 'mapa-rh', label: 'Mapa RH', icon: Users, desc: '6 colunas RH - Salários, Ticket, IRS, DMR-AT/SS, Encargos' },
   { id: 'equipa', label: 'Equipa', icon: Users, desc: 'Colaboradores' },
   { id: 'tarefas', label: 'Tarefas', icon: CheckSquare, desc: 'Lista por urgência e estado' },
   { id: 'agenda', label: 'Agenda', icon: Clock, desc: 'Calendário mensal: tarefas, obrigações e alertas' },

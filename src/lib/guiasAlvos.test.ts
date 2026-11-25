@@ -82,7 +82,7 @@ for (const [t, g] of Object.entries(mapa)) {
 ok('tabs do gabinete usam guias distintos', guiasUsados.size === Object.keys(mapa).length);
 
 // Os guias novos têm de ter pelo menos 3 passos (não são placeholders).
-for (const v of ['aquisicao', 'custos', 'proposta', 'gab-dashboard', 'gab-mapa-controlo', 'gab-lixeira'] as ViewKey[]) {
+for (const v of ['aquisicao', 'custos', 'proposta', 'gab-dashboard', 'gab-mapa-controlo', 'gab-mapa-rh', 'gab-lixeira'] as ViewKey[]) {
   ok(`guia "${v}" tem 3+ passos`, (GUIAS[v]?.passos.length ?? 0) >= 3);
 }
 
