@@ -27,6 +27,24 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error('App crashed:', error, info);
+    // Chunk de um deploy antigo que já não existe → recupera sozinho em vez de
+    // deixar o utilizador preso no ecrã de erro.
+    const msg = String(error?.message || '');
+    if (/dynamically imported module|Importing a module script failed|Loading chunk/i.test(msg)) {
+      try {
+        const k = 'estudo360:chunk-reload';
+        const ultimo = Number(sessionStorage.getItem(k) || 0);
+        if (Date.now() - ultimo > 15000) {
+          sessionStorage.setItem(k, String(Date.now()));
+          const url = msg.match(/https?:\/\/\S+?\.js/)?.[0];
+          if (url) {
+            fetch(url, { cache: 'reload' }).catch(() => {}).then(() => window.location.reload());
+          } else {
+            window.location.reload();
+          }
+        }
+      } catch { /* modo privado */ }
+    }
   }
 
   handleReload = () => {

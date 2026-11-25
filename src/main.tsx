@@ -14,6 +14,28 @@ import './index.css';
 // Link público da proposta: /p/<slug> — sem login, sem App (nem auth gate).
 const publicSlug = slugFromPath(window.location.pathname);
 
+// Deploy a meio: um chunk antigo pode já não existir (ou o Pages devolveu o
+// index.html no lugar dele). Em vez do ecrã de erro, recarrega uma vez —
+// sempre com a entrada falhada refrescada, para não voltar ao mesmo ficheiro.
+function recuperarChunk(entry?: string) {
+  try {
+    const ultimo = Number(sessionStorage.getItem('estudo360:chunk-reload') || 0);
+    if (Date.now() - ultimo < 15000) return; // já tentou há pouco → não entra em loop
+    sessionStorage.setItem('estudo360:chunk-reload', String(Date.now()));
+  } catch { /* modo privado */ }
+  if (entry) {
+    Promise.resolve(fetch(entry, { cache: 'reload' })).catch(() => {}).then(() => location.reload());
+  } else {
+    location.reload();
+  }
+}
+
+window.addEventListener('vite:preloadError', (event) => {
+  const e = event as Event & { payload?: { entry?: string } };
+  e.preventDefault?.();
+  recuperarChunk(e.payload?.entry);
+});
+
 instalarMarcasObrigatorias();
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
