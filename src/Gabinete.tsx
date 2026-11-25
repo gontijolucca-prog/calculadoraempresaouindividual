@@ -2238,7 +2238,7 @@ function CofreView({ cofre, clientes, canDelete = true }: { cofre:CofreEntrada[]
                   <div className="bg-[#ECEEF1] rounded-full px-4 py-2.5 flex items-center justify-between gap-2">
                     <span className="text-sm font-mono tracking-widest truncate">{plain ? plain : '••••••••••••'}</span>
                     <span className="flex items-center gap-1 shrink-0">
-                      <button onClick={handleReveal} className="p-1 hover:bg-black/5 rounded-full">{plain ? <EyeOff className="w-4 h-4 text-zinc-600" /> : <Eye className="w-4 h-4 text-zinc-600" />}</button>
+                      <button onClick={() => { void handleReveal(); }} className="p-1 hover:bg-black/5 rounded-full">{plain ? <EyeOff className="w-4 h-4 text-zinc-600" /> : <Eye className="w-4 h-4 text-zinc-600" />}</button>
                       {plain && <button onClick={()=>handleCopy(plain)} className="p-1 hover:bg-black/5 rounded-full"><Copy className="w-4 h-4 text-zinc-600" /></button>}
                     </span>
                   </div>
