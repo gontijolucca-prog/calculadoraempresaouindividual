@@ -320,11 +320,11 @@ export const GUIAS: Record<ViewKey, Guia> = {
 
   'gab-cofre': {
     titulo: 'Cofre',
-    intro: 'Senhas e acessos do escritório — só a sua conta vê. Guarde sem passphrase e revela com um clique.',
+    intro: 'Senhas e acessos do escritório, cifrados no browser. Revelar pede a passphrase do cofre — uma vez por sessão.',
     acao: 'Guarda o primeiro acesso.',
     passos: [
-      { titulo: 'Guardar acesso', corpo: 'Título, categoria (AT/SS/Banco/…), cliente opcional, utilizador e password. Só a sua conta vê o segredo.', alvo: { texto: 'Guardar primeiro' } },
-      { titulo: 'Encontrar e revelar', corpo: 'Pesquisa por título, cliente ou utilizador. Para ver a password de uma entrada, usa o ícone do olho: a vista fica registada na auditoria (quem viu e quando).', alvo: { texto: 'Pesquisar passwords' } },
+      { titulo: 'Guardar acesso', corpo: 'Título, categoria (AT/SS/Banco/…), cliente opcional, utilizador e password. A password é cifrada antes de sair do browser.', alvo: { texto: 'Guardar primeiro' } },
+      { titulo: 'Encontrar e revelar', corpo: 'Pesquisa por título, cliente ou utilizador. Para ver a password de uma entrada, usa o ícone do olho e introduz a passphrase: fica desbloqueado até fechar o separador. A vista fica registada na auditoria.', alvo: { texto: 'Pesquisar passwords' } },
     ],
   },
 
