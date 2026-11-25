@@ -10,11 +10,15 @@ export default function MiniDock({ onAi, onGuia, showGuia, lift }: { onAi:()=>vo
       <style>{`@keyframes dockIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}`}</style>
     </div>
   );
-  return <button aria-label="Falar com o assistente" onClick={()=>setOpen(true)} className={`no-print fixed z-[90] right-5 lg:right-6 w-12 h-12 rounded-full flex items-center justify-center text-white shadow-xl opacity-60 hover:opacity-100 hover:scale-105 transition-all ${pos}`} style={{background:'linear-gradient(135deg,#0F172A,var(--accent))'}}>
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="12" cy="8" r="3.4" />
-      <path d="M4.5 20c.6-3.7 3.6-5.6 7.5-5.6s6.9 1.9 7.5 5.6" />
-      <path d="M18.5 8.2a6.6 6.6 0 0 0-13 0" opacity=".55" />
-    </svg>
+  return <button aria-label="Abrir a ajuda" onClick={()=>setOpen(true)} className={`no-print fixed z-[90] right-5 lg:right-6 flex items-center gap-2 h-12 rounded-full pl-3 pr-3 sm:pr-4 text-white shadow-xl hover:scale-105 active:scale-[0.98] transition-all ${pos}`}
+    style={{background:'linear-gradient(135deg,#0F172A,var(--accent))', boxShadow:'0 10px 26px -10px rgba(6,119,255,0.75), 0 0 0 1px rgba(255,255,255,0.14)'}}>
+    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-white/15 shrink-0">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <circle cx="12" cy="8" r="3.4" />
+        <path d="M4.5 20c.6-3.7 3.6-5.6 7.5-5.6s6.9 1.9 7.5 5.6" />
+        <path d="M18.5 8.2a6.6 6.6 0 0 0-13 0" opacity=".55" />
+      </svg>
+    </span>
+    <span className="hidden sm:inline text-[13px] font-[800] whitespace-nowrap">Ajuda</span>
   </button>;
 }
