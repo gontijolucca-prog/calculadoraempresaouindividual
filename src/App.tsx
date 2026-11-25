@@ -509,6 +509,8 @@ function AppContent() {
   useEffect(() => {
     if (!isAuthenticated) return;
     if (Date.now() - ultimoPop.current < 350) return; // veio de um popstate
+    // Vista interna de sugestões (#ai-sugestoes): não é uma rota da app.
+    if (window.location.hash === '#ai-sugestoes') { rotaInicial.current = false; return; }
     const nova = hashDaVista(view, gabineteTab, currentEmpresaId);
     if (window.location.hash === nova) { rotaInicial.current = false; return; }
     if (rotaInicial.current) {
