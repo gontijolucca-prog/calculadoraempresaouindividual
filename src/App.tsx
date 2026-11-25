@@ -1645,7 +1645,15 @@ function AppContent() {
     startTour: (v) => setTourRequest({ view: v as ViewKey, nonce: Date.now() }),
     setTourDisabled: (v) => marcarGuiaDesativado(v as ViewKey),
     tourActive: () => !!tourRequest,
-    navigate: (v) => setView(v as ViewType),
+    navigate: (v) => {
+      // Tabs do gabinete usam a mesma chave dos guias ('gab-tarefas' → tab 'tarefas').
+      if (v.startsWith('gab-')) {
+        setView('gabinete');
+        setGabineteTab(v.slice(4));
+        return;
+      }
+      setView(v as ViewType);
+    },
     setMode: (m) => { if (m === 'novo-cliente') handleNovaEmpresaManual(); else selectMode('empresa'); },
     openSaftUpload: (mode = 'novo') => {
       // Para "empresa" é preciso um cliente ativo. Lê da lib (síncrono) e não do
