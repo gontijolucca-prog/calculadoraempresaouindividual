@@ -53,7 +53,7 @@ import { ThemeProvider } from './ThemeContext';
 import { MotionProvider, PageTransition } from './AnimatedPage';
 import { parseSAFT, decodeSaftText, normalizeXmlEncodingToUtf8, type SAFTParseResult } from './lib/saft';
 import { prepararEmpresaSAFT, LOTE_SAFT_XML_BUDGET, type SaftLoteResumo } from './lib/saftLote';
-import { migrarEmpresasParaGabinete, listClientesCache } from './lib/gabinete';
+import { migrarEmpresasParaGabinete, listClientesCache, sincronizarFichaGabinete } from './lib/gabinete';
 import { enforceProfileRules } from './lib/profileRules';
 import { DOC_TYPES, downloadAsWord } from './lib/wordDocs';
 import { raiFromPrevisão } from './lib/previsaCalc';
@@ -683,7 +683,10 @@ function AppContent() {
     // Sem isto, o snapshot → estado novo → sync → stamp → novo snapshot fazia
     // um loop de escrita (~2 gravações/2,5 s) que queimava a quota.
     if (JSON.stringify(normalizeProfile(emp.profile)) === JSON.stringify(clientProfile || {})) return;
-    syncProfileIntoEmpresa(currentEmpresaId, clientProfile);
+    const atualizada = syncProfileIntoEmpresa(currentEmpresaId, clientProfile);
+    // A ficha do gabinete espelha o nome/NIF da empresa: sem isto ficavam duas
+    // versões do mesmo cliente (Ficha 360 com o nome antigo).
+    if (atualizada) void sincronizarFichaGabinete(atualizada).catch(() => {});
   }, [clientProfile, currentEmpresaId]);
 
   // Persiste o estado do Previsão na empresa atual (espelha o sync do perfil).

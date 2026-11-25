@@ -386,7 +386,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
                 <ClientNavItem label="Fazer proposta" Icon={Presentation}
                   onClick={() => { go('proposta'); }}
                   current={view === 'proposta'}
-                  title="Gera o texto da proposta para colar no Gamma" />
+                  title="Texto da proposta a partir dos honorários; o documento imprime-se em Pacote do cliente" />
               </div>
               </div>
             </div>
@@ -435,7 +435,7 @@ export function SidebarLayout({ view, setView, prevView, openLegal, onSAFTUpload
       id: 'pacote-cliente', label: 'Pacote cliente', align: 'right',
       items: [
         { label: 'Pacote do cliente', desc: 'Capa, proposta de honorários e contrato', Icon: FileDown, onClick: () => { onOpenRelatorios?.('proposta'); setDrawerOpen(false); } },
-        { label: 'Fazer proposta', desc: 'Texto pronto para colar no Gamma', Icon: Presentation, current: view === 'proposta', onClick: () => go('proposta') },
+        { label: 'Fazer proposta', desc: 'Texto da proposta a partir dos honorários', Icon: Presentation, current: view === 'proposta', onClick: () => go('proposta') },
       ],
     },
     {

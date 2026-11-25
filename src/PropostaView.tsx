@@ -99,7 +99,7 @@ export default function PropostaView({ office, honorarios, onOpen, onGoToOfficeS
             <Presentation className="w-6 h-6 text-[var(--accent)]" /> Fazer Proposta
           </h1>
           <p className="text-[13px] text-[#64748B] font-[500] mt-1 max-w-[620px]">
-            Gera o texto da proposta a partir dos dados do escritório, do cliente e da tabela de honorários. Copia e cola no Gamma para montar o documento.
+            Gera o texto da proposta a partir dos dados do escritório, do cliente e da tabela de honorários. Para o documento pronto a imprimir, usa Pacote do cliente → Proposta.
           </p>
         </div>
         <button
@@ -129,7 +129,7 @@ export default function PropostaView({ office, honorarios, onOpen, onGoToOfficeS
         <div className="mt-5 bg-white rounded-2xl border border-[#E2E8F0] p-5">
           <div className="flex items-center justify-between">
             <h2 className="text-[15px] font-[800] text-[#0F172A]">
-              Nova proposta para o Gamma
+              Nova proposta
             </h2>
             <button onClick={() => { setCreating(false); setGammaTxt(null); }} className="p-1 text-[#94A3B8] hover:text-[#0F172A]" aria-label="Fechar"><X className="w-4 h-4" /></button>
           </div>

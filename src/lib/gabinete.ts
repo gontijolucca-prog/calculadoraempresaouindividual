@@ -850,6 +850,24 @@ export async function deleteCliente(id: string): Promise<void> {
 }
 export function newClienteId(): string { return newId('cli'); }
 
+/** Mantém a ficha do gabinete alinhada com a empresa do registo (nome/NIF).
+ *  Sem isto, renomear uma empresa na carteira deixava a ficha do gabinete com o
+ *  nome antigo — a Ficha 360 mostrava um cliente e o cabeçalho outro.
+ *  Devolve true se mudou alguma coisa. */
+export async function sincronizarFichaGabinete(emp: { id: string; nome?: string; nif?: string }): Promise<boolean> {
+  if (!emp?.id) return false;
+  const lista = listClientesCache().filter((c) => !c.deletedAt);
+  const porEmpresa = lista.find((c) => c.empresaId === emp.id);
+  const nif = (emp.nif ?? '').replace(/\D/g, '');
+  const semLink = lista.find((c) => !c.empresaId && nif && (c.nif ?? '').replace(/\D/g, '') === nif);
+  const cli = porEmpresa ?? semLink;
+  if (!cli) return false;
+  const nome = (emp.nome ?? '').trim() || cli.nome;
+  if (cli.nome === nome && cli.nif === (emp.nif ?? cli.nif) && cli.empresaId === emp.id) return false;
+  await upsertCliente({ ...cli, nome, nif: emp.nif || cli.nif, empresaId: emp.id });
+  return true;
+}
+
 // ─── Fusão de fichas duplicadas (mesmo NIF) ─────────────────────────────────
 // Uma ficha apagada levaria consigo tarefas, obrigações, documentos, cofre,
 // conversas, tempos e atas. Antes de apagar, esses registos passam para a ficha
