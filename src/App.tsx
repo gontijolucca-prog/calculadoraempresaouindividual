@@ -1764,6 +1764,11 @@ function AppContent() {
             canDelete={can(gabRole, 'apagar') || can(gabRole, 'purgar')}
             onImportTOCOnline={handleImportTOCOnline}
             onImportSAFTLote={handleImportSAFTLote}
+            onAfterMerge={() => {
+              const id = getCurrentEmpresaId();
+              if (id !== currentEmpresaId) setCurrentEmpresaIdState(id);
+              setEmpresasRefresh(n => n + 1);
+            }}
           />
         )}
         {view === 'profile' && ((currentEmpresaId || mode === 'novo-cliente') ? (

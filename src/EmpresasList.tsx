@@ -5,12 +5,14 @@ import {
   History, RotateCcw,
   Calculator, Car, Ticket, User, BarChart2, Home, Building, Banknote, Receipt, TrendingUp,
   LayoutDashboard, UserCircle,
-  Files, Loader2, CheckCircle, AlertTriangle,
+  Files, Loader2, CheckCircle, AlertTriangle, Layers,
 } from 'lucide-react';
 import {
   listEmpresas, listSimulacoes, deleteSimulacao,
   type EmpresaRecord, type SimulationRecord,
 } from './lib/empresas';
+import { gruposDuplicadas, resumoFusao } from './lib/empresasDedupe';
+import { limparDuplicadas } from './lib/dedupeAcao';
 import { SIM_LABELS, type SimView } from './lib/simSummary';
 import { cn } from './lib/utils';
 import TOCOnlineImport from './components/TOCOnlineImport';
@@ -52,9 +54,11 @@ interface Props {
   currentEmpresaId?: string | null;
   /** O cargo atual pode apagar clientes. Falso esconde o botão Eliminar. */
   canDelete?: boolean;
+  /** Chamado depois de fundir duplicadas (App re-sincroniza e revalida o cliente ativo). */
+  onAfterMerge?: () => void;
 }
 
-export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEmpresaFromSAFT, onSAFTUpload, onVerSAFT, onDeleteEmpresa, onRestoreSimulacao, onHistoricoChanged, onImportTOCOnline, onImportSAFTLote, refreshKey, currentEmpresaId, canDelete = false }: Props) {
+export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEmpresaFromSAFT, onSAFTUpload, onVerSAFT, onDeleteEmpresa, onRestoreSimulacao, onHistoricoChanged, onImportTOCOnline, onImportSAFTLote, refreshKey, currentEmpresaId, canDelete = false, onAfterMerge }: Props) {
   const [empresas, setEmpresas] = useState<EmpresaRecord[]>(() => listEmpresas());
   const [query, setQuery] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<EmpresaRecord | null>(null);
@@ -99,6 +103,55 @@ export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEm
   }, [empresas, query]);
 
   const startNova = () => setShowNovaModal(true);
+
+  // ── Duplicadas (mesmo NIF em registos separados) ──────────────────────────
+  const duplicadas = useMemo(() => gruposDuplicadas(empresas), [empresas]);
+  const totalApagar = duplicadas.reduce((s, g) => s + g.empresas.length - 1, 0);
+  const [showDup, setShowDup] = useState(false);
+  const [escolhasDup, setEscolhasDup] = useState<Record<string, string>>({});
+  const [aLimparDup, setALimparDup] = useState(false);
+  const [erroDup, setErroDup] = useState<string | null>(null);
+  const [sucessoDup, setSucessoDup] = useState<string | null>(null);
+
+  const abrirDuplicadas = () => {
+    const inicial: Record<string, string> = {};
+    for (const g of duplicadas) {
+      // Por omissão fica a mais recente — a mesma que a sincronização elegia.
+      inicial[g.nif] = [...g.empresas].sort((a, b) => b.updatedAt - a.updatedAt)[0].id;
+    }
+    setEscolhasDup(inicial);
+    setErroDup(null);
+    setShowDup(true);
+  };
+
+  const aplicarDuplicadas = async () => {
+    if (aLimparDup) return;
+    setALimparDup(true);
+    setErroDup(null);
+    try {
+      const r = await limparDuplicadas(escolhasDup);
+      setEmpresas(listEmpresas());
+      setShowDup(false);
+      setSucessoDup(
+        `Limpeza feita: ${r.apagadas} ${r.apagadas === 1 ? 'registo duplicado removido' : 'registos duplicados removidos'}`
+        + (r.fichasReapontadas ? ` · ${r.fichasReapontadas} ficha(s) do gabinete reapontada(s)` : '')
+        + (r.registosMovidos ? ` · ${r.registosMovidos} registo(s) movido(s)` : '')
+        + '.',
+      );
+      onAfterMerge?.();
+    } catch {
+      setErroDup('Não consegui concluir a limpeza. Podes repetir em segurança — a fusão não duplica dados.');
+    } finally {
+      setALimparDup(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!showDup) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !aLimparDup) setShowDup(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [showDup, aLimparDup]);
 
   const handleNovaManual = () => {
     // Não cria a empresa já — abre o rascunho no modo Novo Cliente. A empresa
@@ -181,6 +234,43 @@ export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEm
           </p>
         </header>
 
+        {/* Limpeza de duplicadas — só aparece quando existem */}
+        {sucessoDup && (
+          <div role="status" className="mb-4 flex items-start gap-3 rounded-[14px] border border-emerald-200 bg-emerald-50 px-4 py-3">
+            <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+            <p className="text-[12.5px] font-[600] text-emerald-900 flex-1 leading-snug">{sucessoDup}</p>
+            <button
+              type="button"
+              onClick={() => setSucessoDup(null)}
+              aria-label="Fechar aviso"
+              className="w-6 h-6 -mt-0.5 -mr-1 rounded-full flex items-center justify-center text-emerald-700 hover:bg-emerald-100 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {duplicadas.length > 0 && (
+          <div role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-[14px] border border-amber-300 bg-amber-50 px-4 py-3">
+            <Layers className="w-5 h-5 text-amber-600 shrink-0" />
+            <div className="flex-1 min-w-[200px]">
+              <p className="text-[13px] font-[800] text-amber-900">
+                {duplicadas.reduce((s, g) => s + g.empresas.length, 0)} empresas duplicadas
+              </p>
+              <p className="text-[12px] font-[500] text-amber-800 leading-snug">
+                O mesmo NIF está em registos separados — normalmente de importações repetidas do SAF-T.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={abrirDuplicadas}
+              className="inline-flex items-center gap-2 bg-white border border-amber-300 text-amber-900 px-3.5 py-2 rounded-[10px] text-[12.5px] font-[800] hover:bg-amber-100 active:scale-[0.98] transition-all"
+            >
+              Rever e limpar
+            </button>
+          </div>
+        )}
+
         {/* Search */}
         <div className="relative mb-5">
           <Search className="w-4 h-4 text-[#6B7280] absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -229,6 +319,125 @@ export default function EmpresasList({ onNavigate, onNovaEmpresaManual, onNovaEm
           onConfirm={() => handleDelete(confirmDelete)}
           onCancel={() => setConfirmDelete(null)}
         />
+      )}
+
+      {/* Limpar duplicadas: pré-visualizar, escolher o registo que fica, fundir */}
+      {showDup && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="dup-modal-title"
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6"
+        >
+          <button
+            type="button"
+            aria-label="Cancelar"
+            onClick={() => { if (!aLimparDup) setShowDup(false); }}
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
+          />
+          <div className="relative bg-white rounded-[22px] shadow-2xl max-w-2xl w-full overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="h-1.5 bg-gradient-to-r from-amber-400 to-amber-600 w-full shrink-0" />
+            <div className="p-6 flex flex-col min-h-0">
+              <div className="flex items-start justify-between gap-3 mb-1">
+                <h2 id="dup-modal-title" className="text-[22px] font-[800] text-[#0B1D2D] leading-tight">
+                  Empresas duplicadas
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setShowDup(false)}
+                  disabled={aLimparDup}
+                  aria-label="Fechar"
+                  className="w-8 h-8 -mt-1 -mr-1 rounded-full flex items-center justify-center text-[#6B7280] hover:text-[#0B1D2D] hover:bg-[#F1F5F9] transition-colors disabled:opacity-40"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-[13px] text-[#6B7280] font-[500] leading-relaxed">
+                Nenhum dado se perde: o registo que fica herda o SAF-T, o histórico de simulações
+                e os dados em falta. As tarefas, obrigações e documentos do gabinete passam para a ficha que fica.
+              </p>
+
+              <div className="mt-4 space-y-3 overflow-y-auto min-h-0 -mx-1 px-1">
+                {duplicadas.map((g) => {
+                  const manterId = escolhasDup[g.nif] ?? g.empresas[0].id;
+                  const r = resumoFusao(g, manterId);
+                  return (
+                    <fieldset key={g.nif} className="rounded-[14px] border border-[#E2E8F0] p-3.5">
+                      <legend className="px-1.5 text-[11px] font-[800] uppercase tracking-[1.5px] text-[#6B7280]">
+                        NIF {g.nif} · escolhe o registo que fica
+                      </legend>
+                      <div className="space-y-2">
+                        {g.empresas.map((e) => {
+                          const sel = e.id === manterId;
+                          return (
+                            <label
+                              key={e.id}
+                              className={cn(
+                                'flex gap-3 items-start rounded-[10px] border p-2.5 cursor-pointer transition-colors',
+                                sel ? 'border-[var(--accent)] bg-[var(--accent)]/5' : 'border-[#E5E9F0] hover:bg-zinc-50',
+                              )}
+                            >
+                              <input
+                                type="radio"
+                                name={`dup-${g.nif}`}
+                                checked={sel}
+                                onChange={() => setEscolhasDup((c) => ({ ...c, [g.nif]: e.id }))}
+                                className="mt-0.5 accent-[var(--accent)]"
+                              />
+                              <span className="flex-1 min-w-0">
+                                <span className="block text-[13px] font-[800] text-[#0B1D2D] truncate">
+                                  {e.nome || 'Sem nome'}
+                                </span>
+                                <span className="block text-[11.5px] font-[500] text-[#6B7280]">
+                                  Atualizada {fmtDateHist(e.updatedAt)} · {e.simulacoes?.length ?? 0} simulações · {e.saftXml ? 'SAF-T guardado' : 'sem SAF-T'}
+                                </span>
+                              </span>
+                              {sel && (
+                                <span className="text-[10px] font-[800] uppercase tracking-[0.5px] text-[var(--accent)] shrink-0 mt-0.5">
+                                  Fica
+                                </span>
+                              )}
+                            </label>
+                          );
+                        })}
+                      </div>
+                      <p className="mt-2 text-[11.5px] font-[600] text-[#64748B] leading-snug">
+                        Resultado: {r.simulacoes} simulações · {r.temSaft ? 'SAF-T preservado' : 'sem SAF-T'}
+                        {r.saftSoNosOutros ? ' (recuperado do duplicado)' : ''} · {r.apagadas} {r.apagadas === 1 ? 'registo apagado' : 'registos apagados'}
+                      </p>
+                    </fieldset>
+                  );
+                })}
+              </div>
+
+              {erroDup && (
+                <p role="alert" className="mt-3 text-[12px] font-[700] text-red-700 bg-red-50 border border-red-200 rounded-[10px] px-3 py-2">
+                  {erroDup}
+                </p>
+              )}
+
+              <div className="mt-4 flex flex-col-reverse sm:flex-row gap-2 sm:justify-end shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowDup(false)}
+                  disabled={aLimparDup}
+                  className="px-4 py-2.5 rounded-[10px] text-[13px] font-[700] text-[#64748B] bg-white border border-[#E2E8F0] hover:bg-slate-50 transition-colors disabled:opacity-40"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={aplicarDuplicadas}
+                  disabled={aLimparDup}
+                  className="inline-flex items-center justify-center gap-2 bg-[var(--accent)] text-white px-4 py-2.5 rounded-[10px] text-[13px] font-[800] hover:bg-[var(--accent-strong)] active:scale-[0.98] transition-all shadow-md shadow-[var(--accent)]/25 disabled:opacity-60"
+                >
+                  {aLimparDup ? <Loader2 className="w-4 h-4 animate-spin" /> : <Layers className="w-4 h-4" />}
+                  {aLimparDup ? 'A fundir…' : `Fundir e apagar ${totalApagar}`}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Importar do TOConline (OAuth da conta do gabinete) */}

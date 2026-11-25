@@ -850,6 +850,86 @@ export async function deleteCliente(id: string): Promise<void> {
 }
 export function newClienteId(): string { return newId('cli'); }
 
+// ─── Fusão de fichas duplicadas (mesmo NIF) ─────────────────────────────────
+// Uma ficha apagada levaria consigo tarefas, obrigações, documentos, cofre,
+// conversas, tempos e atas. Antes de apagar, esses registos passam para a ficha
+// que fica — nada se perde. As apagadas vão para a lixeira (soft delete).
+
+type RegistoComCliente = { id: string; clienteId?: string; clienteNome?: string };
+
+function moverRegistosDeCliente<T extends RegistoComCliente>(
+  col: string,
+  lista: T[],
+  guardar: (l: T[]) => void,
+  manterId: string,
+  manterNome: string,
+  ids: Set<string>,
+): number {
+  let movidos = 0;
+  const next = lista.map((item) => {
+    if (!item.clienteId || !ids.has(item.clienteId)) return item;
+    movidos++;
+    const upd = { ...item, clienteId: manterId, clienteNome: manterNome };
+    queueSet(colPath(col), item.id, upd);
+    return upd;
+  });
+  if (movidos) guardar(next);
+  return movidos;
+}
+
+/** Funde as fichas `apagarIds` na ficha `manterId`: herda campos vazios, move
+ *  todos os registos ligados e apaga as duplicadas para a lixeira.
+ *  Devolve quantos registos foram movidos. */
+export async function fundirClientesDuplicados(manterId: string, apagarIds: string[]): Promise<number> {
+  const ids = new Set(apagarIds.filter((id) => id && id !== manterId));
+  const clientes = listClientesCache();
+  const manter = clientes.find((c) => c.id === manterId);
+  if (!manter || !ids.size) return 0;
+
+  const outros = clientes.filter((c) => ids.has(c.id));
+  const merged = { ...manter } as GabineteCliente & Record<string, unknown>;
+  const mergedRec = merged as unknown as Record<string, unknown>;
+  for (const o of outros) {
+    for (const [k, v] of Object.entries(o as unknown as Record<string, unknown>)) {
+      const atual = mergedRec[k];
+      const vazio = atual === undefined || atual === null || atual === '' || (Array.isArray(atual) && atual.length === 0);
+      if (vazio && v !== undefined && v !== null && v !== '') mergedRec[k] = v;
+    }
+  }
+  const unir = (campo: 'tags' | 'projectos' | 'gerentes') => {
+    const set = new Set([...(manter[campo] ?? []), ...outros.flatMap((o) => o[campo] ?? [])]);
+    if (set.size) merged[campo] = [...set];
+  };
+  unir('tags'); unir('projectos'); unir('gerentes');
+  // Contactos e situação: concatena (são listas de itens, não conjuntos).
+  const contactos = [...(manter.contactos ?? []), ...outros.flatMap((o) => o.contactos ?? [])];
+  if (contactos.length) merged.contactos = contactos;
+  const situacao = [...(manter.situacaoAtual ?? []), ...outros.flatMap((o) => o.situacaoAtual ?? [])];
+  if (situacao.length) merged.situacaoAtual = situacao;
+
+  merged.empresaId = manter.empresaId ?? outros.find((o) => o.empresaId)?.empresaId;
+  merged.createdAt = Math.min(manter.createdAt, ...outros.map((o) => o.createdAt));
+  logAudit('merge_cliente', manter.nome || manter.id, { absorvidos: [...ids] }, manterId);
+  await upsertCliente(merged as GabineteCliente);
+
+  let movidos = 0;
+  movidos += moverRegistosDeCliente('tarefas', listTarefasCache(), saveTarefasCache, manterId, manter.nome, ids);
+  movidos += moverRegistosDeCliente('obrigacoes', listObrigacoesCache(), saveObrigacoesCache, manterId, manter.nome, ids);
+  movidos += moverRegistosDeCliente('cofre', listCofreCache(), saveCofreCache, manterId, manter.nome, ids);
+  movidos += moverRegistosDeCliente('conversas', listConversasCache(), saveConversasCache, manterId, manter.nome, ids);
+  movidos += moverRegistosDeCliente('envios', listEnviosCache(), saveEnviosCache, manterId, manter.nome, ids);
+  movidos += moverRegistosDeCliente('tempos', listTemposCache(), saveTemposCache, manterId, manter.nome, ids);
+  movidos += moverRegistosDeCliente('actas', listActasCache(), saveActasCache, manterId, manter.nome, ids);
+  movidos += moverRegistosDeCliente('contactosGeral', listContactosCache(), saveContactosCache, manterId, manter.nome, ids);
+  movidos += moverRegistosDeCliente('alertasGeral', listAlertasCache(), saveAlertasCache, manterId, manter.nome, ids);
+  movidos += moverRegistosDeCliente('ocorrencias', listOcorrenciasCache(), saveOcorrenciasCache, manterId, manter.nome, ids);
+  movidos += moverRegistosDeCliente('documentos', listDocumentosGeralCache(), saveDocumentosGeralCache, manterId, manter.nome, ids);
+
+  for (const id of ids) await deleteCliente(id);
+  notificarAtualizacaoLocal('clientes');
+  return movidos;
+}
+
 // ─── CRUD — Tarefas ──────────────────────────────────────────────────────────
 export function listTarefasCache(): Tarefa[] { return readCache<Tarefa>('tarefas', []); }
 export function saveTarefasCache(list: Tarefa[]): void { writeCache('tarefas', list); }
