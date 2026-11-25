@@ -39,7 +39,6 @@ import GabineteEquipa from './GabineteEquipa';
 
 // Guia por tab interna do Gabinete (a sugestão muda conforme a tab ativa)
 const GAB_TAB_GUIA: Record<string, ViewKey> = {
-  'mapa-rh': 'gab-mapa-rh',
   'mapa-controlo': 'gab-mapa-controlo',
   dashboard: 'gab-dashboard',
   'visao-geral': 'gab-visao-geral',

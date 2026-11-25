@@ -246,10 +246,9 @@ export const ARVORE: Record<string, NoAjuda> = {
       { rotulo: 'Ficha 360 de um cliente', proximo: 'gab-visao' },
       { rotulo: 'Obrigações Fiscais', proximo: 'gab-quadro' },
       { rotulo: 'Mapa de contabilidade', proximo: 'gab-controlo' },
-      { rotulo: 'Mapa RH', proximo: 'gab-rh' },
       { rotulo: 'Tarefas', proximo: 'gab-tarefas' },
       { rotulo: 'Agenda', proximo: 'gab-agenda' },
-      { rotulo: 'Obrigações fiscais', proximo: 'gab-obrig' },
+      { rotulo: 'Lista de obrigações', proximo: 'gab-obrig' },
       { rotulo: 'Cofre de acessos', proximo: 'gab-cofre' },
       { rotulo: 'Equipa e permissões', proximo: 'gab-equipa' },
       { rotulo: 'Lixeira', proximo: 'gab-lixeira' },
@@ -275,11 +274,7 @@ export const ARVORE: Record<string, NoAjuda> = {
     texto: 'O Mapa de contabilidade acompanha as 7 fases da contabilidade por cliente e por mês.',
     destino: { view: 'gab-mapa-controlo', guia: 'gab-mapa-controlo' },
   },
-  'gab-rh': {
-    id: 'gab-rh',
-    texto: 'O Mapa RH controla as entregas mensais de pessoal: salários, tickets, IRS, DMR-AT, DMR-SS e encargos.',
-    destino: { view: 'gab-mapa-rh', guia: 'gab-mapa-rh' },
-  },
+
   'gab-tarefas': {
     id: 'gab-tarefas',
     texto: 'As Tarefas vivem num quadro por colunas (A fazer, Em curso, Feito, Atrasada), com prazo e responsável.',

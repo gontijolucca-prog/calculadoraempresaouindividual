@@ -13,7 +13,7 @@ export type ViewKey =
   | 'legal' | 'office-settings' | 'historico' | 'exportar' | 'hub'
   | 'gabinete' | 'gab-visao-geral' | 'gab-equipa' | 'gab-agenda' | 'gab-tarefas' | 'gab-obrigacoes' | 'gab-cofre'
   | 'aquisicao' | 'custos' | 'proposta'
-  | 'gab-dashboard' | 'gab-mapa-controlo' | 'gab-mapa-rh' | 'gab-lixeira';
+  | 'gab-dashboard' | 'gab-mapa-controlo' | 'gab-lixeira';
 
 export interface GuiaPasso {
   titulo: string;
@@ -384,17 +384,6 @@ export const GUIAS: Record<ViewKey, Guia> = {
       { titulo: 'As 7 fases', corpo: 'Cada linha é um pilar; cada célula tem três estados (—, ✓, ✕).', alvo: { texto: '7 fases' } },
       { titulo: 'Pilares à medida', corpo: 'Gerir pilares permite acrescentar ou remover fases do mapa.', alvo: { texto: 'Gerir pilares — Mapa de Controlo' } },
       { titulo: 'Exportar', corpo: 'Imprimir e Exportar CSV levam o mapa tal como está no ecrã.', alvo: { texto: 'Exportar CSV' } },
-    ],
-  },
-
-  'gab-mapa-rh': {
-    titulo: 'Mapa RH',
-    intro: 'Controlo mensal de RH por cliente: salários, tickets, guia IRS, DMR-AT, DMR-SS e encargos.',
-    acao: 'Escolha um cliente e marque uma entrega de RH do mês.',
-    passos: [
-      { titulo: 'Filtros', corpo: 'Ano, trimestre, cliente e responsável reduzem a lista.', alvo: { texto: 'Pesquisa Cliente' } },
-      { titulo: 'As 6 colunas', corpo: 'Cada coluna é uma entrega de RH e a célula regista se está feita.', alvo: { texto: 'Gerir pilares — Mapa RH' } },
-      { titulo: 'Exportar', corpo: 'Imprimir e Exportar CSV levam o mapa como está.', alvo: { texto: 'Exportar CSV' } },
     ],
   },
 
