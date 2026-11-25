@@ -11,7 +11,9 @@ export type ViewKey =
   | 'empresas' | 'profile' | 'tax' | 'vehicle' | 'ticket' | 'selfss'
   | 'diagnostico' | 'imoveis' | 'imt' | 'salario' | 'irs' | 'previsa'
   | 'legal' | 'office-settings' | 'historico' | 'exportar' | 'hub'
-  | 'gabinete' | 'gab-visao-geral' | 'gab-equipa' | 'gab-agenda' | 'gab-tarefas' | 'gab-obrigacoes' | 'gab-cofre';
+  | 'gabinete' | 'gab-visao-geral' | 'gab-equipa' | 'gab-agenda' | 'gab-tarefas' | 'gab-obrigacoes' | 'gab-cofre'
+  | 'aquisicao' | 'custos' | 'proposta'
+  | 'gab-dashboard' | 'gab-mapa-controlo' | 'gab-mapa-rh' | 'gab-lixeira';
 
 export interface GuiaPasso {
   titulo: string;
@@ -323,6 +325,87 @@ export const GUIAS: Record<ViewKey, Guia> = {
     passos: [
       { titulo: 'Guardar acesso', corpo: 'Título, categoria (AT/SS/Banco/…), cliente opcional, utilizador e password. Só a sua conta vê o segredo.', alvo: { texto: 'Guardar primeiro' } },
       { titulo: 'Encontrar e revelar', corpo: 'Pesquisa por título, cliente ou utilizador. Para ver a password de uma entrada, usa o ícone do olho: a vista fica registada na auditoria (quem viu e quando).', alvo: { texto: 'Pesquisar passwords' } },
+    ],
+  },
+
+  // ── Faltavam: vistas que existiam na app sem guia próprio ──────────────
+  aquisicao: {
+    titulo: 'Aquisição de viatura',
+    intro: 'Compra de viatura pela empresa: IVA recuperável, tributação autónoma e custo real, conforme a categoria e o regime da compra.',
+    acao: 'Compare uma viatura ligeira com uma comercial para ver a diferença no IVA.',
+    passos: [
+      { titulo: 'Dados da viatura', corpo: 'Comece pela categoria e pelo motor. É daqui que saem o IVA recuperável e a tributação autónoma.', alvo: { texto: 'Dados da viatura' } },
+      { titulo: 'Categoria', corpo: 'Ligeiros de passageiros, comerciais e motas têm regras diferentes de dedução de IVA e de tributação autónoma.', alvo: { texto: 'Categoria' } },
+      { titulo: 'Regime da compra', corpo: 'Compra nova com IVA, bens em 2.ª mão ou locação/leasing/renting — cada regime tem tratamento fiscal próprio.', alvo: { texto: 'Regime de IVA' } },
+      { titulo: 'IVA recuperável', corpo: 'O resultado mostra o IVA que a empresa recupera e o custo depois de impostos.', alvo: { texto: 'IVA recuperável' } },
+    ],
+  },
+
+  custos: {
+    titulo: 'Custos Diferidos',
+    intro: 'Reparte um gasto (ou um proveito) por vários anos: o simulador calcula o reconhecimento de cada ano e o saldo a 31 de dezembro.',
+    acao: 'Introduza um seguro anual e veja o valor diferido no fim do ano.',
+    passos: [
+      { titulo: 'O que é um custo diferido', corpo: 'Gasto pago antecipadamente (ou proveito recebido antes) que pertence a mais do que um período contabilístico.', alvo: { texto: 'Gasto pago antecipadamente' } },
+      { titulo: 'Datas e valor', corpo: 'Data de início, data de termo e valor total definem o número de dias e a repartição diária.', alvo: { texto: 'Data de início' } },
+      { titulo: 'Mapa por ano', corpo: 'A tabela mostra dias, valor reconhecido e o que fica diferido em cada ano.', alvo: { texto: 'Saldo a 31 de dezembro' } },
+      { titulo: 'Exportar', corpo: 'O botão Descarregar PDF leva o mapa com o cabeçalho do escritório.', alvo: { texto: 'Descarregar PDF' } },
+    ],
+  },
+
+  proposta: {
+    titulo: 'Proposta de Honorários',
+    intro: 'A proposta comercial do cliente: mensalidade, serviços incluídos e extra, condições e prazos — pronta a imprimir.',
+    acao: 'Gere a proposta de um cliente e envia-lhe o PDF.',
+    passos: [
+      { titulo: 'Mensalidade', corpo: 'A mensalidade sem IVA e o total com IVA aparecem no topo; o equivalente anual ajuda o cliente a comparar.', alvo: { texto: 'Mensal c/ IVA' } },
+      { titulo: 'Serviços extra', corpo: 'As linhas a zero passam para serviços extra opcionais; as restantes entram na mensalidade.', alvo: { texto: 'Serviços extra opcionais' } },
+      { titulo: 'Imprimir', corpo: 'Imprimir proposta gera o PDF final com o branding do escritório.', alvo: { texto: 'Imprimir proposta' } },
+    ],
+  },
+
+  'gab-dashboard': {
+    titulo: 'Quadro resumo de obrigações',
+    intro: 'Grelha JAN–DEZ por cliente: cada célula marca se a obrigação desse mês está concluída.',
+    acao: 'Marque um mês como concluído e confirme que fica gravado.',
+    passos: [
+      { titulo: 'Uma linha por cliente', corpo: 'Cada cliente tem a sua linha; as colunas são os 12 meses do ano.', alvo: { texto: 'Quadro resumo obrigações' } },
+      { titulo: 'Marcar o mês', corpo: 'Clicar na célula alterna entre concluído e não concluído. Grava logo no gabinete.', alvo: { texto: 'Colapsar todos' } },
+      { titulo: 'Gerir as obrigações do quadro', corpo: 'Escolha que obrigações aparecem como colunas do quadro.', alvo: { texto: 'Gerir obrigações do quadro' } },
+    ],
+  },
+
+  'gab-mapa-controlo': {
+    titulo: 'Mapa de controlo',
+    intro: 'As 7 fases da contabilidade por cliente, mês a mês: documento, vendas, compras, salários, AFT, reconciliação e balancete.',
+    acao: 'Percorra o mapa de um cliente e marque a primeira fase como concluída.',
+    passos: [
+      { titulo: 'Filtros', corpo: 'Ano, trimestre, cliente, gestor e grupo reduzem o mapa ao que quer ver.', alvo: { texto: 'Trimestre' } },
+      { titulo: 'As 7 fases', corpo: 'Cada linha é um pilar; cada célula tem três estados (—, ✓, ✕).', alvo: { texto: '7 fases' } },
+      { titulo: 'Pilares à medida', corpo: 'Gerir pilares permite acrescentar ou remover fases do mapa.', alvo: { texto: 'Gerir pilares — Mapa de Controlo' } },
+      { titulo: 'Exportar', corpo: 'Imprimir e Exportar CSV levam o mapa tal como está no ecrã.', alvo: { texto: 'Exportar CSV' } },
+    ],
+  },
+
+  'gab-mapa-rh': {
+    titulo: 'Mapa RH',
+    intro: 'Controlo mensal de RH por cliente: salários, tickets, guia IRS, DMR-AT, DMR-SS e encargos.',
+    acao: 'Escolha um cliente e marque uma entrega de RH do mês.',
+    passos: [
+      { titulo: 'Filtros', corpo: 'Ano, trimestre, cliente e responsável reduzem a lista.', alvo: { texto: 'Pesquisa Cliente' } },
+      { titulo: 'As 6 colunas', corpo: 'Cada coluna é uma entrega de RH e a célula regista se está feita.', alvo: { texto: 'Gerir pilares — Mapa RH' } },
+      { titulo: 'Exportar', corpo: 'Imprimir e Exportar CSV levam o mapa como está.', alvo: { texto: 'Exportar CSV' } },
+    ],
+  },
+
+  'gab-lixeira': {
+    titulo: 'Lixeira',
+    intro: 'Tudo o que é apagado fica aqui. Restaurar devolve o registo; apagar definitivamente é só para administradores.',
+    acao: 'Restaure um registo apagado para confirmar que volta ao sítio.',
+    passos: [
+      { titulo: 'O que cai na lixeira', corpo: 'Clientes, tarefas, obrigações, contactos, alertas, ocorrências e documentos.', alvo: { texto: 'O que apagas fica aqui' } },
+      { titulo: 'Restaurar', corpo: 'Restaurar devolve o registo à lista original.', alvo: { texto: 'Restaurar' } },
+      { titulo: 'Apagar definitivo', corpo: 'Só administradores. Não há volta a dar.', alvo: { texto: 'Apagar definitivo' } },
     ],
   },
 };

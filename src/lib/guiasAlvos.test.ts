@@ -48,6 +48,45 @@ ok('guia do Gabinete não promete "Tarefas hoje"', !gabTexto.includes('Tarefas h
 ok('guia do Gabinete não promete "Próximos 7 dias"', !gabTexto.includes('Próximos 7 dias'));
 ok('guia do Gabinete não promete "Atalhos"', !gabTexto.includes('Atalhos'));
 
+// ── Cobertura: nenhuma página/ferramenta pode ficar sem guia ────────────────
+// O chatbot de escolha múltipla só pode prometer o que tem visita guiada.
+const lerSrc = (p: string) => fs.readFileSync(path.resolve(process.cwd(), p), 'utf8');
+
+const appSrc = lerSrc('src/App.tsx');
+const blocoViewType = appSrc.match(/type ViewType =([\s\S]*?);/)?.[1] ?? '';
+const vistas = [...blocoViewType.matchAll(/'([a-z-]+)'/g)].map((m) => m[1]);
+
+ok(`ViewType encontrado (${vistas.length} vistas)`, vistas.length >= 15);
+for (const v of vistas) {
+  ok(`vista "${v}" tem guia`, Object.hasOwn(GUIAS, v));
+}
+
+// Tabs internas do Gabinete: cada uma tem de ter um guia próprio.
+const gabSrc = lerSrc('src/Gabinete.tsx');
+const hubSrc = lerSrc('src/GabineteHub.tsx');
+const blocoFuncoes = hubSrc.match(/GABINET_FUNCTIONS[^=]*=\s*\[([\s\S]*?)\];/)?.[1] ?? '';
+const tabs = [...blocoFuncoes.matchAll(/\{\s*id:\s*'([a-z-]+)'/g)].map((m) => m[1]);
+const blocoMapa = gabSrc.match(/GAB_TAB_GUIA[^=]*=\s*\{([\s\S]*?)\};/)?.[1] ?? '';
+const mapa: Record<string, string> = {};
+for (const m of blocoMapa.matchAll(/'?([a-z-]+)'?:\s*'([a-z-]+)'/g)) mapa[m[1]] = m[2];
+
+ok(`GABINET_FUNCTIONS encontradas (${tabs.length} tabs)`, tabs.length >= 8);
+for (const t of tabs) {
+  ok(`tab "${t}" tem guia mapeado`, !!mapa[t]);
+  if (mapa[t]) ok(`tab "${t}" aponta para um guia existente (${mapa[t]})`, Object.hasOwn(GUIAS, mapa[t]));
+}
+const guiasUsados = new Set(Object.values(mapa));
+for (const [t, g] of Object.entries(mapa)) {
+  ok(`guia "${g}" não é reciclado na tab "${t}"`, t === '' || g !== 'gabinete');
+}
+ok('tabs do gabinete usam guias distintos', guiasUsados.size === Object.keys(mapa).length);
+
+// Os guias novos têm de ter pelo menos 3 passos (não são placeholders).
+for (const v of ['aquisicao', 'custos', 'proposta', 'gab-dashboard', 'gab-mapa-controlo', 'gab-mapa-rh', 'gab-lixeira'] as ViewKey[]) {
+  ok(`guia "${v}" tem 3+ passos`, (GUIAS[v]?.passos.length ?? 0) >= 3);
+}
+
+
 console.log(`\n${totalTextos} alvos de texto e ${totalSels} seletores verificados.`);
 if (fails) { console.error(`${fails} falha(s)`); process.exit(1); }
 console.log('Todos os alvos dos guias existem na interface.');
